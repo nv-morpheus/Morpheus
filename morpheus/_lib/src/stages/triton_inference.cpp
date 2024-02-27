@@ -244,7 +244,6 @@ InferenceClientStage::InferenceClientStage(std::string model_name,
                                            bool use_shared_memory,
                                            bool needs_logits,
                                            std::map<std::string, std::string> inout_mapping) :
-  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_model_name(std::move(model_name)),
   m_server_url(std::move(server_url)),
   m_force_convert_inputs(force_convert_inputs),
@@ -257,105 +256,101 @@ InferenceClientStage::InferenceClientStage(std::string model_name,
     this->connect_with_server();  // TODO(Devin)
 }
 
-InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
+mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> InferenceClientStage::on_data(
+    std::shared_ptr<MultiInferenceMessage>&& x)
 {
-    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        std::unique_ptr<triton::client::InferenceServerHttpClient> client;
+    std::unique_ptr<triton::client::InferenceServerHttpClient> client;
 
-        CHECK_TRITON(triton::client::InferenceServerHttpClient::Create(&client, m_server_url, false));
+    CHECK_TRITON(triton::client::InferenceServerHttpClient::Create(&client, m_server_url, false));
 
-        return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output, &client](sink_type_t x) {
-                // Using the `count` which is the number of rows in the inference tensors. We will check later if this
-                // doesn't match the number of rows in the dataframe (`mess_count`). This happens when the size of the
-                // input is too large and needs to be broken up in chunks in the pre-process stage. When this is the
-                // case we will reduce the rows in the response outputs such that we have a single response for each
-                // row int he dataframe.
-                TensorMap output_tensors;
-                buffer_map_t output_buffers;
-                build_output_tensors(x->count, m_model_outputs, output_buffers, output_tensors);
+    // Using the `count` which is the number of rows in the inference tensors. We will check later if this
+    // doesn't match the number of rows in the dataframe (`mess_count`). This happens when the size of the
+    // input is too large and needs to be broken up in chunks in the pre-process stage. When this is the
+    // case we will reduce the rows in the response outputs such that we have a single response for each
+    // row int he dataframe.
+    TensorMap output_tensors;
+    buffer_map_t output_buffers;
 
-                for (TensorIndex start = 0; start < x->count; start += m_max_batch_size)
-                {
-                    triton::client::InferInput* input1;
+    build_output_tensors(x->count, m_model_outputs, output_buffers, output_tensors);
 
-                    TensorIndex stop = std::min(start + m_max_batch_size, x->count);
+    for (TensorIndex start = 0; start < x->count; start += m_max_batch_size)
+    {
+        triton::client::InferInput* input1;
 
-                    sink_type_t mini_batch_input = x->get_slice(start, stop);
+        TensorIndex stop = std::min(start + m_max_batch_size, x->count);
 
-                    // Iterate on the model inputs in case the model takes less than what tensors are available
-                    std::vector<std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>>>
-                        saved_inputs = foreach_map(m_model_inputs, [&mini_batch_input](auto const& model_input) {
-                            return (build_input(mini_batch_input, model_input));
-                        });
+        sink_type_t mini_batch_input = x->get_slice(start, stop);
 
-                    std::vector<std::shared_ptr<const triton::client::InferRequestedOutput>> saved_outputs =
-                        foreach_map(m_model_outputs, [](auto const& model_output) {
-                            // Generate the outputs to be requested.
-                            return build_output(model_output);
-                        });
+        // Iterate on the model inputs in case the model takes less than what tensors are available
+        std::vector<std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>>> saved_inputs =
+            foreach_map(m_model_inputs, [&mini_batch_input](auto const& model_input) {
+                return (build_input(mini_batch_input, model_input));
+            });
 
-                    std::vector<triton::client::InferInput*> inputs =
-                        foreach_map(saved_inputs, [](auto x) { return x.first.get(); });
+        std::vector<std::shared_ptr<const triton::client::InferRequestedOutput>> saved_outputs =
+            foreach_map(m_model_outputs, [](auto const& model_output) {
+                // Generate the outputs to be requested.
+                return build_output(model_output);
+            });
 
-                    std::vector<const triton::client::InferRequestedOutput*> outputs =
-                        foreach_map(saved_outputs, [](auto x) { return x.get(); });
+        std::vector<triton::client::InferInput*> inputs = foreach_map(saved_inputs, [](auto x) {
+            return x.first.get();
+        });
 
-                    auto results = std::unique_ptr<triton::client::InferResult>([&]() {
-                        triton::client::InferResult* results;
-                        CHECK_TRITON(client->Infer(&results, m_options, inputs, outputs));
-                        return results;
-                    }());
+        std::vector<const triton::client::InferRequestedOutput*> outputs = foreach_map(saved_outputs, [](auto x) {
+            return x.get();
+        });
 
-                    for (auto& model_output : m_model_outputs)
-                    {
-                        std::vector<int64_t> output_shape;
+        auto results = std::unique_ptr<triton::client::InferResult>([&]() {
+            triton::client::InferResult* results;
+            CHECK_TRITON(client->Infer(&results, m_options, inputs, outputs));
+            return results;
+        }());
 
-                        CHECK_TRITON(results->Shape(model_output.name, &output_shape));
+        for (auto& model_output : m_model_outputs)
+        {
+            std::vector<int64_t> output_shape;
 
-                        // Make sure we have at least 2 dims
-                        while (output_shape.size() < 2)
-                        {
-                            output_shape.push_back(1);
-                        }
+            CHECK_TRITON(results->Shape(model_output.name, &output_shape));
 
-                        const uint8_t* output_ptr = nullptr;
-                        size_t output_ptr_size    = 0;
-                        CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
+            // Make sure we have at least 2 dims
+            while (output_shape.size() < 2)
+            {
+                output_shape.push_back(1);
+            }
 
-                        auto output_tensor = output_tensors[model_output.mapped_name].slice({start, 0}, {stop, -1});
+            const uint8_t* output_ptr = nullptr;
+            size_t output_ptr_size    = 0;
+            CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
 
-                        DCHECK_EQ(stop - start, output_shape[0]);
-                        DCHECK_EQ(output_tensor.bytes(), output_ptr_size);
-                        DCHECK_NOTNULL(output_ptr);
-                        DCHECK_NOTNULL(output_tensor.data());
+            auto output_tensor = output_tensors[model_output.mapped_name].slice({start, 0}, {stop, -1});
 
-                        MRC_CHECK_CUDA(
-                            cudaMemcpy(output_tensor.data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
-                    }
-                }
+            DCHECK_EQ(stop - start, output_shape[0]);
+            DCHECK_EQ(output_tensor.bytes(), output_ptr_size);
+            DCHECK_NOTNULL(output_ptr);
+            DCHECK_NOTNULL(output_tensor.data());
 
-                if (x->mess_count != x->count)
-                {
-                    reduce_outputs(x, output_buffers, output_tensors);
-                }
+            MRC_CHECK_CUDA(cudaMemcpy(output_tensor.data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
+        }
+    }
 
-                // If we need to do logits, do that here
-                if (m_needs_logits)
-                {
-                    apply_logits(output_buffers, output_tensors);
-                }
+    if (x->mess_count != x->count)
+    {
+        reduce_outputs(x, output_buffers, output_tensors);
+    }
 
-                // Final output of all mini-batches
-                auto response_mem = std::make_shared<ResponseMemory>(x->mess_count, std::move(output_tensors));
-                auto response     = std::make_shared<MultiResponseMessage>(
-                    x->meta, x->mess_offset, x->mess_count, std::move(response_mem), 0, response_mem->count);
+    // If we need to do logits, do that here
+    if (m_needs_logits)
+    {
+        apply_logits(output_buffers, output_tensors);
+    }
 
-                output.on_next(std::move(response));
-            },
-            [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-            [&]() { output.on_completed(); }));
-    };
+    // Final output of all mini-batches
+    auto response_mem = std::make_shared<ResponseMemory>(x->mess_count, std::move(output_tensors));
+    auto response     = std::make_shared<MultiResponseMessage>(
+        x->meta, x->mess_offset, x->mess_count, std::move(response_mem), 0, response_mem->count);
+
+    co_yield std::move(response);
 }
 
 void InferenceClientStage::connect_with_server()

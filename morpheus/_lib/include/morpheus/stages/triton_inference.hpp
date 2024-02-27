@@ -32,6 +32,7 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>
+#include <pymrc/asyncio_runnable.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
@@ -58,14 +59,11 @@ namespace morpheus {
  * This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
  */
 class InferenceClientStage
-  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>
+  : public mrc::pymrc::AsyncioRunnable<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>
 {
   public:
-    using base_t =
-        mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>;
-    using typename base_t::sink_type_t;
-    using typename base_t::source_type_t;
-    using typename base_t::subscribe_fn_t;
+    using sink_type_t = std::shared_ptr<MultiInferenceMessage>;
+    using source_type_t = std::shared_ptr<MultiResponseMessage>;
 
     /**
      * @brief Construct a new Inference Client Stage object
@@ -102,7 +100,8 @@ class InferenceClientStage
     /**
      * TODO(Documentation)
      */
-    subscribe_fn_t build_operator();
+    mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> on_data(
+        std::shared_ptr<MultiInferenceMessage>&& data) override;
 
     std::string m_model_name;
     std::string m_server_url;
