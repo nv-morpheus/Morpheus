@@ -87,6 +87,10 @@ class InferenceClientStage
                          std::map<std::string, std::string> inout_mapping = {});
 
   private:
+
+    std::shared_ptr<triton::client::InferenceServerHttpClient> get_client();
+    void reset_client();
+
     /**
      * TODO(Documentation)
      */
@@ -95,7 +99,7 @@ class InferenceClientStage
     /**
      * TODO(Documentation)
      */
-    void connect_with_server();
+    std::unique_ptr<triton::client::InferenceServerHttpClient> connect_with_server();
 
     /**
      * TODO(Documentation)
@@ -116,6 +120,8 @@ class InferenceClientStage
     std::vector<TritonInOut> m_model_outputs;
     triton::client::InferOptions m_options;
     TensorIndex m_max_batch_size{-1};
+    std::mutex m_client_mutex;
+    std::shared_ptr<triton::client::InferenceServerHttpClient> m_client;
 };
 
 /****** InferenceClientStageInferenceProxy******************/
