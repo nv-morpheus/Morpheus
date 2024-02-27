@@ -62,7 +62,7 @@ class InferenceClientStage
   : public mrc::pymrc::AsyncioRunnable<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>
 {
   public:
-    using sink_type_t = std::shared_ptr<MultiInferenceMessage>;
+    using sink_type_t   = std::shared_ptr<MultiInferenceMessage>;
     using source_type_t = std::shared_ptr<MultiResponseMessage>;
 
     /**
@@ -87,7 +87,6 @@ class InferenceClientStage
                          std::map<std::string, std::string> inout_mapping = {});
 
   private:
-
     std::shared_ptr<triton::client::InferenceServerHttpClient> get_client();
     void reset_client();
 
@@ -105,7 +104,7 @@ class InferenceClientStage
      * TODO(Documentation)
      */
     mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> on_data(
-        std::shared_ptr<MultiInferenceMessage>&& data) override;
+        std::shared_ptr<MultiInferenceMessage>&& data, std::shared_ptr<mrc::coroutines::Scheduler> on) override;
 
     std::string m_model_name;
     std::string m_server_url;

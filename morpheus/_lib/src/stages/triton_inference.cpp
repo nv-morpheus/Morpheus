@@ -17,6 +17,7 @@
 
 #include "morpheus/stages/triton_inference.hpp"
 
+#include "common.h"
 #include "mrc/node/rx_sink_base.hpp"
 #include "mrc/node/rx_source_base.hpp"
 #include "mrc/node/sink_properties.hpp"
@@ -48,6 +49,7 @@
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
 #include <algorithm>  // for min
+#include <coroutine>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -272,11 +274,43 @@ std::shared_ptr<triton::client::InferenceServerHttpClient> InferenceClientStage:
 void InferenceClientStage::reset_client()
 {
     std::unique_lock(this->m_client_mutex);
+
     m_client.reset();
 }
 
+struct TritonInferOperation
+{
+    constexpr bool await_ready() const noexcept
+    {
+        return false;
+    }
+
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        CHECK_TRITON(m_client.AsyncInfer(
+            [this, handle](triton::client::InferResult* result) {
+                m_result.reset(result);
+                handle();
+            },
+            m_options,
+            m_inputs,
+            m_outputs));
+    }
+
+    std::unique_ptr<triton::client::InferResult> await_resume()
+    {
+        return std::move(m_result);
+    }
+
+    triton::client::InferenceServerHttpClient& m_client;
+    triton::client::InferOptions const& m_options;
+    std::vector<triton::client::InferInput*> const& m_inputs;
+    std::vector<triton::client::InferRequestedOutput const*> const& m_outputs;
+    std::unique_ptr<triton::client::InferResult> m_result;
+};
+
 mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> InferenceClientStage::on_data(
-    std::shared_ptr<MultiInferenceMessage>&& x)
+    std::shared_ptr<MultiInferenceMessage>&& x, std::shared_ptr<mrc::coroutines::Scheduler> on)
 {
     while (true)
     {
@@ -323,11 +357,9 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
                         return x.get();
                     });
 
-                auto results = std::unique_ptr<triton::client::InferResult>([&]() {
-                    triton::client::InferResult* results;
-                    CHECK_TRITON(client->Infer(&results, m_options, inputs, outputs));
-                    return results;
-                }());
+                auto results = co_await TritonInferOperation(*client, m_options, inputs, outputs);
+
+                co_await on->yield();
 
                 for (auto& model_output : m_model_outputs)
                 {
