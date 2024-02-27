@@ -90,6 +90,7 @@ class OpenAIChatClient(LLMClient):
                  *,
                  model_name: str,
                  set_assistant: bool = False,
+                 max_retries: int = 10,
                  **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
@@ -109,8 +110,8 @@ class OpenAIChatClient(LLMClient):
         self._model_kwargs = copy.deepcopy(model_kwargs)
 
         # Create the client objects for both sync and async
-        self._client = openai.OpenAI()
-        self._client_async = openai.AsyncOpenAI()
+        self._client = openai.OpenAI(max_retries=max_retries)
+        self._client_async = openai.AsyncOpenAI(max_retries=max_retries)
 
     def get_input_names(self) -> list[str]:
         input_names = [self._prompt_key]
@@ -307,7 +308,12 @@ class OpenAIChatService(LLMService):
 
         return self._message_count
 
-    def get_client(self, *, model_name: str, set_assistant: bool = False, **model_kwargs) -> OpenAIChatClient:
+    def get_client(self,
+                   *,
+                   model_name: str,
+                   set_assistant: bool = False,
+                   max_retries: int = 10,
+                   **model_kwargs) -> OpenAIChatClient:
         """
         Returns a client for interacting with a specific model. This method is the preferred way to create a client.
 
@@ -326,4 +332,8 @@ class OpenAIChatService(LLMService):
 
         final_model_kwargs = {**self._default_model_kwargs, **model_kwargs}
 
-        return OpenAIChatClient(self, model_name=model_name, set_assistant=set_assistant, **final_model_kwargs)
+        return OpenAIChatClient(self,
+                                model_name=model_name,
+                                set_assistant=set_assistant,
+                                max_retries=max_retries,
+                                **final_model_kwargs)
