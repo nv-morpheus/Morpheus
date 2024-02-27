@@ -278,10 +278,6 @@ void InferenceClientStage::reset_client()
 mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> InferenceClientStage::on_data(
     std::shared_ptr<MultiInferenceMessage>&& x)
 {
-    // std::unique_ptr<triton::client::InferenceServerHttpClient> client;
-
-    // CHECK_TRITON(triton::client::InferenceServerHttpClient::Create(&client, m_server_url, false));
-
     while (true)
     {
         try
