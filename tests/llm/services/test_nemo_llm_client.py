@@ -23,19 +23,19 @@ from morpheus.llm.services.nemo_llm_service import NeMoLLMClient
 
 
 def test_constructor(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.MagicMock):
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+    client = NeMoLLMClient(mock_nemo_service, model_name="test_model", additional_arg="test_arg")
     assert isinstance(client, LLMClient)
     mock_nemollm.assert_not_called()
 
 
 def test_get_input_names(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.MagicMock):
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+    client = NeMoLLMClient(mock_nemo_service, model_name="test_model", additional_arg="test_arg")
     assert client.get_input_names() == ["prompt"]
     mock_nemollm.assert_not_called()
 
 
 def test_generate(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.MagicMock):
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+    client = NeMoLLMClient(mock_nemo_service, model_name="test_model", additional_arg="test_arg")
     assert client.generate({'prompt': "test_prompt"}) == "test_output"
     mock_nemollm.generate_multiple.assert_called_once_with(model="test_model",
                                                            prompts=["test_prompt"],
@@ -46,7 +46,7 @@ def test_generate(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.MagicMoc
 def test_generate_batch(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.MagicMock):
     mock_nemollm.generate_multiple.return_value = ["output1", "output2"]
 
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+    client = NeMoLLMClient(mock_nemo_service, model_name="test_model", additional_arg="test_arg")
     assert client.generate_batch({'prompt': ["prompt1", "prompt2"]}) == ["output1", "output2"]
     mock_nemollm.generate_multiple.assert_called_once_with(model="test_model",
                                                            prompts=["prompt1", "prompt2"],
@@ -63,7 +63,7 @@ def test_generate_async(
         mock_nemo_service: mock.MagicMock):
     mock_asyncio_gather.return_value = [mock.MagicMock()]
 
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+    client = NeMoLLMClient(mock_nemo_service, model_name="test_model", additional_arg="test_arg")
     results = asyncio.run(client.generate_async({'prompt': "test_prompt"}))
     assert results == "test_output"
     mock_nemollm.generate.assert_called_once_with("test_model",
@@ -82,7 +82,7 @@ def test_generate_batch_async(
     mock_asyncio_gather.return_value = [mock.MagicMock(), mock.MagicMock()]
     mock_nemollm.post_process_generate_response.side_effect = [{"text": "output1"}, {"text": "output2"}]
 
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+    client = NeMoLLMClient(mock_nemo_service, model_name="test_model", additional_arg="test_arg")
     results = asyncio.run(client.generate_batch_async({'prompt': ["prompt1", "prompt2"]}))
     assert results == ["output1", "output2"]
     mock_nemollm.generate.assert_has_calls([
@@ -101,7 +101,7 @@ def test_generate_batch_async_error(
     mock_asyncio_gather.return_value = [mock.MagicMock(), mock.MagicMock()]
     mock_nemollm.post_process_generate_response.return_value = {"status": "fail", "msg": "unittest"}
 
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+    client = NeMoLLMClient(mock_nemo_service, model_name="test_model", additional_arg="test_arg")
 
     with pytest.raises(RuntimeError, match="unittest"):
         asyncio.run(client.generate_batch_async({'prompt': ["prompt1", "prompt2"]}))

@@ -25,6 +25,7 @@ import cudf
 from _utils import TEST_DIRS
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
+from _utils.llm import mk_mock_openai_response
 from _utils.milvus import populate_milvus
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -160,18 +161,15 @@ def test_rag_standalone_pipe_nemo(config: Config,
 @pytest.mark.parametrize("repeat_count", [5])
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
 def test_rag_standalone_pipe_openai(config: Config,
-                                    mock_chat_completion: mock.MagicMock,
+                                    mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
                                     dataset: DatasetManager,
                                     milvus_server_uri: str,
                                     repeat_count: int,
                                     import_mod: types.ModuleType):
-    mock_chat_completion.acreate.side_effect = [{
-        "choices": [{
-            'message': {
-                'content': EXPECTED_RESPONSE
-            }
-        }]
-    } for _ in range(repeat_count)]
+    (mock_client, mock_async_client) = mock_chat_completion
+    mock_async_client.chat.completions.create.side_effect = [
+        mk_mock_openai_response([EXPECTED_RESPONSE]) for _ in range(repeat_count)
+    ]
 
     collection_name = "test_rag_standalone_pipe_openai"
     populate_milvus(milvus_server_uri=milvus_server_uri,
@@ -190,6 +188,8 @@ def test_rag_standalone_pipe_openai(config: Config,
         utils_mod=import_mod,
     )
     assert_results(results)
+    mock_client.chat.completions.create.assert_not_called()
+    mock_async_client.chat.completions.create.assert_called()
 
 
 @pytest.mark.usefixtures("nemollm")

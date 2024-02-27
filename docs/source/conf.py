@@ -176,6 +176,7 @@ autodoc_mock_imports = [
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
     "nvtabular",
     "pandas",
+    "pydantic",
     "pymilvus",
     "tensorrt",
     "torch",
