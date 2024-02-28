@@ -15,8 +15,9 @@
 import logging
 
 import pymilvus
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings  # pylint: disable=no-name-in-module
 
+from morpheus.llm.services.llm_service import LLMService
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.llm.services.openai_chat_service import OpenAIChatService
 from morpheus.service.vdb.milvus_client import DATA_TYPE_MAP
@@ -34,16 +35,19 @@ def build_huggingface_embeddings(model_name: str, model_kwargs: dict = None, enc
 
 def build_llm_service(model_name: str, llm_service: str, tokens_to_generate: int, **model_kwargs):
     lowered_llm_service = llm_service.lower()
+
+    service: LLMService | None = None
+
     if (lowered_llm_service == 'nemollm'):
         model_kwargs['tokens_to_generate'] = tokens_to_generate
-        llm_service = NeMoLLMService()
+        service = NeMoLLMService()
     elif (lowered_llm_service == 'openai'):
         model_kwargs['max_tokens'] = tokens_to_generate
-        llm_service = OpenAIChatService()
+        service = OpenAIChatService()
     else:
         raise RuntimeError(f"Unsupported LLM service name: {llm_service}")
 
-    return llm_service.get_client(model_name, **model_kwargs)
+    return service.get_client(model_name=model_name, **model_kwargs)
 
 
 def build_milvus_config(resource_schema_config: dict):

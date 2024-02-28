@@ -443,4 +443,4 @@ class InferenceStage(MultiMessageStage):
             for i, idx in enumerate(mess_ids):
                 probs[idx, :] = cp.maximum(probs[idx, :], resp_probs[i, :])
 
-        return MultiResponseMessage.from_message(inf, memory=memory, offset=inf.offset, count=inf.mess_count)
+        return MultiResponseMessage.from_message(inf, memory=memory, offset=seq_offset, count=seq_count)

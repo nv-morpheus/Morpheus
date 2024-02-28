@@ -18,6 +18,7 @@ from unittest import mock
 import cudf
 
 from _utils import assert_results
+from _utils.llm import mk_mock_openai_response
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
@@ -86,15 +87,15 @@ def test_completion_pipe_nemo(
 
 
 def test_completion_pipe_openai(config: Config,
-                                mock_chat_completion: mock.MagicMock,
+                                mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
                                 country_prompts: list[str],
                                 capital_responses: list[str]):
-    mock_chat_completion.acreate.side_effect = [{
-        "choices": [{
-            'message': {
-                'content': response
-            }
-        }]
-    } for response in capital_responses]
+    (mock_client, mock_async_client) = mock_chat_completion
+    mock_async_client.chat.completions.create.side_effect = [
+        mk_mock_openai_response([response]) for response in capital_responses
+    ]
 
     _run_pipeline(config, OpenAIChatService, country_prompts, capital_responses)
+
+    mock_client.chat.completions.create.assert_not_called()
+    mock_async_client.chat.completions.create.assert_called()

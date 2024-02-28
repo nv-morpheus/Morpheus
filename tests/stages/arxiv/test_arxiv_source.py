@@ -162,11 +162,15 @@ def test_splitting_pages(config: Config,
     num_expected_chunks = len(page_content_col)
     source_col = []
     page_col = []
+    type_col = []
     for _ in range(num_expected_chunks):
         source_col.append(pdf_file)
         page_col.append(0)
+        type_col.append("Document")
 
-    expected_df = cudf.DataFrame({"page_content": page_content_col, "source": source_col, "page": page_col})
+    expected_df = cudf.DataFrame({
+        "page_content": page_content_col, "source": source_col, "page": page_col, "type": type_col
+    })
 
     loader = langchain.document_loaders.PyPDFLoader(pdf_file)
     documents = loader.load()
@@ -189,8 +193,11 @@ def test_splitting_pages_no_chunks(config: Config,
     page_content_col = [content]
     source_col = [pdf_file]
     page_col = [0]
+    type_col = ["Document"]
 
-    expected_df = cudf.DataFrame({"page_content": page_content_col, "source": source_col, "page": page_col})
+    expected_df = cudf.DataFrame({
+        "page_content": page_content_col, "source": source_col, "page": page_col, "type": type_col
+    })
 
     loader = langchain.document_loaders.PyPDFLoader(pdf_file)
     documents = loader.load()
