@@ -112,7 +112,6 @@ PYBIND11_MODULE(stages, _module)
              py::arg("task_type")              = py::none(),
              py::arg("task_payload")           = py::none());
 
-    // py::overload_cast<const std::filesystem::path&>
     py::class_<mrc::segment::Object<FileSourceStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<FileSourceStage>>>(
