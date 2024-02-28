@@ -188,17 +188,25 @@ std::vector<std::string> MessageMetaInterfaceProxy::get_column_names(MessageMeta
 
 py::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
 {
-    TableInfo info;
-
+    py::object py_df;
+    py::object copied_df;
+    
     {
         // Need to release the GIL before calling `get_meta()`
         pybind11::gil_scoped_release no_gil;
 
-        // Get the column and convert to cudf
-        info = self.get_info();
+        TableInfo info = self.get_info();
+        py_df = info.get_py_obj();
     }
 
-    return CudfHelper::table_from_table_info(info);
+    {
+        py::gil_scoped_acquire gil;
+        
+        py::object dfcopy = py_df.attr("copy");
+        copied_df = dfcopy();
+    }
+
+    return copied_df;
 }
 
 py::object MessageMetaInterfaceProxy::df_property(MessageMeta& self)
