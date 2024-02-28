@@ -24,12 +24,13 @@ from morpheus.llm.services.openai_chat_service import OpenAIChatClient
 from morpheus.llm.services.openai_chat_service import OpenAIChatService
 
 
-def test_constructor(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
-    client = OpenAIChatClient(OpenAIChatService(), model_name="test_model")
+@pytest.mark.parametrize("max_retries", [5, 10])
+def test_constructor(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], max_retries: int):
+    client = OpenAIChatClient(OpenAIChatService(), model_name="test_model", max_retries=max_retries)
     assert isinstance(client, LLMClient)
 
     for mock_client in mock_chat_completion:
-        mock_client.assert_called()
+        mock_client.assert_called_once_with(max_retries=max_retries)
 
 
 @pytest.mark.parametrize("use_async", [True, False])

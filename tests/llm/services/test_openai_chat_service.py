@@ -36,14 +36,20 @@ def test_get_client():
 
 @pytest.mark.parametrize("set_assistant", [True, False])
 @pytest.mark.parametrize("temperature", [0, 1, 2])
+@pytest.mark.parametrize("max_retries", [5, 10])
 @mock.patch("morpheus.llm.services.openai_chat_service.OpenAIChatClient")
-def test_get_client_passed_args(mock_client: mock.MagicMock, set_assistant: bool, temperature: int):
+def test_get_client_passed_args(mock_client: mock.MagicMock, set_assistant: bool, temperature: int, max_retries: int):
     service = OpenAIChatService()
-    service.get_client(model_name="test_model", set_assistant=set_assistant, temperature=temperature, test='this')
+    service.get_client(model_name="test_model",
+                       set_assistant=set_assistant,
+                       temperature=temperature,
+                       test='this',
+                       max_retries=max_retries)
 
     # Ensure the get_client method passed on the set_assistant and model kwargs
     mock_client.assert_called_once_with(service,
                                         model_name="test_model",
                                         set_assistant=set_assistant,
                                         temperature=temperature,
-                                        test='this')
+                                        test='this',
+                                        max_retries=max_retries)
