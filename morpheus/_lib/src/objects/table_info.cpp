@@ -219,7 +219,6 @@ TableInfo TableInfo::get_slice(cudf::size_type start, cudf::size_type stop, std:
 
 py::object TableInfo::get_py_obj()
 {
-    // Get a copy increasing the ref count
     py::object py_obj = this->get_parent()->get_py_object();
 
     return py_obj;
