@@ -73,7 +73,7 @@ class LangChainAgentNode(LLMNodeBase):
             logger.exception(error_msg)
             return error_msg
 
-    async def execute(self, context: LLMContext) -> LLMContext:
+    async def execute(self, context: LLMContext) -> LLMContext:  # pylint: disable=invalid-overridden-method
 
         input_dict = context.get_inputs()
 
