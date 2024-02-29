@@ -121,6 +121,8 @@ class InferenceClientStage
     TensorIndex m_max_batch_size{-1};
     std::mutex m_client_mutex;
     std::shared_ptr<triton::client::InferenceServerHttpClient> m_client;
+
+    int32_t m_retry_max = 10;
 };
 
 /****** InferenceClientStageInferenceProxy******************/

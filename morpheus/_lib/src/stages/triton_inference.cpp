@@ -49,6 +49,7 @@
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
 #include <algorithm>  // for min
+#include <chrono>
 #include <coroutine>
 #include <cstddef>
 #include <cstdint>
@@ -141,7 +142,7 @@ ShapeType get_seq_ids(const InferenceClientStage::sink_type_t& message)
     return host_seq_ids;
 }
 
-std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>> build_input(
+std::shared_ptr<triton::client::InferInput> build_input(
     const InferenceClientStage::sink_type_t& msg_slice, const TritonInOut& model_input)
 {
     DCHECK(msg_slice->memory->has_tensor(model_input.mapped_name))
@@ -165,7 +166,7 @@ std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>> bui
 
     inp_ptr->AppendRaw(inp_data);
 
-    return std::make_pair(inp_shared, std::move(inp_data));
+    return inp_shared;
 }
 
 std::shared_ptr<const triton::client::InferRequestedOutput> build_output(const TritonInOut& model_output)
@@ -257,7 +258,7 @@ InferenceClientStage::InferenceClientStage(std::string model_name,
 
 std::shared_ptr<triton::client::InferenceServerHttpClient> InferenceClientStage::get_client()
 {
-    std::unique_lock(this->m_client_mutex);
+    std::lock_guard(this->m_client_mutex);
 
     if (m_client != nullptr)
     {
@@ -273,7 +274,7 @@ std::shared_ptr<triton::client::InferenceServerHttpClient> InferenceClientStage:
 
 void InferenceClientStage::reset_client()
 {
-    std::unique_lock(this->m_client_mutex);
+    std::lock_guard(this->m_client_mutex);
 
     m_client.reset();
 }
@@ -309,9 +310,41 @@ struct TritonInferOperation
     std::unique_ptr<triton::client::InferResult> m_result;
 };
 
+using namespace std::chrono_literals;
+struct ExponentialBackoff
+{
+    std::shared_ptr<mrc::coroutines::Scheduler> m_on;
+    std::chrono::milliseconds m_delay;
+    std::chrono::milliseconds m_delay_max;
+
+    ExponentialBackoff(std::shared_ptr<mrc::coroutines::Scheduler> on,
+                       std::chrono::milliseconds delay_initial,
+                       std::chrono::milliseconds delay_max) :
+      m_on(std::move(on)),
+      m_delay(delay_initial),
+      m_delay_max(delay_max)
+    {}
+
+    mrc::coroutines::Task<> yield()
+    {
+        if (m_delay > m_delay_max)
+        {
+            m_delay = m_delay_max;
+        }
+
+        co_await m_on->yield_for(m_delay);
+
+        m_delay *= 2;
+    }
+};
+
 mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> InferenceClientStage::on_data(
     std::shared_ptr<MultiInferenceMessage>&& x, std::shared_ptr<mrc::coroutines::Scheduler> on)
 {
+    int32_t retry_count = 0;
+
+    auto backoff = ExponentialBackoff(on, 100ms, 4000ms);
+
     while (true)
     {
         try
@@ -330,14 +363,12 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
 
             for (TensorIndex start = 0; start < x->count; start += m_max_batch_size)
             {
-                triton::client::InferInput* input1;
-
                 TensorIndex stop = std::min(start + m_max_batch_size, x->count);
 
                 sink_type_t mini_batch_input = x->get_slice(start, stop);
 
                 // Iterate on the model inputs in case the model takes less than what tensors are available
-                std::vector<std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>>> saved_inputs =
+                std::vector<std::shared_ptr<triton::client::InferInput>> saved_inputs =
                     foreach_map(m_model_inputs, [&mini_batch_input](auto const& model_input) {
                         return (build_input(mini_batch_input, model_input));
                     });
@@ -349,7 +380,7 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
                     });
 
                 std::vector<triton::client::InferInput*> inputs = foreach_map(saved_inputs, [](auto x) {
-                    return x.first.get();
+                    return x.get();
                 });
 
                 std::vector<const triton::client::InferRequestedOutput*> outputs =
@@ -408,17 +439,19 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
             co_yield std::move(response);
             co_return;
 
-        } catch (...)
+        } catch (std::exception ex)
         {
             this->reset_client();
 
-            if (false)
+            if (m_retry_max >= 0 and ++retry_count > m_retry_max)
             {
-                continue;
+                throw;
             }
 
-            throw;
+            LOG(WARNING) << "Exception during triton inference, attempting retry: " << ex.what();
         }
+
+        co_await backoff.yield();
     }
 }
 
