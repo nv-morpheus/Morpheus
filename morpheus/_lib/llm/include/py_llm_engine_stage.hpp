@@ -94,7 +94,7 @@ class MORPHEUS_EXPORT PyLLMEngineStage
 
   private:
     mrc::coroutines::AsyncGenerator<std::shared_ptr<ControlMessage>> on_data(
-        std::shared_ptr<ControlMessage>&& data) override
+        std::shared_ptr<ControlMessage>&& data, std::shared_ptr<mrc::coroutines::Scheduler> on) override
     {
         auto result = co_await m_engine->run(std::move(data));
 
