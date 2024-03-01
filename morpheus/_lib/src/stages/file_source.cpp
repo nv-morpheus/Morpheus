@@ -17,11 +17,7 @@
 
 #include "morpheus/stages/file_source.hpp"
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/source_properties.hpp"
 #include "mrc/segment/object.hpp"
-#include "mrc/types.hpp"
 #include "pymrc/node.hpp"
 
 #include "morpheus/io/deserializers.hpp"
@@ -32,12 +28,12 @@
 #include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <mrc/segment/builder.hpp>
-#include <pybind11/cast.h>
+#include <pybind11/cast.h>  // IWYU pragma: keep
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
 
-#include <functional>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -132,5 +128,15 @@ std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceP
     auto stage = builder.construct_object<FileSourceStage>(name, filename, repeat, json_lines);
 
     return stage;
+}
+
+std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::filesystem::path filename,
+    int repeat,
+    pybind11::dict parser_kwargs)
+{
+    return init(builder, name, filename.string(), repeat, std::move(parser_kwargs));
 }
 }  // namespace morpheus
