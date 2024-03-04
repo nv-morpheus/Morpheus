@@ -39,6 +39,7 @@ dependencies:
 - openai=1.13
 - papermill=2.4.0
 - pip
+- pydantic
 - pypdf=3.17.4
 - python-confluent-kafka>=1.9.2,<1.10.0a0
 - python-graphviz
