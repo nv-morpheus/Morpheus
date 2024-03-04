@@ -142,7 +142,8 @@ PYBIND11_MODULE(stages, _module)
              py::arg("force_convert_inputs"),
              py::arg("use_shared_memory"),
              py::arg("needs_logits"),
-             py::arg("inout_mapping") = py::dict());
+             py::arg("input_mapping") = py::dict(),
+             py::arg("output_mapping") = py::dict());
 
     py::class_<mrc::segment::Object<KafkaSourceStage>,
                mrc::segment::ObjectProperties,

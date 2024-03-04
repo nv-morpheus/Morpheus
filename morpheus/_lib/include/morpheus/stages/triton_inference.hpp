@@ -47,6 +47,26 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceClientStage********************************/
 
+struct TritonInferenceClient
+{
+  private:
+    std::string m_server_url;
+    std::string m_model_name;
+    TensorIndex m_max_batch_size = -1;
+    std::vector<TritonInOut> m_model_inputs;
+    std::vector<TritonInOut> m_model_outputs;
+    std::unique_ptr<triton::client::InferenceServerHttpClient> m_client;
+
+  public:
+    TritonInferenceClient(std::string server_url, std::string model_name);
+
+    std::map<std::string, std::string> get_input_mappings(std::map<std::string, std::string> input_map_overrides);
+
+    std::map<std::string, std::string> get_output_mappings(std::map<std::string, std::string> output_map_overrides);
+
+    mrc::coroutines::Task<TensorMap> infer(TensorMap&& inputs);
+};
+
 /**
  * @addtogroup stages
  * @{
@@ -84,7 +104,8 @@ class InferenceClientStage
                          bool force_convert_inputs,
                          bool use_shared_memory,
                          bool needs_logits,
-                         std::map<std::string, std::string> inout_mapping = {});
+                         std::map<std::string, std::string> input_mapping  = {},
+                         std::map<std::string, std::string> output_mapping = {});
 
     /**
      * TODO(Documentation)
@@ -92,13 +113,8 @@ class InferenceClientStage
     static bool is_default_grpc_port(std::string& server_url);
 
   private:
-    std::shared_ptr<triton::client::InferenceServerHttpClient> get_client();
+    std::shared_ptr<TritonInferenceClient> get_client();
     void reset_client();
-
-    /**
-     * TODO(Documentation)
-     */
-    std::unique_ptr<triton::client::InferenceServerHttpClient> connect_with_server();
 
     /**
      * TODO(Documentation)
@@ -108,19 +124,18 @@ class InferenceClientStage
 
     std::string m_model_name;
     std::string m_server_url;
-    bool m_force_convert_inputs;
-    bool m_use_shared_memory;
     bool m_needs_logits{true};
-    std::map<std::string, std::string> m_inout_mapping;
+    std::map<std::string, std::string> m_input_mapping;
+    std::map<std::string, std::string> m_output_mapping;
 
-    // Below are settings created during handshake with server
-    // std::shared_ptr<triton::client::InferenceServerHttpClient> m_client;
-    std::vector<TritonInOut> m_model_inputs;
-    std::vector<TritonInOut> m_model_outputs;
-    triton::client::InferOptions m_options;
-    TensorIndex m_max_batch_size{-1};
+    // // Below are settings created during handshake with server
+    // // std::shared_ptr<triton::client::InferenceServerHttpClient> m_client;
+    // std::vector<TritonInOut> m_model_inputs;
+    // std::vector<TritonInOut> m_model_outputs;
+    // triton::client::InferOptions m_options;
+    // TensorIndex m_max_batch_size{-1};
     std::mutex m_client_mutex;
-    std::shared_ptr<triton::client::InferenceServerHttpClient> m_client;
+    std::shared_ptr<TritonInferenceClient> m_client;
 
     int32_t m_retry_max = 10;
 };
@@ -156,7 +171,8 @@ struct InferenceClientStageInterfaceProxy
         bool force_convert_inputs,
         bool use_shared_memory,
         bool needs_logits,
-        std::map<std::string, std::string> inout_mapping);
+        std::map<std::string, std::string> input_mapping,
+        std::map<std::string, std::string> output_mapping);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group
