@@ -114,22 +114,34 @@ class NeMoLLMClient(LLMClient):
             Inputs containing prompt data.
         """
         prompts = inputs[self._prompt_key]
-        futures = [
-            asyncio.wrap_future(
-                self._parent._conn.generate(self._model_name, p, return_type="async", **self._model_kwargs))
-            for p in prompts
-        ]
 
-        results = await asyncio.gather(*futures)
+        async def process_one(p: str):
+
+            iterations = 0
+            errors = []
+
+            while iterations < 10:
+                fut = await asyncio.wrap_future(
+                    self._parent._conn.generate(self._model_name, p, return_type="async", **self._model_kwargs))
+
+                result = nemollm.NemoLLM.post_process_generate_response(fut, return_text_completion_only=False)
+                if result.get('status', None) == 'fail':
+                    iterations += 1
+                    errors.append(result.get('msg', 'Unknown error'))
+                    continue
+
+                return result['text']
+
+            raise RuntimeError(f"Failed to generate response for prompt '{p}' after 3 attempts. Errors: {errors}")
+
+        futures = [process_one(p) for p in prompts]
+
+        results = await asyncio.gather(*futures, return_exceptions=True)
 
         responses = []
 
         for result in results:
-            result = nemollm.NemoLLM.post_process_generate_response(result, return_text_completion_only=False)
-            if result.get('status', None) == 'fail':
-                raise RuntimeError(result.get('msg', 'Unknown error'))
-
-            responses.append(result['text'])
+            responses.append(result)
 
         return responses
 
@@ -159,6 +171,7 @@ class NeMoLLMService(LLMService):
         org_id = org_id if org_id is not None else os.environ.get("NGC_ORG_ID", None)
 
         self._conn = nemollm.NemoLLM(
+            api_host=os.environ.get("NGC_API_BASE", None),
             # The client must configure the authentication and authorization parameters
             # in accordance with the API server security policy.
             # Configure Bearer authorization
