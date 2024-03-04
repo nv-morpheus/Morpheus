@@ -142,8 +142,8 @@ ShapeType get_seq_ids(const InferenceClientStage::sink_type_t& message)
     return host_seq_ids;
 }
 
-std::shared_ptr<triton::client::InferInput> build_input(
-    const InferenceClientStage::sink_type_t& msg_slice, const TritonInOut& model_input)
+std::shared_ptr<triton::client::InferInput> build_input(const InferenceClientStage::sink_type_t& msg_slice,
+                                                        const TritonInOut& model_input)
 {
     DCHECK(msg_slice->memory->has_tensor(model_input.mapped_name))
         << "Model input '" << model_input.mapped_name << "' not found in InferenceMemory";
@@ -336,6 +336,270 @@ struct ExponentialBackoff
 
         m_delay *= 2;
     }
+};
+
+struct TritonInferenceClient
+{
+  private:
+    std::string m_server_url;
+    std::string m_model_name;
+    TensorIndex m_max_batch_size = -1;
+    std::vector<TritonInOut> m_model_inputs;
+    std::vector<TritonInOut> m_model_outputs;
+    std::unique_ptr<triton::client::InferenceServerHttpClient> m_client;
+
+  public:
+    TritonInferenceClient(std::string server_url, std::string model_name) : m_model_name(std::move(model_name))
+    {
+        // do all of the initial connection logic here, including getting the dtype
+
+        std::unique_ptr<triton::client::InferenceServerHttpClient> client;
+
+        CHECK_TRITON(triton::client::InferenceServerHttpClient::Create(&client, server_url, false));
+
+        // Now load the input/outputs for the model
+        bool is_server_live = false;
+
+        triton::client::Error status = client->IsServerLive(&is_server_live);
+
+        if (not status.IsOk())
+        {
+            if (InferenceClientStage::is_default_grpc_port(server_url))
+            {
+                LOG(WARNING) << "Failed to connect to Triton at '" << server_url
+                             << "'. Default gRPC port of (8001) was detected but C++ "
+                                "InferenceClientStage uses HTTP protocol. Retrying with default HTTP port (8000)";
+
+                // We are using the default gRPC port, try the default HTTP
+                std::unique_ptr<triton::client::InferenceServerHttpClient> unique_client;
+
+                CHECK_TRITON(triton::client::InferenceServerHttpClient::Create(&unique_client, server_url, false));
+
+                client = std::move(unique_client);
+
+                status = client->IsServerLive(&is_server_live);
+            }
+            else if (status.Message().find("Unsupported protocol") != std::string::npos)
+            {
+                throw std::runtime_error(MORPHEUS_CONCAT_STR(
+                    "Failed to connect to Triton at '"
+                    << server_url
+                    << "'. Received 'Unsupported Protocol' error. Are you using the right port? The C++ "
+                       "InferenceClientStage uses Triton's HTTP protocol instead of gRPC. Ensure you have "
+                       "specified the HTTP port (Default 8000)."));
+            }
+
+            if (not status.IsOk())
+                throw std::runtime_error(MORPHEUS_CONCAT_STR(
+                    "Unable to connect to Triton at '"
+                    << server_url << "'. Check the URL and port and ensure the server is running."));
+        }
+
+        // Save this for new clients
+        m_server_url = server_url;
+
+        if (not is_server_live)
+        {
+            throw std::runtime_error("Server is not live");
+        }
+
+        bool is_server_ready = false;
+        CHECK_TRITON(client->IsServerReady(&is_server_ready));
+
+        if (!is_server_ready)
+        {
+            throw std::runtime_error("Server is not ready");
+        }
+
+        bool is_model_ready = false;
+        CHECK_TRITON(client->IsModelReady(&is_model_ready, this->m_model_name));
+
+        if (!is_model_ready)
+            throw std::runtime_error("Model is not ready");
+
+        std::string model_metadata_json;
+        CHECK_TRITON(client->ModelMetadata(&model_metadata_json, this->m_model_name));
+
+        auto model_metadata = nlohmann::json::parse(model_metadata_json);
+
+        std::string model_config_json;
+        CHECK_TRITON(client->ModelConfig(&model_config_json, this->m_model_name));
+
+        auto model_config = nlohmann::json::parse(model_config_json);
+
+        if (model_config.contains("max_batch_size"))
+        {
+            m_max_batch_size = model_config.at("max_batch_size").get<TensorIndex>();
+        }
+
+        for (auto const& input : model_metadata.at("inputs"))
+        {
+            auto shape = input.at("shape").get<ShapeType>();
+
+            auto dtype = DType::from_triton(input.at("datatype").get<std::string>());
+
+            size_t bytes = dtype.item_size();
+
+            for (auto& y : shape)
+            {
+                if (y == -1)
+                {
+                    y = m_max_batch_size;
+                }
+
+                bytes *= y;
+            }
+
+            m_model_inputs.push_back(TritonInOut{input.at("name").get<std::string>(),
+                                                 bytes,
+                                                 DType::from_triton(input.at("datatype").get<std::string>()),
+                                                 shape,
+                                                 "",
+                                                 0});
+        }
+
+        for (auto const& output : model_metadata.at("outputs"))
+        {
+            auto shape = output.at("shape").get<ShapeType>();
+
+            auto dtype = DType::from_triton(output.at("datatype").get<std::string>());
+
+            size_t bytes = dtype.item_size();
+
+            for (auto& y : shape)
+            {
+                if (y == -1)
+                {
+                    y = m_max_batch_size;
+                }
+
+                bytes *= y;
+            }
+
+            m_model_outputs.push_back(TritonInOut{output.at("name").get<std::string>(), bytes, dtype, shape, "", 0});
+        }
+
+        m_client = std::move(client);
+    }
+
+    mrc::coroutines::Task<std::vector<TensorObject>> infer(std::vector<TensorObject> const& inputs)
+    {
+        CHECK_EQ(inputs.size(), m_model_inputs.size()) << "Input tensor count does not match model input count";
+
+        auto element_count = inputs[0].count();
+
+        for (auto& input : inputs)
+        {
+            CHECK_EQ(element_count, input.count()) << "Input tensors are different sizes";
+        }
+
+        std::vector<TensorObject> output_tensors;
+        std::vector<std::shared_ptr<rmm::device_buffer>> output_buffers;
+
+        // create full inference output
+        for (auto& model_output : m_model_outputs)
+        {
+            ShapeType full_output_shape    = model_output.shape;
+            full_output_shape[0]           = inputs.size();
+            auto full_output_element_count = TensorUtils::get_elem_count(full_output_shape);
+
+            auto full_output_buffer = std::make_shared<rmm::device_buffer>(
+                full_output_element_count * model_output.datatype.item_size(), rmm::cuda_stream_per_thread);
+
+            output_buffers.emplace_back(full_output_buffer);
+
+            ShapeType stride{full_output_shape[1], 1};
+
+            output_tensors.emplace_back(
+                Tensor::create(std::move(full_output_buffer), model_output.datatype, full_output_shape, stride, 0));
+        }
+
+        // process all batches
+
+        for (TensorIndex start = 0; start < inputs.size(); start += m_max_batch_size)
+        {
+            TensorIndex stop = std::min(start + m_max_batch_size, static_cast<TensorIndex>(element_count));
+
+            // create batch inputs
+
+            std::vector<std::shared_ptr<triton::client::InferInput>> inference_input_owners;
+            std::vector<triton::client::InferInput*> inference_input_ptrs;
+
+            for (auto i = 0; i < m_model_inputs.size(); i++)
+            {
+                auto model_input      = m_model_inputs[i];
+                auto& inference_input = inputs[i];
+
+                auto inference_input_slice =
+                    inference_input.slice({start, 0}, {stop, -1}).as_type(model_input.datatype);
+
+                triton::client::InferInput* inference_input_ptr;
+
+                triton::client::InferInput::Create(&inference_input_ptr,
+                                                   model_input.name,
+                                                   {inference_input_slice.shape(0), inference_input_slice.shape(1)},
+                                                   model_input.datatype.triton_str());
+
+                inference_input_ptr->AppendRaw(inference_input_slice.get_host_data());
+
+                inference_input_owners.emplace_back(inference_input_ptr);
+                inference_input_ptrs.emplace_back(inference_input_ptr);
+            }
+
+            // create batch outputs
+
+            std::vector<std::shared_ptr<triton::client::InferRequestedOutput>> inference_output_owners;
+            std::vector<triton::client::InferRequestedOutput const*> inference_output_ptrs;
+
+            for (auto i = 0; i < m_model_outputs.size(); i++)
+            {
+                auto model_output = m_model_outputs[i];
+
+                triton::client::InferRequestedOutput* output_ptr;
+                triton::client::InferRequestedOutput::Create(&output_ptr, model_output.name);
+
+                inference_output_ptrs.emplace_back(output_ptr);
+                inference_output_owners.emplace_back(output_ptr);
+            }
+
+            // infer batch results
+
+            auto options = triton::client::InferOptions(m_model_name);
+
+            auto results =
+                co_await TritonInferOperation(*m_client, options, inference_input_ptrs, inference_output_ptrs);
+
+            // verify batch results and copy to full output tensors
+
+            for (auto i = 0; i < m_model_outputs.size(); i++)
+            {
+                std::vector<int64_t> output_shape;
+
+                auto model_output  = m_model_outputs[i];
+                auto output_tensor = output_tensors[i].slice({start, 0}, {stop, -1});
+
+                CHECK_TRITON(results->Shape(model_output.name, &output_shape));  // Make sure we have at least 2 dims
+
+                while (output_shape.size() < 2)
+                {
+                    output_shape.push_back(1);
+                }
+
+                const uint8_t* output_ptr = nullptr;
+                size_t output_ptr_size    = 0;
+                CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
+
+                DCHECK_EQ(stop - start, output_shape[0]);
+                DCHECK_EQ(output_tensor.bytes(), output_ptr_size);
+                DCHECK_NOTNULL(output_ptr);
+                DCHECK_NOTNULL(output_tensor.data());
+
+                MRC_CHECK_CUDA(cudaMemcpy(output_tensor.data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
+            }
+        }
+
+        co_return output_tensors;
+    };
 };
 
 mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> InferenceClientStage::on_data(

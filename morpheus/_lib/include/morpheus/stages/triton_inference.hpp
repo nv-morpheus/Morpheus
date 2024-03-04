@@ -86,14 +86,14 @@ class InferenceClientStage
                          bool needs_logits,
                          std::map<std::string, std::string> inout_mapping = {});
 
-  private:
-    std::shared_ptr<triton::client::InferenceServerHttpClient> get_client();
-    void reset_client();
-
     /**
      * TODO(Documentation)
      */
-    bool is_default_grpc_port(std::string& server_url);
+    static bool is_default_grpc_port(std::string& server_url);
+
+  private:
+    std::shared_ptr<triton::client::InferenceServerHttpClient> get_client();
+    void reset_client();
 
     /**
      * TODO(Documentation)
