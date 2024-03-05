@@ -339,7 +339,6 @@ std::map<std::string, std::string> TritonInferenceClient::get_input_mappings(
 
     for (auto map : m_model_inputs)
     {
-        LOG(WARNING) << "model input found " << map.name;
         mappings[map.name] = map.name;
     }
 
@@ -368,7 +367,6 @@ std::map<std::string, std::string> TritonInferenceClient::get_output_mappings(
 
     for (auto map : m_model_outputs)
     {
-        LOG(WARNING) << "model output found " << map.name;
         mappings[map.name] = map.name;
     }
 
