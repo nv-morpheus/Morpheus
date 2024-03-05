@@ -701,10 +701,8 @@ class TritonInferenceStage(InferenceStage):
         PipelineModes.NLP: {
             "inputs": {
                 "attention_mask": "input_mask",
-                "output": "probs",
             },
             "outputs": {
-                "attention_mask": "input_mask",
                 "output": "probs",
             }
         }

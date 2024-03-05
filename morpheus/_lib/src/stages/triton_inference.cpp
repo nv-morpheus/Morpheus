@@ -339,6 +339,7 @@ std::map<std::string, std::string> TritonInferenceClient::get_input_mappings(
 
     for (auto map : m_model_inputs)
     {
+        LOG(WARNING) << "model input found " << map.name;
         mappings[map.name] = map.name;
     }
 
@@ -348,8 +349,8 @@ std::map<std::string, std::string> TritonInferenceClient::get_input_mappings(
 
         if (pos == mappings.end())
         {
-            LOG(WARNING) << "Input mapping was provided for "
-                         << "but the input does not exist for this model.";
+            LOG(WARNING) << "Input mapping was provided for '" << override.first << "' -> '" << override.second
+                         << "' but the input does not exist for this model.";
             continue;
         }
 
@@ -362,7 +363,31 @@ std::map<std::string, std::string> TritonInferenceClient::get_input_mappings(
 
 std::map<std::string, std::string> TritonInferenceClient::get_output_mappings(
     std::map<std::string, std::string> output_map_overrides)
-{}
+{
+    auto mappings = std::map<std::string, std::string>();
+
+    for (auto map : m_model_outputs)
+    {
+        LOG(WARNING) << "model output found " << map.name;
+        mappings[map.name] = map.name;
+    }
+
+    for (auto override : output_map_overrides)
+    {
+        auto pos = mappings.find(override.first);
+
+        if (pos == mappings.end())
+        {
+            LOG(WARNING) << "Output mapping was provided for '" << override.first << "' -> '" << override.second
+                         << "' but the output does not exist for this model.";
+            continue;
+        }
+
+        mappings.erase(pos);
+        mappings[override.first] = override.second;
+    }
+
+    return mappings;}
 
 mrc::coroutines::Task<TensorMap> TritonInferenceClient::infer(TensorMap&& inputs)
 {
@@ -573,6 +598,7 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
                 input_tensors[mapping.second].swap(x->get_input(mapping.first));
             }
 
+            // TODO(cwharris): Break inference in to batches and attempt retries on per-batch basis.
             auto output_tensors = co_await client->infer(std::move(input_tensors));
 
             co_await on->yield();
@@ -590,7 +616,7 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
 
             TensorMap output_tensor_map;
 
-            for (auto mapping : m_output_mapping)
+            for (auto mapping : client->get_output_mappings(m_output_mapping))
             {
                 output_tensor_map[mapping.second].swap(std::move(output_tensors[mapping.first]));
             }
