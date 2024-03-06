@@ -13,10 +13,15 @@
 # limitations under the License.
 
 import logging
+import typing
+
+from cudf.core.column.column import ColumnBase
+from cudf.core.column.column import as_column
 
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMTaskHandler
 from morpheus.messages import ControlMessage
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +37,17 @@ class SimpleTaskHandler(LLMTaskHandler):
         `["response"]`.
     """
 
-    def __init__(self, output_columns: list[str] = None) -> None:
+    def __init__(self,
+                 output_columns: list[str] = None,
+                 filter_fn: typing.Callable[[DataFrameType], typing.Iterable[bool]] = None) -> None:
         super().__init__()
 
         if (output_columns is None):
             self._output_columns = ["response"]
         else:
             self._output_columns = output_columns
+
+        self._filter_fn = filter_fn
 
     def get_input_names(self) -> list[str]:
         return self._output_columns
@@ -49,7 +58,24 @@ class SimpleTaskHandler(LLMTaskHandler):
 
         with context.message().payload().mutable_dataframe() as df:
             # Write the values to the dataframe
+            if self._filter_fn is not None:
+                row_selector = self._filter_fn(df)
+            else:
+                row_selector = None
+
             for key, value in input_dict.items():
-                df[key] = value
+                if row_selector is None:
+                    df[key] = value
+                else:
+                    try:
+                        # Work-around for array types refer cudf issues #15233 & #11944
+                        values = as_column(value)
+                        row_selector_col = as_column(row_selector)  # TODO: Try pulling this out of the loop
+                        ColumnBase.__setitem__(df[key]._column, row_selector_col, values)
+                    except Exception as e:
+                        logger.error(f"Error writing to column {key}: {e}")
+                        logger.error(
+                            f"value: {value}\nrow_selector: {row_selector}\n{row_selector_col}\n{df[key]}\n{values}")
+                        raise
 
         return [context.message()]
