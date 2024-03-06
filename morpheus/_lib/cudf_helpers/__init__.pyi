@@ -4,8 +4,7 @@ import typing
 import cudf
 
 __all__ = [
-    "cudf",
-    "is_struct_dtype"
+    "cudf"
 ]
 
 
