@@ -56,7 +56,7 @@ cdef public api:
         data, index = data_from_unique_ptr(move(table.tbl), column_names=column_names, index_names=index_names)
 
         df = cudf.DataFrame._from_data(data, index)
-        
+
         update_struct_field_names(df, table.metadata.schema_info)
 
         return df
@@ -236,14 +236,14 @@ cdef Column update_column_struct_field_names(
     # Commented out because it causes failure of test_multi_message.py::test_set_meta_new_column[use_cpp-use_cudf]
     # Specifically adding new string column on sliced meta dataframe.
     #
-    # if col.children:
-    #    children = list(col.children)
-    #    for i, child in enumerate(children):
-    #        children[i] = update_column_struct_field_names(
-    #            child,
-    #            info.children[i]
-    #        )
-    #    col.set_base_children(tuple(children))
+    if col.children:
+       children = list(col.children)
+       for i, child in enumerate(children):
+           children[i] = update_column_struct_field_names(
+               child,
+               info.children[i]
+           )
+       col.set_base_children(tuple(children))
 
     if is_struct_dtype(col):
         print("is_struct_dtype")
