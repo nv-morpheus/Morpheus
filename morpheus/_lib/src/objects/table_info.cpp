@@ -217,13 +217,6 @@ TableInfo TableInfo::get_slice(cudf::size_type start, cudf::size_type stop, std:
             get_table_info_data_slice(this->get_data(), start, stop, column_names)};
 }
 
-py::object TableInfo::get_py_obj()
-{
-    py::object py_obj = this->get_parent()->get_py_object();
-
-    return py_obj;
-}
-
 MutableTableInfo::MutableTableInfo(std::shared_ptr<const IDataTable> parent,
                                    std::unique_lock<std::shared_mutex> lock,
                                    TableInfoData data) :

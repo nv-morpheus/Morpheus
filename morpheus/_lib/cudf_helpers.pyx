@@ -14,12 +14,15 @@
 # limitations under the License.
 
 import cudf
+from cudf.api.types import is_struct_dtype
 
 from libcpp.string cimport string
 from libcpp.utility cimport move
 from libcpp.vector cimport vector
 
 from cudf._lib.column cimport Column
+from cudf._lib.cpp.io.types cimport column_name_info
+from cudf._lib.cpp.io.types cimport table_metadata
 from cudf._lib.cpp.io.types cimport table_with_metadata
 from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.cpp.types cimport size_type
@@ -56,6 +59,18 @@ cdef public api:
 
     object make_table_from_table_info_data(TableInfoData table_info, object owner):
 
+        cdef table_metadata tbl_meta
+
+        num_index_cols_meta = 0
+        cdef column_name_info child_info
+        for i, name in enumerate(owner._column_names, num_index_cols_meta):
+            child_info.name = name.encode()
+            tbl_meta.schema_info.push_back(child_info)
+            _set_col_children_metadata(
+                owner[name]._column,
+                tbl_meta.schema_info[i]
+            )
+
         index_names = None
 
         if (table_info.index_names.size() > 0):
@@ -89,7 +104,11 @@ cdef public api:
             import traceback
             print("error while converting libcudf table to cudf dataframe:", traceback.format_exc())
 
-        return cudf.DataFrame._from_data(data, index)
+        df = cudf.DataFrame._from_data(data, index)
+
+        update_struct_field_names(df, tbl_meta.schema_info)
+
+        return df
 
 
     TableInfoData make_table_info_data_from_table(object table):
@@ -173,3 +192,62 @@ cdef public api:
             source_column_idx += 1
 
         return dict(zip(column_names, data_columns)), index
+
+cdef _set_col_children_metadata(Column col,
+                                column_name_info& col_meta):
+    cdef column_name_info child_info
+    if isinstance(col.dtype, cudf.StructDtype):
+        for i, (child_col, name) in enumerate(
+            zip(col.children, list(col.dtype.fields))
+        ):
+            child_info.name = name.encode()
+            col_meta.children.push_back(child_info)
+            _set_col_children_metadata(
+                child_col, col_meta.children[i]
+            )
+    elif isinstance(col.dtype, cudf.ListDtype):
+        for i, child_col in enumerate(col.children):
+            col_meta.children.push_back(child_info)
+            _set_col_children_metadata(
+                child_col, col_meta.children[i]
+            )
+    else:
+        return
+
+cdef update_struct_field_names(
+    table,
+    vector[column_name_info]& schema_info
+):
+    for i, (name, col) in enumerate(table._data.items()):
+        table._data[name] = update_column_struct_field_names(
+            col, schema_info[i]
+        )
+
+cdef Column update_column_struct_field_names(
+    Column col,
+    column_name_info& info
+):
+    cdef vector[string] field_names
+
+    # Commented out because it causes failure of test_multi_message.py::test_set_meta_new_column[use_cpp-use_cudf]
+    # Specifically adding new string column on sliced meta dataframe.
+    #
+    # if col.children:
+    #    children = list(col.children)
+    #    for i, child in enumerate(children):
+    #        children[i] = update_column_struct_field_names(
+    #            child,
+    #            info.children[i]
+    #        )
+    #    col.set_base_children(tuple(children))
+
+    if is_struct_dtype(col):
+        print("is_struct_dtype")
+        field_names.reserve(len(col.base_children))
+        for i in range(info.children.size()):
+            field_names.push_back(info.children[i].name)
+        col = col._rename_fields(
+            field_names
+        )
+
+    return col

@@ -142,8 +142,6 @@ struct MORPHEUS_EXPORT TableInfo : public TableInfoBase
      */
     TableInfo get_slice(cudf::size_type start, cudf::size_type stop, std::vector<std::string> column_names = {}) const;
 
-    pybind11::object get_py_obj();
-
   private:
     // We use a shared_lock to allow multiple `TableInfo` to be in use at the same time.
     std::shared_lock<std::shared_mutex> m_lock;
