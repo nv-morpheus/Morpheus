@@ -67,15 +67,9 @@ class SimpleTaskHandler(LLMTaskHandler):
                 if row_selector is None:
                     df[key] = value
                 else:
-                    try:
-                        # Work-around for array types refer cudf issues #15233 & #11944
-                        values = as_column(value)
-                        row_selector_col = as_column(row_selector)  # TODO: Try pulling this out of the loop
-                        ColumnBase.__setitem__(df[key]._column, row_selector_col, values)
-                    except Exception as e:
-                        logger.error(f"Error writing to column {key}: {e}")
-                        logger.error(
-                            f"value: {value}\nrow_selector: {row_selector}\n{row_selector_col}\n{df[key]}\n{values}")
-                        raise
+                    # Work-around for array types refer cudf issues #15233 & #11944
+                    values = as_column(value)
+                    row_selector_col = as_column(row_selector)  # TODO: Try pulling this out of the loop
+                    ColumnBase.__setitem__(df[key]._column, row_selector_col, values)
 
         return [context.message()]
