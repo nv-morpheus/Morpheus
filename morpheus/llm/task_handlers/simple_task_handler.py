@@ -59,7 +59,7 @@ class SimpleTaskHandler(LLMTaskHandler):
         with context.message().payload().mutable_dataframe() as df:
             # Write the values to the dataframe
             if self._filter_fn is not None:
-                row_selector = self._filter_fn(df)
+                row_selector = as_column(self._filter_fn(df))
             else:
                 row_selector = None
 
@@ -69,7 +69,6 @@ class SimpleTaskHandler(LLMTaskHandler):
                 else:
                     # Work-around for array types refer cudf issues #15233 & #11944
                     values = as_column(value)
-                    row_selector_col = as_column(row_selector)  # TODO: Try pulling this out of the loop
-                    ColumnBase.__setitem__(df[key]._column, row_selector_col, values)
+                    ColumnBase.__setitem__(df[key]._column, row_selector, values)
 
         return [context.message()]
