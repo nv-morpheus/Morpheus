@@ -187,11 +187,38 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     nlohmann::json::const_reference view_outputs() const;
 
+    /**
+     * @brief Set the row mask indicating which rows of the dataframe are being used to populate the inputs.
+     * This should only be called by the first node in an LLM Engine, typically the Extractor node.
+     *
+     * @param row_mask vector of bools
+     */
+    void set_row_mask(std::vector<bool>&& row_mask);
+
+    /**
+     * @brief Check if the row mask has been set.
+     *
+     * @return true if row mask has been set
+     * @return false if row mask has not been set
+     */
+    bool has_row_mask() const;
+
+    /**
+     * @brief Get the row mask indicating which rows of the dataframe the outputs should be written to.
+     * This should only be called by the task handler.
+     *
+     * @return vector of bools
+     */
+    const std::vector<bool>& get_row_mask() const;
+
   private:
     std::shared_ptr<LLMContext> m_parent{nullptr};
     std::string m_name;
     input_mappings_t m_inputs;
     std::vector<std::string> m_output_names;  // Names of keys to be used as the output. Empty means use all keys
+
+    // Optional row mask to be applied to the Dataframe by the extractor and task handler to filter rows
+    std::vector<bool> m_row_mask;
 
     std::shared_ptr<LLMContextState> m_state;
 

@@ -44,7 +44,11 @@ class ExtracterNode(LLMNodeBase):
 
         with context.message().payload().mutable_dataframe() as df:
             if self._filter_fn is not None:
-                filtered_df = df.loc[self._filter_fn(df), :]
+                row_mask = self._filter_fn(df)
+                filtered_df = df.loc[row_mask, :]
+
+                # Store the row mask in the context so that the task handler has access to it
+                context.set_row_mask(row_mask)
             else:
                 filtered_df = df
 

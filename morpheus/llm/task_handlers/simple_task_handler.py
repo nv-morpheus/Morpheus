@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import typing
 
 from cudf.core.column.column import ColumnBase
 from cudf.core.column.column import as_column
@@ -21,7 +20,6 @@ from cudf.core.column.column import as_column
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMTaskHandler
 from morpheus.messages import ControlMessage
-from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -37,17 +35,13 @@ class SimpleTaskHandler(LLMTaskHandler):
         `["response"]`.
     """
 
-    def __init__(self,
-                 output_columns: list[str] = None,
-                 filter_fn: typing.Callable[[DataFrameType], typing.Iterable[bool]] = None) -> None:
+    def __init__(self, output_columns: list[str] = None) -> None:
         super().__init__()
 
         if (output_columns is None):
             self._output_columns = ["response"]
         else:
             self._output_columns = output_columns
-
-        self._filter_fn = filter_fn
 
     def get_input_names(self) -> list[str]:
         return self._output_columns
@@ -56,12 +50,15 @@ class SimpleTaskHandler(LLMTaskHandler):
 
         input_dict = context.get_inputs()
 
+        # If the input rows were filtered with a row mask, we must re-apply the mask so the output is written to the
+        # correct rows in the dataframe
+        if context.has_row_mask():
+            row_selector = as_column(context.get_row_mask())
+        else:
+            row_selector = None
+
         with context.message().payload().mutable_dataframe() as df:
             # Write the values to the dataframe
-            if self._filter_fn is not None:
-                row_selector = as_column(self._filter_fn(df))
-            else:
-                row_selector = None
 
             for key, value in input_dict.items():
                 if row_selector is None:
