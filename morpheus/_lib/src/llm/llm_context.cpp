@@ -230,17 +230,31 @@ nlohmann::json::const_reference LLMContext::view_outputs() const
 
 void LLMContext::set_row_mask(std::vector<bool>&& row_mask)
 {
-    m_row_mask = std::move(row_mask);
+    if (m_parent)
+    {
+        return m_parent->set_row_mask(std::move(row_mask));
+    }
+
+    m_state->row_mask = std::move(row_mask);
 }
 
 bool LLMContext::has_row_mask() const
 {
-    return !m_row_mask.empty();
+    if (m_parent)
+    {
+        return m_parent->has_row_mask();
+    }
+
+    return !m_state->row_mask.empty();
 }
 
 const std::vector<bool>& LLMContext::get_row_mask() const
 {
-    return m_row_mask;
+    if (m_parent)
+    {
+        return m_parent->get_row_mask();
+    }
+    return m_state->row_mask;
 }
 
 }  // namespace morpheus::llm

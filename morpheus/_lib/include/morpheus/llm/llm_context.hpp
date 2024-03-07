@@ -37,6 +37,9 @@ struct LLMContextState
     LLMTask task;
     std::shared_ptr<ControlMessage> message;
     nlohmann::json values;
+
+    // Optional row mask to be applied to the Dataframe by the extractor and task handler to filter rows
+    std::vector<bool> row_mask;
 };
 
 /**
@@ -66,6 +69,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      * @param parent parent context
      * @param name new context name
      * @param inputs input mappings for new context
+     * @param row_mask row mask for new context
      */
     LLMContext(std::shared_ptr<LLMContext> parent, std::string name, input_mappings_t inputs);
 
@@ -216,9 +220,6 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     std::string m_name;
     input_mappings_t m_inputs;
     std::vector<std::string> m_output_names;  // Names of keys to be used as the output. Empty means use all keys
-
-    // Optional row mask to be applied to the Dataframe by the extractor and task handler to filter rows
-    std::vector<bool> m_row_mask;
 
     std::shared_ptr<LLMContextState> m_state;
 
