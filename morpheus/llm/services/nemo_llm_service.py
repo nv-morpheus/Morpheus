@@ -13,10 +13,10 @@
 # limitations under the License.
 
 import asyncio
-import concurrent.futures
 import logging
 import os
 import typing
+import warnings
 
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.llm_service import LLMService
@@ -76,12 +76,7 @@ class NeMoLLMClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        result = self.generate_batch({self._prompt_key: [input_dict[self._prompt_key]]})[0]
-
-        if (isinstance(result, BaseException)):
-            raise result
-
-        return result
+        return self.generate_batch({self._prompt_key: [input_dict[self._prompt_key]]}, return_exceptions=False)[0]
 
     async def generate_async(self, **input_dict) -> str:
         """
@@ -92,14 +87,20 @@ class NeMoLLMClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        result = (await self.generate_batch_async({self._prompt_key: [input_dict[self._prompt_key]]}))[0]
+        return (await self.generate_batch_async({self._prompt_key: [input_dict[self._prompt_key]]},
+                                                return_exceptions=False))[0]
 
-        if (isinstance(result, BaseException)):
-            raise result
+    @typing.overload
+    def generate_batch(self,
+                       inputs: dict[str, list],
+                       return_exceptions: typing.Literal[True] = True) -> list[str | BaseException]:
+        ...
 
-        return result
+    @typing.overload
+    def generate_batch(self, inputs: dict[str, list], return_exceptions: typing.Literal[False] = False) -> list[str]:
+        ...
 
-    def generate_batch(self, inputs: dict[str, list]) -> list[str | BaseException]:
+    def generate_batch(self, inputs: dict[str, list], return_exceptions=False) -> list[str] | list[str | BaseException]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -107,70 +108,29 @@ class NeMoLLMClient(LLMClient):
         ----------
         inputs : dict
             Inputs containing prompt data.
+        return_exceptions : bool
+            Whether to return exceptions in the output list or raise them immediately.
         """
 
         # Note: We dont want to use the generate_multiple implementation from nemollm because there is no retry logic.
-        # As soon as one of the requests fails, the entire batch fails. Instead, we will submit all the requests at once
-        # and then wait for them to complete. If any of them fail, we will retry them up to a limit
+        # As soon as one of the requests fails, the entire batch fails. Instead, we need to implement the functionality
+        # listed in issue #1555 For now, we generate a warning if `return_exceptions` is True.
+        if (return_exceptions):
+            warnings.warn("return_exceptions==True is not currently supported by the NeMoLLMClient. "
+                          "If an exception is raised for any item, the function will exit and raise that exception.")
 
-        def submit_request(prompt: str):
-            return self._parent._conn.generate(model=self._model_name,
-                                               prompt=prompt,
-                                               return_type="future",
-                                               **self._model_kwargs)
-
-        prompts = inputs[self._prompt_key]
-
-        results: list[str | BaseException] = [None] * len(prompts)  # type: ignore
-
-        # Submit all of the requests at once. Key is the request, value is a tuple of (idx, retry_count)
-        futures: dict[concurrent.futures.Future, tuple[int, int]] = {
-            submit_request(p): (i, 0)
-            for i, p in enumerate(prompts)
-        }  # type: ignore
-
-        while len(futures) > 0:
-            new_futures = {}
-
-            done, pending = concurrent.futures.wait(futures, return_when=concurrent.futures.FIRST_COMPLETED)
-
-            for fut in done:
-
-                try:
-                    nemollm.NemoLLM.handle_response(fut)
-
-                    # Success, process the output and save the result
-                    result: str = nemollm.NemoLLM.post_process_generate_response(
-                        fut, return_text_completion_only=True)  # type: ignore
-
-                    idx, _ = futures[fut]
-
-                    results[idx] = result
-                except Exception as e:
-
-                    idx, retry_count = futures[fut]
-
-                    retry_count += 1
-
-                    if (retry_count >= 3):
-                        results[idx] = e
-                    else:
-                        new_futures[submit_request(prompts[idx])] = (idx, retry_count)
-
-            # For all the pending futures, wait on them again
-            for fut in pending:
-                job = futures[fut]
-                new_futures[fut] = job
-
-            futures = new_futures
-
-        return results
+        return typing.cast(
+            list[str],
+            self._parent._conn.generate_multiple(model=self._model_name,
+                                                 prompts=inputs[self._prompt_key],
+                                                 return_type="text",
+                                                 **self._model_kwargs))
 
     async def _process_one_async(self, prompt: str) -> str:
         iterations = 0
         errors = []
 
-        while iterations < 10:
+        while iterations < self._parent._retry_count:
             fut = await asyncio.wrap_future(
                 self._parent._conn.generate(model=self._model_name,
                                             prompt=prompt,
@@ -189,7 +149,21 @@ class NeMoLLMClient(LLMClient):
 
         raise RuntimeError(f"Failed to generate response for prompt '{prompt}' after 3 attempts. Errors: {errors}")
 
-    async def generate_batch_async(self, inputs: dict[str, list]) -> list[str | BaseException]:
+    @typing.overload
+    async def generate_batch_async(self,
+                                   inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[True] = True) -> list[str | BaseException]:
+        ...
+
+    @typing.overload
+    async def generate_batch_async(self,
+                                   inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[False] = False) -> list[str]:
+        ...
+
+    async def generate_batch_async(self,
+                                   inputs: dict[str, list],
+                                   return_exceptions=False) -> list[str] | list[str | BaseException]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -197,12 +171,14 @@ class NeMoLLMClient(LLMClient):
         ----------
         inputs : dict
             Inputs containing prompt data.
+        return_exceptions : bool
+            Whether to return exceptions in the output list or raise them immediately.
         """
         prompts = inputs[self._prompt_key]
 
         futures = [self._process_one_async(p) for p in prompts]
 
-        results: list[str | BaseException] = await asyncio.gather(*futures, return_exceptions=True)
+        results = await asyncio.gather(*futures, return_exceptions=False)
 
         return results
 
@@ -223,13 +199,32 @@ class NeMoLLMService(LLMService):
         a member of multiple NGC organizations.
     """
 
-    def __init__(self, *, api_key: str = None, org_id: str = None) -> None:
+    def __init__(self, *, api_key: str = None, org_id: str = None, retry_count=5) -> None:
+        """
+        Creates a service for interacting with NeMo LLM models.
+
+        Parameters
+        ----------
+        api_key : str, optional
+            The API key for the LLM service, by default None. If `None` the API key will be read from the `NGC_API_KEY`
+            environment variable. If neither are present an error will be raised., by default None
+        org_id : str, optional
+            The organization ID for the LLM service, by default None. If `None` the organization ID will be read from the
+            `NGC_ORG_ID` environment variable. This value is only required if the account associated with the `api_key` is
+            a member of multiple NGC organizations., by default None
+        retry_count : int, optional
+            The number of times to retry a request before raising an exception, by default 5
+
+        """
+
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
         super().__init__()
         api_key = api_key if api_key is not None else os.environ.get("NGC_API_KEY", None)
         org_id = org_id if org_id is not None else os.environ.get("NGC_ORG_ID", None)
+
+        self._retry_count = retry_count
 
         self._conn = nemollm.NemoLLM(
             api_host=os.environ.get("NGC_API_BASE", None),

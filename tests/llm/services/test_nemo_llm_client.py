@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import asyncio
-from concurrent.futures import Future
 from unittest import mock
 
 import pytest
@@ -53,20 +52,6 @@ def test_generate_batch(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.Ma
                                                            prompts=["prompt1", "prompt2"],
                                                            return_type="text",
                                                            additional_arg="test_arg")
-
-
-@mock.patch("nemollm.NemoLLM", autospec=True)
-def test_generate_batch_error(mock_nemollm_client: mock.MagicMock, mock_nemo_service: mock.MagicMock):
-
-    bad_future = Future()
-    bad_future.set_result({"status": "fail", "msg": "unittest"})
-
-    mock_nemo_service._conn.generate.return_value = bad_future
-
-    client = NeMoLLMClient(mock_nemo_service, model_name="test_model", additional_arg="test_arg")
-
-    with pytest.raises(RuntimeError, match="unittest"):
-        result = client.generate_batch({'prompt': ["prompt1", "prompt2"]})
 
 
 @mock.patch("asyncio.wrap_future")
