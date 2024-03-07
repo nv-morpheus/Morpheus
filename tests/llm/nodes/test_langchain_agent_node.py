@@ -16,8 +16,14 @@
 from unittest import mock
 
 import pytest
+from langchain.agents import AgentType
+from langchain.agents import Tool
+from langchain.agents import initialize_agent
+from langchain.chat_models import ChatOpenAI
 
 from _utils.llm import execute_node
+from _utils.llm import mk_mock_langchain_tool
+from _utils.llm import mk_mock_openai_response
 from morpheus.llm import LLMNodeBase
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
 
@@ -55,3 +61,45 @@ def test_execute(
     node = LangChainAgentNode(agent_executor=mock_agent_executor)
     assert execute_node(node, **values) == expected_output
     mock_agent_executor.arun.assert_has_calls(expected_calls)
+
+
+def test_execute_tools(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
+    (_, mock_async_client) = mock_chat_completion
+    chat_responses = ['Action: I should check Tool1', 'Action: I should check Tool2', 'Final Answer: Yes!']
+    mock_async_client.chat.completions.create.side_effect = [
+        mk_mock_openai_response([response]) for response in chat_responses
+    ]
+
+    llm_chat = ChatOpenAI(model="fake-model", openai_api_key="fake-key")
+
+    mock_tool1 = mk_mock_langchain_tool(["lizards", "frogs"])
+    mock_tool2 = mk_mock_langchain_tool(["snakes", "turtles"])
+
+    tools = [
+        Tool(name="Tool1",
+             func=mock_tool1.run,
+             coroutine=mock_tool1.arun,
+             description="useful for when you need to test"),
+        Tool(name="Tool2",
+             func=mock_tool2.run,
+             coroutine=mock_tool2.arun,
+             description="useful for when you also need to test")
+    ]
+
+    agent = initialize_agent(tools,
+                             llm_chat,
+                             agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+                             verbose=True,
+                             handle_parsing_errors=True,
+                             early_stopping_method="generate",
+                             return_intermediate_steps=False)
+
+    node = LangChainAgentNode(agent_executor=agent)
+    print(node.get_input_names())
+    print(execute_node(node, input="input1"))
+
+    print(mock_tool1.arun.mock_calls)
+    print(mock_tool1.run.mock_calls)
+    print(mock_tool2.arun.mock_calls)
+    print(mock_tool2.run.mock_calls)
+    print(mock_async_client.chat.completions.create.mock_calls)

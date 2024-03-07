@@ -91,3 +91,13 @@ def mk_mock_openai_response(messages: list[str]) -> mock.MagicMock:
     response.choices = mock_choices
 
     return response
+
+
+def mk_mock_langchain_tool(responses: list[str]) -> mock.MagicMock:
+    """
+    Creates a mocked LangChainTestTool with the given responses.
+    """
+    tool = mock.MagicMock()
+    tool.arun = mock.AsyncMock(side_effect=responses)
+    tool.run.side_effect = responses
+    return tool
