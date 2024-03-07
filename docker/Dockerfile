@@ -233,6 +233,7 @@ ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 
 COPY ${MORPHEUS_ROOT_HOST}/conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml ./conda/environments/runtime.yaml
+COPY ${MORPHEUS_ROOT_HOST}/conda/environments/examples_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml ./conda/environments/examples.yaml
 
 # Mount Morpheus conda package build in `conda_bld_morpheus`
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
