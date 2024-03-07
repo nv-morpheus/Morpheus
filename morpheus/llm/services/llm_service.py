@@ -33,7 +33,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    def generate(self, input_dict: dict[str, str]) -> str:
+    def generate(self, **input_dict) -> str:
         """
         Issue a request to generate a response based on a given prompt.
 
@@ -45,7 +45,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    async def generate_async(self, input_dict: dict[str, str]) -> str:
+    async def generate_async(self, **input_dict) -> str:
         """
         Issue an asynchronous request to generate a response based on a given prompt.
 
@@ -57,7 +57,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    def generate_batch(self, inputs: dict[str, list[str]]) -> list[str]:
+    def generate_batch(self, inputs: dict[str, list]) -> list[str | BaseException]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -69,7 +69,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    async def generate_batch_async(self, inputs: dict[str, list[str]]) -> list[str]:
+    async def generate_batch_async(self, inputs: dict[str, list]) -> list[str | BaseException]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 

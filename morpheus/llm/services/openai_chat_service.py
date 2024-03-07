@@ -172,7 +172,7 @@ class OpenAIChatClient(LLMClient):
 
         return self._extract_completion(output)
 
-    def generate(self, input_dict: dict[str, str]) -> str:
+    def generate(self, **input_dict) -> str:
         """
         Issue a request to generate a response based on a given prompt.
 
@@ -201,7 +201,7 @@ class OpenAIChatClient(LLMClient):
 
         return self._extract_completion(output)
 
-    async def generate_async(self, input_dict: dict[str, str]) -> str:
+    async def generate_async(self, **input_dict) -> str:
         """
         Issue an asynchronous request to generate a response based on a given prompt.
 
@@ -212,7 +212,7 @@ class OpenAIChatClient(LLMClient):
         """
         return await self._generate_async(input_dict[self._prompt_key], input_dict.get(self._assistant_key))
 
-    def generate_batch(self, inputs: dict[str, list[str]]) -> list[str]:
+    def generate_batch(self, inputs: dict[str, list]) -> list[str | BaseException]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -235,7 +235,7 @@ class OpenAIChatClient(LLMClient):
 
         return results
 
-    async def generate_batch_async(self, inputs: dict[str, list[str]]) -> list[str]:
+    async def generate_batch_async(self, inputs: dict[str, list]) -> list[str | BaseException]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -256,7 +256,7 @@ class OpenAIChatClient(LLMClient):
             assistant = assistants[i] if assistants is not None else None
             coros.append(self._generate_async(prompt, assistant))
 
-        return await asyncio.gather(*coros)
+        return await asyncio.gather(*coros, return_exceptions=True)
 
 
 class OpenAIChatService(LLMService):

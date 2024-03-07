@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+import concurrent.futures
 import logging
 import os
 import typing
@@ -66,7 +67,7 @@ class NeMoLLMClient(LLMClient):
     def get_input_names(self) -> list[str]:
         return [self._prompt_key]
 
-    def generate(self, input_dict: dict[str, str]) -> str:
+    def generate(self, **input_dict) -> str:
         """
         Issue a request to generate a response based on a given prompt.
 
@@ -75,9 +76,14 @@ class NeMoLLMClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        return self.generate_batch({self._prompt_key: [input_dict[self._prompt_key]]})[0]
+        result = self.generate_batch({self._prompt_key: [input_dict[self._prompt_key]]})[0]
 
-    async def generate_async(self, input_dict: dict[str, str]) -> str:
+        if (isinstance(result, BaseException)):
+            raise result
+
+        return result
+
+    async def generate_async(self, **input_dict) -> str:
         """
         Issue an asynchronous request to generate a response based on a given prompt.
 
@@ -86,9 +92,14 @@ class NeMoLLMClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        return (await self.generate_batch_async({self._prompt_key: [input_dict[self._prompt_key]]}))[0]
+        result = (await self.generate_batch_async({self._prompt_key: [input_dict[self._prompt_key]]}))[0]
 
-    def generate_batch(self, inputs: dict[str, list[str]]) -> list[str]:
+        if (isinstance(result, BaseException)):
+            raise result
+
+        return result
+
+    def generate_batch(self, inputs: dict[str, list]) -> list[str | BaseException]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -97,14 +108,88 @@ class NeMoLLMClient(LLMClient):
         inputs : dict
             Inputs containing prompt data.
         """
-        return typing.cast(
-            list[str],
-            self._parent._conn.generate_multiple(model=self._model_name,
-                                                 prompts=inputs[self._prompt_key],
-                                                 return_type="text",
-                                                 **self._model_kwargs))
 
-    async def generate_batch_async(self, inputs: dict[str, list[str]]) -> list[str]:
+        # Note: We dont want to use the generate_multiple implementation from nemollm because there is no retry logic.
+        # As soon as one of the requests fails, the entire batch fails. Instead, we will submit all the requests at once
+        # and then wait for them to complete. If any of them fail, we will retry them up to a limit
+
+        def submit_request(prompt: str):
+            return self._parent._conn.generate(model=self._model_name,
+                                               prompt=prompt,
+                                               return_type="future",
+                                               **self._model_kwargs)
+
+        prompts = inputs[self._prompt_key]
+
+        results: list[str | BaseException] = [None] * len(prompts)  # type: ignore
+
+        # Submit all of the requests at once. Key is the request, value is a tuple of (idx, retry_count)
+        futures: dict[concurrent.futures.Future, tuple[int, int]] = {
+            submit_request(p): (i, 0)
+            for i, p in enumerate(prompts)
+        }  # type: ignore
+
+        while len(futures) > 0:
+            new_futures = {}
+
+            done, pending = concurrent.futures.wait(futures, return_when=concurrent.futures.FIRST_COMPLETED)
+
+            for fut in done:
+
+                try:
+                    nemollm.NemoLLM.handle_response(fut)
+
+                    # Success, process the output and save the result
+                    result: str = nemollm.NemoLLM.post_process_generate_response(
+                        fut, return_text_completion_only=True)  # type: ignore
+
+                    idx, _ = futures[fut]
+
+                    results[idx] = result
+                except Exception as e:
+
+                    idx, retry_count = futures[fut]
+
+                    retry_count += 1
+
+                    if (retry_count >= 3):
+                        results[idx] = e
+                    else:
+                        new_futures[submit_request(prompts[idx])] = (idx, retry_count)
+
+            # For all the pending futures, wait on them again
+            for fut in pending:
+                job = futures[fut]
+                new_futures[fut] = job
+
+            futures = new_futures
+
+        return results
+
+    async def _process_one_async(self, prompt: str) -> str:
+        iterations = 0
+        errors = []
+
+        while iterations < 10:
+            fut = await asyncio.wrap_future(
+                self._parent._conn.generate(model=self._model_name,
+                                            prompt=prompt,
+                                            return_type="async",
+                                            **self._model_kwargs))  # type: ignore
+
+            result: dict = nemollm.NemoLLM.post_process_generate_response(
+                fut, return_text_completion_only=False)  # type: ignore
+
+            if result.get('status', None) == 'fail':
+                iterations += 1
+                errors.append(result.get('msg', 'Unknown error'))
+                continue
+
+            return result['text']
+
+        raise RuntimeError(f"Failed to generate response for prompt '{prompt}' after 3 attempts. Errors: {errors}")
+
+    async def generate_batch_async(self, inputs: dict[str, list]) -> list[str | BaseException]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -115,35 +200,11 @@ class NeMoLLMClient(LLMClient):
         """
         prompts = inputs[self._prompt_key]
 
-        async def process_one(p: str):
+        futures = [self._process_one_async(p) for p in prompts]
 
-            iterations = 0
-            errors = []
+        results: list[str | BaseException] = await asyncio.gather(*futures, return_exceptions=True)
 
-            while iterations < 10:
-                fut = await asyncio.wrap_future(
-                    self._parent._conn.generate(self._model_name, p, return_type="async", **self._model_kwargs))
-
-                result = nemollm.NemoLLM.post_process_generate_response(fut, return_text_completion_only=False)
-                if result.get('status', None) == 'fail':
-                    iterations += 1
-                    errors.append(result.get('msg', 'Unknown error'))
-                    continue
-
-                return result['text']
-
-            raise RuntimeError(f"Failed to generate response for prompt '{p}' after 3 attempts. Errors: {errors}")
-
-        futures = [process_one(p) for p in prompts]
-
-        results = await asyncio.gather(*futures, return_exceptions=True)
-
-        responses = []
-
-        for result in results:
-            responses.append(result)
-
-        return responses
+        return results
 
 
 class NeMoLLMService(LLMService):

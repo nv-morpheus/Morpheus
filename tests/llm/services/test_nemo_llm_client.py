@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import asyncio
+from concurrent.futures import Future
 from unittest import mock
 
 import pytest
@@ -36,7 +37,7 @@ def test_get_input_names(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.M
 
 def test_generate(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.MagicMock):
     client = NeMoLLMClient(mock_nemo_service, model_name="test_model", additional_arg="test_arg")
-    assert client.generate({'prompt': "test_prompt"}) == "test_output"
+    assert client.generate(prompt="test_prompt") == "test_output"
     mock_nemollm.generate_multiple.assert_called_once_with(model="test_model",
                                                            prompts=["test_prompt"],
                                                            return_type="text",
@@ -54,6 +55,20 @@ def test_generate_batch(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.Ma
                                                            additional_arg="test_arg")
 
 
+@mock.patch("nemollm.NemoLLM", autospec=True)
+def test_generate_batch_error(mock_nemollm_client: mock.MagicMock, mock_nemo_service: mock.MagicMock):
+
+    bad_future = Future()
+    bad_future.set_result({"status": "fail", "msg": "unittest"})
+
+    mock_nemo_service._conn.generate.return_value = bad_future
+
+    client = NeMoLLMClient(mock_nemo_service, model_name="test_model", additional_arg="test_arg")
+
+    with pytest.raises(RuntimeError, match="unittest"):
+        result = client.generate_batch({'prompt': ["prompt1", "prompt2"]})
+
+
 @mock.patch("asyncio.wrap_future")
 @mock.patch("asyncio.gather", new_callable=mock.AsyncMock)
 def test_generate_async(
@@ -64,7 +79,7 @@ def test_generate_async(
     mock_asyncio_gather.return_value = [mock.MagicMock()]
 
     client = NeMoLLMClient(mock_nemo_service, model_name="test_model", additional_arg="test_arg")
-    results = asyncio.run(client.generate_async({'prompt': "test_prompt"}))
+    results = asyncio.run(client.generate_async(prompt="test_prompt"))
     assert results == "test_output"
     mock_nemollm.generate.assert_called_once_with("test_model",
                                                   "test_prompt",
