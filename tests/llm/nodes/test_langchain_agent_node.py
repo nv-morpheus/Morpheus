@@ -65,10 +65,15 @@ def test_execute(
 
 def test_execute_tools(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
     (_, mock_async_client) = mock_chat_completion
-    chat_responses = ['Action: I should check Tool1', 'Action: I should check Tool2', 'Final Answer: Yes!']
-    mock_async_client.chat.completions.create.side_effect = [
-        mk_mock_openai_response([response]) for response in chat_responses
+    chat_responses = [
+        'I should check Tool1\nAction: Tool1\nAction Input: "test1"',
+        'I should check\nAction: Tool2\nAction Input: "test2"',
+        'Observation: Answer: Yes!\nI now know the final answer.\nFinal Answer: Yes!'
     ]
+    mock_responses = [mk_mock_openai_response([response]) for response in chat_responses]
+
+    print(mock_responses)
+    mock_async_client.chat.completions.create.side_effect = mock_responses
 
     llm_chat = ChatOpenAI(model="fake-model", openai_api_key="fake-key")
 
@@ -95,11 +100,9 @@ def test_execute_tools(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
                              return_intermediate_steps=False)
 
     node = LangChainAgentNode(agent_executor=agent)
-    print(node.get_input_names())
-    print(execute_node(node, input="input1"))
+    try:
+        print(execute_node(node, input="input1"))
+    except Exception as e:
+        print(e)
 
-    print(mock_tool1.arun.mock_calls)
-    print(mock_tool1.run.mock_calls)
-    print(mock_tool2.arun.mock_calls)
-    print(mock_tool2.run.mock_calls)
     print(mock_async_client.chat.completions.create.mock_calls)

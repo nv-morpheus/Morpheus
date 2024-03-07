@@ -87,8 +87,15 @@ def mk_mock_openai_response(messages: list[str]) -> mock.MagicMock:
     Creates a mocked openai.types.chat.chat_completion.ChatCompletion response with the given messages.
     """
     response = mock.MagicMock()
-    mock_choices = [_mk_mock_choice(message) for message in messages]
-    response.choices = mock_choices
+
+    response.choices = [_mk_mock_choice(message) for message in messages]
+    response.dict.return_value = {
+        "choices": [{
+            'message': {
+                'role': 'assistant', 'content': message
+            }
+        } for message in messages]
+    }
 
     return response
 
