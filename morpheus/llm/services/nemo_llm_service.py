@@ -66,7 +66,7 @@ class NeMoLLMClient(LLMClient):
     def get_input_names(self) -> list[str]:
         return [self._prompt_key]
 
-    def generate(self, input_dict: dict[str, str]) -> str:
+    def generate(self, **input_dict) -> str:
         """
         Issue a request to generate a response based on a given prompt.
 
@@ -77,7 +77,7 @@ class NeMoLLMClient(LLMClient):
         """
         return self.generate_batch({self._prompt_key: [input_dict[self._prompt_key]]})[0]
 
-    async def generate_async(self, input_dict: dict[str, str]) -> str:
+    async def generate_async(self, **input_dict) -> str:
         """
         Issue an asynchronous request to generate a response based on a given prompt.
 
@@ -88,7 +88,7 @@ class NeMoLLMClient(LLMClient):
         """
         return (await self.generate_batch_async({self._prompt_key: [input_dict[self._prompt_key]]}))[0]
 
-    def generate_batch(self, inputs: dict[str, list[str]]) -> list[str]:
+    def generate_batch(self, inputs: dict[str, list]) -> list[str]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -104,7 +104,7 @@ class NeMoLLMClient(LLMClient):
                                                  return_type="text",
                                                  **self._model_kwargs))
 
-    async def generate_batch_async(self, inputs: dict[str, list[str]]) -> list[str]:
+    async def generate_batch_async(self, inputs: dict[str, list]) -> list[str]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
