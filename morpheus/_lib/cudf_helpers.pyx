@@ -14,6 +14,9 @@
 # limitations under the License.
 
 import cudf
+from cudf.api.types import is_struct_dtype
+from cudf.core.dtypes import StructDtype
+import pandas as pd
 
 from libcpp.string cimport string
 from libcpp.utility cimport move
@@ -25,7 +28,6 @@ from cudf._lib.cpp.io.types cimport table_metadata
 from cudf._lib.cpp.io.types cimport table_with_metadata
 from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.cpp.types cimport size_type
-from cudf._lib.io.utils cimport update_struct_field_names
 from cudf._lib.utils cimport data_from_unique_ptr
 from cudf._lib.utils cimport get_column_names
 from cudf._lib.utils cimport table_view_from_table
@@ -217,3 +219,38 @@ cdef _set_col_children_metadata(Column col,
             )
     else:
         return
+
+cdef update_struct_field_names(
+    table,
+    vector[column_name_info]& schema_info
+):
+    for i, (name, col) in enumerate(table._data.items()):
+        table._data[name] = update_column_struct_field_names(
+            col, schema_info[i]
+        )
+
+
+cdef Column update_column_struct_field_names(
+    Column col,
+    column_name_info& info
+):
+    cdef vector[string] field_names
+
+    if col.dtype != "object" and col.children:
+        children = list(col.children)
+        for i, child in enumerate(children):
+            children[i] = update_column_struct_field_names(
+                child,
+                info.children[i]
+            )        
+            col.set_base_children(tuple(children))
+
+    if isinstance(col.dtype, StructDtype):
+        field_names.reserve(len(col.base_children))
+        for i in range(info.children.size()):
+            field_names.push_back(info.children[i].name)
+        col = col._rename_fields(
+            field_names
+        )
+
+    return col
