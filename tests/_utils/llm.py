@@ -63,12 +63,17 @@ def execute_node(node: LLMNodeBase,
 def execute_task_handler(task_handler: LLMTaskHandler,
                          task_dict: dict,
                          input_message: ControlMessage,
+                         row_mask: typing.Iterable[bool] = None,
                          **input_values: dict) -> ControlMessage:
     """
     Executes an LLM task handler with the necessary LLM context.
     """
     task = LLMTask("unittests", task_dict)
     parent_context = LLMContext(task, input_message)
+
+    if row_mask is not None:
+        parent_context.set_row_mask(row_mask)
+
     context = _mk_context(parent_context, input_values)
 
     message = asyncio.run(task_handler.try_handle(context))

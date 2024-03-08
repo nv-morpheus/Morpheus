@@ -21,6 +21,7 @@ from morpheus.llm import LLMTaskHandler
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.utils.type_aliases import DataFrameType
 
 
 def test_constructor():
@@ -35,12 +36,26 @@ def test_get_input_names(output_columns: list[str] | None, expected_input_names:
     assert task_handler.get_input_names() == expected_input_names
 
 
-def test_execute_task_handler(dataset_cudf: DatasetManager):
+@pytest.mark.parametrize("row_mask", [None, [True, False, True, False, True]])
+def test_execute_task_handler(dataset_cudf: DatasetManager, row_mask: list[bool] | None):
     reptiles = ['lizards', 'snakes', 'turtles', 'frogs', 'toads']
-    df = dataset_cudf["filter_probs.csv"][0:5]  # Take the first 5 rows since there are only have 5 reptiles
+    if row_mask is not None:
+        expected_reptiles: list[str] = []
+        for (i, r) in enumerate(reptiles):
+            if row_mask[i]:
+                expected_reptiles.append(r)
+            else:
+                expected_reptiles.append('')
+    else:
+        expected_reptiles = reptiles.copy()
+
+    # Take the first 5 rows since there are only have 5 reptiles
+    df: DataFrameType = dataset_cudf["filter_probs.csv"][0:5]
 
     expected_df = df.copy(deep=True)
-    expected_df['reptiles'] = reptiles.copy()
+    expected_df['reptiles'] = expected_reptiles
+
+    df['reptiles'] = ''  # init a new column of empty strings
 
     message = ControlMessage()
     message.payload(MessageMeta(df))
@@ -48,7 +63,7 @@ def test_execute_task_handler(dataset_cudf: DatasetManager):
     task_handler = SimpleTaskHandler(['reptiles'])
 
     task_dict = {"input_keys": ["reptiles"]}
-    response_messages = execute_task_handler(task_handler, task_dict, message, reptiles=reptiles)
+    response_messages = execute_task_handler(task_handler, task_dict, message, reptiles=reptiles, row_mask=row_mask)
     assert len(response_messages) == 1
     response_message = response_messages[0]
 
