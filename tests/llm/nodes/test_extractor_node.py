@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
+import pytest
+
 import cudf
 
 from _utils.llm import execute_node
@@ -20,6 +24,7 @@ from morpheus.llm import LLMNodeBase
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.utils.type_aliases import DataFrameType
 
 
 def test_constructor():
@@ -32,7 +37,8 @@ def test_get_input_names():
     assert len(node.get_input_names()) == 0
 
 
-def test_execute():
+@pytest.mark.parametrize("use_filter_fn", [False, True])
+def test_execute(use_filter_fn: bool):
     insects = ["ant", "bee", "butterfly", "mosquito", "grasshopper"]
     mammals = ["lion", "dolphin", "gorilla", "wolf", "tiger"]
     reptiles = ['lizards', 'snakes', 'turtles', 'frogs', 'toads']
@@ -40,6 +46,20 @@ def test_execute():
     message = ControlMessage()
     message.payload(MessageMeta(df))
 
+    if use_filter_fn:
+
+        def filter_fn(df: DataFrameType) -> typing.Iterable[bool]:
+            return df['insects'].str.startswith('b')
+
+        expected_mammals = ["dolphin", "gorilla"]
+        expected_repitles = ['snakes', 'turtles']
+    else:
+        filter_fn = None
+        expected_mammals = mammals.copy()
+        expected_repitles = reptiles.copy()
+
+    expected_output = {"mammals": expected_mammals, "reptiles": expected_repitles}
+
     task_dict = {"input_keys": ["mammals", "reptiles"]}
-    node = ExtracterNode()
-    assert execute_node(node, task_dict=task_dict, input_message=message) == {"mammals": mammals, "reptiles": reptiles}
+    node = ExtracterNode(filter_fn=filter_fn)
+    assert execute_node(node, task_dict=task_dict, input_message=message) == expected_output

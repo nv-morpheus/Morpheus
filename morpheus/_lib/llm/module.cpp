@@ -34,14 +34,12 @@
 #include "morpheus/pybind11/input_map.hpp"  // IWYU pragma: keep
 #include "morpheus/pybind11/json.hpp"       // IWYU pragma: keep
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/json_types.hpp"
 #include "morpheus/version.hpp"
 
+#include <mrc/segment/object.hpp>  // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>
 #include <nlohmann/detail/exceptions.hpp>
 #include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
-#include <pybind11/detail/common.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>    // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/pytypes.h>     // for dict, sequence
@@ -54,8 +52,8 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
+// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
 
 namespace morpheus::llm {
 namespace py = pybind11;
@@ -209,7 +207,10 @@ PYBIND11_MODULE(llm, _module)
              py::overload_cast<const std::string&, nlohmann::json>(&LLMContext::set_output),
              py::arg("output_name"),
              py::arg("output"))
-        .def("push", &LLMContext::push, py::arg("name"), py::arg("inputs"));
+        .def("push", &LLMContext::push, py::arg("name"), py::arg("inputs"))
+        .def("set_row_mask", &LLMContext::set_row_mask, py::arg("row_mask"))
+        .def("has_row_mask", &LLMContext::has_row_mask)
+        .def("get_row_mask", &LLMContext::get_row_mask);
 
     py::class_<LLMNodeBase, PyLLMNodeBase<>, std::shared_ptr<LLMNodeBase>>(_module, "LLMNodeBase")
         .def(py::init_alias<>())
@@ -301,8 +302,8 @@ PYBIND11_MODULE(llm, _module)
         .def("get_input_names",
              &LLMTaskHandler::get_input_names,
              R"pbdoc(
-                Get the input names for the task handler. 
-                
+                Get the input names for the task handler.
+
                 Returns
                 -------
                 list[str]
