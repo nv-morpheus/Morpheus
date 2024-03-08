@@ -16,7 +16,6 @@
 import cudf
 from cudf.api.types import is_struct_dtype
 from cudf.core.dtypes import StructDtype
-import pandas as pd
 
 from libcpp.string cimport string
 from libcpp.utility cimport move
