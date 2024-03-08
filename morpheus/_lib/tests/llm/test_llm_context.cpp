@@ -43,7 +43,9 @@ TEST_CLASS(LLMContext);
 
 TEST_F(TestLLMContext, Initialization)
 {
-    llm::LLMContext ctx_1;
+    llm::LLMContext ctx;
+    EXPECT_EQ(ctx.parent(), nullptr);
+    EXPECT_EQ(ctx.message(), nullptr);
 }
 
 TEST_F(TestLLMContext, InitWithLLMTask)
@@ -307,4 +309,20 @@ TEST_F(TestLLMContext, MultipleInputMappingsBothInvalid)
     ASSERT_THROW(child_ctx.get_input("input1"), std::runtime_error);
     ASSERT_THROW(child_ctx.get_input("input2"), std::runtime_error);
     ASSERT_THROW(child_ctx.get_inputs(), std::runtime_error);
+}
+
+TEST_F(TestLLMContext, GetSetRowMask)
+{
+    llm::LLMContext ctx;
+    EXPECT_FALSE(ctx.has_row_mask());
+    EXPECT_TRUE(ctx.get_row_mask().empty());
+
+    std::vector<bool> row_mask{true, false, true};
+
+    // pass a copy, keeping the original to compare against later
+    ctx.set_row_mask(std::move(std::vector<bool>{row_mask}));
+    EXPECT_TRUE(ctx.has_row_mask());
+
+    const auto& row_mask_ref = ctx.get_row_mask();
+    EXPECT_EQ(row_mask_ref, row_mask);
 }
