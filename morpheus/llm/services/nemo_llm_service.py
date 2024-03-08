@@ -147,7 +147,9 @@ class NeMoLLMClient(LLMClient):
 
             return result['text']
 
-        raise RuntimeError(f"Failed to generate response for prompt '{prompt}' after 3 attempts. Errors: {errors}")
+        raise RuntimeError(
+            f"Failed to generate response for prompt '{prompt}' after {self._parent._retry_count} attempts. "
+            f"Errors: {errors}")
 
     @typing.overload
     async def generate_batch_async(self,

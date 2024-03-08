@@ -22,6 +22,7 @@ import pytest
 import cudf
 
 from _utils import assert_results
+from _utils.environment import set_env
 from _utils.llm import mk_mock_openai_response
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
@@ -97,11 +98,11 @@ def test_completion_pipe_nemo(config: Config,
                               capital_responses: list[str]):
 
     # Set a dummy key to bypass the API key check
-    os.environ["NGC_API_KEY"] = "test"
+    with set_env(NGC_API_KEY="test"):
 
-    mock_nemollm.post_process_generate_response.side_effect = [{"text": response} for response in capital_responses]
-    results = _run_pipeline(config, NeMoLLMService, countries=countries, capital_responses=capital_responses)
-    assert_results(results)
+        mock_nemollm.post_process_generate_response.side_effect = [{"text": response} for response in capital_responses]
+        results = _run_pipeline(config, NeMoLLMService, countries=countries, capital_responses=capital_responses)
+        assert_results(results)
 
 
 @pytest.mark.usefixtures("openai")
