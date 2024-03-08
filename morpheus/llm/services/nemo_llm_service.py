@@ -159,6 +159,7 @@ class NeMoLLMService(LLMService):
         org_id = org_id if org_id is not None else os.environ.get("NGC_ORG_ID", None)
 
         self._conn = nemollm.NemoLLM(
+            api_host=os.environ.get("NGC_API_BASE", None),
             # The client must configure the authentication and authorization parameters
             # in accordance with the API server security policy.
             # Configure Bearer authorization

@@ -97,7 +97,9 @@ def build_agent_executor(config: EngineAgentConfig) -> AgentExecutor:
         embeddings = OpenAIEmbeddings(openai_api_key=openai.api_key, max_retries=5)
 
         # load code vector DB
-        code_vector_db = FAISS.load_local(config.code_repo.faiss_dir, embeddings)
+        code_vector_db = FAISS.load_local(folder_path=config.code_repo.faiss_dir,
+                                          embeddings=embeddings,
+                                          allow_dangerous_deserialization=True)
         code_qa_tool = RetrievalQA.from_chain_type(llm=langchain_llm,
                                                    chain_type="stuff",
                                                    retriever=code_vector_db.as_retriever())

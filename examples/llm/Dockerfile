@@ -26,6 +26,9 @@ COPY . ./
 # Use a separate build directory to avoid clashes on the host
 ENV BUILD_DIR=build-docker
 
+# Make it easier to run commands in the container
+ENV SHELL=/bin/bash
+
 RUN ls -lah
 
 # Build morpheus
