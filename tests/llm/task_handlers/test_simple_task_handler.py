@@ -35,9 +35,10 @@ def test_get_input_names(output_columns: list[str] | None, expected_input_names:
     assert task_handler.get_input_names() == expected_input_names
 
 
-def test_try_handle(dataset_cudf: DatasetManager):
+def test_execute_task_handler(dataset_cudf: DatasetManager):
     reptiles = ['lizards', 'snakes', 'turtles', 'frogs', 'toads']
     df = dataset_cudf["filter_probs.csv"][0:5]  # Take the first 5 rows since there are only have 5 reptiles
+
     expected_df = df.copy(deep=True)
     expected_df['reptiles'] = reptiles.copy()
 
@@ -51,4 +52,4 @@ def test_try_handle(dataset_cudf: DatasetManager):
     assert len(response_messages) == 1
     response_message = response_messages[0]
 
-    dataset_cudf.assert_compare_df(df, response_message.payload().df)
+    dataset_cudf.assert_compare_df(expected_df, response_message.payload().df)
