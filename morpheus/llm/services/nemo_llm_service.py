@@ -180,7 +180,7 @@ class NeMoLLMClient(LLMClient):
 
         futures = [self._process_one_async(p) for p in prompts]
 
-        results = await asyncio.gather(*futures, return_exceptions=False)
+        results = await asyncio.gather(*futures, return_exceptions=return_exceptions)
 
         return results
 
