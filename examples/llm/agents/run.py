@@ -133,6 +133,6 @@ def kafka(**kwargs):
 )
 def cve(**kwargs):
 
-    from .cve_pipeline import pipeline as _pipeline
+    from ..cyber_dev_day.pipeline import pipeline as _pipeline
 
     return _pipeline(**kwargs)

@@ -1,0 +1,96 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+version: '3.3'
+
+services:
+
+  # Run `docker compose build morpheus` to help build the base Morpheus container
+  morpheus:
+    build:
+      context: ../..
+      dockerfile: ./docker/Dockerfile
+      args:
+        - MORPHEUS_ROOT_HOST=.
+      target: development
+    image: nvcr.io/nvidia/morpheus/morpheus:v24.03.00-cyber-dev-day
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [ gpu ]
+    volumes:
+      - ../..:/workspace
+    profiles:
+      # This disables this service when running `docker compose up`
+      - build
+
+  cyber-dev-day:
+    build:
+      context: ../..
+      dockerfile: ./examples/llm/Dockerfile
+      args:
+        - MORPHEUS_CONTAINER=${MORPHEUS_CONTAINER:-nvcr.io/nvidia/morpheus/morpheus}
+        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v24.03.00-cyber-dev-day}
+      target: jupyter
+    image: morpheus-cyber-dev-day
+    ports:
+      - "26303:26302"
+      - "8888:8888"
+    working_dir: /workspace/examples/llm
+    command: jupyter-lab --no-browser --allow-root --ip='*'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [ gpu ]
+    networks:
+      - proxy
+    env_file:
+      - .env
+    environment:
+      - TERM=${TERM:-}
+      # Overwrite any environment variables in the .env file with URLs needed in the network
+      - OPENAI_API_BASE=http://cache-proxy/openai/v1
+      - OPENAI_BASE_URL=http://cache-proxy/openai/v1
+      - NGC_API_BASE=http://cache-proxy:81/nemo/v1
+      - NVIDIA_API_BASE=http://cache-proxy:81/nvcf/v2
+    volumes:
+      - ../..:/workspace
+    cap_add:
+      - sys_nice
+    depends_on:
+      - cache-proxy
+    restart: always
+
+  cache-proxy:
+    image: nginx:1.23.4
+    container_name: cache-proxy
+    ports:
+      - 127.0.0.1:81:80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - proxy-cache:/server_cache:rw
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    driver: bridge
+
+volumes:
+  proxy-cache:
+    driver: local
