@@ -1065,8 +1065,9 @@ def mock_chat_completion_fixture():
 @pytest.mark.usefixtures("nemollm")
 @pytest.fixture(name="mock_nemollm")
 def mock_nemollm_fixture():
-    with mock.patch("nemollm.NemoLLM") as mock_nemollm:
+    with mock.patch("nemollm.NemoLLM", autospec=True) as mock_nemollm:
         mock_nemollm.return_value = mock_nemollm
+        mock_nemollm.generate_multiple.return_value = ["test_output"]
         mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}
 
         yield mock_nemollm
