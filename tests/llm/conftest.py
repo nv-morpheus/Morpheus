@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
-import typing
 from unittest import mock
 
 import pytest
@@ -106,7 +104,7 @@ def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
 
     from concurrent.futures import Future
 
-    def generate_mock(*args, **kwargs):
+    def generate_mock(*_, **kwargs):
 
         fut = Future()
 
@@ -116,13 +114,13 @@ def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
 
     mock_nemollm.generate.side_effect = generate_mock
 
-    def generate_multiple_mock(*args, **kwargs):
+    def generate_multiple_mock(*_, **kwargs):
 
         assert kwargs["return_type"] == "text", "Only text return type is supported for mocking."
 
         prompts: list[str] = kwargs["prompts"]
 
-        return [prompt for prompt in prompts]
+        return list(prompts)
 
     mock_nemollm.generate_multiple.side_effect = generate_multiple_mock
 

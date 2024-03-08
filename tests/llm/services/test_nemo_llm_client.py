@@ -13,14 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 from unittest import mock
-from unittest.mock import ANY
 
 import pytest
 
 from morpheus.llm.services.llm_service import LLMClient
-from morpheus.llm.services.nemo_llm_service import NeMoLLMClient
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 
 
@@ -41,8 +38,6 @@ def test_generate(mock_nemollm: mock.MagicMock):
     client = NeMoLLMService(api_key="dummy").get_client(model_name="test_model", customization_id="test_custom_id")
 
     assert client.generate(prompt="test_prompt") == "test_prompt"
-
-    _, kwargs = mock_nemollm.generate_multiple.call_args_list[-1]
 
     mock_nemollm.generate_multiple.assert_called_once_with(model="test_model",
                                                            prompts=["test_prompt"],
@@ -104,7 +99,7 @@ async def test_generate_batch_async_error_retry(mock_nemollm: mock.MagicMock):
 
     count = 0
 
-    def mock_post_process_generate_response(*args, **kwargs):
+    def mock_post_process_generate_response(*args, **_):
         nonlocal count
         if count < 2:
             count += 1

@@ -186,17 +186,6 @@ class NeMoLLMClient(LLMClient):
 class NeMoLLMService(LLMService):
     """
     A service for interacting with NeMo LLM models, this class should be used to create a client for a specific model.
-
-    Parameters
-    ----------
-    api_key : str, optional
-        The API key for the LLM service, by default None. If `None` the API key will be read from the `NGC_API_KEY`
-        environment variable. If neither are present an error will be raised.
-
-    org_id : str, optional
-        The organization ID for the LLM service, by default None. If `None` the organization ID will be read from the
-        `NGC_ORG_ID` environment variable. This value is only required if the account associated with the `api_key` is
-        a member of multiple NGC organizations.
     """
 
     def __init__(self, *, api_key: str = None, org_id: str = None, retry_count=5) -> None:
@@ -209,9 +198,9 @@ class NeMoLLMService(LLMService):
             The API key for the LLM service, by default None. If `None` the API key will be read from the `NGC_API_KEY`
             environment variable. If neither are present an error will be raised., by default None
         org_id : str, optional
-            The organization ID for the LLM service, by default None. If `None` the organization ID will be read from the
-            `NGC_ORG_ID` environment variable. This value is only required if the account associated with the `api_key` is
-            a member of multiple NGC organizations., by default None
+            The organization ID for the LLM service, by default None. If `None` the organization ID will be read from
+            the `NGC_ORG_ID` environment variable. This value is only required if the account associated with the
+            `api_key` is a member of multiple NGC organizations., by default None
         retry_count : int, optional
             The number of times to retry a request before raising an exception, by default 5
 
