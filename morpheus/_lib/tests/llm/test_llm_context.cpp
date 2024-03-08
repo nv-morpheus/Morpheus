@@ -19,21 +19,17 @@
 
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_context.hpp"
-#include "morpheus/llm/llm_lambda_node.hpp"
-#include "morpheus/llm/llm_node.hpp"
-#include "morpheus/llm/llm_node_runner.hpp"
 #include "morpheus/llm/llm_task.hpp"
+#include "morpheus/messages/control.hpp"  // for ControlMessage
 #include "morpheus/types.hpp"
 
 #include <gtest/gtest.h>
-#include <mrc/channel/forward.hpp>
-#include <mrc/coroutines/sync_wait.hpp>
 #include <nlohmann/json.hpp>
 
-#include <coroutine>
 #include <memory>
 #include <stdexcept>
-#include <string>
+#include <utility>  // for move
+// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
 
 using namespace morpheus;
 using namespace morpheus::test;

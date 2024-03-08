@@ -19,9 +19,8 @@
 
 #include "morpheus/export.h"
 #include "morpheus/llm/input_map.hpp"
-#include "morpheus/llm/llm_task.hpp"
-#include "morpheus/messages/control.hpp"
-#include "morpheus/utilities/json_types.hpp"
+#include "morpheus/llm/llm_task.hpp"      // IWYU pragma: keep
+#include "morpheus/messages/control.hpp"  // IWYU pragma: keep
 
 #include <mrc/types.hpp>
 #include <nlohmann/json.hpp>
@@ -29,6 +28,11 @@
 #include <memory>
 #include <string>
 #include <vector>
+
+// IWYU mistakenly believes that we could use the forward declares of LLMTask and ControlMessage in fwd.hpp, however an
+// an incomplete type decl cannot be used in a shared_ptr, and in the case of LLMTask in a struct that is used in a
+// shared_ptr.
+// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
 
 namespace morpheus::llm {
 
