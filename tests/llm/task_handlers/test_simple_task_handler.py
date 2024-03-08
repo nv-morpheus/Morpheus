@@ -37,7 +37,7 @@ def test_get_input_names(output_columns: list[str] | None, expected_input_names:
 
 
 @pytest.mark.parametrize("row_mask", [None, [True, False, True, False, True]])
-def test_execute_task_handler(dataset_cudf: DatasetManager, row_mask: list[bool] | None):
+def test_try_handle(dataset_cudf: DatasetManager, row_mask: list[bool] | None):
     reptiles = ['lizards', 'snakes', 'turtles', 'frogs', 'toads']
     if row_mask is not None:
         expected_reptiles: list[str] = []

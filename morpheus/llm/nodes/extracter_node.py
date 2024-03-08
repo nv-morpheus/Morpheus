@@ -38,7 +38,7 @@ class ExtracterNode(LLMNodeBase):
         # This node does not receive its inputs from upstream nodes, but rather from the task itself
         return []
 
-    async def execute(self, context: LLMContext) -> LLMContext:
+    async def execute(self, context: LLMContext) -> LLMContext:  # pylint: disable=invalid-overridden-method
         # Get the keys from the task
         input_keys: list[str] = typing.cast(list[str], context.task()["input_keys"])
 

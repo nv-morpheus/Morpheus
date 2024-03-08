@@ -46,10 +46,9 @@ def test_extractor_simple_task_handler_pipeline(config: Config, dataset_cudf: Da
 
     if use_filter_fn:
 
-        def _is_even(df: DataFrameType) -> list[bool]:
+        def filter_fn(df: DataFrameType) -> list[bool]:
             return [i % 2 == 0 for i in range(len(df))]
 
-        filter_fn = _is_even
         v3_values = input_df['v3'].values
         expected_response = []
         for i in range(len(input_df)):

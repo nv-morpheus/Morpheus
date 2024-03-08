@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 import pytest
 
 import cudf
@@ -22,6 +24,7 @@ from morpheus.llm import LLMNodeBase
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.utils.type_aliases import DataFrameType
 
 
 def test_constructor():
@@ -44,7 +47,10 @@ def test_execute(use_filter_fn: bool):
     message.payload(MessageMeta(df))
 
     if use_filter_fn:
-        filter_fn = lambda df: df['insects'].str.startswith('b')
+
+        def filter_fn(df: DataFrameType) -> typing.Iterable[bool]:
+            return df['insects'].str.startswith('b')
+
         expected_mammals = ["dolphin", "gorilla"]
         expected_repitles = ['snakes', 'turtles']
     else:
