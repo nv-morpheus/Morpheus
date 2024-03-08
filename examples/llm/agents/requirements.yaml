@@ -37,6 +37,7 @@ dependencies:
   - pip
   - pip:
     - google-search-results==2.4
+    - langchain-nvidia-ai-endpoints
     - langchain==0.1.9
     - nemollm
     - pydpkg==1.9.2

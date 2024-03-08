@@ -32,6 +32,21 @@ class NeMoLLMModelConfig(BaseModel):
     tokens_to_generate: int = 300
 
 
+class NVFoundationLLMServiceConfig(BaseModel):
+
+    type: typing.Literal["nvfoundation"] = "nvfoundation"
+
+    api_key: str | None = None
+
+
+class NVFoundationLLMModelConfig(BaseModel):
+
+    service: NVFoundationLLMServiceConfig
+
+    model_name: str
+    temperature: float = 0.0
+
+
 class OpenAIServiceConfig(BaseModel):
 
     type: typing.Literal["openai"] = "openai"
@@ -45,7 +60,8 @@ class OpenAIMModelConfig(BaseModel):
 
 
 LLMModelConfig = typing.Annotated[typing.Annotated[NeMoLLMModelConfig, Tag("nemo")]
-                                  | typing.Annotated[OpenAIMModelConfig, Tag("openai")],
+                                  | typing.Annotated[OpenAIMModelConfig, Tag("openai")]
+                                  | typing.Annotated[NVFoundationLLMModelConfig, Tag("nvfoundation")],
                                   Discriminator(_llm_discriminator)]
 
 

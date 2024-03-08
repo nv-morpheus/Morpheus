@@ -18,6 +18,7 @@ import re
 import time
 from textwrap import dedent
 
+import openai
 from langchain.agents import AgentType
 from langchain.agents import Tool
 from langchain.agents import initialize_agent
@@ -25,16 +26,17 @@ from langchain.agents import load_tools
 from langchain.agents.agent import AgentExecutor
 from langchain.chains import RetrievalQA
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms.openai import OpenAI
 from langchain.vectorstores.faiss import FAISS
 
 import cudf
 
-from morpheus._lib.llm import LLMLambdaNode
-from morpheus._lib.llm import LLMNode
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
+from morpheus.llm import LLMLambdaNode
+from morpheus.llm import LLMNode
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
 from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
@@ -59,6 +61,8 @@ from .config import EngineConfig
 from .config import EngineSBOMConfig
 from .config import NeMoLLMModelConfig
 from .config import NeMoLLMServiceConfig
+from .config import NVFoundationLLMModelConfig
+from .config import NVFoundationLLMServiceConfig
 from .tools import SBOMChecker
 
 logger = logging.getLogger(__name__)
@@ -307,9 +311,11 @@ def _build_agent_executor(config: EngineAgentConfig) -> AgentExecutor:
                               "package is not present.")))
 
     if (config.code_repo.faiss_dir is not None):
-        embeddings = HuggingFaceEmbeddings(model_name=config.code_repo.embedding_model_name,
-                                           model_kwargs={'device': 'cuda'},
-                                           encode_kwargs={'normalize_embeddings': False})
+        # embeddings = HuggingFaceEmbeddings(model_name=config.code_repo.embedding_model_name,
+        #                                    model_kwargs={'device': 'cuda'},
+        #                                    encode_kwargs={'normalize_embeddings': False})
+
+        embeddings = OpenAIEmbeddings(openai_api_key=openai.api_key, max_retries=5)
 
         # load code vector DB
         code_vector_db = FAISS.load_local(config.code_repo.faiss_dir, embeddings)
@@ -353,15 +359,17 @@ def pipeline(
 ) -> float:
 
     nemo_service_config = NeMoLLMServiceConfig()
+    nvfoundation_service_config = NVFoundationLLMServiceConfig()
 
     engine_config = EngineConfig(
         checklist=EngineChecklistConfig(model=NeMoLLMModelConfig(service=nemo_service_config,
                                                                  model_name="gpt-43b-002"), ),
         agent=EngineAgentConfig(
-            model=NeMoLLMModelConfig(service=nemo_service_config, model_name="gpt-43b-002"),
+            model=NVFoundationLLMModelConfig(service=nvfoundation_service_config, model_name="mixtral_8x7b"),
             sbom=EngineSBOMConfig(data_file=""),
             code_repo=EngineCodeRepoConfig(
-                faiss_dir="/home/mdemoret/Repos/morpheus/morpheus-dev2/.tmp/Sherlock/NSPECT-V1TL-NPZI_code_faiss"),
+                faiss_dir="/home/mdemoret/Repos/morpheus/morpheus-dev2/.tmp/Sherlock/NSPECT-V1TL-NPZI_code_faiss",
+                embedding_model_name="Xenova/text-embedding-ada-002"),
         ),
     )
 
