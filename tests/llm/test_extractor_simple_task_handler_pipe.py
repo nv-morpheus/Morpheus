@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
+import pytest
+
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
@@ -25,20 +29,43 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.utils.type_aliases import DataFrameType
 
 
-def _build_engine() -> LLMEngine:
+def _build_engine(filter_fn: typing.Callable[[DataFrameType], typing.Iterable[bool]] = None) -> LLMEngine:
     engine = LLMEngine()
-    engine.add_node("extracter", node=ExtracterNode())
+    engine.add_node("extracter", node=ExtracterNode(filter_fn=filter_fn))
     engine.add_task_handler(inputs=["/extracter"], handler=SimpleTaskHandler())
 
     return engine
 
 
-def test_extractor_simple_task_handler_pipeline(config: Config, dataset_cudf: DatasetManager):
+@pytest.mark.parametrize("use_filter_fn", [False, True])
+def test_extractor_simple_task_handler_pipeline(config: Config, dataset_cudf: DatasetManager, use_filter_fn: bool):
     input_df = dataset_cudf["filter_probs.csv"]
+
+    if use_filter_fn:
+
+        def _is_even(df: DataFrameType) -> list[bool]:
+            return [i % 2 == 0 for i in range(len(df))]
+
+        filter_fn = _is_even
+        v3_values = input_df['v3'].values
+        expected_response = []
+        for i in range(len(input_df)):
+            if i % 2 == 0:
+                expected_response.append(float(v3_values[i]))
+            else:
+                expected_response.append(0.0)
+
+    else:
+        filter_fn = None
+        expected_response = input_df['v3']
+
     expected_df = input_df.copy(deep=True)
-    expected_df['response'] = input_df['v3']
+    expected_df['response'] = expected_response
+
+    input_df['response'] = 0.0  # Allocate a new floating point colunmn
 
     task_payload = {"task_type": "llm_engine", "task_dict": {"input_keys": ['v3']}}
 
@@ -46,7 +73,7 @@ def test_extractor_simple_task_handler_pipeline(config: Config, dataset_cudf: Da
     pipe.set_source(InMemorySourceStage(config, dataframes=[input_df]))
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=task_payload))
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine()))
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(filter_fn=filter_fn)))
     sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
 
     pipe.run()
