@@ -44,40 +44,6 @@ TEST_CLASS(LLMContext);
 TEST_F(TestLLMContext, Initialization)
 {
     llm::LLMContext ctx_1;
-
-    nlohmann::json task_dict;
-    task_dict = {
-        {"task_type", "dictionary"},
-        {"model_name", "test"},
-    };
-
-    llm::LLMContext ctx_2{llm::LLMTask{"template", task_dict}, nullptr};
-    ASSERT_EQ(ctx_2.task().get("task_type"), "dictionary");
-    ASSERT_EQ(ctx_2.task().get("model_name"), "test");
-
-    nlohmann::json msg_config;
-    msg_config["tasks"] = {{{"type", "llm_engine"}, {"properties", {{"type", "template"}, {"properties", task_dict}}}}};
-
-    auto msg = std::make_shared<ControlMessage>(msg_config);
-
-    llm::LLMContext ctx_3{llm::LLMTask{}, msg};
-    ASSERT_EQ(ctx_3.message()->has_task("llm_engine"), true);
-
-    llm::LLMContext ctx_4{llm::LLMTask{"template", task_dict}, msg};
-    ASSERT_EQ(ctx_4.message()->has_task("llm_engine"), true);
-    ASSERT_EQ(ctx_4.task().get("task_type"), "dictionary");
-    ASSERT_EQ(ctx_4.task().get("model_name"), "test");
-
-    auto parent_ctx = std::make_shared<llm::LLMContext>(llm::LLMTask{"template", task_dict}, msg);
-    auto inputs     = llm::input_mappings_t{{"/ext1", "input1"}};
-    llm::LLMContext ctx_5{parent_ctx, "child", inputs};
-    ASSERT_EQ(ctx_5.input_map()[0].external_name, "/ext1");
-    ASSERT_EQ(ctx_5.input_map()[0].internal_name, "input1");
-    ASSERT_EQ(ctx_5.parent()->message()->has_task("llm_engine"), true);
-    ASSERT_EQ(ctx_5.parent()->task().get("task_type"), "dictionary");
-    ASSERT_EQ(ctx_5.parent()->task().get("model_name"), "test");
-    ASSERT_EQ(ctx_5.name(), "child");
-    ASSERT_EQ(ctx_5.full_name(), "/child");
 }
 
 TEST_F(TestLLMContext, InitWithLLMTask)
