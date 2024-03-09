@@ -66,10 +66,6 @@ class HttpTritonClient : public ITritonClient
 {
 };
 
-class FakeTritonClient : public ITritonClient
-{
-};
-
 struct TritonInferenceClient
 {
   private:
@@ -114,18 +110,12 @@ class InferenceClientStage
      * @param model_name : Name of the model specifies which model can handle the inference requests that are sent to
      * Triton inference
      * @param server_url : Triton server URL.
-     * @param force_convert_inputs : Instructs the stage to convert the incoming data to the same format that Triton is
-     * expecting. If set to False, data will only be converted if it would not result in the loss of data.
-     * @param use_shared_memory : Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using
-     * CUDA IPC reduces network transfer time but requires that Morpheus and Triton are located on the same machine.
      * @param needs_logits : Determines if logits are required.
      * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this
      * if the Morpheus names do not match the model.
      */
     InferenceClientStage(std::string model_name,
                          std::string server_url,
-                         bool force_convert_inputs,
-                         bool use_shared_memory,
                          bool needs_logits,
                          std::map<std::string, std::string> input_mapping  = {},
                          std::map<std::string, std::string> output_mapping = {});
@@ -177,10 +167,6 @@ struct InferenceClientStageInterfaceProxy
      * @param model_name : Name of the model specifies which model can handle the inference requests that are sent to
      * Triton inference
      * @param server_url : Triton server URL.
-     * @param force_convert_inputs : Instructs the stage to convert the incoming data to the same format that Triton is
-     * expecting. If set to False, data will only be converted if it would not result in the loss of data.
-     * @param use_shared_memory : Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using
-     * CUDA IPC reduces network transfer time but requires that Morpheus and Triton are located on the same machine.
      * @param needs_logits : Determines if logits are required.
      * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this
      * if the Morpheus names do not match the model.
@@ -191,8 +177,6 @@ struct InferenceClientStageInterfaceProxy
         const std::string& name,
         std::string model_name,
         std::string server_url,
-        bool force_convert_inputs,
-        bool use_shared_memory,
         bool needs_logits,
         std::map<std::string, std::string> input_mapping,
         std::map<std::string, std::string> output_mapping);

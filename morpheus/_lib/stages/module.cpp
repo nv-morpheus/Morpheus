@@ -139,8 +139,6 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("model_name"),
              py::arg("server_url"),
-             py::arg("force_convert_inputs"),
-             py::arg("use_shared_memory"),
              py::arg("needs_logits"),
              py::arg("input_mapping") = py::dict(),
              py::arg("output_mapping") = py::dict());

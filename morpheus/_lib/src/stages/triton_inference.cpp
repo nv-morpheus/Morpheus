@@ -504,8 +504,6 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClient::infer(TensorMap&& inputs
 // ************ InferenceClientStage ************************* //
 InferenceClientStage::InferenceClientStage(std::string model_name,
                                            std::string server_url,
-                                           bool force_convert_inputs,
-                                           bool use_shared_memory,
                                            bool needs_logits,
                                            std::map<std::string, std::string> input_mapping,
                                            std::map<std::string, std::string> output_mapping) :
@@ -671,8 +669,6 @@ std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStage
     const std::string& name,
     std::string model_name,
     std::string server_url,
-    bool force_convert_inputs,
-    bool use_shared_memory,
     bool needs_logits,
     std::map<std::string, std::string> input_mapping,
     std::map<std::string, std::string> output_mapping)
@@ -680,8 +676,6 @@ std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStage
     auto stage = builder.construct_object<InferenceClientStage>(name,
                                                                 model_name,
                                                                 server_url,
-                                                                force_convert_inputs,
-                                                                use_shared_memory,
                                                                 needs_logits,
                                                                 input_mapping,
                                                                 output_mapping);
