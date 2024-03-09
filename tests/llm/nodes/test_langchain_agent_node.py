@@ -56,6 +56,7 @@ def test_execute(
     expected_output: list,
     expected_calls: list[mock.call],
 ):
+    # Tests the execute method of the LangChainAgentNode with a mocked agent_executor
     mock_agent_executor.arun.return_value = arun_return
 
     node = LangChainAgentNode(agent_executor=mock_agent_executor)
@@ -64,21 +65,22 @@ def test_execute(
 
 
 def test_execute_tools(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
+    # Tests the execute method of the LangChainAgentNode with a a mocked tools and chat completion
     (_, mock_async_client) = mock_chat_completion
     chat_responses = [
-        'I should check Tool1\nAction: Tool1\nAction Input: "test1"',
-        'I should check\nAction: Tool2\nAction Input: "test2"',
+        'I should check Tool1\nAction: Tool1\nAction Input: "name a reptile"',
+        'I should check Tool2\nAction: Tool2\nAction Input: "name of a day of the week"',
+        'I should check Tool1\nAction: Tool1\nAction Input: "name a reptile"',
+        'I should check Tool2\nAction: Tool2\nAction Input: "name of a day of the week"',
         'Observation: Answer: Yes!\nI now know the final answer.\nFinal Answer: Yes!'
     ]
     mock_responses = [mk_mock_openai_response([response]) for response in chat_responses]
-
-    print(mock_responses)
     mock_async_client.chat.completions.create.side_effect = mock_responses
 
     llm_chat = ChatOpenAI(model="fake-model", openai_api_key="fake-key")
 
-    mock_tool1 = mk_mock_langchain_tool(["lizards", "frogs"])
-    mock_tool2 = mk_mock_langchain_tool(["snakes", "turtles"])
+    mock_tool1 = mk_mock_langchain_tool(["lizard", "frog"])
+    mock_tool2 = mk_mock_langchain_tool(["Tuesday", "Thursday"])
 
     tools = [
         Tool(name="Tool1",
@@ -100,9 +102,4 @@ def test_execute_tools(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
                              return_intermediate_steps=False)
 
     node = LangChainAgentNode(agent_executor=agent)
-    try:
-        print(execute_node(node, input="input1"))
-    except Exception as e:
-        print(e)
-
-    print(mock_async_client.chat.completions.create.mock_calls)
+    assert execute_node(node, input="input1") == "Yes!"

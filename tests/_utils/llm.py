@@ -104,7 +104,18 @@ def mk_mock_langchain_tool(responses: list[str]) -> mock.MagicMock:
     """
     Creates a mocked LangChainTestTool with the given responses.
     """
+
+    # Langchain will call inspect.signature on the tool methods, typically mock objects don't have a signature,
+    # explicitly providing one here
+    async def _arun_spec(*args, **kwargs):
+        pass
+
+    def run_spec(*args, **kwargs):
+        pass
+
     tool = mock.MagicMock()
-    tool.arun = mock.AsyncMock(side_effect=responses)
+    tool.arun = mock.create_autospec(spec=_arun_spec)
+    tool.arun.side_effect = responses
+    tool.run = mock.create_autospec(run_spec)
     tool.run.side_effect = responses
     return tool
