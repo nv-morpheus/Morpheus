@@ -734,8 +734,8 @@ class TritonInferenceStage(InferenceStage):
             output_mapping_.update(output_mapping)
 
         self._kwargs = {
-            "model_name": model_name,
             "server_url": server_url,
+            "model_name": model_name,
             "force_convert_inputs": force_convert_inputs,
             "use_shared_memory": use_shared_memory,
             "input_mapping": input_mapping_,

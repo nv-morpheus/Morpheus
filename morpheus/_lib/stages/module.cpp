@@ -137,8 +137,8 @@ PYBIND11_MODULE(stages, _module)
         .def(py::init<>(&InferenceClientStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("model_name"),
              py::arg("server_url"),
+             py::arg("model_name"),
              py::arg("needs_logits"),
              py::arg("input_mapping") = py::dict(),
              py::arg("output_mapping") = py::dict());

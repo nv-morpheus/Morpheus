@@ -63,8 +63,7 @@ class ITritonClient
 };
 
 class HttpTritonClient : public ITritonClient
-{
-};
+{};
 
 struct TritonInferenceClient
 {
@@ -107,15 +106,15 @@ class InferenceClientStage
     /**
      * @brief Construct a new Inference Client Stage object
      *
+     * @param server_url : Triton server URL.
      * @param model_name : Name of the model specifies which model can handle the inference requests that are sent to
      * Triton inference
-     * @param server_url : Triton server URL.
      * @param needs_logits : Determines if logits are required.
      * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this
      * if the Morpheus names do not match the model.
      */
-    InferenceClientStage(std::string model_name,
-                         std::string server_url,
+    InferenceClientStage(std::string server_url,
+                         std::string model_name,
                          bool needs_logits,
                          std::map<std::string, std::string> input_mapping  = {},
                          std::map<std::string, std::string> output_mapping = {});

@@ -385,7 +385,8 @@ std::map<std::string, std::string> TritonInferenceClient::get_output_mappings(
         mappings[override.first] = override.second;
     }
 
-    return mappings;}
+    return mappings;
+}
 
 mrc::coroutines::Task<TensorMap> TritonInferenceClient::infer(TensorMap&& inputs)
 {
@@ -502,8 +503,8 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClient::infer(TensorMap&& inputs
 
 // Component public implementations
 // ************ InferenceClientStage ************************* //
-InferenceClientStage::InferenceClientStage(std::string model_name,
-                                           std::string server_url,
+InferenceClientStage::InferenceClientStage(std::string server_url,
+                                           std::string model_name,
                                            bool needs_logits,
                                            std::map<std::string, std::string> input_mapping,
                                            std::map<std::string, std::string> output_mapping) :
@@ -667,18 +668,14 @@ bool InferenceClientStage::is_default_grpc_port(std::string& server_url)
 std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
     mrc::segment::Builder& builder,
     const std::string& name,
-    std::string model_name,
     std::string server_url,
+    std::string model_name,
     bool needs_logits,
     std::map<std::string, std::string> input_mapping,
     std::map<std::string, std::string> output_mapping)
 {
-    auto stage = builder.construct_object<InferenceClientStage>(name,
-                                                                model_name,
-                                                                server_url,
-                                                                needs_logits,
-                                                                input_mapping,
-                                                                output_mapping);
+    auto stage = builder.construct_object<InferenceClientStage>(
+        name, server_url, model_name, needs_logits, input_mapping, output_mapping);
 
     return stage;
 }

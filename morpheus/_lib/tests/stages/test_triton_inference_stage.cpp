@@ -10,62 +10,62 @@
 
 #include <iostream>
 
-// class FakeTritonClient : public morpheus::ITritonClient
-// {
-//   public:
-//     triton::client::Error is_server_live(bool* live) override
-//     {
-//         *live = true;
+class FakeTritonClient : public morpheus::ITritonClient
+{
+  public:
+    triton::client::Error is_server_live(bool* live) override
+    {
+        *live = true;
 
-//         return triton::client::Error::Success;
-//     }
+        return triton::client::Error::Success;
+    }
 
-//     triton::client::Error is_server_ready(bool* ready) override
-//     {
-//         *ready = true;
+    triton::client::Error is_server_ready(bool* ready) override
+    {
+        *ready = true;
 
-//         return triton::client::Error::Success;
-//     }
+        return triton::client::Error::Success;
+    }
 
-//     triton::client::Error is_model_ready(bool* ready, std::string& model_name) override
-//     {
-//         *ready = true;
+    triton::client::Error is_model_ready(bool* ready, std::string& model_name) override
+    {
+        *ready = true;
 
-//         return triton::client::Error::Success;
-//     }
+        return triton::client::Error::Success;
+    }
 
-//     triton::client::Error model_config(std::string* model_config, std::string& model_name) override
-//     {
-//         *model_config = "{}";
+    triton::client::Error model_config(std::string* model_config, std::string& model_name) override
+    {
+        *model_config = "{}";
 
-//         return triton::client::Error::Success;
-//     }
+        return triton::client::Error::Success;
+    }
 
-//     triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) override
-//     {
-//         *model_metadata = "{}";
+    triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) override
+    {
+        *model_metadata = "{}";
 
-//         return triton::client::Error::Success;
-//     }
+        return triton::client::Error::Success;
+    }
 
-//     triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
-//                                       const triton::client::InferOptions& options,
-//                                       const std::vector<triton::client::InferInput*>& inputs,
-//                                       const std::vector<const triton::client::InferRequestedOutput*>& outputs =
-//                                           std::vector<const triton::client::InferRequestedOutput*>()) override
-//     {
-//         return triton::client::Error::Success;
-//     }
-// };
+    triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
+                                      const triton::client::InferOptions& options,
+                                      const std::vector<triton::client::InferInput*>& inputs,
+                                      const std::vector<const triton::client::InferRequestedOutput*>& outputs =
+                                          std::vector<const triton::client::InferRequestedOutput*>()) override
+    {
+        return triton::client::Error::Success;
+    }
+};
 
 class TestTritonInferenceStage : public ::testing::Test
 {};
 
 TEST_F(TestTritonInferenceStage, OnData)
 {
-    // auto create_client = []() -> std::unique_ptr<morpheus::ITritonClient> {
-    //     return std::make_unique<FakeTritonClient>();
-    // };
+    auto create_client = []() -> std::unique_ptr<morpheus::ITritonClient> {
+        return std::make_unique<FakeTritonClient>();
+    };
 
     auto stage = morpheus::InferenceClientStage("", "", false, {}, {});
 
