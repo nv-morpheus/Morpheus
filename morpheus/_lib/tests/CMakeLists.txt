@@ -160,4 +160,10 @@ add_morpheus_test(
     test_type_util.cpp
 )
 
+add_morpheus_test(
+  NAME triton_inference_stage
+  FILES
+    stages/test_triton_inference_stage.cpp
+)
+
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

@@ -47,6 +47,29 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceClientStage********************************/
 
+class ITritonClient
+{
+  public:
+    virtual triton::client::Error is_server_live(bool* live)                                                  = 0;
+    virtual triton::client::Error is_server_ready(bool* ready)                                                = 0;
+    virtual triton::client::Error is_model_ready(bool* ready, std::string& model_name)                        = 0;
+    virtual triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name)        = 0;
+    virtual triton::client::Error model_config(std::string* model_config, std::string& model_name)            = 0;
+    virtual triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
+                                              const triton::client::InferOptions& options,
+                                              const std::vector<triton::client::InferInput*>& inputs,
+                                              const std::vector<const triton::client::InferRequestedOutput*>& outputs =
+                                                  std::vector<const triton::client::InferRequestedOutput*>()) = 0;
+};
+
+class HttpTritonClient : public ITritonClient
+{
+};
+
+class FakeTritonClient : public ITritonClient
+{
+};
+
 struct TritonInferenceClient
 {
   private:
@@ -112,15 +135,15 @@ class InferenceClientStage
      */
     static bool is_default_grpc_port(std::string& server_url);
 
-  private:
-    std::shared_ptr<TritonInferenceClient> get_client();
-    void reset_client();
-
     /**
      * TODO(Documentation)
      */
     mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> on_data(
         std::shared_ptr<MultiInferenceMessage>&& data, std::shared_ptr<mrc::coroutines::Scheduler> on) override;
+
+  private:
+    std::shared_ptr<TritonInferenceClient> get_client();
+    void reset_client();
 
     std::string m_model_name;
     std::string m_server_url;
