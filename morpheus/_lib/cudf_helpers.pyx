@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import cudf
-from cudf.api.types import is_struct_dtype
 from cudf.core.dtypes import StructDtype
 
 from libcpp.string cimport string
