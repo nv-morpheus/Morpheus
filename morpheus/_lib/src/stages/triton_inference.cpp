@@ -221,8 +221,6 @@ TritonInferenceClient::TritonInferenceClient(std::unique_ptr<ITritonClient> clie
         m_max_batch_size = model_config.at("max_batch_size").get<TensorIndex>();
     }
 
-    std::cout << "CHECK INPUTS" << std::endl;
-
     for (auto const& input : model_metadata.at("inputs"))
     {
         auto shape = input.at("shape").get<ShapeType>();
@@ -251,8 +249,6 @@ TritonInferenceClient::TritonInferenceClient(std::unique_ptr<ITritonClient> clie
                                              0});
     }
 
-    std::cout << "CHECK OUTPUTS" << std::endl;
-
     for (auto const& output : model_metadata.at("outputs"))
     {
         auto shape = output.at("shape").get<ShapeType>();
@@ -280,14 +276,10 @@ std::map<std::string, std::string> TritonInferenceClient::get_input_mappings(
 {
     auto mappings = std::map<std::string, std::string>();
 
-    std::cout << "GOT HERE 0" << std::endl;
-
     for (auto map : m_model_inputs)
     {
         mappings[map.name] = map.name;
     }
-
-    std::cout << "GOT HERE 1" << std::endl;
 
     for (auto override : input_map_overrides)
     {
@@ -548,23 +540,15 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
                 input_tensors[mapping.second].swap(x->get_input(mapping.first));
             }
 
-            std::cout << "GOT HERE A" << std::endl;
-
             // TODO(cwharris): Break inference in to batches and attempt retries on per-batch basis.
             auto output_tensors = co_await client->infer(std::move(input_tensors));
 
-            std::cout << "GOT HERE B" << std::endl;
-
             co_await on->yield();
-
-            std::cout << "GOT HERE C" << std::endl;
 
             if (x->mess_count != x->count)
             {
                 reduce_outputs(x, output_tensors);
             }
-
-            std::cout << "GOT HERE D" << std::endl;
 
             // If we need to do logits, do that here
             if (m_needs_logits)
@@ -572,17 +556,12 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
                 apply_logits(output_tensors);
             }
 
-            std::cout << "GOT HERE E" << std::endl;
-
             TensorMap output_tensor_map;
 
             for (auto mapping : client->get_output_mappings(m_output_mapping))
             {
                 output_tensor_map[mapping.second].swap(std::move(output_tensors[mapping.first]));
             }
-
-
-            std::cout << "GOT HERE F" << std::endl;
 
             // Final output of all mini-batches
             auto response_mem = std::make_shared<ResponseMemory>(x->mess_count, std::move(output_tensor_map));
