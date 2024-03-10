@@ -33,50 +33,51 @@
 
 class FakeInferResult : public triton::client::InferResult
 {
+  public:
     triton::client::Error RequestStatus() const override
     {
-        throw std::runtime_error("not implemented");
+        throw std::runtime_error("RequestStatus not implemented");
     }
 
     std::string DebugString() const override
     {
-        throw std::runtime_error("not implemented");
+        throw std::runtime_error("DebugString not implemented");
     }
 
     triton::client::Error Id(std::string* id) const override
     {
-        throw std::runtime_error("not implemented");
+        throw std::runtime_error("Id not implemented");
     }
 
     triton::client::Error ModelName(std::string* name) const override
     {
-        throw std::runtime_error("not implemented");
+        throw std::runtime_error("ModelName not implemented");
     }
 
     triton::client::Error ModelVersion(std::string* version) const override
     {
-        throw std::runtime_error("not implemented");
+        throw std::runtime_error("ModelVersion not implemented");
     }
 
     triton::client::Error Shape(const std::string& output_name, std::vector<int64_t>* shape) const override
     {
-        throw std::runtime_error("not implemented");
+        throw std::runtime_error("ModelVersion not implemented");
     }
 
     triton::client::Error Datatype(const std::string& output_name, std::string* datatype) const override
     {
-        throw std::runtime_error("not implemented");
+        throw std::runtime_error("Datatype not implemented");
     }
 
     triton::client::Error StringData(const std::string& output_name,
                                      std::vector<std::string>* string_result) const override
     {
-        throw std::runtime_error("not implemented");
+        throw std::runtime_error("StringData not implemented");
     }
 
     triton::client::Error RawData(const std::string& output_name, const uint8_t** buf, size_t* byte_size) const override
     {
-        throw std::runtime_error("not implemented");
+        throw std::runtime_error("RawData not implemented");
     }
 };
 

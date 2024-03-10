@@ -412,9 +412,7 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClient::infer(TensorMap&& inputs
 
         for (auto model_output : m_model_outputs)
         {
-            std::cout << "capturing output: " << model_output.name << std::endl;
             auto output_tensor = output_tensors[model_output.name].slice({start, 0}, {stop, -1});
-            std::cout << "capturing output: " << model_output.name << std::endl;
 
             std::vector<int64_t> output_shape;
 
