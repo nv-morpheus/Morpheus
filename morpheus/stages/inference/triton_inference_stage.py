@@ -743,6 +743,14 @@ class TritonInferenceStage(InferenceStage):
             "needs_logits": needs_logits
         }
 
+        self._server_url = server_url
+        self._model_name = model_name
+        self._force_conver_inputs = force_convert_inputs
+        self._use_shared_memory = use_shared_memory
+        self._input_mapping = input_mapping_
+        self._output_mapping = output_mapping_
+        self._needs_logits = needs_logits
+
     def supports_cpp_node(self) -> bool:
         # Get the value from the worker class
         return TritonInferenceWorker.supports_cpp_node()
@@ -756,4 +764,12 @@ class TritonInferenceStage(InferenceStage):
         return TritonInferenceWorker(inf_queue=inf_queue, c=self._config, **self._kwargs)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return _stages.InferenceClientStage(builder, name=self.unique_name, **self._kwargs)
+        return _stages.InferenceClientStage(
+            builder,
+            self.unique_name,
+            self._server_url,
+            self._model_name,
+            self._needs_logits,
+            self._input_mapping,
+            self._output_mapping
+        )

@@ -9,6 +9,7 @@
 #include <mrc/coroutines/test_scheduler.hpp>
 
 #include <iostream>
+#include <memory>
 
 class FakeTritonClient : public morpheus::ITritonClient
 {
@@ -63,11 +64,11 @@ class TestTritonInferenceStage : public ::testing::Test
 
 TEST_F(TestTritonInferenceStage, OnData)
 {
-    auto create_client = []() -> std::unique_ptr<morpheus::ITritonClient> {
+    auto create_client = []() {
         return std::make_unique<FakeTritonClient>();
     };
 
-    auto stage = morpheus::InferenceClientStage("", "", false, {}, {});
+    auto stage = morpheus::InferenceClientStage(create_client, "", false, {}, {});
 
     auto on = std::make_shared<mrc::coroutines::TestScheduler>();
 
