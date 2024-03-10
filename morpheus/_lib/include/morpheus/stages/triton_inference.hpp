@@ -202,10 +202,10 @@ struct TritonInferenceClient
     TensorIndex m_max_batch_size = -1;
     std::vector<TritonInOut> m_model_inputs;
     std::vector<TritonInOut> m_model_outputs;
-    std::unique_ptr<ITritonClient> m_client;
+    std::shared_ptr<ITritonClient> m_client;
 
   public:
-    TritonInferenceClient(std::unique_ptr<ITritonClient> client, std::string model_name);
+    TritonInferenceClient(std::shared_ptr<ITritonClient> client, std::string model_name);
 
     std::map<std::string, std::string> get_input_mappings(std::map<std::string, std::string> input_map_overrides);
 
@@ -242,7 +242,7 @@ class InferenceClientStage
      * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this
      * if the Morpheus names do not match the model.
      */
-    InferenceClientStage(std::function<std::unique_ptr<ITritonClient>()> create_client,
+    InferenceClientStage(std::function<std::shared_ptr<ITritonClient>()> create_client,
                          std::string model_name,
                          bool needs_logits,
                          std::map<std::string, std::string> input_mapping  = {},
@@ -264,7 +264,7 @@ class InferenceClientStage
     void reset_client();
 
     std::string m_model_name;
-    std::function<std::unique_ptr<ITritonClient>()> m_create_client;
+    std::function<std::shared_ptr<ITritonClient>()> m_create_client;
     bool m_needs_logits{true};
     std::map<std::string, std::string> m_input_mapping;
     std::map<std::string, std::string> m_output_mapping;

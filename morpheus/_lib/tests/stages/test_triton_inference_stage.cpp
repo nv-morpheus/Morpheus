@@ -124,11 +124,17 @@ class FakeTritonClient : public morpheus::ITritonClient
             "inputs":[
                 {
                     "name":"seq_ids",
-                    "shape": [0],
+                    "shape": [0, 1],
                     "datatype":"INT32"
                 }
             ],
-            "outputs":[]})";
+            "outputs":[
+                {
+                    "name":"seq_ids",
+                    "shape": [0, 1],
+                    "datatype":"INT32"
+                }
+            ]})";
 
         return triton::client::Error::Success;
     }
@@ -159,8 +165,6 @@ class TestTritonInferenceStage : public morpheus::test::TestWithPythonInterprete
         }
     }
 };
-
-#include <cudf/column/column_factories.hpp>
 
 cudf::io::table_with_metadata create_test_table_with_metadata(uint32_t rows)
 {
@@ -200,7 +204,7 @@ TEST_F(TestTritonInferenceStage, SingleRow)
     const std::size_t count = 10;
     const auto dtype        = morpheus::DType::create<int>();
     auto buffer = std::make_shared<rmm::device_buffer>(count * dtype.item_size(), rmm::cuda_stream_per_thread);
-    std::vector<int> seq_ids({0,1,2,3,4,5,6,7,8,9});
+    std::vector<int> seq_ids({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
     cudaMemcpy(buffer->data(), seq_ids.data(), count * sizeof(int), cudaMemcpyKind::cudaMemcpyHostToDevice);
     auto tensors = morpheus::TensorMap();
     tensors["seq_ids"].swap(morpheus::Tensor::create(buffer, dtype, {count, 1}, {}));
