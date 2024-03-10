@@ -74,12 +74,11 @@ using buffer_map_t = std::map<std::string, std::shared_ptr<rmm::device_buffer>>;
 
 ShapeType get_seq_ids(const InferenceClientStage::sink_type_t& message)
 {
-
     std::cout << "GOT HERE C.0" << std::endl;
     // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
     // The output tensors we store in `reponse_memory` will all be of the same length as the the
     // dataframe. seq_ids has three columns, but we are only interested in the first column.
-    auto seq_ids         = message->get_input("seq_ids");
+    auto seq_ids = message->get_input("seq_ids");
     std::cout << "GOT HERE C.1" << std::endl;
     const auto item_size = seq_ids.dtype().item_size();
     std::cout << "GOT HERE C.2" << std::endl;
@@ -145,7 +144,7 @@ void apply_logits(TensorMap& output_tensors)
 
 struct TritonInferOperation
 {
-    constexpr bool await_ready() const noexcept
+    bool await_ready() const noexcept
     {
         return false;
     }
@@ -154,12 +153,15 @@ struct TritonInferOperation
     {
         CHECK_TRITON(m_client.async_infer(
             [this, handle](triton::client::InferResult* result) {
+                std::cout << "infer callback called" << std::endl;
                 m_result.reset(result);
                 handle();
             },
             m_options,
             m_inputs,
             m_outputs));
+
+        std::cout << "await_suspend" << std::endl;
     }
 
     std::unique_ptr<triton::client::InferResult> await_resume()
@@ -329,9 +331,12 @@ std::map<std::string, std::string> TritonInferenceClient::get_output_mappings(
 
 mrc::coroutines::Task<TensorMap> TritonInferenceClient::infer(TensorMap&& inputs)
 {
-    if (inputs.size() == 0) {
+    std::cout << "infer" << std::endl;
+    if (inputs.size() == 0)
+    {
         co_return inputs;
     }
+    std::cout << "infer go" << std::endl;
 
     CHECK_EQ(inputs.size(), m_model_inputs.size()) << "Input tensor count does not match model input count";
 
@@ -543,7 +548,11 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
             // TODO(cwharris): Break inference in to batches and attempt retries on per-batch basis.
             auto output_tensors = co_await client->infer(std::move(input_tensors));
 
+            std::cout << "yield" << std::endl;
+
             co_await on->yield();
+
+            std::cout << "yielded" << std::endl;
 
             if (x->mess_count != x->count)
             {
