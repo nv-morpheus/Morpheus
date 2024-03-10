@@ -37,14 +37,14 @@ class FakeTritonClient : public morpheus::ITritonClient
 
     triton::client::Error model_config(std::string* model_config, std::string& model_name) override
     {
-        *model_config = "{}";
+        *model_config = R"({})";
 
         return triton::client::Error::Success;
     }
 
     triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) override
     {
-        *model_metadata = "{}";
+        *model_metadata = R"({"inputs":[],"outputs":[]})";
 
         return triton::client::Error::Success;
     }

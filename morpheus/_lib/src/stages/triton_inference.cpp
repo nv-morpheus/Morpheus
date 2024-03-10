@@ -74,11 +74,15 @@ using buffer_map_t = std::map<std::string, std::shared_ptr<rmm::device_buffer>>;
 
 ShapeType get_seq_ids(const InferenceClientStage::sink_type_t& message)
 {
+
+    std::cout << "GOT HERE C.0" << std::endl;
     // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
     // The output tensors we store in `reponse_memory` will all be of the same length as the the
     // dataframe. seq_ids has three columns, but we are only interested in the first column.
     auto seq_ids         = message->get_input("seq_ids");
+    std::cout << "GOT HERE C.1" << std::endl;
     const auto item_size = seq_ids.dtype().item_size();
+    std::cout << "GOT HERE C.2" << std::endl;
 
     ShapeType host_seq_ids(message->count);
     MRC_CHECK_CUDA(cudaMemcpy2D(host_seq_ids.data(),
@@ -175,7 +179,7 @@ struct TritonInferOperation
 namespace morpheus {
 
 TritonInferenceClient::TritonInferenceClient(std::unique_ptr<ITritonClient> client, std::string model_name) :
-    m_client(std::move(client)),
+  m_client(std::move(client)),
   m_model_name(std::move(model_name))
 {
     // Now load the input/outputs for the model
@@ -217,6 +221,8 @@ TritonInferenceClient::TritonInferenceClient(std::unique_ptr<ITritonClient> clie
         m_max_batch_size = model_config.at("max_batch_size").get<TensorIndex>();
     }
 
+    std::cout << "CHECK INPUTS" << std::endl;
+
     for (auto const& input : model_metadata.at("inputs"))
     {
         auto shape = input.at("shape").get<ShapeType>();
@@ -245,6 +251,8 @@ TritonInferenceClient::TritonInferenceClient(std::unique_ptr<ITritonClient> clie
                                              0});
     }
 
+    std::cout << "CHECK OUTPUTS" << std::endl;
+
     for (auto const& output : model_metadata.at("outputs"))
     {
         auto shape = output.at("shape").get<ShapeType>();
@@ -272,10 +280,14 @@ std::map<std::string, std::string> TritonInferenceClient::get_input_mappings(
 {
     auto mappings = std::map<std::string, std::string>();
 
+    std::cout << "GOT HERE 0" << std::endl;
+
     for (auto map : m_model_inputs)
     {
         mappings[map.name] = map.name;
     }
+
+    std::cout << "GOT HERE 1" << std::endl;
 
     for (auto override : input_map_overrides)
     {
@@ -325,6 +337,10 @@ std::map<std::string, std::string> TritonInferenceClient::get_output_mappings(
 
 mrc::coroutines::Task<TensorMap> TritonInferenceClient::infer(TensorMap&& inputs)
 {
+    if (inputs.size() == 0) {
+        co_return inputs;
+    }
+
     CHECK_EQ(inputs.size(), m_model_inputs.size()) << "Input tensor count does not match model input count";
 
     auto element_count = inputs.begin()->second.shape(0);
@@ -459,11 +475,7 @@ std::shared_ptr<TritonInferenceClient> InferenceClientStage::get_client()
         return m_client;
     }
 
-    std::cout << "GOT HERE 0" << std::endl;
-
     auto client = m_create_client();
-
-    std::cout << "GOT HERE 1" << std::endl;
 
     m_client = std::make_shared<TritonInferenceClient>(std::move(client), m_model_name);
 
@@ -536,15 +548,23 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
                 input_tensors[mapping.second].swap(x->get_input(mapping.first));
             }
 
+            std::cout << "GOT HERE A" << std::endl;
+
             // TODO(cwharris): Break inference in to batches and attempt retries on per-batch basis.
             auto output_tensors = co_await client->infer(std::move(input_tensors));
 
+            std::cout << "GOT HERE B" << std::endl;
+
             co_await on->yield();
+
+            std::cout << "GOT HERE C" << std::endl;
 
             if (x->mess_count != x->count)
             {
                 reduce_outputs(x, output_tensors);
             }
+
+            std::cout << "GOT HERE D" << std::endl;
 
             // If we need to do logits, do that here
             if (m_needs_logits)
@@ -552,12 +572,17 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
                 apply_logits(output_tensors);
             }
 
+            std::cout << "GOT HERE E" << std::endl;
+
             TensorMap output_tensor_map;
 
             for (auto mapping : client->get_output_mappings(m_output_mapping))
             {
                 output_tensor_map[mapping.second].swap(std::move(output_tensors[mapping.first]));
             }
+
+
+            std::cout << "GOT HERE F" << std::endl;
 
             // Final output of all mini-batches
             auto response_mem = std::make_shared<ResponseMemory>(x->mess_count, std::move(output_tensor_map));
@@ -567,7 +592,7 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
             co_yield std::move(response);
             co_return;
 
-        } catch (std::exception ex)
+        } catch (...)
         {
             this->reset_client();
 
@@ -576,7 +601,7 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
                 throw;
             }
 
-            LOG(WARNING) << "Exception during triton inference, attempting retry: " << ex.what();
+            LOG(WARNING) << "Exception while processing message for InferenceClientStage, attempting retry.";
         }
 
         co_await backoff.yield();
@@ -593,7 +618,7 @@ std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStage
     std::map<std::string, std::string> input_mapping,
     std::map<std::string, std::string> output_mapping)
 {
-    auto create_client = [server_url](){
+    auto create_client = [server_url]() {
         return std::make_unique<HttpTritonClient>(server_url);
     };
 
