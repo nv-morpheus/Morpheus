@@ -28,7 +28,9 @@ dependencies:
 - python=3.10
 - pytorch-cuda
 - pytorch=*=*cuda*
+- requests
 - requests-cache=1.1
+- requests-toolbelt
 - scikit-learn=1.3.2
 - sqlalchemy
 - tqdm=4
