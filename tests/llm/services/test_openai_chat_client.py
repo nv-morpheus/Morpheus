@@ -61,14 +61,14 @@ def test_generate(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
                               set_assistant=set_assistant,
                               temperature=temperature)
     if use_async:
-        results = asyncio.run(client.generate_async(input_dict))
+        results = asyncio.run(client.generate_async(**input_dict))
         mock_async_client.chat.completions.create.assert_called_once_with(model="test_model",
                                                                           messages=expected_messages,
                                                                           temperature=temperature)
         mock_client.chat.completions.create.assert_not_called()
 
     else:
-        results = client.generate(input_dict)
+        results = client.generate(**input_dict)
         mock_client.chat.completions.create.assert_called_once_with(model="test_model",
                                                                     messages=expected_messages,
                                                                     temperature=temperature)
