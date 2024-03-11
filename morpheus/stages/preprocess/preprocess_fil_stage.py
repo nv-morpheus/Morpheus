@@ -17,6 +17,7 @@ import typing
 from functools import partial
 
 import cupy as cp
+from morpheus._lib.messages import ControlMessage
 import mrc
 import numpy as np
 import pandas as pd
@@ -24,6 +25,7 @@ import pandas as pd
 import cudf
 
 import morpheus._lib.stages as _stages
+from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -47,7 +49,6 @@ class PreprocessFILStage(PreprocessBaseStage):
         Pipeline configuration instance.
 
     """
-
     def __init__(self, c: Config):
         super().__init__(c)
 
@@ -89,6 +90,83 @@ class PreprocessFILStage(PreprocessBaseStage):
             df = x.get_meta(fea_cols)
         except KeyError:
             logger.exception("Cound not get metadat for columns.")
+            return None
+
+        # Extract just the numbers from each feature col. Not great to operate on x.meta.df here but the operations will
+        # only happen once.
+        for col in fea_cols:
+            if (df[col].dtype == np.dtype(str) or df[col].dtype == np.dtype(object)):
+                # If the column is a string, parse the number
+                df[col] = df[col].str.extract(r"(\d+)", expand=False).astype("float32")
+            elif (df[col].dtype != np.float32):
+                # Convert to float32
+                df[col] = df[col].astype("float32")
+
+        if (isinstance(df, pd.DataFrame)):
+            df = cudf.from_pandas(df)
+
+        # Convert the dataframe to cupy the same way cuml does
+        data = cp.asarray(df.to_cupy())
+
+        count = data.shape[0]
+
+        seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
+        seg_ids[:, 2] = fea_len - 1
+
+        # Create the inference memory. Keep in mind count here could be > than input count
+        memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seg_ids)
+
+        infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
+
+        return infer_message
+
+    @staticmethod
+    def process_control_message(x: ControlMessage, fea_len: int, fea_cols: typing.List[str]) -> ControlMessage:
+        with x.payload().mutable_dataframe() as df:
+            try:
+                fea_cols_indexer = df.columns.get_indexer(fea_cols)
+                if (-1 in fea_cols_indexer):
+                    missing_columns = [
+                        fea_cols[i] for i, index_value in enumerate(fea_cols_indexer) if index_value == -1
+                    ]
+                    raise KeyError(f"Requested columns {missing_columns} does not exist in the dataframe")
+                df = df.iloc[:, fea_cols_indexer]
+            except KeyError:
+                logger.exception("Cound not get metadata for columns.")
+                return None
+
+        # Extract just the numbers from each feature col. Not great to operate on x.meta.df here but the operations will
+        # only happen once.
+        for col in fea_cols:
+            if (df[col].dtype == np.dtype(str) or df[col].dtype == np.dtype(object)):
+                # If the column is a string, parse the number
+                df[col] = df[col].str.extract(r"(\d+)", expand=False).astype("float32")
+            elif (df[col].dtype != np.float32):
+                # Convert to float32
+                df[col] = df[col].astype("float32")
+
+        if (isinstance(df, pd.DataFrame)):
+            df = cudf.from_pandas(df)
+
+        # Convert the dataframe to cupy the same way cuml does
+        data = cp.asarray(df.to_cupy())
+
+        count = data.shape[0]
+
+        seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
+        seg_ids[:, 2] = fea_len - 1
+
+        x.tensors(CppTensorMemory(count=count, tensors={"input__0": data, "seq_ids": seg_ids}))
+        return x
+
+    @staticmethod
+    def process_multi_message(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
+        try:
+            df = x.get_meta(fea_cols)
+        except KeyError:
+            logger.exception("Cound not get metadata for columns.")
             return None
 
         # Extract just the numbers from each feature col. Not great to operate on x.meta.df here but the operations will
