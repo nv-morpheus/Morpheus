@@ -77,7 +77,7 @@ ShapeType get_seq_ids(const InferenceClientStage::sink_type_t& message)
     // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
     // The output tensors we store in `reponse_memory` will all be of the same length as the the
     // dataframe. seq_ids has three columns, but we are only interested in the first column.
-    auto seq_ids = message->get_input("seq_ids");
+    auto seq_ids         = message->get_input("seq_ids");
     const auto item_size = seq_ids.dtype().item_size();
 
     ShapeType host_seq_ids(message->count);
@@ -165,8 +165,8 @@ struct TritonInferOperation
 
     ITritonClient& m_client;
     triton::client::InferOptions const& m_options;
-    std::vector<triton::client::InferInput*> const& m_inputs;
-    std::vector<triton::client::InferRequestedOutput const*> const& m_outputs;
+    std::vector<TritonInferInput> const& m_inputs;
+    std::vector<TritonInferRequestedOutput> const& m_outputs;
     std::unique_ptr<triton::client::InferResult> m_result;
 };
 
@@ -181,7 +181,7 @@ TritonInferenceClient::TritonInferenceClient(std::shared_ptr<ITritonClient> clie
     // Now load the input/outputs for the model
     bool is_server_live = false;
 
-    triton::client::Error status = m_client->is_server_live(&is_server_live);
+    CHECK_TRITON(m_client->is_server_live(&is_server_live));
 
     if (not is_server_live)
     {
@@ -191,7 +191,7 @@ TritonInferenceClient::TritonInferenceClient(std::shared_ptr<ITritonClient> clie
     bool is_server_ready = false;
     CHECK_TRITON(m_client->is_server_ready(&is_server_ready));
 
-    if (!is_server_ready)
+    if (not is_server_ready)
     {
         throw std::runtime_error("Server is not ready");
     }
@@ -199,7 +199,7 @@ TritonInferenceClient::TritonInferenceClient(std::shared_ptr<ITritonClient> clie
     bool is_model_ready = false;
     CHECK_TRITON(m_client->is_model_ready(&is_model_ready, this->m_model_name));
 
-    if (!is_model_ready)
+    if (not is_model_ready)
         throw std::runtime_error("Model is not ready");
 
     std::string model_metadata_json;
@@ -366,47 +366,34 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClient::infer(TensorMap&& inputs
 
         // create batch inputs
 
-        std::vector<std::shared_ptr<triton::client::InferInput>> inference_input_owners;
-        std::vector<triton::client::InferInput*> inference_input_ptrs;
+        std::vector<TritonInferInput> inference_inputs;
 
         for (auto model_input : m_model_inputs)
         {
-            auto& inference_input = inputs[model_input.name];
+            auto inference_input_slice =
+                inputs[model_input.name].slice({start, 0}, {stop, -1}).as_type(model_input.datatype);
 
-            auto inference_input_slice = inference_input.slice({start, 0}, {stop, -1}).as_type(model_input.datatype);
-
-            triton::client::InferInput* inference_input_ptr;
-
-            triton::client::InferInput::Create(&inference_input_ptr,
-                                               model_input.name,
-                                               {inference_input_slice.shape(0), inference_input_slice.shape(1)},
-                                               model_input.datatype.triton_str());
-
-            inference_input_ptr->AppendRaw(inference_input_slice.get_host_data());
-
-            inference_input_owners.emplace_back(inference_input_ptr);
-            inference_input_ptrs.emplace_back(inference_input_ptr);
+            inference_inputs.emplace_back(
+                TritonInferInput{model_input.name,
+                                 {inference_input_slice.shape(0), inference_input_slice.shape(1)},
+                                 model_input.datatype.triton_str(),
+                                 inference_input_slice.get_host_data()});
         }
 
         // create batch outputs
 
-        std::vector<std::shared_ptr<triton::client::InferRequestedOutput>> inference_output_owners;
-        std::vector<triton::client::InferRequestedOutput const*> inference_output_ptrs;
+        std::vector<TritonInferRequestedOutput> outputs;
 
         for (auto model_output : m_model_outputs)
         {
-            triton::client::InferRequestedOutput* output_ptr;
-            triton::client::InferRequestedOutput::Create(&output_ptr, model_output.name);
-
-            inference_output_ptrs.emplace_back(output_ptr);
-            inference_output_owners.emplace_back(output_ptr);
+            outputs.emplace_back(TritonInferRequestedOutput{model_output.name});
         }
 
         // infer batch results
 
         auto options = triton::client::InferOptions(m_model_name);
 
-        auto results = co_await TritonInferOperation(*m_client, options, inference_input_ptrs, inference_output_ptrs);
+        auto results = co_await TritonInferOperation(*m_client, options, inference_inputs, outputs);
 
         // verify batch results and copy to full output tensors
 
@@ -560,10 +547,12 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
 
             // Final output of all mini-batches
             auto response_mem = std::make_shared<ResponseMemory>(x->mess_count, std::move(output_tensor_map));
-            auto response     = std::make_shared<MultiResponseMessage>(
+
+            auto response = std::make_shared<MultiResponseMessage>(
                 x->meta, x->mess_offset, x->mess_count, std::move(response_mem), 0, response_mem->count);
 
             co_yield std::move(response);
+
             co_return;
 
         } catch (...)
@@ -601,4 +590,5 @@ std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStage
 
     return stage;
 }
+
 }  // namespace morpheus

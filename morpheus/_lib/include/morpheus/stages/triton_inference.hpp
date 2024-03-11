@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common.h"
+
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
 #include "morpheus/objects/triton_in_out.hpp"
@@ -69,6 +71,21 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceClientStage********************************/
 
+class TritonInferInput
+{
+  public:
+    std::string name;
+    std::vector<int64_t> shape;
+    std::string type;
+    std::vector<uint8_t> data;
+};
+
+class TritonInferRequestedOutput
+{
+  public:
+    std::string name;
+};
+
 class ITritonClient
 {
   public:
@@ -77,11 +94,10 @@ class ITritonClient
     virtual triton::client::Error is_model_ready(bool* ready, std::string& model_name)                 = 0;
     virtual triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) = 0;
     virtual triton::client::Error model_config(std::string* model_config, std::string& model_name)     = 0;
-    virtual triton::client::Error async_infer(
-        triton::client::InferenceServerHttpClient::OnCompleteFn callback,
-        const triton::client::InferOptions& options,
-        const std::vector<triton::client::InferInput*>& inputs,
-        const std::vector<const triton::client::InferRequestedOutput*>& outputs) = 0;
+    virtual triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
+                                              const triton::client::InferOptions& options,
+                                              const std::vector<TritonInferInput>& inputs,
+                                              const std::vector<TritonInferRequestedOutput>& outputs)  = 0;
 };
 
 class HttpTritonClient : public ITritonClient
@@ -184,10 +200,41 @@ class HttpTritonClient : public ITritonClient
 
     triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
                                       const triton::client::InferOptions& options,
-                                      const std::vector<triton::client::InferInput*>& inputs,
-                                      const std::vector<const triton::client::InferRequestedOutput*>& outputs) override
+                                      const std::vector<TritonInferInput>& inputs,
+                                      const std::vector<TritonInferRequestedOutput>& outputs) override
     {
-        return m_client->AsyncInfer(callback, options, inputs, outputs);
+        std::vector<std::unique_ptr<triton::client::InferInput>> inference_inputs;
+        std::vector<triton::client::InferInput*> inference_input_ptrs;
+
+        for (auto& input : inputs)
+        {
+            triton::client::InferInput* inference_input_ptr;
+            triton::client::InferInput::Create(&inference_input_ptr, input.name, input.shape, input.type);
+
+            inference_input_ptr->AppendRaw(input.data);
+
+            inference_input_ptrs.emplace_back(inference_input_ptr);
+            inference_inputs.emplace_back(inference_input_ptr);
+        }
+
+        std::vector<std::unique_ptr<const triton::client::InferRequestedOutput>> inference_outputs;
+        std::vector<const triton::client::InferRequestedOutput*> inference_output_ptrs;
+
+        for (auto& output : outputs)
+        {
+            triton::client::InferRequestedOutput* inference_output_ptr;
+            triton::client::InferRequestedOutput::Create(&inference_output_ptr, output.name);
+            inference_output_ptrs.emplace_back(inference_output_ptr);
+            inference_outputs.emplace_back(inference_output_ptr);
+        }
+
+        return m_client->AsyncInfer(
+            [&inference_inputs, &inference_outputs, callback](triton::client::InferResult* result) {
+                callback(result);
+            },
+            options,
+            inference_input_ptrs,
+            inference_output_ptrs);
     }
 
   private:
