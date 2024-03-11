@@ -110,7 +110,7 @@ def create_code_embedding(code_dir: str,
 
     parser = LanguageParser(language=Language.PYTHON.value, parser_threshold=500)
 
-    positive_matches = set(code_path.glob("**/*.py"))
+    positive_matches = set(code_path.glob(include))
 
     for exclusion in final_exclusions:
         negative_matches = set(code_path.glob(exclusion))
