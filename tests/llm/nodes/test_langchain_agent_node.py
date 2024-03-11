@@ -68,29 +68,35 @@ def test_execute_tools(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
     # Tests the execute method of the LangChainAgentNode with a a mocked tools and chat completion
     (_, mock_async_client) = mock_chat_completion
     chat_responses = [
+        # Responses for first input
         'I should check Tool1\nAction: Tool1\nAction Input: "name a reptile"',
         'I should check Tool2\nAction: Tool2\nAction Input: "name of a day of the week"',
         'I should check Tool1\nAction: Tool1\nAction Input: "name a reptile"',
         'I should check Tool2\nAction: Tool2\nAction Input: "name of a day of the week"',
-        'Observation: Answer: Yes!\nI now know the final answer.\nFinal Answer: Yes!'
+        'Observation: Answer: Yes!\nI now know the final answer.\nFinal Answer: Yes!',
+
+  # Responses for second input
+        'I should check Tool1\nAction: Tool1\nAction Input: "name a reptile"',
+        'I should check Tool2\nAction: Tool2\nAction Input: "name of a day of the week"',
+        'Observation: Answer: Yes!\nI now know the final answer.\nFinal Answer: No!'
     ]
     mock_responses = [mk_mock_openai_response([response]) for response in chat_responses]
     mock_async_client.chat.completions.create.side_effect = mock_responses
 
     llm_chat = ChatOpenAI(model="fake-model", openai_api_key="fake-key")
 
-    mock_tool1 = mk_mock_langchain_tool(["lizard", "frog"])
-    mock_tool2 = mk_mock_langchain_tool(["Tuesday", "Thursday"])
+    mock_tool1 = mk_mock_langchain_tool(["lizard", "frog", "snake"])
+    mock_tool2 = mk_mock_langchain_tool(["Tuesday", "Thursday", "Saturday"])
 
     tools = [
         Tool(name="Tool1",
              func=mock_tool1.run,
              coroutine=mock_tool1.arun,
-             description="useful for when you need to test"),
+             description="useful for when you need to know the name of a reptile"),
         Tool(name="Tool2",
              func=mock_tool2.run,
              coroutine=mock_tool2.arun,
-             description="useful for when you also need to test")
+             description="useful for when you need to know the day of the week")
     ]
 
     agent = initialize_agent(tools,
@@ -102,4 +108,43 @@ def test_execute_tools(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
                              return_intermediate_steps=False)
 
     node = LangChainAgentNode(agent_executor=agent)
-    assert execute_node(node, input="input1") == "Yes!"
+    assert execute_node(node, input=["input1", "input2"]) == ["Yes!", "No!"]
+
+
+def test_execute_error(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
+    # Tests the execute method of the LangChainAgentNode with a a mocked tools and chat completion
+    (_, mock_async_client) = mock_chat_completion
+    chat_responses = [
+        'I should check Tool1\nAction: Tool1\nAction Input: "name a reptile"',
+        'I should check Tool2\nAction: Tool2\nAction Input: "name of a day of the week"',
+        'Observation: Answer: Yes!\nI now know the final answer.\nFinal Answer: Yes!'
+    ]
+    mock_responses = [mk_mock_openai_response([response]) for response in chat_responses]
+    mock_async_client.chat.completions.create.side_effect = mock_responses
+
+    llm_chat = ChatOpenAI(model="fake-model", openai_api_key="fake-key")
+
+    mock_tool1 = mk_mock_langchain_tool(["lizard"])
+    mock_tool2 = mk_mock_langchain_tool(RuntimeError("unittest"))
+
+    tools = [
+        Tool(name="Tool1",
+             func=mock_tool1.run,
+             coroutine=mock_tool1.arun,
+             description="useful for when you need to know the name of a reptile"),
+        Tool(name="Tool2",
+             func=mock_tool2.run,
+             coroutine=mock_tool2.arun,
+             description="useful for when you need to test tool errors")
+    ]
+
+    agent = initialize_agent(tools,
+                             llm_chat,
+                             agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+                             verbose=True,
+                             handle_parsing_errors=True,
+                             early_stopping_method="generate",
+                             return_intermediate_steps=False)
+
+    node = LangChainAgentNode(agent_executor=agent)
+    assert execute_node(node, input="input1") == "Error running agent: unittest"
