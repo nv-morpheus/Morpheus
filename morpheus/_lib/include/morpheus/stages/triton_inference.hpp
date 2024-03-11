@@ -45,206 +45,70 @@
 #include <thread>
 #include <vector>
 
-/**
- * @brief Checks the status object returned by a Triton client call logging any potential errors.
- *
- */
-#define CHECK_TRITON(method) ::InferenceClientStage__check_triton_errors(method, #method, __FILE__, __LINE__);
-
-// Component-private free functions.
-void InferenceClientStage__check_triton_errors(triton::client::Error status,
-                                               const std::string& methodName,
-                                               const std::string& filename,
-                                               const int& lineNumber)
-{
-    if (!status.IsOk())
-    {
-        std::string err_msg = MORPHEUS_CONCAT_STR("Triton Error while executing '"
-                                                  << methodName << "'. Error: " + status.Message() << "\n"
-                                                  << filename << "(" << lineNumber << ")");
-        LOG(ERROR) << err_msg;
-        throw std::runtime_error(err_msg);
-    }
-}
-
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceClientStage********************************/
 
-class TritonInferInput
+struct TritonInferInput
 {
-  public:
     std::string name;
     std::vector<int64_t> shape;
     std::string type;
     std::vector<uint8_t> data;
 };
 
-class TritonInferRequestedOutput
+struct TritonInferRequestedOutput
 {
-  public:
     std::string name;
 };
 
 class ITritonClient
 {
   public:
-    virtual triton::client::Error is_server_live(bool* live)                                           = 0;
-    virtual triton::client::Error is_server_ready(bool* ready)                                         = 0;
-    virtual triton::client::Error is_model_ready(bool* ready, std::string& model_name)                 = 0;
+    virtual triton::client::Error is_server_live(bool* live) = 0;
+
+    virtual triton::client::Error is_server_ready(bool* ready) = 0;
+
+    virtual triton::client::Error is_model_ready(bool* ready, std::string& model_name) = 0;
+
     virtual triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) = 0;
-    virtual triton::client::Error model_config(std::string* model_config, std::string& model_name)     = 0;
+
+    virtual triton::client::Error model_config(std::string* model_config, std::string& model_name) = 0;
+
     virtual triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
                                               const triton::client::InferOptions& options,
                                               const std::vector<TritonInferInput>& inputs,
-                                              const std::vector<TritonInferRequestedOutput>& outputs)  = 0;
+                                              const std::vector<TritonInferRequestedOutput>& outputs) = 0;
 };
 
 class HttpTritonClient : public ITritonClient
 {
   private:
-    static bool is_default_grpc_port(std::string& server_url)
-    {
-        // Check if we are the default gRPC port of 8001 and try 8000 for http client instead
-        size_t colon_loc = server_url.find_last_of(':');
-
-        if (colon_loc == -1)
-        {
-            return false;
-        }
-
-        // Check if the port matches 8001
-        if (server_url.size() < colon_loc + 1 || server_url.substr(colon_loc + 1) != "8001")
-        {
-            return false;
-        }
-
-        // It matches, change to 8000
-        server_url = server_url.substr(0, colon_loc) + ":8000";
-
-        return true;
-    }
+    std::unique_ptr<triton::client::InferenceServerHttpClient> m_client;
+    static bool is_default_grpc_port(std::string& server_url);
 
   public:
-    HttpTritonClient(std::string server_url)
-    {
-        std::unique_ptr<triton::client::InferenceServerHttpClient> client;
+    HttpTritonClient(std::string server_url);
 
-        CHECK_TRITON(triton::client::InferenceServerHttpClient::Create(&client, server_url, false));
+    triton::client::Error is_server_live(bool* live) override;
 
-        bool is_server_live;
+    triton::client::Error is_server_ready(bool* ready) override;
 
-        auto status = client->IsServerLive(&is_server_live);
+    triton::client::Error is_model_ready(bool* ready, std::string& model_name) override;
 
-        if (not status.IsOk())
-        {
-            std::string new_server_url = server_url;
-            if (is_default_grpc_port(new_server_url))
-            {
-                LOG(WARNING) << "Failed to connect to Triton at '" << server_url
-                             << "'. Default gRPC port of (8001) was detected but C++ "
-                                "InferenceClientStage uses HTTP protocol. Retrying with default HTTP port (8000)";
+    triton::client::Error model_config(std::string* model_config, std::string& model_name) override;
 
-                // We are using the default gRPC port, try the default HTTP
-                std::unique_ptr<triton::client::InferenceServerHttpClient> unique_client;
-
-                CHECK_TRITON(triton::client::InferenceServerHttpClient::Create(&unique_client, new_server_url, false));
-
-                client = std::move(unique_client);
-
-                status = client->IsServerLive(&is_server_live);
-            }
-            else if (status.Message().find("Unsupported protocol") != std::string::npos)
-            {
-                throw std::runtime_error(MORPHEUS_CONCAT_STR(
-                    "Failed to connect to Triton at '"
-                    << server_url
-                    << "'. Received 'Unsupported Protocol' error. Are you using the right port? The C++ "
-                       "InferenceClientStage uses Triton's HTTP protocol instead of gRPC. Ensure you have "
-                       "specified the HTTP port (Default 8000)."));
-            }
-
-            if (not status.IsOk())
-                throw std::runtime_error(MORPHEUS_CONCAT_STR(
-                    "Unable to connect to Triton at '"
-                    << server_url << "'. Check the URL and port and ensure the server is running."));
-        }
-
-        m_client = std::move(client);
-    }
-
-    triton::client::Error is_server_live(bool* live) override
-    {
-        return m_client->IsServerLive(live);
-    }
-
-    triton::client::Error is_server_ready(bool* ready) override
-    {
-        return m_client->IsServerReady(ready);
-    }
-
-    triton::client::Error is_model_ready(bool* ready, std::string& model_name) override
-    {
-        return m_client->IsModelReady(ready, model_name);
-    }
-
-    triton::client::Error model_config(std::string* model_config, std::string& model_name) override
-    {
-        return m_client->ModelConfig(model_config, model_name);
-    }
-
-    triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) override
-    {
-        return m_client->ModelMetadata(model_metadata, model_name);
-    }
+    triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) override;
 
     triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
                                       const triton::client::InferOptions& options,
                                       const std::vector<TritonInferInput>& inputs,
-                                      const std::vector<TritonInferRequestedOutput>& outputs) override
-    {
-        std::vector<std::unique_ptr<triton::client::InferInput>> inference_inputs;
-        std::vector<triton::client::InferInput*> inference_input_ptrs;
-
-        for (auto& input : inputs)
-        {
-            triton::client::InferInput* inference_input_ptr;
-            triton::client::InferInput::Create(&inference_input_ptr, input.name, input.shape, input.type);
-
-            inference_input_ptr->AppendRaw(input.data);
-
-            inference_input_ptrs.emplace_back(inference_input_ptr);
-            inference_inputs.emplace_back(inference_input_ptr);
-        }
-
-        std::vector<std::unique_ptr<const triton::client::InferRequestedOutput>> inference_outputs;
-        std::vector<const triton::client::InferRequestedOutput*> inference_output_ptrs;
-
-        for (auto& output : outputs)
-        {
-            triton::client::InferRequestedOutput* inference_output_ptr;
-            triton::client::InferRequestedOutput::Create(&inference_output_ptr, output.name);
-            inference_output_ptrs.emplace_back(inference_output_ptr);
-            inference_outputs.emplace_back(inference_output_ptr);
-        }
-
-        return m_client->AsyncInfer(
-            [&inference_inputs, &inference_outputs, callback](triton::client::InferResult* result) {
-                callback(result);
-            },
-            options,
-            inference_input_ptrs,
-            inference_output_ptrs);
-    }
-
-  private:
-    std::unique_ptr<triton::client::InferenceServerHttpClient> m_client;
+                                      const std::vector<TritonInferRequestedOutput>& outputs) override;
 };
 
 struct TritonInferenceClient
 {
   private:
-    std::string m_server_url;
     std::string m_model_name;
     TensorIndex m_max_batch_size = -1;
     std::vector<TritonInOut> m_model_inputs;
