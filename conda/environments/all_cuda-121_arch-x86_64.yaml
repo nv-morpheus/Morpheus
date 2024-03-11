@@ -119,7 +119,7 @@ dependencies:
   - --find-links https://data.dgl.ai/wheels/cu121/repo.html
   - PyMuPDF==1.23.21
   - databricks-connect
-  - dgl
+  - dgl==2.0.0
   - dglgo
   - google-search-results==2.4
   - langchain==0.1.9
