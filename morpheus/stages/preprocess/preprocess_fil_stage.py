@@ -85,41 +85,11 @@ class PreprocessFILStage(PreprocessBaseStage):
             FIL inference message.
 
         """
-
-        try:
-            df = x.get_meta(fea_cols)
-        except KeyError:
-            logger.exception("Cound not get metadat for columns.")
-            return None
-
-        # Extract just the numbers from each feature col. Not great to operate on x.meta.df here but the operations will
-        # only happen once.
-        for col in fea_cols:
-            if (df[col].dtype == np.dtype(str) or df[col].dtype == np.dtype(object)):
-                # If the column is a string, parse the number
-                df[col] = df[col].str.extract(r"(\d+)", expand=False).astype("float32")
-            elif (df[col].dtype != np.float32):
-                # Convert to float32
-                df[col] = df[col].astype("float32")
-
-        if (isinstance(df, pd.DataFrame)):
-            df = cudf.from_pandas(df)
-
-        # Convert the dataframe to cupy the same way cuml does
-        data = cp.asarray(df.to_cupy())
-
-        count = data.shape[0]
-
-        seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
-        seg_ids[:, 2] = fea_len - 1
-
-        # Create the inference memory. Keep in mind count here could be > than input count
-        memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seg_ids)
-
-        infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
-
-        return infer_message
+        if isinstance(x, ControlMessage):
+            return PreprocessFILStage.process_control_message(x, fea_len, fea_cols)
+        if isinstance(x, MultiMessage):
+            return PreprocessFILStage.process_multi_message(x, fea_len, fea_cols)
+        raise TypeError(f"Unsupported message type: {type(x)}")
 
     @staticmethod
     def process_control_message(x: ControlMessage, fea_len: int, fea_cols: typing.List[str]) -> ControlMessage:
