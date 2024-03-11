@@ -20,35 +20,36 @@ FROM ${MORPHEUS_CONTAINER}:${MORPHEUS_CONTAINER_VERSION} as base
 
 WORKDIR /workspace
 
-# Copy everything over to the container
-COPY . ./
-
-# Use a separate build directory to avoid clashes on the host
-ENV BUILD_DIR=build-docker
+# # Use a separate build directory to avoid clashes on the host
+# ENV BUILD_DIR=build-docker
 
 # Make it easier to run commands in the container
 ENV SHELL=/bin/bash
 
-RUN ls -lah
+# Copy over just the environment file to install the dependencies without busting the cache from source file changes
+COPY ./examples/cyber_dev_day/requirements.yaml ./examples/cyber_dev_day/
+
+# Install the example's dependencies
+RUN source activate morpheus \
+    && mamba env update -n morpheus -f ./examples/cyber_dev_day/requirements.yaml
+
+# Copy everything over to the container to build
+COPY . ./
 
 # Build morpheus
 RUN source activate morpheus &&\
     CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_PYTHON_PERFORM_INSTALL=ON -DMORPHEUS_CUDA_ARCHITECTURES=75;80" ./scripts/compile.sh
 
-# Set the workdir to the examples base folder
-WORKDIR /workspace/examples/llm/
-
-# Install the example's dependencies
-RUN source activate morpheus \
-    && mamba env update -n morpheus -f ./agents/requirements.yaml
+# Set the workdir to the dev day example
+WORKDIR /workspace/examples/cyber_dev_day/
 
 # # If any changes have been made from the base image, recopy the sources
-# COPY . /workspace/private_examples/llm/
+# COPY ./examples/cyber_dev_day /workspace/examples/cyber_dev_day/
 
 # ===== Setup for running unattended =====
 FROM base as runtime
 
-# # Install Spear Phishing package
+# # Install the Workflow package
 # RUN source activate morpheus \
 #     && pip install -e .
 

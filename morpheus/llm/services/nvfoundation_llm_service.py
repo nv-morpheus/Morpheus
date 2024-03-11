@@ -70,7 +70,7 @@ class NVFoundationLLMClient(LLMClient):
     def get_input_names(self) -> list[str]:
         schema = self._client.get_input_schema()
 
-        return []
+        return [self._prompt_key]
 
     def generate(self, **input_dict) -> str:
         """

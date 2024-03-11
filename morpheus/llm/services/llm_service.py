@@ -59,7 +59,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    def generate_batch(self, inputs: dict[str, list]) -> list[str]:
+    def generate_batch(self, inputs: dict[str, list], **kwargs) -> list[str]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -71,7 +71,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    async def generate_batch_async(self, inputs: dict[str, list]) -> list[str]:
+    async def generate_batch_async(self, inputs: dict[str, list], **kwargs) -> list[str]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -112,7 +112,7 @@ class LLMService(ABC):
     @typing.overload
     @staticmethod
     def create(service_type: typing.Literal["openai"], *service_args,
-               **service_kwargs) -> "morpheus.llm.services.nemo_llm_service.NeMoLLMService":
+               **service_kwargs) -> "morpheus.llm.services.nemo_llm_service.OpenAILLMService":
         pass
 
     @typing.overload

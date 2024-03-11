@@ -42,7 +42,7 @@ services:
   cyber-dev-day:
     build:
       context: ../..
-      dockerfile: ./examples/llm/Dockerfile
+      dockerfile: ./examples/cyber_dev_day/Dockerfile
       args:
         - MORPHEUS_CONTAINER=${MORPHEUS_CONTAINER:-nvcr.io/nvidia/morpheus/morpheus}
         - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v24.03.00-cyber-dev-day}
@@ -51,7 +51,7 @@ services:
     ports:
       - "26303:26302"
       - "8888:8888"
-    working_dir: /workspace/examples/llm
+    working_dir: /workspace/examples/cyber_dev_day
     command: jupyter-lab --no-browser --allow-root --ip='*'
     deploy:
       resources:
@@ -66,12 +66,14 @@ services:
     environment:
       - TERM=${TERM:-}
       # Overwrite any environment variables in the .env file with URLs needed in the network
-      - OPENAI_API_BASE=http://cache-proxy/openai/v1
-      - OPENAI_BASE_URL=http://cache-proxy/openai/v1
       - NGC_API_BASE=http://cache-proxy:81/nemo/v1
       - NVIDIA_API_BASE=http://cache-proxy:81/nvcf/v2
+      - OPENAI_API_BASE=http://cache-proxy:81/openai/v1
+      - OPENAI_BASE_URL=http://cache-proxy:81/openai/v1
     volumes:
       - ../..:/workspace
+      - build-cache:/workspace/.cache
+      - build-dir:/workspace/build-docker
     cap_add:
       - sys_nice
     depends_on:
@@ -95,4 +97,8 @@ networks:
 
 volumes:
   proxy-cache:
+    driver: local
+  build-cache:
+    driver: local
+  build-dir:
     driver: local

@@ -172,7 +172,7 @@ class OpenAIChatClient(LLMClient):
 
         return self._extract_completion(output)
 
-    def generate(self, input_dict: dict[str, str]) -> str:
+    def generate(self, **input_dict) -> str:
         """
         Issue a request to generate a response based on a given prompt.
 
@@ -201,7 +201,7 @@ class OpenAIChatClient(LLMClient):
 
         return self._extract_completion(output)
 
-    async def generate_async(self, input_dict: dict[str, str]) -> str:
+    async def generate_async(self, **input_dict) -> str:
         """
         Issue an asynchronous request to generate a response based on a given prompt.
 
@@ -212,7 +212,7 @@ class OpenAIChatClient(LLMClient):
         """
         return await self._generate_async(input_dict[self._prompt_key], input_dict.get(self._assistant_key))
 
-    def generate_batch(self, inputs: dict[str, list[str]]) -> list[str]:
+    def generate_batch(self, inputs: dict[str, list[str]], **kwargs) -> list[str]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -231,11 +231,11 @@ class OpenAIChatClient(LLMClient):
         results = []
         for (i, prompt) in enumerate(prompts):
             assistant = assistants[i] if assistants is not None else None
-            results.append(self._generate(prompt, assistant))
+            results.append(self._generate(prompt, assistant, **kwargs))
 
         return results
 
-    async def generate_batch_async(self, inputs: dict[str, list[str]]) -> list[str]:
+    async def generate_batch_async(self, inputs: dict[str, list[str]], **kwargs) -> list[str]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -254,7 +254,7 @@ class OpenAIChatClient(LLMClient):
         coros = []
         for (i, prompt) in enumerate(prompts):
             assistant = assistants[i] if assistants is not None else None
-            coros.append(self._generate_async(prompt, assistant))
+            coros.append(self._generate_async(prompt, assistant, **kwargs))
 
         return await asyncio.gather(*coros)
 

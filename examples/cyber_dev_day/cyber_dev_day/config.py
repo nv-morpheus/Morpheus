@@ -1,7 +1,6 @@
 import typing
 
 from pydantic import BaseModel
-from pydantic import ConfigDict
 from pydantic import Discriminator
 from pydantic import Field
 from pydantic import Tag
@@ -106,44 +105,8 @@ class EngineAgentConfig(BaseModel):
     code_repo: EngineCodeRepoConfig
 
 
-class EngineSummaryConfig(BaseModel):
-
-    model: LLMModelConfig
-
-
-class EngineJustificationConfig(BaseModel):
-
-    model: LLMModelConfig
-
-
 class EngineConfig(BaseModel):
 
     checklist: EngineChecklistConfig
 
     agent: EngineAgentConfig
-
-    # summary: EngineSummaryConfig
-
-    # justification: EngineJustificationConfig
-
-
-class PipelineOutputConfig(BaseModel):
-
-    pass
-
-
-class PipelineConfig(BaseModel):
-
-    input: CveFileInputConfig | NspectFileInputConfig | HttpServerInputConfig = Field(discriminator='type')
-
-    engine: EngineConfig
-
-    output: PipelineOutputConfig
-
-
-# test = PipelineConfig(input=CveFileInputConfig(),
-#                       engine=EngineConfig(checklist=EngineChecklistConfig(model=NeMoLLMModelConfig(model_name="test")),
-#                                           agent=EngineAgentConfig(model=NeMoLLMModelConfig(model_name="test"))),
-#                       output=PipelineOutputConfig())
-
-# print(test.model_dump_json(indent=2))
