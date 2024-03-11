@@ -107,10 +107,10 @@ def mk_mock_langchain_tool(responses: list[str]) -> mock.MagicMock:
 
     # Langchain will call inspect.signature on the tool methods, typically mock objects don't have a signature,
     # explicitly providing one here
-    async def _arun_spec(*args, **kwargs):
+    async def _arun_spec(*_, **__):
         pass
 
-    def run_spec(*args, **kwargs):
+    def run_spec(*_, **__):
         pass
 
     tool = mock.MagicMock()

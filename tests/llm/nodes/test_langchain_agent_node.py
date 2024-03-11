@@ -19,7 +19,7 @@ import pytest
 from langchain.agents import AgentType
 from langchain.agents import Tool
 from langchain.agents import initialize_agent
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI  # pylint: disable=no-name-in-module
 
 from _utils.llm import execute_node
 from _utils.llm import mk_mock_langchain_tool
