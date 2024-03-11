@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
-import typing
 from unittest import mock
 
 import pytest
@@ -104,16 +102,26 @@ def serpapi_api_key_fixture():
 @pytest.fixture(name="mock_nemollm")
 def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
 
-    # The generate function is a blocking call that returns a future when return_type="async"
-    async def mock_task(fut: asyncio.Future, value: typing.Any = mock.DEFAULT):
-        fut.set_result(value)
+    from concurrent.futures import Future
 
-    def create_future(*args, **kwargs) -> asyncio.Future:  # pylint: disable=unused-argument
-        event_loop = asyncio.get_event_loop()
-        fut = event_loop.create_future()
-        event_loop.create_task(mock_task(fut, mock.DEFAULT))
+    def generate_mock(*_, **kwargs):
+
+        fut = Future()
+
+        fut.set_result(kwargs["prompt"])
+
         return fut
 
-    mock_nemollm.generate.side_effect = create_future
+    mock_nemollm.generate.side_effect = generate_mock
+
+    def generate_multiple_mock(*_, **kwargs):
+
+        assert kwargs["return_type"] == "text", "Only text return type is supported for mocking."
+
+        prompts: list[str] = kwargs["prompts"]
+
+        return list(prompts)
+
+    mock_nemollm.generate_multiple.side_effect = generate_multiple_mock
 
     yield mock_nemollm
