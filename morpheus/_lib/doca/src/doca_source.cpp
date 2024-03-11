@@ -38,6 +38,7 @@
 #include <rmm/device_scalar.hpp>
 #include <rmm/mr/device/per_device_resource.hpp>
 #include <rte_byteorder.h>
+#include "morpheus/utilities/error.hpp"
 
 #include <iostream>
 #include <memory>
@@ -125,7 +126,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         int thread_idx = mrc::runnable::Context::get_runtime_context().rank();
 
         if (thread_idx >= MAX_QUEUE) {
-            MORPHEUS_LOCAL(MORPHEUS_CONCAT_STR("Thread ID " << thread_idx << " bigger than MAX_QUEUE " << MAX_QUEUE));
+            MORPHEUS_FAIL("Thread ID bigger than MAX_QUEUE");
             return;
         }
 
