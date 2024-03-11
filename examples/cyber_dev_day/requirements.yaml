@@ -16,6 +16,7 @@
 channels:
   - conda-forge
   - huggingface
+  - pytorch
 dependencies:
   - aiohttp-client-cache=0.11
   - aiohttp=3.9
@@ -23,10 +24,10 @@ dependencies:
   # - faiss-gpu=1.7 # Uncomment this when the package supports CUDA 12. See: https://github.com/conda-forge/faiss-split-feedstock/pull/72
   - faiss=1.7
   - openai=1.13
+  - pytorch=*=*cuda*
   - sentence-transformers>=2.0.0,<3.0.0
   - tiktoken>=0.3.2,<0.6.0
   - transformers
-  - uvloop
 
   ####### Pip Transitive Dependencies (keep sorted!) #######
   # These are dependencies that are available on conda, but are required by the pip packages listed below. Its much

@@ -1,4 +1,6 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# syntax=docker/dockerfile:1.3
+
+# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +39,9 @@ RUN source activate morpheus \
 COPY . ./
 
 # Build morpheus
-RUN source activate morpheus &&\
+RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
+    --mount=type=cache,id=workspace_build,target=/workspace/build,sharing=locked \
+    source activate morpheus &&\
     CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_PYTHON_PERFORM_INSTALL=ON -DMORPHEUS_CUDA_ARCHITECTURES=75;80" ./scripts/compile.sh
 
 # Set the workdir to the dev day example

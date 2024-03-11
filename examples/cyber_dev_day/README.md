@@ -58,7 +58,7 @@ The following instructions are for building the necessary containers for the Cyb
    ```
 3. Pull the LFS files to ensure all Git files are downloaded:
    ```bash
-   ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch all
+   ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch examples
    ```
 4. Build the Morpheus container:
    ```bash
