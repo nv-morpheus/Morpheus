@@ -261,7 +261,9 @@ dependencies:
           - python-graphviz
           - pytorch-cuda
           - pytorch=*=*cuda*
+          - requests
           - requests-cache=1.1
+          - requests-toolbelt # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
           - sqlalchemy
           - tqdm=4
           - typing_utils=0.1

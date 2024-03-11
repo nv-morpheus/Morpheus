@@ -46,7 +46,9 @@ dependencies:
 - python=3.10
 - pytorch-cuda
 - pytorch=*=*cuda*
+- requests
 - requests-cache=1.1
+- requests-toolbelt
 - s3fs=2023.12.2
 - scikit-learn=1.3.2
 - sentence-transformers
