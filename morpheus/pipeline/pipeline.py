@@ -17,9 +17,11 @@ import logging
 import os
 import signal
 import sys
+import threading
 import typing
 from collections import OrderedDict
 from collections import defaultdict
+from enum import Enum
 from functools import partial
 
 import mrc
@@ -41,6 +43,14 @@ logger = logging.getLogger(__name__)
 StageT = typing.TypeVar("StageT", bound=StageBase)
 
 
+class PipelineState(Enum):
+    INITIALIZED = "initialized"
+    BUILT = "built"
+    STARTED = "started"
+    STOPPED = "stopped"
+    COMPLETED = "completed"
+
+
 class Pipeline():
     """
     Class for building your pipeline. A pipeline for your use case can be constructed by first adding a
@@ -56,16 +66,19 @@ class Pipeline():
     """
 
     def __init__(self, config: Config):
+
+        self._mutex = threading.RLock()
+
         self._source_count: int = None  # Maximum number of iterations for progress reporting. None = Unknown/Unlimited
 
         self._id_counter = 0
         self._num_threads = config.num_threads
 
         # Complete set of nodes across segments in this pipeline
-        self._stages: typing.Set[Stage] = set()
+        self._stages: typing.List[Stage] = []
 
         # Complete set of sources across segments in this pipeline
-        self._sources: typing.Set[SourceStage] = set()
+        self._sources: typing.List[SourceStage] = []
 
         # Dictionary containing segment information for this pipeline
         self._segments: typing.Dict = defaultdict(lambda: {"nodes": set(), "ingress_ports": [], "egress_ports": []})
@@ -75,19 +88,21 @@ class Pipeline():
 
         self._segment_graphs = defaultdict(lambda: networkx.DiGraph())
 
-        self._is_built = False
-        self._is_started = False
+        self._state = PipelineState.INITIALIZED
 
         self._mrc_executor: mrc.Executor = None
 
         self._loop: asyncio.AbstractEventLoop = None
 
+        # Future that allows post_start to propagate exceptions back to pipeline
+        self._post_start_future: asyncio.Future = None
+
     @property
-    def is_built(self) -> bool:
-        return self._is_built
+    def state(self) -> PipelineState:
+        return self._state
 
     def _assert_not_built(self):
-        assert not self.is_built, "Pipeline has already been built. Cannot modify pipeline."
+        assert self._state == PipelineState.INITIALIZED, "Pipeline has already been built. Cannot modify pipeline."
 
     def add_stage(self, stage: StageT, segment_id: str = "main") -> StageT:
         """
@@ -110,10 +125,10 @@ class Pipeline():
         # Add to list of stages if it's a stage, not a source
         if (isinstance(stage, Stage)):
             segment_nodes.add(stage)
-            self._stages.add(stage)
+            self._stages.append(stage)
         elif (isinstance(stage, SourceStage)):
             segment_nodes.add(stage)
-            self._sources.add(stage)
+            self._sources.append(stage)
         else:
             raise NotImplementedError(f"add_stage() failed. Unknown node type: {type(stage)}")
 
@@ -279,7 +294,7 @@ class Pipeline():
         Once the pipeline has been constructed, this will start the pipeline by calling `Source.start` on the source
         object.
         """
-        assert not self._is_built, "Pipeline can only be built once!"
+        assert self._state == PipelineState.INITIALIZED, "Pipeline can only be built once!"
         assert len(self._sources) > 0, "Pipeline must have a source stage"
 
         self._pre_build()
@@ -341,19 +356,16 @@ class Pipeline():
 
         self._mrc_executor.register_pipeline(mrc_pipeline)
 
-        self._is_built = True
+        with self._mutex:
+            self._state = PipelineState.BUILT
 
         logger.info("====Registering Pipeline Complete!====")
 
     async def _start(self):
-        assert self._is_built, "Pipeline must be built before starting"
+        assert self._state == PipelineState.BUILT, "Pipeline must be built before starting"
 
-        # Only execute this once
-        if (self._is_started):
-            return
-
-        # Stop from running this twice
-        self._is_started = True
+        with self._mutex:
+            self._state = PipelineState.STARTED
 
         # Save off the current loop so we can use it in async_start
         self._loop = asyncio.get_running_loop()
@@ -392,10 +404,35 @@ class Pipeline():
 
         logger.info("====Pipeline Started====")
 
+        async def post_start(executor):
+
+            try:
+                # Make a local reference so the object doesn't go out of scope from a call to stop()
+                await executor.join_async()
+            except Exception:
+                logger.exception("Exception occurred in pipeline. Rethrowing")
+                raise
+            finally:
+                # Call join on all sources. This only occurs after all messages have been processed fully.
+                for source in list(self._sources):
+                    await source.join()
+
+                # Now call join on all stages
+                for stage in list(self._stages):
+                    await stage.join()
+
+                self._on_stop()
+
+                with self._mutex:
+                    self._state = PipelineState.COMPLETED
+
+        self._post_start_future = asyncio.create_task(post_start(self._mrc_executor))
+
     def stop(self):
         """
         Stops all running stages and the underlying MRC pipeline.
         """
+        assert self._state == PipelineState.STARTED, "Pipeline must be running to stop it"
 
         logger.info("====Stopping Pipeline====")
         for stage in list(self._sources) + list(self._stages):
@@ -403,52 +440,26 @@ class Pipeline():
 
         self._mrc_executor.stop()
 
+        with self._mutex:
+            self._state = PipelineState.STOPPED
+
         logger.info("====Pipeline Stopped====")
         self._on_stop()
 
     async def join(self):
         """
-        Suspend execution all currently running stages and the MRC pipeline.
-        Typically called after `stop`.
+        Wait until pipeline completes upon which join methods of sources and stages will be called.
         """
-        try:
-            # If the pipeline failed any pre-flight checks self._mrc_executor will be None
-            if self._mrc_executor is None:
-                raise RuntimeError("Pipeline failed pre-flight checks.")
+        assert self._post_start_future is not None, "Pipeline must be started before joining"
 
-            # Make a local reference so the object doesnt go out of scope from a call to stop()
-            executor = self._mrc_executor
-
-            await executor.join_async()
-        except Exception:
-            logger.exception("Exception occurred in pipeline. Rethrowing")
-            raise
-        finally:
-            # Make sure these are always shut down even if there was an error
-            for source in list(self._sources):
-                source.stop()
-
-            # First wait for all sources to stop. This only occurs after all messages have been processed fully
-            for source in list(self._sources):
-                await source.join()
-
-            # Now that there is no more data, call stop on all stages to ensure shutdown (i.e., for stages that have
-            # their own worker loop thread)
-            for stage in list(self._stages):
-                stage.stop()
-
-            # Now call join on all stages
-            for stage in list(self._stages):
-                await stage.join()
-
-            self._on_stop()
+        await self._post_start_future
 
     def _on_stop(self):
         self._mrc_executor = None
 
-    async def _build_and_start(self):
+    async def build_and_start(self):
 
-        if (not self.is_built):
+        if (self._state == PipelineState.INITIALIZED):
             try:
                 self.build()
             except Exception:
@@ -460,8 +471,7 @@ class Pipeline():
     async def _async_start(self, stages: networkx.classes.reportviews.NodeView):
         # This method is called once for each segment in the pipeline executed on this host
         for stage in stages:
-            if (isinstance(stage, Stage)):
-                await stage.start_async()
+            await stage.start_async()
 
     def visualize(self, filename: str = None, **graph_kwargs):
         """
@@ -470,7 +480,7 @@ class Pipeline():
         exists it will be overwritten.  Requires the graphviz library.
         """
 
-        if not self._is_built:
+        if self._state == PipelineState.INITIALIZED:
             raise RuntimeError("Pipeline.visualize() requires that the Pipeline has been started before generating "
                                "the visualization. Please call Pipeline.build() or  Pipeline.run() before calling "
                                "Pipeline.visualize().")
@@ -624,9 +634,7 @@ class Pipeline():
         This function sets up the current asyncio loop, builds the pipeline, and awaits on it to complete.
         """
         try:
-            await self._build_and_start()
-
-            # Wait for completion
+            await self.build_and_start()
             await self.join()
 
         except KeyboardInterrupt:
@@ -634,9 +642,6 @@ class Pipeline():
 
             # Stop the pipeline
             self.stop()
-
-            # Wait again for nice completion
-            await self.join()
 
         finally:
             # Shutdown the async generator sources and exit

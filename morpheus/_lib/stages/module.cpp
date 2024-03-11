@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "morpheus/messages/control.hpp"  // for ControlMessage
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/file_types.hpp"  // for FileTypes
@@ -35,16 +36,21 @@
 #include "morpheus/utilities/http_server.hpp"  // for DefaultMaxPayloadSize
 #include "morpheus/version.hpp"
 
+#include <mrc/segment/builder.hpp>  // for Builder
 #include <mrc/segment/object.hpp>
 #include <mrc/utils/string_utils.hpp>
 #include <pybind11/attr.h>      // for multiple_inheritance
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/pytypes.h>   // for dict, sequence
-#include <pymrc/utils.hpp>      // for pymrc::import
+// for pathlib.Path -> std::filesystem::path conversions
+#include <pybind11/stl/filesystem.h>  // IWYU pragma: keep
+#include <pymrc/utils.hpp>            // for pymrc::import
 #include <rxcpp/rx.hpp>
 
+#include <filesystem>  // for std::filesystem::path
 #include <memory>
 #include <sstream>
+#include <string>
 
 namespace morpheus {
 namespace py = pybind11;
@@ -84,21 +90,42 @@ PYBIND11_MODULE(stages, _module)
         .def(
             py::init<>(&AddScoresStageInterfaceProxy::init), py::arg("builder"), py::arg("name"), py::arg("idx2label"));
 
-    py::class_<mrc::segment::Object<DeserializeStage>,
+    py::class_<mrc::segment::Object<DeserializeStage<MultiMessage>>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<DeserializeStage>>>(
-        _module, "DeserializeStage", py::multiple_inheritance())
-        .def(py::init<>(&DeserializeStageInterfaceProxy::init),
+               std::shared_ptr<mrc::segment::Object<DeserializeStage<MultiMessage>>>>(
+        _module, "DeserializeMultiMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&DeserializeStageInterfaceProxy::init_multi),
              py::arg("builder"),
              py::arg("name"),
              py::arg("batch_size"),
              py::arg("ensure_sliceable_index") = true);
 
+    py::class_<mrc::segment::Object<DeserializeStage<ControlMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<DeserializeStage<ControlMessage>>>>(
+        _module, "DeserializeControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&DeserializeStageInterfaceProxy::init_cm),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("batch_size"),
+             py::arg("ensure_sliceable_index") = true,
+             py::arg("task_type")              = py::none(),
+             py::arg("task_payload")           = py::none());
+
     py::class_<mrc::segment::Object<FileSourceStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<FileSourceStage>>>(
         _module, "FileSourceStage", py::multiple_inheritance())
-        .def(py::init<>(&FileSourceStageInterfaceProxy::init),
+        .def(py::init(py::overload_cast<mrc::segment::Builder&, const std::string&, std::string, int, py::dict>(
+                 &FileSourceStageInterfaceProxy::init)),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("filename"),
+             py::arg("repeat"),
+             py::arg("parser_kwargs"))
+        .def(py::init(
+                 py::overload_cast<mrc::segment::Builder&, const std::string&, std::filesystem::path, int, py::dict>(
+                     &FileSourceStageInterfaceProxy::init)),
              py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),

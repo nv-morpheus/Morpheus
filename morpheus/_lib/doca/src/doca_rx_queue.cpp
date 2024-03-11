@@ -36,16 +36,16 @@ DocaRxQueue::DocaRxQueue(std::shared_ptr<DocaContext> context) :
     uint32_t cyclic_buffer_size;
     DOCA_TRY(doca_eth_rxq_create(context->dev(), MAX_PKT_NUM, MAX_PKT_SIZE, &(m_rxq_info_cpu)));
     DOCA_TRY(doca_eth_rxq_set_type(m_rxq_info_cpu, DOCA_ETH_RXQ_TYPE_CYCLIC));
-    DOCA_TRY(doca_eth_rxq_get_pkt_buffer_size(m_rxq_info_cpu, &cyclic_buffer_size));
+    DOCA_TRY(doca_eth_rxq_estimate_packet_buf_size(DOCA_ETH_RXQ_TYPE_CYCLIC, 0, 0, MAX_PKT_SIZE, MAX_PKT_NUM, 0, &cyclic_buffer_size));
     DOCA_TRY(doca_mmap_create(&m_packet_mmap));
     DOCA_TRY(doca_mmap_add_dev(m_packet_mmap, context->dev()));
 
     m_packet_memory = std::make_unique<DocaMem<void>>(m_context, cyclic_buffer_size, DOCA_GPU_MEM_TYPE_GPU);
 
     DOCA_TRY(doca_mmap_set_memrange(m_packet_mmap, m_packet_memory->gpu_ptr(), cyclic_buffer_size));
-    DOCA_TRY(doca_mmap_set_permissions(m_packet_mmap, DOCA_ACCESS_FLAG_LOCAL_READ_WRITE | DOCA_ACCESS_FLAG_PCI_RELAXED_ORDERING));
+    DOCA_TRY(doca_mmap_set_permissions(m_packet_mmap, DOCA_ACCESS_FLAG_LOCAL_READ_WRITE));
     DOCA_TRY(doca_mmap_start(m_packet_mmap));
-    DOCA_TRY(doca_eth_rxq_set_pkt_buffer(m_rxq_info_cpu, m_packet_mmap, 0, cyclic_buffer_size));
+    DOCA_TRY(doca_eth_rxq_set_pkt_buf(m_rxq_info_cpu, m_packet_mmap, 0, cyclic_buffer_size));
 
     m_doca_ctx = doca_eth_rxq_as_doca_ctx(m_rxq_info_cpu);
 
@@ -59,22 +59,22 @@ DocaRxQueue::DocaRxQueue(std::shared_ptr<DocaContext> context) :
 
 DocaRxQueue::~DocaRxQueue()
 {
-    if (m_rxq_info_cpu != nullptr)
-    {
-        auto doca_ret = doca_eth_rxq_destroy(m_rxq_info_cpu);
+    doca_error_t doca_ret;
+
+    if (m_rxq_info_cpu != nullptr) {
+        doca_ret = doca_ctx_stop(m_doca_ctx);
         if (doca_ret != DOCA_SUCCESS)
-        {
             LOG(WARNING) << "doca_eth_rxq_destroy failed (" << doca_ret << ")" << std::endl;
-        }
+
+        doca_ret = doca_eth_rxq_destroy(m_rxq_info_cpu);
+        if (doca_ret != DOCA_SUCCESS)
+            LOG(WARNING) << "doca_eth_rxq_destroy failed (" << doca_ret << ")" << std::endl;
     }
 
-    if (m_packet_mmap != nullptr)
-    {
-        auto doca_ret = doca_mmap_destroy(m_packet_mmap);
+    if (m_packet_mmap != nullptr) {
+        doca_ret = doca_mmap_destroy(m_packet_mmap);
         if (doca_ret != DOCA_SUCCESS)
-        {
             LOG(WARNING) << "doca_mmap_destroy failed (" << doca_ret << ")" << std::endl;
-        }
     }
 }
 

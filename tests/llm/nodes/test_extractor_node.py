@@ -16,12 +16,10 @@
 import cudf
 
 from _utils.llm import execute_node
-# pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import MessageMeta as MessageMetaCpp
-# pylint: enable=morpheus-incorrect-lib-from-import
 from morpheus.llm import LLMNodeBase
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 
 
 def test_constructor():
@@ -40,7 +38,7 @@ def test_execute():
     reptiles = ['lizards', 'snakes', 'turtles', 'frogs', 'toads']
     df = cudf.DataFrame({"insects": insects.copy(), "mammals": mammals.copy(), "reptiles": reptiles.copy()})
     message = ControlMessage()
-    message.payload(MessageMetaCpp(df))
+    message.payload(MessageMeta(df))
 
     task_dict = {"input_keys": ["mammals", "reptiles"]}
     node = ExtracterNode()

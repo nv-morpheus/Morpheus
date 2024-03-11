@@ -32,3 +32,7 @@ dependencies:
     - nvtabular=23.06
     - papermill
     - s3fs>=2023.6
+
+    ##### Pip Dependencies (keep sorted!) #######
+    - pip:
+        - python-logging-loki

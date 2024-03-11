@@ -33,12 +33,6 @@ from morpheus.utils.logger import configure_logging
 
 @click.command()
 @click.option(
-    "--num_threads",
-    default=1,
-    type=click.IntRange(min=1),
-    help="Number of internal pipeline threads to use",
-)
-@click.option(
     "--pipeline_batch_size",
     default=1024,
     type=click.IntRange(min=1),
@@ -77,7 +71,7 @@ from morpheus.utils.logger import configure_logging
     help="UDP or TCP traffic",
     required=True,
 )
-def run_pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_fea_length, out_file, nic_addr,
+def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, out_file, nic_addr,
                  gpu_addr, traffic_type):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
@@ -88,7 +82,7 @@ def run_pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_f
     config.mode = PipelineModes.NLP
 
     # Below properties are specified by the command line
-    config.num_threads = num_threads
+    config.num_threads = 4
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
     config.feature_length = model_fea_length

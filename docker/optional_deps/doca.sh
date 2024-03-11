@@ -24,9 +24,7 @@ if [[ ${MORPHEUS_SUPPORT_DOCA} != @(TRUE|ON) ]]; then
 fi
 
 DOCA_REPO_HOST=${DOCA_REPO_HOST:?"Must set \$DOCA_REPO_HOST to build DOCA."}
-DOCA_VERSION=${DOCA_VERSION:-2.5.1-0.0.1}
-DPDK_VERSION=${DPDK_VERSION:-22.11.0-1.4.1}
-
+DOCA_VERSION=${DOCA_VERSION:-2.6.0-0.0.1}
 WORKING_DIR=$1
 
 echo "Installing DOCA using directory: ${WORKING_DIR}"
@@ -36,14 +34,14 @@ DEB_DIR=${WORKING_DIR}/deb
 mkdir -p ${DEB_DIR}
 
 # Download all files with -nc to skip download if its already there
-wget -nc -P ${DEB_DIR} https://${DOCA_REPO_HOST}/doca-repo-2.5.1/doca-repo-2.5.1-0.0.1-240218-065549-daily/doca-host-repo-ubuntu2204_2.5.1-0.0.1-240218-065549-daily.2.5.1005.1.23.10.2.0.9.0_amd64.deb
+wget -nc -P ${DEB_DIR} https://${DOCA_REPO_HOST}/doca-repo-2.6.0/doca-repo-2.6.0-0.0.1-240205-083002-daily/doca-host-repo-ubuntu2204_2.6.0-0.0.1-240205-083002-daily.2.6.0058.1.24.01.0.3.3.1_amd64.deb
 # Install the doca host repo
 dpkg -i ${DEB_DIR}/doca-host-repo*.deb
 
 # Install all other packages
 apt-get update
 # apt-get install -y libjson-c-dev meson cmake pkg-config
-apt-get install -y doca-sdk doca-runtime doca-tools doca-gpu doca-gpu-dev
+apt-get install -y doca-sdk doca-runtime doca-gpu doca-gpu-dev
 
 # Now install the gdrcopy library according to: https://github.com/NVIDIA/gdrcopy
 GDRCOPY_DIR=${WORKING_DIR}/gdrcopy
@@ -52,7 +50,7 @@ if [[ ! -d "${GDRCOPY_DIR}" ]] ; then
     git clone https://github.com/NVIDIA/gdrcopy.git ${GDRCOPY_DIR}
     cd ${GDRCOPY_DIR}
 else
-    cd cd ${GDRCOPY_DIR}
+    cd ${GDRCOPY_DIR}
     git pull https://github.com/NVIDIA/gdrcopy.git
 fi
 

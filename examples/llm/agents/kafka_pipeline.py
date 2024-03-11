@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 def _build_agent_executor(model_name: str) -> AgentExecutor:
 
-    llm = OpenAIChat(model=model_name, temperature=0)
+    llm = OpenAIChat(model_name=model_name, model_kwargs={"temperature": 0.0}, client=None)
 
     tools = load_tools(["serpapi", "llm-math"], llm=llm)
 

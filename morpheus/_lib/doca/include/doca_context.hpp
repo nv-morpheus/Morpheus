@@ -42,7 +42,7 @@ struct DocaContext
     uint16_t m_nic_port;
     uint32_t m_max_queue_count;
     std::unique_ptr<RTEContext> m_rte_context;
-    struct doca_log_backend *sdk_log;
+    doca_log_backend* sdk_log;
 
   public:
     DocaContext(std::string nic_addr, std::string gpu_addr);

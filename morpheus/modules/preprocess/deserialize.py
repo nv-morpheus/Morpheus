@@ -128,12 +128,6 @@ def _process_dataframe_to_control_message(message: MessageMeta,
     list of ControlMessage
         A list of ControlMessage objects.
     """
-
-    # Because ControlMessages only have a C++ implementation, we need to import the C++ MessageMeta and use that
-    # 100% of the time
-    # pylint: disable=morpheus-incorrect-lib-from-import
-    from morpheus._lib.messages import MessageMeta as MessageMetaCpp
-
     message = _check_slicable_index(message, ensure_sliceable_index)
 
     # Now break it up by batches
@@ -147,7 +141,7 @@ def _process_dataframe_to_control_message(message: MessageMeta,
 
             ctrl_msg = ControlMessage()
 
-            ctrl_msg.payload(MessageMetaCpp(df=df.iloc[i:i + batch_size]))
+            ctrl_msg.payload(MessageMeta(df=df.iloc[i:i + batch_size]))
 
             if (task_tuple is not None):
                 ctrl_msg.add_task(task_type=task_tuple[0], task=task_tuple[1])
@@ -156,7 +150,7 @@ def _process_dataframe_to_control_message(message: MessageMeta,
     else:
         ctrl_msg = ControlMessage()
 
-        ctrl_msg.payload(MessageMetaCpp(message.df))
+        ctrl_msg.payload(MessageMeta(message.df))
 
         if (task_tuple is not None):
             ctrl_msg.add_task(task_type=task_tuple[0], task=task_tuple[1])

@@ -90,6 +90,9 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            return self._doca_source_class(builder, self.unique_name, self._nic_pci_address, self._gpu_pci_address, self._traffic_type)
+            # return self._doca_source_class(builder, self.unique_name, self._nic_pci_address, self._gpu_pci_address, self._traffic_type)
+            node = self._doca_source_class(builder, self.unique_name, self._nic_pci_address, self._gpu_pci_address, self._traffic_type)
+            node.launch_options.pe_count = self._max_concurrent
+            return node
 
         raise NotImplementedError("Does not support Python nodes")

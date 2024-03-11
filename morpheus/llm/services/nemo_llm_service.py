@@ -50,11 +50,14 @@ class NeMoLLMClient(LLMClient):
         Additional keyword arguments to pass to the model when generating text.
     """
 
-    def __init__(self, parent: "NeMoLLMService", model_name: str, **model_kwargs: dict[str, typing.Any]) -> None:
+    def __init__(self, parent: "NeMoLLMService", *, model_name: str, **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
         super().__init__()
+
+        assert parent is not None, "Parent service cannot be None."
+
         self._parent = parent
         self._model_name = model_name
         self._model_kwargs = model_kwargs
@@ -167,7 +170,7 @@ class NeMoLLMService(LLMService):
             org_id=org_id,
         )
 
-    def get_client(self, model_name: str, **model_kwargs: dict[str, typing.Any]) -> NeMoLLMClient:
+    def get_client(self, *, model_name: str, **model_kwargs) -> NeMoLLMClient:
         """
         Returns a client for interacting with a specific model. This method is the preferred way to create a client.
 
@@ -180,4 +183,4 @@ class NeMoLLMService(LLMService):
             Additional keyword arguments to pass to the model when generating text.
         """
 
-        return NeMoLLMClient(self, model_name, **model_kwargs)
+        return NeMoLLMClient(self, model_name=model_name, **model_kwargs)

@@ -24,15 +24,15 @@
 #include <type_traits>
 
 uint32_t const PACKETS_PER_THREAD   = 4;
-uint32_t const THREADS_PER_BLOCK    = 512;
+uint32_t const THREADS_PER_BLOCK    = 1024; //512
 uint32_t const PACKETS_PER_BLOCK    = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
-uint32_t const PACKET_RX_TIMEOUT_NS = 100000; //100us
+uint32_t const PACKET_RX_TIMEOUT_NS = 1000000; //1ms //500us
 
 uint32_t const MAX_PKT_RECEIVE = PACKETS_PER_BLOCK;
-uint32_t const MAX_PKT_SIZE    = 8192;
+uint32_t const MAX_PKT_SIZE    = 4096;
 uint32_t const MAX_PKT_NUM     = 65536;
-uint32_t const MAX_QUEUE       = 3;
-uint32_t const MAX_SEM_X_QUEUE = 16;
+uint32_t const MAX_QUEUE       = 4;
+uint32_t const MAX_SEM_X_QUEUE = 32;
 
 enum doca_traffic_type {
   DOCA_TRAFFIC_TYPE_UDP = 0,

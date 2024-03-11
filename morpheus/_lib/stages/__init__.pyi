@@ -11,11 +11,13 @@ import typing
 from morpheus._lib.common import FilterSource
 import morpheus._lib.common
 import mrc.core.segment
+import os
 
 __all__ = [
     "AddClassificationsStage",
     "AddScoresStage",
-    "DeserializeStage",
+    "DeserializeControlMessageStage",
+    "DeserializeMultiMessageStage",
     "FileSourceStage",
     "FilterDetectionsStage",
     "FilterSource",
@@ -37,10 +39,16 @@ class AddClassificationsStage(mrc.core.segment.SegmentObject):
 class AddScoresStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, idx2label: typing.Dict[int, str]) -> None: ...
     pass
-class DeserializeStage(mrc.core.segment.SegmentObject):
+class DeserializeControlMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, batch_size: int, ensure_sliceable_index: bool = True, task_type: object = None, task_payload: object = None) -> None: ...
+    pass
+class DeserializeMultiMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, batch_size: int, ensure_sliceable_index: bool = True) -> None: ...
     pass
 class FileSourceStage(mrc.core.segment.SegmentObject):
+    @typing.overload
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: os.PathLike, repeat: int, parser_kwargs: dict) -> None: ...
+    @typing.overload
     def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: str, repeat: int, parser_kwargs: dict) -> None: ...
     pass
 class FilterDetectionsStage(mrc.core.segment.SegmentObject):

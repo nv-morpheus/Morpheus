@@ -21,24 +21,24 @@ files:
       cuda: ["12.1"]
       arch: [x86_64]
     includes:
-      - data_retrieval
-      - build_cpp
-      - development
       - benchmark_cpp
-      - runtime
+      - build_cpp
+      - checks
+      - cudatoolkit
+      - cve-mitigation
+      - data_retrieval
+      - development
+      - doca
+      - docs
       - example-dfp-prod
       - example-gnn
       - example-llm-agents
       - example-llm-completion
       - example-llm-rag
       - example-llm-vdb-upload
-      - test_python_morpheus
-      - docs
-      - cudatoolkit
       - python
-      - checks
-      - cve-mitigation
-      - doca
+      - runtime
+      - test_python_morpheus
 
   dev:
     output: conda
@@ -46,26 +46,16 @@ files:
       cuda: ["12.1"]
       arch: [x86_64]
     includes:
-      - data_retrieval
-      - build_cpp
-      - development
       - benchmark_cpp
+      - build_cpp
+      - checks
+      - cudatoolkit
+      - data_retrieval
+      - development
+      - docs
+      - python
       - runtime
       - test_python_morpheus
-      - docs
-      - cudatoolkit
-      - python
-      - checks
-
-  examples:
-    output: conda
-    matrix:
-      cuda: ["12.1"]
-      arch: [x86_64]
-    includes:
-      - examples
-      - runtime
-      - cudatoolkit
 
   build:
     output: none
@@ -73,14 +63,14 @@ files:
       cuda: ["12.1"]
       arch: [x86_64]
     includes:
-      - data_retrieval
-      - build_cpp
-      - development
       - benchmark_cpp
+      - build_cpp
+      - cudatoolkit
+      - data_retrieval
+      - development
+      - python
       - runtime
       - test_python_morpheus
-      - cudatoolkit
-      - python
 
   test:
     output: none
@@ -88,20 +78,20 @@ files:
       cuda: ["12.1"]
       arch: [x86_64]
     includes:
-      - data_retrieval
-      - build_cpp
-      - development
       - benchmark_cpp
-      - runtime
-      - test_python_morpheus
+      - build_cpp
+      - cudatoolkit
+      - data_retrieval
+      - development
       - example-dfp-prod
       - example-gnn
       - example-llm-agents
       - example-llm-completion
       - example-llm-rag
       - example-llm-vdb-upload
-      - cudatoolkit
       - python
+      - runtime
+      - test_python_morpheus
 
   docs:
     output: none
@@ -109,19 +99,19 @@ files:
       cuda: ["12.1"]
       arch: [x86_64]
     includes:
-      - data_retrieval
-      - build_cpp
       - benchmark_cpp
+      - build_cpp
       - cudatoolkit
-      - python
+      - data_retrieval
       - docs
-      - runtime
       - example-dfp-prod
       - example-gnn
       - example-llm-agents
       - example-llm-completion
       - example-llm-rag
       - example-llm-vdb-upload
+      - python
+      - runtime
 
   runtime:
     output: conda
@@ -138,7 +128,7 @@ files:
       cuda: ["12.1"]
       arch: [x86_64]
     includes:
-      - runtime
+      - cve-mitigation
       - example-dfp-prod
       - example-gnn
       - example-llm-agents
@@ -146,7 +136,7 @@ files:
       - example-llm-rag
       - example-llm-vdb-upload
       - python
-      - cve-mitigation
+      - runtime
 
   model-utils:
     output: conda
@@ -231,18 +221,18 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
+          - &click click >=8
+          - &numpydoc numpydoc=1.5
           - breathe=4.35.0
           - doxygen=1.9.2
           - exhale=0.3.6
           - ipython
           - myst-parser=0.18.1
           - nbsphinx
+          - pluggy=1.3
           - python-graphviz
           - sphinx
           - sphinx_rtd_theme
-          - &numpydoc numpydoc=1.5
-          - pluggy=1.3
-          - &click click >=8
 
   benchmark_cpp:
     common:
@@ -266,6 +256,7 @@ dependencies:
           - mlflow=2.9.2
           - networkx=2.8.8
           - nvtabular=23.08.00
+          - pydantic
           - python-confluent-kafka>=1.9.2,<1.10.0a0
           - python-graphviz
           - pytorch-cuda
@@ -287,10 +278,10 @@ dependencies:
       - output_types: [conda]
         packages:
           - &nodejs nodejs=18.*
-          - pytest=7.4.4
           - pytest-asyncio
           - pytest-benchmark=4.0
           - pytest-cov
+          - pytest=7.4.4
           - python-docx==1.1.0
           - pip
           - pip:
@@ -328,12 +319,13 @@ dependencies:
       - output_types: [conda]
         packages:
           - &grpcio-status grpcio-status==1.59
-          - &langchain langchain=0.0.190
           - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
           - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
-          - pip
+          - numexpr
           - sentence-transformers
+          - pip
           - pip:
+            - &langchain langchain==0.1.9
             - nemollm
 
   example-llm-completion:
@@ -350,12 +342,12 @@ dependencies:
       - output_types: [conda]
         packages:
           - *grpcio-status
-          - *langchain
           - anyio>=3.7
           - jsonpatch>=1.33
-          - openai=0.28
+          - openai=1.13
           - pip
           - pip:
+            - *langchain
             - google-search-results==2.4
 
   example-llm-vdb-upload:
@@ -364,27 +356,27 @@ dependencies:
         packages:
           - *arxiv
           - *grpcio-status
-          - *langchain
           - *newspaper3k
           - *pypdf
           - onnx
           - pip
           - pip:
               - PyMuPDF==1.23.21
+              - *langchain
 
   model-training-tuning:
     common:
       - output_types: [conda]
         packages:
           - *cuml
+          - *scikit-learn
+          - *transformers
           - jupyterlab
           - matplotlib
           - onnx
           - pandas
-          - *scikit-learn
           - seaborn
           - seqeval=1.2.2
-          - *transformers
           - xgboost
 
   cve-mitigation:

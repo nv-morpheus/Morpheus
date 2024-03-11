@@ -136,7 +136,7 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
     RTE_TRY(rte_eth_dev_start(port_id));
 
     /* Initialize doca flow framework */
-    rxq_flow_cfg.queues = rxq_num;
+    rxq_flow_cfg.pipe_queues = rxq_num;
     /*
      * HWS: Hardware steering
      * Isolated: don't create RSS rule for DPDK created RX queues
@@ -174,8 +174,8 @@ DocaContext::DocaContext(std::string nic_addr, std::string gpu_addr) : m_max_que
     m_rte_context = std::make_unique<RTEContext>();
 
     /* Register a logger backend for internal SDK errors and warnings */
-    DOCA_TRY(doca_log_backend_create_with_file_sdk(stderr, &sdk_log));
-    DOCA_TRY(doca_log_backend_set_sdk_level(sdk_log, DOCA_LOG_LEVEL_DEBUG));
+    // DOCA_TRY(doca_log_backend_create_with_file_sdk(stderr, &sdk_log));
+    // DOCA_TRY(doca_log_backend_set_sdk_level(sdk_log, DOCA_LOG_LEVEL_DEBUG));
 
     DOCA_TRY(open_doca_device_with_pci(nic_addr_c, &m_dev));
     DOCA_TRY(doca_dpdk_port_probe(m_dev, "dv_flow_en=2"));
@@ -195,13 +195,14 @@ DocaContext::DocaContext(std::string nic_addr, std::string gpu_addr) : m_max_que
 
 DocaContext::~DocaContext()
 {
+    doca_flow_port_stop(m_flow_port);
+	doca_flow_destroy();
+
     if (m_gpu != nullptr)
     {
         auto doca_ret = doca_gpu_destroy(m_gpu);
         if (doca_ret != DOCA_SUCCESS)
-        {
             LOG(WARNING) << "DOCA cleanup failed (" << doca_ret << ")" << std::endl;
-        }
     }
 }
 

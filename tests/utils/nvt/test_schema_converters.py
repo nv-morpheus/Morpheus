@@ -13,8 +13,13 @@
 # limitations under the License.
 
 import json
+import warnings
 
-import nvtabular as nvt
+with warnings.catch_warnings():
+    # Ignore warning regarding tensorflow not being installed
+    warnings.filterwarnings("ignore", message=".*No module named 'tensorflow'", category=UserWarning)
+    import nvtabular as nvt
+
 import pandas as pd
 import pytest
 

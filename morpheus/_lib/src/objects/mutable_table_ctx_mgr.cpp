@@ -22,6 +22,7 @@
 #include <pybind11/gil.h>
 #include <pybind11/pytypes.h>
 
+#include <memory>
 #include <utility>
 
 namespace morpheus {
@@ -39,13 +40,16 @@ py::object MutableTableCtxMgr::enter()
     // Release the GIL
     py::gil_scoped_release no_gil;
     m_table    = std::make_unique<MutableTableInfo>(std::move(m_meta_msg.get_mutable_info()));
-    m_py_table = std::make_unique<py::object>(std::move(m_table->checkout_obj()));
+    m_py_table = m_table->checkout_obj();
     return *m_py_table;
 }
 
 void MutableTableCtxMgr::exit(const py::object& type, const py::object& value, const py::object& traceback)
 {
-    m_table->return_obj(std::move(*m_py_table.release()));
+    std::unique_ptr<pybind11::object> ptr{nullptr};
+    m_py_table.swap(ptr);
+
+    m_table->return_obj(std::move(ptr));
     m_table.reset(nullptr);
 }
 

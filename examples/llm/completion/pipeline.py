@@ -54,8 +54,8 @@ def _build_engine(llm_service: str):
     else:
         raise ValueError(f"Invalid LLM service: {llm_service}")
 
-    llm_service = llm_service_cls()
-    llm_clinet = llm_service.get_client(model_name=model_name)
+    service = llm_service_cls()
+    llm_clinet = service.get_client(model_name=model_name)
 
     engine = LLMEngine()
 

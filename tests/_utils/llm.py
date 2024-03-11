@@ -14,6 +14,7 @@
 
 import asyncio
 import typing
+from unittest import mock
 
 from morpheus.llm import InputMap
 from morpheus.llm import LLMContext
@@ -73,3 +74,20 @@ def execute_task_handler(task_handler: LLMTaskHandler,
     message = asyncio.run(task_handler.try_handle(context))
 
     return message
+
+
+def _mk_mock_choice(message: str) -> mock.MagicMock:
+    mock_choice = mock.MagicMock()
+    mock_choice.message.content = message
+    return mock_choice
+
+
+def mk_mock_openai_response(messages: list[str]) -> mock.MagicMock:
+    """
+    Creates a mocked openai.types.chat.chat_completion.ChatCompletion response with the given messages.
+    """
+    response = mock.MagicMock()
+    mock_choices = [_mk_mock_choice(message) for message in messages]
+    response.choices = mock_choices
+
+    return response

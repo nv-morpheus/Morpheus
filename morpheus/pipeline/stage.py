@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import warnings
 
 import mrc
 
@@ -39,18 +38,6 @@ class Stage(_pipeline.StageBase):
 
     def _start(self):
         pass
-
-    async def start_async(self):
-        """
-        This function is called along with on_start during stage initialization. Allows stages to utilize the
-        asyncio loop if needed.
-        """
-        if (hasattr(self, 'on_start')):
-            warnings.warn(
-                "The on_start method is deprecated and may be removed in the future. "
-                "Please use start_async instead.",
-                DeprecationWarning)
-            self.on_start()
 
     def _on_complete(self, node):  # pylint: disable=unused-argument
         logger.info("Stage Complete: %s", self.name)

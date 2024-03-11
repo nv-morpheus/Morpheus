@@ -43,7 +43,7 @@ struct DocaRxPipe
     doca_flow_pipe* m_root_pipe;
 
   public:
-    DocaRxPipe(std::shared_ptr<DocaContext> context, std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue>> rxq, enum doca_traffic_type const type);
+    DocaRxPipe(std::shared_ptr<DocaContext> context, std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue>> rxq, doca_traffic_type const type);
     ~DocaRxPipe();
 };
 

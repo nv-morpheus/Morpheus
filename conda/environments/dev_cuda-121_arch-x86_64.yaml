@@ -60,6 +60,7 @@ dependencies:
 - pre-commit
 - protobuf=4.24
 - pybind11-stubgen=0.10.5
+- pydantic
 - pylint=3.0.3
 - pytest-asyncio
 - pytest-benchmark=4.0

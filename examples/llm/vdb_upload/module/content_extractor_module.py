@@ -29,10 +29,10 @@ import mrc.core.operators as ops
 import pandas as pd
 from docx import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pydantic import BaseModel
+from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from pydantic import Field
 from pydantic import ValidationError
-from pydantic import validator
+from pydantic import field_validator
 
 from morpheus.messages import MessageMeta
 from morpheus.utils.module_utils import ModuleLoaderFactory
@@ -55,12 +55,13 @@ class ContentExtractorSchema(BaseModel):
     converters_meta: Dict[str, Dict] = Field(default_factory=dict)
     num_threads: int = 10
 
-    @validator('converters_meta', pre=True, allow_reuse=True)
-    def val_converters_meta(cls, to_validate: Dict[str, Dict]) -> Dict[str, Dict]:  # pylint: disable=no-self-argument
+    @field_validator('converters_meta', mode="before")
+    @classmethod
+    def val_converters_meta(cls, to_validate: Dict[str, Dict]) -> Dict[str, Dict]:
         validated_meta = {}
         for key, value in to_validate.items():
             if key.lower() == 'csv':
-                validated_meta[key] = CSVConverterSchema(**value)
+                validated_meta[key] = CSVConverterSchema(**value).model_dump()
             else:
                 validated_meta[key] = value
         return validated_meta
@@ -197,7 +198,7 @@ def _csv_to_text_converter(input_info: ConverterInputInfo) -> list[str]:
         raise ValueError("The CSV file must either include a 'content' column or have a "
                          "columns specified in the meta configuration with key 'text_column_names'.")
     df.fillna(value='', inplace=True)
-    text_arr = df[text_column_names].apply(lambda x: ' '.join(map(str, x)), axis=1).tolist()
+    text_arr = df[sorted(text_column_names)].apply(lambda x: ' '.join(map(str, x)), axis=1).tolist()
     return text_arr
 
 
@@ -319,8 +320,10 @@ def file_content_extractor(builder: mrc.Builder):
 
     chunk_params = {
         file_type: {
+            # pylint: disable=no-member
             "chunk_size": converters_meta.get(file_type, {}).get("chunk_size", chunk_size),
             "chunk_overlap": converters_meta.get(file_type, {}).get("chunk_overlap", chunk_overlap)
+            # pylint: enable=no-member
         }
         for file_type in converters
     }
