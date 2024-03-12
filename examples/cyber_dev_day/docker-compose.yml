@@ -65,27 +65,24 @@ services:
       - .env
     environment:
       - TERM=${TERM:-}
-      - NGC_API_KEY=CYBER_DEV_DAY
-      - NGC_ORG_ID=CYBER_DEV_DAY
-      - NVIDIA_API_KEY=CYBER_DEV_DAY
       # Overwrite any environment variables in the .env file with URLs needed in the network
-      - NGC_API_BASE=https://morpheus-sherlock.nvidia.com/nemo/v1
-      - NVIDIA_API_BASE=https://morpheus-sherlock.nvidia.com/nvcf/v2
-      - OPENAI_API_BASE=https://morpheus-sherlock.nvidia.com/openai/v1
-      - OPENAI_BASE_URL=https://morpheus-sherlock.nvidia.com/openai/v1
+      - NGC_API_BASE=http://cache-proxy:81/nemo/v1
+      - NVIDIA_API_BASE=http://cache-proxy:81/nvcf/v2
+      - OPENAI_API_BASE=http://cache-proxy:81/openai/v1
+      - OPENAI_BASE_URL=http://cache-proxy:81/openai/v1
     volumes:
       - ../..:/workspace
       - build-cache:/workspace/.cache
       - build-dir:/workspace/build-docker
     cap_add:
       - sys_nice
-    # depends_on:
-    #   - nginx-proxy-cache
+    depends_on:
+      - cache-proxy
     restart: always
 
-  nginx-proxy-cache:
+  cache-proxy:
     image: nginx:1.23.4
-    container_name: nginx-proxy-cache
+    container_name: cache-proxy
     ports:
       - 127.0.0.1:81:81
     volumes:
