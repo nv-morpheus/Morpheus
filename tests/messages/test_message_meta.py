@@ -41,36 +41,36 @@ def fixture_df(
     dataset: DatasetManager,
     index_type: typing.Literal['normal', 'skip', 'dup', 'down',
                                'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
-    filter_probs_df = dataset["test_dataframe.jsonlines"]
+    test_df = dataset["test_dataframe.jsonlines"]
 
     if (index_type == "normal"):
-        return filter_probs_df
+        return test_df
 
     if (index_type == "skip"):
         # Skip some rows
-        return filter_probs_df.iloc[::3, :].copy()
+        return test_df.iloc[::3, :].copy()
 
     if (index_type == "dup"):
         # Duplicate
-        return dataset.dup_index(filter_probs_df, count=2)
+        return dataset.dup_index(test_df, count=2)
 
     if (index_type == "down"):
         # Reverse
-        return filter_probs_df.iloc[::-1, :].copy()
+        return test_df.iloc[::-1, :].copy()
 
     if (index_type == "updown"):
         # Go up then down
-        down = filter_probs_df.iloc[::-1, :].copy()
+        down = test_df.iloc[::-1, :].copy()
 
         # Increase the index to keep them unique
         down.index += len(down)
 
-        if isinstance(filter_probs_df, pd.DataFrame):
+        if isinstance(test_df, pd.DataFrame):
             concat_fn = pd.concat
         else:
             concat_fn = cudf.concat
 
-        out_df = concat_fn([filter_probs_df, down])
+        out_df = concat_fn([test_df, down])
 
         assert out_df.index.is_unique
 
