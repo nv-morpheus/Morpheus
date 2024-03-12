@@ -41,7 +41,7 @@ def fixture_df(
     dataset: DatasetManager,
     index_type: typing.Literal['normal', 'skip', 'dup', 'down',
                                'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
-    filter_probs_df = dataset["filter_probs.csv"]
+    filter_probs_df = dataset["test_dataframe.jsonlines"]
 
     if (index_type == "normal"):
         return filter_probs_df
@@ -113,9 +113,9 @@ def test_mutable_dataframe(df: DataFrameType):
     meta = MessageMeta(df)
 
     with meta.mutable_dataframe() as df_:
-        df_['v2'].iloc[3] = 47
+        df_['col1'].iloc[1] = 47
 
-    assert meta.copy_dataframe()['v2'].iloc[3] == 47
+    assert meta.copy_dataframe()['col1'].iloc[1] == 47
 
 
 def test_using_ctx_outside_with_block(df: DataFrameType):
@@ -145,7 +145,7 @@ def test_copy_dataframe(df: DataFrameType):
 
     # Try setting a single value on the copy
     cdf = meta.copy_dataframe()
-    cdf['v2'].iloc[3] = 47
+    cdf['col1'].iloc[1] = 47
     DatasetManager.assert_df_equal(meta.copy_dataframe(), df, assert_msg="Should be identical")
 
 
