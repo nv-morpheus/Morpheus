@@ -1051,19 +1051,21 @@ def openai_fixture(fail_missing: bool):
 @pytest.mark.usefixtures("openai")
 @pytest.fixture(name="mock_chat_completion")
 def mock_chat_completion_fixture():
-    with mock.patch("openai.ChatCompletion") as mock_chat_completion:
-        mock_chat_completion.return_value = mock_chat_completion
+    from _utils.llm import mk_mock_openai_response
+    with (mock.patch("openai.OpenAI") as mock_client, mock.patch("openai.AsyncOpenAI") as mock_async_client):
+        mock_client.return_value = mock_client
+        mock_async_client.return_value = mock_async_client
 
-        response = {'choices': [{'message': {'content': 'test_output'}}]}
-        mock_chat_completion.create.return_value = response.copy()
-        mock_chat_completion.acreate = mock.AsyncMock(return_value=response.copy())
-        yield mock_chat_completion
+        mock_client.chat.completions.create.return_value = mk_mock_openai_response(['test_output'])
+        mock_async_client.chat.completions.create = mock.AsyncMock(
+            return_value=mk_mock_openai_response(['test_output']))
+        yield (mock_client, mock_async_client)
 
 
 @pytest.mark.usefixtures("nemollm")
 @pytest.fixture(name="mock_nemollm")
 def mock_nemollm_fixture():
-    with mock.patch("nemollm.NemoLLM") as mock_nemollm:
+    with mock.patch("nemollm.NemoLLM", autospec=True) as mock_nemollm:
         mock_nemollm.return_value = mock_nemollm
         mock_nemollm.generate_multiple.return_value = ["test_output"]
         mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}

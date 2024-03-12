@@ -38,11 +38,14 @@ def test_constructor(mock_nemollm: mock.MagicMock, api_key: str, org_id: str):
     expected_org_id = org_id or env_org_id
 
     NeMoLLMService(api_key=api_key, org_id=org_id)
-    mock_nemollm.assert_called_once_with(api_key=expected_api_key, org_id=expected_org_id)
+    _, kwargs = mock_nemollm.call_args_list[-1]
+
+    assert kwargs["api_key"] == expected_api_key
+    assert kwargs["org_id"] == expected_org_id
 
 
 def test_get_client():
     service = NeMoLLMService(api_key="test_api_key")
-    client = service.get_client("test_model")
+    client = service.get_client(model_name="test_model")
 
     assert isinstance(client, NeMoLLMClient)

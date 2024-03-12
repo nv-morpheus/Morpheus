@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>  // for path
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -83,6 +84,15 @@ static inline std::ostream& operator<<(std::ostream& os, const FileTypes& f)
  * @return FileTypes
  */
 FileTypes determine_file_type(const std::string& filename);
+
+/**
+ * @brief Determines the file type from a filename based on extension. For example, my_file.json would return
+ * `FileTypes::JSON`.
+ *
+ * @param filename path to a file. Does not need to exist
+ * @return FileTypes
+ */
+FileTypes determine_file_type(const std::filesystem::path& filename);
 
 #pragma GCC visibility pop
 

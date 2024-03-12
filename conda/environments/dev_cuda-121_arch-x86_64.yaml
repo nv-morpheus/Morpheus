@@ -60,6 +60,7 @@ dependencies:
 - pre-commit
 - protobuf=4.24
 - pybind11-stubgen=0.10.5
+- pydantic
 - pylint=3.0.3
 - pytest-asyncio
 - pytest-benchmark=4.0
@@ -72,7 +73,9 @@ dependencies:
 - pytorch-cuda
 - pytorch=*=*cuda*
 - rapidjson=1.1.0
+- requests
 - requests-cache=1.1
+- requests-toolbelt
 - scikit-build=0.17.6
 - scikit-learn=1.3.2
 - sphinx
