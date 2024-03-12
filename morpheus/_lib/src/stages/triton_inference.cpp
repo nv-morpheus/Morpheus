@@ -331,10 +331,9 @@ TritonInferenceClientSession::TritonInferenceClientSession(std::shared_ptr<ITrit
   m_model_name(std::move(model_name))
 {
     // Now load the input/outputs for the model
+
     bool is_server_live = false;
-
     CHECK_TRITON(m_client->is_server_live(&is_server_live));
-
     if (not is_server_live)
     {
         throw std::runtime_error("Server is not live");
@@ -342,7 +341,6 @@ TritonInferenceClientSession::TritonInferenceClientSession(std::shared_ptr<ITrit
 
     bool is_server_ready = false;
     CHECK_TRITON(m_client->is_server_ready(&is_server_ready));
-
     if (not is_server_ready)
     {
         throw std::runtime_error("Server is not ready");
@@ -350,9 +348,9 @@ TritonInferenceClientSession::TritonInferenceClientSession(std::shared_ptr<ITrit
 
     bool is_model_ready = false;
     CHECK_TRITON(m_client->is_model_ready(&is_model_ready, this->m_model_name));
-
-    if (not is_model_ready)
+    if (not is_model_ready) {
         throw std::runtime_error("Model is not ready");
+    }
 
     std::string model_metadata_json;
     CHECK_TRITON(m_client->model_metadata(&model_metadata_json, this->m_model_name));
@@ -361,7 +359,6 @@ TritonInferenceClientSession::TritonInferenceClientSession(std::shared_ptr<ITrit
 
     std::string model_config_json;
     CHECK_TRITON(m_client->model_config(&model_config_json, this->m_model_name));
-
     auto model_config = nlohmann::json::parse(model_config_json);
 
     if (model_config.contains("max_batch_size"))
