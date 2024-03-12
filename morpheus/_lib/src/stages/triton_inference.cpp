@@ -56,6 +56,7 @@
 #include <exception>
 #include <functional>
 #include <memory>
+#include <shared_mutex>
 #include <sstream>
 #include <stdexcept>  // for runtime_error, out_of_range
 #include <utility>
@@ -329,7 +330,8 @@ triton::client::Error HttpTritonClient::async_infer(triton::client::InferenceSer
         inference_output_ptrs);
 }
 
-TritonInferenceClient::TritonInferenceClient(std::shared_ptr<ITritonClient> client, std::string model_name) :
+TritonInferenceClientSession::TritonInferenceClientSession(std::shared_ptr<ITritonClient> client,
+                                                           std::string model_name) :
   m_client(std::move(client)),
   m_model_name(std::move(model_name))
 {
@@ -420,7 +422,7 @@ TritonInferenceClient::TritonInferenceClient(std::shared_ptr<ITritonClient> clie
     }
 }
 
-std::map<std::string, std::string> TritonInferenceClient::get_input_mappings(
+std::map<std::string, std::string> TritonInferenceClientSession::get_input_mappings(
     std::map<std::string, std::string> input_map_overrides)
 {
     auto mappings = std::map<std::string, std::string>();
@@ -448,7 +450,7 @@ std::map<std::string, std::string> TritonInferenceClient::get_input_mappings(
     return mappings;
 };
 
-std::map<std::string, std::string> TritonInferenceClient::get_output_mappings(
+std::map<std::string, std::string> TritonInferenceClientSession::get_output_mappings(
     std::map<std::string, std::string> output_map_overrides)
 {
     auto mappings = std::map<std::string, std::string>();
@@ -476,7 +478,7 @@ std::map<std::string, std::string> TritonInferenceClient::get_output_mappings(
     return mappings;
 }
 
-mrc::coroutines::Task<TensorMap> TritonInferenceClient::infer(TensorMap&& inputs)
+mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&& inputs)
 {
     if (inputs.size() == 0)
     {
@@ -581,42 +583,39 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClient::infer(TensorMap&& inputs
     co_return output_tensors;
 };
 
+TritonInferenceClient::TritonInferenceClient(std::shared_ptr<ITritonClient> client, std::string model_name) :
+  m_client(std::move(client)),
+  m_model_name(std::move(model_name))
+{}
+
+std::shared_ptr<IInferenceClientSession> TritonInferenceClient::get_session()
+{
+    if (m_session == nullptr)
+    {
+        m_session = std::make_shared<TritonInferenceClientSession>(m_client, m_model_name);
+    }
+
+    return reinterpret_pointer_cast<IInferenceClientSession>(m_session);
+}
+
+void TritonInferenceClient::reset_session()
+{
+    m_session.reset();
+}
+
 // Component public implementations
 // ************ InferenceClientStage ************************* //
-InferenceClientStage::InferenceClientStage(std::function<std::shared_ptr<ITritonClient>()> create_client,
+InferenceClientStage::InferenceClientStage(std::shared_ptr<IInferenceClient> client,
                                            std::string model_name,
                                            bool needs_logits,
                                            std::map<std::string, std::string> input_mapping,
                                            std::map<std::string, std::string> output_mapping) :
   m_model_name(std::move(model_name)),
-  m_create_client(std::move(create_client)),
+  m_client(std::move(client)),
   m_needs_logits(needs_logits),
   m_input_mapping(std::move(input_mapping)),
   m_output_mapping(std::move(output_mapping))
 {}
-
-std::shared_ptr<TritonInferenceClient> InferenceClientStage::get_client()
-{
-    std::lock_guard(this->m_client_mutex);
-
-    if (m_client != nullptr)
-    {
-        return m_client;
-    }
-
-    auto client = m_create_client();
-
-    m_client = std::make_shared<TritonInferenceClient>(std::move(client), m_model_name);
-
-    return m_client;
-}
-
-void InferenceClientStage::reset_client()
-{
-    std::lock_guard(this->m_client_mutex);
-
-    m_client.reset();
-}
 
 using namespace std::chrono_literals;
 struct ExponentialBackoff
@@ -665,11 +664,13 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
             // TensorMap output_tensors;
             // buffer_map_t output_buffers;
 
-            auto client = this->get_client();
+            auto lock = std::shared_lock(m_session_mutex);
+
+            auto session = m_client->get_session();
 
             TensorMap input_tensors;
 
-            for (auto mapping : client->get_input_mappings(m_input_mapping))
+            for (auto mapping : session->get_input_mappings(m_input_mapping))
             {
                 CHECK(x->memory->has_tensor(mapping.first))
                     << "Model input '" << mapping.first << "' not found in InferenceMemory";
@@ -678,7 +679,7 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
             }
 
             // TODO(cwharris): Break inference in to batches and attempt retries on per-batch basis.
-            auto output_tensors = co_await client->infer(std::move(input_tensors));
+            auto output_tensors = co_await session->infer(std::move(input_tensors));
 
             co_await on->yield();
 
@@ -695,7 +696,7 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
 
             TensorMap output_tensor_map;
 
-            for (auto mapping : client->get_output_mappings(m_output_mapping))
+            for (auto mapping : session->get_output_mappings(m_output_mapping))
             {
                 output_tensor_map[mapping.second].swap(std::move(output_tensors[mapping.first]));
             }
@@ -712,7 +713,9 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
 
         } catch (...)
         {
-            this->reset_client();
+            auto lock = std::unique_lock(m_session_mutex);
+
+            this->m_client->reset_session();
 
             if (m_retry_max >= 0 and ++retry_count > m_retry_max)
             {
@@ -736,12 +739,12 @@ std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStage
     std::map<std::string, std::string> input_mapping,
     std::map<std::string, std::string> output_mapping)
 {
-    auto create_client = [server_url]() {
-        return std::make_shared<HttpTritonClient>(server_url);
-    };
-
-    auto stage = builder.construct_object<InferenceClientStage>(
-        name, create_client, model_name, needs_logits, input_mapping, output_mapping);
+    auto triton_client           = std::make_shared<HttpTritonClient>(server_url);
+    auto client                  = std::reinterpret_pointer_cast<ITritonClient>(triton_client);
+    auto triton_inference_client = std::make_shared<TritonInferenceClient>(client, model_name);
+    auto inference_client        = std::reinterpret_pointer_cast<IInferenceClient>(triton_inference_client);
+    auto stage                   = builder.construct_object<InferenceClientStage>(
+        name, inference_client, model_name, needs_logits, input_mapping, output_mapping);
 
     return stage;
 }

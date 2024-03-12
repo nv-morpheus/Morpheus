@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 #include "common.h"
 #include "cuda_runtime_api.h"
@@ -42,6 +41,7 @@
 #include <mrc/coroutines/scheduler.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
 #include <mrc/coroutines/test_scheduler.hpp>
+#include <mrc/type_traits.hpp>
 
 #include <filesystem>
 #include <iostream>
@@ -85,7 +85,7 @@ class FakeInferResult : public triton::client::InferResult
 
     triton::client::Error Shape(const std::string& output_name, std::vector<int64_t>* shape) const override
     {
-        shape = new std::vector<int64_t>({0, 0}); // this is technically a leak
+        shape = new std::vector<int64_t>({0, 0});  // this is technically a leak
 
         return triton::client::Error::Success;
     }
@@ -113,27 +113,29 @@ class FakeInferResult : public triton::client::InferResult
 class FakeTritonClient : public morpheus::ITritonClient
 {
   private:
-    bool m_is_server_live_has_errored = false;
-    bool m_is_server_live = false;
+    bool m_is_server_live_has_errored  = false;
+    bool m_is_server_live              = false;
     bool m_is_server_ready_has_errored = false;
-    bool m_is_server_ready = false;
-    bool m_is_model_ready_has_errored = false;
-    bool m_is_model_ready = false;
-    bool m_model_config_has_errored = false;
-    bool m_model_metadata_has_errored = false;
-    bool m_async_infer_has_errored = false;
+    bool m_is_server_ready             = false;
+    bool m_is_model_ready_has_errored  = false;
+    bool m_is_model_ready              = false;
+    bool m_model_config_has_errored    = false;
+    bool m_model_metadata_has_errored  = false;
+    bool m_async_infer_has_errored     = false;
 
   public:
     triton::client::Error is_server_live(bool* live) override
     {
-        if (not m_is_server_live_has_errored) {
+        if (not m_is_server_live_has_errored)
+        {
             m_is_server_live_has_errored = true;
             return triton::client::Error("is_server_live error");
         }
 
         *live = m_is_server_live;
 
-        if (not m_is_server_live) {
+        if (not m_is_server_live)
+        {
             m_is_server_live = true;
         }
 
@@ -142,14 +144,16 @@ class FakeTritonClient : public morpheus::ITritonClient
 
     triton::client::Error is_server_ready(bool* ready) override
     {
-        if (not m_is_server_ready_has_errored) {
+        if (not m_is_server_ready_has_errored)
+        {
             m_is_server_ready_has_errored = true;
             return triton::client::Error("is_server_ready error");
         }
 
         *ready = m_is_server_live;
 
-        if (not m_is_server_ready) {
+        if (not m_is_server_ready)
+        {
             m_is_server_ready = true;
         }
 
@@ -158,14 +162,16 @@ class FakeTritonClient : public morpheus::ITritonClient
 
     triton::client::Error is_model_ready(bool* ready, std::string& model_name) override
     {
-        if (not m_is_model_ready_has_errored) {
+        if (not m_is_model_ready_has_errored)
+        {
             m_is_model_ready_has_errored = true;
             return triton::client::Error("is_model_ready error");
         }
 
         *ready = m_is_model_ready;
 
-        if (not m_is_model_ready) {
+        if (not m_is_model_ready)
+        {
             m_is_model_ready = true;
         }
 
@@ -285,18 +291,18 @@ TEST_F(TestTritonInferenceStage, SingleRow)
     cudaMemcpy(buffer->data(), seq_ids.data(), count * sizeof(int), cudaMemcpyKind::cudaMemcpyHostToDevice);
     auto tensors = morpheus::TensorMap();
     tensors["seq_ids"].swap(morpheus::Tensor::create(buffer, dtype, {count, 1}, {}));
-    auto memory = std::make_shared<morpheus::TensorMemory>(count, std::move(tensors));
-    auto table = create_test_table_with_metadata(count);
+    auto memory  = std::make_shared<morpheus::TensorMemory>(count, std::move(tensors));
+    auto table   = create_test_table_with_metadata(count);
     auto meta    = morpheus::MessageMeta::create_from_cpp(std::move(table), 1);
     auto message = std::make_shared<morpheus::MultiInferenceMessage>(meta, 0, count, memory);
 
-    auto fake_client = std::make_shared<FakeTritonClient>();
-    auto create_client = [&]() {
-        return fake_client;
-    };
-    auto stage = morpheus::InferenceClientStage(create_client, "", false, {}, {});
+    auto triton_client           = std::make_shared<FakeTritonClient>();
+    auto client = std::reinterpret_pointer_cast<morpheus::ITritonClient>(triton_client);
+    auto triton_inference_client = std::make_shared<morpheus::TritonInferenceClient>(client, "");
+    auto inference_client        = std::reinterpret_pointer_cast<morpheus::IInferenceClient>(triton_inference_client);
+    auto stage                   = morpheus::InferenceClientStage(inference_client, "", false, {}, {});
 
-    auto on            = std::make_shared<mrc::coroutines::TestScheduler>();
+    auto on           = std::make_shared<mrc::coroutines::TestScheduler>();
     auto results_task = [](auto& stage, auto message, auto on)
         -> mrc::coroutines::Task<std::vector<std::shared_ptr<morpheus::MultiResponseMessage>>> {
         std::vector<std::shared_ptr<morpheus::MultiResponseMessage>> results;

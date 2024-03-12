@@ -43,13 +43,14 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceClientStage********************************/
 
-struct TritonInferInput
+struct MORPHEUS_EXPORT TritonInferInput
 {
     std::string name;
     std::vector<int64_t> shape;
@@ -57,12 +58,12 @@ struct TritonInferInput
     std::vector<uint8_t> data;
 };
 
-struct TritonInferRequestedOutput
+struct MORPHEUS_EXPORT TritonInferRequestedOutput
 {
     std::string name;
 };
 
-class ITritonClient
+class MORPHEUS_EXPORT ITritonClient
 {
   public:
     virtual triton::client::Error is_server_live(bool* live) = 0;
@@ -81,7 +82,26 @@ class ITritonClient
                                               const std::vector<TritonInferRequestedOutput>& outputs) = 0;
 };
 
-class HttpTritonClient : public ITritonClient
+class MORPHEUS_EXPORT IInferenceClientSession
+{
+  public:
+    virtual std::map<std::string, std::string> get_input_mappings(
+        std::map<std::string, std::string> input_map_overrides) = 0;
+
+    virtual std::map<std::string, std::string> get_output_mappings(
+        std::map<std::string, std::string> output_map_overrides) = 0;
+
+    virtual mrc::coroutines::Task<TensorMap> infer(TensorMap&& inputs) = 0;
+};
+
+class MORPHEUS_EXPORT IInferenceClient
+{
+  public:
+    virtual std::shared_ptr<IInferenceClientSession> get_session() = 0;
+    virtual void reset_session()                                   = 0;
+};
+
+class MORPHEUS_EXPORT HttpTritonClient : public ITritonClient
 {
   private:
     std::unique_ptr<triton::client::InferenceServerHttpClient> m_client;
@@ -106,7 +126,7 @@ class HttpTritonClient : public ITritonClient
                                       const std::vector<TritonInferRequestedOutput>& outputs) override;
 };
 
-struct TritonInferenceClient
+class MORPHEUS_EXPORT TritonInferenceClientSession : IInferenceClientSession
 {
   private:
     std::string m_model_name;
@@ -116,13 +136,30 @@ struct TritonInferenceClient
     std::shared_ptr<ITritonClient> m_client;
 
   public:
+    TritonInferenceClientSession(std::shared_ptr<ITritonClient> client, std::string model_name);
+
+    std::map<std::string, std::string> get_input_mappings(
+        std::map<std::string, std::string> input_map_overrides) override;
+
+    std::map<std::string, std::string> get_output_mappings(
+        std::map<std::string, std::string> output_map_overrides) override;
+
+    mrc::coroutines::Task<TensorMap> infer(TensorMap&& inputs) override;
+};
+
+class MORPHEUS_EXPORT TritonInferenceClient : IInferenceClient
+{
+  private:
+    std::shared_ptr<ITritonClient> m_client;
+    std::string m_model_name;
+    std::shared_ptr<TritonInferenceClientSession> m_session;
+
+  public:
     TritonInferenceClient(std::shared_ptr<ITritonClient> client, std::string model_name);
 
-    std::map<std::string, std::string> get_input_mappings(std::map<std::string, std::string> input_map_overrides);
+    std::shared_ptr<IInferenceClientSession> get_session() override;
 
-    std::map<std::string, std::string> get_output_mappings(std::map<std::string, std::string> output_map_overrides);
-
-    mrc::coroutines::Task<TensorMap> infer(TensorMap&& inputs);
+    void reset_session() override;
 };
 
 /**
@@ -131,12 +168,11 @@ struct TritonInferenceClient
  * @file
  */
 
-#pragma GCC visibility push(default)
 /**
  * @brief Perform inference with Triton Inference Server.
  * This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
  */
-class InferenceClientStage
+class MORPHEUS_EXPORT InferenceClientStage
   : public mrc::pymrc::AsyncioRunnable<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>
 {
   public:
@@ -146,14 +182,14 @@ class InferenceClientStage
     /**
      * @brief Construct a new Inference Client Stage object
      *
-     * @param create_client : Create's a Triton client instance.
+     * @param client : Inference client instance.
      * @param model_name : Name of the model specifies which model can handle the inference requests that are sent to
      * Triton inference
      * @param needs_logits : Determines if logits are required.
      * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this
      * if the Morpheus names do not match the model.
      */
-    InferenceClientStage(std::function<std::shared_ptr<ITritonClient>()> create_client,
+    InferenceClientStage(std::shared_ptr<IInferenceClient> client,
                          std::string model_name,
                          bool needs_logits,
                          std::map<std::string, std::string> input_mapping  = {},
@@ -171,23 +207,12 @@ class InferenceClientStage
         std::shared_ptr<MultiInferenceMessage>&& data, std::shared_ptr<mrc::coroutines::Scheduler> on) override;
 
   private:
-    std::shared_ptr<TritonInferenceClient> get_client();
-    void reset_client();
-
     std::string m_model_name;
-    std::function<std::shared_ptr<ITritonClient>()> m_create_client;
+    std::shared_ptr<IInferenceClient> m_client;
     bool m_needs_logits{true};
     std::map<std::string, std::string> m_input_mapping;
     std::map<std::string, std::string> m_output_mapping;
-
-    // // Below are settings created during handshake with server
-    // // std::shared_ptr<triton::client::InferenceServerHttpClient> m_client;
-    // std::vector<TritonInOut> m_model_inputs;
-    // std::vector<TritonInOut> m_model_outputs;
-    // triton::client::InferOptions m_options;
-    // TensorIndex m_max_batch_size{-1};
-    std::mutex m_client_mutex;
-    std::shared_ptr<TritonInferenceClient> m_client;
+    std::shared_mutex m_session_mutex;
 
     int32_t m_retry_max = 10;
 };
@@ -196,7 +221,7 @@ class InferenceClientStage
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct InferenceClientStageInterfaceProxy
+struct MORPHEUS_EXPORT InferenceClientStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a InferenceClientStage, and return the result
@@ -220,6 +245,5 @@ struct InferenceClientStageInterfaceProxy
         std::map<std::string, std::string> input_mapping,
         std::map<std::string, std::string> output_mapping);
 };
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus
