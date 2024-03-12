@@ -72,7 +72,8 @@ void* RMMTensor::data() const
     return static_cast<uint8_t*>(m_md->data()) + this->offset_bytes();
 }
 
-std::shared_ptr<rmm::device_buffer> RMMTensor::buffer() const {
+std::shared_ptr<rmm::device_buffer> RMMTensor::buffer() const
+{
     return m_md;
 }
 

@@ -17,33 +17,27 @@
 
 #pragma once
 
-#include "common.h"
-
+#include "morpheus/export.h"
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
 #include "morpheus/objects/triton_in_out.hpp"
 #include "morpheus/types.hpp"
 
-#include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
 #include <http_client.h>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/sink_properties.hpp>
-#include <mrc/node/source_properties.hpp>
+#include <mrc/coroutines/async_generator.hpp>
+#include <mrc/coroutines/scheduler.hpp>
+#include <mrc/coroutines/task.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
-#include <mrc/types.hpp>
+#include <pybind11/pybind11.h>
 #include <pymrc/asyncio_runnable.hpp>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
+#include <stdint.h>
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 #include <map>
 #include <memory>
+#include <shared_mutex>
 #include <string>
-#include <thread>
-#include <utility>
 #include <vector>
 
 namespace morpheus {
@@ -194,11 +188,6 @@ class MORPHEUS_EXPORT InferenceClientStage
                          bool needs_logits,
                          std::map<std::string, std::string> input_mapping  = {},
                          std::map<std::string, std::string> output_mapping = {});
-
-    /**
-     * TODO(Documentation)
-     */
-    static bool is_default_grpc_port(std::string& server_url);
 
     /**
      * TODO(Documentation)

@@ -694,15 +694,14 @@ class TritonInferenceStage(InferenceStage):
 
     _INFERENCE_WORKER_DEFAULT_INOUT_MAPPING = {
         PipelineModes.FIL: {
-            "outputs" : {
+            "outputs": {
                 "output__0": "probs",
             }
         },
         PipelineModes.NLP: {
             "inputs": {
                 "attention_mask": "input_mask",
-            },
-            "outputs": {
+            }, "outputs": {
                 "output": "probs",
             }
         }
@@ -764,12 +763,10 @@ class TritonInferenceStage(InferenceStage):
         return TritonInferenceWorker(inf_queue=inf_queue, c=self._config, **self._kwargs)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return _stages.InferenceClientStage(
-            builder,
-            self.unique_name,
-            self._server_url,
-            self._model_name,
-            self._needs_logits,
-            self._input_mapping,
-            self._output_mapping
-        )
+        return _stages.InferenceClientStage(builder,
+                                            self.unique_name,
+                                            self._server_url,
+                                            self._model_name,
+                                            self._needs_logits,
+                                            self._input_mapping,
+                                            self._output_mapping)
