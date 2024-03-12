@@ -25,7 +25,7 @@ y="\033[0;33m"
 x="\033[0m"
 
 DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"morpheus"}
-DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"dev-$(date +'%y%m%d')"}
+DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"yuchen-dev-$(date +'%y%m%d')"}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 DOCKER_ARGS="--runtime=nvidia --env WORKSPACE_VOLUME=${PWD} -v $PWD:/workspace --net=host --gpus=all --cap-add=sys_nice"

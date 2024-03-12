@@ -163,7 +163,7 @@ class PreprocessFILStage(PreprocessBaseStage):
 
         # Create the inference memory. Keep in mind count here could be > than input count
         memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seg_ids)
-
+        
         infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
 
         return infer_message

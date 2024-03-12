@@ -214,7 +214,6 @@ class PreprocessNLPStage(PreprocessBaseStage):
                             }))
 
         message.set_metadata("inference_memory_params", {"inference_type": "nlp"})
-
         return message
 
     @staticmethod
