@@ -327,7 +327,7 @@ triton::client::Error HttpTritonClient::async_infer(triton::client::InferenceSer
 
 TritonInferenceClientSession::TritonInferenceClientSession(std::shared_ptr<ITritonClient> client,
                                                            std::string model_name) :
-  m_client(std::move(client)),
+  m_client(client),
   m_model_name(std::move(model_name))
 {
     // Now load the input/outputs for the model
@@ -578,7 +578,7 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&&
     co_return output_tensors;
 };
 
-TritonInferenceClient::TritonInferenceClient(std::shared_ptr<ITritonClient> client, std::string model_name) :
+TritonInferenceClient::TritonInferenceClient(std::unique_ptr<ITritonClient>&& client, std::string model_name) :
   m_client(std::move(client)),
   m_model_name(std::move(model_name))
 {}
@@ -600,7 +600,7 @@ void TritonInferenceClient::reset_session()
 
 // Component public implementations
 // ************ InferenceClientStage ************************* //
-InferenceClientStage::InferenceClientStage(std::shared_ptr<IInferenceClient> client,
+InferenceClientStage::InferenceClientStage(std::unique_ptr<IInferenceClient>&& client,
                                            std::string model_name,
                                            bool needs_logits,
                                            std::map<std::string, std::string> input_mapping,
@@ -734,12 +734,10 @@ std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStage
     std::map<std::string, std::string> input_mapping,
     std::map<std::string, std::string> output_mapping)
 {
-    auto triton_client           = std::make_shared<HttpTritonClient>(server_url);
-    auto client                  = std::reinterpret_pointer_cast<ITritonClient>(triton_client);
-    auto triton_inference_client = std::make_shared<TritonInferenceClient>(client, model_name);
-    auto inference_client        = std::reinterpret_pointer_cast<IInferenceClient>(triton_inference_client);
+    auto triton_client           = std::make_unique<HttpTritonClient>(server_url);
+    auto triton_inference_client = std::make_unique<TritonInferenceClient>(std::move(triton_client), model_name);
     auto stage                   = builder.construct_object<InferenceClientStage>(
-        name, inference_client, model_name, needs_logits, input_mapping, output_mapping);
+        name, std::move(triton_inference_client), model_name, needs_logits, input_mapping, output_mapping);
 
     return stage;
 }

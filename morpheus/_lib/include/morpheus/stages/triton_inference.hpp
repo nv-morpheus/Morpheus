@@ -120,7 +120,7 @@ class MORPHEUS_EXPORT HttpTritonClient : public ITritonClient
                                       const std::vector<TritonInferRequestedOutput>& outputs) override;
 };
 
-class MORPHEUS_EXPORT TritonInferenceClientSession : IInferenceClientSession
+class MORPHEUS_EXPORT TritonInferenceClientSession : public IInferenceClientSession
 {
   private:
     std::string m_model_name;
@@ -141,7 +141,7 @@ class MORPHEUS_EXPORT TritonInferenceClientSession : IInferenceClientSession
     mrc::coroutines::Task<TensorMap> infer(TensorMap&& inputs) override;
 };
 
-class MORPHEUS_EXPORT TritonInferenceClient : IInferenceClient
+class MORPHEUS_EXPORT TritonInferenceClient : public IInferenceClient
 {
   private:
     std::shared_ptr<ITritonClient> m_client;
@@ -149,7 +149,7 @@ class MORPHEUS_EXPORT TritonInferenceClient : IInferenceClient
     std::shared_ptr<TritonInferenceClientSession> m_session;
 
   public:
-    TritonInferenceClient(std::shared_ptr<ITritonClient> client, std::string model_name);
+    TritonInferenceClient(std::unique_ptr<ITritonClient>&& client, std::string model_name);
 
     std::shared_ptr<IInferenceClientSession> get_session() override;
 
@@ -183,7 +183,7 @@ class MORPHEUS_EXPORT InferenceClientStage
      * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this
      * if the Morpheus names do not match the model.
      */
-    InferenceClientStage(std::shared_ptr<IInferenceClient> client,
+    InferenceClientStage(std::unique_ptr<IInferenceClient>&& client,
                          std::string model_name,
                          bool needs_logits,
                          std::map<std::string, std::string> input_mapping  = {},
