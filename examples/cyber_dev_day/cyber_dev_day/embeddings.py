@@ -128,8 +128,13 @@ def create_code_embedding(code_dir: str,
 
     logger.info(f"Total {len(documents)} source code documents in {len(positive_matches)} files.")
 
+    debug_file_path = f"{os.getenv('MORPHEUS_ROOT', '.')}/.tmp/embedding_file_list.txt"
+
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(debug_file_path), exist_ok=True)
+
     # Write out the list of files to disk to analyze
-    with open(f"{os.getenv('MORPHEUS_ROOT', '.')}/.tmp/embedding_file_list.txt", mode="w", encoding="utf-8") as f:
+    with open(debug_file_path, mode="w", encoding="utf-8") as f:
         f.writelines([f".{doc.metadata['source'].removeprefix(code_dir)}\n" for doc in documents])
 
     python_splitter = RecursiveCharacterTextSplitter.from_language(language=Language.PYTHON,
