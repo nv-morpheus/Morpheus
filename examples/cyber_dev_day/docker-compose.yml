@@ -66,10 +66,10 @@ services:
     environment:
       - TERM=${TERM:-}
       # Overwrite any environment variables in the .env file with URLs needed in the network
-      - NGC_API_BASE=http://cache-proxy:81/nemo/v1
-      - NVIDIA_API_BASE=http://cache-proxy:81/nvcf/v2
-      - OPENAI_API_BASE=http://cache-proxy:81/openai/v1
-      - OPENAI_BASE_URL=http://cache-proxy:81/openai/v1
+      - NGC_API_BASE=http://morpheuscache.ddns.net/nemo/v1
+      - NVIDIA_API_BASE=http://morpheuscache.ddns.net/nvcf/v2
+      - OPENAI_API_BASE=http://morpheuscache.ddns.net/openai/v1
+      - OPENAI_BASE_URL=http://morpheuscache.ddns.net/openai/v1
     volumes:
       - ../..:/workspace
       - build-cache:/workspace/.cache
@@ -77,14 +77,13 @@ services:
     cap_add:
       - sys_nice
     depends_on:
-      - cache-proxy
+      - proxy-cache
     restart: always
 
-  cache-proxy:
+  proxy-cache:
     image: nginx:1.23.4
-    container_name: cache-proxy
     ports:
-      - 127.0.0.1:81:81
+      - "81"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/template-variables.conf:/etc/nginx/templates/10-variables.conf.template:ro
