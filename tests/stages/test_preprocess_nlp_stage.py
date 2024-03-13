@@ -140,6 +140,7 @@ def test_process_control_message_and_multi_message(mock_tokenize_text_series, co
                                                    stage._add_special_tokens,
                                                    stage._column)
     
+    # Check if each tensor in the control message is equal to the corresponding tensor in the inference message
     for tensor_key in output_cm.tensors().tensor_names:
         assert cp.array_equal(output_cm.tensors().get_tensor(tensor_key), getattr(output_infer_message, tensor_key))
         
