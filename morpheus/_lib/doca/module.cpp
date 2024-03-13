@@ -42,8 +42,7 @@ PYBIND11_MODULE(doca, m)
              py::arg("name"),
              py::arg("nic_pci_address"),
              py::arg("gpu_pci_address"),
-             py::arg("traffic_type")
-             );
+             py::arg("traffic_type"));
 }
 
 }  // namespace morpheus

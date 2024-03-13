@@ -47,41 +47,45 @@ namespace {
 
 using jobs_check_t = doca_error_t (*)(doca_devinfo*);
 
-static doca_error_t open_doca_device_with_pci(const char *pcie_value, struct doca_dev **retval)
+static doca_error_t open_doca_device_with_pci(const char* pcie_value, struct doca_dev** retval)
 {
-	struct doca_devinfo **dev_list;
-	uint32_t nb_devs;
-	doca_error_t res;
-	size_t i;
-	uint8_t is_addr_equal = 0;
+    struct doca_devinfo** dev_list;
+    uint32_t nb_devs;
+    doca_error_t res;
+    size_t i;
+    uint8_t is_addr_equal = 0;
 
-	/* Set default return value */
-	*retval = NULL;
+    /* Set default return value */
+    *retval = NULL;
 
-	res = doca_devinfo_create_list(&dev_list, &nb_devs);
-	if (res != DOCA_SUCCESS) {
-		LOG(ERROR) << "Failed to load doca devices list";
-		return res;
-	}
+    res = doca_devinfo_create_list(&dev_list, &nb_devs);
+    if (res != DOCA_SUCCESS)
+    {
+        LOG(ERROR) << "Failed to load doca devices list";
+        return res;
+    }
 
-	/* Search */
-	for (i = 0; i < nb_devs; i++) {
-		res = doca_devinfo_is_equal_pci_addr(dev_list[i], pcie_value, &is_addr_equal);
-		if (res == DOCA_SUCCESS && is_addr_equal) {
-			/* if device can be opened */
-			res = doca_dev_open(dev_list[i], retval);
-			if (res == DOCA_SUCCESS) {
-				doca_devinfo_destroy_list(dev_list);
-				return res;
-			}
-		}
-	}
+    /* Search */
+    for (i = 0; i < nb_devs; i++)
+    {
+        res = doca_devinfo_is_equal_pci_addr(dev_list[i], pcie_value, &is_addr_equal);
+        if (res == DOCA_SUCCESS && is_addr_equal)
+        {
+            /* if device can be opened */
+            res = doca_dev_open(dev_list[i], retval);
+            if (res == DOCA_SUCCESS)
+            {
+                doca_devinfo_destroy_list(dev_list);
+                return res;
+            }
+        }
+    }
 
-	MORPHEUS_FAIL("Matching device not found");
-	res = DOCA_ERROR_NOT_FOUND;
+    MORPHEUS_FAIL("Matching device not found");
+    res = DOCA_ERROR_NOT_FOUND;
 
-	doca_devinfo_destroy_list(dev_list);
-	return res;
+    doca_devinfo_destroy_list(dev_list);
+    return res;
 }
 
 doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
@@ -196,7 +200,7 @@ DocaContext::DocaContext(std::string nic_addr, std::string gpu_addr) : m_max_que
 DocaContext::~DocaContext()
 {
     doca_flow_port_stop(m_flow_port);
-	doca_flow_destroy();
+    doca_flow_destroy();
 
     if (m_gpu != nullptr)
     {
