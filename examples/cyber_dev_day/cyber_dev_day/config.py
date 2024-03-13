@@ -104,6 +104,8 @@ class EngineAgentConfig(BaseModel):
 
     code_repo: EngineCodeRepoConfig
 
+    verbose: bool = True
+
 
 class EngineConfig(BaseModel):
 

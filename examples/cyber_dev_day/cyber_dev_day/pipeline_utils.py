@@ -81,7 +81,10 @@ def build_agent_executor(config: EngineAgentConfig) -> AgentExecutor:
                  description=("useful for when you need to check if an application or any dependency within "
                               "the Docker container uses a function or a component of a library.")))
 
-    agent_executor = initialize_agent(tools, langchain_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
+    agent_executor = initialize_agent(tools,
+                                      langchain_llm,
+                                      agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+                                      verbose=config.verbose)
 
     return agent_executor
 
