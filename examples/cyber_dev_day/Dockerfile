@@ -76,5 +76,10 @@ RUN source activate morpheus &&\
     jupyter contrib nbextension install --user &&\
     pip install jupyterlab_nvdashboard==0.9
 
+# Set defaults which will be automatically replaced by the proxy server
+ENV NGC_API_KEY="CYBER_DEV_DAY"
+ENV NGC_ORG_ID="CYBER_DEV_DAY"
+ENV NVIDIA_API_KEY="CYBER_DEV_DAY"
+
 # Launch jupyter
 CMD ["jupyter-lab", "--ip=0.0.0.0", "--no-browser", "--allow-root"]
