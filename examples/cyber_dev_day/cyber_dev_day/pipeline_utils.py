@@ -51,9 +51,8 @@ def build_agent_executor(config: EngineAgentConfig) -> AgentExecutor:
 
     if (config.sbom.data_file is not None):
 
-        # Load the SBOM into a map
-        sbom_map = {}
-        sbom_checker = SBOMChecker(sbom_map)
+        # Load the SBOM
+        sbom_checker = SBOMChecker.from_csv(config.sbom.data_file)
 
         tools.append(
             Tool(name="SBOM Package Checker",

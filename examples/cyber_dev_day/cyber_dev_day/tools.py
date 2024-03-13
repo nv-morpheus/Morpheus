@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import warnings
+from textwrap import dedent
 
 from packaging.version import InvalidVersion
 from packaging.version import parse as parse_version
+
+logger = logging.getLogger(__name__)
 
 
 def range_version_comparator(software_version: str, vulnerability_lower_range: str, vulnerability_upper_range: str):
@@ -145,17 +149,36 @@ def version_comparison(software_version: str):
 
 class SBOMChecker:
 
+    tool_description = dedent("""
+        Useful for when you need to check the Docker container's software bill of
+        materials (SBOM) to get whether or not a given library is in the container.
+        Input should be the name of the library or software. If the package is
+        present a version number is returned, otherwise False is returned if the
+        package is not present.
+    """).replace("\n", "")
+
     def __init__(self, sbom_map: dict[str, str]):
-        self.sbom_map = sbom_map
+
+        # Convert all keys to lowercase
+        self.sbom_map = {k.lower().strip(): v for k, v in sbom_map.items()}
 
     def sbom_checker(self, package_name: str):
         "use this tool to check the version of the software package from the SBOM"
         "returns the software version if the package is present in the SBOM"
         "if the package is not in the SBOM returns False"
 
+        return self.sbom_map.get(package_name.lower().strip(), f"The package {package_name} was not found in the SBOM")
+
+    @staticmethod
+    def from_csv(file_path: str) -> "SBOMChecker":
+        """
+        Use this tool to load the SBOM from a CSV file returns an instance of the SBOMChecker class
+        """
         try:
-            version = self.sbom_map.get(package_name.lower().strip(), False)
+            import pandas as pd
+            sbom = pd.read_csv(file_path)
+            sbom_map = dict(zip(sbom['package'].str.lower(), sbom['version']))
+            return SBOMChecker(sbom_map)
         except Exception as e:
-            warnings.warn(str(e), stacklevel=2)
-            version = False
-        return version
+            logger.error("Error loading SBOM from CSV file: %s. Error: %s", file_path, str(e), exc_info=True)
+            raise e
