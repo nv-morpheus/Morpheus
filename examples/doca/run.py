@@ -119,12 +119,13 @@ def run_pipeline(pipeline_batch_size,
         pipeline.add_stage(DeserializeStage(config))
         pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
 
+        hashfile = '/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt'
+
         # add preprocessing stage
         pipeline.add_stage(
             PreprocessNLPStage(
                 config,
-                vocab_hash_file=
-                '/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
+                vocab_hash_file=hashfile,
                 do_lower_case=True,
                 truncation=True,
                 add_special_tokens=False,
