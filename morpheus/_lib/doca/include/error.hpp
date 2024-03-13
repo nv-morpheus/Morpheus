@@ -38,8 +38,8 @@ namespace detail {
 
 inline void throw_doca_error(doca_error_t error, const char* file, unsigned int line)
 {
-    throw morpheus::DocaError(MORPHEUS_CONCAT_STR(
-        "DOCA error encountered at: " << file << ":" << line << ": " << error << " " << doca_error_get_descr(error)));
+    throw morpheus::DocaError(MORPHEUS_CONCAT_STR("DOCA error encountered at: " << file << ":" << line << ": " << error
+                                                                                << " " << doca_error_get_descr(error)));
 }
 
 inline void throw_rte_error(int error, const char* file, unsigned int line)

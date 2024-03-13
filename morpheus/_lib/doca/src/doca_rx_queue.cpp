@@ -36,7 +36,8 @@ DocaRxQueue::DocaRxQueue(std::shared_ptr<DocaContext> context) :
     uint32_t cyclic_buffer_size;
     DOCA_TRY(doca_eth_rxq_create(context->dev(), MAX_PKT_NUM, MAX_PKT_SIZE, &(m_rxq_info_cpu)));
     DOCA_TRY(doca_eth_rxq_set_type(m_rxq_info_cpu, DOCA_ETH_RXQ_TYPE_CYCLIC));
-    DOCA_TRY(doca_eth_rxq_estimate_packet_buf_size(DOCA_ETH_RXQ_TYPE_CYCLIC, 0, 0, MAX_PKT_SIZE, MAX_PKT_NUM, 0, &cyclic_buffer_size));
+    DOCA_TRY(doca_eth_rxq_estimate_packet_buf_size(
+        DOCA_ETH_RXQ_TYPE_CYCLIC, 0, 0, MAX_PKT_SIZE, MAX_PKT_NUM, 0, &cyclic_buffer_size));
     DOCA_TRY(doca_mmap_create(&m_packet_mmap));
     DOCA_TRY(doca_mmap_add_dev(m_packet_mmap, context->dev()));
 
@@ -61,7 +62,8 @@ DocaRxQueue::~DocaRxQueue()
 {
     doca_error_t doca_ret;
 
-    if (m_rxq_info_cpu != nullptr) {
+    if (m_rxq_info_cpu != nullptr)
+    {
         doca_ret = doca_ctx_stop(m_doca_ctx);
         if (doca_ret != DOCA_SUCCESS)
             LOG(WARNING) << "doca_eth_rxq_destroy failed (" << doca_ret << ")" << std::endl;
@@ -71,7 +73,8 @@ DocaRxQueue::~DocaRxQueue()
             LOG(WARNING) << "doca_eth_rxq_destroy failed (" << doca_ret << ")" << std::endl;
     }
 
-    if (m_packet_mmap != nullptr) {
+    if (m_packet_mmap != nullptr)
+    {
         doca_ret = doca_mmap_destroy(m_packet_mmap);
         if (doca_ret != DOCA_SUCCESS)
             LOG(WARNING) << "doca_mmap_destroy failed (" << doca_ret << ")" << std::endl;

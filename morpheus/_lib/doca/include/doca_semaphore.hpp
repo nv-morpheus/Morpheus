@@ -41,7 +41,7 @@ struct DocaSemaphore
 
     doca_gpu_semaphore_gpu* gpu_ptr();
     uint16_t size();
-    void * get_info_cpu(uint32_t idx);
+    void* get_info_cpu(uint32_t idx);
     bool is_ready(uint32_t idx);
     void set_free(uint32_t idx);
 };

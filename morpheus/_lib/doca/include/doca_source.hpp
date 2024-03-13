@@ -17,8 +17,9 @@
 
 #pragma once
 
-#include "morpheus/messages/meta.hpp"
 #include "common.hpp"
+
+#include "morpheus/messages/meta.hpp"
 
 #include <mrc/segment/builder.hpp>
 #include <pymrc/node.hpp>
@@ -49,7 +50,9 @@ class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
-    DocaSourceStage(std::string const& nic_pci_address, std::string const& gpu_pci_address, std::string const& traffic_type);
+    DocaSourceStage(std::string const& nic_pci_address,
+                    std::string const& gpu_pci_address,
+                    std::string const& traffic_type);
 
   private:
     subscriber_fn_t build();
@@ -75,8 +78,7 @@ struct DocaSourceStageInterfaceProxy
                                                                        std::string const& name,
                                                                        std::string const& nic_pci_address,
                                                                        std::string const& gpu_pci_address,
-                                                                       std::string const& traffic_type
-                                                                      );
+                                                                       std::string const& traffic_type);
 };
 
 #pragma GCC visibility pop

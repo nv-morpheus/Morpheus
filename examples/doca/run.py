@@ -71,8 +71,13 @@ from morpheus.utils.logger import configure_logging
     help="UDP or TCP traffic",
     required=True,
 )
-def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, out_file, nic_addr,
-                 gpu_addr, traffic_type):
+def run_pipeline(pipeline_batch_size,
+                 model_max_batch_size,
+                 model_fea_length,
+                 out_file,
+                 nic_addr,
+                 gpu_addr,
+                 traffic_type):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 
@@ -118,7 +123,8 @@ def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, ou
         pipeline.add_stage(
             PreprocessNLPStage(
                 config,
-                vocab_hash_file='/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
+                vocab_hash_file=
+                '/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
                 do_lower_case=True,
                 truncation=True,
                 add_special_tokens=False,
