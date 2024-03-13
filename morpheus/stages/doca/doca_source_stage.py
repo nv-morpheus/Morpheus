@@ -68,10 +68,10 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
         self._max_concurrent = c.num_threads
         self._nic_pci_address = nic_pci_address
         self._gpu_pci_address = gpu_pci_address
-        self._traffic_type = traffic_type
-        if self._traffic_type != 'udp' and self._traffic_type != 'tcp':
+        self._traffic_type = traffic_type.lower()
+        if self._traffic_type not in ('udp', 'tcp'):
             raise NotImplementedError("The Morpheus DOCA source stage allows a only udp or tcp types of traffic flow " +
-                                      self._traffic_type)
+                                      traffic_type)
 
     @property
     def name(self) -> str:
@@ -91,7 +91,6 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            # return self._doca_source_class(builder, self.unique_name, self._nic_pci_address, self._gpu_pci_address, self._traffic_type)
             node = self._doca_source_class(builder,
                                            self.unique_name,
                                            self._nic_pci_address,

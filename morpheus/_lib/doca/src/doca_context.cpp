@@ -61,7 +61,7 @@ static doca_error_t open_doca_device_with_pci(const char* pcie_value, struct doc
     res = doca_devinfo_create_list(&dev_list, &nb_devs);
     if (res != DOCA_SUCCESS)
     {
-        MORPHEUS_FAIL("Failed to load doca devices list");
+        LOG(ERROR) << "Failed to load doca devices list";
         return res;
     }
 

@@ -23,6 +23,8 @@
 #include "doca_semaphore.hpp"
 #include "doca_source_kernels.hpp"
 
+#include "morpheus/utilities/error.hpp"
+
 #include <cudf/column/column_factories.hpp>
 #include <cudf/column/column_view.hpp>
 #include <cudf/copying.hpp>
@@ -38,7 +40,6 @@
 #include <rmm/device_scalar.hpp>
 #include <rmm/mr/device/per_device_resource.hpp>
 #include <rte_byteorder.h>
-#include <time.h>
 
 #include <iostream>
 #include <memory>
@@ -128,8 +129,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
         if (thread_idx >= MAX_QUEUE)
         {
-            MORPHEUS_LOCAL(MORPHEUS_CONCAT_STR("Thread ID " << thread_idx << " bigger than MAX_QUEUE " << MAX_QUEUE));
-            return;
+            MORPHEUS_FAIL(MORPHEUS_CONCAT_STR("Thread ID " << thread_idx << " bigger than MAX_QUEUE " << MAX_QUEUE));
         }
 
         payload_buffer_d.reserve(MAX_SEM_X_QUEUE);
