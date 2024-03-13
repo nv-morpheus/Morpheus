@@ -57,3 +57,23 @@ def test_process_multi_message(config: Config):
     expect_seg_ids[:, 0] = cp.arange(0, df.shape[0], dtype=cp.uint32)
     expect_seg_ids[:, 2] = stage._fea_length - 1
     assert cp.array_equal(output_infer_message.seq_ids, expect_seg_ids)
+
+
+def test_process_control_message_and_multi_message(config: Config):
+    stage = PreprocessFILStage(config)
+    df = cudf.DataFrame({"data": [1, 2, 3]})
+    meta = MessageMeta(df)
+    input_control_message = ControlMessage()
+    input_control_message.payload(meta)
+
+    mess_offset = 0
+    input_multi_message = MultiMessage(meta=meta, mess_offset=mess_offset, mess_count=3)
+
+    output_control_message = stage.pre_process_batch(input_control_message, stage._fea_length, stage.features)
+
+    output_infer_message = stage.pre_process_batch(input_multi_message, stage._fea_length, stage.features)
+
+    # Check if each tensor in the control message is equal to the corresponding tensor in the inference message
+    for tensor_key in output_control_message.tensors().tensor_names:
+        assert cp.array_equal(output_control_message.tensors().get_tensor(tensor_key),
+                              getattr(output_infer_message, tensor_key))

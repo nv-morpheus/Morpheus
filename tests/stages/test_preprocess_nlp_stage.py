@@ -51,7 +51,6 @@ def test_constructor(config: Config):
 @patch("morpheus.stages.preprocess.preprocess_nlp_stage.tokenize_text_series")
 def test_process_control_message(mock_tokenize_text_series, config: Config):
     mock_tokenized = Mock()
-    # TODO: TensorMemory does not examine the consistency of the tensors
     mock_tokenized.input_ids = cp.array([[1, 2], [1, 2]])
     mock_tokenized.input_mask = cp.array([[3, 4], [3, 4]])
     mock_tokenized.segment_ids = cp.array([[0, 0], [1, 1]])
@@ -112,17 +111,17 @@ def test_process_control_message_and_multi_message(mock_tokenize_text_series, co
     mock_tokenized.input_mask = cp.array([[3, 4], [3, 4]])
     mock_tokenized.segment_ids = cp.array([[0, 0], [1, 1]])
     mock_tokenize_text_series.return_value = mock_tokenized
-    
+
     stage = PreprocessNLPStage(config)
     df = cudf.DataFrame({"data": ["a", "b", "c"]})
     meta = MessageMeta(df)
-    input_cm = ControlMessage()
-    input_cm.payload(meta)
-    
+    input_control_message = ControlMessage()
+    input_control_message.payload(meta)
+
     mess_offset = 0
     input_multi_message = MultiMessage(meta=meta, mess_offset=mess_offset, mess_count=2)
-    
-    output_cm = stage.pre_process_batch(input_cm,
+
+    output_control_message = stage.pre_process_batch(input_control_message,
                                         stage._vocab_hash_file,
                                         stage._do_lower_case,
                                         stage._seq_length,
@@ -139,8 +138,7 @@ def test_process_control_message_and_multi_message(mock_tokenize_text_series, co
                                                    stage._truncation,
                                                    stage._add_special_tokens,
                                                    stage._column)
-    
+
     # Check if each tensor in the control message is equal to the corresponding tensor in the inference message
-    for tensor_key in output_cm.tensors().tensor_names:
-        assert cp.array_equal(output_cm.tensors().get_tensor(tensor_key), getattr(output_infer_message, tensor_key))
-        
+    for tensor_key in output_control_message.tensors().tensor_names:
+        assert cp.array_equal(output_control_message.tensors().get_tensor(tensor_key), getattr(output_infer_message, tensor_key))

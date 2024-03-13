@@ -95,16 +95,10 @@ class PreprocessFILStage(PreprocessBaseStage):
     def process_control_message(x: ControlMessage, fea_len: int, fea_cols: typing.List[str]) -> ControlMessage:
         with x.payload().mutable_dataframe() as df:
             try:
-                fea_cols_indexer = df.columns.get_indexer(fea_cols)
-                if (-1 in fea_cols_indexer):
-                    missing_columns = [
-                        fea_cols[i] for i, index_value in enumerate(fea_cols_indexer) if index_value == -1
-                    ]
-                    raise KeyError(f"Requested columns {missing_columns} does not exist in the dataframe")
-                df = df.iloc[:, fea_cols_indexer]
+                df = df[fea_cols]
             except KeyError:
-                logger.exception("Cound not get metadata for columns.")
-                return None
+                logger.exception("Requested feature columns does not exist in the dataframe.", exc_info=True)
+                raise
 
         # Extract just the numbers from each feature col. Not great to operate on x.meta.df here but the operations will
         # only happen once.
@@ -136,8 +130,8 @@ class PreprocessFILStage(PreprocessBaseStage):
         try:
             df = x.get_meta(fea_cols)
         except KeyError:
-            logger.exception("Cound not get metadata for columns.")
-            return None
+            logger.exception("Requested feature columns does not exist in the dataframe.", exc_info=True)
+            raise
 
         # Extract just the numbers from each feature col. Not great to operate on x.meta.df here but the operations will
         # only happen once.
