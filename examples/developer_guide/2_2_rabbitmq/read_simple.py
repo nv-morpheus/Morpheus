@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 import logging
 import os
 
+import click
 from rabbitmq_source_stage import RabbitMQSourceStage
+from rabbitmq_source_stage_deco import rabbitmq_source
 
-from morpheus._lib.file_types import FileTypes
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -26,7 +28,12 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.utils.logger import configure_logging
 
 
-def run_pipeline():
+@click.command()
+@click.option("--use_source_function",
+              is_flag=True,
+              default=False,
+              help="Use the function based version of the RabbitMQ source stage instead of the class")
+def run_pipeline(use_source_function: bool):
     # Enable the Morpheus logger
     configure_logging(log_level=logging.DEBUG)
 
@@ -37,7 +44,10 @@ def run_pipeline():
     pipeline = LinearPipeline(config)
 
     # Set source stage
-    pipeline.set_source(RabbitMQSourceStage(config, host='localhost', exchange='logs'))
+    if use_source_function:
+        pipeline.set_source(rabbitmq_source(config, host='localhost', exchange='logs'))
+    else:
+        pipeline.set_source(RabbitMQSourceStage(config, host='localhost', exchange='logs'))
 
     # Add monitor to record the performance of our new stages
     pipeline.add_stage(MonitorStage(config))

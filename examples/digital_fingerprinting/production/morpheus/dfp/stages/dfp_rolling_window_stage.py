@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,162 +11,56 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Groups incomming messages into a rolling time window."""
 
-import dataclasses
 import logging
 import os
-import pickle
 import typing
 from contextlib import contextmanager
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
 
+import mrc
 import pandas as pd
-import srf
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 from ..messages.multi_dfp_message import DFPMessageMeta
 from ..messages.multi_dfp_message import MultiDFPMessage
+from ..utils.cached_user_window import CachedUserWindow
 from ..utils.logging_timer import log_time
 
-# Setup conda environment
-conda_env = {
-    'channels': ['defaults', 'conda-forge'],
-    'dependencies': ['python={}'.format('3.8'), 'pip'],
-    'pip': ['mlflow', 'dfencoder'],
-    'name': 'mlflow-env'
-}
-
-logger = logging.getLogger("morpheus.{}".format(__name__))
-
-
-@dataclasses.dataclass
-class CachedUserWindow:
-    user_id: str
-    cache_location: str
-    timestamp_column: str = "timestamp"
-    total_count: int = 0
-    count: int = 0
-    min_epoch: datetime = datetime(1970, 1, 1, tzinfo=timezone(timedelta(hours=0)))
-    max_epoch: datetime = datetime(1970, 1, 1, tzinfo=timezone(timedelta(hours=0)))
-    batch_count: int = 0
-    pending_batch_count: int = 0
-    last_train_count: int = 0
-    last_train_epoch: datetime = None
-    last_train_batch: int = 0
-
-    _trained_rows: pd.Series = dataclasses.field(init=False, repr=False, default_factory=pd.DataFrame)
-    _df: pd.DataFrame = dataclasses.field(init=False, repr=False, default_factory=pd.DataFrame)
-
-    def append_dataframe(self, incoming_df: pd.DataFrame) -> bool:
-
-        # # Get the row hashes
-        # row_hashes = pd.util.hash_pandas_object(incoming_df)
-
-        # Filter the incoming df by epochs later than the current max_epoch
-        filtered_df = incoming_df[incoming_df["timestamp"] > self.max_epoch]
-
-        if (len(filtered_df) == 0):
-            # We have nothing new to add. Double check that we fit within the window
-            before_history = incoming_df[incoming_df["timestamp"] < self.min_epoch]
-
-            return len(before_history) == 0
-
-        # Increment the batch count
-        self.batch_count += 1
-        self.pending_batch_count += 1
-
-        # Set the filtered index
-        filtered_df.index = range(self.total_count, self.total_count + len(filtered_df))
-
-        # Save the row hash to make it easier to find later. Do this before the batch so it doesnt participate
-        filtered_df["_row_hash"] = pd.util.hash_pandas_object(filtered_df, index=False)
-
-        # Use batch id to distinguish groups in the same dataframe
-        filtered_df["_batch_id"] = self.batch_count
-
-        # Append just the new rows
-        self._df = pd.concat([self._df, filtered_df])
-
-        self.total_count += len(filtered_df)
-        self.count = len(self._df)
-
-        if (len(self._df) > 0):
-            self.min_epoch = self._df[self.timestamp_column].min()
-            self.max_epoch = self._df[self.timestamp_column].max()
-
-        return True
-
-    def get_train_df(self, max_history) -> pd.DataFrame:
-
-        new_df = self.trim_dataframe(self._df,
-                                     max_history=max_history,
-                                     last_batch=self.batch_count - self.pending_batch_count,
-                                     timestamp_column=self.timestamp_column)
-
-        self.last_train_count = self.total_count
-        self.last_train_epoch = datetime.now()
-        self.last_train_batch = self.batch_count
-        self.pending_batch_count = 0
-
-        self._df = new_df
-
-        if (len(self._df) > 0):
-            self.min_epoch = self._df[self.timestamp_column].min()
-            self.max_epoch = self._df[self.timestamp_column].max()
-
-        return new_df
-
-    def save(self):
-
-        # Make sure the directories exist
-        os.makedirs(os.path.dirname(self.cache_location), exist_ok=True)
-
-        with open(self.cache_location, "wb") as f:
-            pickle.dump(self, f)
-
-    @staticmethod
-    def trim_dataframe(df: pd.DataFrame,
-                       max_history: typing.Union[int, str],
-                       last_batch: int,
-                       timestamp_column: str = "timestamp") -> pd.DataFrame:
-        if (max_history is None):
-            return df
-
-        # Want to ensure we always see data once. So any new data is preserved
-        new_batches = df[df["_batch_id"] > last_batch]
-
-        # See if max history is an int
-        if (isinstance(max_history, int)):
-            return df.tail(max(max_history, len(new_batches)))
-
-        # If its a string, then its a duration
-        if (isinstance(max_history, str)):
-            # Get the latest timestamp
-            latest = df[timestamp_column].max()
-
-            time_delta = pd.Timedelta(max_history)
-
-            # Calc the earliest
-            earliest = min(latest - time_delta, new_batches[timestamp_column].min())
-
-            return df[df[timestamp_column] >= earliest]
-
-        raise RuntimeError("Unsupported max_history")
-
-    @staticmethod
-    def load(cache_location: str) -> "CachedUserWindow":
-
-        with open(cache_location, "rb") as f:
-            return pickle.load(f)
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class DFPRollingWindowStage(SinglePortStage):
+    """
+    This stage groups incomming messages into a rolling time window, emitting them only when the history requirements
+    are met specified by the `min_history`, `min_increment` and `max_history` parameters.
+
+    Incoming data is cached to disk (`cache_dir`) to reduce memory ussage. This computes a row hash for the first and
+    last rows of the incoming `DataFrame` as such all data contained must be hashable, any non-hashable values such as
+    `lists` should be dropped or converted into hashable types in the `DFPFileToDataFrameStage`.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    min_history : int
+        Exclude users with less than `min_history` records, setting this to `1` effectively disables this feature.
+    min_increment : int
+        Exclude incoming batches for users where less than `min_increment` new records have been added since the last
+        batch, setting this to `0` effectively disables this feature.
+    max_history : int or str
+        When not `None`, include up to `max_history` records. When `max_history` is an int, then the last `max_history`
+        records will be included. When `max_history` is a `str` it is assumed to represent a duration parsable by
+        [`pandas.Timedelta`](https://pandas.pydata.org/docs/reference/api/pandas.Timedelta.html) and only those records
+        within the window of [latest timestamp - `max_history`, latest timestamp] will be included.
+    cache_dir : str
+        Path to cache directory, cached items will be stored in a subdirectory under this directory named
+        `rolling-user-data`. This directory, along with `cache_dir` will be created if it does not already exist.
+    """
 
     def __init__(self,
                  c: Config,
@@ -186,39 +80,22 @@ class DFPRollingWindowStage(SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Stage name."""
         return "dfp-rolling-window"
 
     def supports_cpp_node(self):
+        """Whether this stage supports a C++ node."""
         return False
 
     def accepted_types(self) -> typing.Tuple:
+        """Input types accepted by this stage."""
         return (DFPMessageMeta, )
 
-    def _trim_dataframe(self, df: pd.DataFrame):
-
-        if (self._max_history is None):
-            return df
-
-        # See if max history is an int
-        if (isinstance(self._max_history, int)):
-            return df.tail(self._max_history)
-
-        # If its a string, then its a duration
-        if (isinstance(self._max_history, str)):
-            # Get the latest timestamp
-            latest = df[self._config.ae.timestamp_column_name].max()
-
-            time_delta = pd.Timedelta(self._max_history)
-
-            # Calc the earliest
-            earliest = latest - time_delta
-
-            return df[df['timestamp'] >= earliest]
-
-        raise RuntimeError("Unsupported max_history")
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiDFPMessage)
 
     @contextmanager
-    def _get_user_cache(self, user_id: str):
+    def _get_user_cache(self, user_id: str) -> typing.Generator[CachedUserWindow, None, None]:
 
         # Determine cache location
         cache_location = os.path.join(self._cache_dir, f"{user_id}.pkl")
@@ -250,8 +127,8 @@ class DFPRollingWindowStage(SinglePortStage):
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
                 # Then our incoming dataframe wasnt even covered by the window. Generate warning
-                logger.warn(("Incoming data preceeded existing history. "
-                             "Consider deleting the rolling window cache and restarting."))
+                logger.warning(("Incoming data preceeded existing history. "
+                                "Consider deleting the rolling window cache and restarting."))
                 return None
 
             # Exit early if we dont have enough data
@@ -272,7 +149,7 @@ class DFPRollingWindowStage(SinglePortStage):
             match = train_df[train_df["_row_hash"] == incoming_hash.iloc[0]]
 
             if (len(match) == 0):
-                raise RuntimeError("Invalid rolling window")
+                raise RuntimeError(f"Invalid rolling window for user {user_id}")
 
             first_row_idx = match.index[0].item()
             last_row_idx = train_df[train_df["_row_hash"] == incoming_hash.iloc[-1]].index[-1].item()
@@ -283,15 +160,16 @@ class DFPRollingWindowStage(SinglePortStage):
                 raise RuntimeError(("Overlapping rolling history detected. "
                                     "Rolling history can only be used with non-overlapping batches"))
 
-            train_offset = train_df.index.get_loc(first_row_idx)
-
             # Otherwise return a new message
             return MultiDFPMessage(meta=DFPMessageMeta(df=train_df, user_id=user_id),
-                                   mess_offset=train_offset,
-                                   mess_count=found_count)
+                                   mess_offset=0,
+                                   mess_count=len(train_df))
 
-    def on_data(self, message: DFPMessageMeta):
-
+    def on_data(self, message: DFPMessageMeta) -> MultiDFPMessage:
+        """
+        Emits a new message containing the rolling window for the user if and only if the history requirments are met,
+        returns `None` otherwise.
+        """
         with log_time(logger.debug) as log_info:
 
             result = self._build_window(message)
@@ -315,12 +193,8 @@ class DFPRollingWindowStage(SinglePortStage):
 
             return result
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
+        builder.make_edge(input_node, node)
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
-            obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
-        builder.make_edge(input_stream[0], stream)
-
-        return stream, MultiDFPMessage
+        return node

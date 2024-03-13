@@ -1,0 +1,2 @@
+Ensure that the .tmp dir exists as many scripts and examples depend on this dir.
+Everything else in this dir is ignored by .gitignore.

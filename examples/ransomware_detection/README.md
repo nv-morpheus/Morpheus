@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@ limitations under the License.
 
 # Example Ransomware Detection Morpheus Pipeline for AppShield Data
 
-Example Morpheus pipeline using Docker containers for Triton Inference server and Morpheus SDK/Client.
+Example of a Morpheus Pipeline using Triton Inference server.
 
 ## Setup Triton Inference Server
 
@@ -26,37 +26,50 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 
 Example:
 
-```
-docker pull nvcr.io/nvidia/tritonserver:22.08-py3
-```
-
-##### Start Triton Inference Server container
 ```bash
-cd ${MORPHEUS_ROOT}/examples/ransomware_detection
+docker pull nvcr.io/nvidia/tritonserver:23.06-py3
+```
+##### Setup Env Variable
+```bash
+export MORPHEUS_ROOT=$(pwd)
+```
 
+##### Start Triton Inference Server Container
+Run the following from the `examples/ransomware_detection` directory to launch Triton and load the `ransomw-model-short-rf` model:
+
+```bash
 # Run Triton in explicit mode
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:22.08-py3 \
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:23.06-py3 \
    tritonserver --model-repository=/models/triton-model-repo \
                 --exit-on-error=false \
                 --model-control-mode=explicit \
                 --load-model ransomw-model-short-rf
 ```
 
-## Requirements
-**Note**: Make sure `dask` and `distributed` are installed in your conda environment before running the ransomware detection pipeline. Run the installation command specified below if not.
+##### Verify Model Deployment
+Once Triton server finishes starting up, it will display the status of all loaded models. Successful deployment of the model will show the following:
 
-```bash
-conda install dask==2022.7.0 distributed==2022.7.0
+```
++----------------------------+---------+--------+
+| Model                      | Version | Status |
++----------------------------+---------+--------+
+| ransomw-model-short-rf     | 1       | READY  |
++----------------------------+---------+--------+
 ```
 
-## Run Pipeline
-Launch the example using the following
+> **Note**: If this is not present in the output, check the Triton log for any error messages related to loading the model.
 
-Input features for a short model can be taken from every three snapshots sequence, such as (1, 2, 3), or (2, 3, 4). The sliding window represents the number of subsequent snapshots that need to be taken into consideration when generating the input for a model. Sliding window for the medium model is `5` and for the long model it is `10`.
+## Requirements
+> **Note**: Make sure `dask` and `distributed` are installed in your Conda environment before running the ransomware detection pipeline. Run the installation command specified below if not.
 
 ```bash
-cd ${MORPHEUS_ROOT}/examples/ransomware_detection
+mamba install 'dask>=2023.1.1' 'distributed>=2023.1.1'
+```
 
+## Run Ransomware Detection Pipeline
+Run the following from the `examples/ransomware_detection` directory to start the ransomware detection pipeline:
+
+```bash
 python run.py --server_url=localhost:8001 \
               --sliding_window=3 \
               --model_name=ransomw-model-short-rf \
@@ -64,6 +77,8 @@ python run.py --server_url=localhost:8001 \
               --input_glob=${MORPHEUS_ROOT}/examples/data/appshield/*/snapshot-*/*.json \
               --output_file=./ransomware_detection_output.jsonlines
 ```
+
+Input features for a short model can be taken from every three snapshots sequence, such as (1, 2, 3), or (2, 3, 4). The sliding window represents the number of subsequent snapshots that need to be taken into consideration when generating the input for a model. Sliding window for the medium model is `5` and for the long model it is `10`.
 
 The configuration options for this example can be queried with:
 

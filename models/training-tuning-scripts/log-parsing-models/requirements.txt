@@ -1,2 +1,0 @@
-seqeval==1.2.2
-transformers==4.22.2

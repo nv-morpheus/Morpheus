@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Command line tool"""
 
 import pluggy
 
@@ -19,5 +20,6 @@ import pluggy
 hookimpl = pluggy.HookimplMarker("morpheus")
 """Marker to be imported and used in plugins (and for own implementations)"""
 
+# pylint: disable=wrong-import-position
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.run import run_cli  # Import the run_cli command into the cli module

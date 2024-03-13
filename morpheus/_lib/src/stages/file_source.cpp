@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,30 +17,26 @@
 
 #include "morpheus/stages/file_source.hpp"
 
-#include "morpheus/io/deserializers.hpp"
+#include "mrc/segment/object.hpp"
+#include "pymrc/node.hpp"
 
-#include <cudf/column/column.hpp>  // for column
-#include <cudf/io/csv.hpp>
-#include <cudf/io/json.hpp>
-#include <cudf/scalar/scalar.hpp>  // for string_scalar
-#include <cudf/strings/replace.hpp>
-#include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
-#include <cudf/table/table.hpp>                  // for table
+#include "morpheus/io/deserializers.hpp"
+#include "morpheus/objects/file_types.hpp"
+#include "morpheus/objects/table_info.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
+
 #include <cudf/types.hpp>
 #include <glog/logging.h>
-#include <pybind11/cast.h>  // for object_api::operator()
+#include <mrc/segment/builder.hpp>
+#include <pybind11/cast.h>  // IWYU pragma: keep
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
-#include <srf/segment/builder.hpp>
 
-#include <algorithm>  // for find
-#include <cstddef>    // for size_t
 #include <filesystem>
 #include <memory>
-#include <regex>
+#include <optional>
 #include <sstream>
-#include <stdexcept>  // for runtime_error
 #include <utility>
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
 // IWYU pragma: no_include <ext/alloc_traits.h>
@@ -48,17 +44,18 @@
 namespace morpheus {
 // Component public implementations
 // ************ FileSourceStage ************* //
-FileSourceStage::FileSourceStage(std::string filename, int repeat) :
+FileSourceStage::FileSourceStage(std::string filename, int repeat, std::optional<bool> json_lines) :
   PythonSource(build()),
   m_filename(std::move(filename)),
-  m_repeat(repeat)
+  m_repeat(repeat),
+  m_json_lines(json_lines)
 {}
 
 FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
-        auto data_table     = load_table_from_file(m_filename);
-        int index_col_count = get_index_col_count(data_table);
+        auto data_table     = load_table_from_file(m_filename, FileTypes::Auto, m_json_lines);
+        int index_col_count = prepare_df_index(data_table);
 
         // Next, create the message metadata. This gets reused for repeats
         // When index_col_count is 0 this will cause a new range index to be created
@@ -83,11 +80,11 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
             // Clone the meta object before pushing while we still have access to it
             if (repeat_idx + 1 < m_repeat)
             {
+                // Use the copy function, copy_to_py_object will acquire it's own gil
+                auto df = CudfHelper::table_from_table_info(meta->get_info());
+
                 // GIL must come after get_info
                 pybind11::gil_scoped_acquire gil;
-
-                // Use the copy function
-                auto df = meta->get_py_table().attr("copy")();
 
                 pybind11::int_ df_len = pybind11::len(df);
 
@@ -114,11 +111,32 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 }
 
 // ************ FileSourceStageInterfaceProxy ************ //
-std::shared_ptr<srf::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name, std::string filename, int repeat)
+std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::string filename,
+    int repeat,
+    pybind11::dict parser_kwargs)
 {
-    auto stage = builder.construct_object<FileSourceStage>(name, filename, repeat);
+    std::optional<bool> json_lines = std::nullopt;
+
+    if (parser_kwargs.contains("lines"))
+    {
+        json_lines = parser_kwargs["lines"].cast<bool>();
+    }
+
+    auto stage = builder.construct_object<FileSourceStage>(name, filename, repeat, json_lines);
 
     return stage;
+}
+
+std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::filesystem::path filename,
+    int repeat,
+    pybind11::dict parser_kwargs)
+{
+    return init(builder, name, filename.string(), repeat, std::move(parser_kwargs));
 }
 }  // namespace morpheus

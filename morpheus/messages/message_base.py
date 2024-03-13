@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@
 
 import abc
 import dataclasses
+import functools
 import typing
 
 from morpheus.config import CppConfig
 
 
 class MessageImpl(abc.ABCMeta):
-
-    _cpp_class: typing.Union[type, typing.Callable] = None
     """
     Metaclass to switch between Python & C++ message implementations at construction time.
     Note: some classes don't have a C++ implementation, but do inherit from a class that
@@ -29,8 +28,10 @@ class MessageImpl(abc.ABCMeta):
     to prevent creating instances of their parent's C++ impl.
     """
 
-    def __new__(cls, classname, bases, classdict, cpp_class=None):
-        result = super().__new__(cls, classname, bases, classdict)
+    _cpp_class: typing.Union[type, typing.Callable] = None
+
+    def __new__(cls, name, bases, namespace, /, cpp_class=None, **kwargs):
+        result = super().__new__(cls, name, bases, namespace, **kwargs)
 
         # Set the C++ class type into the object to use for creation later if desired
         result._cpp_class = cpp_class
@@ -39,26 +40,37 @@ class MessageImpl(abc.ABCMeta):
         if (cpp_class is not None):
             result.register(cpp_class)
 
+            # Wrap __new__ to attempt to provide the right type annotations
+            @functools.wraps(result.__new__)
+            def _internal_new(other_cls, *args, **kwargs):
+
+                # If _cpp_class is set, and use_cpp is enabled, create the C++ instance
+                if (getattr(other_cls, "_cpp_class", None) is not None and CppConfig.get_should_use_cpp()):
+                    return cpp_class(*args, **kwargs)
+
+                # Otherwise, do the default init
+                return object.__new__(other_cls)
+
+            result.__new__ = _internal_new
+
         return result
 
 
 class MessageBase(metaclass=MessageImpl):
-
-    def __new__(cls, *args, **kwargs):
-
-        # If _cpp_class is set, and use_cpp is enabled, create the C++ instance
-        if (getattr(cls, "_cpp_class", None) is not None and CppConfig.get_should_use_cpp()):
-            return cls._cpp_class(*args, **kwargs)
-
-        # Otherwise, do the default init
-        return super().__new__(cls)
+    """
+    Base class for all messages. Returns a C++ implementation if `CppConfig.get_should_use_cpp()` is `True` and the
+    class has an associated C++ implementation (`cpp_class`), returns the Python implementation for all others.
+    """
 
 
 @dataclasses.dataclass
 class MessageData(MessageBase):
+    """
+    Base class for MultiMessage, defining serialization methods
+    """
 
     def __getstate__(self):
         return self.__dict__
 
-    def __setstate__(self, d):
-        self.__dict__ = d
+    def __setstate__(self, state):
+        self.__dict__ = state

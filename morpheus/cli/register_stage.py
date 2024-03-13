@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,6 @@ import inspect
 import pathlib
 import re
 import typing
-from enum import Enum
 
 import click
 import numpydoc.docscrape
@@ -29,14 +28,16 @@ from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
 from morpheus.cli.stage_registry import StageInfo
 from morpheus.cli.utils import get_config_from_ctx
-from morpheus.cli.utils import get_enum_values
+from morpheus.cli.utils import get_enum_keys
 from morpheus.cli.utils import get_pipeline_from_ctx
+from morpheus.cli.utils import is_enum
 from morpheus.cli.utils import parse_enum
 from morpheus.cli.utils import prepare_command
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.utils.type_utils import _DecoratorType
 from morpheus.utils.type_utils import get_full_qualname
+from morpheus.utils.type_utils import is_union_type
 
 
 def class_name_to_command_name(class_name: str) -> str:
@@ -68,7 +69,7 @@ def get_param_type(numpydoc_obj: numpydoc.docscrape.NumpyDocString, name: str):
     return found_doc.type
 
 
-def parse_type_value(value_str: str) -> typing.Any:
+def parse_type_value(value_str: str) -> typing.Any:  # pylint: disable=too-many-return-statements
 
     value_lower = value_str.lower()
 
@@ -119,7 +120,7 @@ def parse_doc_type_str(doc_type_str: str) -> dict:
             # Single type
             out_dict[""] = equal_split[0].strip()
         else:
-            raise RuntimeError("Invalid docstring: {}".format(doc_type_str))
+            raise RuntimeError(f"Invalid docstring: {doc_type_str}")
 
     return out_dict
 
@@ -161,12 +162,24 @@ def has_matching_kwargs(function, input_dict: dict) -> bool:
     return len([True for input_name in list(input_dict.keys()) if input_name in fn_sig.parameters]) > 0
 
 
+def _convert_enum_default(options_kwargs: dict, annotation):
+    """
+    Display the default value of an enum argument as a string not an enum instance
+    """
+    default_val = options_kwargs.get('default')
+    if (isinstance(default_val, annotation)):
+        options_kwargs['default'] = default_val.name
+
+
 def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
 
     doc_type_kwargs = get_doc_kwargs(doc_type)
 
     if (annotation == inspect.Parameter.empty):
         raise RuntimeError("All types must be specified to auto register stage.")
+
+    if (is_union_type(annotation)):
+        raise RuntimeError("Union types are not supported for auto registering stages.")
 
     if (issubtype(annotation, typing.List)):
         # For variable length array, use multiple=True
@@ -177,10 +190,11 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         # For paths, use the Path option and apply any kwargs
         options_kwargs["type"] = partial_pop_kwargs(click.Path, doc_type_kwargs)()
 
-    elif (issubtype(annotation, Enum)):
+    elif (is_enum(annotation)):
         case_sensitive = doc_type_kwargs.get('case_sensitive', True)
-        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(get_enum_values(annotation))
+        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(get_enum_keys(annotation))
 
+        _convert_enum_default(options_kwargs, annotation)
         options_kwargs["callback"] = functools.partial(parse_enum, enum_class=annotation, case_sensitive=case_sensitive)
 
     elif (issubtype(annotation, int) and not issubtype(annotation, bool)):
@@ -197,6 +211,11 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         else:
             options_kwargs["type"] = annotation
 
+    elif (issubtype(annotation, dict)):
+        options_kwargs["multiple"] = True
+        options_kwargs["type"] = click.Tuple([str, str])
+        options_kwargs["callback"] = lambda ctx, param, value: dict(value)
+
     else:
         options_kwargs["type"] = annotation
 
@@ -204,7 +223,10 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
     options_kwargs.update(doc_type_kwargs)
 
 
-def compute_option_name(stage_arg_name: str, rename_options: typing.Dict[str, str] = dict()) -> tuple:
+def compute_option_name(stage_arg_name: str, rename_options: typing.Dict[str, str] = None) -> tuple:
+
+    if (rename_options is None):
+        rename_options = {}
 
     rename_val = rename_options.get(stage_arg_name, f"--{stage_arg_name}")
 
@@ -213,10 +235,10 @@ def compute_option_name(stage_arg_name: str, rename_options: typing.Dict[str, st
     elif (not issubtype(type(rename_val), tuple)):
         rename_val = tuple(rename_val)
 
-    for n in rename_val:
-        if (not n.startswith("-")):
-            raise RuntimeError("Rename value '{}' for option '{}', must start with '-'. i.e. '--my_new_option".format(
-                n, stage_arg_name))
+    for name in rename_val:
+        if (not name.startswith("-")):
+            raise RuntimeError(
+                f"Rename value '{name}' for option '{stage_arg_name}', must start with '-'. i.e. '--my_new_option")
 
     # Create the click option name as a ("stage_arg_name", "--rename1", "--rename2", "-r")
     return (stage_arg_name, ) + rename_val
@@ -224,19 +246,34 @@ def compute_option_name(stage_arg_name: str, rename_options: typing.Dict[str, st
 
 def register_stage(command_name: str = None,
                    modes: typing.Sequence[PipelineModes] = None,
-                   ignore_args: typing.List[str] = list(),
-                   command_args: dict = dict(),
-                   option_args: typing.Dict[str, dict] = dict(),
-                   rename_options: typing.Dict[str, str] = dict()):
+                   ignore_args: typing.List[str] = None,
+                   command_args: dict = None,
+                   option_args: typing.Dict[str, dict] = None,
+                   rename_options: typing.Dict[str, str] = None):
+
+    if (ignore_args is None):
+        ignore_args = []
+
+    if (command_args is None):
+        command_args = {}
+
+    if (option_args is None):
+        option_args = {}
+
+    if (rename_options is None):
+        rename_options = {}
 
     if (modes is None):
-        modes = [x for x in PipelineModes]
+        modes = list(PipelineModes)
 
     def register_stage_inner(stage_class: _DecoratorType) -> _DecoratorType:
 
         nonlocal command_name
 
-        if (not hasattr(stage_class, "_morpheus_registered_stage")):
+        # A subclass of a stage that is already registered with the CLI will already have this attribute set,
+        # but the command name won't match.
+        if (not hasattr(stage_class, "_morpheus_registered_stage")
+                or stage_class._morpheus_registered_stage.name != command_name):
 
             # Determine the command name if it wasnt supplied
             if (command_name is None):
@@ -264,13 +301,16 @@ def register_stage(command_name: str = None,
                         if (p_value.annotation == Config):
                             config_param_name = p_name
                             continue
-                        elif (p_name in ignore_args):
+
+                        if (p_name in ignore_args):
                             assert p_value.default != inspect.Parameter.empty, (
                                 "Cannot ignore argument without default value")
                             continue
-                        elif (p_value.kind == inspect.Parameter.VAR_POSITIONAL):
+
+                        if (p_value.kind == inspect.Parameter.VAR_POSITIONAL):
                             continue
-                        elif (p_value.kind == inspect.Parameter.VAR_KEYWORD):
+
+                        if (p_value.kind == inspect.Parameter.VAR_KEYWORD):
                             continue
 
                         option_kwargs = {}
@@ -299,7 +339,7 @@ def register_stage(command_name: str = None,
                         command_params.append(option)
                     except Exception as ex:
                         raise RuntimeError((f"Error auto registering CLI command '{command_name}' with "
-                                            f"class '{stage_class}' and parameter '{p_name}'. Error:")) from ex
+                                            f"class '{stage_class}' and parameter '{p_name}'. Error: {ex}")) from ex
 
                 if (config_param_name is None):
                     raise RuntimeError("All stages must take on argument of morpheus.Config. Ensure your stage "
@@ -312,7 +352,7 @@ def register_stage(command_name: str = None,
                     from morpheus.pipeline.source_stage import SourceStage
 
                     config = get_config_from_ctx(ctx)
-                    p = get_pipeline_from_ctx(ctx)
+                    pipeline = get_pipeline_from_ctx(ctx)
 
                     # Set the config to the correct parameter
                     kwargs[config_param_name] = config
@@ -320,9 +360,9 @@ def register_stage(command_name: str = None,
                     stage = stage_class(**kwargs)
 
                     if (issubclass(stage_class, SourceStage)):
-                        p.set_source(stage)
+                        pipeline.set_source(stage)
                     else:
-                        p.add_stage(stage)
+                        pipeline.add_stage(stage)
 
                     return stage
 
@@ -353,8 +393,8 @@ def register_stage(command_name: str = None,
             existing_registrations: typing.Set[PipelineModes] = set()
 
             # Get any already registered nodes
-            for m in modes:
-                registered_stage = GlobalStageRegistry.get().get_stage_info(command_name, m)
+            for mode in modes:
+                registered_stage = GlobalStageRegistry.get().get_stage_info(command_name, mode)
 
                 if (registered_stage is not None):
 
@@ -362,14 +402,14 @@ def register_stage(command_name: str = None,
                     if (isinstance(registered_stage, LazyStageInfo)):
                         # Only check the qualified name
                         if (registered_stage.qualified_name != get_full_qualname(stage_class)):
-                            raise RuntimeError("Qualified name {} != {}".format(registered_stage.qualified_name,
-                                                                                get_full_qualname(stage_class)))
+                            raise RuntimeError(
+                                f"Qualified name {registered_stage.qualified_name} != {get_full_qualname(stage_class)}")
                     elif (registered_stage != stage_info):
-                        raise RuntimeError(
-                            ("Registering stage '{}' failed. Stage is already registered with different options. "
-                             "Ensure `register_stage` is only executed once for each mode and name combination. "
-                             "If registered multiple times (i.e. on module reload), the registration must be identical"
-                             ).format(command_name))
+                        raise RuntimeError((
+                            f"Registering stage '{command_name}' failed. Stage is already registered with different "
+                            "options. Ensure `register_stage` is only executed once for each mode and name combination."
+                            " If registered multiple times (i.e. on module reload), the registration must be identical"
+                        ))
 
                     existing_registrations.update(registered_stage.modes)
 

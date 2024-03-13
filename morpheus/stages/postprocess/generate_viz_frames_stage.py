@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ import os
 import sys
 import typing
 
+import mrc
+import mrc.core.operators as ops
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-import srf
-import srf.core.operators as ops
 import websockets.legacy.server
 from websockets.server import serve
 
@@ -32,9 +32,9 @@ import cudf
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.producer_consumer_queue import AsyncIOProducerConsumerQueue
 from morpheus.utils.producer_consumer_queue import Closed
 
@@ -42,9 +42,9 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("gen-viz", modes=[PipelineModes.NLP], command_args={"deprecated": True})
-class GenerateVizFramesStage(SinglePortStage):
+class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
     """
-    Write out vizualization DataFrames.
+    Write out visualization DataFrames.
 
     Parameters
     ----------
@@ -57,17 +57,29 @@ class GenerateVizFramesStage(SinglePortStage):
 
     """
 
-    def __init__(self, c: Config, server_url: str = "0.0.0.0", server_port: int = 8765):
+    def __init__(self,
+                 c: Config,
+                 server_url: str = "0.0.0.0",
+                 server_port: int = 8765,
+                 out_dir: str = None,
+                 overwrite: bool = False):
         super().__init__(c)
 
         self._server_url = server_url
         self._server_port = server_port
+        self._out_dir = out_dir
+        self._overwrite = overwrite
 
         self._first_timestamp = -1
         self._buffers = []
         self._buffer_queue: AsyncIOProducerConsumerQueue = None
 
         self._replay_buffer = []
+
+        # Properties set on start
+        self._loop: asyncio.AbstractEventLoop = None
+        self._server_task: asyncio.Task = None
+        self._server_close_event: asyncio.Event = None
 
     @property
     def name(self) -> str:
@@ -79,23 +91,23 @@ class GenerateVizFramesStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[morpheus.pipeline.messages.MultiResponseProbsMessage, ]
+        typing.Tuple[morpheus.pipeline.messages.MultiResponseMessage, ]
             Accepted input types
 
         """
-        return (MultiResponseProbsMessage, )
+        return (MultiResponseMessage, )
 
     def supports_cpp_node(self):
         return False
 
     @staticmethod
-    def round_to_sec(x):
+    def round_to_sec(x: int | float):
         """
         Round to even seconds second
 
         Parameters
         ----------
-        x : int/float
+        x : int | float
             Rounding up the value
 
         Returns
@@ -106,7 +118,7 @@ class GenerateVizFramesStage(SinglePortStage):
         """
         return int(round(x / 1000.0) * 1000)
 
-    def _to_vis_df(self, x: MultiResponseProbsMessage):
+    def _to_vis_df(self, x: MultiResponseMessage):
 
         idx2label = {
             0: 'address',
@@ -126,13 +138,14 @@ class GenerateVizFramesStage(SinglePortStage):
         def indent_data(y: str):
             try:
                 return json.dumps(json.loads(y), indent=3)
-            except:  # noqa: E722
+            except Exception:
                 return y
 
         df["data"] = df["data"].apply(indent_data)
 
-        pass_thresh = (x.probs >= 0.5).any(axis=1)
-        max_arg = x.probs.argmax(axis=1)
+        probs = x.get_probs_tensor()
+        pass_thresh = (probs >= 0.5).any(axis=1)
+        max_arg = probs.argmax(axis=1)
 
         condlist = [pass_thresh]
 
@@ -145,7 +158,7 @@ class GenerateVizFramesStage(SinglePortStage):
         df["ts_round_sec"] = (df["timestamp"] / 1000.0).astype(int) * 1000
 
         # Return a list of tuples of (ts_round_sec, dataframe)
-        return [(key, group) for key, group in df.groupby(df.ts_round_sec)]
+        return list(df.groupby(df.ts_round_sec))
 
     def _write_viz_file(self, x: typing.List[typing.Tuple[int, pd.DataFrame]]):
 
@@ -158,22 +171,27 @@ class GenerateVizFramesStage(SinglePortStage):
 
         offset = (curr_timestamp - self._first_timestamp) / 1000
 
-        fn = os.path.join(self._out_dir, "{}.csv".format(offset))
+        out_file = os.path.join(self._out_dir, f"{offset}.csv")
 
-        assert not os.path.exists(fn)
+        assert self._overwrite or not os.path.exists(out_file)
 
-        in_df.to_csv(fn, columns=["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "si", "data"])
+        in_df.to_csv(out_file, columns=["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "si", "data"])
 
     async def start_async(self):
+        """
+        Launch the Websocket server and asynchronously send messages via Websocket.
+        """
 
-        loop = asyncio.get_event_loop()
-        self._loop = loop
+        self._loop = asyncio.get_event_loop()
 
-        self._buffer_queue = AsyncIOProducerConsumerQueue(maxsize=2, loop=loop)
+        self._buffer_queue = AsyncIOProducerConsumerQueue(maxsize=2)
 
         async def client_connected(websocket: websockets.legacy.server.WebSocketServerProtocol):
+            """
+            Establishes a connection with the WebSocket server.
+            """
 
-            logger.info("Got connection from: {}:{}".format(*websocket.remote_address))
+            logger.info("Got connection from: %s:%s", *websocket.remote_address)
 
             while True:
                 try:
@@ -184,9 +202,12 @@ class GenerateVizFramesStage(SinglePortStage):
                 except Exception as ex:
                     logger.exception("Error occurred trying to send message over socket", exc_info=ex)
 
-            logger.info("Disconnected from: {}:{}".format(*websocket.remote_address))
+            logger.info("Disconnected from: %s:%s", *websocket.remote_address)
 
         async def run_server():
+            """
+            Runs Websocket server.
+            """
 
             try:
 
@@ -195,26 +216,39 @@ class GenerateVizFramesStage(SinglePortStage):
                     listening_on = [":".join([str(y) for y in x.getsockname()]) for x in server.sockets]
                     listening_on_str = [f"'{x}'" for x in listening_on]
 
-                    logger.info("Websocket server listening at: {}".format(", ".join(listening_on_str)))
+                    logger.info("Websocket server listening at: %s", ", ".join(listening_on_str))
 
                     await self._server_close_event.wait()
 
                     logger.info("Server shut down")
 
-                logger.info("Server shut down. Is queue empty: {}".format(self._buffer_queue.empty()))
+                logger.info("Server shut down. Is queue empty: %s", self._buffer_queue.empty())
             except Exception as e:
                 logger.error("Error during serve", exc_info=e)
                 raise
 
-        self._server_task = loop.create_task(run_server())
+        self._server_task = self._loop.create_task(run_server())
 
-        self._server_close_event = asyncio.Event(loop=loop)
+        self._server_close_event = asyncio.Event()
 
         await asyncio.sleep(1.0)
 
         return await super().start_async()
 
+    async def join(self):
+        """
+        Stages can implement this to perform cleanup steps when pipeline is stopped.
+        """
+
+        if (self._loop is not None):
+            asyncio.run_coroutine_threadsafe(self._stop_server(), loop=self._loop)
+            pass
+
     async def _stop_server(self):
+
+        # Only run this once
+        if (self._buffer_queue.is_closed()):
+            return
 
         logger.info("Shutting down queue")
 
@@ -222,27 +256,25 @@ class GenerateVizFramesStage(SinglePortStage):
 
         self._server_close_event.set()
 
-        # Wait for it to
+        # Wait for it to fully shut down
         await self._server_task
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        stream = input_stream[0]
+        def node_fn(input_obs, output_obs):
 
-        def node_fn(input, output):
-
-            def write_batch(x: MultiResponseProbsMessage):
+            def write_batch(x: MultiResponseMessage):
 
                 sink = pa.BufferOutputStream()
 
                 # This is the timestamp of the earliest message
-                t0 = x.get_meta("timestamp").min()
+                time0 = x.get_meta("timestamp").min()
 
                 df = x.get_meta(["timestamp", "src_ip", "dest_ip", "secret_keys", "data"])
 
                 out_df = cudf.DataFrame()
 
-                out_df["dt"] = (df["timestamp"] - t0).astype(np.int32)
+                out_df["dt"] = (df["timestamp"] - time0).astype(np.int32)
                 out_df["src"] = df["src_ip"].str.ip_to_int().astype(np.int32)
                 out_df["dst"] = df["dest_ip"].str.ip_to_int().astype(np.int32)
                 out_df["lvl"] = df["secret_keys"].astype(np.int32)
@@ -255,10 +287,14 @@ class GenerateVizFramesStage(SinglePortStage):
 
                 out_buf = sink.getvalue()
 
-                # Enqueue the buffer and block until that completes
-                asyncio.run_coroutine_threadsafe(self._buffer_queue.put(out_buf), loop=self._loop).result()
+                try:
+                    # Enqueue the buffer and block until that completes
+                    asyncio.run_coroutine_threadsafe(self._buffer_queue.put(out_buf), loop=self._loop).result()
+                except Closed:
+                    # Ignore closed errors. Likely the pipeline is shutting down
+                    pass
 
-            input.pipe(ops.map(write_batch)).subscribe(output)
+            input_obs.pipe(ops.map(write_batch)).subscribe(output_obs)
 
             logger.info("Gen-viz stage completed. Waiting for shutdown")
 
@@ -270,9 +306,7 @@ class GenerateVizFramesStage(SinglePortStage):
             logger.info("Gen-viz shutdown complete")
 
         # Sink to file
-        to_file = seg.make_node_full(self.unique_name, node_fn)
-        seg.make_edge(stream, to_file)
-        stream = to_file
+        to_filenode = builder.make_node(self.unique_name, ops.build(node_fn))
+        builder.make_edge(input_node, to_filenode)
 
-        # Return input unchanged to allow passthrough
-        return input_stream
+        return to_filenode

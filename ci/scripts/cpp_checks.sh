@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,8 +58,10 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
 
       CLANG_TIDY_DIFF=$(find_clang_tidy_diff)
 
-      # Run using a clang-tidy wrapper to allow warnings-as-errors and to eliminate any output except errors (since clang-tidy-diff.py doesnt return the correct error codes)
-      CLANG_TIDY_OUTPUT=`get_unified_diff ${CPP_FILE_REGEX} | ${CLANG_TIDY_DIFF} -j 0 -path ${BUILD_DIR} -p1 -quiet 2>&1`
+      # Run using a clang-tidy wrapper to allow warnings-as-errors and to eliminate any output except errors (since
+      # clang-tidy-diff.py doesn't return the correct error codes)
+      CLANG_TIDY_OUTPUT=`get_unified_diff ${CPP_FILE_REGEX} | ${CLANG_TIDY_DIFF} \
+         -extra-arg="-Wno-ignored-optimization-argument" -j 0 -path ${BUILD_DIR} -p1 -quiet 2>&1`
 
       if [[ -n "${CLANG_TIDY_OUTPUT}" && ${CLANG_TIDY_OUTPUT} != "No relevant changes found." ]]; then
          CLANG_TIDY_RETVAL=1
@@ -80,10 +82,30 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
 
    # Include What You Use
    if [[ "${SKIP_IWYU}" == "" ]]; then
-      IWYU_DIRS="morpheus"
-      NUM_PROC=$(get_num_proc)
-      IWYU_OUTPUT=`${IWYU_TOOL} -p ${BUILD_DIR} -j ${NUM_PROC} ${IWYU_DIRS} 2>&1`
-      IWYU_RETVAL=$?
+      # Remove .h, .hpp, and .cu files from the modified list
+      shopt -s extglob
+      IWYU_MODIFIED_FILES=( "${MORPHEUS_MODIFIED_FILES[@]/*.@(h|hpp|cu)/}" )
+
+      # Get the list of compiled files relative to this directory
+      WORKING_PREFIX="${PWD}/"
+      COMPILED_FILES=( $(jq -r .[].file ${BUILD_DIR}/compile_commands.json | sort -u ) )
+      COMPILED_FILES=( "${COMPILED_FILES[@]/#$WORKING_PREFIX/}" )
+      COMBINED_FILES=("${COMPILED_FILES[@]}")
+      COMBINED_FILES+=("${IWYU_MODIFIED_FILES[@]}")
+
+      # Find the intersection between compiled files and modified files
+      IWYU_MODIFIED_FILES=( $(printf '%s\0' "${COMBINED_FILES[@]}" | sort -z | uniq -d -z | xargs -0n1) )
+
+      if [[ "${#IWYU_MODIFIED_FILES[@]}" != "0" ]]; then
+         NUM_PROC=$(get_num_proc)
+         IWYU_OUTPUT=`${IWYU_TOOL} -p ${BUILD_DIR} -j ${NUM_PROC} ${IWYU_MODIFIED_FILES[@]} 2>&1`
+         IWYU_RETVAL=$?
+      else
+         echo "No modified C++ files match IWYU's filters. Skipping IWYU"
+
+         # Set the return value to 0 if we didnt run it
+         IWYU_RETVAL=0
+      fi
    fi
 else
    echo "No modified C++ files to check"

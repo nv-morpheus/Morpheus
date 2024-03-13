@@ -1,18 +1,27 @@
 [
 
 ## Include mappings
-# srf protos
-{ "include": [ "\"srf/protos/architect.pb.h\"", private, "<srf/protos/architect.pb.h>", "public" ] },
-{ "include": [ "\"srf/protos/codable.pb.h\"", private, "<srf/protos/codable.pb.h>", "public" ] },
-{ "include": [ "\"srf/protos/remote_descriptor.pb.h\"", private, "<srf/protos/remote_descriptor.pb.h>", "public" ] },
-{ "include": [ "\"srf/protos/tensor_meta_data.pb.h\"", private, "<srf/protos/tensor_meta_data.pb.h>", "public" ] },
+# mrc protos
+{ "include": [ "\"mrc/protos/architect.pb.h\"", private, "<mrc/protos/architect.pb.h>", "public" ] },
+{ "include": [ "\"mrc/protos/codable.pb.h\"", private, "<mrc/protos/codable.pb.h>", "public" ] },
+{ "include": [ "\"mrc/protos/remote_descriptor.pb.h\"", private, "<mrc/protos/remote_descriptor.pb.h>", "public" ] },
+{ "include": [ "\"mrc/protos/tensor_meta_data.pb.h\"", private, "<mrc/protos/tensor_meta_data.pb.h>", "public" ] },
 
 # stdlib
 { "include": [ "<bits/cxxabi_forced.h>", private, "<mutex>", "public" ] },
 { "include": [ "<bits/cxxabi_forced.h>", private, "<vector>", "public" ] },
+{ "include": [ "<bits/this_thread_sleep.h>", private, "<thread>", "public" ] },
 { "include": [ "<bits/types/siginfo_t.h>", private, "<csignal>", "public" ] },
 
 # boost
+{ "include": ["@<boost/algorithm/string/.*>", "private", "<boost/algorithm/string.hpp>", "public" ] },
+{ "include": ["@<boost/asio/detail/.*>", "private", "<boost/asio.hpp>", "public" ] },
+{ "include": ["@<boost/asio/impl/.*>", "private", "<boost/asio.hpp>", "public" ] },
+{ "include": ["@<boost/asio/ip/impl/.*>", "private", "<boost/asio.hpp>", "public" ] },
+{ "include": ["@<boost/beast/core/detail/.*>", "private", "<boost/beast/core.hpp>", "public" ] },
+{ "include": ["@<boost/beast/core/impl/.*>", "private", "<boost/beast/core.hpp>", "public" ] },
+{ "include": ["@<boost/beast/http/detail/.*>", "private", "<boost/beast/http.hpp>", "public" ] },
+{ "include": ["@<boost/beast/http/impl/.*>", "private", "<boost/beast/http.hpp>", "public" ] },
 { "include": ["@<boost/fiber/future/detail/.*>", "private", "<boost/fiber/future/future.hpp>", "public"] },
 
 # cuda
@@ -36,6 +45,10 @@
 
 # Protobuf
 { "include": [ "<google/protobuf/repeated_ptr_field.h>", private, "<google/protobuf/repeated_field.h>", "public" ] },
+
+# pybind11
+{ "include": [ "<pybind11/detail/common.h>", "private", "<pybind11/pytypes.h>", "public" ] },
+{ "include": [ "<pybind11/cast.h>", "private", "<pybind11/pybind11.h>", "public" ] },
 
 # rxcpp
 # Hide includes that are exported by <rxcpp/rx.hpp>
@@ -105,7 +118,6 @@
 { "symbol": ["nlohmann::json", "private", "<nlohmann/json_fwd.hpp>", "public"] },
 
 # pybind11
-{ "symbol": ["pybind11", "private", "<pybind11/cast.h>", "public"] },
 { "symbol": ["pybind11", "private", "<pybind11/embed.h>", "public"] },
 { "symbol": ["pybind11", "private", "<pybind11/pybind11.h>", "public"] },
 { "symbol": ["pybind11", "private", "<pybind11/pytypes.h>", "public"] },
@@ -120,7 +132,6 @@
 { "symbol": ["PyObject", "private", "<pybind11/pybind11.h>", "public"] },
 { "symbol": ["PySequence_GetItem", "private", "<pybind11/pybind11.h>", "public"] },
 { "symbol": ["pybind11::arg", "private", "<pybind11/pybind11.h>", "public"] },
-{ "symbol": ["pybind11::detail::get_type_info", "private", "<pybind11/cast.h>", "public"] },
 { "symbol": ["pybind11::detail::key_error", "private", "<pybind11/pytypes.h>", "public"] },
 { "symbol": ["pybind11::detail::overload_cast_impl", "private", "<pybind11/pybind11.h>", "public"] },
 { "symbol": ["pybind11::detail::str_attr_accessor", "private", "<pybind11/pybind11.h>", "public"] },
@@ -138,7 +149,7 @@
 # xtensor
 { "symbol": ["xt::no_ownership", "private", "<xtensor/xadapt.hpp>", "public"] },
 
-# srf
-{ "symbol": ["std::__decay_and_strip<std::shared_ptr<srf::TraceStatistics> &>::__type" , "private", "<srf/benchmarking/trace_statistics.hpp>", "public"] },
+# mrc
+{ "symbol": ["std::__decay_and_strip<std::shared_ptr<mrc::TraceStatistics> &>::__type" , "private", "<mrc/benchmarking/trace_statistics.hpp>", "public"] },
 
 ]

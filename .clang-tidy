@@ -5,7 +5,17 @@
 # Disable modernize-use-trailing-return-type (too many hits)
 # Disable modernize-use-nodiscard (why isnt [[nodiscard]] the default?)
 # Enable identifier in TODO comments
-Checks: -*,readability-identifier-naming,modernize-*,-modernize-use-trailing-return-type,-modernize-use-nodiscard,google-readability-todo
+Checks: >
+  -*,
+  readability-identifier-naming,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
+  google-readability-todo
+
+WarningsAsErrors: >
+  *,
+  -clang-diagnostic-unused-command-line-argument
 
 #WarningsAsErrors: '*'
 HeaderFilterRegex: '.*\/include\/morpheus\/.*'
@@ -91,7 +101,7 @@ CheckOptions:
   - key:             readability-identifier-naming.GetConfigPerFile
     value:           'true'
   - key:             readability-identifier-naming.GlobalConstantCase
-    value:           CamelCase
+    value:           UPPER_CASE
   - key:             readability-identifier-naming.GlobalConstantIgnoredRegexp
     value:           ''
   - key:             readability-identifier-naming.GlobalConstantPrefix
@@ -181,7 +191,7 @@ CheckOptions:
   - key:             readability-identifier-naming.TypeTemplateParameterCase
     value:           CamelCase
   - key:             readability-identifier-naming.TypeTemplateParameterIgnoredRegexp
-    value:           ^[A-Z]$
+    value:           '^([A-Z]|expr-type)$'
   - key:             readability-identifier-naming.TypeTemplateParameterPrefix
     value:           ''
   - key:             readability-identifier-naming.TypeTemplateParameterSuffix

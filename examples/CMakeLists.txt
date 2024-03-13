@@ -1,5 +1,5 @@
 # =============================================================================
-# Copyright (c) 2020-2022, NVIDIA CORPORATION.
+# Copyright (c) 2020-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,9 @@
 # =============================================================================
 list(APPEND CMAKE_MESSAGE_CONTEXT "examples")
 
-add_subdirectory(developer_guide/3_simple_cpp_stage)
-add_subdirectory(developer_guide/4_rabbitmq_cpp_stage)
+# Add the binary dir before including examples so they can find the parent project
+list(PREPEND CMAKE_PREFIX_PATH "${PROJECT_BINARY_DIR}")
+
+add_subdirectory(developer_guide)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

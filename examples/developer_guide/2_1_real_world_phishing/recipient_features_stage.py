@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,20 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
-import srf
+import mrc
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("recipient-features", modes=[PipelineModes.NLP])
-class RecipientFeaturesStage(SinglePortStage):
+class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
     """
     Pre-processing stage which counts the number of recipients in an email's metadata.
 
@@ -35,7 +35,7 @@ class RecipientFeaturesStage(SinglePortStage):
     config : morpheus.config.Config
         Pipeline configuration instance.
     sep_token : str
-        Bert separator toeken.
+        Bert separator token.
     """
 
     def __init__(self, config: Config, sep_token: str = '[SEP]'):
@@ -43,40 +43,50 @@ class RecipientFeaturesStage(SinglePortStage):
         if config.mode != PipelineModes.NLP:
             raise RuntimeError("RecipientFeaturesStage must be used in a pipeline configured for NLP")
 
-        if len(sep_token):
+        if len(sep_token) > 0:
             self._sep_token = sep_token
         else:
             raise ValueError("sep_token cannot be an empty string")
+
+        # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
+        # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
+        # stage defining this attribute.
+        self._needed_columns.update({
+            'to_count': TypeId.INT32,
+            'bcc_count': TypeId.INT32,
+            'cc_count': TypeId.INT32,
+            'total_recipients': TypeId.INT32,
+            'data': TypeId.STRING
+        })
 
     @property
     def name(self) -> str:
         return "recipient-features"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:
         return False
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
-        # Get the DataFrame from the incoming message
-        df = message.df
+        # Open the DataFrame from the incoming message for in-place modification
+        with message.mutable_dataframe() as df:
+            df['to_count'] = df['To'].str.count('@')
+            df['bcc_count'] = df['BCC'].str.count('@')
+            df['cc_count'] = df['CC'].str.count('@')
+            df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
 
-        df['to_count'] = df['To'].str.count('@')
-        df['bcc_count'] = df['BCC'].str.count('@')
-        df['cc_count'] = df['CC'].str.count('@')
-        df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
-
-        # Attach features to string data
-        df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
-                      df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
-                      df['Message'])
+            # Attach features to string data
+            df['data'] = (df['to_count'].astype(str) + self._sep_token + df['bcc_count'].astype(str) + self._sep_token +
+                          df['cc_count'].astype(str) + self._sep_token + df['total_recipients'].astype(str) +
+                          self._sep_token + df['Message'])
 
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self.on_data)
-        builder.make_edge(input_stream[0], node)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node

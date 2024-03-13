@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,7 @@ RUN apt update && \
     rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
 # Install python packages
-RUN pip install "mlflow>1.29.0,<2" boto3 pymysql pyyaml
+RUN pip install "mlflow >=2.2.1,<3" boto3 pymysql pyyaml
 
 # We run on port 5000
 EXPOSE 5000

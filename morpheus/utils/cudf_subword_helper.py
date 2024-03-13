@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Wrapper around cudf's subword tokenizer"""
 
 import collections
 import threading
@@ -42,7 +43,7 @@ def create_vocab_table(vocabpath):
     id2vocab = []
     vocab2id = {}
     import numpy as np
-    with open(vocabpath) as f:
+    with open(vocabpath, encoding='UTF-8') as f:
         for index, line in enumerate(f):
             token = line.split()[0]
             id2vocab.append(token)
@@ -88,12 +89,11 @@ def get_cached_tokenizer(vocab_hash_file: str, do_lower_case: bool):
     cudf.core.subword_tokenizer.SubwordTokenizer
         Cached subword tokenizer
     """
-
     hashed_inputs = hash((vocab_hash_file, do_lower_case))
 
     cached_tokenizers = getattr(_tl, "cached_tokenizers", None)
 
-    # Set the initial dictionary if its not set
+    # Set the initial dictionary if it's not set
     if (cached_tokenizers is None):
         cached_tokenizers = {}
         _tl.cached_tokenizers = cached_tokenizers
@@ -140,7 +140,6 @@ def tokenize_text_series(vocab_hash_file: str,
         A named tuple with these keys {'input_ids':,'input_mask':,'segment_ids':}
 
     """
-
     tokenizer = get_cached_tokenizer(vocab_hash_file, do_lower_case)
 
     assert tokenizer is not None, "Must create tokenizer first using `create_tokenizer()`"

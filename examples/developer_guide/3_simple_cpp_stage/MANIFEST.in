@@ -1,0 +1,2 @@
+include src/simple_cpp_stage/_version.py
+recursive-include src *.so *.pyi

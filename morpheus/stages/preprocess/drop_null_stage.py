@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,19 +14,19 @@
 
 import typing
 
-import srf
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("dropna", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
-class DropNullStage(SinglePortStage):
+class DropNullStage(PassThruTypeMixin, SinglePortStage):
     """
     Drop null data entries from a DataFrame.
 
@@ -67,22 +67,15 @@ class DropNullStage(SinglePortStage):
         # Enable support by default
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        # Finally, flatten to a single stream
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def on_next(x: MessageMeta):
 
-            def on_next(x: MessageMeta):
+            y = MessageMeta(x.df[~x.df[self._column].isna()])
 
-                y = MessageMeta(x.df[~x.df[self._column].isna()])
+            return y
 
-                return y
+        node = builder.make_node(self.unique_name, ops.map(on_next), ops.filter(lambda x: not x.df.empty))
+        builder.make_edge(input_node, node)
 
-            obs.pipe(ops.map(on_next), ops.filter(lambda x: not x.df.empty)).subscribe(sub)
-
-        node = builder.make_node_full(self.unique_name, node_fn)
-        builder.make_edge(stream, node)
-        stream = node
-
-        return stream, input_stream[1]
+        return node

@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,11 +28,9 @@ DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"morpheus"}
 DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"dev-$(date +'%y%m%d')"}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
-DOCKER_ARGS="--env WORKSPACE_VOLUME=${PWD} -v $PWD:/workspace --net=host --gpus=all --cap-add=sys_nice"
+DOCKER_ARGS="--runtime=nvidia --env WORKSPACE_VOLUME=${PWD} -v $PWD:/workspace --net=host --gpus=all --cap-add=sys_nice"
 
-if [[ -z "${SSH_AUTH_SOCK}" ]]; then
-   echo -e "${y}No ssh-agent auth socket found. Dependencies in private git repos may fail during build.${x}"
-else
+if [[ -n "${SSH_AUTH_SOCK}" ]]; then
    echo -e "${b}Setting up ssh-agent auth socket${x}"
    DOCKER_ARGS="${DOCKER_ARGS} -v $(readlink -f $SSH_AUTH_SOCK):/ssh-agent:ro -e SSH_AUTH_SOCK=/ssh-agent"
 fi
@@ -40,5 +38,11 @@ fi
 echo -e "${g}Launching ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}...${x}"
 
 set -x
-docker run --rm -ti ${DOCKER_ARGS} ${DOCKER_EXTRA_ARGS} ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} "${@:-bash}"
+docker run \
+    -v /dev/hugepages:/dev/hugepages \
+    --privileged \
+    --rm \
+    -ti \
+    ${DOCKER_ARGS} ${DOCKER_EXTRA_ARGS} \
+    ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} "${@:-bash}"
 set +x

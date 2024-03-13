@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,19 +15,19 @@
 import logging
 import typing
 
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.logger import deprecated_stage_warning
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("delay", command_args={"deprecated": True})
-class DelayStage(SinglePortStage):
+class DelayStage(PassThruTypeMixin, SinglePortStage):
     """
     Delay results for a certain duration.
 
@@ -65,9 +65,9 @@ class DelayStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        reason = "The stage is no longer required to manage backpressure and has been deprecated. It has no" \
+                 " effect acts as a pass through stage."
+        deprecated_stage_warning(logger, type(self), self.unique_name, reason=reason)
 
-        # This stage is no longer needed and is just a pass thru stage
-        deprecated_stage_warning(logger, type(self), self.unique_name)
-
-        return input_stream
+        return input_node

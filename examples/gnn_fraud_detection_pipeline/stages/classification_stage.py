@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,18 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
-import srf
+import mrc
+from mrc.core import operators as ops
 
 import cuml
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 from .graph_sage_stage import GraphSAGEMultiMessage
 
@@ -47,29 +47,35 @@ class ClassificationStage(SinglePortStage):
         super().__init__(c)
 
         self._xgb_model = cuml.ForestInference.load(model_xgb_file, output_class=True)
+        self._needed_columns.update({'node_id': TypeId.INT64, 'prediction': TypeId.FLOAT32})
 
     @property
     def name(self) -> str:
         return "gnn-fraud-classification"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> (GraphSAGEMultiMessage, ):
         return (GraphSAGEMultiMessage, )
 
-    def supports_cpp_node(self):
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiMessage)
+
+    def supports_cpp_node(self) -> bool:
         return False
 
-    def _process_message(self, message: GraphSAGEMultiMessage):
+    def _process_message(self, message: GraphSAGEMultiMessage) -> GraphSAGEMultiMessage:
         ind_emb_columns = message.get_meta(message.inductive_embedding_column_names)
-
         message.set_meta("node_id", message.node_identifiers)
 
+        # The XGBoost model is returning two probabilities for the binary classification. The first (column 0) is
+        # probability that the transaction is in the benign class, and the second (column 1) is the probability that
+        # the transaction is in the fraudulent class. Added together the two values will always equal 1.
         prediction = self._xgb_model.predict_proba(ind_emb_columns).iloc[:, 1]
 
         message.set_meta("prediction", prediction)
 
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self._process_message)
-        builder.make_edge(input_stream[0], node)
-        return node, MultiMessage
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self._process_message))
+        builder.make_edge(input_node, node)
+        return node

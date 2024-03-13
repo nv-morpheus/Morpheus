@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,28 +17,44 @@
 
 #include "morpheus/stages/preprocess_nlp.hpp"
 
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/sink_properties.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/object.hpp"
+#include "mrc/types.hpp"
+
 #include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
-#include "morpheus/messages/memory/tensor_memory.hpp"     // for TensorMemory::tensor_map_t
 #include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/dev_mem_info.hpp"
+#include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 #include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
-#include "morpheus/utilities/type_util.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex, TensorMap
+#include "morpheus/utilities/matx_util.hpp"
 
-#include <cudf/column/column.hpp>                // for column, column::contents
+#include <cudf/column/column.hpp>  // for column, column::contents
+#include <cudf/column/column_factories.hpp>
+#include <cudf/column/column_view.hpp>
+#include <cudf/filling.hpp>
+#include <cudf/reshape.hpp>
+#include <cudf/scalar/scalar.hpp>
 #include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
+#include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
+#include <mrc/segment/builder.hpp>
+#include <nvtext/normalize.hpp>
 #include <nvtext/subword_tokenize.hpp>
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>  // for device_buffer
-#include <srf/segment/builder.hpp>
 
 #include <cstdint>
 #include <exception>
+#include <functional>
 #include <map>
 #include <memory>
-#include <type_traits>  // for declval
 #include <utility>
 
 namespace morpheus {
@@ -76,56 +92,96 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, stride](sink_type_t x) {
                 // Convert to string view
-                auto string_col = cudf::strings_column_view{x->get_meta(this->m_column).get_column(0)};
+                auto meta       = x->get_meta(this->m_column);
+                auto col        = meta.get_column(0);
+                auto string_col = cudf::strings_column_view{col};
 
                 // Create the hashed vocab
                 thread_local std::unique_ptr<nvtext::hashed_vocabulary> vocab =
                     nvtext::load_vocabulary_file(this->m_vocab_hash_file);
 
+                // remove leading and trailing whitespace
+                auto normalized_col      = nvtext::normalize_spaces(string_col);
+                auto normalized_col_view = cudf::strings_column_view{normalized_col->view()};
+
                 // Perform the tokenizer
-                auto token_results = nvtext::subword_tokenize(string_col,
-                                                              *vocab,
-                                                              this->m_sequence_length,
-                                                              stride,
-                                                              this->m_do_lower_case,
-                                                              this->m_truncation,
-                                                              string_col.size() * 2);
+                nvtext::tokenizer_result token_results;
+
+                if (normalized_col_view.chars_size(rmm::cuda_stream_default) > 0)
+                {
+                    token_results = nvtext::subword_tokenize(normalized_col_view,
+                                                             *vocab,
+                                                             this->m_sequence_length,
+                                                             stride,
+                                                             this->m_do_lower_case,
+                                                             this->m_truncation,
+                                                             rmm::mr::get_current_device_resource());
+                }
+                else
+                {
+                    // workaround for a situation where the input strings contain either no characters or only
+                    // whitespace
+                    auto zero = cudf::numeric_scalar<uint32_t>(0, true, rmm::cuda_stream_default);
+                    auto ids =
+                        cudf::make_column_from_scalar(zero, this->m_sequence_length * normalized_col_view.size());
+                    auto mask =
+                        cudf::make_column_from_scalar(zero, this->m_sequence_length * normalized_col_view.size());
+                    auto metadata = [&]() {
+                        auto iota   = cudf::sequence(normalized_col_view.size(), zero);
+                        auto zeroes = cudf::make_column_from_scalar(zero, normalized_col_view.size());
+                        return cudf::interleave_columns(cudf::table_view{
+                            std::vector<cudf::column_view>{iota->view(), zeroes->view(), zeroes->view()}});
+                    }();
+
+                    token_results = nvtext::tokenizer_result{static_cast<uint32_t>(normalized_col_view.size()),
+                                                             this->m_sequence_length,
+                                                             std::move(ids),
+                                                             std::move(mask),
+                                                             std::move(metadata)};
+                }
 
                 // Build the results
                 auto memory = std::make_shared<InferenceMemory>(token_results.nrows_tensor);
 
-                int32_t length = token_results.tensor_token_ids->size() / token_results.sequence_length;
+                TensorIndex length = token_results.tensor_token_ids->size() / token_results.sequence_length;
                 auto input_ids_released =
                     cudf::cast(token_results.tensor_token_ids->view(), cudf::data_type(cudf::type_id::INT32))
                         ->release();
 
-                memory->tensors["input_ids"] = std::move(
-                    Tensor::create(std::move(input_ids_released.data),
-                                   DType::create<int32_t>(),
-                                   std::vector<TensorIndex>{length, static_cast<int>(token_results.sequence_length)},
-                                   std::vector<TensorIndex>{},
-                                   0));
+                memory->set_tensor("input_ids",
+                                   Tensor::create(std::move(input_ids_released.data),
+                                                  DType::create<int32_t>(),
+                                                  {length, static_cast<TensorIndex>(token_results.sequence_length)},
+                                                  {},
+                                                  0));
 
                 length = token_results.tensor_attention_mask->size() / token_results.sequence_length;
                 auto input_mask_released =
                     cudf::cast(token_results.tensor_attention_mask->view(), cudf::data_type(cudf::type_id::INT32))
                         ->release();
-                memory->tensors["input_mask"] = std::move(
-                    Tensor::create(std::move(input_mask_released.data),
-                                   DType::create<int32_t>(),
-                                   std::vector<TensorIndex>{length, static_cast<int>(token_results.sequence_length)},
-                                   std::vector<TensorIndex>{},
-                                   0));
+                memory->set_tensor("input_mask",
+                                   Tensor::create(std::move(input_mask_released.data),
+                                                  DType::create<int32_t>(),
+                                                  {length, static_cast<TensorIndex>(token_results.sequence_length)},
+                                                  {},
+                                                  0));
 
-                length = token_results.tensor_metadata->size() / 3;
-                auto seq_ids_released =
-                    cudf::cast(token_results.tensor_metadata->view(), cudf::data_type(cudf::type_id::INT32))->release();
-                memory->tensors["seq_ids"] =
-                    std::move(Tensor::create(std::move(seq_ids_released.data),
-                                             DType::create<int32_t>(),
-                                             std::vector<TensorIndex>{length, static_cast<int32_t>(3)},
-                                             std::vector<TensorIndex>{},
-                                             0));
+                auto tensor_index_dtype = DType::create<TensorIndex>();
+                length                  = token_results.tensor_metadata->size() / 3;
+                auto seq_ids_released   = cudf::cast(token_results.tensor_metadata->view(),
+                                                   cudf::data_type(tensor_index_dtype.cudf_type_id()))
+                                            ->release();
+
+                std::shared_ptr<rmm::device_buffer> seq_ids_data = std::move(seq_ids_released.data);
+
+                if (x->mess_offset > 0)
+                {
+                    // Add an offset to the seq_ids so the message IDs line up
+                    MatxUtil::offset_seq_ids(
+                        DevMemInfo{seq_ids_data, tensor_index_dtype.type_id(), {length, 3}, {1, 3}}, x->mess_offset);
+                }
+
+                memory->set_tensor("seq_ids", Tensor::create(seq_ids_data, tensor_index_dtype, {length, 3}, {}, 0));
 
                 auto next = std::make_shared<MultiInferenceMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);
@@ -138,9 +194,9 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
 }
 
 // ************ PreprocessNLPStageInterfaceProxy *********** //
-std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
-    const std::string &name,
+std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
     std::string vocab_hash_file,
     uint32_t sequence_length,
     bool truncation,

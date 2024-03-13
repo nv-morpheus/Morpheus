@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,11 @@ limitations under the License.
 
 # Sensitive Information Detection with Natural Language Processing (NLP) Example
 
-This example illustrates how to use Morpheus to automatically detect Sensitive Information (SI) in network packets by utilizing a Natural Language Processing (NLP) neural network and Triton Inference Server.
+This example illustrates how to use Morpheus to detect Sensitive Information (SI) in network packets automatically by utilizing a Natural Language Processing (NLP) neural network and Triton Inference Server.
 
 ## Background
 
-The goal of this example is to identify potentially sensitive information in network packet data as quickly as possible to limit exposure and take corrective action. Sensitive information is a broad term but can be generalized to any data that should be guarded from unautorized access. Credit card numbers, passwords, authorization keys, and emails are all examples of sensitive information.
+The goal of this example is to identify potentially sensitive information in network packet data as quickly as possible to limit exposure and take corrective action. Sensitive information is a broad term but can be generalized to any data that should be guarded from unauthorized access. Credit card numbers, passwords, authorization keys, and emails are all examples of sensitive information.
 
 In this example, we will be using Morpheus' provided NLP SI Detection model. This model is capable of detecting 10 different categories of sensitive information:
 
@@ -77,14 +77,14 @@ This example utilizes the Triton Inference Server to perform inference. The neur
 From the Morpheus repo root directory, run the following to launch Triton and load the `sid-minibert` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
 ```
 
-Where `22.02-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (see [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
+Where `23.06-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (refer to [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
 
 This will launch Triton and only load the `sid-minibert-onnx` model. This model has been configured with a max batch size of 32, and to use dynamic batching for increased performance.
 
-Once Triton has loaded the model, you should see the following in the output:
+Once Triton has loaded the model, the following should be displayed:
 
 ```
 +-------------------+---------+--------+
@@ -93,7 +93,7 @@ Once Triton has loaded the model, you should see the following in the output:
 | sid-minibert-onnx | 1       | READY  |
 +-------------------+---------+--------+
 ```
-
+> **Note**: If this is not present in the output, check the Triton log for any error messages related to loading the model.
 
 ## Running the Pipeline
 
@@ -101,7 +101,7 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch the pipeline. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way.
 
-From the Morpheus repo root directory run:
+From the Morpheus repo root directory, run:
 ```bash
 export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
@@ -123,14 +123,14 @@ morpheus --log_level=DEBUG \
    `# 6th Stage: Add results from inference to the messages` \
    add-class \
    `# 7th Stage: Filtering removes any messages that did not detect SI` \
-   filter \
+   filter --filter_source=TENSOR \
    `# 8th Stage: Convert from objects back into strings` \
    serialize --exclude '^_ts_' \
    `# 9th Stage: Write out the JSON lines to the detections.jsonlines file` \
    to-file --filename=detections.jsonlines --overwrite
 ```
 
-If successful, you should see the following output:
+If successful, the following should be displayed:
 
 ```bash
 Configuring Pipeline via CLI
@@ -168,20 +168,20 @@ CPP Enabled: True
 ====Starting Pipeline====
 ====Pipeline Started====
 ====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
 Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=sid-minibert-onnx, server_url=localhost:8000, force_convert_inputs=True, use_shared_memory=False)>
-  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseMessage
 Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
 Added stage: <add-class-5; AddClassificationsStage(threshold=0.5, labels=[], prefix=)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
 Added stage: <serialize-6; SerializeStage(include=[], exclude=['^_ts_'], fixed_columns=True)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
+  └─ morpheus.MultiResponseMessage -> morpheus.MessageMeta
 Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====
@@ -203,7 +203,7 @@ The output file `detections.jsonlines` will contain the original PCAP messages w
 * secret_keys
 * user
 
-The value for these fields will either be a `1` indicating a decection and a `0` indicating no detection. An example row with a detection looks like:
+The value for these fields will be a `1` indicating a detection or a `0` indicating no detection. An example row with a detection is:
 ```json
 {
   "timestamp": 1616381019580,

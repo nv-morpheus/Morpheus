@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Pipeline and tool subcommands for the Morpheus CLI."""
 
 import functools
 import logging
@@ -24,7 +25,7 @@ from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_config_from_ctx
-from morpheus.cli.utils import get_enum_values
+from morpheus.cli.utils import get_enum_keys
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_pipeline_from_ctx
 from morpheus.cli.utils import load_labels_file
@@ -48,9 +49,12 @@ from morpheus.utils.logger import configure_logging
 
 DEFAULT_CONFIG = Config()
 
-# List all of the options in from morpheus._lib.file_types.FileTypes without importing the object. This slows down
+# List all of the options in from morpheus.common.FileTypes without importing the object. This slows down
 # autocomplete too much.
 FILE_TYPE_NAMES = ["auto", "csv", "json"]
+
+# Graphviz rankdir options ad documented in https://graphviz.org/docs/attr-types/rankdir/
+RANKDIR_CHOICES = ['BT', 'LR', 'RL', 'TB']
 
 ALIASES = {
     "pipeline": "pipeline-nlp",
@@ -64,14 +68,17 @@ logger = logging.getLogger("morpheus.cli")
 # `modes` is a tuple so it can be cached for LRU to work
 @functools.lru_cache(maxsize=None)
 def add_command(name: str, stage_module: str, modes: typing.Tuple[PipelineModes, ...] = None):
+    """Add a stage to the global registry."""
 
     GlobalStageRegistry.get().add_stage_info(
         LazyStageInfo(name=name, stage_qualified_name=stage_module, modes=list(modes)))
 
 
 class AliasedGroup(click.Group):
+    """A click group that supports aliases."""
 
     def get_command(self, ctx, cmd_name):
+        """Resolve aliases before calling the base method."""
         try:
             cmd_name = ALIASES[cmd_name]
         except KeyError:
@@ -80,6 +87,7 @@ class AliasedGroup(click.Group):
 
 
 class PluginGroup(AliasedGroup):
+    """Click group that loads subcommands from plugins."""
 
     def __init__(
         self,
@@ -96,28 +104,31 @@ class PluginGroup(AliasedGroup):
         self._plugin_manager = PluginManager.get()
 
     def list_commands(self, ctx: click.Context) -> typing.List[str]:
+        """Get the list of commands."""
 
         # Get the list of commands from the base
-        command_list = super().list_commands(ctx)
+        command_list = set(super().list_commands(ctx))
 
         # Extend it with any plugins
         registered_stages = self._plugin_manager.get_registered_stages()
 
         plugin_command_list = registered_stages.get_registered_names(self._pipeline_mode)
 
-        duplicate_commands = [x for x in plugin_command_list if x in command_list]
+        duplicate_commands = command_list.intersection(plugin_command_list)
 
-        if (len(duplicate_commands) > 0):
-            raise RuntimeError("Plugins registered the following duplicate commands: {}".format(
-                ", ".join(duplicate_commands)))
+        # The COMP_WORDS environment variable is set by click using the auto-complete feature, which may cause this
+        # metho to be called multiple times.
+        if (len(duplicate_commands) > 0 and 'COMP_WORDS' not in os.environ):
+            raise RuntimeError(f"Plugins registered the following duplicate commands: {', '.join(duplicate_commands)}")
 
-        command_list.extend(plugin_command_list)
+        command_list.update(plugin_command_list)
 
         command_list = sorted(command_list)
 
         return command_list
 
     def get_command(self, ctx, cmd_name):
+        """Get the command."""
 
         # Check if the command is already loaded
         if (cmd_name not in self.commands):
@@ -162,6 +173,7 @@ def cli(ctx: click.Context,
         log_config_file: str = DEFAULT_CONFIG.log_config_file,
         plugins: typing.List[str] = None,
         **kwargs):
+    """Main entry point function for the CLI."""
 
     # ensure that ctx.obj exists and is a dict (in case `cli()` is called
     # by means other than the `if` block below
@@ -185,7 +197,7 @@ def cli(ctx: click.Context,
 @cli.group(short_help="Run a utility tool", no_args_is_help=True)
 @prepare_command()
 def tools(ctx: click.Context, **kwargs):
-
+    """Tools subcommand"""
     pass
 
 
@@ -197,7 +209,7 @@ def tools(ctx: click.Context, **kwargs):
 @click.option('--max_workspace_size', type=int, default=16000)
 @prepare_command()
 def onnx_to_trt(ctx: click.Context, **kwargs):
-
+    """Converts an ONNX model to a TRT engine"""
     logger.info("Generating onnx file")
 
     # Convert batches to a list
@@ -205,9 +217,9 @@ def onnx_to_trt(ctx: click.Context, **kwargs):
 
     c = ConfigOnnxToTRT()
 
-    for param in kwargs:
+    for (param, val) in kwargs.items():
         if hasattr(c, param):
-            setattr(c, param, kwargs[param])
+            setattr(c, param, val)
 
     from morpheus.utils.onnx_to_trt import gen_engine
 
@@ -216,6 +228,7 @@ def onnx_to_trt(ctx: click.Context, **kwargs):
 
 @tools.group(short_help="Utility for installing/updating/removing shell completion for Morpheus", no_args_is_help=True)
 def autocomplete(**kwargs):
+    """Utility for installing/updating/removing shell completion for Morpheus"""
     pass
 
 
@@ -226,12 +239,10 @@ def autocomplete(**kwargs):
               help="The shell to install completion to. Leave as the default to auto-detect")
 def show(shell):
     """Show the click-completion-command completion code"""
-
-    from morpheus.utils import click_completion_tools
-
+    from morpheus.cli import click_completion_tools
     shell, path, code = click_completion_tools.get_code(shell=shell)
 
-    click.secho("To add %s completion, write the following code to '%s':\n" % (shell, path), fg="blue")
+    click.secho(f"To add {shell} completion, write the following code to '{path}':\n", fg="blue")
     click.echo(code)
 
 
@@ -246,12 +257,10 @@ def show(shell):
               help="Location to install complete to. Leave empty to choose the default for the specified shell")
 def install(**kwargs):
     """Install the click-completion-command completion"""
-
-    from morpheus.utils import click_completion_tools
-
+    from morpheus.cli import click_completion_tools
     shell, path = click_completion_tools.install_code(**kwargs)
 
-    click.echo('%s completion installed in %s' % (shell, path))
+    click.echo(f'{shell} completion installed in {path}')
 
 
 @cli.group(short_help="Run one of the available pipelines", no_args_is_help=True, cls=AliasedGroup)
@@ -279,13 +288,22 @@ def install(**kwargs):
               type=bool,
               help=("Whether or not to use C++ node and message types or to prefer python. "
                     "Only use as a last resort if bugs are encountered"))
+@click.option('--manual_seed',
+              default=None,
+              type=click.IntRange(min=1),
+              envvar="MORPHEUS_MANUAL_SEED",
+              help=("Manually seed the random number generators used by Morpheus, useful for testing."))
 @prepare_command(parse_config=True)
 def run(ctx: click.Context, **kwargs):
-
+    """Run subcommand, used for running a pipeline"""
     # Since the option isnt the same name as `should_use_cpp` anymore, manually set the value here.
     CppConfig.set_should_use_cpp(kwargs.pop("use_cpp", CppConfig.get_should_use_cpp()))
 
-    pass
+    manual_seed_val = kwargs.pop("manual_seed", None)
+    if manual_seed_val is not None:
+        from morpheus.utils.seed import manual_seed
+        logger.debug("Manually seeding random number generators to %d", manual_seed_val)
+        manual_seed(manual_seed_val)
 
 
 @click.group(chain=True,
@@ -311,6 +329,11 @@ def run(ctx: click.Context, **kwargs):
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
 @prepare_command()
 def pipeline_nlp(ctx: click.Context, **kwargs):
     """
@@ -318,11 +341,9 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
     output of each stage will become the input for the next stage. For example, to read, classify and write to a file,
     the following stages could be used
 
-    \b
     pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
     --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
 
-    \b
     Pipelines must follow a few rules:
     1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
     2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
@@ -357,7 +378,7 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
              cls=PluginGroup,
              pipeline_mode=PipelineModes.FIL)
 @click.option('--model_fea_length',
-              default=29,
+              default=18,
               type=click.IntRange(min=1),
               help="Number of features trained in the model")
 @click.option('--label',
@@ -372,13 +393,17 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
                     "A label file is a simple text file where each line corresponds to a label. "
                     "If unspecified the value specified by the --label flag will be used."))
 @click.option('--columns_file',
-              default="data/columns_fil.txt",
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read column features."))
 @click.option('--viz_file',
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
 @prepare_command()
 def pipeline_fil(ctx: click.Context, **kwargs):
     """
@@ -386,11 +411,9 @@ def pipeline_fil(ctx: click.Context, **kwargs):
     output of each stage will become the input for the next stage. For example, to read, classify and write to a file,
     the following stages could be used
 
-    \b
     pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
     --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
 
-    \b
     Pipelines must follow a few rules:
     1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
     2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
@@ -417,8 +440,6 @@ def pipeline_fil(ctx: click.Context, **kwargs):
     if ("columns_file" in kwargs and kwargs["columns_file"] is not None):
         config.fil.feature_columns = load_labels_file(kwargs["columns_file"])
         logger.debug("Loaded columns. Current columns: [%s]", str(config.fil.feature_columns))
-    else:
-        raise ValueError('Unable to find columns file')
 
     from morpheus.pipeline import LinearPipeline
 
@@ -434,15 +455,14 @@ def pipeline_fil(ctx: click.Context, **kwargs):
              pipeline_mode=PipelineModes.AE)
 @click.option('--columns_file',
               required=True,
-              default="data/columns_ae.txt",
+              default=None,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read column features."))
 @click.option('--labels_file',
               default=None,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read labels from in order to convert class IDs into labels. "
-                    "A label file is a simple text file where each line corresponds to a label. "
-                    "If unspecified, only a single output label is created for FIL"))
+                    "A label file is a simple text file where each line corresponds to a label. "))
 @click.option('--userid_column_name',
               type=str,
               default="userIdentityaccountId",
@@ -454,8 +474,8 @@ def pipeline_fil(ctx: click.Context, **kwargs):
               help=("Specifying this value will filter all incoming data to only use rows with matching User IDs. "
                     "Which column is used for the User ID is specified by `userid_column_name`"))
 @click.option('--feature_scaler',
-              type=click.Choice(get_enum_values(AEFeatureScalar), case_sensitive=False),
-              default=AEFeatureScalar.STANDARD.value,
+              type=click.Choice(get_enum_keys(AEFeatureScalar), case_sensitive=False),
+              default=AEFeatureScalar.STANDARD.name,
               callback=functools.partial(parse_enum, enum_class=AEFeatureScalar, case_sensitive=False),
               help=("Autoencoder feature scaler"))
 @click.option('--use_generic_model',
@@ -466,6 +486,16 @@ def pipeline_fil(ctx: click.Context, **kwargs):
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
+@click.option('--timestamp_column_name',
+              type=str,
+              default="timestamp",
+              required=True,
+              help=("Which column to use as the timestamp."))
 @prepare_command()
 def pipeline_ae(ctx: click.Context, **kwargs):
     """
@@ -473,11 +503,9 @@ def pipeline_ae(ctx: click.Context, **kwargs):
     output of each stage will become the input for the next stage. For example, to read, classify and write to a file,
     the following stages could be used
 
-    \b
     pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
     --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
 
-    \b
     Pipelines must follow a few rules:
     1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
     2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
@@ -497,21 +525,17 @@ def pipeline_ae(ctx: click.Context, **kwargs):
 
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = kwargs["userid_column_name"]
+    config.ae.timestamp_column_name = kwargs["timestamp_column_name"]
     config.ae.feature_scaler = kwargs["feature_scaler"]
     config.ae.use_generic_model = kwargs["use_generic_model"]
-
-    if ("columns_file" in kwargs and kwargs["columns_file"] is not None):
-        config.ae.feature_columns = load_labels_file(kwargs["columns_file"])
-        logger.debug("Loaded columns. Current columns: [%s]", str(config.ae.feature_columns))
-    else:
-        # Use a default single label
-        config.class_labels = ["reconstruct_loss", "zscore"]
+    config.ae.feature_columns = load_labels_file(kwargs["columns_file"])
+    logger.debug("Loaded columns. Current columns: [%s]", str(config.ae.feature_columns))
 
     if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
         config.class_labels = load_labels_file(kwargs["labels_file"])
         logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
     else:
-        # Use a default single label
+        # Use default labels
         config.class_labels = ["reconstruct_loss", "zscore"]
 
     if ("userid_filter" in kwargs):
@@ -549,6 +573,11 @@ def pipeline_ae(ctx: click.Context, **kwargs):
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
 @prepare_command()
 def pipeline_other(ctx: click.Context, **kwargs):
     """
@@ -556,11 +585,9 @@ def pipeline_other(ctx: click.Context, **kwargs):
     output of each stage will become the input for the next stage. For example, to read, classify and write to a file,
     the following stages could be used
 
-    \b
     pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
     --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
 
-    \b
     Pipelines must follow a few rules:
     1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
     2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
@@ -599,6 +626,13 @@ def pipeline_other(ctx: click.Context, **kwargs):
 @pipeline_other.result_callback()
 @click.pass_context
 def post_pipeline(ctx: click.Context, *args, **kwargs):
+    """Executes the pipeline"""
+
+    pipeline = get_pipeline_from_ctx(ctx)
+    pipeline.build()
+    if ("viz_file" in kwargs and kwargs["viz_file"] is not None):
+        pipeline.visualize(kwargs["viz_file"], rankdir=kwargs["viz_direction"].upper())
+        click.secho(f"Pipeline visualization saved to {kwargs['viz_file']}", fg="yellow")
 
     config = get_config_from_ctx(ctx)
 
@@ -607,15 +641,7 @@ def post_pipeline(ctx: click.Context, *args, **kwargs):
 
     click.secho("Starting pipeline via CLI... Ctrl+C to Quit", fg="red")
 
-    pipeline = get_pipeline_from_ctx(ctx)
-
-    # Run the pipeline before generating visualization to ensure the pipeline has been started
     pipeline.run()
-
-    # TODO(MDD): Move visualization before `pipeline.run()` once Issue #230 is fixed.
-    if ("viz_file" in kwargs and kwargs["viz_file"] is not None):
-        pipeline.visualize(kwargs["viz_file"], rankdir="LR")
-        click.secho("Pipeline visualization saved to {}".format(kwargs["viz_file"]), fg="yellow")
 
 
 # Manually create the subcommands for each command (necessary since commands can be used on multiple groups)
@@ -638,20 +664,27 @@ add_command("delay", "morpheus.stages.general.delay_stage.DelayStage", modes=ALL
 add_command("deserialize", "morpheus.stages.preprocess.deserialize_stage.DeserializeStage", modes=NOT_AE)
 add_command("dropna", "morpheus.stages.preprocess.drop_null_stage.DropNullStage", modes=NOT_AE)
 add_command("filter", "morpheus.stages.postprocess.filter_detections_stage.FilterDetectionsStage", modes=ALL)
+add_command("from-arxiv", "morpheus.stages.input.arxiv_source.ArxivSource", modes=ALL)
 add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
 add_command("from-appshield", "morpheus.stages.input.appshield_source_stage.AppShieldSourceStage", modes=FIL_ONLY)
 add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
 add_command("from-cloudtrail", "morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage", modes=AE_ONLY)
+add_command("from-databricks-deltalake",
+            "morpheus.stages.input.databricks_deltalake_source_stage.DataBricksDeltaLakeSourceStage",
+            modes=ALL)
 add_command("from-duo", "morpheus.stages.input.duo_source_stage.DuoSourceStage", modes=AE_ONLY)
 add_command("from-file", "morpheus.stages.input.file_source_stage.FileSourceStage", modes=NOT_AE)
 add_command("from-kafka", "morpheus.stages.input.kafka_source_stage.KafkaSourceStage", modes=NOT_AE)
+add_command("from-http", "morpheus.stages.input.http_server_source_stage.HttpServerSourceStage", modes=ALL)
+add_command("from-http-client", "morpheus.stages.input.http_client_source_stage.HttpClientSourceStage", modes=ALL)
+add_command("from-rss", "morpheus.stages.input.rss_source_stage.RSSSourceStage", modes=ALL)
 add_command("gen-viz", "morpheus.stages.postprocess.generate_viz_frames_stage.GenerateVizFramesStage", modes=NLP_ONLY)
 add_command("inf-identity", "morpheus.stages.inference.identity_inference_stage.IdentityInferenceStage", modes=NOT_AE)
 add_command("inf-pytorch",
             "morpheus.stages.inference.auto_encoder_inference_stage.AutoEncoderInferenceStage",
             modes=AE_ONLY)
 add_command("inf-pytorch", "morpheus.stages.inference.pytorch_inference_stage.PyTorchInferenceStage", modes=NOT_AE)
-add_command("inf-triton", "morpheus.stages.inference.triton_inference_stage.TritonInferenceStage", modes=ALL)
+add_command("inf-triton", "morpheus.stages.inference.triton_inference_stage.TritonInferenceStage", modes=NOT_AE)
 add_command("mlflow-drift", "morpheus.stages.postprocess.ml_flow_drift_stage.MLFlowDriftStage", modes=NOT_AE)
 add_command("monitor", "morpheus.stages.general.monitor_stage.MonitorStage", modes=ALL)
 add_command("preprocess", "morpheus.stages.preprocess.preprocess_ae_stage.PreprocessAEStage", modes=AE_ONLY)
@@ -659,8 +692,15 @@ add_command("preprocess", "morpheus.stages.preprocess.preprocess_fil_stage.Prepr
 add_command("preprocess", "morpheus.stages.preprocess.preprocess_nlp_stage.PreprocessNLPStage", modes=NLP_ONLY)
 add_command("serialize", "morpheus.stages.postprocess.serialize_stage.SerializeStage", modes=ALL)
 add_command("timeseries", "morpheus.stages.postprocess.timeseries_stage.TimeSeriesStage", modes=AE_ONLY)
+add_command("to-elasticsearch",
+            "morpheus.stages.output.write_to_elasticsearch_stage.WriteToElasticsearchStage",
+            modes=ALL)
 add_command("to-file", "morpheus.stages.output.write_to_file_stage.WriteToFileStage", modes=ALL)
 add_command("to-kafka", "morpheus.stages.output.write_to_kafka_stage.WriteToKafkaStage", modes=ALL)
+add_command("to-http", "morpheus.stages.output.http_client_sink_stage.HttpClientSinkStage", modes=ALL)
+add_command("to-http-server", "morpheus.stages.output.http_server_sink_stage.HttpServerSinkStage", modes=ALL)
 add_command("train-ae", "morpheus.stages.preprocess.train_ae_stage.TrainAEStage", modes=AE_ONLY)
 add_command("trigger", "morpheus.stages.general.trigger_stage.TriggerStage", modes=ALL)
 add_command("validate", "morpheus.stages.postprocess.validation_stage.ValidationStage", modes=ALL)
+
+add_command("from-doca", "morpheus.stages.doca.doca_source_stage.DocaSourceStage", modes=NLP_ONLY)

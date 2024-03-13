@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Sourse stage for Duo Authentication logs."""
 
 import json
 import logging
@@ -22,6 +23,7 @@ from morpheus.cli import register_stage
 from morpheus.config import PipelineModes
 from morpheus.stages.input.autoencoder_source_stage import AutoencoderSourceStage
 
+DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
 logger = logging.getLogger(__name__)
 
 
@@ -47,7 +49,7 @@ class DuoSourceStage(AutoencoderSourceStage):
         files. Any new files that are added that match the glob will then be processed.
     max_files: int, default = -1
         Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
-    file_type : `morpheus._lib.file_types.FileTypes`, default = 'FileTypes.Auto'.
+    file_type : `morpheus.common.FileTypes`, default = 'FileTypes.Auto'.
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1
@@ -64,21 +66,49 @@ class DuoSourceStage(AutoencoderSourceStage):
 
     @property
     def name(self) -> str:
+        """Unique name for the stage."""
         return "from-duo"
 
     def supports_cpp_node(self):
+        """Indicate that this stages does not support a C++ node."""
         return False
 
     @staticmethod
     def change_columns(df):
+        """
+        Removes characters (_,.,{,},:) from the names of the dataframe columns.
+
+        Parameters
+        ----------
+        df : `pd.DataFrame`
+            Dataframe that requires column renaming.
+
+        Returns
+        -------
+        df : `pd.DataFrame`
+            Dataframe with renamed columns.
+        """
         df.columns = df.columns.str.replace('[_,.,{,},:]', '')
         df.columns = df.columns.str.strip()
         return df
 
     @staticmethod
     def derive_features(df: pd.DataFrame, feature_columns: typing.List[str]):
+        """
+        Derives feature columns from the DUO (logs) source columns.
 
-        _DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe for deriving columns.
+        feature_columns : typing.List[str]
+            Names of columns that are need to be derived.
+
+        Returns
+        -------
+        df : typing.List[pd.DataFrame]
+            Dataframe with actual and derived columns.
+        """
         timestamp_column = "isotimestamp"
         city_column = "accessdevicelocationcity"
         state_column = "accessdevicelocationstate"
@@ -86,7 +116,7 @@ class DuoSourceStage(AutoencoderSourceStage):
 
         df['time'] = pd.to_datetime(df[timestamp_column], errors='coerce')
         df['day'] = df['time'].dt.date
-        df.fillna({'time': pd.to_datetime(_DEFAULT_DATE), 'day': pd.to_datetime(_DEFAULT_DATE).date()}, inplace=True)
+        df.fillna({'time': pd.to_datetime(DEFAULT_DATE), 'day': pd.to_datetime(DEFAULT_DATE).date()}, inplace=True)
         df.sort_values(by=['time'], inplace=True)
 
         overall_location_columns = [col for col in [city_column, state_column, country_column] if col is not None]
@@ -110,10 +140,31 @@ class DuoSourceStage(AutoencoderSourceStage):
                               feature_columns: typing.List[str],
                               userid_filter: str = None,
                               repeat_count: int = 1) -> typing.Dict[str, pd.DataFrame]:
+        """
+        After loading the input batch of DUO logs into a dataframe, this method builds a dataframe
+        for each set of userid rows in accordance with the specified filter condition.
 
+        Parameters
+        ----------
+        x : typing.List[str]
+            List of messages.
+        userid_column_name : str
+            Name of the column used for categorization.
+        feature_columns : typing.List[str]
+            Feature column names.
+        userid_filter : str
+            Only rows with the supplied userid are filtered.
+        repeat_count : str
+            Number of times the given rows should be repeated.
+
+        Returns
+        -------
+        df_per_user  : typing.Dict[str, pd.DataFrame]
+            Dataframe per userid.
+        """
         dfs = []
         for file in x:
-            with open(file) as json_in:
+            with open(file, encoding='UTF-8') as json_in:
                 log = json.load(json_in)
             df = pd.json_normalize(log)
             df = DuoSourceStage.change_columns(df)

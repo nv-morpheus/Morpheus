@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,68 +14,92 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import mock
-
 import cupy as cp
 import pytest
 
+import cudf
+
+from _utils.dataset_manager import DatasetManager
+from morpheus.config import Config
+from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.messages.message_meta import MessageMeta
+from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 
 
-def test_constructor(config):
+@pytest.fixture(name="config")
+def config_fixture(config: Config):
     config.class_labels = ['frogs', 'lizards', 'toads']
+    yield config
 
-    ac = AddClassificationsStage(config)
-    assert ac._class_labels == ['frogs', 'lizards', 'toads']
-    assert ac._labels == ['frogs', 'lizards', 'toads']
-    assert ac._idx2label == {0: 'frogs', 1: 'lizards', 2: 'toads'}
-    assert ac.name == "add-class"
+
+def test_constructor(config: Config):
+    stage = AddClassificationsStage(config)
+    assert stage._class_labels == ['frogs', 'lizards', 'toads']
+    assert stage._labels == ['frogs', 'lizards', 'toads']
+    assert stage._idx2label == {0: 'frogs', 1: 'lizards', 2: 'toads'}
+    assert stage.name == "add-class"
 
     # Just ensure that we get a valid non-empty tuple
-    accepted_types = ac.accepted_types()
+    accepted_types = stage.accepted_types()
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
 
-    ac = AddClassificationsStage(config, threshold=1.3, labels=['lizards'], prefix='test_')
-    assert ac._class_labels, ['frogs', 'lizards', 'toads']
-    assert ac._labels, ['lizards']
-    assert ac._idx2label, {1: 'test_lizards'}
 
-    pytest.raises(AssertionError, AddClassificationsStage, config, labels=['missing'])
+def test_constructor_explicit_labels(config: Config):
+    stage = AddClassificationsStage(config, threshold=1.3, labels=['lizards'], prefix='test_')
+    assert stage._class_labels == ['frogs', 'lizards', 'toads']
+    assert stage._labels == ['lizards']
+    assert stage._idx2label == {1: 'test_lizards'}
 
 
-@pytest.mark.use_python
-def test_add_labels(config):
-    mock_message = mock.MagicMock()
-    mock_message.probs = cp.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]])
-
-    config.class_labels = ['frogs', 'lizards', 'toads']
-
-    ac = AddClassificationsStage(config, threshold=0.5)
-    ac._add_labels(mock_message)
-
-    mock_message.set_meta.assert_has_calls([
-        mock.call('frogs', [False, False]),
-        mock.call('lizards', [False, True]),
-        mock.call('toads', [True, True]),
-    ])
-
-    wrong_shape = mock.MagicMock()
-    wrong_shape.probs = cp.array([[0.1, 0.5], [0.2, 0.6]])
-    pytest.raises(RuntimeError, ac._add_labels, wrong_shape)
+def test_constructor_errors(config: Config):
+    with pytest.raises(AssertionError):
+        AddClassificationsStage(config, labels=['missing'])
 
 
 @pytest.mark.use_python
-def test_build_single(config):
-    mock_stream = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node.return_value = mock_stream
-    mock_input = mock.MagicMock()
+def test_add_labels():
 
-    config.class_labels = ['frogs', 'lizards', 'toads']
+    class_labels = {0: "frogs", 1: "lizards", 2: "toads"}
 
-    ac = AddClassificationsStage(config)
-    ac._build_single(mock_segment, mock_input)
+    threshold = 0.6
 
-    mock_segment.make_node.assert_called_once()
-    mock_segment.make_edge.assert_called_once()
+    df = cudf.DataFrame([0, 1], columns=["dummy"])
+    probs_array = cp.array([[0.1, 0.6, 0.8], [0.3, 0.61, 0.9]])
+    probs_array_bool = probs_array > threshold
+
+    message = MultiResponseMessage(meta=MessageMeta(df), memory=TensorMemory(count=2, tensors={"probs": probs_array}))
+
+    labeled = AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=threshold)
+
+    DatasetManager.assert_df_equal(labeled.get_meta("frogs"), probs_array_bool[:, 0])
+    DatasetManager.assert_df_equal(labeled.get_meta("lizards"), probs_array_bool[:, 1])
+    DatasetManager.assert_df_equal(labeled.get_meta("toads"), probs_array_bool[:, 2])
+
+    # Same thing but change the probs tensor name
+    message = MultiResponseMessage(meta=MessageMeta(df),
+                                   memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
+                                   probs_tensor_name="other_probs")
+
+    labeled = AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=threshold)
+
+    DatasetManager.assert_df_equal(labeled.get_meta("frogs"), probs_array_bool[:, 0])
+    DatasetManager.assert_df_equal(labeled.get_meta("lizards"), probs_array_bool[:, 1])
+    DatasetManager.assert_df_equal(labeled.get_meta("toads"), probs_array_bool[:, 2])
+
+    # Fail in missing probs data
+    message = MultiResponseMessage(meta=MessageMeta(df),
+                                   memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
+                                   probs_tensor_name="other_probs")
+    message.probs_tensor_name = "probs"
+
+    with pytest.raises(KeyError):
+        AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=threshold)
+
+    # Too small of a probs array
+    message = MultiResponseMessage(meta=MessageMeta(df),
+                                   memory=TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
+
+    with pytest.raises(RuntimeError):
+        AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=threshold)

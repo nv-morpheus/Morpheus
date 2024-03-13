@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -71,13 +71,6 @@ body:
       required: true
 
   - type: textarea
-    id: alternatives
-    attributes:
-      label: Describe any alternatives you have considered
-      description: List any other libraries, or approaches you have looked at or tried.
-      placeholder: I have looked at library xyz and qrs, but they do not offer GPU accleration
-
-  - type: textarea
     id: misc
     attributes:
       label: Additional context
@@ -87,7 +80,7 @@ body:
     id: terms
     attributes:
       label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/nv-morpheus/Morpheus/blob/main/CODE_OF_CONDUCT.md)
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/nv-morpheus/.github/blob/main/CODE_OF_CONDUCT.md)
       options:
         - label: I agree to follow this project's Code of Conduct
           required: true

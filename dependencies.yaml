@@ -1,0 +1,415 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Dependency list for https://github.com/rapidsai/dependency-file-generator
+files:
+  all:
+    output: conda
+    matrix:
+      cuda: ["12.1"]
+      arch: [x86_64]
+    includes:
+      - benchmark_cpp
+      - build_cpp
+      - checks
+      - cudatoolkit
+      - cve-mitigation
+      - data_retrieval
+      - development
+      - doca
+      - docs
+      - example-dfp-prod
+      - example-gnn
+      - example-llm-agents
+      - example-llm-completion
+      - example-llm-rag
+      - example-llm-vdb-upload
+      - python
+      - runtime
+      - test_python_morpheus
+
+  dev:
+    output: conda
+    matrix:
+      cuda: ["12.1"]
+      arch: [x86_64]
+    includes:
+      - benchmark_cpp
+      - build_cpp
+      - checks
+      - cudatoolkit
+      - data_retrieval
+      - development
+      - docs
+      - python
+      - runtime
+      - test_python_morpheus
+
+  build:
+    output: none
+    matrix:
+      cuda: ["12.1"]
+      arch: [x86_64]
+    includes:
+      - benchmark_cpp
+      - build_cpp
+      - cudatoolkit
+      - data_retrieval
+      - development
+      - python
+      - runtime
+      - test_python_morpheus
+
+  test:
+    output: none
+    matrix:
+      cuda: ["12.1"]
+      arch: [x86_64]
+    includes:
+      - benchmark_cpp
+      - build_cpp
+      - cudatoolkit
+      - data_retrieval
+      - development
+      - example-dfp-prod
+      - example-gnn
+      - example-llm-agents
+      - example-llm-completion
+      - example-llm-rag
+      - example-llm-vdb-upload
+      - python
+      - runtime
+      - test_python_morpheus
+
+  docs:
+    output: none
+    matrix:
+      cuda: ["12.1"]
+      arch: [x86_64]
+    includes:
+      - benchmark_cpp
+      - build_cpp
+      - cudatoolkit
+      - data_retrieval
+      - docs
+      - example-dfp-prod
+      - example-gnn
+      - example-llm-agents
+      - example-llm-completion
+      - example-llm-rag
+      - example-llm-vdb-upload
+      - python
+      - runtime
+
+  runtime:
+    output: conda
+    matrix:
+      cuda: ["12.1"]
+      arch: [x86_64]
+    includes:
+      - runtime
+      - python
+
+  examples:
+    output: conda
+    matrix:
+      cuda: ["12.1"]
+      arch: [x86_64]
+    includes:
+      - cve-mitigation
+      - example-dfp-prod
+      - example-gnn
+      - example-llm-agents
+      - example-llm-completion
+      - example-llm-rag
+      - example-llm-vdb-upload
+      - python
+      - runtime
+
+  model-utils:
+    output: conda
+    matrix:
+      cuda: ["12.1"]
+      arch: [x86_64]
+    includes:
+      - model-training-tuning
+      - python
+
+  checks:
+    output: none
+    includes:
+      - checks
+      - python
+
+channels:
+  - conda-forge
+  - huggingface
+  - rapidsai
+  - rapidsai-nightly
+  - nvidia
+  - nvidia/label/dev
+  - pytorch
+  - defaults
+
+dependencies:
+
+  build_cpp: # should be split into `build_python` if/when converting to use scikit-build
+    common:
+      - output_types: [conda]
+        packages:
+          - boost-cpp=1.84
+          - ccache
+          - cmake=3.27
+          - cuda-nvcc
+          - cudf=24.02
+          - cxx-compiler
+          - cython=3.0
+          - gcc_linux-64=11.2
+          - glog=0.6
+          - gxx_linux-64=11.2
+          - librdkafka>=1.9.2,<1.10.0a0
+          - mrc=24.03
+          - ninja=1.11
+          - nlohmann_json=3.9
+          - pkg-config=0.29 # for mrc cmake
+          - protobuf=4.24
+          - pybind11-stubgen=0.10.5
+          - rapidjson=1.1.0
+          - scikit-build=0.17.6
+          - sysroot_linux-64=2.17
+          - tritonclient=2.34
+          - ucx=1.15
+          - zlib=1.2.13
+
+  checks:
+    common:
+      - output_types: [conda]
+        packages:
+          - pre-commit
+
+  data_retrieval:
+    common:
+      - output_types: [conda]
+        packages:
+          - git-lfs
+
+  development:
+    common:
+      - output_types: [conda]
+        packages:
+          - clangdev=16
+          - flake8
+          - include-what-you-use=0.20
+          - isort
+          - pylint=3.0.3
+          - versioneer
+          - yapf=0.40.1
+
+  docs:
+    common:
+      - output_types: [conda]
+        packages:
+          - &click click >=8
+          - &numpydoc numpydoc=1.5
+          - breathe=4.35.0
+          - doxygen=1.9.2
+          - exhale=0.3.6
+          - ipython
+          - myst-parser=0.18.1
+          - nbsphinx
+          - pluggy=1.3
+          - python-graphviz
+          - sphinx
+          - sphinx_rtd_theme
+
+  benchmark_cpp:
+    common:
+      - output_types: [conda]
+        packages:
+          - benchmark=1.8.3
+
+  runtime:
+    common:
+      - output_types: [conda]
+        packages:
+          - *click
+          - *numpydoc
+          - &dill dill=0.3.7
+          - &scikit-learn scikit-learn=1.3.2
+          - appdirs
+          - datacompy=0.10
+          - elasticsearch==8.9.0
+          - feedparser=6.0.10
+          - grpcio=1.59
+          - mlflow=2.9.2
+          - networkx=2.8.8
+          - nvtabular=23.08.00
+          - pydantic
+          - python-confluent-kafka>=1.9.2,<1.10.0a0
+          - python-graphviz
+          - pytorch-cuda
+          - pytorch=*=*cuda*
+          - requests-cache=1.1
+          - sqlalchemy
+          - tqdm=4
+          - typing_utils=0.1
+          - watchdog=3.0
+          - websockets
+          - pip
+          - pip:
+            - databricks-connect
+            - milvus==2.3.5 # update to match pymilvus when available
+            - pymilvus==2.3.6
+
+  test_python_morpheus:
+    common:
+      - output_types: [conda]
+        packages:
+          - &nodejs nodejs=18.*
+          - pytest-asyncio
+          - pytest-benchmark=4.0
+          - pytest-cov
+          - pytest=7.4.4
+          - python-docx==1.1.0
+          - pip
+          - pip:
+              - PyMuPDF==1.23.21
+              - pytest-kafka==0.6.0
+
+  example-dfp-prod:
+    common:
+      - output_types: [conda]
+        packages:
+          - *dill
+          - *nodejs
+          - boto3
+          - dask=2023.12.1
+          - distributed=2023.12.1
+          - kfp
+          - mlflow=2.9.2
+          - papermill=2.4.0
+          - s3fs=2023.12.2
+
+  example-gnn:
+    common:
+      - output_types: [conda]
+        packages:
+          - &cuml cuml=24.02.*
+          - pip
+          - pip:
+            - --find-links https://data.dgl.ai/wheels/cu121/repo.html
+            - --find-links https://data.dgl.ai/wheels-test/repo.html
+            - dgl
+            - dglgo
+
+  example-llm-agents:
+    common:
+      - output_types: [conda]
+        packages:
+          - &grpcio-status grpcio-status==1.59
+          - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
+          - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
+          - numexpr
+          - sentence-transformers
+          - pip
+          - pip:
+            - &langchain langchain==0.1.9
+            - nemollm
+
+  example-llm-completion:
+    common:
+      - output_types: [conda]
+        packages:
+          - *grpcio-status
+          - &arxiv arxiv=1.4
+          - &newspaper3k newspaper3k=0.2
+          - &pypdf pypdf=3.17.4
+
+  example-llm-rag:
+    common:
+      - output_types: [conda]
+        packages:
+          - *grpcio-status
+          - anyio>=3.7
+          - jsonpatch>=1.33
+          - openai=1.13
+          - pip
+          - pip:
+            - *langchain
+            - google-search-results==2.4
+
+  example-llm-vdb-upload:
+    common:
+      - output_types: [conda]
+        packages:
+          - *arxiv
+          - *grpcio-status
+          - *newspaper3k
+          - *pypdf
+          - onnx
+          - pip
+          - pip:
+              - PyMuPDF==1.23.21
+              - *langchain
+
+  model-training-tuning:
+    common:
+      - output_types: [conda]
+        packages:
+          - *cuml
+          - *scikit-learn
+          - *transformers
+          - jupyterlab
+          - matplotlib
+          - onnx
+          - pandas
+          - seaborn
+          - seqeval=1.2.2
+          - xgboost
+
+  cve-mitigation:
+    common:
+      - output_types: [conda]
+        packages:
+          - libwebp=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863
+
+
+  doca:
+    common:
+      - output_types: [conda]
+        packages:
+          - automake
+          - libtool
+          - rdma-core>=48
+
+  python:
+    common:
+      - output_types: [conda]
+        packages:
+          - python=3.10
+
+  cudatoolkit:
+    specific:
+      - output_types: [conda]
+        matrices:
+          - matrix:
+              cuda: "12.1"
+            packages:
+              - cuda-cudart-dev=12.1
+              - cuda-nvml-dev=12.1
+              - cuda-nvrtc-dev=12.1
+              - cuda-nvtx-dev=12.1
+              - cuda-tools=12.1
+              - cuda-version=12.1

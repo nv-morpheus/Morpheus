@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,32 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import mock
-
-import pytest
-
 from morpheus.stages.general.trigger_stage import TriggerStage
 
 
 def test_constructor(config):
-    ts = TriggerStage(config)
-    assert ts.name == "trigger"
+    stage = TriggerStage(config)
+    assert stage.name == "trigger"
 
     # Just ensure that we get a valid non-empty tuple
-    accepted_types = ts.accepted_types()
+    accepted_types = stage.accepted_types()
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
-
-
-@pytest.mark.use_python
-def test_build_single(config):
-    mock_stream = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node.return_value = mock_stream
-    mock_input = mock.MagicMock()
-
-    ts = TriggerStage(config)
-    ts._build_single(mock_segment, mock_input)
-
-    mock_segment.make_node_full.assert_called_once()
-    mock_segment.make_edge.assert_called_once()

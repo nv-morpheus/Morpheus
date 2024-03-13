@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 # limitations under the License.
 
 ARG MORPHEUS_CONTAINER=nvcr.io/nvidia/morpheus/morpheus
-ARG MORPHEUS_CONTAINER_VERSION=v22.09.00-runtime
+ARG MORPHEUS_CONTAINER_VERSION=v24.03.00-runtime
 
 FROM ${MORPHEUS_CONTAINER}:${MORPHEUS_CONTAINER_VERSION} as base
 
@@ -31,7 +31,7 @@ COPY ./conda_env.yml ./
 
 # Install DFP dependencies
 RUN source activate morpheus \
-    && mamba env update -n morpheus -f ./conda_env.yml
+    && mamba env update -n morpheus --file ../../conda/environments/examples_cuda-121_arch-x86_64.yaml
 
 # Set the tracking URI for mlflow
 ENV MLFLOW_TRACKING_URI="http://mlflow:5000"
@@ -55,13 +55,14 @@ CMD ["./launch.sh"]
 FROM base as jupyter
 
 # Install the jupyter specific requirements
-RUN source activate morpheus \
-    && mamba install -y -c conda-forge \
+RUN source activate morpheus &&\
+    mamba install -y -c conda-forge \
         ipywidgets \
-        nb_conda_kernels \
-    && pip install jupyter_contrib_nbextensions==0.5.1 \
-    && jupyter contrib nbextension install --user \
-    && pip install jupyterlab_nvdashboard==0.7.0
+        jupyter_contrib_nbextensions \
+        # notebook v7 is incompatible with jupyter_contrib_nbextensions
+        notebook=6 &&\
+    jupyter contrib nbextension install --user &&\
+    pip install jupyterlab_nvdashboard==0.9
 
 # Launch jupyter
 CMD ["jupyter-lab", "--ip=0.0.0.0", "--no-browser", "--allow-root"]

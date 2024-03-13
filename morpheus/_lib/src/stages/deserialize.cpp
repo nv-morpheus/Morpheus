@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,52 +17,69 @@
 
 #include "morpheus/stages/deserialize.hpp"
 
-#include <pysrf/node.hpp>
-#include <rxcpp/rx.hpp>
-#include <srf/segment/builder.hpp>
+#include "morpheus/messages/control.hpp"
+#include "morpheus/types.hpp"
 
-#include <algorithm>  // for min
-#include <cstddef>
-#include <exception>
-#include <memory>
-#include <type_traits>  // for declval
-#include <utility>
+#include <pybind11/pybind11.h>
+#include <pymrc/utils.hpp>  // for cast_from_pyobject
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 namespace morpheus {
-// Component public implementations
-// ************ DeserializationStage **************************** //
-DeserializeStage::DeserializeStage(size_t batch_size) :
-  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
-  m_batch_size(batch_size)
-{}
 
-DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
+void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
+                         TensorIndex start,
+                         TensorIndex stop,
+                         cm_task_t* task,
+                         std::shared_ptr<MultiMessage>& windowed_message)
 {
-    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output](sink_type_t x) {
-                // Make one large MultiMessage
-                auto full_message = std::make_shared<MultiMessage>(x, 0, x->count());
-
-                // Loop over the MessageMeta and create sub-batches
-                for (size_t i = 0; i < x->count(); i += this->m_batch_size)
-                {
-                    auto next = full_message->get_slice(i, std::min(i + this->m_batch_size, x->count()));
-
-                    output.on_next(std::move(next));
-                }
-            },
-            [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-            [&]() { output.on_completed(); }));
-    };
+    DCHECK_EQ(task, nullptr) << "Task is not supported for MultiMessage";
+    auto sliced_msg = std::make_shared<MultiMessage>(incoming_message, start, stop - start);
+    windowed_message.swap(sliced_msg);
 }
 
-// ************ DeserializationStageInterfaceProxy ************* //
-std::shared_ptr<srf::segment::Object<DeserializeStage>> DeserializeStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name, size_t batch_size)
+void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
+                         TensorIndex start,
+                         TensorIndex stop,
+                         cm_task_t* task,
+                         std::shared_ptr<ControlMessage>& windowed_message)
 {
-    auto stage = builder.construct_object<DeserializeStage>(name, batch_size);
+    auto slidced_meta = std::make_shared<SlicedMessageMeta>(incoming_message, start, stop);
+    auto message      = std::make_shared<ControlMessage>();
+    message->payload(slidced_meta);
+    if (task)
+    {
+        message->add_task(task->first, task->second);
+    }
+
+    windowed_message.swap(message);
+}
+
+std::shared_ptr<mrc::segment::Object<DeserializeStage<MultiMessage>>> DeserializeStageInterfaceProxy::init_multi(
+    mrc::segment::Builder& builder, const std::string& name, TensorIndex batch_size, bool ensure_sliceable_index)
+{
+    return builder.construct_object<DeserializeStage<MultiMessage>>(name, batch_size, ensure_sliceable_index, nullptr);
+}
+
+std::shared_ptr<mrc::segment::Object<DeserializeStage<ControlMessage>>> DeserializeStageInterfaceProxy::init_cm(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    TensorIndex batch_size,
+    bool ensure_sliceable_index,
+    const pybind11::object& task_type,
+    const pybind11::object& task_payload)
+{
+    std::unique_ptr<cm_task_t> task{nullptr};
+
+    if (!task_type.is_none() && !task_payload.is_none())
+    {
+        task = std::make_unique<cm_task_t>(pybind11::cast<std::string>(task_type),
+                                           mrc::pymrc::cast_from_pyobject(task_payload));
+    }
+
+    auto stage = builder.construct_object<DeserializeStage<ControlMessage>>(
+        name, batch_size, ensure_sliceable_index, std::move(task));
 
     return stage;
 }
+
 }  // namespace morpheus

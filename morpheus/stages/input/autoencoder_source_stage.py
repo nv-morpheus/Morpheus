@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,21 +18,22 @@ import typing
 from abc import abstractmethod
 from functools import partial
 
+import mrc
 import pandas as pd
-import srf
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
-from morpheus._lib.file_types import FileTypes
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.messages import UserMessageMeta
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.directory_watcher import DirectoryWatcher
 
 logger = logging.getLogger(__name__)
 
 
-class AutoencoderSourceStage(SingleOutputSource):
+class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     All AutoEncoder source stages must extend this class and implement the `files_to_dfs_per_user` abstract method.
     Feature columns can be managed by overriding the `derive_features` method. Otherwise, all columns from input
@@ -54,7 +55,7 @@ class AutoencoderSourceStage(SingleOutputSource):
         files. Any new files that are added that match the glob will then be processed.
     max_files: int, default = -1
         Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
-    file_type : `morpheus._lib.file_types.FileTypes`, default = 'FileTypes.Auto'.
+    file_type : `morpheus.common.FileTypes`, default = 'FileTypes.Auto'.
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1
@@ -83,6 +84,7 @@ class AutoencoderSourceStage(SingleOutputSource):
 
         SingleOutputSource.__init__(self, c)
 
+        self._input_glob = input_glob
         self._file_type = file_type
 
         self._feature_columns = c.ae.feature_columns
@@ -109,7 +111,10 @@ class AutoencoderSourceStage(SingleOutputSource):
     @property
     def input_count(self) -> int:
         """Return None for no max input count"""
-        return self._input_count
+        return self._input_count if self._input_count is not None else 0
+
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(UserMessageMeta)
 
     def get_match_pattern(self, glob_split):
         """Return a file match pattern"""
@@ -120,6 +125,22 @@ class AutoencoderSourceStage(SingleOutputSource):
 
     @staticmethod
     def repeat_df(df: pd.DataFrame, repeat_count: int) -> typing.List[pd.DataFrame]:
+        """
+        This function iterates over the same dataframe to extending small datasets in debugging with incremental
+        updates to the `event_dt` and `eventTime` columns.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            To be repeated dataframe.
+        repeat_count : int
+            Number of times the given dataframe should be repeated.
+
+        Returns
+        -------
+        df_array : typing.List[pd.DataFrame]
+            List of repeated dataframes.
+        """
 
         df_array = []
 
@@ -144,6 +165,25 @@ class AutoencoderSourceStage(SingleOutputSource):
                          userid_column_name: str,
                          userid_filter: str,
                          datetime_column_name="event_dt"):
+        """
+        Creates a dataframe for each userid.
+
+        Parameters
+        ----------
+        x : typing.List[pd.DataFrame]
+            List of dataframes.
+        userid_column_name : str
+            Name of a dataframe column used for categorization.
+        userid_filter : str
+            Only rows with the supplied userid are filtered.
+        datetime_column_name : str
+            Name of the dataframe column used to sort the rows.
+
+        Returns
+        -------
+        user_dfs : typing.Dict[str, pd.DataFrame]
+            Dataframes, each of which is associated with a single userid.
+        """
 
         combined_df = pd.concat(x)
 
@@ -193,11 +233,48 @@ class AutoencoderSourceStage(SingleOutputSource):
                               feature_columns: typing.List[str],
                               userid_filter: str = None,
                               repeat_count: int = 1) -> typing.Dict[str, pd.DataFrame]:
+        """
+        Stages that extend `AutoencoderSourceStage` must implement this abstract function
+        in order to convert messages in the files to dataframes per userid.
+
+        Parameters
+        ----------
+        x : typing.List[str]
+            List of messages.
+        userid_column_name : str
+            Name of the column used for categorization.
+        feature_columns : typing.List[str]
+            Feature column names.
+        userid_filter : str
+            Only rows with the supplied userid are filtered.
+        repeat_count : str
+            Number of times the given rows should be repeated.
+
+        Returns
+        -------
+            : typing.Dict[str, pd.DataFrame]
+            Dataframe per userid.
+        """
 
         pass
 
     @staticmethod
-    def derive_features(df: pd.DataFrame, feature_columns: typing.List[str]):
+    def derive_features(df: pd.DataFrame, feature_columns: typing.List[str]):  # pylint: disable=unused-argument
+        """
+        If any features are available to be derived, can be implemented by overriding this function.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            A dataframe.
+        feature_columns : typing.List[str]
+            Names of columns that are need to be derived.
+
+        Returns
+        -------
+        df : typing.List[pd.DataFrame]
+            Dataframe with actual and derived columns.
+        """
         return df
 
     def _add_derived_features(self, x: typing.Dict[str, pd.DataFrame]):
@@ -232,44 +309,29 @@ class AutoencoderSourceStage(SingleOutputSource):
 
         return user_metas
 
-    def _build_source(self, seg: srf.Builder) -> StreamPair:
-
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         # The first source just produces filenames
-        filename_source = self._watcher.build_node(self.unique_name, seg)
+        return self._watcher.build_node(self.unique_name, builder)
 
-        out_type = typing.List[str]
+    def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        # Supposed to just return a source here
-        return filename_source, out_type
+        # At this point, we have batches of filenames to process. Make a node for processing batches of
+        # filenames into batches of dataframes
+        post_node = builder.make_node(
+            self.unique_name + "-post",
+            ops.map(
+                partial(
+                    self.files_to_dfs_per_user,
+                    userid_column_name=self._user_column_name,
+                    feature_columns=None,  # Use None here to leave all columns in
+                    userid_filter=self._userid_filter,
+                    repeat_count=self._repeat_count)),
+            ops.map(self._add_derived_features),
+            # Now group the batch of dataframes into a single df, split by user, and send a single UserMessageMeta
+            # per user
+            ops.map(self._build_user_metadata),
+            # Finally flatten to single meta
+            ops.flatten())
+        builder.make_edge(out_node, post_node)
 
-    def _post_build_single(self, seg: srf.Builder, out_pair: StreamPair) -> StreamPair:
-
-        out_stream = out_pair[0]
-        out_type = out_pair[1]
-
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
-
-            input.pipe(
-                # At this point, we have batches of filenames to process. Make a node for processing batches of
-                # filenames into batches of dataframes
-                ops.map(
-                    partial(
-                        self.files_to_dfs_per_user,
-                        userid_column_name=self._user_column_name,
-                        feature_columns=None,  # Use None here to leave all columns in
-                        userid_filter=self._userid_filter,
-                        repeat_count=self._repeat_count)),
-                ops.map(self._add_derived_features),
-                # Now group the batch of dataframes into a single df, split by user, and send a single UserMessageMeta
-                # per user
-                ops.map(self._build_user_metadata),
-                # Finally flatten to single meta
-                ops.flatten()).subscribe(output)
-
-        post_node = seg.make_node_full(self.unique_name + "-post", node_fn)
-        seg.make_edge(out_stream, post_node)
-
-        out_stream = post_node
-        out_type = UserMessageMeta
-
-        return super()._post_build_single(seg, (out_stream, out_type))
+        return super()._post_build_single(builder, post_node)

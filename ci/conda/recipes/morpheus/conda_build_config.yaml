@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,23 +14,19 @@
 # limitations under the License.
 
 c_compiler_version:
-  - 9.4
+  - 11.2
 
 cxx_compiler_version:
-  - 9.4
+  - 11.2
 
 cuda_compiler:
-  - nvcc
+  - cuda-nvcc
 
 cuda_compiler_version:
-  - 11.5
+  - 12.1
 
 python:
-  - 3.8
-  - 3.9
-
-boost:
-  - 1.74
+  - 3.10
 
 rapids_version:
-  - 22.08
+  - 24.02

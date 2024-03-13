@@ -1,5 +1,5 @@
 #=============================================================================
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,16 +19,18 @@ function(find_and_configure_rabbitmq version)
 
   list(APPEND CMAKE_MESSAGE_CONTEXT "rabbitmq")
 
+  # Commit 7fa7b0b contains unreleased cmake fixes which currently only exist in the master branch of the repo.
+  # https://github.com/alanxz/rabbitmq-c/issues/740
+
   rapids_cpm_find(rabbitmq ${version}
     GLOBAL_TARGETS
       rabbitmq rabbitmq::rabbitmq
     BUILD_EXPORT_SET
-      ${PROJECT_NAME}-exports
+      ${PROJECT_NAME}-core-exports
     INSTALL_EXPORT_SET
-      ${PROJECT_NAME}-exports
+      ${PROJECT_NAME}-core-exports
     CPM_ARGS
       GIT_REPOSITORY  https://github.com/alanxz/rabbitmq-c
-      GIT_TAG         "v${version}"
       GIT_SHALLOW     TRUE
       OPTIONS         "BUILD_EXAMPLES OFF"
                       "BUILD_TESTING OFF"

@@ -1,6 +1,7 @@
----
 # Refer to the following link for the explanation of each params:
-#   http://releases.llvm.org/8.0.0/tools/clang/docs/ClangFormatStyleOptions.html
+#   https://releases.llvm.org/14.0.0/tools/clang/docs/ClangFormatStyleOptions.html
+
+---
 Language: Cpp
 # BasedOnStyle: Google
 AccessModifierOffset: -2
@@ -16,6 +17,7 @@ AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: false # Allows placing breakpoint
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Empty
 AllowShortLoopsOnASingleLine: false
 # This is deprecated
 AlwaysBreakAfterDefinitionReturnType: None
@@ -58,7 +60,6 @@ ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 2
 ContinuationIndentWidth: 4
 Cpp11BracedListStyle: true
-DerivePointerAlignment: true
 DisableFormat: false
 ExperimentalAutoDetectBinPacking: false
 FixNamespaceComments: true
@@ -103,6 +104,7 @@ ObjCBinPackProtocolList: Never
 ObjCBlockIndentWidth: 2
 ObjCSpaceAfterProperty: false
 ObjCSpaceBeforeProtocolList: true
+PackConstructorInitializers: CurrentLine
 PenaltyBreakAssignment: 2
 PenaltyBreakBeforeFirstCallParameter: 1
 PenaltyBreakComment: 300
@@ -158,10 +160,14 @@ SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-Standard: c++17
+Standard: c++20
 StatementMacros:
   - Q_UNUSED
   - QT_REQUIRE_VERSION
 # Be consistent with indent-width, even for people who use tab for indentation!
 TabWidth: 4
 UseTab: Never
+
+---
+Language: Json
+TabWidth: 2

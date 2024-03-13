@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,10 +18,11 @@ All objects related to building and running a pipeline.
 # These must be imported in a specific order
 # isort: off
 
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import PortSchema
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.pipeline.sender import Sender
 from morpheus.pipeline.receiver import Receiver
-from morpheus.pipeline.stream_wrapper import StreamWrapper
+from morpheus.pipeline.stage_base import StageBase
 from morpheus.pipeline.stage import Stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage

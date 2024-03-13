@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/data_table.hpp"  // for IDataTable
-#include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/table_info_data.hpp"
 
 #include <cudf/types.hpp>      // for size_type
 #include <pybind11/pytypes.h>  // for object
@@ -43,7 +43,7 @@ struct PyDataTable : public IDataTable
      *
      * @param py_table
      */
-    PyDataTable(pybind11::object &&py_table);
+    PyDataTable(pybind11::object&& py_table);
     ~PyDataTable();
 
     /**
@@ -58,16 +58,11 @@ struct PyDataTable : public IDataTable
      *
      * @return TableInfo
      */
-    TableInfo get_info() const override;
-
-    /**
-     * Get data table as python object
-     *
-     * @return pybind11::object
-     */
-    const pybind11::object &get_py_object() const override;
+    const pybind11::object& get_py_object() const override;
 
   private:
+    TableInfoData get_table_data() const override;
+
     pybind11::object m_py_table;
 };
 /** @} */  // end of group

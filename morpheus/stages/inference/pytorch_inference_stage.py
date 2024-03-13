@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +21,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import ResponseMemory
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -61,6 +60,7 @@ class _PyTorchInferenceWorker(InferenceWorker):
         self._model_filename: str = model_filename
 
         self._model = None
+        self._outputs = {}
 
         # Use this to cache the output size
         self._output_size = None
@@ -86,7 +86,7 @@ class _PyTorchInferenceWorker(InferenceWorker):
 
         return (x.count, self._outputs[list(self._outputs.keys())[0]].shape[1])
 
-    def process(self, batch: MultiInferenceMessage, cb: typing.Callable[[ResponseMemory], None]):
+    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
 
         # convert from cupy to torch tensor using dlpack
         input_ids = from_dlpack(batch.get_input("input_ids").astype(cp.float).toDlpack()).type(torch.long)
@@ -102,10 +102,10 @@ class _PyTorchInferenceWorker(InferenceWorker):
         if (len(probs_cp.shape) == 1):
             probs_cp = cp.expand_dims(probs_cp, axis=1)
 
-        response_mem = ResponseMemoryProbs(count=batch.count, probs=probs_cp)
+        response_mem = TensorMemory(count=batch.count, tensors={'probs': probs_cp})
 
         # Return the response
-        cb(response_mem)
+        callback(response_mem)
 
 
 @register_stage("inf-pytorch", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])

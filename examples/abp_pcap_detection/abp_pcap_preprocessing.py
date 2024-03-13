@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@ import typing
 from functools import partial
 
 import cupy as cp
+import mrc
 import numpy as np
-import srf
 
 import cudf
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryFIL
@@ -67,6 +67,12 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
             self.features
         ), f"Number of features in preprocessing {len(self.features)}, does not match configuration {self._fea_length}"
 
+        # columns required to be added to input message meta
+        self.req_cols = ["flow_id", "rollup_time"]
+
+        for req_col in self.req_cols:
+            self._needed_columns[req_col] = TypeId.STRING
+
     @property
     def name(self) -> str:
         return "preprocess-anomaly"
@@ -75,35 +81,33 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         return False
 
     @staticmethod
-    def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
-        flags_bin_series = cudf.Series(x.get_meta("flags").to_pandas().apply(lambda x: format(int(x), "05b")))
+    def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str],
+                          req_cols: typing.List[str]) -> MultiInferenceFILMessage:
+        # Converts the int flags field into a binary string
+        flags_bin_series = x.get_meta("flags").to_pandas().apply(lambda x: format(int(x), "05b"))
 
-        df = flags_bin_series.str.findall("[0-1]")
-
-        rename_cols_dct = {0: "ack", 1: "psh", 2: "rst", 3: "syn", 4: "fin"}
+        # Expand binary string into an array
+        df = cudf.DataFrame(np.vstack(flags_bin_series.str.findall("[0-1]")).astype("int8"), index=x.get_meta().index)
 
         # adding [ack, psh, rst, syn, fin] details from the binary flag
-        for col in df.columns:
-            rename_col = rename_cols_dct[col]
-            df[rename_col] = df[col].astype("int8")
-
-        df = df.drop([0, 1, 2, 3, 4], axis=1)
+        rename_cols_dct = {0: "ack", 1: "psh", 2: "rst", 3: "syn", 4: "fin"}
+        df = df.rename(columns=rename_cols_dct)
 
         df["flags_bin"] = flags_bin_series
         df["timestamp"] = x.get_meta("timestamp").astype("int64")
 
         def round_time_kernel(timestamp, rollup_time, secs):
-            for i, ts in enumerate(timestamp):
-                x = ts % secs
+            for i, time in enumerate(timestamp):
+                x = time % secs
                 y = 1 - (x / secs)
                 delta = y * secs
-                rollup_time[i] = ts + delta
+                rollup_time[i] = time + delta
 
         df = df.apply_rows(
             round_time_kernel,
             incols=["timestamp"],
-            outcols=dict(rollup_time=np.int64),
-            kwargs=dict(secs=60000000),
+            outcols={"rollup_time": np.int64},
+            kwargs={"secs": 60000000},
         )
 
         df["rollup_time"] = cudf.to_datetime(df["rollup_time"], unit="us").dt.strftime("%Y-%m-%d %H:%M")
@@ -144,7 +148,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         # syn/all - Number of flows with SYN flag to all flows
         # fin/all - Number of flows with FIN flag to all flows
         for col in ["rst", "syn", "fin"]:
-            dst_col = "{}/all".format(col)
+            dst_col = f"{col}/all"
             grouped_df[dst_col] = grouped_df[col] / grouped_df["all"]
 
         # Adding index column to retain the order of input messages.
@@ -169,39 +173,27 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         data = cp.asarray(merged_df[fea_cols].to_cupy())
         count = data.shape[0]
 
-        # columns required to be added to input message meta
-        req_cols = ["flow_id", "rollup_time"]
-
         for col in req_cols:
-            # TODO: temporary work-around for Issue #286
-            x.meta.df[col] = merged_df[col].copy(True)
+            x.set_meta(col, merged_df[col])
 
         del merged_df
 
-        seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
-        seg_ids[:, 2] = fea_len - 1
+        seq_ids = cp.zeros((count, 3), dtype=cp.uint32)
+        seq_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
+        seq_ids[:, 2] = fea_len - 1
 
         # Create the inference memory. Keep in mind count here could be > than input count
-        memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seg_ids)
+        memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seq_ids)
 
-        infer_message = MultiInferenceFILMessage(
-            meta=x.meta,
-            mess_offset=x.mess_offset,
-            mess_count=x.mess_count,
-            memory=memory,
-            offset=0,
-            count=memory.count,
-        )
+        infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
 
         return infer_message
 
     def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
-        return partial(
-            AbpPcapPreprocessingStage.pre_process_batch,
-            fea_len=self._fea_length,
-            fea_cols=self.features,
-        )
+        return partial(AbpPcapPreprocessingStage.pre_process_batch,
+                       fea_len=self._fea_length,
+                       fea_cols=self.features,
+                       req_cols=self.req_cols)
 
-    def _get_preprocess_node(self, builder: srf.Builder):
-        return _stages.AbpPcapPreprocessingStage(builder, self.unique_name)
+    def _get_preprocess_node(self, builder: mrc.Builder):
+        raise NotImplementedError("C++ node not implemented for this stage")

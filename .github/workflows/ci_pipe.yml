@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,12 +18,17 @@ name: CI Pipeline
 on:
   workflow_call:
     inputs:
-      aws_region:
-        default: 'us-west-2'
-        type: string
       run_check:
         required: true
         type: boolean
+      conda_run_build:
+        description: 'Runs the conda-build stage to ensure the conda package builds successfully'
+        required: true
+        type: boolean
+      conda_upload_label:
+        description: 'The label to use when uploading the conda package. Leave empty to disable uploading'
+        required: true
+        type: string
       container:
         required: true
         type: string
@@ -31,32 +36,39 @@ on:
         required: true
         type: string
     secrets:
-      GHA_AWS_ACCESS_KEY_ID:
-        required: true
-      GHA_AWS_SECRET_ACCESS_KEY:
-        required: true
       NGC_API_KEY:
         required: true
 
 env:
-  AWS_DEFAULT_REGION:  ${{ inputs.aws_region }}
-  AWS_ACCESS_KEY_ID: "${{ secrets.GHA_AWS_ACCESS_KEY_ID }}"
-  AWS_SECRET_ACCESS_KEY: "${{ secrets.GHA_AWS_SECRET_ACCESS_KEY }}"
   CHANGE_TARGET: "${{ github.base_ref }}"
   CUDA_PATH: "/usr/local/cuda/"
-  CUDA_VER: "11.5"
+  CUDA_VER: "12.1"
   GH_TOKEN: "${{ github.token }}"
   GIT_COMMIT: "${{ github.sha }}"
   MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
   WORKSPACE: "${{ github.workspace }}/morpheus"
   WORKSPACE_TMP: "${{ github.workspace }}/tmp"
 
+permissions:
+  actions: none
+  checks: none
+  contents: read
+  deployments: none
+  discussions: none
+  id-token: write
+  issues: none
+  packages: read
+  pages: none
+  pull-requests: read
+  repository-projects: none
+  security-events: none
+  statuses: none
 
 jobs:
   check:
     if: ${{ inputs.run_check }}
     name: Check
-    runs-on: [self-hosted, linux, amd64, cpu4]
+    runs-on: linux-amd64-cpu4
     timeout-minutes: 60
     container:
       credentials:
@@ -74,13 +86,20 @@ jobs:
           path: 'morpheus'
           fetch-depth: 0
 
+      - name: Get AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 43200 # 12h
+
       - name: Check
         shell: bash
         run: ./morpheus/ci/scripts/github/checks.sh
 
   build:
     name: Build
-    runs-on: [self-hosted, linux, amd64, cpu16]
+    runs-on: linux-amd64-cpu16
     timeout-minutes: 60
     container:
       credentials:
@@ -97,14 +116,20 @@ jobs:
           lfs: false
           path: 'morpheus'
 
+      - name: Get AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 43200 # 12h
+
       - name: Build:linux:x86_64:gcc
         shell: bash
         run: ./morpheus/ci/scripts/github/build.sh
 
   test:
     name: Test
-    needs: [build]
-    runs-on: [self-hosted, linux, amd64, gpu-v100-495-1]
+    runs-on: linux-amd64-gpu-v100-latest-1
     timeout-minutes: 60
     container:
       credentials:
@@ -125,6 +150,13 @@ jobs:
           lfs: false
           path: 'morpheus'
 
+      - name: Get AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 43200 # 12h
+
       - name: Test:linux:x86_64:gcc
         shell: bash
         run: ./morpheus/ci/scripts/github/test.sh
@@ -132,7 +164,7 @@ jobs:
   documentation:
     name: Documentation
     needs: [build]
-    runs-on: [self-hosted, linux, amd64, cpu4]
+    runs-on: linux-amd64-cpu4
     timeout-minutes: 60
     container:
       credentials:
@@ -149,6 +181,50 @@ jobs:
           lfs: false
           path: 'morpheus'
 
+      - name: Get AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 43200 # 12h
+
       - name: build_docs
         shell: bash
         run: ./morpheus/ci/scripts/github/docs.sh
+
+  package:
+    name: Package
+    if: ${{ inputs.conda_run_build }}
+    needs: [check, documentation, test]
+    runs-on: linux-amd64-cpu16
+    timeout-minutes: 60
+    container:
+      credentials:
+        username: '$oauthtoken'
+        password: ${{ secrets.NGC_API_KEY }}
+      image: ${{ inputs.container }}
+    strategy:
+      fail-fast: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: 'morpheus'
+          fetch-depth: 0
+
+      - name: Get AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 43200 # 12h
+
+      - name: conda
+        shell: bash
+        env:
+          CONDA_TOKEN: "${{ secrets.CONDA_TOKEN }}"
+          SCRIPT_ARGS: "${{ inputs.conda_upload_label != '' && 'upload' || '' }}"
+          CONDA_PKG_LABEL: "${{ inputs.conda_upload_label }}"
+        run: ./morpheus/ci/scripts/github/conda.sh $SCRIPT_ARGS

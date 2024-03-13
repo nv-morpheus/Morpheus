@@ -1,0 +1,2 @@
+not_phishing
+is_phishing

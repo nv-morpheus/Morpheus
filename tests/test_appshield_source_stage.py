@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +17,15 @@
 import glob
 import json
 import os
-from unittest import mock
 
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
+from _utils import TEST_DIRS
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 from morpheus.utils.directory_watcher import DirectoryWatcher
-from utils import TEST_DIRS
 
 
 @pytest.mark.parametrize('cols_include',
@@ -138,8 +137,8 @@ def test_read_file_to_df(cols_exclude, expected_df):
                               'appshield',
                               'snapshot-1',
                               'envars_2022-01-30_10-26-01.017250.json')
-    file = open(input_file, 'r', encoding='latin1')
-    output_df = AppShieldSourceStage.read_file_to_df(file, cols_exclude)
+    with open(input_file, 'r', encoding='latin1') as file:
+        output_df = AppShieldSourceStage.read_file_to_df(file, cols_exclude)
 
     assert list(output_df.columns) == ['PID', 'Process']
     assert_frame_equal(output_df, expected_df)
@@ -176,7 +175,8 @@ def test_load_meta_cols(plugin, expected_new_columns):
                               'envars_2022-01-30_10-26-01.017250.json')
     filepath_split = input_file.split('/')
 
-    data = json.load(open(input_file, 'r', encoding='latin1'))
+    with open(input_file, 'r', encoding='latin1') as file:
+        data = json.load(file)
     input_df = pd.DataFrame(columns=data['titles'], data=data['data'])
     output_df = AppShieldSourceStage.load_meta_cols(filepath_split, plugin, input_df)
 
@@ -311,54 +311,3 @@ def test_build_metadata(input_df_per_source):
 
     assert len(appshield_message_metas) == 2
     assert isinstance(appshield_message_metas[0], AppShieldMessageMeta)
-
-
-@pytest.mark.use_python
-@pytest.mark.parametrize('cols_include',
-                         [[
-                             'Base',
-                             'Block',
-                             'CommitCharge',
-                             'End VPN',
-                             'File',
-                             'GrantedAccess',
-                             'HandleValue',
-                             'InInit',
-                             'InLoad',
-                             'InMem',
-                             'Name',
-                             'Offset',
-                             'PID',
-                             'Parent',
-                             'Path',
-                             'PrivateMemory',
-                             'Process',
-                             'Protection',
-                             'SHA256',
-                             'Size',
-                             'Start VPN',
-                             'State',
-                             'TID',
-                             'Tag',
-                             'Type',
-                             'Value',
-                             'Variable',
-                             'WaitReason',
-                             'plugin',
-                             'snapshot_id',
-                             'timestamp'
-                         ]])
-@pytest.mark.parametrize('cols_exclude', [['SHA256']])
-@pytest.mark.parametrize('plugins_include', [['ldrmodules', 'threadlist', 'envars', 'vadinfo', 'handles']])
-@pytest.mark.parametrize('input_glob', [os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', '*.json')])
-def test_post_build_single(config, input_glob, cols_include, cols_exclude, plugins_include):
-    mock_stream = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node.return_value = mock_stream
-    mock_input = mock.MagicMock()
-
-    source = AppShieldSourceStage(config, input_glob, plugins_include, cols_include, cols_exclude)
-    source._post_build_single(mock_segment, mock_input)
-
-    mock_segment.make_node_full.assert_called_once()
-    mock_segment.make_edge.assert_called_once()

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Contains configuration objects used to run pipeline and utilities.
-"""
+"""Contains configuration objects used to run pipeline and utilities."""
 
 import dataclasses
 import json
@@ -46,7 +44,7 @@ def auto_determine_bootstrap():
     bootstrap_servers = ",".join(
         [bridge_ip + ":" + c.ports["9092/tcp"][0]["HostPort"] for c in kafka_net.containers if "9092/tcp" in c.ports])
 
-    logger.info("Auto determined Bootstrap Servers: {}".format(bootstrap_servers))
+    logger.info("Auto determined Bootstrap Servers: %s", bootstrap_servers)
 
     return bootstrap_servers
 
@@ -130,6 +128,7 @@ class ConfigAutoEncoder(ConfigBase):
 
 @dataclasses.dataclass
 class ConfigFIL(ConfigBase):
+    """Config specific to running with a FIL model."""
     feature_columns: typing.List[str] = None
 
 
@@ -156,16 +155,12 @@ class CppConfig:
 
     @staticmethod
     def get_should_use_cpp() -> bool:
-        """
-        Gets the global option for whether to use C++ node and message types or otherwise prefer Python.
-        """
+        """Gets the global option for whether to use C++ node and message types or otherwise prefer Python."""
         return CppConfig.__use_cpp and CppConfig.__allow_cpp
 
     @staticmethod
     def set_should_use_cpp(value: bool):
-        """
-        Sets the global option for whether to use C++ node and message types or otherwise prefer Python.
-        """
+        """Sets the global option for whether to use C++ node and message types or otherwise prefer Python."""
         CppConfig.__use_cpp = value
 
 
@@ -203,8 +198,8 @@ class Config(ConfigBase):
         Config for autoencoder.
     log_config_file : str
         File corresponding to this Config.
-
     """
+
     # Whether in Debug mode.
     debug: bool = False
     log_level: int = logging.WARN
@@ -235,7 +230,7 @@ class Config(ConfigBase):
             File path to save Config.
         """
         # Read the json file and store as
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding='UTF-8') as f:
             json.dump(dataclasses.asdict(self), f, indent=3, sort_keys=True)
 
     def to_string(self):

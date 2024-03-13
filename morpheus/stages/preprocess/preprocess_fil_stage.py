@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ import typing
 from functools import partial
 
 import cupy as cp
+import mrc
 import numpy as np
 import pandas as pd
-import srf
 
 import cudf
 
@@ -110,23 +110,18 @@ class PreprocessFILStage(PreprocessBaseStage):
         count = data.shape[0]
 
         seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
         seg_ids[:, 2] = fea_len - 1
 
         # Create the inference memory. Keep in mind count here could be > than input count
         memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seg_ids)
 
-        infer_message = MultiInferenceFILMessage(meta=x.meta,
-                                                 mess_offset=x.mess_offset,
-                                                 mess_count=x.mess_count,
-                                                 memory=memory,
-                                                 offset=0,
-                                                 count=memory.count)
+        infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
 
         return infer_message
 
     def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
         return partial(PreprocessFILStage.pre_process_batch, fea_len=self._fea_length, fea_cols=self.features)
 
-    def _get_preprocess_node(self, builder: srf.Builder):
+    def _get_preprocess_node(self, builder: mrc.Builder):
         return _stages.PreprocessFILStage(builder, self.unique_name, self.features)

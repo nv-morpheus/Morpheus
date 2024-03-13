@@ -1,5 +1,5 @@
 <!--
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ We show here how to set up and run the Production DFP pipeline on Azure and Duo 
 
 To run the demo you will need the following:
 - Docker
-- `docker-compose` (Tested with version 1.29)
+- `docker-compose-plugin` (Tested with version 2.12.2)
 
 ## Pull `morpheus-visualizations` submodule
 
@@ -36,24 +36,24 @@ This is necessary to get the latest changes needed for DFP. From the root of the
 ./docker/build_container_release.sh
 ```
 
-## Building Services via `docker-compose`
+## Building Services via `docker compose`
 
 ```bash
 cd examples/digital_fingerprinting/production
 export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
-docker-compose build
+docker compose build
 ```
 
 ## Start Morpheus Pipeline Container
 
 From the `examples/digital_fingerprinting/production` directory run:
 ```bash
-docker-compose run -p 3000:3000 morpheus_pipeline bash
+docker compose run -p 3000:3000 morpheus_pipeline bash
 ```
 
 The `-p 3000:3000` maps the visualization app to port 3000 on the host for access via web browser. Starting the `morpheus_pipeline` service will also start the `mlflow` service in the background. For debugging purposes it can be helpful to view the logs of the running MLflow service.
 
-By default, a mlflow dashboard will be available at:
+By default, a MLflow dashboard will be available at:
 ```bash
 http://localhost:5000
 ```
@@ -101,7 +101,7 @@ python dfp_viz_azure_pipeline.py \
 ```
 **Note:** Since models are persisted to a Docker volume, the above command only needs to be run once even if the `mlflow` service is restarted.
 
-Run inference with DFP viz postprocessing using Azure log files in `/workspace/examples/data/dfp/azure-inference-data` to generate input files for Azure DFP visualization:
+Run inference with DFP viz post-processing using Azure log files in `/workspace/examples/data/dfp/azure-inference-data` to generate input files for Azure DFP visualization:
 ```
 python dfp_viz_azure_pipeline.py \
     --train_users=none \
@@ -111,7 +111,7 @@ python dfp_viz_azure_pipeline.py \
     --output_dir=./azure-dfp-output
 ```
 
-When pipeline run completes, you should now see `dfp-viz-azure-2022-08-30.csv` and `dfp-viz-azure-2022-08-31.csv` in the `azure-dfp-output` directory. These files can be used as input to the DFP Viz UI.
+When the pipeline run completes, the `dfp-viz-azure-2022-08-30.csv` and `dfp-viz-azure-2022-08-31.csv` output files will be present in the `azure-dfp-output` directory. These files can be used as input to the DFP Viz UI.
 
 ### Duo
 
@@ -138,6 +138,7 @@ python dfp_viz_duo_pipeline.py \
 While still in the `morpheus_pipeline` container, perform the following steps to install and run the DFP Visualization Tool:
 
 ### Install dependencies
+
 ```
 cd viz
 ```

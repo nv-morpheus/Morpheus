@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,17 +17,18 @@ import os
 import typing
 
 import click
-import srf
+import mrc
 
-from morpheus._lib.file_types import FileTypes
-from morpheus._lib.messages import MessageMeta
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
@@ -39,7 +40,7 @@ from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
 
 
-class NLPVizFileSource(SingleOutputSource):
+class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
     """
     Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
     testing performance and accuracy of a pipeline.
@@ -53,7 +54,7 @@ class NLPVizFileSource(SingleOutputSource):
     iterative: boolean
         Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
         good for interleaving source stages.
-    file_type : `morpheus._lib.file_types.FileTypes`, default = 'auto'
+    file_type : `morpheus.common.FileTypes`, default = 'auto'
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1
@@ -61,17 +62,9 @@ class NLPVizFileSource(SingleOutputSource):
     filter_null: bool, default = True
         Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
         the line with processing. Setting this to True is recommended.
-    cudf_kwargs: dict, default=None
-        keyword args passed to underlying cuDF I/O function. See the cuDF documentation for `cudf.read_csv()` and
-        `cudf.read_json()` for the available options. With `file_type` == 'json', this defaults to ``{ "lines": True }``
-        and with `file_type` == 'csv', this defaults to ``{}``.
     """
 
-    def __init__(self,
-                 c: Config,
-                 filenames: typing.List[str],
-                 file_type: FileTypes = FileTypes.Auto,
-                 cudf_kwargs: dict = None):
+    def __init__(self, c: Config, filenames: typing.List[str], file_type: FileTypes = FileTypes.Auto):
 
         super().__init__(c)
 
@@ -79,7 +72,6 @@ class NLPVizFileSource(SingleOutputSource):
 
         self._filenames = filenames
         self._file_type = file_type
-        self._cudf_kwargs = {} if cudf_kwargs is None else cudf_kwargs
 
         self._input_count = None
         self._max_concurrent = c.num_threads
@@ -93,19 +85,18 @@ class NLPVizFileSource(SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
     def supports_cpp_node(self):
         return False
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
             raise RuntimeError("Does not support C++ nodes")
-        else:
-            out_stream = builder.make_source(self.unique_name, self._generate_frames())
 
-        out_type = MessageMeta
-
-        return out_stream, out_type
+        return builder.make_source(self.unique_name, self._generate_frames())
 
     def _generate_frames(self):
 
@@ -134,7 +125,7 @@ class NLPVizFileSource(SingleOutputSource):
     "--num_threads",
     default=os.cpu_count(),
     type=click.IntRange(min=1),
-    help="Number of internal pipeline threads to use",
+    help="Number of internal pipeline threads to use.",
 )
 @click.option(
     "--input_file",
@@ -146,7 +137,7 @@ class NLPVizFileSource(SingleOutputSource):
         "examples/data/sid_visualization/group1-benign-2nodes-v2.jsonlines",
         "examples/data/sid_visualization/group2-benign-50nodes.jsonlines"
     ],
-    help="List of files to send to the visualization, in order",
+    help="List of files to send to the visualization, in order.",
 )
 @click.option('--max_batch_size',
               default=50000,
@@ -155,9 +146,9 @@ class NLPVizFileSource(SingleOutputSource):
 @click.option(
     "--model_name",
     default="sid-minibert-onnx",
-    help="The name of the model that is deployed on Tritonserver",
+    help="The name of the model that is deployed on Tritonserver.",
 )
-@click.option("--triton_server_url", default="localhost:8001", required=True, help="Tritonserver url")
+@click.option("--triton_server_url", default="localhost:8001", required=True, help="Tritonserver url.")
 def run_pipeline(debug, use_cpp, num_threads, input_file, max_batch_size, model_name, triton_server_url):
 
     if debug:
@@ -167,26 +158,31 @@ def run_pipeline(debug, use_cpp, num_threads, input_file, max_batch_size, model_
 
     CppConfig.set_should_use_cpp(use_cpp)
 
-    # Its necessary to get the global config object and configure it for FIL mode
+    # Its necessary to get the global config object and configure it for FIL mode.
     config = Config()
     config.mode = PipelineModes.NLP
 
-    # Below properties are specified by the command line
+    # Below properties are specified by the command line.
     config.num_threads = num_threads
     config.pipeline_batch_size = max_batch_size
     config.feature_length = 256
+    config.model_max_batch_size = 32
     config.class_labels = load_labels_file(get_data_file_path("data/labels_nlp.txt"))
 
-    # Create a linear pipeline object
+    # Create a linear pipeline object.
     pipeline = LinearPipeline(config)
 
-    # Set source stage
+    # Set source stage.
     # This stage reads raw data from the required plugins and merge all the plugins data into a single dataframe
     # for a given source.
     pipeline.set_source(NLPVizFileSource(config, filenames=input_file))
 
+    # Add a deserialize stage.
+    # At this stage, messages were logically partitioned based on the 'pipeline_batch_size'.
     pipeline.add_stage(DeserializeStage(config))
 
+    # Add a preprocessing NLP stage.
+    # This stage preprocess the rows in the Dataframe.
     pipeline.add_stage(
         PreprocessNLPStage(config,
                            vocab_hash_file=get_data_file_path("data/bert-base-uncased-hash.txt"),
@@ -194,7 +190,8 @@ def run_pipeline(debug, use_cpp, num_threads, input_file, max_batch_size, model_
                            do_lower_case=True,
                            add_special_tokens=False))
 
-    # Add a inference stage
+    # Add a inference stage.
+    # This stage sends inference requests to the Tritonserver and captures the response.
     pipeline.add_stage(
         TritonInferenceStage(
             config,
@@ -203,17 +200,19 @@ def run_pipeline(debug, use_cpp, num_threads, input_file, max_batch_size, model_
             force_convert_inputs=True,
         ))
 
-    # Add a monitor stage
+    # Add a monitor stage.
+    # This stage logs the metrics (msg/sec) from the above stage.
     pipeline.add_stage(MonitorStage(config, description="Inference rate"))
 
+    # Add a add classification stage.
+    # This stage adds detected classifications to each message.
     pipeline.add_stage(AddClassificationsStage(config, threshold=0.8))
 
+    # Add a generate viz frame stage.
+    # This stage writes out visualization DataFrames.
     pipeline.add_stage(GenerateVizFramesStage(config, server_url="0.0.0.0", server_port=8765))
 
-    # Build pipeline
-    pipeline.build()
-
-    # Run the pipeline
+    # Run the pipeline.
     pipeline.run()
 
 

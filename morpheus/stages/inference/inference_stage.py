@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,23 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import typing
 from abc import abstractmethod
 from functools import partial
 from functools import reduce
 
 import cupy as cp
-import srf
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 
+import cudf
+
+# pylint: disable=morpheus-incorrect-lib-from-import
+from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
+from morpheus.messages import InferenceMemoryNLP
+from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiResponseProbsMessage
-from morpheus.messages import ResponseMemory
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages import MultiInferenceNLPMessage
+from morpheus.messages import MultiMessage
+from morpheus.messages import MultiResponseMessage
+from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
+
+logger = logging.getLogger(__name__)
 
 
 class InferenceWorker:
@@ -48,13 +59,22 @@ class InferenceWorker:
         self._inf_queue = inf_queue
 
     def init(self):
+        """
+        By overriding this function, the resources necessary for the inference can be initiated.
+        Each inference worker calls this function once.
+        """
+
         # Nothing required in base
         pass
 
     def stop(self):
+        """
+        Override this function to stop the inference workers or carry out any additional cleanups.
+        """
+
         pass
 
-    def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseProbsMessage:
+    def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseMessage:
         """
         Create initial inference response message with result values initialized to zero. Results will be
         set in message as each inference mini-batch is processed.
@@ -66,21 +86,17 @@ class InferenceWorker:
 
         Returns
         -------
-        `morpheus.pipeline.messages.MultiResponseProbsMessage`
+        `morpheus.pipeline.messages.MultiResponseMessage`
             Response message with probabilities calculated from inference results.
         """
 
         dims = self.calc_output_dims(x)
         output_dims = (x.mess_count, *dims[1:])
 
-        memory = ResponseMemoryProbs(count=output_dims[0], probs=cp.zeros(output_dims))
+        memory = TensorMemory(count=output_dims[0], tensors={'probs': cp.zeros(output_dims)})
 
-        output_message = MultiResponseProbsMessage(meta=x.meta,
-                                                   mess_offset=x.mess_offset,
-                                                   mess_count=x.mess_count,
-                                                   memory=memory,
-                                                   offset=0,
-                                                   count=memory.count)
+        output_message = MultiResponseMessage.from_message(x, memory=memory)
+
         return output_message
 
     @abstractmethod
@@ -101,7 +117,7 @@ class InferenceWorker:
         pass
 
     @abstractmethod
-    def process(self, batch: MultiInferenceMessage, cb: typing.Callable[[ResponseMemory], None]):
+    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
         """
         Main inference processing function. This function will be called once for each mini-batch. Once the inference is
         complete, the `cb` parameter should be used to set the response value. The callback can be called
@@ -111,7 +127,7 @@ class InferenceWorker:
         ----------
         batch : `morpheus.pipeline.messages.MultiInferenceMessage`
             Mini-batch of inference messages.
-        cb : typing.Callable[[`morpheus.pipeline.messages.ResponseMemory`], None]
+        callback : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
             Callback to set the values for the inference response.
 
         """
@@ -168,7 +184,8 @@ class InferenceStage(MultiMessageStage):
         return "inference"
 
     def accepted_types(self) -> typing.Tuple:
-        """Accepted input types to this stage.
+        """
+        Accepted input types to this stage.
 
         Returns
         -------
@@ -176,6 +193,9 @@ class InferenceStage(MultiMessageStage):
             Tuple of input types.
         """
         return (MultiInferenceMessage, )
+
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiResponseMessage)
 
     def supports_cpp_node(self):
         # Default to False unless derived classes override this value
@@ -201,15 +221,12 @@ class InferenceStage(MultiMessageStage):
         """
         pass
 
-    def _get_cpp_inference_node(self, builder: srf.Builder) -> srf.SegmentObject:
+    def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         raise NotImplementedError("No C++ node is available for this inference type")
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        stream = input_stream[0]
-        out_type = MultiResponseProbsMessage
-
-        def py_inference_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def py_inference_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
             worker = self._get_inference_worker(self._inf_queue)
 
@@ -217,36 +234,59 @@ class InferenceStage(MultiMessageStage):
 
             outstanding_requests = 0
 
-            def on_next(x: MultiInferenceMessage):
+            def on_next(message: typing.Union[MultiInferenceMessage, ControlMessage]):
                 nonlocal outstanding_requests
+                _message = None
+                if (isinstance(message, ControlMessage)):
+                    _message = message
+                    tensors = message.tensors()
+                    memory_params: dict = message.get_metadata("inference_memory_params")
+                    inference_type: str = memory_params["inference_type"]
 
-                batches = self._split_batches(x, self._max_batch_size)
+                    if (inference_type == "nlp"):
+                        memory = InferenceMemoryNLP(count=tensors.count, **tensors.get_tensors())
+                        meta_message = MessageMeta(df=message.payload().df)
+                        multi_message = MultiMessage(meta=meta_message)
 
-                output_message = worker.build_output_message(x)
+                        message = MultiInferenceNLPMessage.from_message(multi_message, memory=memory)
+                    else:
+                        raise ValueError(f"Unsupported inference type for ControlMessage: {inference_type}")
 
-                memory = output_message.memory
+                batches = self._split_batches(message, self._max_batch_size)
+
+                output_message = worker.build_output_message(message)
 
                 fut_list = []
 
                 for batch in batches:
                     outstanding_requests += 1
 
-                    completion_future = srf.Future()
+                    completion_future = mrc.Future()
 
-                    def set_output_fut(resp: ResponseMemoryProbs, b, batch_future: srf.Future):
+                    def set_output_fut(resp: TensorMemory, inner_batch, batch_future: mrc.Future):
                         nonlocal outstanding_requests
-                        m = self._convert_one_response(memory, b, resp)
+                        mess = self._convert_one_response(output_message, inner_batch, resp)
 
                         outstanding_requests -= 1
 
-                        batch_future.set_result(m)
+                        batch_future.set_result(mess)
 
                     fut_list.append(completion_future)
 
-                    worker.process(batch, partial(set_output_fut, b=batch, batch_future=completion_future))
+                    worker.process(batch, partial(set_output_fut, inner_batch=batch, batch_future=completion_future))
 
                 for f in fut_list:
                     f.result()
+
+                # TODO(Devin): This is a hack to support ControlMessage side channel.
+                if (isinstance(_message, ControlMessage)):
+                    _df = cudf.DataFrame(output_message.get_meta())
+                    if (_df is not None and not _df.empty):
+                        embeddings = output_message.get_probs_tensor()
+                        _df["embedding"] = embeddings.tolist()
+                        _message_meta = CppMessageMeta(df=_df)
+                        _message.payload(_message_meta)
+                    output_message = _message
 
                 return output_message
 
@@ -257,35 +297,36 @@ class InferenceStage(MultiMessageStage):
         if (self._build_cpp_node()):
             node = self._get_cpp_inference_node(builder)
         else:
-            node = builder.make_node_full(self.unique_name, py_inference_fn)
+            node = builder.make_node(self.unique_name, ops.build(py_inference_fn))
 
         # Set the concurrency level to be up with the thread count
         node.launch_options.pe_count = self._thread_count
-        builder.make_edge(stream, node)
+        builder.make_edge(input_node, node)
 
-        stream = node
-
-        return stream, out_type
-
-    def _start(self):
-
-        return super()._start()
+        return node
 
     def stop(self):
-        for w in self._workers:
-            w.stop()
+        """
+        Stops the inference workers and closes the inference queue.
+        """
+
+        for worker in self._workers:
+            worker.stop()
 
         # Now stop the _inf_queue to unblock workers
         self._inf_queue.close()
 
     async def join(self):
+        """
+        On all inference worker threads, this function applies join.
+        """
 
         # Wait for queue to be finished. This does block but it should be fine for now
         self._inf_queue.join()
 
         # Join all workers
-        for w in self._workers:
-            await w.join()
+        for worker in self._workers:
+            await worker.join()
 
         return await super().join()
 
@@ -319,7 +360,6 @@ class InferenceStage(MultiMessageStage):
         out_resp = []
 
         for start, stop in out_batches:
-
             out_resp.append(x.get_slice(start, stop))
 
         assert len(out_resp) > 0
@@ -327,9 +367,10 @@ class InferenceStage(MultiMessageStage):
         return out_resp
 
     @staticmethod
-    def _convert_response(x: typing.Tuple[typing.List[MultiInferenceMessage], typing.List[ResponseMemoryProbs]]):
+    def _convert_response(
+            x: typing.Tuple[typing.List[MultiInferenceMessage], typing.List[TensorMemory]]) -> MultiResponseMessage:
 
-        # Convert a MultiResponse into a MultiResponseProbsMessage
+        # Convert a MultiInferenceMessage into a MultiResponseMessage
         in_message = x[0]
         out_message = x[1]
 
@@ -339,73 +380,67 @@ class InferenceStage(MultiMessageStage):
         total_mess_count = reduce(lambda y, z: y + z.mess_count, in_message, 0)
 
         # Create a message data to store the entire list
-        memory = ResponseMemoryProbs(count=total_mess_count,
-                                     probs=cp.zeros((total_mess_count, out_message[0].probs.shape[1])))
+        probs = cp.zeros((total_mess_count, out_message[0].get_tensor('probs').shape[1]))
 
-        saved_meta = in_message[0].meta
         saved_offset = in_message[0].mess_offset
         saved_count = 0
 
         for inf, res in zip(in_message, out_message):
 
-            # Ensure they all share the same meta object. Otherwise this doesnt work
+            # Ensure they all share the same meta object. Otherwise this doesn't work
             # assert inf.meta is saved_meta
 
             # Make sure we have a continuous list
             assert inf.mess_offset == saved_offset + saved_count
 
+            assert inf.count == res.count
+
             # Two scenarios:
             if (inf.mess_count == inf.count):
                 # In message and out message have same count. Just use probs as is
-                memory.probs[inf.offset:inf.offset + inf.count, :] = res.probs
+                probs[inf.offset:inf.offset + inf.count, :] = res.get_output('probs')
             else:
-                assert inf.count == res.count
-
-                mess_ids = inf.seq_ids[:, 0].get().tolist()
+                mess_ids = inf.get_tensor("seq_ids")[:, 0].get().tolist()
 
                 # Out message has more reponses, so we have to do key based blending of probs
                 for i, idx in enumerate(mess_ids):
-                    memory.probs[idx, :] = cp.maximum(memory.probs[idx, :], res.probs[i, :])
+                    probs[idx, :] = cp.maximum(probs[idx, :], res.get_output('probs')[i, :])
 
             saved_count += inf.mess_count
 
         assert saved_count == total_mess_count, "Did not set every element in output"
 
-        return MultiResponseProbsMessage(meta=saved_meta,
-                                         mess_offset=saved_offset,
-                                         mess_count=saved_count,
-                                         memory=memory,
-                                         offset=0,
-                                         count=memory.count)
+        memory = TensorMemory(count=total_mess_count, tensors={'probs': probs})
+
+        return MultiResponseMessage.from_message(in_message[0], mess_count=saved_count, memory=memory)
 
     @staticmethod
-    def _convert_one_response(memory: ResponseMemory, inf: MultiInferenceMessage, res: ResponseMemoryProbs):
+    def _convert_one_response(output: MultiResponseMessage, inf: MultiInferenceMessage, res: TensorMemory):
         # Make sure we have a continuous list
         # assert inf.mess_offset == saved_offset + saved_count
+        memory = output.memory
 
-        probs = memory.get_output("probs")
+        probs = memory.get_tensor(output.probs_tensor_name)
+        resp_probs = res.get_tensor(output.probs_tensor_name)
 
-        seq_offset = inf.seq_ids[0, 0].item()
-        seq_count = inf.seq_ids[-1, 0].item() + 1 - seq_offset
+        seq_ids = inf.get_id_tensor()
+
+        seq_offset = seq_ids[0, 0].item() - output.mess_offset
+        seq_count = (seq_ids[-1, 0].item() + 1 - seq_offset) - output.mess_offset
 
         # Two scenarios:
         if (inf.mess_count == inf.count):
             assert seq_count == res.count
 
             # In message and out message have same count. Just use probs as is
-            probs[seq_offset:seq_offset + seq_count, :] = res.probs
+            probs[seq_offset:seq_offset + seq_count, :] = resp_probs
         else:
             assert inf.count == res.count
 
-            mess_ids = inf.seq_ids[:, 0].get().tolist()
+            mess_ids = seq_ids[:, 0].get().tolist()
 
             # Out message has more reponses, so we have to do key based blending of probs
             for i, idx in enumerate(mess_ids):
-                probs[idx, :] = cp.maximum(probs[idx, :], res.probs[i, :])
+                probs[idx, :] = cp.maximum(probs[idx, :], resp_probs[i, :])
 
-        return MultiResponseProbsMessage(meta=inf.meta,
-                                         mess_offset=inf.mess_offset,
-                                         mess_count=inf.mess_count,
-                                         memory=memory,
-                                         offset=inf.offset,
-                                         count=inf.count)
+        return MultiResponseMessage.from_message(inf, memory=memory, offset=seq_offset, count=seq_count)

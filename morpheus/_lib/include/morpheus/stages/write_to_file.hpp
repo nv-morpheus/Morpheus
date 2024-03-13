@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,18 +20,24 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/file_types.hpp"
 
-#include <pysrf/node.hpp>
+#include <boost/fiber/context.hpp>
+#include <boost/fiber/future/future.hpp>
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
+#include <mrc/types.hpp>
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
 
 #include <fstream>
 #include <functional>  // for function
+#include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace morpheus {
@@ -49,10 +55,10 @@ namespace morpheus {
  * @brief Write all messages to a file. Messages are written to a file by this class.
  * This class does not maintain an open file or buffer messages.
  */
-class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
+class WriteToFileStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -64,11 +70,13 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
      * @param mode : Reference to the mode for opening a file
      * @param file_type : FileTypes
      * @param include_index_col : Write out the index as a column, by default true
+     * @param flush : When `true` flush the output buffer to disk on each message.
      */
-    WriteToFileStage(const std::string &filename,
+    WriteToFileStage(const std::string& filename,
                      std::ios::openmode mode = std::ios::out,
                      FileTypes file_type     = FileTypes::Auto,
-                     bool include_index_col  = true);
+                     bool include_index_col  = true,
+                     bool flush              = false);
 
   private:
     /**
@@ -81,21 +89,29 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
      *
      * @param msg
      */
-    void write_json(sink_type_t &msg);
+    void write_json(sink_type_t& msg);
 
     /**
      * @brief Write messages (rows in a DataFrame) to a CSV format
      *
      * @param msg
      */
-    void write_csv(sink_type_t &msg);
+    void write_csv(sink_type_t& msg);
+
+    /**
+     * @brief Write messages (rows in a DataFrame) to a Parquet format
+     *
+     * @param msg
+     */
+    void write_parquet(sink_type_t& msg);
 
     subscribe_fn_t build_operator();
 
-    bool m_is_first;
+    bool m_is_first{};
     bool m_include_index_col;
+    bool m_flush;
     std::ofstream m_fstream;
-    std::function<void(sink_type_t &)> m_write_func;
+    std::function<void(sink_type_t&)> m_write_func;
 };
 
 /****** WriteToFileStageInterfaceProxy******************/
@@ -113,14 +129,16 @@ struct WriteToFileStageInterfaceProxy
      * @param mode : Reference to the mode for opening a file
      * @param file_type : FileTypes
      * @param include_index_col : Write out the index as a column, by default true
-     * @return std::shared_ptr<srf::segment::Object<WriteToFileStage>>
+     * @param flush : When `true` flush the output buffer to disk on each message.
+     * @return std::shared_ptr<mrc::segment::Object<WriteToFileStage>>
      */
-    static std::shared_ptr<srf::segment::Object<WriteToFileStage>> init(srf::segment::Builder &builder,
-                                                                        const std::string &name,
-                                                                        const std::string &filename,
-                                                                        const std::string &mode = "w",
+    static std::shared_ptr<mrc::segment::Object<WriteToFileStage>> init(mrc::segment::Builder& builder,
+                                                                        const std::string& name,
+                                                                        const std::string& filename,
+                                                                        const std::string& mode = "w",
                                                                         FileTypes file_type     = FileTypes::Auto,
-                                                                        bool include_index_col  = true);
+                                                                        bool include_index_col  = true,
+                                                                        bool flush              = false);
 };
 
 #pragma GCC visibility pop

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,7 +51,7 @@ def test_monitor_stage(benchmark, num_messages):
 
     # Test Data
 
-    df = cudf.DataFrame({"value": [x for x in range(0, num_messages)]})
+    df = cudf.DataFrame({"value": list(range(0, num_messages))})
 
     # Configuration
 

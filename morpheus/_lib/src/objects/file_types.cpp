@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,13 +24,8 @@
 #include <stdexcept>
 
 namespace morpheus {
-FileTypes FileTypesInterfaceProxy::determine_file_type(const std::string &filename)
-{
-    return morpheus::determine_file_type(filename);
-}
-}  // namespace morpheus
 
-morpheus::FileTypes morpheus::determine_file_type(const std::string &filename)
+FileTypes determine_file_type(const std::string& filename)
 {
     auto filename_path = std::filesystem::path(filename);
 
@@ -42,6 +37,10 @@ morpheus::FileTypes morpheus::determine_file_type(const std::string &filename)
     {
         return FileTypes::CSV;
     }
+    else if (filename_path.extension() == ".parquet")
+    {
+        return FileTypes::PARQUET;
+    }
     else
     {
         throw std::runtime_error(MORPHEUS_CONCAT_STR("Unsupported extension '"
@@ -49,3 +48,10 @@ morpheus::FileTypes morpheus::determine_file_type(const std::string &filename)
                                                      << "' with 'auto' type. 'auto' only works with: csv, json"));
     }
 }
+
+FileTypes determine_file_type(const std::filesystem::path& filename)
+{
+    return determine_file_type(filename.string());
+}
+
+}  // namespace morpheus

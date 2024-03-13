@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,27 +15,29 @@
 
 import logging
 import typing
-from functools import partial
 
-import srf
-from srf.core import operators as ops
+import mrc
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
+from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
 
-@register_stage("deserialize", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
+@register_stage("deserialize",
+                modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
+                ignore_args=["message_type", "task_type", "task_payload"])
 class DeserializeStage(MultiMessageStage):
     """
-    Deserialize source data into Dataframes.
+    Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
 
     This stage deserialize the output of `FileSourceStage`/`KafkaSourceStage` into a `MultiMessage`. This
     should be one of the first stages after the `Source` object.
@@ -44,18 +46,59 @@ class DeserializeStage(MultiMessageStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-
+    ensure_sliceable_index : bool, default = True
+        Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`, which will replace the index
+        of the underlying dataframe if the existing one is not unique and monotonic.
+    message_type : typing.Literal[MultiMessage, ControlMessage], default = MultiMessage
+        Sets the type of message to be emitted from this stage.
+    task_type : str, default = None
+        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
+        is set to `ControlMessage`. If not `None`, `task_payload` must also be specified.
+    task_payload : dict, default = None
+        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
+        is set to `ControlMessage`. If not `None`, `task_type` must also be specified.
     """
 
-    def __init__(self, c: Config):
+    def __init__(self,
+                 c: Config,
+                 *,
+                 ensure_sliceable_index: bool = True,
+                 message_type: typing.Union[typing.Literal[MultiMessage],
+                                            typing.Literal[ControlMessage]] = MultiMessage,
+                 task_type: str = None,
+                 task_payload: dict = None):
         super().__init__(c)
 
         self._batch_size = c.pipeline_batch_size
+        self._ensure_sliceable_index = ensure_sliceable_index
 
         self._max_concurrent = c.num_threads
 
         # Mark these stages to log timestamps if requested
         self._should_log_timestamps = True
+
+        self._message_type = message_type
+        self._task_type = task_type
+        self._task_payload = task_payload
+
+        if (self._message_type == ControlMessage):
+            if ((self._task_type is None) != (self._task_payload is None)):
+                raise ValueError("Both `task_type` and `task_payload` must be specified if either is specified.")
+        elif (self._message_type == MultiMessage):
+            if (self._task_type is not None or self._task_payload is not None):
+                raise ValueError("Cannot specify `task_type` or `task_payload` for non-control messages.")
+        else:
+            raise ValueError(f"Invalid message type: {self._message_type}")
+
+        self._module_config = {
+            "ensure_sliceable_index": self._ensure_sliceable_index,
+            "message_type": "MultiMessage" if self._message_type == MultiMessage else "ControlMessage",
+            "task_type": self._task_type,
+            "task_payload": self._task_payload,
+            "batch_size": self._batch_size,
+            "max_concurrency": self._max_concurrent,
+            "should_log_timestamp": self._should_log_timestamps
+        }
 
     @property
     def name(self) -> str:
@@ -66,51 +109,28 @@ class DeserializeStage(MultiMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (MessageMeta)
+        return (MessageMeta, )
 
     def supports_cpp_node(self):
         # Enable support by default
-        return True
+        return False
 
-    @staticmethod
-    def process_dataframe(x: MessageMeta, batch_size: int) -> typing.List[MultiMessage]:
-        """
-        The deserialization of the cudf is implemented in this function.
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(self._message_type)
 
-        Parameters
-        ----------
-        x : cudf.DataFrame
-            Input rows that needs to be deserilaized.
-        batch_size : int
-            Batch size.
-
-        """
-
-        full_message = MultiMessage(meta=x, mess_offset=0, mess_count=x.count)
-
-        # Now break it up by batches
-        output = []
-
-        for i in range(0, full_message.mess_count, batch_size):
-            output.append(full_message.get_slice(i, min(i + batch_size, full_message.mess_count)))
-
-        return output
-
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-        out_type = MultiMessage
-
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
-
-            obs.pipe(ops.map(partial(DeserializeStage.process_dataframe, batch_size=self._batch_size)),
-                     ops.flatten()).subscribe(sub)
-
-        if self._build_cpp_node():
-            stream = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        if (self.supports_cpp_node()):
+            out_node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
+            builder.make_edge(input_node, out_node)
         else:
-            stream = builder.make_node_full(self.unique_name, node_fn)
+            module_loader = DeserializeLoaderFactory.get_instance(module_name=f"deserialize_{self.unique_name}",
+                                                                  module_config=self._module_config)
 
-        builder.make_edge(input_stream[0], stream)
+            module = module_loader.load(builder=builder)
 
-        return stream, out_type
+            mod_in_node = module.input_port("input")
+            out_node = module.output_port("output")
+
+            builder.make_edge(input_node, mod_in_node)
+
+        return out_node

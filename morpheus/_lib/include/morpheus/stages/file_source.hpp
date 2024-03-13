@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,17 +19,18 @@
 
 #include "morpheus/messages/meta.hpp"
 
-#include <cudf/io/types.hpp>  // for table_with_metadata
-#include <pysrf/node.hpp>
+#include <boost/fiber/context.hpp>
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
+#include <pybind11/pytypes.h>
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
 
+#include <filesystem>  // for path
 #include <memory>
+#include <optional>
 #include <string>
-#include <vector>  // for vector
+#include <thread>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -46,10 +47,10 @@ namespace morpheus {
  * @brief Load messages from a file. Source stage is used to load messages from a file and
  * dumping the contents into the pipeline immediately. Useful for testing performance and accuracy of a pipeline.
  */
-class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
+class FileSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>;
+    using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
@@ -58,14 +59,16 @@ class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageM
      *
      * @param filename : Name of the file from which the messages will be read
      * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging
+     * @param json_lines: Whether to force json or jsonlines parsing
      */
-    FileSourceStage(std::string filename, int repeat = 1);
+    FileSourceStage(std::string filename, int repeat = 1, std::optional<bool> json_lines = std::nullopt);
 
   private:
     subscriber_fn_t build();
 
     std::string m_filename;
     int m_repeat{1};
+    std::optional<bool> m_json_lines;
 };
 
 /****** FileSourceStageInterfaceProxy***********************/
@@ -81,12 +84,19 @@ struct FileSourceStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param filename : Name of the file from which the messages will be read.
      * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
-     * @return std::shared_ptr<srf::segment::Object<FileSourceStage>>
+     * @param parser_kwargs : Optional arguments to pass to the file parser.
+     * @return std::shared_ptr<mrc::segment::Object<FileSourceStage>>
      */
-    static std::shared_ptr<srf::segment::Object<FileSourceStage>> init(srf::segment::Builder &builder,
-                                                                       const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder& builder,
+                                                                       const std::string& name,
                                                                        std::string filename,
-                                                                       int repeat = 1);
+                                                                       int repeat                   = 1,
+                                                                       pybind11::dict parser_kwargs = pybind11::dict());
+    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder& builder,
+                                                                       const std::string& name,
+                                                                       std::filesystem::path filename,
+                                                                       int repeat                   = 1,
+                                                                       pybind11::dict parser_kwargs = pybind11::dict());
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

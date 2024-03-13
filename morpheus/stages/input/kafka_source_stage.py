@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,12 +14,13 @@
 
 import logging
 import time
+import typing
 from enum import Enum
 from io import StringIO
 
 import confluent_kafka as ck
+import mrc
 import pandas as pd
-import srf
 
 import cudf
 
@@ -27,9 +28,11 @@ import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.config import auto_determine_bootstrap
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +45,7 @@ class AutoOffsetReset(Enum):
 
 
 @register_stage("from-kafka", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
-class KafkaSourceStage(SingleOutputSource):
+class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Load messages from a Kafka cluster.
 
@@ -53,8 +56,9 @@ class KafkaSourceStage(SingleOutputSource):
     bootstrap_servers : str
         Comma-separated list of bootstrap servers. If using Kafka created via `docker-compose`, this can be set to
         'auto' to automatically determine the cluster IPs and ports
-    input_topic : str
-        Input kafka topic.
+    input_topic : typing.List[str], default = ["test_pcap"]
+        Name of the Kafka topic from which messages will be consumed. To consume from multiple topics,
+        repeat the same option multiple times.
     group_id : str
         Specifies the name of the consumer group a Kafka consumer belongs to.
     client_id : str, default = None
@@ -67,7 +71,7 @@ class KafkaSourceStage(SingleOutputSource):
     disable_pre_filtering : bool, default = False
         Enabling this option will skip pre-filtering of json messages. This is only useful when inputs are known to be
         valid json.
-    auto_offset_reset : `AutoOffsetReset`, default = AutoOffsetReset.LATEST, case_sensitive = False
+    auto_offset_reset : `AutoOffsetReset`, case_sensitive = False
         Sets the value for the configuration option 'auto.offset.reset'. See the kafka documentation for more
         information on the effects of each value."
     stop_after: int, default = 0
@@ -77,21 +81,27 @@ class KafkaSourceStage(SingleOutputSource):
     """
 
     def __init__(self,
-                 c: Config,
+                 config: Config,
                  bootstrap_servers: str,
-                 input_topic: str = "test_pcap",
+                 input_topic: typing.List[str] = None,
                  group_id: str = "morpheus",
                  client_id: str = None,
                  poll_interval: str = "10millis",
                  disable_commit: bool = False,
                  disable_pre_filtering: bool = False,
-                 auto_offset_reset: AutoOffsetReset = "latest",
+                 auto_offset_reset: AutoOffsetReset = AutoOffsetReset.LATEST,
                  stop_after: int = 0,
                  async_commits: bool = True):
-        super().__init__(c)
+        super().__init__(config)
+
+        if (input_topic is None):
+            input_topic = ["test_pcap"]
 
         if isinstance(auto_offset_reset, AutoOffsetReset):
             auto_offset_reset = auto_offset_reset.value
+
+        if (bootstrap_servers == "auto"):
+            bootstrap_servers = auto_determine_bootstrap()
 
         self._consumer_params = {
             'bootstrap.servers': bootstrap_servers,
@@ -102,9 +112,13 @@ class KafkaSourceStage(SingleOutputSource):
         if client_id is not None:
             self._consumer_params['client.id'] = client_id
 
-        self._topic = input_topic
-        self._max_batch_size = c.pipeline_batch_size
-        self._max_concurrent = c.num_threads
+        if isinstance(input_topic, str):
+            input_topic = [input_topic]
+
+        # Remove duplicate topics if there are any.
+        self._topics = list(set(input_topic))
+        self._max_batch_size = config.pipeline_batch_size
+        self._max_concurrent = config.num_threads
         self._disable_commit = disable_commit
         self._disable_pre_filtering = disable_pre_filtering
         self._stop_after = stop_after
@@ -127,7 +141,13 @@ class KafkaSourceStage(SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
     def stop(self):
+        """
+        Performs cleanup steps when pipeline is stopped.
+        """
 
         # Indicate we need to stop
         self._stop_requested = True
@@ -150,7 +170,7 @@ class KafkaSourceStage(SingleOutputSource):
                 buffer.seek(0)
                 df = cudf.io.read_json(buffer, engine='cudf', lines=True, orient='records')
             except Exception as e:
-                logger.error("Error parsing payload into a dataframe : {}".format(e))
+                logger.error("Error parsing payload into a dataframe : %s", e)
             finally:
                 if (not self._disable_commit):
                     for msg in batch:
@@ -173,7 +193,7 @@ class KafkaSourceStage(SingleOutputSource):
         consumer = None
         try:
             consumer = ck.Consumer(self._consumer_params)
-            consumer.subscribe([self._topic])
+            consumer.subscribe(self._topics)
 
             batch = []
 
@@ -216,13 +236,13 @@ class KafkaSourceStage(SingleOutputSource):
             if (consumer):
                 consumer.close()
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if (self._build_cpp_node()):
             source = _stages.KafkaSourceStage(builder,
                                               self.unique_name,
                                               self._max_batch_size,
-                                              self._topic,
+                                              self._topics,
                                               int(self._poll_interval * 1000),
                                               self._consumer_params,
                                               self._disable_commit,
@@ -236,4 +256,4 @@ class KafkaSourceStage(SingleOutputSource):
         else:
             source = builder.make_source(self.unique_name, self._source_generator)
 
-        return source, MessageMeta
+        return source

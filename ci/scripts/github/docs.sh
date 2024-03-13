@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,33 +18,40 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
-update_conda_env
+rapids-dependency-file-generator \
+  --output conda \
+  --file_key docs \
+  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee env.yaml
 
-aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
+update_conda_env env.yaml
+
+download_artifact "wheel.tar.bz"
 
 tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
 
-pip install ${MORPHEUS_ROOT}/build/wheel
+pip install ${MORPHEUS_ROOT}/build/dist/*.whl
 
 rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
 git lfs install
-${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs
+${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs examples
 
-cd ${MORPHEUS_ROOT}/docs
-rapids-logger "Installing Documentation dependencies"
-pip install -r requirement.txt
+git submodule update --init --recursive
+
+rapids-logger "Configuring for docs"
+cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_BUILD_DOCS=ON .
 
 rapids-logger "Building docs"
+cmake --build build --parallel ${PARALLEL_LEVEL} --target install
+cmake --build build --parallel ${PARALLEL_LEVEL} --target morpheus_docs
 
-make -j ${PARALLEL_LEVEL} html
-
-rapids-logger "Tarring the docs"
-tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/html
+rapids-logger "Archiving the docs"
+tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/docs/html
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/docs.tar.bz" "${ARTIFACT_URL}/docs.tar.bz"
+set_job_summary_preamble
+upload_artifact "${WORKSPACE_TMP}/docs.tar.bz"
 
 rapids-logger "Success"
 exit 0

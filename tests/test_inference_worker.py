@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,45 +18,58 @@ from unittest import mock
 
 import pytest
 
+from _utils.inference_worker import IW
 from morpheus.stages.inference import inference_stage
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
-from utils import IW
 
 
 def test_constructor():
-    pq = ProducerConsumerQueue()
-    iw = inference_stage.InferenceWorker(pq)
-    assert iw._inf_queue is pq
+    queue = ProducerConsumerQueue()
+    worker = inference_stage.InferenceWorker(queue)
+    assert worker._inf_queue is queue
 
     # Call empty methods
-    iw.init()
-    iw.stop()
+    worker.init()
+    worker.stop()
 
 
 @pytest.mark.use_python
-def test_build_output_message(config):
-    pq = ProducerConsumerQueue()
-    iw = IW(pq)
+@pytest.mark.usefixtures("config")
+def test_build_output_message():
+
+    # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
+    # pylint: disable=no-member
+
+    queue = ProducerConsumerQueue()
+    worker = IW(queue)
 
     mock_message = mock.MagicMock()
-    mock_message.count = 10
+    mock_message.meta = mock.MagicMock()
+    mock_message.meta.count = 20
     mock_message.mess_offset = 11
     mock_message.mess_count = 2
+    mock_message.memory = mock.MagicMock()
+    mock_message.memory.count = 30
+    mock_message.count = 10
     mock_message.offset = 12
 
-    response = iw.build_output_message(mock_message)
+    response = worker.build_output_message(mock_message)
     assert response.count == 2
     assert response.mess_offset == 11
     assert response.mess_count == 2
     assert response.offset == 0
 
     mock_message = mock.MagicMock()
-    mock_message.count = 2
+    mock_message.meta = mock.MagicMock()
+    mock_message.meta.count = 20
     mock_message.mess_offset = 11
     mock_message.mess_count = 2
+    mock_message.memory = mock.MagicMock()
+    mock_message.memory.count = 30
+    mock_message.count = 2
     mock_message.offset = 12
 
-    response = iw.build_output_message(mock_message)
+    response = worker.build_output_message(mock_message)
     assert response.count == 2
     assert response.mess_offset == 11
     assert response.mess_count == 2

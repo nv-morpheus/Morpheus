@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,17 +20,24 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 
-#include <pysrf/node.hpp>
+#include <boost/fiber/context.hpp>
+#include <boost/fiber/future/future.hpp>
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
+#include <mrc/types.hpp>
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 #include <cstdint>  // for uint32_t
+#include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace morpheus {
@@ -48,10 +55,10 @@ namespace morpheus {
  * @brief NLP input data for inference
  */
 class PreprocessNLPStage
-  : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>
 {
   public:
-    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -61,7 +68,7 @@ class PreprocessNLPStage
      *
      * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created
      * from the raw vocabulary using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
-     * @param sequence_length : Sequence Length to use (We add to special tokens for ner classification job).
+     * @param sequence_length : Sequence Length to use (We add to special tokens for NER classification job).
      * @param truncation : If set to true, strings will be truncated and padded to max_length. Each input string will
      * result in exactly one output sequence. If set to false, there may be multiple output sequences when the
      * max_length is smaller than generated tokens.
@@ -72,6 +79,7 @@ class PreprocessNLPStage
      * containing the overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is
      * equal to stride there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will
      * be repeated on the second sequence and so on until the entire sentence is encoded.
+     * @param column : Name of the string column to operate on, defaults to "data".
      */
     PreprocessNLPStage(std::string vocab_hash_file,
                        uint32_t sequence_length,
@@ -109,7 +117,7 @@ struct PreprocessNLPStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created
      * from the raw vocabulary using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
-     * @param sequence_length : Sequence Length to use (We add to special tokens for ner classification job).
+     * @param sequence_length : Sequence Length to use (We add to special tokens for NER classification job).
      * @param truncation : If set to true, strings will be truncated and padded to max_length. Each input string will
      * result in exactly one output sequence. If set to false, there may be multiple output sequences when the
      * max_length is smaller than generated tokens.
@@ -120,10 +128,11 @@ struct PreprocessNLPStageInterfaceProxy
      * containing the overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is
      * equal to stride there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will
      * be repeated on the second sequence and so on until the entire sentence is encoded.
-     * @return std::shared_ptr<srf::segment::Object<PreprocessNLPStage>>
+     * @param column : Name of the string column to operate on, defaults to "data".
+     * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>
      */
-    static std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> init(srf::segment::Builder &builder,
-                                                                          const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> init(mrc::segment::Builder& builder,
+                                                                          const std::string& name,
                                                                           std::string vocab_hash_file,
                                                                           uint32_t sequence_length,
                                                                           bool truncation,

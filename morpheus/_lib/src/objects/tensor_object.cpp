@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,9 @@
 
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <vector>
-
 namespace morpheus {
 
-static void set_contiguous_stride(const std::vector<TensorIndex>& shape, std::vector<TensorIndex>& stride)
+static void set_contiguous_stride(const ShapeType& shape, ShapeType& stride)
 {
     stride.resize(shape.size());
     TensorIndex ttl = 1;
@@ -32,5 +30,7 @@ static void set_contiguous_stride(const std::vector<TensorIndex>& shape, std::ve
         ttl *= shape.at(i);
     }
 }
+
+void TensorObject::throw_on_invalid_storage() {}
 
 }  // namespace morpheus

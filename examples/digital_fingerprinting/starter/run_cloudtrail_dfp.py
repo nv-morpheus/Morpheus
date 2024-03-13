@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Executes a pipeline that trains an autoencoder and then uses it to detect anomalies in the same data."""
 
 import logging
 import os
@@ -31,6 +32,7 @@ from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
+from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
 
 
@@ -96,7 +98,7 @@ def run_pipeline(num_threads,
                  pretrained_filename,
                  models_output_filename,
                  output_file):
-
+    """Configure and run the pipeline."""
     configure_logging(log_level=logging.DEBUG)
 
     CppConfig.set_should_use_cpp(False)
@@ -104,12 +106,9 @@ def run_pipeline(num_threads,
     config = Config()
     config.mode = PipelineModes.AE
     config.ae = ConfigAutoEncoder()
-    config.ae.userid_column_name = "userIdentityaccountId"
+    config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.feature_scaler = AEFeatureScalar.STANDARD
-
-    with open(columns_file, "r") as lf:
-        config.ae.feature_columns = [x.strip() for x in lf.readlines()]
-
+    config.ae.feature_columns = load_labels_file(columns_file)
     config.num_threads = num_threads
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
@@ -153,4 +152,6 @@ def run_pipeline(num_threads,
 
 
 if __name__ == "__main__":
+    # The click decordators add all of the needed arguments to the `run_pipeline` function but pylint doesn't know that
+    # pylint: disable=no-value-for-parameter
     run_pipeline()

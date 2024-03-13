@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,8 +56,8 @@ class PluginManager():
         # Direct specification.
         if isinstance(specs, collections.abc.Sequence):
             return list(specs)
-        raise RuntimeError("Plugins may be specified as a sequence or a ','-separated string of plugin names. Got: %r" %
-                           specs)
+        raise RuntimeError(
+            f"Plugins may be specified as a sequence or a ','-separated string of plugin names. Got: {specs}")
 
     def _ensure_plugins_loaded(self):
 
@@ -68,22 +68,23 @@ class PluginManager():
         self.add_plugin_option(os.environ.get("MORPHEUS_PLUGINS"))
 
         # Loop over all specs and load the plugins
-        for s in self._plugin_specs:
+        for spec in self._plugin_specs:
             try:
-                if os.path.exists(s):
-                    mod_name = os.path.splitext(os.path.basename(s))[0]
-                    spec = importlib.util.spec_from_file_location(mod_name, s)
+                if os.path.exists(spec):
+                    mod_name = os.path.splitext(os.path.basename(spec))[0]
+                    spec = importlib.util.spec_from_file_location(mod_name, spec)
                     mod = importlib.util.module_from_spec(spec)
                     sys.modules[mod_name] = mod
                     spec.loader.exec_module(mod)
                 else:
-                    mod = importlib.import_module(s)
+                    mod = importlib.import_module(spec)
 
                 # Sucessfully loaded. Register
                 self._pm.register(mod)
 
             except ImportError as e:
-                raise ImportError(f'Error importing plugin "{s}": {e.args[0]}').with_traceback(e.__traceback__) from e
+                raise ImportError(f'Error importing plugin "{spec}": {e.args[0]}').with_traceback(
+                    e.__traceback__) from e
 
         # Finally, consider setuptools entrypoints
         self._pm.load_setuptools_entrypoints("morpheus")
@@ -104,6 +105,7 @@ class PluginManager():
             self._stage_registry = GlobalStageRegistry.get()
 
             # Now call the plugin system to add stages as necessary
+            # pylint: disable=no-member
             self._pm.hook.morpheus_cli_collect_stages(registry=self._stage_registry)
 
         return self._stage_registry

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ import logging
 import os
 import queue
 
-import srf
+import mrc
 from watchdog.events import FileSystemEvent
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
@@ -26,7 +26,7 @@ from watchdog.utils.dirsnapshot import DirectorySnapshotDiff
 from watchdog.utils.dirsnapshot import EmptyDirectorySnapshot
 from watchdog.utils.patterns import filter_paths
 
-from morpheus._lib.common import FiberQueue
+from morpheus.common import FiberQueue
 from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)
@@ -90,7 +90,10 @@ class DirectoryWatcher():
         # Will be a watchdog observer if enabled
         self._watcher = None
 
-    def build_node(self, name: str, builder: srf.Builder):
+    def build_node(self, name: str, builder: mrc.Builder):
+        """
+        Build and return the MRC source node
+        """
 
         # The first source just produces filenames
         return builder.make_source(name, self._generate_via_polling())
@@ -101,21 +104,21 @@ class DirectoryWatcher():
         event (and we should wait for potentially more changes) or if these files were read on startup and should be
         processed immediately.
         """
-        q = FiberQueue(self._queue_max_size)
+        f_queue = FiberQueue(self._queue_max_size)
 
         if (self._watch_directory):
 
             # Create a file watcher
             self._watcher = Observer()
-            self._watcher.setDaemon(True)
-            self._watcher.setName("DirectoryWatcher")
+            self._watcher.daemon = True
+            self._watcher.name = "DirectoryWatcher"
 
             event_handler = PatternMatchingEventHandler(patterns=[self._match_pattern])
 
             def process_dir_change(event: FileSystemEvent):
 
                 # Push files into the queue indicating this is an event
-                q.put(([event.src_path], True))
+                f_queue.put(([event.src_path], True))
 
             event_handler.on_created = process_dir_change
 
@@ -134,13 +137,13 @@ class DirectoryWatcher():
         logger.info("Found %d files in glob. Loading...", len(file_list))
 
         # Push all to the queue and close it
-        q.put((file_list, False))
+        f_queue.put((file_list, False))
 
         if (not self._watch_directory):
             # Close the queue
-            q.close()
+            f_queue.close()
 
-        return q
+        return f_queue
 
     def _generate_via_polling(self):
 

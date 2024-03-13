@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,20 +14,18 @@
 
 import typing
 
-import srf
-from common.data_models import FeatureConfig
-from common.feature_extractor import FeatureExtractor
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 
 from dask.distributed import Client
 
-from morpheus._lib.messages import MessageMeta
+from common.data_models import FeatureConfig  # pylint: disable=no-name-in-module
+from common.feature_extractor import FeatureExtractor  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
 
 
@@ -83,89 +81,84 @@ class CreateFeaturesRWStage(MultiMessageStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def on_next(self, x: AppShieldMessageMeta):
 
-        stream = input_stream[0]
+        snapshot_fea_dfs = []
 
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
+        df = x.df
 
-            def on_next(x: AppShieldMessageMeta):
+        # Type cast CommitCharge.
+        df["CommitCharge"] = df["CommitCharge"].astype("float").astype("Int32")
+        df["Name"] = df["Name"].str.lower()
 
-                snapshot_fea_dfs = []
+        # Create PID_Process feature.
+        df['PID_Process'] = df.PID + '_' + df.Process
 
-                df = x.df
+        snapshot_ids = df.snapshot_id.unique()
 
-                # Type cast CommitCharge.
-                df["CommitCharge"] = df["CommitCharge"].astype("float").astype("Int32")
-                df["Name"] = df["Name"].str.lower()
+        if len(snapshot_ids) > 1:
+            # Group snapshot rows using snapshot id.
+            all_dfs = [df[df.snapshot_id == snapshot_id] for snapshot_id in snapshot_ids]
+        else:
+            all_dfs = [df]
 
-                # Create PID_Process feature.
-                df['PID_Process'] = df.PID + '_' + df.Process
+        extract_func = self._fe.extract_features
+        combine_func = FeatureExtractor.combine_features
 
-                snapshot_ids = df.snapshot_id.unique()
+        # Schedule dask task `extract_features` per snapshot.
+        snapshot_fea_dfs = self._client.map(extract_func, all_dfs, feas_all_zeros=self._feas_all_zeros)
 
-                if len(snapshot_ids) > 1:
-                    # Group snapshot rows using snapshot id.
-                    all_dfs = [df[df.snapshot_id == snapshot_id] for snapshot_id in snapshot_ids]
-                else:
-                    all_dfs = [df]
+        # Combined `extract_features` results.
+        features_df = self._client.submit(combine_func, snapshot_fea_dfs)
 
-                extract_func = self._fe.extract_features
-                combine_func = FeatureExtractor.combine_features
+        # Gather features from all the snapshots.
+        features_df = features_df.result()
 
-                # Schedule dask task `extract_features` per snapshot.
-                snapshot_fea_dfs = self._client.map(extract_func, all_dfs, feas_all_zeros=self._feas_all_zeros)
+        # Snapshot sequence will be generated using `source_pid_process`.
+        # Determines which source generated the snapshot messages.
+        # There's a chance of receiving the same snapshots names from multiple sources(hosts)
+        features_df['source_pid_process'] = x.source + '_' + features_df.pid_process
 
-                # Combined `extract_features` results.
-                features_df = self._client.submit(combine_func, snapshot_fea_dfs)
+        # Sort entries by pid_process and snapshot_id
+        features_df = features_df.sort_values(by=["pid_process", "snapshot_id"]).reset_index(drop=True)
 
-                # Gather features from all the snapshots.
-                features_df = features_df.result()
+        # Create AppShieldMessageMeta with extracted features information.
+        meta = AppShieldMessageMeta(features_df, x.source)
 
-                # Snapshot sequence will be generated using `source_pid_process`.
-                # Determines which source generated the snapshot messages.
-                # There's a chance of receiving the same snapshots names from multiple sources(hosts)
-                features_df['source_pid_process'] = x.source + '_' + features_df.pid_process
+        return meta
 
-                # Sort entries by pid_process and snapshot_id
-                features_df = features_df.sort_values(by=["pid_process", "snapshot_id"]).reset_index(drop=True)
+    def create_multi_messages(self, x: AppShieldMessageMeta) -> typing.List[MultiMessage]:
 
-                # Create AppShieldMessageMeta with extracted features information.
-                meta = AppShieldMessageMeta(features_df, x.source)
+        multi_messages = []
 
-                return meta
+        df = x.df
 
-            def create_multi_messages(x: MessageMeta) -> typing.List[MultiMessage]:
+        pid_processes = df.pid_process.unique()
 
-                multi_messages = []
+        # Create multi messaage per pid_process, this assumes that the DF has been sorted by the `pid_process` column
+        for pid_process in pid_processes:
 
-                df = x.df
+            pid_process_index = df[df.pid_process == pid_process].index
 
-                pid_processes = df.pid_process.unique()
+            start = pid_process_index.min()
+            stop = pid_process_index.max() + 1
+            mess_count = stop - start
 
-                # Create multi messaage per pid_process
-                for pid_process in pid_processes:
+            multi_message = MultiMessage(meta=x, mess_offset=start, mess_count=mess_count)
+            multi_messages.append(multi_message)
 
-                    pid_process_index = df[df.pid_process == pid_process].index
+        return multi_messages
 
-                    start = pid_process_index.min()
-                    stop = pid_process_index.max() + 1
-                    mess_count = stop - start
+    def on_completed(self):
+        # Close dask client when pipeline initiates shutdown
+        self._client.close()
 
-                    multi_message = MultiMessage(meta=x, mess_offset=start, mess_count=mess_count)
-                    multi_messages.append(multi_message)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name,
+                                 ops.map(self.on_next),
+                                 ops.map(self.create_multi_messages),
+                                 ops.on_completed(self.on_completed),
+                                 ops.flatten())
+        builder.make_edge(input_node, node)
 
-                return multi_messages
-
-            def on_completed():
-                # Close dask client when pipeline initiates shutdown
-                self._client.close()
-
-            input.pipe(ops.map(on_next), ops.map(create_multi_messages), ops.on_completed(on_completed),
-                       ops.flatten()).subscribe(output)
-
-        node = builder.make_node_full(self.unique_name, node_fn)
-        builder.make_edge(stream, node)
-        stream = node
-
-        return stream, MultiMessage
+        return node

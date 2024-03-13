@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,13 +29,49 @@ rm -rf ${MORPHEUS_ROOT}/build
 # Restart the build
 ./scripts/compile.sh
 ```
+
+**Incompatible MLflow Models**
+
+Models trained with a previous version of Morpheus and stored into MLflow may be incompatible with the current version. This error can be identified by the following error message occurring in an MLflow based pipeline such as DFP.
+
+```
+Error trying to get model
+
+Traceback (most recent call last):
+
+File "/workspace/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py", line 101, in on_data
+
+loaded_model = model_cache.load_model(self._client)
+```
+```
+ModuleNotFoundError: No module named 'dfencoder'
+```
+
+The work arounds available for this issue are:
+
+* Revert to the previous version of Morpheus until the models can be re-trained.
+* Re-train the model using the current version of Morpheus
+
+In the case of models trained by the DFP example, the existing models can be deleted by running the following command:
+
+```bash
+docker volume ls # list current docker volumes
+docker volume rm production_db_data production_mlflow_data
+
+# Re-build the MLflow container for DFP
+cd ${MORPHEUS_ROOT}/examples/digital_fingerprinting/production/
+docker compose build
+docker compose up mlflow
+```
+
+
 **Debugging Python Code**
 
-To debug issues in python code, several Visual Studio Code launch configurations have been included in the repo. These launch configurations can be found in `${MORPHEUS_ROOT}/morpheus.code-workspace`. To launch the debugging environment, ensure that Visual Studio Code has opened the morpheus workspace file (File->Open Workspace from File...). Once the workspace has been loaded, the launch configurations should be available in the debugging tab.
+To debug issues in python code, several Visual Studio Code launch configurations have been included in the repo. These launch configurations can be found in `${MORPHEUS_ROOT}/morpheus.code-workspace`. To launch the debugging environment, ensure Visual Studio Code has opened the morpheus workspace file (File->Open Workspace from File...). Once the workspace has been loaded, the launch configurations should be available in the debugging tab.
 
 **Debugging C++ Code**
 
-Similar to the Python launch configurations, several C++ launch configurations can be found in the Visual Studio Code workspace file. However, unlike the Python configuration, it's necessary to ensure morpheus was compiled in Debug mode in order for breakpoints to work correctly. To build Morpheus in Debug mode, use the following:
+Similar to the Python launch configurations, several C++ launch configurations can be found in the Visual Studio Code workspace file. However, unlike the Python configuration, it's necessary to ensure Morpheus was compiled in Debug mode in order for breakpoints to work correctly. To build Morpheus in Debug mode, use the following:
 
 ```bash
 CMAKE_CONFIGURE_EXTRA_ARGS="-DCMAKE_BUILD_TYPE=Debug" ./scripts/compile.sh

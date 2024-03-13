@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import typing
 import numpy as np
 import pandas as pd
 
-from morpheus._lib.file_types import FileTypes
-from morpheus._lib.file_types import determine_file_type
 from morpheus.cli import register_stage
+from morpheus.common import FileTypes
+from morpheus.common import determine_file_type
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.stages.input.autoencoder_source_stage import AutoencoderSourceStage
@@ -64,7 +64,7 @@ class CloudTrailSourceStage(AutoencoderSourceStage):
         ----------
         filename : str
             Path to a file to read.
-        file_type : `morpheus._lib.file_types.FileTypes`
+        file_type : `morpheus.common.FileTypes`
             What type of file to read. Leave as Auto to auto detect based on the file extension.
 
         Returns
@@ -93,6 +93,22 @@ class CloudTrailSourceStage(AutoencoderSourceStage):
 
     @staticmethod
     def cleanup_df(df: pd.DataFrame, feature_columns: typing.List[str]):
+        """
+        This function does clean up certain columns in the dataframe.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe for columns cleanup.
+        feature_columns : typing.List[str]
+            Only the columns that are present in the feature columns will be preserved in the dataframe
+            if feature columns are supplied..
+
+        Returns
+        -------
+        df : typing.List[pd.DataFrame]
+            Clean dataframe.
+        """
 
         # Replace all the dots in column names
         df.columns = df.columns.str.replace('.', '', regex=False)
@@ -100,11 +116,7 @@ class CloudTrailSourceStage(AutoencoderSourceStage):
         df["event_dt"] = pd.to_datetime(df["eventTime"])
 
         def remove_null(x):
-            """
-            Util function that cleans up data.
-            :param x:
-            :return:
-            """
+
             if isinstance(x, list):
                 if isinstance(x[0], dict):
                     key = list(x[0].keys())
@@ -112,11 +124,7 @@ class CloudTrailSourceStage(AutoencoderSourceStage):
             return x
 
         def clean_column(cloudtrail_df):
-            """
-            Clean a certain column based on lists inside.
-            :param cloudtrail_df:
-            :return:
-            """
+
             col_name = 'requestParametersownersSetitems'
             if (col_name in cloudtrail_df):
                 cloudtrail_df[col_name] = cloudtrail_df[col_name].apply(lambda x: remove_null(x))
@@ -143,6 +151,28 @@ class CloudTrailSourceStage(AutoencoderSourceStage):
                               feature_columns: typing.List[str],
                               userid_filter: str = None,
                               repeat_count: int = 1) -> typing.Dict[str, pd.DataFrame]:
+        """
+        After loading the input batch of CloudTrail logs into a dataframe, this method builds a dataframe
+        for each set of userid rows in accordance with the specified filter condition.
+
+        Parameters
+        ----------
+        x : typing.List[str]
+            List of messages.
+        userid_column_name : str
+            Name of the column used for categorization.
+        feature_columns : typing.List[str]
+            Feature column names.
+        userid_filter : str
+            Only rows with the supplied userid are filtered.
+        repeat_count : str
+            Number of times the given rows should be repeated.
+
+        Returns
+        -------
+        df_per_user  : typing.Dict[str, pd.DataFrame]
+            Dataframe per userid.
+        """
 
         # Using pandas to parse nested JSON until cuDF adds support
         # https://github.com/rapidsai/cudf/issues/8827

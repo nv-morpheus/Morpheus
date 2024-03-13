@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include "morpheus/utilities/type_util.hpp"
+#include "morpheus/objects/dtype.hpp"  // for DType
+#include "morpheus/types.hpp"          // fpr ShapeType
 
 #include <string>
 #include <vector>
@@ -41,7 +42,7 @@ struct TritonInOut
     std::string name;
     size_t bytes;
     DType datatype;
-    std::vector<int> shape;
+    ShapeType shape;
     std::string mapped_name;
     size_t offset;
 };

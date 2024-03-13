@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,6 +44,7 @@ class DataClassProp:
         self.fget = fget
         self.fset = fset
         self.fdel = fdel
+        self.name = None
         if doc is None and fget is not None:
             doc = fget.__doc__
         self.__doc__ = doc

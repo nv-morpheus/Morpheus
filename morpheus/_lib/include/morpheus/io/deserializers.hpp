@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,10 +17,14 @@
 
 #pragma once
 
-#include <cudf/io/json.hpp>
-#include <cudf/io/types.hpp>
+#include "morpheus/objects/file_types.hpp"  // for FileTypes
 
+#include <cudf/io/types.hpp>
+#include <pybind11/pytypes.h>  // for pybind11::object
+
+#include <optional>
 #include <string>
+#include <vector>
 
 namespace morpheus {
 #pragma GCC visibility push(default)
@@ -31,21 +35,31 @@ namespace morpheus {
  */
 
 /**
+ * @brief Get the column names from table object. Looks at both column_names as well as schema_info and returns the
+ * correct one.
+ *
+ * @param table The table to pull the columns from
+ * @return std::vector<std::string>
+ */
+std::vector<std::string> get_column_names_from_table(const cudf::io::table_with_metadata& table);
+
+/**
  * @brief Loads a cudf table from either CSV or JSON file
  *
  * @param filename : Name of the file that should be loaded into a table
  * @return cudf::io::table_with_metadata
  */
-cudf::io::table_with_metadata load_table_from_file(const std::string& filename);
+cudf::io::table_with_metadata load_table_from_file(const std::string& filename,
+                                                   FileTypes file_type            = FileTypes::Auto,
+                                                   std::optional<bool> json_lines = std::nullopt);
 
 /**
- * @brief Loads a cudf table from a JSON source, replacing any escape characters in the source data that cudf can't
- * handle
+ * @brief Returns the number of index columns in `data_table`, in practice this will be a `0` or `1`
  *
- * @param json_options : JSON file reader options
- * @return cudf::io::table_with_metadata
+ * @param data_table : Table which contains the data and it's metadata
+ * @return int
  */
-cudf::io::table_with_metadata load_json_table(cudf::io::json_reader_options&& json_options);
+int get_index_col_count(const cudf::io::table_with_metadata& data_table);
 
 /**
  * @brief Returns the number of index columns in `data_table`, in practice this will be a `0` or `1`
@@ -54,7 +68,15 @@ cudf::io::table_with_metadata load_json_table(cudf::io::json_reader_options&& js
  * @param data_table : Table which contains the data and it's metadata
  * @return int
  */
-int get_index_col_count(cudf::io::table_with_metadata& data_table);
+int prepare_df_index(cudf::io::table_with_metadata& data_table);
+
+/**
+ * @brief Loads a cudf table from either CSV or JSON file returning the DataFrame as a Python object
+ *
+ * @param filename : Name of the file that should be loaded into a table
+ * @return pybind11::object
+ */
+pybind11::object read_file_to_df(const std::string& filename, FileTypes file_type = FileTypes::Auto);
 
 #pragma GCC visibility pop
 /** @} */  // end of group

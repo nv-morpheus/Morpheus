@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +15,16 @@
 
 import typing
 
-import srf
+import mrc
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("pass-thru")
-class PassThruStage(SinglePortStage):
+class PassThruStage(PassThruTypeMixin, SinglePortStage):
     """
     A Simple Pass Through Stage
     """
@@ -32,18 +33,18 @@ class PassThruStage(SinglePortStage):
     def name(self) -> str:
         return "pass-thru"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         return (typing.Any, )
 
     def supports_cpp_node(self) -> bool:
         return False
 
-    def on_data(self, message: typing.Any):
+    def on_data(self, message: typing.Any) -> typing.Any:
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self.on_data)
-        builder.make_edge(input_stream[0], node)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node

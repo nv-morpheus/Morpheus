@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,15 @@
 
 import typing
 
-import srf
+import mrc
+from mrc.core import operators as ops
 
 from morpheus.config import Config
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
-class WriteToS3Stage(SinglePortStage):
+class WriteToS3Stage(PassThruTypeMixin, SinglePortStage):
     """
     This class writes messages to an s3 bucket.
 
@@ -58,13 +59,8 @@ class WriteToS3Stage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self._s3_writer))
+        builder.make_edge(input_node, node)
 
-        node = builder.make_node(self.unique_name, self._s3_writer)
-        builder.make_edge(stream, node)
-
-        stream = node
-
-        # Return input unchanged to allow passthrough
-        return stream, input_stream[1]
+        return node

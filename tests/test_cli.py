@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,8 @@
 
 import os
 import shutil
+import warnings
+from unittest import mock
 
 import click
 import mlflow
@@ -24,7 +26,11 @@ from click.testing import CliRunner
 from mlflow.tracking import fluent
 
 import morpheus
+from _utils import TEST_DIRS
+from _utils.stages.conv_msg import ConvMsg
 from morpheus.cli import commands
+from morpheus.common import FileTypes
+from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
@@ -52,8 +58,7 @@ from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
-from utils import TEST_DIRS
-from utils import ConvMsg
+from morpheus.utils.file_utils import load_labels_file
 
 GENERAL_ARGS = ['run', '--num_threads=12', '--pipeline_batch_size=1024', '--model_max_batch_size=1024', '--use_cpp=0']
 MONITOR_ARGS = ['monitor', '--description', 'Unittest', '--smoothing=0.001', '--unit', 'inf']
@@ -77,6 +82,10 @@ KAFKA_BOOTS = ['--bootstrap_servers', 'kserv1:123,kserv2:321']
 FROM_KAFKA_ARGS = ['from-kafka', '--input_topic', 'test_topic'] + KAFKA_BOOTS
 TO_KAFKA_ARGS = ['to-kafka', '--output_topic', 'test_topic'] + KAFKA_BOOTS
 
+# Pylint doesn't understand how pytest fixtures work and flags fixture uasage as a redefinition of the symbol in the
+# outer scope.
+# pylint: disable=redefined-outer-name
+
 
 # Fixtures specific to the cli tests
 @pytest.fixture(scope="function")
@@ -87,7 +96,7 @@ def callback_values(request: pytest.FixtureRequest):
     without actually running it. When run the callback will update the
     `callback_values` dictionary with the context, pipeline & stages constructed.
     """
-    cv = {}
+    callback_values_ = {}
 
     marker = request.node.get_closest_marker("replace_callback")
     group_name = marker.args[0]
@@ -95,17 +104,17 @@ def callback_values(request: pytest.FixtureRequest):
 
     @group.result_callback(replace=True)
     @click.pass_context
-    def mock_post_callback(ctx, stages, *a, **k):
-        cv.update({'ctx': ctx, 'stages': stages, 'pipe': ctx.obj["pipeline"]})
+    def mock_post_callback(ctx, stages, *a, **k):  # pylint: disable=unused-argument
+        callback_values_.update({'ctx': ctx, 'stages': stages, 'pipe': ctx.obj["pipeline"]})
         ctx.exit(47)
 
-    return cv
+    return callback_values_
 
 
 @pytest.fixture(scope="function")
 def mlflow_uri(tmp_path):
     experiment_name = "Morpheus"
-    uri = "file://{}".format(tmp_path)
+    uri = f"file://{tmp_path}"
     mlflow.set_tracking_uri(uri)
     mlflow.create_experiment(experiment_name)
     experiment = mlflow.get_experiment_by_name(experiment_name)
@@ -121,17 +130,19 @@ def mlflow_uri(tmp_path):
         mlflow.end_run()
 
 
+@pytest.fixture(scope="function", autouse=True)
+def config_warning_fixture():
+    # morpheus.cli.utils._apply_to_config method will warn about any keyword arguments that don't match a config option
+    # this isn't triggered in normal production code, but is triggered in the cli tests.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="No config option matches for.*", category=UserWarning)
+        yield
+
+
 @pytest.mark.reload_modules(commands)
-@pytest.mark.usefixtures("reload_modules")
+@pytest.mark.usefixtures("chdir_tmpdir", "reload_modules")
 @pytest.mark.use_python
 class TestCLI:
-
-    def _read_data_file(self, data_file):
-        """
-        Used to read in labels and columns files
-        """
-        with open(data_file) as fh:
-            return [line.strip() for line in fh]
 
     def test_help(self):
         runner = CliRunner()
@@ -157,7 +168,24 @@ class TestCLI:
                                env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
+    @pytest.mark.usefixtures("restore_environ")
+    @pytest.mark.parametrize('use_environ', [True, False])
+    @pytest.mark.parametrize('value', [1, 13, 33])
+    @mock.patch('morpheus.utils.seed.manual_seed')
+    def test_manual_seed(self, mock_manual_seed: mock.MagicMock, value: int, use_environ: bool):
+        flags = ['run']
+        if use_environ:
+            os.environ['MORPHEUS_MANUAL_SEED'] = str(value)
+        else:
+            flags.append(f'--manual_seed={value}')
+
+        flags.append('pipeline-other')
+
+        runner = CliRunner()
+        result = runner.invoke(commands.cli, flags)
+        assert result.exit_code == 0, result.output
+        mock_manual_seed.assert_called_once_with(value)
+
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae(self, config, callback_values):
         """
@@ -202,7 +230,7 @@ class TestCLI:
         config.ae.userid_column_name = "user_col"
         config.ae.userid_filter = "user321"
 
-        expected_columns = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
+        expected_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
         assert config.ae.feature_columns == expected_columns
 
         pipe = callback_values['pipe']
@@ -230,13 +258,11 @@ class TestCLI:
         assert time_series._hot_start
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -247,10 +273,10 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_ae')
-    def test_pipeline_ae_all(self, config, callback_values, tmp_path):
+    def test_pipeline_ae_all(self, callback_values):
         """
         Attempt to add all possible stages to the pipeline_ae, even if the pipeline doesn't
         actually make sense, just test that cli could assemble it
@@ -272,8 +298,8 @@ class TestCLI:
             'preprocess',
             'inf-pytorch',
             'add-scores'
-        ] + INF_TRITON_ARGS + ['timeseries', '--resolution=1m', '--zscore_threshold=8.0', '--hot_start'] +
-                MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
+        ] + ['timeseries', '--resolution=1m', '--zscore_threshold=8.0', '--hot_start'] + MONITOR_ARGS + VALIDATE_ARGS +
+                ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
 
         runner = CliRunner()
         result = runner.invoke(commands.cli, args)
@@ -291,7 +317,6 @@ class TestCLI:
             process_ae,
             auto_enc,
             add_scores,
-            triton_inf,
             time_series,
             monitor,
             validation,
@@ -315,24 +340,17 @@ class TestCLI:
         assert isinstance(auto_enc, AutoEncoderInferenceStage)
         assert isinstance(add_scores, AddScoresStage)
 
-        assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
-
         assert isinstance(time_series, TimeSeriesStage)
         assert time_series._resolution == '1m'
         assert time_series._zscore_threshold == 8.0
         assert time_series._hot_start
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -343,20 +361,20 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
         assert to_kafka._output_topic == 'test_topic'
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_fil')
-    def test_pipeline_fil(self, config, callback_values, tmp_path):
+    def test_pipeline_fil(self, config, callback_values):
         """
         Creates a pipeline roughly matching that of the abp validation test
         """
-        args = (GENERAL_ARGS + ['pipeline-fil'] + FILE_SRC_ARGS + ['deserialize', 'preprocess'] + INF_TRITON_ARGS +
-                MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
+        args = (GENERAL_ARGS + ['pipeline-fil', '--columns_file=data/columns_fil.txt'] + FILE_SRC_ARGS +
+                ['deserialize', 'preprocess'] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS +
+                ['serialize'] + TO_FILE_ARGS)
 
         obj = {}
         runner = CliRunner()
@@ -368,7 +386,7 @@ class TestCLI:
         assert config.mode == PipelineModes.FIL
         assert config.class_labels == ["mining"]
 
-        expected_columns = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
+        expected_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
         assert config.fil.feature_columns == expected_columns
 
         assert config.ae is None
@@ -393,15 +411,13 @@ class TestCLI:
         assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -411,7 +427,7 @@ class TestCLI:
 
         assert isinstance(serialize, SerializeStage)
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_fil')
     def test_pipeline_fil_all(self, config, callback_values, tmp_path, mlflow_uri):
@@ -420,30 +436,31 @@ class TestCLI:
         actually make sense, just test that cli could assemble it
         """
         tmp_model = os.path.join(tmp_path, 'fake-model.file')
-        with open(tmp_model, 'w') as fh:
+        with open(tmp_model, 'w', encoding='UTF-8') as fh:
             pass
 
         labels_file = os.path.join(tmp_path, 'labels.txt')
-        with open(labels_file, 'w') as fh:
+        with open(labels_file, 'w', encoding='UTF-8') as fh:
             fh.writelines(['frogs\n', 'lizards\n', 'toads'])
 
-        args = (GENERAL_ARGS + ['pipeline-fil', '--labels_file', labels_file] + FILE_SRC_ARGS + FROM_KAFKA_ARGS + [
-            'deserialize',
-            'filter',
-            'dropna',
-            '--column',
-            'xyz',
-            'preprocess',
-            'add-scores',
-            'unittest-conv-msg',
-            'inf-identity',
-            'inf-pytorch',
-            '--model_filename',
-            tmp_model,
-            'mlflow-drift',
-            '--tracking_uri',
-            mlflow_uri
-        ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS +
+        args = (GENERAL_ARGS + ['pipeline-fil', '--labels_file', labels_file, '--columns_file=data/columns_fil.txt'] +
+                FILE_SRC_ARGS + FROM_KAFKA_ARGS + [
+                    'deserialize',
+                    'filter',
+                    'dropna',
+                    '--column',
+                    'xyz',
+                    'preprocess',
+                    'add-scores',
+                    'unittest-conv-msg',
+                    'inf-identity',
+                    'inf-pytorch',
+                    '--model_filename',
+                    tmp_model,
+                    'mlflow-drift',
+                    '--tracking_uri',
+                    mlflow_uri
+                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS +
                 TO_KAFKA_ARGS)
 
         obj = {}
@@ -491,7 +508,7 @@ class TestCLI:
 
         assert isinstance(from_kafka, KafkaSourceStage)
         assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
-        assert from_kafka._topic == 'test_topic'
+        assert from_kafka._topics == ['test_topic']
 
         assert isinstance(deserialize, DeserializeStage)
         assert isinstance(filter_stage, FilterDetectionsStage)
@@ -517,15 +534,13 @@ class TestCLI:
         assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -536,14 +551,149 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
+
+        assert isinstance(to_kafka, WriteToKafkaStage)
+        assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
+        assert to_kafka._output_topic == 'test_topic'
+
+    @pytest.mark.replace_callback('pipeline_other')
+    def test_enum_parsing(self, config, callback_values, tmp_path, mlflow_uri):
+        """
+        Test parsing of CLI flags for C++ enum values issue #675
+        """
+        tmp_model = os.path.join(tmp_path, 'fake-model.file')
+        with open(tmp_model, 'w', encoding='UTF-8'):
+            pass
+
+        labels_file = os.path.join(tmp_path, 'labels.txt')
+        with open(labels_file, 'w', encoding='UTF-8') as fh:
+            fh.writelines(['frogs\n', 'lizards\n', 'toads'])
+
+        file_src_args = FILE_SRC_ARGS[:]
+        file_src_args.append('--file_type=json')
+
+        from_kafka_args = FROM_KAFKA_ARGS[:]
+        from_kafka_args.append('--auto_offset_reset=earliest')
+
+        to_file_args = TO_FILE_ARGS[:]
+        to_file_args.append('--file_type=csv')
+
+        args = (GENERAL_ARGS + ['pipeline-other', '--labels_file', labels_file] + file_src_args + from_kafka_args + [
+            'deserialize',
+            'filter',
+            '--filter_source=tensor',
+            'dropna',
+            '--column',
+            'xyz',
+            'add-scores',
+            'unittest-conv-msg',
+            'inf-identity',
+            'inf-pytorch',
+            '--model_filename',
+            tmp_model,
+            'mlflow-drift',
+            '--tracking_uri',
+            mlflow_uri
+        ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + to_file_args +
+                TO_KAFKA_ARGS)
+
+        obj = {}
+        runner = CliRunner()
+        result = runner.invoke(commands.cli, args, obj=obj)
+        assert result.exit_code == 47, result.output
+
+        # Ensure our config is populated correctly
+
+        config = obj["config"]
+        assert config.mode == PipelineModes.OTHER
+
+        assert config.ae is None
+
+        pipe = callback_values['pipe']
+        assert pipe is not None
+
+        stages = callback_values['stages']
+        # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
+        [
+            file_source,
+            from_kafka,
+            deserialize,
+            filter_stage,
+            dropna,
+            add_scores,
+            conv_msg,
+            inf_ident,
+            inf_pytorch,
+            mlflow_drift,
+            triton_inf,
+            monitor,
+            add_class,
+            validation,
+            serialize,
+            to_file,
+            to_kafka
+        ] = stages
+
+        assert isinstance(file_source, FileSourceStage)
+        assert file_source._filename == os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
+        assert not file_source._iterative
+        assert file_source._file_type == FileTypes.JSON
+
+        assert isinstance(from_kafka, KafkaSourceStage)
+        assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
+        assert from_kafka._topics == ['test_topic']
+        assert from_kafka._consumer_params['auto.offset.reset'] == 'earliest'
+
+        assert isinstance(deserialize, DeserializeStage)
+        assert isinstance(filter_stage, FilterDetectionsStage)
+        assert filter_stage._controller._filter_source == FilterSource.TENSOR
+
+        assert isinstance(dropna, DropNullStage)
+        assert dropna._column == 'xyz'
+
+        assert isinstance(add_scores, AddScoresStage)
+        assert isinstance(conv_msg, ConvMsg)
+        assert isinstance(inf_ident, IdentityInferenceStage)
+
+        assert isinstance(inf_pytorch, PyTorchInferenceStage)
+        assert inf_pytorch._model_filename == tmp_model
+
+        assert isinstance(mlflow_drift, MLFlowDriftStage)
+        assert mlflow_drift._tracking_uri == mlflow_uri
+
+        assert isinstance(triton_inf, TritonInferenceStage)
+        assert triton_inf._kwargs['model_name'] == 'test-model'
+        assert triton_inf._kwargs['server_url'] == 'test:123'
+        assert triton_inf._kwargs['force_convert_inputs']
+
+        assert isinstance(monitor, MonitorStage)
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
+
+        assert isinstance(add_class, AddClassificationsStage)
+
+        assert isinstance(validation, ValidationStage)
+        assert validation._results_file_name == 'results.json'
+        assert validation._index_col == '_index_'
+
+        # Click appears to be converting this into a tuple
+        assert list(validation._exclude_columns) == ['event_dt']
+        assert validation._rel_tol == 0.1
+
+        assert isinstance(serialize, SerializeStage)
+
+        assert isinstance(to_file, WriteToFileStage)
+        assert to_file._controller._output_file == 'out.csv'
+        assert to_file._controller._file_type == FileTypes.CSV
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
         assert to_kafka._output_topic == 'test_topic'
 
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_nlp(self, config, callback_values, tmp_path):
+    def test_pipeline_nlp(self, config, callback_values):
         """
         Build a pipeline roughly ressembles the phishing validation script
         """
@@ -558,8 +708,8 @@ class TestCLI:
                     '--truncation=True',
                     '--do_lower_case=True',
                     '--add_special_tokens=False'
-                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=pred', '--threshold=0.7'] + VALIDATE_ARGS +
-                ['serialize'] + TO_FILE_ARGS)
+                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=is_phishing', '--threshold=0.7'] +
+                VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
 
         obj = {}
         runner = CliRunner()
@@ -569,7 +719,7 @@ class TestCLI:
         # Ensure our config is populated correctly
         config = obj["config"]
         assert config.mode == PipelineModes.NLP
-        assert config.class_labels == ["score", "pred"]
+        assert config.class_labels == ["not_phishing", "is_phishing"]
         assert config.feature_length == 128
 
         assert config.ae is None
@@ -588,7 +738,7 @@ class TestCLI:
         assert isinstance(deserialize, DeserializeStage)
 
         assert isinstance(process_nlp, PreprocessNLPStage)
-        assert process_nlp._vocab_hash_file == vocab_file_name
+        assert process_nlp._vocab_hash_file == os.path.realpath(vocab_file_name)
         assert process_nlp._truncation
         assert process_nlp._do_lower_case
         assert not process_nlp._add_special_tokens
@@ -599,17 +749,15 @@ class TestCLI:
         assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
-        assert add_class._labels == ('pred', )
+        assert add_class._labels == ('is_phishing', )
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -620,7 +768,7 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_nlp')
     def test_pipeline_nlp_all(self, config, callback_values, tmp_path, mlflow_uri):
@@ -629,7 +777,7 @@ class TestCLI:
         actually make sense, just test that cli could assemble it
         """
         tmp_model = os.path.join(tmp_path, 'fake-model.file')
-        with open(tmp_model, 'w'):
+        with open(tmp_model, 'w', encoding='UTF-8'):
             pass
 
         labels_file = os.path.join(TEST_DIRS.data_dir, 'labels_phishing.txt')
@@ -656,8 +804,8 @@ class TestCLI:
                     'mlflow-drift',
                     '--tracking_uri',
                     mlflow_uri
-                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=pred', '--threshold=0.7'] + VALIDATE_ARGS +
-                ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
+                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=is_phishing', '--threshold=0.7'] +
+                VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
 
         obj = {}
         runner = CliRunner()
@@ -667,7 +815,7 @@ class TestCLI:
         # Ensure our config is populated correctly
         config = obj["config"]
         assert config.mode == PipelineModes.NLP
-        assert config.class_labels == ["score", "pred"]
+        assert config.class_labels == ["not_phishing", "is_phishing"]
         assert config.feature_length == 128
 
         assert config.ae is None
@@ -704,7 +852,7 @@ class TestCLI:
 
         assert isinstance(from_kafka, KafkaSourceStage)
         assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
-        assert from_kafka._topic == 'test_topic'
+        assert from_kafka._topics == ['test_topic']
 
         assert isinstance(deserialize, DeserializeStage)
         assert isinstance(filter_stage, FilterDetectionsStage)
@@ -713,7 +861,7 @@ class TestCLI:
         assert dropna._column == 'xyz'
 
         assert isinstance(process_nlp, PreprocessNLPStage)
-        assert process_nlp._vocab_hash_file == vocab_file_name
+        assert process_nlp._vocab_hash_file == os.path.realpath(vocab_file_name)
         assert process_nlp._truncation
         assert process_nlp._do_lower_case
         assert not process_nlp._add_special_tokens
@@ -734,17 +882,15 @@ class TestCLI:
         assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
-        assert add_class._labels == ('pred', )
+        assert add_class._labels == ('is_phishing', )
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -754,14 +900,14 @@ class TestCLI:
 
         assert isinstance(serialize, SerializeStage)
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
         assert to_kafka._output_topic == 'test_topic'
 
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_alias(self, config, callback_values, tmp_path):
+    def test_pipeline_alias(self, config, callback_values):  # pylint: disable=unused-argument
         """
         Verify that pipeline implies pipeline-nlp
         """
@@ -776,9 +922,8 @@ class TestCLI:
         # Ensure our config is populated correctly
         assert config.mode == PipelineModes.NLP
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_nlp_relative_paths(self, config, callback_values, tmp_path):
+    def test_pipeline_nlp_relative_paths(self, config, callback_values):
         """
         Ensure that the default paths in the nlp pipeline are valid when run from outside the morpheus repo
         """
@@ -794,7 +939,7 @@ class TestCLI:
         result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
-        expected_labels = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'labels_nlp.txt'))
+        expected_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'labels_nlp.txt'))
 
         # Ensure our config is populated correctly
         config = obj["config"]
@@ -802,11 +947,11 @@ class TestCLI:
 
         stages = callback_values['stages']
         # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
+        # pylint: disable=unused-variable
         [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
 
-        assert process_nlp._vocab_hash_file == vocab_file_name
+        assert process_nlp._vocab_hash_file == os.path.realpath(vocab_file_name)
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_nlp')
     def test_pipeline_nlp_relative_path_precedence(self, config, callback_values, tmp_path):
         """
@@ -827,7 +972,7 @@ class TestCLI:
         test_labels = ["label1", "label2", "label3"]
 
         # Overwrite the copied labels
-        with open(labels_file_local, mode="w") as f:
+        with open(labels_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_labels))
 
         args = (GENERAL_ARGS + ['pipeline-nlp', f"--labels_file={labels_file}"] + FILE_SRC_ARGS +
@@ -845,13 +990,14 @@ class TestCLI:
 
         stages = callback_values['stages']
         # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
+        # pylint: disable=unused-variable
         [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
 
         assert process_nlp._vocab_hash_file == vocab_file_local
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
+    # pylint: disable=unused-argument
     @pytest.mark.replace_callback('pipeline_fil')
-    def test_pipeline_fil_relative_path_precedence(self, config: Config, callback_values, tmp_path):
+    def test_pipeline_fil_relative_path_precedence(self, config: Config, tmp_path: str, callback_values: dict):
         """
         Ensure that relative paths are choosen over the morpheus data directory paths
         """
@@ -868,14 +1014,14 @@ class TestCLI:
         test_labels = ["label1"]
 
         # Overwrite the copied labels
-        with open(labels_file_local, mode="w") as f:
+        with open(labels_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_labels))
 
         # Use different labels
-        test_columns = [f"column{i}" for i in range(29)]
+        test_columns = [f"column{i}" for i in range(18)]
 
         # Overwrite the copied labels
-        with open(columns_file_local, mode="w") as f:
+        with open(columns_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_columns))
 
         args = (GENERAL_ARGS + ['pipeline-fil', f"--labels_file={labels_file}", f"--columns_file={columns_file}"] +
@@ -893,9 +1039,9 @@ class TestCLI:
 
         assert config.fil.feature_columns == test_columns
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
+    # pylint: disable=unused-argument
     @pytest.mark.replace_callback('pipeline_ae')
-    def test_pipeline_ae_relative_path_precedence(self, config: Config, callback_values, tmp_path):
+    def test_pipeline_ae_relative_path_precedence(self, config: Config, tmp_path: str, callback_values: dict):
         """
         Ensure that relative paths are choosen over the morpheus data directory paths
         """
@@ -912,14 +1058,14 @@ class TestCLI:
         test_labels = ["label1"]
 
         # Overwrite the copied labels
-        with open(labels_file_local, mode="w") as f:
+        with open(labels_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_labels))
 
         # Use different labels
         test_columns = [f"column{i}" for i in range(33)]
 
         # Overwrite the copied labels
-        with open(columns_file_local, mode="w") as f:
+        with open(columns_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_columns))
 
         args = (GENERAL_ARGS + [

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
---- 
-file_extensions: 
+---
+file_extensions:
   - doc
   - docx
   - html
@@ -38,7 +38,7 @@ file_extensions:
   - 7z
   - rar
   - msg
-model_features: 
+model_features:
   - envirs_pathext
   - count_double_extension_count_handles
   - page_readonly_vads_count
@@ -138,8 +138,9 @@ model_features:
   - page_execute_readwrite_vads_count
   - handles_df_type_unique_ratio
   - page_execute_readwrite_count
+features:
   - ldrmodules_df_path
-raw_columns: 
+raw_columns:
   - Base
   - Block
   - CommitCharge

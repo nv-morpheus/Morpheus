@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,16 +12,16 @@
 # limitations under the License.
 
 # See the docstring in versioneer.py for instructions. Note that you must
-# re-run 'versioneer.py setup' after changing this section, and commit the
+# re-run 'versioneer setup' after changing this section, and commit the
 # resulting files.
 
 import versioneer
-from setuptools import find_packages
-from setuptools import setup
+from setuptools import find_packages  # noqa: E402
+from setuptools import setup  # noqa: E402
 
 setup(
     name="morpheus",
-    version=versioneer.get_version(),
+    version=versioneer.get_version(),  # pylint: disable=no-member
     description="Morpheus",
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -32,23 +32,16 @@ setup(
         "Topic :: System :: Networking :: Monitoring",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3 :: Only",
     ],
     author="NVIDIA Corporation",
     include_package_data=True,
-    packages=find_packages(include=["morpheus", "morpheus.*"], exclude=['tests']),
-    install_requires=[
-        # Only list the packages which cannot be installed via conda here. Should mach the requirements in
-        # docker/conda/environments/requirements.txt
-        "dfencoder @ git+https://github.com/nv-morpheus/dfencoder.git@branch-22.09#egg=dfencoder",
-        "torch==1.10.2+cu113",
-        "tritonclient[all]==2.17.*",  # Force to 2.17 since they require grpcio==1.41 for newer versions
-    ],
+    packages=find_packages(include=["morpheus*"], exclude=['tests']),
+    install_requires=[],
     license="Apache",
-    python_requires='>=3.8, <4',
-    cmdclass=versioneer.get_cmdclass(),
+    python_requires='>=3.10, <4',
+    cmdclass=versioneer.get_cmdclass(),  # pylint: disable=no-member
     entry_points='''
         [console_scripts]
         morpheus=morpheus.cli:run_cli

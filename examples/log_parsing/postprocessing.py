@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,18 +17,20 @@ import pathlib
 import typing
 from collections import defaultdict
 
+import mrc
 import numpy as np
 import pandas as pd
-import srf
+from mrc.core import operators as ops
 
-from messages import MultiPostprocLogParsingMessage
-from messages import MultiResponseLogParsingMessage
+import cudf
+
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 @register_stage("log-postprocess", modes=[PipelineModes.NLP])
@@ -53,11 +55,14 @@ class LogParsingPostProcessingStage(SinglePortStage):
         self._model_config_path = model_config_path
 
         self._vocab_lookup = {}
-        with open(vocab_path) as f:
+
+        # Explicitly setting the encoding, we know we have unicode chars in this file and we need to avoid issue:
+        # https://github.com/nv-morpheus/Morpheus/issues/859
+        with open(vocab_path, encoding='UTF-8') as f:
             for index, line in enumerate(f):
                 self._vocab_lookup[index] = line.split()[0]
 
-        with open(model_config_path) as f:
+        with open(model_config_path, encoding='UTF-8') as f:
             config = json.load(f)
 
         self._label_map = {int(k): v for k, v in config["id2label"].items()}
@@ -70,15 +75,18 @@ class LogParsingPostProcessingStage(SinglePortStage):
         return False
 
     def accepted_types(self) -> typing.Tuple:
-        return (MultiResponseLogParsingMessage, )
+        return (MultiResponseMessage, )
 
-    def _postprocess(self, x: MultiPostprocLogParsingMessage):
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
 
-        infer_pdf = pd.DataFrame(x.seq_ids.get()).astype(int)
+    def _postprocess(self, x: MultiResponseMessage):
+
+        infer_pdf = pd.DataFrame(x.get_tensor('seq_ids').get()).astype(int)
         infer_pdf.columns = ["doc", "start", "stop"]
-        infer_pdf["confidences"] = x.confidences.tolist()
-        infer_pdf["labels"] = x.labels.tolist()
-        infer_pdf["token_ids"] = x.input_ids.tolist()
+        infer_pdf["confidences"] = x.get_tensor('confidences').tolist()
+        infer_pdf["labels"] = x.get_tensor('labels').tolist()
+        infer_pdf["token_ids"] = x.get_tensor('input_ids').tolist()
 
         infer_pdf["confidences"] = infer_pdf.apply(lambda row: row["confidences"][row["start"]:row["stop"]], axis=1)
 
@@ -109,8 +117,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
 
         # decode cleanup
         parsed_df = self.__decode_cleanup(parsed_df)
-
-        return MessageMeta(df=parsed_df)
+        return MessageMeta(df=cudf.DataFrame.from_pandas(parsed_df))
 
     def __get_label_dicts(self, row):
         token_dict = defaultdict(str)
@@ -156,11 +163,11 @@ class LogParsingPostProcessingStage(SinglePortStage):
 
         return df
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Convert the messages to rows of strings
-        stream = builder.make_node(self.unique_name, self._postprocess)
+        node = builder.make_node(self.unique_name, ops.map(self._postprocess))
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
-        return stream, MessageMeta
+        return node

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,9 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "dep")
 
-set(RABBITMQ_VERSION "0.11.0" CACHE STRING "Version of RabbitMQ-C to use")
+rapids_find_package(CUDAToolkit REQUIRED)
+
+set(RABBITMQ_VERSION "0.12.0" CACHE STRING "Version of RabbitMQ-C to use")
 include(Configure_rabbitmq)
 
 set(SIMPLE_AMQP_CLIENT_VERSION "2.5.1" CACHE STRING "Version of SimpleAmqpClient to use")

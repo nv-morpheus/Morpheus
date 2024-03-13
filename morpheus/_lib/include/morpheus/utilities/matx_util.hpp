@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,11 +18,11 @@
 #pragma once
 
 #include "morpheus/objects/dev_mem_info.hpp"
+#include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"
+#include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 
-#include <cstddef>
 #include <memory>
 #include <vector>
 
@@ -43,7 +43,7 @@ struct MatxUtil
      * @param output_type
      * @return std::shared_ptr<rmm::device_buffer>
      */
-    static std::shared_ptr<rmm::device_buffer> cast(const DevMemInfo &input, TypeId output_type);
+    static std::shared_ptr<rmm::device_buffer> cast(const DevMemInfo& input, TypeId output_type);
 
     /**
      * @brief Builds a Nx3 segment ID matrix
@@ -51,9 +51,22 @@ struct MatxUtil
      * @param row_count
      * @param fea_len
      * @param output_type
+     * @param start_idx
      * @return std::shared_ptr<rmm::device_buffer>
      */
-    static std::shared_ptr<rmm::device_buffer> create_seg_ids(size_t row_count, size_t fea_len, TypeId output_type);
+    static std::shared_ptr<rmm::device_buffer> create_seq_ids(TensorIndex row_count,
+                                                              TensorIndex fea_len,
+                                                              TypeId output_type,
+                                                              std::shared_ptr<MemoryDescriptor> md,
+                                                              TensorIndex start_idx = 0);
+
+    /**
+     * @brief Adds a constant offset to a seg_ids tensor
+     *
+     * @param input
+     * @param offset
+     */
+    static void offset_seq_ids(const DevMemInfo& input, TensorIndex offset);
 
     /**
      * @brief Calculate logits on device_buffer
@@ -61,36 +74,26 @@ struct MatxUtil
      * @param input
      * @return std::shared_ptr<rmm::device_buffer>
      */
-    static std::shared_ptr<rmm::device_buffer> logits(const DevMemInfo &input);
+    static std::shared_ptr<rmm::device_buffer> logits(const DevMemInfo& input);
 
     /**
      * @brief Perform transpose
      *
      * @param input
-     * @param rows
-     * @param cols
      * @return std::shared_ptr<rmm::device_buffer>
      */
-    static std::shared_ptr<rmm::device_buffer> transpose(const DevMemInfo &input, size_t rows, size_t cols);
+    static std::shared_ptr<rmm::device_buffer> transpose(const DevMemInfo& input);
 
     /**
      * @brief Returns an array of boolean where x[i,j] >= thresh_val, when by_row is true an Nx1 array will be returned
      * with a true if any value in the row is above the threshold
      *
      * @param input
-     * @param rows
-     * @param cols
-     * @param stride
      * @param thresh_val
      * @param by_row
      * @return std::shared_ptr<rmm::device_buffer>
      */
-    static std::shared_ptr<rmm::device_buffer> threshold(const DevMemInfo &input,
-                                                         size_t rows,
-                                                         size_t cols,
-                                                         const std::vector<TensorIndex> &stride,
-                                                         double thresh_val,
-                                                         bool by_row);
+    static std::shared_ptr<rmm::device_buffer> threshold(const DevMemInfo& input, double thresh_val, bool by_row);
 
     /**
      * @brief Returns a buffer with `output_shape` containing the max value from values in `input` mapped according to
@@ -106,17 +109,13 @@ struct MatxUtil
      * @param input
      * @param seq_ids
      * @param seq_id_offset
-     * @param input_shape
-     * @param input_stride
      * @param output_shape
      * @return std::shared_ptr<rmm::device_buffer>
      */
-    static std::shared_ptr<rmm::device_buffer> reduce_max(const DevMemInfo &input,
-                                                          const std::vector<int32_t> &seq_ids,
-                                                          size_t seq_id_offset,
-                                                          const std::vector<int64_t> &input_shape,
-                                                          const std::vector<int64_t> &input_stride,
-                                                          const std::vector<int64_t> &output_shape);
+    static std::shared_ptr<rmm::device_buffer> reduce_max(const DevMemInfo& input,
+                                                          const ShapeType& seq_ids,
+                                                          TensorIndex seq_id_offset,
+                                                          const ShapeType& output_shape);
 };
 /** @} */  // end of group
 }  // namespace morpheus

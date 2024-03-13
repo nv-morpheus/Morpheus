@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import ResponseMemory
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages import TensorMemory
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -48,17 +47,18 @@ class _IdentityInferenceWorker(InferenceWorker):
     def calc_output_dims(self, x: MultiInferenceMessage) -> typing.Tuple:
         return (x.count, self._seq_length)
 
-    def process(self, batch: MultiInferenceMessage, cb: typing.Callable[[ResponseMemory], None]):
+    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
 
-        def tmp(b: MultiInferenceMessage, f):
+        def tmp(batch: MultiInferenceMessage, f):
 
-            f(ResponseMemoryProbs(
-                count=b.count,
-                probs=cp.zeros((b.count, self._seq_length), dtype=cp.float32),
-            ))
+            f(
+                TensorMemory(
+                    count=batch.count,
+                    tensors={'probs': cp.zeros((batch.count, self._seq_length), dtype=cp.float32)},
+                ))
 
         # Call directly instead of enqueing
-        tmp(batch, cb)
+        tmp(batch, callback)
 
 
 @register_stage("inf-identity", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])

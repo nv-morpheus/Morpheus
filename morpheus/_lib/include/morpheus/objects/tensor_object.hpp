@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,18 +17,19 @@
 
 #pragma once
 
+#include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/memory_descriptor.hpp"
+#include "morpheus/types.hpp"  // for RankType, ShapeType, TensorIndex, TensorSize
 #include "morpheus/utilities/string_util.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
 #include <glog/logging.h>  // for CHECK
+#include <mrc/cuda/common.hpp>
 #include <rmm/device_uvector.hpp>
-#include <srf/cuda/common.hpp>
 
 #include <algorithm>
 #include <array>
-#include <cstddef>  // for size_t, byte
-#include <cstdint>
+#include <cstdint>  // for uint8_t
 #include <functional>
 #include <memory>   // for shared_ptr
 #include <numeric>  // IWYU pragma: keep
@@ -50,27 +51,7 @@ namespace morpheus {
  * @file
  */
 
-using TensorIndex = long long;  // NOLINT
-using RankType    = int;        // NOLINT
-
 namespace detail {
-
-template <typename IterT>
-std::string join(IterT begin, IterT end, std::string const& separator)
-{
-    std::ostringstream result;
-    if (begin != end)
-        result << *begin++;
-    while (begin != end)
-        result << separator << *begin++;
-    return result.str();
-}
-
-template <typename IterT>
-std::string array_to_str(IterT begin, IterT end)
-{
-    return MORPHEUS_CONCAT_STR("[" << join(begin, end, ", ") << "]");
-}
 
 template <RankType R>
 void set_contiguous_stride(const std::array<TensorIndex, R>& shape, std::array<TensorIndex, R>& stride)
@@ -119,15 +100,15 @@ enum class TensorStorageType
 template <typename T>
 using DeviceContainer = rmm::device_uvector<T>;  // NOLINT(readability-identifier-naming)
 
-struct MemoryDescriptor
-{};
-
 struct ITensorStorage
 {
-    virtual ~ITensorStorage()  = default;
+    virtual ~ITensorStorage() = default;
+
     virtual void* data() const = 0;
+
     // virtual const void* data() const                             = 0;
-    virtual std::size_t bytes() const                            = 0;
+    virtual TensorSize bytes() const = 0;
+
     virtual std::shared_ptr<MemoryDescriptor> get_memory() const = 0;
     // virtual TensorStorageType storage_type() const               = 0;
 };
@@ -136,43 +117,47 @@ struct ITensor;
 
 struct ITensorOperations
 {
-    virtual std::shared_ptr<ITensor> slice(const std::vector<TensorIndex>& min_dims,
-                                           const std::vector<TensorIndex>& max_dims) const = 0;
+    virtual std::shared_ptr<ITensor> slice(const ShapeType& min_dims, const ShapeType& max_dims) const = 0;
 
-    virtual std::shared_ptr<ITensor> reshape(const std::vector<TensorIndex>& dims) const = 0;
+    virtual std::shared_ptr<ITensor> reshape(const ShapeType& dims) const = 0;
 
     virtual std::shared_ptr<ITensor> deep_copy() const = 0;
 
-    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
+    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<RangeType>& selected_rows,
                                                TensorIndex num_rows) const = 0;
 
-    virtual std::shared_ptr<ITensor> as_type(DataType dtype) const = 0;
+    virtual std::shared_ptr<ITensor> as_type(DType dtype) const = 0;
 };
 
 struct ITensor : public ITensorStorage, public ITensorOperations
 {
     ~ITensor() override = default;
 
-    virtual RankType rank() const     = 0;
-    virtual std::size_t count() const = 0;
-    virtual DataType dtype() const    = 0;
+    virtual RankType rank() const = 0;
 
-    virtual std::size_t shape(std::size_t) const  = 0;
-    virtual std::size_t stride(std::size_t) const = 0;
+    virtual TensorSize count() const = 0;
+
+    virtual DType dtype() const = 0;
+
+    virtual TensorIndex shape(TensorIndex) const = 0;
+
+    virtual TensorIndex stride(TensorIndex) const = 0;
+
+    virtual intptr_t stream() const = 0;
 
     virtual bool is_compact() const = 0;
 
-    std::vector<std::size_t> get_shape() const
+    ShapeType get_shape() const
     {
-        std::vector<std::size_t> v(this->rank());
+        ShapeType v(this->rank());
         for (int i = 0; i < this->rank(); ++i)
             v[i] = this->shape(i);
         return v;
     }
 
-    std::vector<std::size_t> get_stride() const
+    ShapeType get_stride() const
     {
-        std::vector<std::size_t> v(this->rank());
+        ShapeType v(this->rank());
         for (int i = 0; i < this->rank(); ++i)
             v[i] = this->stride(i);
         return v;
@@ -192,6 +177,7 @@ struct TensorObject final
       m_md(std::move(md)),
       m_tensor(std::move(tensor))
     {}
+
     TensorObject(std::shared_ptr<ITensor> tensor) : TensorObject(tensor->get_memory(), tensor) {}
 
     TensorObject(const TensorObject& other) = default;
@@ -208,16 +194,17 @@ struct TensorObject final
         return m_tensor->data();
     }
 
-    DataType dtype() const
+    DType dtype() const
     {
         return m_tensor->dtype();
     }
 
-    std::size_t count() const
+    TensorSize count() const
     {
         return m_tensor->count();
     }
-    std::size_t bytes() const
+
+    TensorSize bytes() const
     {
         return m_tensor->bytes();
     }
@@ -226,28 +213,35 @@ struct TensorObject final
     {
         return m_tensor->rank();
     }
-    std::size_t dtype_size() const
+
+    TensorSize dtype_size() const
     {
         return m_tensor->dtype().item_size();
     }
 
-    std::vector<std::size_t> get_shape() const
+    ShapeType get_shape() const
     {
         return m_tensor->get_shape();
     }
 
-    std::vector<std::size_t> get_stride() const
+    ShapeType get_stride() const
     {
         return m_tensor->get_stride();
     }
 
-    TensorIndex shape(std::uint32_t idx) const
+    TensorIndex shape(TensorIndex idx) const
     {
         return m_tensor->shape(idx);
     }
-    TensorIndex stride(std::uint32_t idx) const
+
+    TensorIndex stride(TensorIndex idx) const
     {
         return m_tensor->stride(idx);
+    }
+
+    intptr_t stream() const
+    {
+        return m_tensor->stream();
     }
 
     bool is_compact() const
@@ -255,7 +249,7 @@ struct TensorObject final
         return m_tensor->is_compact();
     }
 
-    TensorObject slice(std::vector<TensorIndex> min_dims, std::vector<TensorIndex> max_dims) const
+    TensorObject slice(ShapeType min_dims, ShapeType max_dims) const
     {
         // Replace any -1 values
         std::replace_if(
@@ -265,19 +259,19 @@ struct TensorObject final
                 return d < 0 ? s : d;
             });
 
-        return TensorObject(m_md, m_tensor->slice(min_dims, max_dims));
+        return {m_md, m_tensor->slice(min_dims, max_dims)};
     }
 
-    TensorObject reshape(const std::vector<TensorIndex>& dims) const
+    TensorObject reshape(const ShapeType& dims) const
     {
-        return TensorObject(m_md, m_tensor->reshape(dims));
+        return {m_md, m_tensor->reshape(dims)};
     }
 
     TensorObject deep_copy() const
     {
         std::shared_ptr<ITensor> copy = m_tensor->deep_copy();
 
-        return TensorObject(copy);
+        return {copy};
     }
 
     template <typename T = uint8_t>
@@ -289,12 +283,12 @@ struct TensorObject final
 
         out_data.resize(this->bytes() / sizeof(T));
 
-        SRF_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes(), cudaMemcpyDeviceToHost));
+        MRC_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes(), cudaMemcpyDeviceToHost));
 
         return out_data;
     }
 
-    template <typename T, size_t N>
+    template <typename T, RankType N>
     T read_element(const TensorIndex (&idx)[N]) const
     {
         auto stride = this->get_stride();
@@ -305,26 +299,26 @@ struct TensorObject final
         CHECK(std::transform_reduce(
             shape.begin(), shape.end(), std::begin(idx), 1, std::logical_and<>(), std::greater<>()))
             << "Index is outsize of the bounds of the tensor. Index="
-            << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
-            << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
+            << StringUtil::array_to_str(std::begin(idx), std::begin(idx) + N)
+            << ", Size=" << StringUtil::array_to_str(shape.begin(), shape.end()) << "";
 
-        CHECK(DataType::create<T>() == this->dtype())
-            << "read_element type must match array type. read_element type: '" << DataType::create<T>().name()
+        CHECK(DType::create<T>() == this->dtype())
+            << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
             << "', array type: '" << this->dtype().name() << "'";
 
-        size_t offset = std::transform_reduce(
-                            stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
-                        this->dtype_size();
+        auto offset = std::transform_reduce(
+                          stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
+                      this->dtype_size();
 
         T output;
 
-        SRF_CHECK_CUDA(
+        MRC_CHECK_CUDA(
             cudaMemcpy(&output, static_cast<uint8_t*>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
 
         return output;
     }
 
-    template <typename T, size_t N>
+    template <typename T, RankType N>
     T read_element(const std::array<TensorIndex, N> idx) const
     {
         auto stride = this->get_stride();
@@ -335,35 +329,56 @@ struct TensorObject final
         CHECK(
             std::transform_reduce(shape.begin(), shape.end(), std::begin(idx), 1, std::logical_and<>(), std::less<>()))
             << "Index is outsize of the bounds of the tensor. Index="
-            << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
-            << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
+            << StringUtil::array_to_str(std::begin(idx), std::begin(idx) + N)
+            << ", Size=" << StringUtil::array_to_str(shape.begin(), shape.end()) << "";
 
-        CHECK(DataType::create<T>() == this->dtype())
-            << "read_element type must match array type. read_element type: '" << DataType::create<T>().name()
+        CHECK(DType::create<T>() == this->dtype())
+            << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
             << "', array type: '" << this->dtype().name() << "'";
 
-        size_t offset = std::transform_reduce(
-                            stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
-                        this->dtype_size();
+        auto offset = std::transform_reduce(
+                          stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
+                      this->dtype_size();
 
         T output;
 
-        SRF_CHECK_CUDA(
+        MRC_CHECK_CUDA(
             cudaMemcpy(&output, static_cast<uint8_t*>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
 
         return output;
     }
 
-    // move assignment
-    TensorObject& operator=(TensorObject&& other) noexcept
+    /**
+     * @brief Explicitly swap the pointers to the underlying data with another tensor. Use inplace of the move operator
+     * since it's hard to determine when you want to perform a move vs copy the data.
+     *
+     * @return TensorObject&
+     */
+    TensorObject& swap(TensorObject&& other) noexcept
     {
         // Guard self assignment
         if (this == &other)
             return *this;
 
-        m_md     = std::exchange(other.m_md, nullptr);  // leave other in valid state
-        m_tensor = std::exchange(other.m_tensor, nullptr);
+        using std::swap;
+
+        swap(m_md, other.m_md);
+        swap(m_tensor, other.m_tensor);
+
         return *this;
+    }
+
+    /**
+     * @brief Swap this tensor with another. Only the pointers to the enderlying data are exchanged. No values are
+     * moved.
+     *
+     */
+    friend void swap(TensorObject& lhs, TensorObject& rhs) noexcept
+    {
+        using std::swap;
+
+        swap(lhs.m_md, rhs.m_md);
+        swap(lhs.m_tensor, rhs.m_tensor);
     }
 
     // copy assignment
@@ -372,6 +387,8 @@ struct TensorObject final
         // Guard self assignment
         if (this == &other)
             return *this;
+
+        CHECK(m_md && m_tensor) << "Cannot set an empty tensor. Use `std::swap(tensor1, tensor2)` instead.";
 
         // Check for valid assignment
         if (this->get_shape() != other.get_shape())
@@ -394,12 +411,12 @@ struct TensorObject final
         DCHECK(this->bytes() == other.bytes()) << "Left and right bytes should be the same if all other test passed";
 
         // Perform the copy operation
-        SRF_CHECK_CUDA(cudaMemcpy(this->data(), other.data(), this->bytes(), cudaMemcpyDeviceToDevice));
+        MRC_CHECK_CUDA(cudaMemcpy(this->data(), other.data(), this->bytes(), cudaMemcpyDeviceToDevice));
 
         return *this;
     }
 
-    std::shared_ptr<ITensor> get_tensor() const
+    [[maybe_unused]] std::shared_ptr<ITensor> get_tensor() const
     {
         return m_tensor;
     }
@@ -414,15 +431,15 @@ struct TensorObject final
         return m_tensor->dtype().type_str();
     }
 
-    TensorObject as_type(DataType dtype) const
+    TensorObject as_type(DType dtype) const
     {
         if (dtype == m_tensor->dtype())
         {
             // Shallow copy
-            return TensorObject(*this);
+            return {*this};
         }
 
-        return TensorObject(m_tensor->as_type(dtype));
+        return {m_tensor->as_type(dtype)};
     }
 
     /**
@@ -433,14 +450,13 @@ struct TensorObject final
      * @param num_rows
      * @return TensorObject
      */
-    TensorObject copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
-                           TensorIndex num_rows) const
+    TensorObject copy_rows(const std::vector<RangeType>& selected_rows, TensorIndex num_rows) const
     {
-        return TensorObject(m_tensor->copy_rows(selected_rows, num_rows));
+        return {m_tensor->copy_rows(selected_rows, num_rows)};
     }
 
   protected:
-    void throw_on_invalid_storage();
+    [[maybe_unused]] void throw_on_invalid_storage();
 
   private:
     std::shared_ptr<MemoryDescriptor> m_md;

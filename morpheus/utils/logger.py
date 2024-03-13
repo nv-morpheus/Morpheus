@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Logging utilities for Morpheus"""
 
 import json
 import logging
@@ -18,14 +19,21 @@ import logging.config
 import logging.handlers
 import multiprocessing
 import os
+from enum import Enum
 
 import appdirs
 import click
-import srf
+import mrc
 from tqdm import tqdm
+
+LogLevels = Enum('LogLevels', logging._nameToLevel)
 
 
 class TqdmLoggingHandler(logging.Handler):
+    """
+    Console log handler used by Morpheus, provides colorized output and sends
+    all logs at level ERROR and above to stderr, others to stdout.
+    """
 
     def __init__(self, level=logging.NOTSET):
         super().__init__(level)
@@ -34,6 +42,7 @@ class TqdmLoggingHandler(logging.Handler):
         self._stderr = click.get_text_stream('stderr')
 
     def emit(self, record: logging.LogRecord):
+        """Apply formatting and send output to stderr or stdout."""
         try:
             msg = self.format(record)
 
@@ -50,10 +59,11 @@ class TqdmLoggingHandler(logging.Handler):
         # See issue 36272 https://bugs.python.org/issue36272
         except (KeyboardInterrupt, SystemExit, RecursionError):  # noqa
             raise
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             self.handleError(record)
 
     def _determine_color(self, levelno: int):
+        # pylint: disable=no-else-return
         if (levelno >= logging.CRITICAL):
             return {"fg": "red", "bold": True}
         elif (levelno >= logging.ERROR):
@@ -71,13 +81,13 @@ def _configure_from_log_file(log_config_file: str):
 
     ext = os.path.splitext(log_config_file)[1].lower()
 
-    if (ext == "json"):
+    if (ext == ".json"):
 
         dict_config: dict = None
 
         # Try and load from dict
-        with open(log_config_file, "r") as fp:
-            dict_config = json.load(fp)
+        with open(log_config_file, "r", encoding='UTF-8') as fh:
+            dict_config = json.load(fh)
 
         logging.config.dictConfig(dict_config)
     else:
@@ -85,13 +95,14 @@ def _configure_from_log_file(log_config_file: str):
         logging.config.fileConfig(log_config_file)
 
 
-def _configure_from_log_level(log_level: int):
+def _configure_from_log_level(*extra_handlers: logging.Handler, log_level: int):
     """
     Default config with only option being the logging level. Outputs to both the console and a file. Sets up a logging
     producer/consumer that works well in multi-thread/process environments.
 
     Parameters
     ----------
+    *extra_handlers: List of additional handlers which will handle entries placed on the queue
     log_level : int
         Log level and above to report
     """
@@ -101,51 +112,56 @@ def _configure_from_log_level(log_level: int):
     # Get the root Morpheus logger
     morpheus_logger = logging.getLogger("morpheus")
 
-    # Set the level here
-    set_log_level(log_level=log_level)
+    # Prevent reconfiguration if called again
+    if (not getattr(morpheus_logger, "_configured_by_morpheus", False)):
+        setattr(morpheus_logger, "_configured_by_morpheus", True)
 
-    # Dont propagate upstream
-    morpheus_logger.propagate = False
-    morpheus_logging_queue = multiprocessing.Queue()
+        # Set the level here
+        set_log_level(log_level=log_level)
 
-    # This needs the be the only handler for morpheus logger
-    morpheus_queue_handler = logging.handlers.QueueHandler(morpheus_logging_queue)
+        # Dont propagate upstream
+        morpheus_logger.propagate = False
+        morpheus_logging_queue = multiprocessing.Queue()
 
-    # At this point, any morpheus logger will propagate upstream to the morpheus root and then be handled by the queue
-    # handler
-    morpheus_logger.addHandler(morpheus_queue_handler)
+        # This needs the be the only handler for morpheus logger
+        morpheus_queue_handler = logging.handlers.QueueHandler(morpheus_logging_queue)
 
-    log_file = os.path.join(appdirs.user_log_dir(appauthor="NVIDIA", appname="morpheus"), "morpheus.log")
+        # At this point, any morpheus logger will propagate upstream to the morpheus root and then be handled by the queue
+        # handler
+        morpheus_logger.addHandler(morpheus_queue_handler)
 
-    # Ensure the log directory exists
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        log_file = os.path.join(appdirs.user_log_dir(appauthor="NVIDIA", appname="morpheus"), "morpheus.log")
 
-    # Now we build all of the handlers for the queue listener
-    file_handler = logging.handlers.RotatingFileHandler(filename=log_file, backupCount=5, maxBytes=1000000)
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(
-        logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s {%(name)s, %(threadName)s}'))
+        # Ensure the log directory exists
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-    # Tqdm stream handler (avoids messing with progress bars)
-    console_handler = TqdmLoggingHandler()
+        # Now we build all of the handlers for the queue listener
+        file_handler = logging.handlers.RotatingFileHandler(filename=log_file, backupCount=5, maxBytes=1000000)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(
+            logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s {%(name)s, %(threadName)s}'))
 
-    # Build and run the queue listener to actually process queued messages
-    queue_listener = logging.handlers.QueueListener(morpheus_logging_queue,
-                                                    console_handler,
-                                                    file_handler,
-                                                    respect_handler_level=True)
-    queue_listener.start()
-    queue_listener._thread.name = "Logging Thread"
+        # Tqdm stream handler (avoids messing with progress bars)
+        console_handler = TqdmLoggingHandler()
 
-    # Register a function to kill the listener thread before shutting down. prevents error on intpreter close
-    def stop_queue_listener():
-        queue_listener.stop()
+        # Build and run the queue listener to actually process queued messages
+        queue_listener = logging.handlers.QueueListener(morpheus_logging_queue,
+                                                        console_handler,
+                                                        file_handler,
+                                                        *extra_handlers,
+                                                        respect_handler_level=True)
+        queue_listener.start()
+        queue_listener._thread.name = "Logging Thread"
 
-    import atexit
-    atexit.register(stop_queue_listener)
+        # Register a function to kill the listener thread before shutting down. prevents error on intpreter close
+        def stop_queue_listener():
+            queue_listener.stop()
+
+        import atexit
+        atexit.register(stop_queue_listener)
 
 
-def configure_logging(log_level: int, log_config_file: str = None):
+def configure_logging(*extra_handlers: logging.Handler, log_level: int = None, log_config_file: str = None):
     """
     Configures Morpheus logging in one of two ways. Either specifying a logging config file to load or a logging level
     which will use a default configuration. The default configuration outputs to both the console and a file. Sets up a
@@ -153,6 +169,7 @@ def configure_logging(log_level: int, log_config_file: str = None):
 
     Parameters
     ----------
+    *extra_handlers: List of handlers to add to existing default console and file handlers.
     log_level: int
         Specifies the log level and above to output. Must be one of the available levels in the `logging` module.
     log_config_file: str, optional (default = None):
@@ -163,20 +180,20 @@ def configure_logging(log_level: int, log_config_file: str = None):
         will be loaded via `logging.config.dictConfig()` (See `here
         <https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig>`__). Defaults to None.
     """
-
-    # Start by initializing SRF logging
-    srf.logging.init_logging("morpheus")
+    # Start by initializing MRC logging
+    mrc.logging.init_logging("morpheus")
 
     if (log_config_file is not None):
         # Configure using log file
         _configure_from_log_file(log_config_file=log_config_file)
     else:
-        _configure_from_log_level(log_level=log_level)
+        assert log_level is not None, "log_level must be specified"
+        _configure_from_log_level(*extra_handlers, log_level=log_level)
 
 
 def set_log_level(log_level: int):
     """
-    Set the Morpheus logging level. Also propagates the value to SRF's logging system to keep the logging levels in sync
+    Set the Morpheus logging level. Also propagates the value to MRC's logging system to keep the logging levels in sync
 
     Parameters
     ----------
@@ -189,12 +206,11 @@ def set_log_level(log_level: int):
     int
         The previously set logging level
     """
-
     # Get the old level and return it in case the user wants that
-    old_level = srf.logging.get_level()
+    old_level = mrc.logging.get_level()
 
-    # Set the SRF logging level to match
-    srf.logging.set_level(log_level)
+    # Set the MRC logging level to match
+    mrc.logging.set_level(log_level)
 
     # Get the root Morpheus logger
     morpheus_logger = logging.getLogger("morpheus")
@@ -203,24 +219,17 @@ def set_log_level(log_level: int):
     return old_level
 
 
-def deprecated_stage_warning(logger, cls, name):
-    logger.warning(("The '%s' stage ('%s') is no longer required to manage backpressure and has been deprecated. "
-                    "It has no effect and acts as a pass through stage."),
-                   cls.__name__,
-                   name)
+def deprecated_stage_warning(logger, cls, name, reason: str = None):
+    """Log a warning about a deprecated stage."""
+    message = f"The '{cls.__name__}' stage ('{name}') has been deprecated and will be removed in a future version."
+    if reason is not None:
+        message = " ".join((message, reason))
+    logger.warning(message)
 
 
-def get_log_levels():
-    log_levels = list(logging._nameToLevel.keys())
-
-    if ("NOTSET" in log_levels):
-        log_levels.remove("NOTSET")
-
-    return log_levels
-
-
-def parse_log_level(ctx, param, value):
-    x = logging._nameToLevel.get(value.upper(), None)
-    if x is None:
-        raise click.BadParameter('Must be one of {}. Passed: {}'.format(", ".join(logging._nameToLevel.keys()), value))
-    return x
+def deprecated_message_warning(logger, cls, new_cls):
+    """Log a warning about a deprecated message."""
+    logger.warning(
+        ("The '%s' message has been deprecated and will be removed in a future version. Please use '%s' instead."),
+        cls.__name__,
+        new_cls.__name__)

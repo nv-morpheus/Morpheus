@@ -1,5 +1,5 @@
-/**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,19 +19,25 @@
 
 #include "morpheus/messages/meta.hpp"  // for MessageMeta
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/objects/table_info.hpp"  // for TableInfo
 
-#include <pysrf/node.hpp>
+#include <boost/fiber/context.hpp>
+#include <boost/fiber/future/future.hpp>
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
+#include <mrc/types.hpp>
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
+#include <map>
 #include <memory>
 #include <regex>
 #include <string>
+#include <thread>
 #include <vector>  // for vector
 
 namespace morpheus {
@@ -49,10 +55,10 @@ namespace morpheus {
  * @brief Include & exclude columns from messages. This class filters columns from a `MultiMessage` object emitting a
  * `MessageMeta`.
  */
-class SerializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>
+class SerializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -65,20 +71,20 @@ class SerializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessag
      * @param fixed_columns : When `True` `SerializeStage` will assume that the Dataframe in all messages contain
      * the same columns as the first message received.
      */
-    SerializeStage(const std::vector<std::string> &include,
-                   const std::vector<std::string> &exclude,
+    SerializeStage(const std::vector<std::string>& include,
+                   const std::vector<std::string>& exclude,
                    bool fixed_columns = true);
 
   private:
-    void make_regex_objs(const std::vector<std::string> &regex_strs, std::vector<std::regex> &regex_objs);
+    void make_regex_objs(const std::vector<std::string>& regex_strs, std::vector<std::regex>& regex_objs);
 
-    bool match_column(const std::vector<std::regex> &patterns, const std::string &column) const;
+    bool match_column(const std::vector<std::regex>& patterns, const std::string& column) const;
 
-    bool include_column(const std::string &column) const;
+    bool include_column(const std::string& column) const;
 
-    bool exclude_column(const std::string &column) const;
+    bool exclude_column(const std::string& column) const;
 
-    TableInfo get_meta(sink_type_t &msg);
+    std::shared_ptr<SlicedMessageMeta> get_meta(sink_type_t& msg);
 
     subscribe_fn_t build_operator();
 
@@ -103,12 +109,12 @@ struct SerializeStageInterfaceProxy
      * @param exclude : Reference to the attributes that are not required send to downstream stage.
      * @param fixed_columns : When `True` `SerializeStage` will assume that the Dataframe in all messages contain
      * the same columns as the first message received.
-     * @return std::shared_ptr<srf::segment::Object<SerializeStage>>
+     * @return std::shared_ptr<mrc::segment::Object<SerializeStage>>
      */
-    static std::shared_ptr<srf::segment::Object<SerializeStage>> init(srf::segment::Builder &builder,
-                                                                      const std::string &name,
-                                                                      const std::vector<std::string> &include,
-                                                                      const std::vector<std::string> &exclude,
+    static std::shared_ptr<mrc::segment::Object<SerializeStage>> init(mrc::segment::Builder& builder,
+                                                                      const std::string& name,
+                                                                      const std::vector<std::string>& include,
+                                                                      const std::vector<std::string>& exclude,
                                                                       bool fixed_columns = true);
 };
 

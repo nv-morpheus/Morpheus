@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,21 +17,21 @@ import time
 import typing
 
 import confluent_kafka as ck
-import srf
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("to-kafka")
-class WriteToKafkaStage(SinglePortStage):
+class WriteToKafkaStage(PassThruTypeMixin, SinglePortStage):
     """
     Write all messages to a Kafka cluster.
 
@@ -76,12 +76,10 @@ class WriteToKafkaStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Convert the messages to rows of strings
-        stream = input_stream[0]
-
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
             producer = ck.Producer(self._kafka_conf)
 
@@ -90,7 +88,7 @@ class WriteToKafkaStage(SinglePortStage):
             def on_next(x: MessageMeta):
                 nonlocal outstanding_requests
 
-                def cb(_, msg):
+                def callback(_, msg):
                     if msg is not None and msg.value() is not None:
                         pass
                     else:
@@ -103,13 +101,13 @@ class WriteToKafkaStage(SinglePortStage):
                         sub.on_error(msg.error())
 
                 records = serializers.df_to_json(x.df, strip_newlines=True)
-                for m in records:
+                for mess in records:
 
                     # Push all of the messages
                     while True:
                         try:
                             # this runs asynchronously, in C-K's thread
-                            producer.produce(self._output_topic, m, callback=cb)
+                            producer.produce(self._output_topic, mess, callback=callback)
                             break
                         except BufferError:
                             time.sleep(self._poll_time)
@@ -117,7 +115,7 @@ class WriteToKafkaStage(SinglePortStage):
                             logger.exception(("Error occurred in `to-kafka` stage with broker '%s' "
                                               "while committing message:\n%s"),
                                              self._kafka_conf["bootstrap.servers"],
-                                             m)
+                                             mess)
                             break
                         finally:
                             # Try and process some
@@ -137,9 +135,8 @@ class WriteToKafkaStage(SinglePortStage):
             assert outstanding_requests == 0, "Not all inference requests were completed"
 
         # Write to kafka
-        node = builder.make_node_full(self.unique_name, node_fn)
-        builder.make_edge(stream, node)
+        node = builder.make_node(self.unique_name, ops.build(node_fn))
+        builder.make_edge(input_node, node)
         # node.launch_options.pe_count = self._max_concurrent
 
-        # Return input unchanged
-        return node, input_stream[1]
+        return node

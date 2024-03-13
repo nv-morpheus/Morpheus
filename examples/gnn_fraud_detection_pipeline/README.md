@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,82 +18,101 @@ limitations under the License.
 
 ## Requirements
 
-Prior to running the gnn fruad detection pipeline, additional requirements must be installed in to your conda environment. A supplemental requirements file has been provided in this example directory.
+Prior to running the GNN fraud detection pipeline, additional requirements must be installed in to your Conda environment. A supplemental requirements file has been provided in this example directory.
 
 ```bash
-mamba env update -n ${CONDA_DEFAULT_ENV} -f examples/gnn_fraud_detection_pipeline/requirements.yml
+export CUDA_VER=11.8
+mamba env update \
+  -n ${CONDA_DEFAULT_ENV} \
+  --file ./morpheus/conda/environments/examples_cuda-121_arch-x86_64.yaml
 ```
 
 ## Running
 
+##### Setup Env Variable
+```bash
+export MORPHEUS_ROOT=$(pwd)
+```
+
 Use Morpheus to run the GNN fraud detection Pipeline with the transaction data. A pipeline has been configured in `run.py` with several command line options:
 
 ```bash
+cd ${MORPHEUS_ROOT}/examples/gnn_fraud_detection_pipeline
 python run.py --help
+```
+```
 Usage: run.py [OPTIONS]
 
 Options:
-  --num_threads INTEGER RANGE     Number of internal pipeline threads to use
+  --num_threads INTEGER RANGE     Number of internal pipeline threads to use.
+                                  [x>=1]
   --pipeline_batch_size INTEGER RANGE
                                   Internal batch size for the pipeline. Can be
                                   much larger than the model batch size. Also
-                                  used for Kafka consumers
-
+                                  used for Kafka consumers.  [x>=1]
   --model_max_batch_size INTEGER RANGE
-                                  Max batch size to use for the model
-  --input_file PATH               Input filepath  [required]
+                                  Max batch size to use for the model.  [x>=1]
+  --model_fea_length INTEGER RANGE
+                                  Features length to use for the model.
+                                  [x>=1]
+  --input_file PATH               Input data filepath.  [required]
+  --training_file PATH            Training data filepath.  [required]
+  --model_dir PATH                Trained model directory path  [required]
   --output_file TEXT              The path to the file where the inference
                                   output will be saved.
-  --training_file PATH            Training data file [required]
-  --model_fea_length INTEGER RANGE
-                                  Features length to use for the model
-  --model-xgb-file PATH           The name of the XGB model that is deployed
-  --model-hinsage-file PATH       The name of the trained HinSAGE model file path
-
   --help                          Show this message and exit.
 ```
 
-To launch the configured Morpheus pipeline with the sample data that is provided at `<MORPHEUS_ROOT>/models/dataset`, run the following:
+To launch the configured Morpheus pipeline with the sample data that is provided at `$MORPHEUS_ROOT/models/dataset`, run the following:
 
 ```bash
-
+cd ${MORPHEUS_ROOT}/examples/gnn_fraud_detection_pipeline
 python run.py
+```
+```
+====Registering Pipeline====
 ====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=validation.csv, iterative=None, file_type=auto, repeat=1, filter_null=False, cudf_kwargs=None)>
+Graph construction rate: 0 messages [00:00, ? me====Building Pipeline Complete!====
+Inference rate: 0 messages [00:00, ? messages/s]====Registering Pipeline Complete!====
+====Starting Pipeline====
+====Pipeline Started==== 0 messages [00:00, ? messages/s]
+====Building Segment: linear_segment_0====ges/s]
+Added source: <from-file-0; FileSourceStage(filename=validation.csv, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=False)>
   └─> morpheus.MessageMeta
-Added stage: <deserialize-1; DeserializeStage()>
+Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True)>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
 Added stage: <fraud-graph-construction-2; FraudGraphConstructionStage(training_file=training.csv)>
   └─ morpheus.MultiMessage -> stages.FraudGraphMultiMessage
-Added stage: <monitor-3; MonitorStage(description=Graph construction rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None)>
+Added stage: <monitor-3; MonitorStage(description=Graph construction rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
   └─ stages.FraudGraphMultiMessage -> stages.FraudGraphMultiMessage
-Added stage: <gnn-fraud-sage-4; GraphSAGEStage(model_hinsage_file=model/hinsage-model.pt, batch_size=5, sample_size=[2, 32], record_id=index, target_node=transaction)>
+Added stage: <gnn-fraud-sage-4; GraphSAGEStage(model_dir=model, batch_size=100, record_id=index, target_node=transaction)>
   └─ stages.FraudGraphMultiMessage -> stages.GraphSAGEMultiMessage
-Added stage: <monitor-5; MonitorStage(description=Inference rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None)>
+Added stage: <monitor-5; MonitorStage(description=Inference rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
   └─ stages.GraphSAGEMultiMessage -> stages.GraphSAGEMultiMessage
-Added stage: <gnn-fraud-classification-6; ClassificationStage(model_xgb_file=model/xgb-model.pt)>
+Added stage: <gnn-fraud-classification-6; ClassificationStage(model_xgb_file=model/xgb.pt)>
   └─ stages.GraphSAGEMultiMessage -> morpheus.MultiMessage
-Added stage: <monitor-7; MonitorStage(description=Add classification rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None)>
+Added stage: <monitor-7; MonitorStage(description=Add classification rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
   └─ morpheus.MultiMessage -> morpheus.MultiMessage
-Added stage: <serialize-8; SerializeStage(include=None, exclude=['^ID$', '^_ts_'], output_type=pandas)>
-  └─ morpheus.MultiMessage -> pandas.DataFrame
-Added stage: <monitor-9; MonitorStage(description=Serialize rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None)>
-  └─ pandas.DataFrame -> pandas.DataFrame
-Added stage: <to-file-10; WriteToFileStage(filename=result.csv, overwrite=True, file_type=auto)>
-  └─ pandas.DataFrame -> pandas.DataFrame
-====Building Pipeline Complete!====
-====Pipeline Started====
-Graph construction rate[Complete]: 265messages [00:00, 1590.22messages/s]
-Inference rate[Complete]: 265messages [00:01, 150.23messages/s]
-Add classification rate[Complete]: 265messages [00:01, 147.11messages/s]
-Serialize rate[Complete]: 265messages [00:01, 142.31messages/s]
+Added stage: <serialize-8; SerializeStage(include=[], exclude=['^ID$', '^_ts_'], fixed_columns=True)>
+  └─ morpheus.MultiMessage -> morpheus.MessageMeta
+Added stage: <monitor-9; MonitorStage(description=Serialize rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
+  └─ morpheus.MessageMeta -> morpheus.MessageMeta
+Added stage: <to-file-10; WriteToFileStage(filename=output.csv, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
+  └─ morpheus.MessageMeta -> morpheus.MessageMeta
+====Building Segment Complete!====
+Graph construction rate[Complete]: 265 messages [00:00, 1218.88 messages/s]
+Inference rate[Complete]: 265 messages [00:01, 174.04 messages/s]
+Add classification rate[Complete]: 265 messages [00:01, 170.69 messages/s]
+Serialize rate[Complete]: 265 messages [00:01, 166.36 messages/s]
+====Pipeline Complete====
 ```
 
 ### CLI Example
-The above example is illustrative of using the Python API to build a custom Morpheus Pipeline. Alternately the Morpheus command line could have been used to accomplush the same goal. To do this we must ensure that the `examples` directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
+The above example is illustrative of using the Python API to build a custom Morpheus pipeline. Alternately, the Morpheus command line could have been used to accomplish the same goal. To do this we must ensure the `examples` directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
+
 Note: Since the `gnn_fraud_detection_pipeline` module is visible to Python we can specify the plugins by their module name rather than the more verbose file path.
 
-From the root of the Morpheus repo run:
+From the root of the Morpheus repo, run:
 ```bash
 PYTHONPATH="examples" \
 morpheus --log_level INFO \
@@ -104,9 +123,8 @@ morpheus --log_level INFO \
 	deserialize \
 	fraud-graph-construction --training_file examples/gnn_fraud_detection_pipeline/training.csv \
 	monitor --description "Graph construction rate" \
-	gnn-fraud-sage --model_hinsage_file examples/gnn_fraud_detection_pipeline/model/hinsage-model.pt \
+	gnn-fraud-sage --model_dir  examples/gnn_fraud_detection_pipeline/model/ \
 	monitor --description "Inference rate" \
-	gnn-fraud-classification --model_xgb_file examples/gnn_fraud_detection_pipeline/model/xgb-model.pt \
 	monitor --description "Add classification rate" \
 	serialize \
 	to-file --filename "output.csv" --overwrite

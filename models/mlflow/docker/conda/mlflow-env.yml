@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,12 +18,9 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.8
-  - pip
+  - boto3
   - onnx
-  - openssl>=1.1.1s,<3
+  - libwebp>=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863
   - psycopg2<3
-  - pip:
-    - boto3
-    - mlflow>1.29.0,<2
-    - pymysql
+  - pymysql
+  - python=3.11

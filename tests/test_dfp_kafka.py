@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,15 +21,16 @@ from io import StringIO
 from unittest import mock
 
 import numpy as np
-import pandas
 import pandas as pd
 import pytest
 
-from morpheus._lib.file_types import FileTypes
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
+from _utils.kafka import KafkaTopics
 from morpheus.cli import commands
+from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.utils import filter_null_data
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -42,8 +43,8 @@ from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 from morpheus.stages.preprocess import preprocess_ae_stage
 from morpheus.stages.preprocess import train_ae_stage
 from morpheus.utils.compare_df import compare_df
+from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
-from utils import TEST_DIRS
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
@@ -55,15 +56,14 @@ configure_logging(log_level=logging.DEBUG)
 @pytest.mark.kafka
 @pytest.mark.slow
 @pytest.mark.use_python
-@pytest.mark.reload_modules(commands)
-@pytest.mark.reload_modules(preprocess_ae_stage)
-@pytest.mark.reload_modules(train_ae_stage)
+@pytest.mark.reload_modules([commands, preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
-def test_dfp_roleg(mock_ae,
-                   config,
+def test_dfp_roleg(mock_ae: mock.MagicMock,
+                   dataset_pandas: DatasetManager,
+                   config: Config,
                    kafka_bootstrap_servers: str,
-                   kafka_topics: typing.Tuple[str, str],
+                   kafka_topics: KafkaTopics,
                    kafka_consumer: "KafkaConsumer"):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_anomaly_score.csv'), delimiter=',')
@@ -89,9 +89,8 @@ def test_dfp_roleg(mock_ae,
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "role-g"
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
-        config.ae.feature_columns = [x.strip() for x in fh.readlines()]
+    config.ae.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
+    config.ae.timestamp_column_name = "event_dt"
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
@@ -129,14 +128,14 @@ def test_dfp_roleg(mock_ae,
     mock_ae.get_anomaly_score.assert_called()
     mock_ae.get_results.assert_called_once()
 
-    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
+    val_df = dataset_pandas[val_file_name]
 
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f'{rec.value.decode("utf-8")}\n')
 
     output_buf.seek(0)
-    output_df = pandas.read_json(output_buf, lines=True)
+    output_df = pd.read_json(output_buf, lines=True)
     output_df = filter_null_data(output_df)
 
     assert len(output_df) == len(val_df)
@@ -159,14 +158,14 @@ def test_dfp_roleg(mock_ae,
 @pytest.mark.kafka
 @pytest.mark.slow
 @pytest.mark.use_python
-@pytest.mark.reload_modules(preprocess_ae_stage)
-@pytest.mark.reload_modules(train_ae_stage)
+@pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
-def test_dfp_user123(mock_ae,
-                     config,
+def test_dfp_user123(mock_ae: mock.MagicMock,
+                     dataset_pandas: DatasetManager,
+                     config: Config,
                      kafka_bootstrap_servers: str,
-                     kafka_topics: typing.Tuple[str, str],
+                     kafka_topics: KafkaTopics,
                      kafka_consumer: "KafkaConsumer"):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_anomaly_score.csv'), delimiter=',')
@@ -191,9 +190,8 @@ def test_dfp_user123(mock_ae,
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "user123"
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
-        config.ae.feature_columns = [x.strip() for x in fh.readlines()]
+    config.ae.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
+    config.ae.timestamp_column_name = "event_dt"
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
@@ -231,14 +229,14 @@ def test_dfp_user123(mock_ae,
     mock_ae.get_anomaly_score.assert_called()
     mock_ae.get_results.assert_called_once()
 
-    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
+    val_df = dataset_pandas[val_file_name]
 
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f'{rec.value.decode("utf-8")}\n')
 
     output_buf.seek(0)
-    output_df = pandas.read_json(output_buf, lines=True)
+    output_df = pd.read_json(output_buf, lines=True)
     output_df = filter_null_data(output_df)
 
     assert len(output_df) == len(val_df)

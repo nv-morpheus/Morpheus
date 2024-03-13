@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,64 +11,69 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Postprocessing stage for Digital Fingerprinting pipeline."""
 
 import logging
 import time
 import typing
 from datetime import datetime
 
+import mrc
 import numpy as np
-import srf
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
-from ..messages.multi_dfp_message import DFPMessageMeta
-
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
-class DFPPostprocessingStage(SinglePortStage):
+class DFPPostprocessingStage(PassThruTypeMixin, SinglePortStage):
+    """
+    This stage adds a new `event_time` column to the DataFrame indicating the time which Morpheus detected the
+    anomalous messages, and replaces any `NAN` values with the a string value of `'NaN'`.
 
-    def __init__(self, c: Config, z_score_threshold=2.0):
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    """
+
+    def __init__(self, c: Config):
         super().__init__(c)
-
-        self._z_score_threshold = z_score_threshold
+        self._needed_columns['event_time'] = TypeId.STRING
 
     @property
     def name(self) -> str:
+        """Stage name."""
         return "dfp-postproc"
 
     def supports_cpp_node(self):
+        """Whether this stage supports a C++ node."""
         return False
 
     def accepted_types(self) -> typing.Tuple:
+        """Accepted input types."""
         return (MultiAEMessage, )
 
-    def _extract_events(self, message: MultiAEMessage):
-
-        z_scores = message.get_meta("mean_abs_z")
-
-        above_threshold_df = message.get_meta()[z_scores > self._z_score_threshold]
-
-        if (not above_threshold_df.empty):
-            above_threshold_df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-            above_threshold_df = above_threshold_df.replace(np.nan, 'NaN', regex=True)
-
-            return above_threshold_df
-
-        return None
+    def _process_events(self, message: MultiAEMessage):
+        # Assume that a filter stage preceedes this stage
+        df = message.get_meta()
+        df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        df.replace(np.nan, 'NaN', regex=True, inplace=True)
+        message.set_meta(None, df)
 
     def on_data(self, message: MultiAEMessage):
-        if (not message):
+        """Process a message."""
+        if (not message or message.mess_count == 0):
             return None
 
         start_time = time.time()
 
-        extracted_events = self._extract_events(message)
+        self._process_events(message)
 
         duration = (time.time() - start_time) * 1000.0
 
@@ -76,21 +81,14 @@ class DFPPostprocessingStage(SinglePortStage):
             logger.debug("Completed postprocessing for user %s in %s ms. Event count: %s. Start: %s, End: %s",
                          message.meta.user_id,
                          duration,
-                         0 if extracted_events is None else len(extracted_events),
+                         message.mess_count,
                          message.get_meta(self._config.ae.timestamp_column_name).min(),
                          message.get_meta(self._config.ae.timestamp_column_name).max())
 
-        if (extracted_events is None):
-            return None
+        return message
 
-        return DFPMessageMeta(extracted_events, user_id=message.meta.user_id)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
+        builder.make_edge(input_node, node)
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
-            obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
-        builder.make_edge(input_stream[0], stream)
-
-        return stream, DFPMessageMeta
+        return node
