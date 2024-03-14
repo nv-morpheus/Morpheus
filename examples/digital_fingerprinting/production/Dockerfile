@@ -28,7 +28,7 @@ WORKDIR /workspace/examples/digital_fingerprinting/
 
 # Install DFP dependencies
 RUN source activate morpheus \
-    && mamba env update -n morpheus --file /workspace/conda/environments/examples.yaml
+    && mamba env update -n morpheus --file /workspace/conda/environments/examples_cuda-121_arch-x86_64.yaml
 
 # Set the tracking URI for mlflow
 ENV MLFLOW_TRACKING_URI="http://mlflow:5000"

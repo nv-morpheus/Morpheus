@@ -232,8 +232,15 @@ ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 
-COPY ${MORPHEUS_ROOT_HOST}/conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml ./conda/environments/runtime.yaml
-COPY ${MORPHEUS_ROOT_HOST}/conda/environments/examples_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml ./conda/environments/examples.yaml
+# Only copy specific files/folders over that are necessary for runtime
+COPY "${MORPHEUS_ROOT_HOST}/conda/environments/*.yaml" "./conda/environments/"
+COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
+COPY "${MORPHEUS_ROOT_HOST}/docs" "./docs"
+COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
+COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
+COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
+COPY "${MORPHEUS_ROOT_HOST}/*.md" "./"
+COPY "${MORPHEUS_ROOT_HOST}/LICENSE" "./"
 
 # Mount Morpheus conda package build in `conda_bld_morpheus`
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
@@ -255,17 +262,8 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
         -c defaults \
         morpheus &&\
 
-    /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file conda/environments/runtime.yaml && \
+    /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml && \
     conda clean -afy
-
-# Only copy specific files/folders over that are necessary for runtime
-COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
-COPY "${MORPHEUS_ROOT_HOST}/docs" "./docs"
-COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
-COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
-COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
-COPY "${MORPHEUS_ROOT_HOST}/*.md" "./"
-COPY "${MORPHEUS_ROOT_HOST}/LICENSE" "./"
 
 # Use morpheus by default
 CMD [ "morpheus" ]
