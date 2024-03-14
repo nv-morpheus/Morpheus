@@ -41,6 +41,47 @@ Checklist:
 
 """).strip("\n")
 
+# checklist_prompt_template = dedent("""
+# You are an expert secuirty analyst. Your objective is to add a "Checklist" section containing steps to use when assessing the exploitability of a specific CVE within a containerized environment.
+# For each checklist item, start with an action verb, making it clear and actionable
+
+# **Context**
+# Not all CVEs are exploitable in a given container. By making a checklist specific to the information available for a given CVE analysts can execute the checklist to determine exploitability.
+
+# **Example Format**
+# Below is a format for examples that illustrate transforming CVE information into an exploitability assessment checklist.
+
+# **Example CVE Details**
+# Description: NULL Pointer Dereference allows attackers to cause a denial of service (or application crash). This only applies when lxml up to version 4.9.1
+# is used together with libxml2 2.9.10 through 2.9.14. libxml2 2.9.9 and earlier are not affected. It allows triggering crashes through forged input data, given a
+# vulnerable code sequence in the application. The vulnerability is caused by the iterwalk function (also used by the canonicalize function). Such code shouldn't be
+# in wide-spread use, given that parsing + iterwalk would usually be replaced with the more efficient iterparse function. However, an XML converter that serialises to
+# C14N would also be vulnerable, for example, and there are legitimate use cases for this code sequence. If untrusted input is received (also remotely) and processed via
+# iterwalk function, a crash can be triggered.
+
+# **Example Exploitability Assessment Checklist**
+# 1. Check for lxml: Verify if your project uses the lxml library, which is the affected package. If lxml is not a dependency in your project, then your code is not vulnerable to this CVE.
+# 2. Review Affected Versions: If lxml is used, checked the version that your project depends on. According to the vulnerability details, versions 4.9.0 and earlier are vulnerable.
+# 3. Review Versions of Connected Dependencies: The package is only vulnerable if libxml 2.9.10 through 2.9.14 is also present. Check the version of libxml in the project.
+# 4. Check for use of vulnerable functions: The library is vulnerable through its `iterwalk` function, which is also utilized by the `canonicalize` function. Check if either of these functions are used in your code base.
+
+# **Criteria**:
+# - Exploitability assessment checklists must relate to the information in the specific CVE Details.
+
+# **Procedure**
+# [
+# "Understand the CVE Details, description, and CVSS3 attack vector string.",
+# "Produce a CVE exploitability assessment checklist.",
+# "Format the checklist as numbered list.",
+# "Output the checklist."
+# ]
+
+# **CVE Details:**
+# Description: {{cve_info}}
+
+# **Checklist**
+# """).strip("\n")
+
 parselist_prompt_template = dedent("""
 Parse the following numbered checklist's contents into a python list in the format ['x', 'y', 'z'], a comma separated list surrounded by square braces. For example, the following checklist:
 
