@@ -25,6 +25,7 @@
 
 #include <mrc/types.hpp>
 #include <nlohmann/json.hpp>
+#include <pymrc/utilities/json_values.hpp>
 
 #include <memory>
 #include <string>
@@ -188,6 +189,12 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     nlohmann::json::const_reference view_outputs() const;
 
   private:
+    nlohmann::json::const_reference get_const_json_ref() const;
+    nlohmann::json get_json() const;
+
+    void ensure_cache() const;
+    void invalidate_cache() const;
+
     std::shared_ptr<LLMContext> m_parent{nullptr};
     std::string m_name;
     input_mappings_t m_inputs;
@@ -195,7 +202,8 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     std::shared_ptr<LLMContextState> m_state;
 
-    nlohmann::json m_outputs;
+    mrc::pymrc::JSONValues m_outputs;
+    mutable std::unique_ptr<nlohmann::json> m_cached_outputs{nullptr};
 
     mrc::Promise<void> m_outputs_promise;
     mrc::SharedFuture<void> m_outputs_future;

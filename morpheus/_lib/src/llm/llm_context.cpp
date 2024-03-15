@@ -19,7 +19,12 @@
 
 #include "morpheus/utilities/string_util.hpp"
 
+#include <glog/logging.h>
+#include <nlohmann/json_fwd.hpp>
+#include <pymrc/utilities/json_values.hpp>
+
 #include <algorithm>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
@@ -79,7 +84,7 @@ std::shared_ptr<ControlMessage>& LLMContext::message() const
 
 nlohmann::json::const_reference LLMContext::all_outputs() const
 {
-    return m_outputs;
+    return get_const_json_ref();
 }
 
 std::string LLMContext::full_name() const
@@ -101,16 +106,18 @@ std::shared_ptr<LLMContext> LLMContext::push(std::string name, input_mappings_t 
 
 void LLMContext::pop()
 {
+    auto outputs(get_json());
+
     // Copy the outputs from the child context to the parent
     if (m_output_names.empty())
     {
         // Use them all by default
-        m_parent->set_output(m_name, std::move(m_outputs));
+        m_parent->set_output(m_name, std::move(outputs));
     }
     else if (m_output_names.size() == 1)
     {
         // Treat only a single output as the output
-        m_parent->set_output(m_name, std::move(m_outputs[m_output_names[0]]));
+        m_parent->set_output(m_name, std::move(outputs[m_output_names[0]]));
     }
     else
     {
@@ -119,11 +126,14 @@ void LLMContext::pop()
 
         for (const auto& output_name : m_output_names)
         {
-            new_outputs[output_name] = m_outputs[output_name];
+            new_outputs[output_name] = std::move(outputs[output_name]);
         }
 
         m_parent->set_output(m_name, std::move(new_outputs));
     }
+
+    m_outputs = std::move(mrc::pymrc::JSONValues(std::move(outputs)));
+    invalidate_cache();
 }
 
 nlohmann::json::const_reference LLMContext::get_input() const
@@ -141,15 +151,16 @@ nlohmann::json::const_reference LLMContext::get_input(const std::string& node_na
 {
     if (node_name[0] == '/')
     {
+        nlohmann::json::const_reference outputs = get_const_json_ref();
         nlohmann::json::json_pointer node_json_ptr(node_name);
 
-        if (!m_outputs.contains(node_json_ptr))
+        if (!outputs.contains(node_json_ptr))
         {
             throw std::runtime_error(MORPHEUS_CONCAT_STR("Input '" << node_name << "' not found in the output map"));
         }
 
         // Get the value from a sibling output
-        return m_outputs[node_json_ptr];
+        return outputs[node_json_ptr];
     }
     else
     {
@@ -200,14 +211,26 @@ nlohmann::json LLMContext::get_inputs() const
 
 void LLMContext::set_output(nlohmann::json outputs)
 {
-    m_outputs = std::move(outputs);
+    m_outputs = std::move(mrc::pymrc::JSONValues(std::move(outputs)));
+    invalidate_cache();
 
     this->outputs_complete();
 }
 
 void LLMContext::set_output(const std::string& output_name, nlohmann::json output)
 {
-    m_outputs[output_name] = std::move(output);
+    std::string name;
+    if (output_name[0] == '/')
+    {
+        name = output_name;
+    }
+    else
+    {
+        name = "/" + output_name;
+    }
+
+    m_outputs = std::move(m_outputs.set_value(name, std::move(output)));
+    invalidate_cache();
 }
 
 void LLMContext::set_output_names(std::vector<std::string> output_names)
@@ -225,7 +248,32 @@ nlohmann::json::const_reference LLMContext::view_outputs() const
     // // Wait for the outputs to be available
     // m_outputs_future.wait();
 
-    return m_outputs;
+    return get_const_json_ref();
+}
+
+void LLMContext::ensure_cache() const
+{
+    if (!m_cached_outputs)
+    {
+        m_cached_outputs = std::make_unique<nlohmann::json>(std::move(m_outputs.to_json()));
+    }
+}
+
+nlohmann::json::const_reference LLMContext::get_const_json_ref() const
+{
+    ensure_cache();
+    return *m_cached_outputs;
+}
+
+nlohmann::json LLMContext::get_json() const
+{
+    ensure_cache();
+    return *m_cached_outputs;
+}
+
+void LLMContext::invalidate_cache() const
+{
+    m_cached_outputs.reset();
 }
 
 }  // namespace morpheus::llm
