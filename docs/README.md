@@ -22,7 +22,7 @@ Additional packages required for building the documentation are defined in `./co
 ## Install Additional Dependencies
 From the root of the Morpheus repo:
 ```bash
-conda env update --solver=libmamba -n morpheus --file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune
+conda env update --solver=libmamba -n morpheus --file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune
 ```
 
 ## Build Morpheus and Documentation

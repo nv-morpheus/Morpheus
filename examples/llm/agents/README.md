@@ -97,7 +97,7 @@ Install the required dependencies.
 ```bash
 mamba env update \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./morpheus/conda/environments/examples_cuda-121_arch-x86_64.yaml
+  --file ./conda/environments/examples_cuda-121_arch-x86_64.yaml
 ```
 
 
