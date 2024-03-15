@@ -98,9 +98,12 @@ def build_cve_llm_engine(config: EngineConfig) -> LLMEngine:
     engine.add_node("checklist", inputs=["/extracter"], node=CVEChecklistNode(config=config.checklist))
 
     engine.add_node("agent",
-                    inputs=[("/extracter")],
+                    inputs=[("/checklist")],
                     node=LangChainAgentNode(agent_executor=build_agent_executor(config=config.agent)))
 
-    engine.add_task_handler(inputs=["/agent"], handler=SimpleTaskHandler())
+    engine.add_task_handler(
+        inputs=[("/checklist", "checklist"), ("/agent", "response")],
+        handler=SimpleTaskHandler(output_columns=["checklist", "response"]),
+    )
 
     return engine

@@ -160,7 +160,8 @@ class NVFoundationLLMService(LLMService):
         self._nve_client = NVEModel(
             nvidia_api_key=self._api_key,
             fetch_url_format=f"{os.getenv('NVIDIA_API_BASE', 'https://api.nvcf.nvidia.com/v2')}/nvcf/pexec/status/",
-            call_invoke_base=f"{os.getenv('NVIDIA_API_BASE', 'https://api.nvcf.nvidia.com/v2')}/nvcf/pexec/functions"
+            call_invoke_base=f"{os.getenv('NVIDIA_API_BASE', 'https://api.nvcf.nvidia.com/v2')}/nvcf/pexec/functions",
+            func_list_format=f"{os.getenv('NVIDIA_API_BASE', 'https://api.nvcf.nvidia.com/v2')}/nvcf/functions",
         )  # type: ignore
 
     def get_client(self, *, model_name: str, **model_kwargs) -> NVFoundationLLMClient:
