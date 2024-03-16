@@ -76,14 +76,19 @@ class MORPHEUS_EXPORT ITritonClient
                                               const std::vector<TritonInferRequestedOutput>& outputs) = 0;
 };
 
+struct MORPHEUS_EXPORT TensorModelMapping {
+  std::string model_field_name;
+  std::string tensor_field_name;
+};
+
 class MORPHEUS_EXPORT IInferenceClientSession
 {
   public:
-    virtual std::map<std::string, std::string> get_input_mappings(
-        std::map<std::string, std::string> input_map_overrides) = 0;
+    virtual std::vector<TensorModelMapping> get_input_mappings(
+        std::vector<TensorModelMapping> input_map_overrides) = 0;
 
-    virtual std::map<std::string, std::string> get_output_mappings(
-        std::map<std::string, std::string> output_map_overrides) = 0;
+    virtual std::vector<TensorModelMapping> get_output_mappings(
+        std::vector<TensorModelMapping> output_map_overrides) = 0;
 
     virtual mrc::coroutines::Task<TensorMap> infer(TensorMap&& inputs) = 0;
 };
@@ -132,11 +137,11 @@ class MORPHEUS_EXPORT TritonInferenceClientSession : public IInferenceClientSess
   public:
     TritonInferenceClientSession(std::shared_ptr<ITritonClient> client, std::string model_name);
 
-    std::map<std::string, std::string> get_input_mappings(
-        std::map<std::string, std::string> input_map_overrides) override;
+    std::vector<TensorModelMapping> get_input_mappings(
+        std::vector<TensorModelMapping> input_map_overrides) override;
 
-    std::map<std::string, std::string> get_output_mappings(
-        std::map<std::string, std::string> output_map_overrides) override;
+    std::vector<TensorModelMapping> get_output_mappings(
+        std::vector<TensorModelMapping> output_map_overrides) override;
 
     mrc::coroutines::Task<TensorMap> infer(TensorMap&& inputs) override;
 };
@@ -186,8 +191,8 @@ class MORPHEUS_EXPORT InferenceClientStage
     InferenceClientStage(std::unique_ptr<IInferenceClient>&& client,
                          std::string model_name,
                          bool needs_logits,
-                         std::map<std::string, std::string> input_mapping  = {},
-                         std::map<std::string, std::string> output_mapping = {});
+                         std::vector<TensorModelMapping> input_mapping,
+                         std::vector<TensorModelMapping> output_mapping);
 
     /**
      * TODO(Documentation)
@@ -199,8 +204,8 @@ class MORPHEUS_EXPORT InferenceClientStage
     std::string m_model_name;
     std::shared_ptr<IInferenceClient> m_client;
     bool m_needs_logits{true};
-    std::map<std::string, std::string> m_input_mapping;
-    std::map<std::string, std::string> m_output_mapping;
+    std::vector<TensorModelMapping> m_input_mapping;
+    std::vector<TensorModelMapping> m_output_mapping;
     std::shared_mutex m_session_mutex;
 
     int32_t m_retry_max = 10;

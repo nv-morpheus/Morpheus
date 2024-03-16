@@ -54,7 +54,9 @@
 #include <shared_mutex>
 #include <sstream>
 #include <stdexcept>  // for runtime_error, out_of_range
+#include <string>
 #include <utility>
+#include <vector>
 // IWYU pragma: no_include <initializer_list>
 
 /**
@@ -118,7 +120,7 @@ static void reduce_outputs(const InferenceClientStage::sink_type_t& x, TensorMap
 
     for (auto& mapping : output_tensors)
     {
-        auto output_tensor = mapping.second;
+        auto& output_tensor = mapping.second;
 
         ShapeType shape  = output_tensor.get_shape();
         ShapeType stride = output_tensor.get_stride();
@@ -126,12 +128,11 @@ static void reduce_outputs(const InferenceClientStage::sink_type_t& x, TensorMap
         ShapeType reduced_shape{shape};
         reduced_shape[0] = x->mess_count;
 
-        auto rmm_tensor = reinterpret_cast<RMMTensor const*>(&output_tensor);
-
-        CHECK_NOTNULL(rmm_tensor);
-
         auto reduced_buffer = MatxUtil::reduce_max(
-            DevMemInfo{rmm_tensor->buffer(), output_tensor.dtype(), shape, stride}, host_seq_ids, 0, reduced_shape);
+            DevMemInfo{output_tensor.data(), output_tensor.dtype(), output_tensor.get_memory(), shape, stride},
+            host_seq_ids,
+            0,
+            reduced_shape);
 
         output_tensor.swap(Tensor::create(std::move(reduced_buffer), output_tensor.dtype(), reduced_shape, stride, 0));
     }
@@ -141,16 +142,13 @@ static void apply_logits(TensorMap& output_tensors)
 {
     for (auto& mapping : output_tensors)
     {
-        auto output_tensor = mapping.second;
+        auto& output_tensor = mapping.second;
 
         auto shape  = output_tensor.get_shape();
         auto stride = output_tensor.get_stride();
 
-        auto rmm_tensor = reinterpret_cast<RMMTensor const*>(&output_tensor);
-
-        CHECK_NOTNULL(rmm_tensor);
-
-        auto output_buffer = MatxUtil::logits(DevMemInfo{rmm_tensor->buffer(), output_tensor.dtype(), shape, stride});
+        auto output_buffer = MatxUtil::logits(
+            DevMemInfo{output_tensor.data(), output_tensor.dtype(), output_tensor.get_memory(), shape, stride});
 
         // For logits the input and output shapes will be the same
         output_tensor.swap(Tensor::create(std::move(output_buffer), output_tensor.dtype(), shape, stride, 0));
@@ -316,18 +314,28 @@ triton::client::Error HttpTritonClient::async_infer(triton::client::InferenceSer
         inference_outputs.emplace_back(inference_output_ptr);
     }
 
-    return m_client->AsyncInfer(
-        [&inference_inputs, &inference_outputs, callback](triton::client::InferResult* result) {
-            callback(result);
-        },
-        options,
-        inference_input_ptrs,
-        inference_output_ptrs);
+    triton::client::InferResult* result;
+
+    auto status = m_client->Infer(&result, options, inference_input_ptrs, inference_output_ptrs);
+
+    callback(result);
+
+    return status;
+
+    // TODO(cwharris): either fix tests or make this ENV-flagged, as AsyncInfer gives different results.
+
+    // return m_client->AsyncInfer(
+    //     [callback](triton::client::InferResult* result) {
+    //         callback(result);
+    //     },
+    //     options,
+    //     inference_input_ptrs,
+    //     inference_output_ptrs);
 }
 
 TritonInferenceClientSession::TritonInferenceClientSession(std::shared_ptr<ITritonClient> client,
                                                            std::string model_name) :
-  m_client(client),
+  m_client(std::move(client)),
   m_model_name(std::move(model_name))
 {
     // Now load the input/outputs for the model
@@ -348,7 +356,8 @@ TritonInferenceClientSession::TritonInferenceClientSession(std::shared_ptr<ITrit
 
     bool is_model_ready = false;
     CHECK_TRITON(m_client->is_model_ready(&is_model_ready, this->m_model_name));
-    if (not is_model_ready) {
+    if (not is_model_ready)
+    {
         throw std::runtime_error("Model is not ready");
     }
 
@@ -414,57 +423,46 @@ TritonInferenceClientSession::TritonInferenceClientSession(std::shared_ptr<ITrit
     }
 }
 
-std::map<std::string, std::string> TritonInferenceClientSession::get_input_mappings(
-    std::map<std::string, std::string> input_map_overrides)
+std::vector<TensorModelMapping> TritonInferenceClientSession::get_input_mappings(
+    std::vector<TensorModelMapping> input_map_overrides)
 {
-    auto mappings = std::map<std::string, std::string>();
+    auto mappings = std::vector<TensorModelMapping>();
 
     for (auto map : m_model_inputs)
     {
-        mappings[map.name] = map.name;
+        mappings.emplace_back(TensorModelMapping(map.name, map.name));
     }
 
     for (auto override : input_map_overrides)
     {
-        auto pos = mappings.find(override.second);
-
-        if (pos == mappings.end())
-        {
-            LOG(WARNING) << "Input mapping was provided for '" << override.first << "' -> '" << override.second
-                         << "' but the input does not exist for this model.";
-            continue;
-        }
-
-        mappings.erase(pos);
-        mappings[override.first] = override.second;
+        mappings.emplace_back(override);
     }
 
     return mappings;
 };
 
-std::map<std::string, std::string> TritonInferenceClientSession::get_output_mappings(
-    std::map<std::string, std::string> output_map_overrides)
+std::vector<TensorModelMapping> TritonInferenceClientSession::get_output_mappings(
+    std::vector<TensorModelMapping> output_map_overrides)
 {
-    auto mappings = std::map<std::string, std::string>();
+    auto mappings = std::vector<TensorModelMapping>();
 
     for (auto map : m_model_outputs)
     {
-        mappings[map.name] = map.name;
+        mappings.emplace_back(TensorModelMapping(map.name, map.name));
     }
 
     for (auto override : output_map_overrides)
     {
-        auto pos = mappings.find(override.first);
+        auto pos = std::find_if(mappings.begin(), mappings.end(), [override](TensorModelMapping m) {
+            return m.model_field_name == override.model_field_name;
+        });
 
-        if (pos == mappings.end())
+        if (pos != mappings.end())
         {
-            LOG(WARNING) << "Output mapping was provided for '" << override.first << "' -> '" << override.second
-                         << "' but the output does not exist for this model.";
-            continue;
+            mappings.erase(pos);
         }
 
-        mappings.erase(pos);
-        mappings[override.first] = override.second;
+        mappings.emplace_back(override);
     }
 
     return mappings;
@@ -472,11 +470,6 @@ std::map<std::string, std::string> TritonInferenceClientSession::get_output_mapp
 
 mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&& inputs)
 {
-    if (inputs.size() == 0)
-    {
-        co_return inputs;
-    }
-
     CHECK_EQ(inputs.size(), m_model_inputs.size()) << "Input tensor count does not match model input count";
 
     auto element_count = inputs.begin()->second.shape(0);
@@ -486,8 +479,7 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&&
         CHECK_EQ(element_count, input.second.shape(0)) << "Input tensors are different sizes";
     }
 
-    TensorMap output_tensors;
-    std::vector<std::shared_ptr<rmm::device_buffer>> output_buffers;
+    TensorMap model_output_tensors;
 
     // create full inference output
     for (auto& model_output : m_model_outputs)
@@ -499,11 +491,9 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&&
         auto full_output_buffer = std::make_shared<rmm::device_buffer>(
             full_output_element_count * model_output.datatype.item_size(), rmm::cuda_stream_per_thread);
 
-        output_buffers.emplace_back(full_output_buffer);
-
         ShapeType stride{full_output_shape[1], 1};
 
-        output_tensors[model_output.name].swap(
+        model_output_tensors[model_output.name].swap(
             Tensor::create(std::move(full_output_buffer), model_output.datatype, full_output_shape, stride, 0));
     }
 
@@ -548,12 +538,13 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&&
 
         for (auto model_output : m_model_outputs)
         {
-            auto output_tensor = output_tensors[model_output.name].slice({start, 0}, {stop, -1});
+            auto output_tensor = model_output_tensors[model_output.name].slice({start, 0}, {stop, -1});
 
             std::vector<int64_t> output_shape;
 
-            CHECK_TRITON(results->Shape(model_output.name, &output_shape));  // Make sure we have at least 2 dims
+            CHECK_TRITON(results->Shape(model_output.name, &output_shape));
 
+            // Make sure we have at least 2 dims
             while (output_shape.size() < 2)
             {
                 output_shape.push_back(1);
@@ -572,7 +563,7 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&&
         }
     }
 
-    co_return output_tensors;
+    co_return model_output_tensors;
 };
 
 TritonInferenceClient::TritonInferenceClient(std::unique_ptr<ITritonClient>&& client, std::string model_name) :
@@ -600,8 +591,8 @@ void TritonInferenceClient::reset_session()
 InferenceClientStage::InferenceClientStage(std::unique_ptr<IInferenceClient>&& client,
                                            std::string model_name,
                                            bool needs_logits,
-                                           std::map<std::string, std::string> input_mapping,
-                                           std::map<std::string, std::string> output_mapping) :
+                                           std::vector<TensorModelMapping> input_mapping,
+                                           std::vector<TensorModelMapping> output_mapping) :
   m_model_name(std::move(model_name)),
   m_client(std::move(client)),
   m_needs_logits(needs_logits),
@@ -660,37 +651,45 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
 
             auto session = m_client->get_session();
 
-            TensorMap input_tensors;
+            TensorMap model_input_tensors;
 
             for (auto mapping : session->get_input_mappings(m_input_mapping))
             {
-                CHECK(x->memory->has_tensor(mapping.first))
-                    << "Model input '" << mapping.first << "' not found in InferenceMemory";
-
-                input_tensors[mapping.second].swap(x->get_input(mapping.first));
+                if (x->memory->has_tensor(mapping.tensor_field_name))
+                {
+                    model_input_tensors[mapping.model_field_name].swap(x->get_input(mapping.tensor_field_name));
+                }
             }
 
             // TODO(cwharris): Break inference in to batches and attempt retries on per-batch basis.
-            auto output_tensors = co_await session->infer(std::move(input_tensors));
+            auto model_output_tensors = co_await session->infer(std::move(model_input_tensors));
 
             co_await on->yield();
 
             if (x->mess_count != x->count)
             {
-                reduce_outputs(x, output_tensors);
+                reduce_outputs(x, model_output_tensors);
             }
 
             // If we need to do logits, do that here
             if (m_needs_logits)
             {
-                apply_logits(output_tensors);
+                apply_logits(model_output_tensors);
             }
 
             TensorMap output_tensor_map;
 
             for (auto mapping : session->get_output_mappings(m_output_mapping))
             {
-                output_tensor_map[mapping.second].swap(std::move(output_tensors[mapping.first]));
+                auto pos = model_output_tensors.find(mapping.model_field_name);
+
+                if (pos != model_output_tensors.end())
+                {
+                    output_tensor_map[mapping.tensor_field_name].swap(
+                        std::move(model_output_tensors[mapping.model_field_name]));
+
+                    model_output_tensors.erase(pos);
+                }
             }
 
             // Final output of all mini-batches
@@ -728,13 +727,26 @@ std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStage
     std::string server_url,
     std::string model_name,
     bool needs_logits,
-    std::map<std::string, std::string> input_mapping,
-    std::map<std::string, std::string> output_mapping)
+    std::map<std::string, std::string> input_mappings,
+    std::map<std::string, std::string> output_mappings)
 {
+    std::vector<TensorModelMapping> input_mappings_{};
+    std::vector<TensorModelMapping> output_mappings_{};
+
+    for (auto& mapping : input_mappings)
+    {
+        input_mappings_.emplace_back(TensorModelMapping{mapping.first, mapping.second});
+    }
+
+    for (auto& mapping : output_mappings)
+    {
+        output_mappings_.emplace_back(TensorModelMapping{mapping.first, mapping.second});
+    }
+
     auto triton_client           = std::make_unique<HttpTritonClient>(server_url);
     auto triton_inference_client = std::make_unique<TritonInferenceClient>(std::move(triton_client), model_name);
     auto stage                   = builder.construct_object<InferenceClientStage>(
-        name, std::move(triton_inference_client), model_name, needs_logits, input_mapping, output_mapping);
+        name, std::move(triton_inference_client), model_name, needs_logits, input_mappings_, output_mappings_);
 
     return stage;
 }
