@@ -439,16 +439,14 @@ class TritonInferenceWorker(InferenceWorker):
                  model_name: str,
                  server_url: str,
                  force_convert_inputs: bool,
-                 input_mapping: dict[str, str] = None,
-                 output_mapping: dict[str, str] = None,
+                 inout_mapping: dict[str, str] = None,
                  use_shared_memory: bool = False,
                  needs_logits: bool = False):
         super().__init__(inf_queue)
 
         self._model_name = model_name
         self._server_url = server_url
-        self._input_mapping = input_mapping or {}
-        self._output_mapping = output_mapping or {}
+        self._inout_mapping = inout_mapping or {}
         self._use_shared_memory = use_shared_memory
 
         self._max_batch_size = c.model_max_batch_size
@@ -532,12 +530,7 @@ class TritonInferenceWorker(InferenceWorker):
 
                     num_bytes *= y_int
 
-                if x["name"] in self._input_mapping:
-                    mapped_name = self._input_mapping[x["name"]]
-                elif x["name"] in self._output_mapping:
-                    mapped_name = self._output_mapping[x["name"]]
-                else:
-                    mapped_name = x["name"]
+                mapped_name = x["name"] if x["name"] not in self._inout_mapping else self._inout_mapping[x["name"]]
 
                 return TritonInOut(name=x["name"],
                                    bytes=num_bytes,
@@ -714,6 +707,7 @@ class TritonInferenceStage(InferenceStage):
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
                  needs_logits: bool = None,
+                 inout_mapping: dict[str, str] = None,
                  input_mapping: dict[str, str] = None,
                  output_mapping: dict[str, str] = None):
         super().__init__(c)
@@ -723,12 +717,21 @@ class TritonInferenceStage(InferenceStage):
         if needs_logits is None:
             needs_logits = c.mode == PipelineModes.NLP
 
-        # Combine the pipeline mode defaults with any user supplied ones
         input_mapping_ = self._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {}).get("inputs", {})
+        output_mapping_ = self._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {}).get("outputs", {})
+
+        inout_mapping_ = {}
+        inout_mapping_.update(input_mapping_)
+        inout_mapping_.update(output_mapping_)
+
+        if inout_mapping is not None:
+            inout_mapping_.update(inout_mapping)
+            input_mapping_.update(inout_mapping)
+            output_mapping_.update(inout_mapping)
+
         if input_mapping is not None:
             input_mapping_.update(input_mapping)
 
-        output_mapping_ = self._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {}).get("outputs", {})
         if output_mapping is not None:
             output_mapping_.update(output_mapping)
 
@@ -737,8 +740,7 @@ class TritonInferenceStage(InferenceStage):
             "model_name": model_name,
             "force_convert_inputs": force_convert_inputs,
             "use_shared_memory": use_shared_memory,
-            "input_mapping": input_mapping_,
-            "output_mapping": output_mapping_,
+            "inout_mapping": inout_mapping_,
             "needs_logits": needs_logits
         }
 

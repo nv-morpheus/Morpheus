@@ -168,6 +168,11 @@ def test_log_parsing_triton_inference_log_parsing_build_output_message(config: C
 def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typing.List[types.ModuleType]):
     inference_mod = import_mod[0]
 
+
+    expected_inout_mapping = {}
+    expected_inout_mapping.update(inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP, {}).get("inputs", {}))
+    expected_inout_mapping.update(inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP, {}).get("outputs", {}))
+
     expected_kwargs = {
         "model_name":
             'test_model',
@@ -180,7 +185,7 @@ def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typ
         "needs_logits":
             True,
         "inout_mapping":
-            inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP, {}),
+            expected_inout_mapping,
     }
 
     stage = inference_mod.LogParsingInferenceStage(
@@ -206,12 +211,13 @@ def test_log_parsing_inference_stage_get_inference_worker(config: Config, import
                                                    use_shared_memory=False,
                                                    inout_mapping={'test': 'this'})
 
-    expected_mapping = inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(
-        PipelineModes.NLP, {})
-    expected_mapping.update({'test': 'this'})
+    expected_inout_mapping = {}
+    expected_inout_mapping.update(inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP, {}).get("inputs", {}))
+    expected_inout_mapping.update(inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP, {}).get("outputs", {}))
+    expected_inout_mapping.update({'test': 'this'})
 
     worker = stage._get_inference_worker(inf_queue=ProducerConsumerQueue())
-    _check_worker(inference_mod, worker, expected_mapping)
+    _check_worker(inference_mod, worker, expected_inout_mapping)
 
 
 @pytest.mark.use_cudf
