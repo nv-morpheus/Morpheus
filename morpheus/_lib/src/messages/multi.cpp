@@ -273,7 +273,7 @@ pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, std::s
 }
 
 pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, std::vector<std::string> columns)
-{    
+{
     // Need to release the GIL before calling `get_meta()`
     pybind11::gil_scoped_release no_gil;
 
