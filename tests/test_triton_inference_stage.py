@@ -139,8 +139,10 @@ def test_stage_constructor(config: Config,
         expexted_needs_logits = needs_logits
 
     expected_inout_mapping = {}
-    expected_inout_mapping.update(TritonInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(pipeline_mode, {}).get("inputs", {}))
-    expected_inout_mapping.update(TritonInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(pipeline_mode, {}).get("outputs", {}))
+    expected_inout_mapping.update(
+        TritonInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(pipeline_mode, {}).get("inputs", {}))
+    expected_inout_mapping.update(
+        TritonInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(pipeline_mode, {}).get("outputs", {}))
     expected_inout_mapping.update(inout_mapping or {})
 
     config.mode = pipeline_mode
