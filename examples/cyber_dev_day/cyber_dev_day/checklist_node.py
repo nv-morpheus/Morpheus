@@ -41,8 +41,8 @@ logger = logging.getLogger(__name__)
 
 # """).strip("\n")
 
-checklist_prompt_template = dedent("""
-You are an expert security analyst. Your objective is to add a "Checklist" section containing steps to use when assessing the exploitability of a specific CVE within a containerized environment. \
+checklist_prompt_template = dedent(
+    """You are an expert security analyst. Your objective is to add a "Checklist" section containing steps to use when assessing the exploitability of a specific CVE within a containerized environment. \
 For each checklist item, start with an action verb, making it clear and actionable
 
 **Context**:
@@ -68,7 +68,7 @@ Example 1 Exploitability Assessment Checklist:
 "Check for lxml: Verify if your project uses the lxml library, which is the affected package. If lxml is not a dependency in your project, then your code is not vulnerable to this CVE.",
 "Review Affected Versions: If lxml is used, checked the version that your project depends on. According to the vulnerability details, versions 4.9.0 and earlier are vulnerable.",
 "Review Versions of Connected Dependencies: The package is only vulnerable if libxml 2.9.10 through 2.9.14 is also present. Check the version of libxml in the project.",
-"Check for use of vulnerable functions: The library is vulnerable through its `iterwalk` function, which is also utilized by the `canonicalize` function. Check if either of these functions are used in your codebase."
+"Check for use of vulnerable functions: The library is vulnerable through its `iterwalk` function, which is also utilized by the `canonicalize` function. Check if either of these functions are used in your code base."
 ]
 
 Example 2 CVE Details:
@@ -86,7 +86,7 @@ Example 2 Exploitability Assessment Checklist:
 [
     "Check for aiohttp: Verify if your project uses the aiohttp library, which is the affected package. If aiohttp is not a dependency in your project, then your code is not vulnerable to this CVE.",
     "Review Affected Versions: If aiohttp is used, check the version that your project depends on. According to the vulnerability details, versions from 1.0.5 up to (excluding) 3.9.2 are affected by this vulnerability.",
-    "Review Code To Check for Vulnerability Mitigation: Check if the 'follow_symlinks' option is set to False in your codebase to mitigate the risk of directory traversal vulnerabilities."
+    "Review Code To Check for Vulnerability Mitigation: Check if the 'follow_symlinks' option is set to False to mitigate the risk of directory traversal vulnerabilities."
 ]
 
 **Criteria**:
@@ -104,8 +104,7 @@ Example 2 Exploitability Assessment Checklist:
 **CVE Details:**
 {{cve_details}}
 
-**Checklist**:
-""").strip("\n")
+**Checklist**: """).strip("\n")
 
 parselist_prompt_template = dedent("""
 Parse the following numbered checklist's contents into a python list in the format ['x', 'y', 'z'], a comma separated list surrounded by square braces. For example, the following checklist:
