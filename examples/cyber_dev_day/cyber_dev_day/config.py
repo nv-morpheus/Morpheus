@@ -28,6 +28,7 @@ class NeMoLLMModelConfig(BaseModel):
     model_name: str
     customization_id: str | None = None
     temperature: float = 0.0
+    top_k: int = 0
     tokens_to_generate: int = 300
 
 

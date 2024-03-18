@@ -78,8 +78,8 @@ def build_agent_executor(config: EngineAgentConfig) -> AgentExecutor:
         tools.append(
             Tool(name="Docker Container Code QA System",
                  func=code_qa_tool.run,
-                 description=("useful for when you need to check if an application or any dependency within "
-                              "the Docker container uses a function or a component of a library.")))
+                 description=("useful for when you need to review code to check for an import or function usage in "
+                              "the Docker container.")))
 
     agent_executor = initialize_agent(tools,
                                       langchain_llm,
