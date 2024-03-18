@@ -86,6 +86,8 @@ class PromptTemplateNode(LLMNodeBase):
 
             output_list = await asyncio.gather(*render_coros)
 
+        print("Prompt Output:\n{}".format(output_list[0]))
+
         context.set_output(output_list)
 
         return context
