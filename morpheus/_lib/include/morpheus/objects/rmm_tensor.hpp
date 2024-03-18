@@ -127,11 +127,6 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<rmm::device_buffer> buffer() const;
-
-    /**
-     * TODO(Documentation)
-     */
     void get_shape(ShapeType& s) const;
 
     /**
