@@ -274,12 +274,7 @@ pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, std::s
 
 pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, std::vector<std::string> columns)
 {
-    // Need to release the GIL before calling `get_meta()`
-    pybind11::gil_scoped_release no_gil;
-
-    pybind11::object df = self.meta->get_info().get_py_obj();
-
-    pybind11::gil_scoped_acquire gil;
+    pybind11::object df = self.meta->get_py_object();
 
     auto row_indexer = pybind11::slice(
         pybind11::int_(self.mess_offset), pybind11::int_(self.mess_offset + self.mess_count), pybind11::none());
