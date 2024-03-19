@@ -123,13 +123,12 @@ def run_pipeline(pipeline_batch_size,
 
         # add preprocessing stage
         pipeline.add_stage(
-            PreprocessNLPStage(
-                config,
-                vocab_hash_file=hashfile,
-                do_lower_case=True,
-                truncation=True,
-                add_special_tokens=False,
-                column='data'))
+            PreprocessNLPStage(config,
+                               vocab_hash_file=hashfile,
+                               do_lower_case=True,
+                               truncation=True,
+                               add_special_tokens=False,
+                               column='data'))
 
         pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
 
