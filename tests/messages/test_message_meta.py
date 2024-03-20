@@ -154,26 +154,26 @@ def test_pandas_df_cpp(dataset_pandas: DatasetManager):
     """
     Test for issue #821, calling the `df` property returns an empty cudf dataframe.
     """
-    df = dataset_pandas["filter_probs.csv"]
+    df = dataset_pandas["test_dataframe.jsonlines"]
     assert isinstance(df, pd.DataFrame)
 
     meta = MessageMeta(df)
     assert isinstance(meta, MessageMetaCpp)
     assert isinstance(meta.df, cudf.DataFrame)
-    DatasetManager.assert_compare_df(meta.df, df)
+    DatasetManager.assert_df_equal(meta.df, df, assert_msg="Should be identical")
 
 
 def test_cast(config: Config, dataset: DatasetManager):  # pylint: disable=unused-argument
     """
     Test tcopy constructor
     """
-    df = dataset["filter_probs.csv"]
+    df = dataset["test_dataframe.jsonlines"]
     meta1 = MessageMeta(df)
 
     meta2 = MessageMeta(meta1)
     assert isinstance(meta2, MessageMeta)
 
-    DatasetManager.assert_compare_df(meta2.copy_dataframe(), df)
+    DatasetManager.assert_df_equal(meta2.copy_dataframe(), df, assert_msg="Should be identical")
 
 
 @pytest.mark.use_pandas
@@ -182,7 +182,7 @@ def test_cast_python_to_cpp(dataset: DatasetManager):
     """
     Test that we can cast a python MessageMeta to a C++ MessageMeta
     """
-    df = dataset["filter_probs.csv"]
+    df = dataset["test_dataframe.jsonlines"]
 
     py_meta = MessageMeta(df)
     assert isinstance(py_meta, MessageMeta)
@@ -201,7 +201,7 @@ def test_cast_cpp_to_python(dataset: DatasetManager):
     """
     Test that we can cast a a C++ MessageMeta to a python MessageMeta
     """
-    df = dataset["filter_probs.csv"]
+    df = dataset["test_dataframe.jsonlines"]
     cpp_meta = MessageMetaCpp(df)
 
     py_meta = MessageMeta(cpp_meta)
