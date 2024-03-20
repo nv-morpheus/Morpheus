@@ -156,7 +156,7 @@ class ConfigGenerator:
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "conda_env": {
                     'channels': ['defaults', 'conda-forge'],
-                    'dependencies': ['python=3.8', 'pip'],
+                    'dependencies': ['python=3.10', 'pip'],
                     'pip': ['mlflow', 'dfencoder'],
                     'name': 'mlflow-env'
                 }
