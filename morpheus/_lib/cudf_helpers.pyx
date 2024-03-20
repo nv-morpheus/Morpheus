@@ -55,11 +55,7 @@ cdef public api:
 
         data, index = data_from_unique_ptr(move(table.tbl), column_names=column_names, index_names=index_names)
 
-        df = cudf.DataFrame._from_data(data, index)
-        
-        update_struct_field_names(df, table.metadata.schema_info)
-
-        return df
+        return cudf.DataFrame._from_data(data, index)
 
     object make_table_from_table_info_data(TableInfoData table_info, object owner):
 
