@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 
@@ -29,6 +30,10 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>
+#include <nvtext/subword_tokenize.hpp>
+#include <cudf/unary.hpp>
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/utilities/matx_util.hpp"
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
@@ -39,6 +44,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <type_traits>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -94,6 +100,9 @@ class PreprocessNLPStage
      * TODO(Documentation)
      */
     subscribe_fn_t build_operator();
+    nvtext::tokenizer_result subword_tokenize(cudf::strings_column_view const& string_col,
+                                              int stride,
+                                              rmm::mr::device_memory_resource* mr);
 
     std::string m_vocab_hash_file;
     std::string m_column;
@@ -141,6 +150,87 @@ struct PreprocessNLPStageInterfaceProxy
                                                                           int stride         = -1,
                                                                           std::string column = "data");
 };
+
+// template <typename InputT>
+// typename PreprocessNLPStage<InputT>::subscribe_fn_t PreprocessNLPStage<InputT>::build_operator()
+// {
+//     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+//         uint32_t stride = m_stride;
+
+//         // Auto calc stride to be 75% of sequence length
+//         if (stride < 0)
+//         {
+//             stride = m_sequence_length / 2;
+//             stride = stride + stride / 2;
+//         }
+
+//         return input.subscribe(rxcpp::make_observer<sink_type_t>(
+//             [this, &output, stride](sink_type_t x) {
+//                 // Convert to string view
+//                 if constexpr (std::is_same_v<>)
+//                 auto meta = x->get_meta(this->m_column);
+//                 auto col        = meta.get_column(0);
+//                 auto string_col = cudf::strings_column_view{col};
+
+//                 auto token_results = this->subword_tokenize(string_col, stride, rmm::mr::get_current_device_resource());
+                
+//                 // Build the results
+//                 auto memory = std::make_shared<InferenceMemory>(token_results.nrows_tensor);
+
+//                 TensorIndex length = token_results.tensor_token_ids->size() / token_results.sequence_length;
+//                 auto input_ids_released =
+//                     cudf::cast(token_results.tensor_token_ids->view(), cudf::data_type(cudf::type_id::INT32))
+//                         ->release();
+
+//                 memory->set_tensor("input_ids",
+//                                    Tensor::create(std::move(input_ids_released.data),
+//                                                   DType::create<int32_t>(),
+//                                                   {length, static_cast<TensorIndex>(token_results.sequence_length)},
+//                                                   {},
+//                                                   0));
+
+//                 length = token_results.tensor_attention_mask->size() / token_results.sequence_length;
+//                 auto input_mask_released =
+//                     cudf::cast(token_results.tensor_attention_mask->view(), cudf::data_type(cudf::type_id::INT32))
+//                         ->release();
+//                 memory->set_tensor("input_mask",
+//                                    Tensor::create(std::move(input_mask_released.data),
+//                                                   DType::create<int32_t>(),
+//                                                   {length, static_cast<TensorIndex>(token_results.sequence_length)},
+//                                                   {},
+//                                                   0));
+
+//                 auto tensor_index_dtype = DType::create<TensorIndex>();
+//                 length                  = token_results.tensor_metadata->size() / 3;
+//                 auto seq_ids_released   = cudf::cast(token_results.tensor_metadata->view(),
+//                                                    cudf::data_type(tensor_index_dtype.cudf_type_id()))
+//                                             ->release();
+
+//                 std::shared_ptr<rmm::device_buffer> seq_ids_data = std::move(seq_ids_released.data);
+
+//                 if (x->mess_offset > 0)
+//                 {
+//                     // Add an offset to the seq_ids so the message IDs line up
+//                     MatxUtil::offset_seq_ids(
+//                         DevMemInfo{seq_ids_data, tensor_index_dtype.type_id(), {length, 3}, {1, 3}}, x->mess_offset);
+//                 }
+
+//                 memory->set_tensor("seq_ids", Tensor::create(seq_ids_data, tensor_index_dtype, {length, 3}, {}, 0));
+
+//                 auto next = std::make_shared<MultiInferenceMessage>(
+//                     x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);
+
+//                 output.on_next(std::move(next));
+//             },
+//             [&](std::exception_ptr error_ptr) {
+//                 output.on_error(error_ptr);
+//             },
+//             [&]() {
+//                 output.on_completed();
+//             }));
+//     };
+// }
+
 #pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus
