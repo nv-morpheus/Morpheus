@@ -18,6 +18,7 @@
 #include "morpheus/messages/control.hpp"  // for ControlMessage
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/messages/multi_inference_nlp.hpp"
 #include "morpheus/objects/file_types.hpp"  // for FileTypes
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
@@ -214,11 +215,26 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("features"));
 
-    py::class_<mrc::segment::Object<PreprocessNLPStage>,
+    py::class_<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>>(
-        _module, "PreprocessNLPStage", py::multiple_inheritance())
-        .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init),
+               std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>>>(
+        _module, "PreprocessNLPMultiMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init_multi),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("vocab_hash_file"),
+             py::arg("sequence_length"),
+             py::arg("truncation"),
+             py::arg("do_lower_case"),
+             py::arg("add_special_token"),
+             py::arg("stride"),
+             py::arg("column"));
+
+    py::class_<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>>>(
+        _module, "PreprocessNLPControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init_cm),
              py::arg("builder"),
              py::arg("name"),
              py::arg("vocab_hash_file"),

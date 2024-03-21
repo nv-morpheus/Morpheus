@@ -21,14 +21,16 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/utilities/matx_util.hpp"
 
 #include <boost/fiber/context.hpp>
 #include <boost/fiber/future/future.hpp>
 #include <cudf/column/column_factories.hpp>
-#include <cudf/column/column_factories.hpp>
 #include <cudf/filling.hpp>
 #include <cudf/reshape.hpp>
-#include <cudf/column/column_factories.hpp>
+#include <cudf/scalar/scalar.hpp>
+#include <cudf/unary.hpp>
 #include <mrc/node/rx_sink_base.hpp>
 #include <mrc/node/rx_source_base.hpp>
 #include <mrc/node/sink_properties.hpp>
@@ -38,10 +40,6 @@
 #include <mrc/types.hpp>
 #include <nvtext/normalize.hpp>
 #include <nvtext/subword_tokenize.hpp>
-#include <cudf/unary.hpp>
-#include <cudf/scalar/scalar.hpp>
-#include "morpheus/objects/tensor.hpp"
-#include "morpheus/utilities/matx_util.hpp"
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
@@ -52,7 +50,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -68,9 +65,8 @@ namespace morpheus {
 /**
  * @brief NLP input data for inference
  */
-template<typename InputT, typename OutputT>
-class PreprocessNLPStage
-  : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
+template <typename InputT, typename OutputT>
+class PreprocessNLPStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
@@ -109,9 +105,6 @@ class PreprocessNLPStage
      * TODO(Documentation)
      */
     subscribe_fn_t build_operator();
-    nvtext::tokenizer_result subword_tokenize(cudf::strings_column_view const& string_col,
-                                              int stride,
-                                              rmm::mr::device_memory_resource* mr);
 
     std::string m_vocab_hash_file;
     std::string m_column;
@@ -124,12 +117,12 @@ class PreprocessNLPStage
 
 template <typename InputT, typename OutputT>
 PreprocessNLPStage<InputT, OutputT>::PreprocessNLPStage(std::string vocab_hash_file,
-                                       uint32_t sequence_length,
-                                       bool truncation,
-                                       bool do_lower_case,
-                                       bool add_special_token,
-                                       int stride,
-                                       std::string column) :
+                                                        uint32_t sequence_length,
+                                                        bool truncation,
+                                                        bool do_lower_case,
+                                                        bool add_special_token,
+                                                        int stride,
+                                                        std::string column) :
   base_t(base_t::op_factory_from_sub_fn(build_operator())),
   m_vocab_hash_file(std::move(vocab_hash_file)),
   m_sequence_length(sequence_length),
@@ -140,54 +133,13 @@ PreprocessNLPStage<InputT, OutputT>::PreprocessNLPStage(std::string vocab_hash_f
   m_column(std::move(column))
 {}
 
-template <typename InputT, typename OutputT>
-nvtext::tokenizer_result PreprocessNLPStage<InputT, OutputT>::subword_tokenize(cudf::strings_column_view const& string_col,
-                                                              int stride,
-                                                              rmm::mr::device_memory_resource* mr)
-{
-    // Create the hashed vocab
-    thread_local std::unique_ptr<nvtext::hashed_vocabulary> vocab =
-        nvtext::load_vocabulary_file(this->m_vocab_hash_file);
-
-    // remove leading and trailing whitespace
-    auto normalized_col      = nvtext::normalize_spaces(string_col);
-    auto normalized_col_view = cudf::strings_column_view{normalized_col->view()};
-
-    // Perform the tokenizer
-    nvtext::tokenizer_result token_results;
-
-    if (normalized_col_view.chars_size(rmm::cuda_stream_default) > 0)
-    {
-        token_results = nvtext::subword_tokenize(normalized_col_view,
-                                                 *vocab,
-                                                 this->m_sequence_length,
-                                                 stride,
-                                                 this->m_do_lower_case,
-                                                 this->m_truncation,
-                                                 rmm::mr::get_current_device_resource());
-    }
-    else
-    {
-        // workaround for a situation where the input strings contain either no characters or only
-        // whitespace
-        auto zero     = cudf::numeric_scalar<uint32_t>(0, true, rmm::cuda_stream_default);
-        auto ids      = cudf::make_column_from_scalar(zero, this->m_sequence_length * normalized_col_view.size());
-        auto mask     = cudf::make_column_from_scalar(zero, this->m_sequence_length * normalized_col_view.size());
-        auto metadata = [&]() {
-            auto iota   = cudf::sequence(normalized_col_view.size(), zero);
-            auto zeroes = cudf::make_column_from_scalar(zero, normalized_col_view.size());
-            return cudf::interleave_columns(
-                cudf::table_view{std::vector<cudf::column_view>{iota->view(), zeroes->view(), zeroes->view()}});
-        }();
-
-        token_results = nvtext::tokenizer_result{static_cast<uint32_t>(normalized_col_view.size()),
-                                                 this->m_sequence_length,
-                                                 std::move(ids),
-                                                 std::move(mask),
-                                                 std::move(metadata)};
-    }
-    return token_results;
-}
+nvtext::tokenizer_result subword_tokenize(const std::string& vocab_hash_file,
+                                          uint32_t sequence_length,
+                                          bool do_lower_case,
+                                          bool truncation,
+                                          cudf::strings_column_view const& string_col,
+                                          int stride,
+                                          rmm::mr::device_memory_resource* mr);
 
 template <typename InputT, typename OutputT>
 PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, OutputT>::build_operator()
@@ -212,8 +164,13 @@ PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, O
                     auto col        = meta.get_column(0);
                     auto string_col = cudf::strings_column_view{col};
 
-                    auto token_results =
-                        this->subword_tokenize(string_col, stride, rmm::mr::get_current_device_resource());
+                    auto token_results = subword_tokenize(this->m_vocab_hash_file,
+                                                          this->m_sequence_length,
+                                                          this->m_do_lower_case,
+                                                          this->m_truncation,
+                                                          string_col,
+                                                          stride,
+                                                          rmm::mr::get_current_device_resource());
 
                     // Build the results
                     auto memory = std::make_shared<InferenceMemory>(token_results.nrows_tensor);
@@ -267,7 +224,6 @@ PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, O
                 else if constexpr (std::is_same_v<sink_type_t, ControlMessage>)
                 {
                     // Convert to string view
-
                     auto num_columns = x->payload()->get_info().num_columns();
                     auto meta =
                         x->payload()->get_info().get_slice(0, num_columns, std::vector<std::string>{this->m_column});
@@ -275,8 +231,13 @@ PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, O
                     auto col        = meta.get_column(0);
                     auto string_col = cudf::strings_column_view{col};
 
-                    auto token_results =
-                        this->subword_tokenize(string_col, stride, rmm::mr::get_current_device_resource());
+                    auto token_results = subword_tokenize(this->m_vocab_hash_file,
+                                                          this->m_sequence_length,
+                                                          this->m_do_lower_case,
+                                                          this->m_truncation,
+                                                          string_col,
+                                                          stride,
+                                                          rmm::mr::get_current_device_resource());
 
                     // Build the results
                     auto memory = std::make_shared<TensorMemory>(token_results.nrows_tensor);
@@ -319,9 +280,12 @@ PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, O
 
                     output.on_next(std::move(next));
                 }
+                // sink_type_t not supported
                 else
                 {
-                    // sink_type_t not supported, error_handling
+                    std::string error_msg{"Unsupported input type received: " + std::string(typeid(x).name())};
+                    LOG(ERROR) << error_msg;
+                    throw std::runtime_error(error_msg);
                 }
             },
             [&](std::exception_ptr error_ptr) {
@@ -333,7 +297,6 @@ PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, O
     };
 }
 
-
 /****** PreprocessNLPStageInferenceProxy********************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
@@ -341,7 +304,8 @@ PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, O
 struct PreprocessNLPStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a ProcessNLPStage, and return the result
+     * @brief Create and initialize a ProcessNLPStage that receives MultiMessage and emits MultiInferenceMessage, and
+     * return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
@@ -361,30 +325,49 @@ struct PreprocessNLPStageInterfaceProxy
      * @param column : Name of the string column to operate on, defaults to "data".
      * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>> init(mrc::segment::Builder& builder,
-                                                                          const std::string& name,
-                                                                          std::string vocab_hash_file,
-                                                                          uint32_t sequence_length,
-                                                                          bool truncation,
-                                                                          bool do_lower_case,
-                                                                          bool add_special_token,
-                                                                          int stride         = -1,
-                                                                          std::string column = "data");
-    /*
-    TODO: Documentation
-    */
-    // static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>> init(mrc::segment::Builder& builder,
-    //                                                                       const std::string& name,
-    //                                                                       std::string vocab_hash_file,
-    //                                                                       uint32_t sequence_length,
-    //                                                                       bool truncation,
-    //                                                                       bool do_lower_case,
-    //                                                                       bool add_special_token,
-    //                                                                       int stride         = -1,
-    //                                                                       std::string column = "data");
+    static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>> init_multi(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        std::string vocab_hash_file,
+        uint32_t sequence_length,
+        bool truncation,
+        bool do_lower_case,
+        bool add_special_token,
+        int stride         = -1,
+        std::string column = "data");
+    /**
+     * @brief Create and initialize a ProcessNLPStage that receives ControlMessage and emits ControlMessage, and return
+     * the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created
+     * from the raw vocabulary using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
+     * @param sequence_length : Sequence Length to use (We add to special tokens for NER classification job).
+     * @param truncation : If set to true, strings will be truncated and padded to max_length. Each input string will
+     * result in exactly one output sequence. If set to false, there may be multiple output sequences when the
+     * max_length is smaller than generated tokens.
+     * @param do_lower_case : If set to true, original text will be lowercased before encoding.
+     * @param add_special_token : Whether or not to encode the sequences with the special tokens of the BERT
+     * classification model.
+     * @param stride : If `truncation` == False and the tokenized string is larger than max_length, the sequences
+     * containing the overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is
+     * equal to stride there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will
+     * be repeated on the second sequence and so on until the entire sentence is encoded.
+     * @param column : Name of the string column to operate on, defaults to "data".
+     * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>
+     */
+    static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>> init_cm(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        std::string vocab_hash_file,
+        uint32_t sequence_length,
+        bool truncation,
+        bool do_lower_case,
+        bool add_special_token,
+        int stride         = -1,
+        std::string column = "data");
 };
-
-
 
 #pragma GCC visibility pop
 /** @} */  // end of group
