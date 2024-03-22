@@ -156,7 +156,7 @@ PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, O
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, stride](sink_type_t x) {
-                if constexpr (std::is_same_v<sink_type_t, MultiMessage>)
+                if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
                 {
                     // Convert to string view
                     auto meta = x->get_meta(this->m_column);
@@ -221,7 +221,7 @@ PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, O
 
                     output.on_next(std::move(next));
                 }
-                else if constexpr (std::is_same_v<sink_type_t, ControlMessage>)
+                else if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<ControlMessage>>)
                 {
                     // Convert to string view
                     auto num_columns = x->payload()->get_info().num_columns();
@@ -275,7 +275,7 @@ PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, O
 
                     memory->set_tensor("seq_ids", Tensor::create(seq_ids_data, tensor_index_dtype, {length, 3}, {}, 0));
 
-                    auto next = std::make_shared<ControlMessage>(x);
+                    auto next = x;
                     next->tensors(memory);
 
                     output.on_next(std::move(next));
@@ -283,7 +283,7 @@ PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, O
                 // sink_type_t not supported
                 else
                 {
-                    std::string error_msg{"Unsupported input type received: " + std::string(typeid(x).name())};
+                    std::string error_msg{"PreProcessNLPStage receives unsupported input type: " + std::string(typeid(x).name())};
                     LOG(ERROR) << error_msg;
                     throw std::runtime_error(error_msg);
                 }
