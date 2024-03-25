@@ -17,11 +17,14 @@
 
 #include "py_llm_node_base.hpp"
 
+#include "py_llm_context.hpp"
+
 #include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_engine.hpp"
 #include "morpheus/llm/llm_node.hpp"
 #include "morpheus/llm/llm_node_base.hpp"
 
+#include <glog/logging.h>
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
@@ -43,6 +46,7 @@ std::vector<std::string> PyLLMNodeBase<BaseT>::get_input_names() const
 template <class BaseT>
 Task<std::shared_ptr<LLMContext>> PyLLMNodeBase<BaseT>::execute(std::shared_ptr<LLMContext> context)
 {
+    DCHECK_NOTNULL(std::dynamic_pointer_cast<PyLLMContext>(context));
     MRC_PYBIND11_OVERRIDE_CORO_PURE_TEMPLATE(std::shared_ptr<LLMContext>, LLMNodeBase, BaseT, execute, context);
 }
 

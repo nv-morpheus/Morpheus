@@ -38,6 +38,7 @@ class PyLLMEngine : public PyLLMNode<LLMEngine>
     ~PyLLMEngine() override;
 
     void add_task_handler(user_input_mappings_t inputs, std::shared_ptr<LLMTaskHandler> task_handler) override;
+    std::shared_ptr<LLMContext> create_context(LLMTask task, std::shared_ptr<ControlMessage> message) override;
 
   private:
     // Keep the python objects alive by saving references in this object

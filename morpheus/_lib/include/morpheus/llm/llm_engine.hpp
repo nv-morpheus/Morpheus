@@ -61,6 +61,8 @@ class MORPHEUS_EXPORT LLMEngine : public LLMNode
      */
     virtual void add_task_handler(user_input_mappings_t inputs, std::shared_ptr<LLMTaskHandler> task_handler);
 
+    virtual std::shared_ptr<LLMContext> create_context(LLMTask task, std::shared_ptr<ControlMessage> message);
+
     /**
      * @brief Execute nodes in this engine and pass outputs to its task handlers. Must pass this a control message with
      * a 'llm_engine' task` containing 'task_type' and 'task_dict' properties required for execution of task(s).
