@@ -37,7 +37,6 @@ struct LLMContextState
 {
     LLMTask task;
     std::shared_ptr<ControlMessage> message;
-    nlohmann::json values;
 };
 
 /**
