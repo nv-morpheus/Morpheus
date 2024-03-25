@@ -169,6 +169,8 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      */
     void set_output(nlohmann::json outputs);
 
+    void set_output(mrc::pymrc::JSONValues&& outputs);
+
     /**
      * @brief Set an output value for this context.
      *
@@ -176,6 +178,8 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      * @param output output value
      */
     void set_output(const std::string& output_name, nlohmann::json output);
+
+    void set_output(const std::string& output_name, mrc::pymrc::JSONValues&& output);
 
     /**
      * @brief Set the output names to propagate from this context when using pop.

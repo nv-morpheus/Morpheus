@@ -233,6 +233,30 @@ void LLMContext::set_output(const std::string& output_name, nlohmann::json outpu
     invalidate_cache();
 }
 
+void LLMContext::set_output(mrc::pymrc::JSONValues&& outputs)
+{
+    m_outputs = std::move(outputs);
+    invalidate_cache();
+
+    this->outputs_complete();
+}
+
+void LLMContext::set_output(const std::string& output_name, mrc::pymrc::JSONValues&& output)
+{
+    std::string name;
+    if (output_name[0] == '/')
+    {
+        name = output_name;
+    }
+    else
+    {
+        name = "/" + output_name;
+    }
+
+    m_outputs = std::move(m_outputs.set_value(name, std::move(output)));
+    invalidate_cache();
+}
+
 void LLMContext::set_output_names(std::vector<std::string> output_names)
 {
     m_output_names = std::move(output_names);
