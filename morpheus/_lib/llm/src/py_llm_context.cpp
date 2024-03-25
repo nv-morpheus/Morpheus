@@ -34,7 +34,7 @@ py::object PyLLMContext::all_outputs() const
     return m_outputs.to_python();
 }
 
-std::shared_ptr<PyLLMContext> PyLLMContext::push(std::string name, input_mappings_t inputs)
+std::shared_ptr<LLMContext> PyLLMContext::push(std::string name, input_mappings_t inputs)
 {
     return std::make_shared<PyLLMContext>(this->shared_from_this(), std::move(name), std::move(inputs));
 }
