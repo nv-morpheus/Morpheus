@@ -44,6 +44,7 @@ void PyLLMContext::pop()
     auto py_parent = std::dynamic_pointer_cast<PyLLMContext>(m_parent);
     if (py_parent)
     {
+        pybind11::gil_scoped_acquire gil;
         auto outputs = m_outputs.to_python();
 
         // Copy the outputs from the child context to the parent
@@ -92,14 +93,15 @@ py::object PyLLMContext::get_py_input() const
 
 py::object PyLLMContext::get_py_input(const std::string& node_name) const
 {
+    pybind11::gil_scoped_acquire gil;
     if (node_name[0] == '/')
     {
         auto py_dict = m_outputs.to_python().cast<py::dict>();
 
         try
         {
-            return py_dict[node_name.c_str()];
-        } catch (const py::key_error& e)
+            return py_dict[node_name.substr(1).c_str()];
+        } catch (py::error_already_set& err)
         {
             throw std::runtime_error(MORPHEUS_CONCAT_STR("Input '" << node_name << "' not found in the output map"));
         }
