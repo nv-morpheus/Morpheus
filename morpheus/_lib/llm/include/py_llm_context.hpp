@@ -26,7 +26,13 @@ namespace morpheus::llm {
 class PyLLMContext : public LLMContext
 {
   public:
+    using LLMContext::LLMContext;
+
     pybind11::object all_outputs() const;
+
+    std::shared_ptr<LLMContext> push(std::string name, input_mappings_t inputs) override;
+    void pop() override;
+
     pybind11::object get_py_input() const;
     pybind11::object get_py_input(const std::string& node_name) const;
     pybind11::object get_py_inputs() const;

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "./include/py_llm_context.hpp"
 #include "./include/py_llm_engine.hpp"
 #include "./include/py_llm_node.hpp"
 #include "./include/py_llm_node_base.hpp"
@@ -23,7 +24,6 @@
 #include "py_llm_lambda_node.hpp"
 
 #include "morpheus/llm/input_map.hpp"
-#include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_engine.hpp"
 #include "morpheus/llm/llm_node.hpp"
 #include "morpheus/llm/llm_node_base.hpp"
@@ -181,35 +181,31 @@ PYBIND11_MODULE(llm, _module)
     //     },
     //     py::keep_alive<0, 1>());
 
-    py::class_<LLMContext, std::shared_ptr<LLMContext>>(_module, "LLMContext")
+    py::class_<PyLLMContext, std::shared_ptr<PyLLMContext>>(_module, "LLMContext")
         .def(py::init<>())
-        .def(py::init<std::shared_ptr<LLMContext>, std::string, input_mappings_t>(),
+        .def(py::init<std::shared_ptr<PyLLMContext>, std::string, input_mappings_t>(),
              py::arg("prent"),
              py::arg("name"),
              py::arg("inputs"))
         .def(py::init<LLMTask, std::shared_ptr<ControlMessage>>(), py::arg("task"), py::arg("message"))
-        .def_property_readonly("name", &LLMContext::name)
-        .def_property_readonly("full_name", &LLMContext::full_name)
-        .def_property_readonly("view_outputs", &LLMContext::view_outputs)
-        .def_property_readonly("input_map", &LLMContext::input_map)
-        .def_property_readonly("parent", &LLMContext::parent)
-        .def("task", &LLMContext::task)
-        .def("message", &LLMContext::message)
-        .def("get_input", py::overload_cast<>(&LLMContext::get_input, py::const_))
+        .def_property_readonly("name", &PyLLMContext::name)
+        .def_property_readonly("full_name", &PyLLMContext::full_name)
+        .def_property_readonly("view_outputs", &PyLLMContext::view_outputs)
+        .def_property_readonly("input_map", &PyLLMContext::input_map)
+        .def_property_readonly("parent", &PyLLMContext::parent)
+        .def("task", &PyLLMContext::task)
+        .def("message", &PyLLMContext::message)
+        .def("get_input", py::overload_cast<>(&PyLLMContext::get_py_input, py::const_))
         .def("get_input",
-             py::overload_cast<const std::string&>(&LLMContext::get_input, py::const_),
+             py::overload_cast<const std::string&>(&PyLLMContext::get_py_input, py::const_),
              py::arg("node_name"))
-        .def("get_inputs",
-             [](LLMContext& self) {
-                 // Convert the return value
-                 return mrc::pymrc::cast_from_json(self.get_inputs()).cast<py::dict>();
-             })
-        .def("set_output", py::overload_cast<nlohmann::json>(&LLMContext::set_output), py::arg("outputs"))
+        .def("get_inputs", &PyLLMContext::get_py_inputs)
+        .def("set_output", py::overload_cast<py::object>(&PyLLMContext::set_output), py::arg("outputs"))
         .def("set_output",
-             py::overload_cast<const std::string&, nlohmann::json>(&LLMContext::set_output),
+             py::overload_cast<const std::string&, py::object>(&PyLLMContext::set_output),
              py::arg("output_name"),
              py::arg("output"))
-        .def("push", &LLMContext::push, py::arg("name"), py::arg("inputs"));
+        .def("push", &PyLLMContext::push, py::arg("name"), py::arg("inputs"));
 
     py::class_<LLMNodeBase, PyLLMNodeBase<>, std::shared_ptr<LLMNodeBase>>(_module, "LLMNodeBase")
         .def(py::init_alias<>())
@@ -301,8 +297,8 @@ PYBIND11_MODULE(llm, _module)
         .def("get_input_names",
              &LLMTaskHandler::get_input_names,
              R"pbdoc(
-                Get the input names for the task handler. 
-                
+                Get the input names for the task handler.
+
                 Returns
                 -------
                 list[str]

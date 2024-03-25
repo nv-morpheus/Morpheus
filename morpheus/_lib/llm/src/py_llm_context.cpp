@@ -17,6 +17,7 @@
 
 #include "py_llm_context.hpp"
 
+#include "morpheus/llm/llm_context.hpp"
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 
 #include <pybind11/pybind11.h>
@@ -31,6 +32,51 @@ namespace py = pybind11;
 py::object PyLLMContext::all_outputs() const
 {
     return m_outputs.to_python();
+}
+
+std::shared_ptr<PyLLMContext> PyLLMContext::push(std::string name, input_mappings_t inputs)
+{
+    return std::make_shared<PyLLMContext>(this->shared_from_this(), std::move(name), std::move(inputs));
+}
+
+void PyLLMContext::pop()
+{
+    auto py_parent = std::dynamic_pointer_cast<PyLLMContext>(m_parent);
+    if (py_parent)
+    {
+        auto outputs = m_outputs.to_python();
+
+        // Copy the outputs from the child context to the parent
+        if (m_output_names.empty())
+        {
+            // Use them all by default
+            py_parent->set_output(m_name, std::move(outputs));
+        }
+        else if (m_output_names.size() == 1)
+        {
+            // Treat only a single output as the output
+            py_parent->set_output(m_name, outputs.attr("pop")(m_output_names[0].c_str()));
+        }
+        else
+        {
+            // Build a new json object with only the specified keys
+            py::dict new_outputs;
+
+            for (const auto& output_name : m_output_names)
+            {
+                new_outputs[output_name.c_str()] = outputs.attr("pop")(output_name.c_str());
+            }
+
+            py_parent->set_output(m_name, std::move(new_outputs));
+        }
+
+        m_outputs = std::move(mrc::pymrc::JSONValues(std::move(outputs)));
+        invalidate_cache();
+    }
+    else
+    {
+        LLMContext::pop();
+    }
 }
 
 py::object PyLLMContext::get_py_input() const
