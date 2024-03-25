@@ -24,6 +24,7 @@
 #include "py_llm_lambda_node.hpp"
 
 #include "morpheus/llm/input_map.hpp"
+#include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_engine.hpp"
 #include "morpheus/llm/llm_node.hpp"
 #include "morpheus/llm/llm_node_base.hpp"
@@ -181,7 +182,8 @@ PYBIND11_MODULE(llm, _module)
     //     },
     //     py::keep_alive<0, 1>());
 
-    py::class_<PyLLMContext, std::shared_ptr<PyLLMContext>>(_module, "LLMContext")
+    py::class_<LLMContext, std::shared_ptr<LLMContext>>(_module, "_BaseLLMContext");
+    py::class_<PyLLMContext, LLMContext, std::shared_ptr<PyLLMContext>>(_module, "LLMContext")
         .def(py::init<>())
         .def(py::init<std::shared_ptr<PyLLMContext>, std::string, input_mappings_t>(),
              py::arg("prent"),
