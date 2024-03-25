@@ -17,6 +17,7 @@
 
 #include "py_llm_lambda_node.hpp"
 
+#include "py_llm_context.hpp"
 #include "pymrc/coro.hpp"
 
 #include "morpheus/llm/llm_context.hpp"
@@ -91,14 +92,14 @@ std::vector<std::string> PyLLMLambdaNode::get_input_names() const
 
 Task<std::shared_ptr<LLMContext>> PyLLMLambdaNode::execute(std::shared_ptr<LLMContext> context)
 {
-    // Get the inputs. This will be a dictionary
-    auto inputs = context->get_inputs();
-
     // Grab the GIL
     pybind11::gil_scoped_acquire gil;
 
-    // Convert to python dictionary
-    auto py_inputs = mrc::pymrc::cast_from_json(std::move(inputs));
+    // TODO: I think we have a macro for this
+    auto py_context = std::dynamic_pointer_cast<PyLLMContext>(context);
+
+    // Get the inputs. This will be a dictionary
+    auto py_inputs = py_context->get_py_inputs();
 
     // Call the function
     auto py_coro = m_fn(**py_inputs);
@@ -121,11 +122,8 @@ Task<std::shared_ptr<LLMContext>> PyLLMLambdaNode::execute(std::shared_ptr<LLMCo
         DCHECK_EQ(PyGILState_Check(), 0) << "Should not have the GIL after returning from co_await";
     }
 
-    // Convert back to JSON
-    auto return_val = mrc::pymrc::cast_from_pyobject(std::move(o_result));
-
     // Set the object back into the context outputs
-    context->set_output(std::move(return_val));
+    py_context->set_output(std::move(o_result));
 
     co_return context;
 }
