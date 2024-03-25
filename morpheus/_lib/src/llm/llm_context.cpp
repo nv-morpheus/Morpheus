@@ -20,14 +20,26 @@
 #include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>
-#include <nlohmann/json_fwd.hpp>
-#include <pymrc/utilities/json_values.hpp>
 
 #include <algorithm>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
+
+namespace {
+std::string ensure_leading_path(const std::string& path)
+{
+    DCHECK(!path.empty());
+
+    if (path[0] != '/')
+    {
+        return "/" + path;
+    }
+
+    return path;
+}
+}  // namespace
 
 namespace morpheus::llm {
 
@@ -217,22 +229,6 @@ void LLMContext::set_output(nlohmann::json outputs)
     this->outputs_complete();
 }
 
-void LLMContext::set_output(const std::string& output_name, nlohmann::json output)
-{
-    std::string name;
-    if (output_name[0] == '/')
-    {
-        name = output_name;
-    }
-    else
-    {
-        name = "/" + output_name;
-    }
-
-    m_outputs = std::move(m_outputs.set_value(name, std::move(output)));
-    invalidate_cache();
-}
-
 void LLMContext::set_output(mrc::pymrc::JSONValues&& outputs)
 {
     m_outputs = std::move(outputs);
@@ -241,18 +237,16 @@ void LLMContext::set_output(mrc::pymrc::JSONValues&& outputs)
     this->outputs_complete();
 }
 
+void LLMContext::set_output(const std::string& output_name, nlohmann::json output)
+{
+    auto name = ensure_leading_path(output_name);
+    m_outputs = std::move(m_outputs.set_value(name, std::move(output)));
+    invalidate_cache();
+}
+
 void LLMContext::set_output(const std::string& output_name, mrc::pymrc::JSONValues&& output)
 {
-    std::string name;
-    if (output_name[0] == '/')
-    {
-        name = output_name;
-    }
-    else
-    {
-        name = "/" + output_name;
-    }
-
+    auto name = ensure_leading_path(output_name);
     m_outputs = std::move(m_outputs.set_value(name, std::move(output)));
     invalidate_cache();
 }

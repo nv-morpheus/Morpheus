@@ -187,11 +187,11 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      */
     void set_output_names(std::vector<std::string> output_names);
 
-    void outputs_complete();
+    virtual void outputs_complete();
 
     nlohmann::json::const_reference view_outputs() const;
 
-  private:
+  protected:
     nlohmann::json::const_reference get_const_json_ref() const;
     nlohmann::json get_json() const;
 
