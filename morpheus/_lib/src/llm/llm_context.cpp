@@ -159,6 +159,36 @@ nlohmann::json::const_reference LLMContext::get_input() const
     return this->get_input(m_inputs[0].internal_name);
 }
 
+input_mappings_t::const_iterator LLMContext::find_input(const std::string& node_name, bool throw_if_not_found) const
+{
+    auto found = std::find_if(m_inputs.begin(), m_inputs.end(), [&node_name](const auto& map_iterator) {
+        return map_iterator.internal_name == node_name;
+    });
+
+    if (throw_if_not_found && found == m_inputs.end())
+    {
+        std::stringstream error_msg;
+        error_msg << "Input '" << node_name << "' not found in the input list.";
+
+        if (!m_inputs.empty())
+        {
+            error_msg << " Available inputs are:";
+            for (const auto& input : m_inputs)
+            {
+                error_msg << " '" << input.internal_name << "'";
+            }
+        }
+        else
+        {
+            error_msg << " Input list is empty.";
+        }
+
+        throw std::runtime_error(error_msg.str());
+    }
+
+    return found;
+}
+
 nlohmann::json::const_reference LLMContext::get_input(const std::string& node_name) const
 {
     if (node_name[0] == '/')
@@ -177,31 +207,7 @@ nlohmann::json::const_reference LLMContext::get_input(const std::string& node_na
     else
     {
         // Must be on the parent, so find the mapping between this namespace and the parent
-        auto found = std::find_if(m_inputs.begin(), m_inputs.end(), [&node_name](const auto& map_iterator) {
-            return map_iterator.internal_name == node_name;
-        });
-
-        if (found == m_inputs.end())
-        {
-            std::stringstream error_msg;
-            error_msg << "Input '" << node_name << "' not found in the input list.";
-
-            if (!m_inputs.empty())
-            {
-                error_msg << " Available inputs are:";
-                for (const auto& input : m_inputs)
-                {
-                    error_msg << " '" << input.internal_name << "'";
-                }
-            }
-            else
-            {
-                error_msg << " Input list is empty.";
-            }
-
-            throw std::runtime_error(error_msg.str());
-        }
-
+        auto found       = find_input(node_name);
         auto& input_name = found->external_name;
 
         // Get the value from a parent output

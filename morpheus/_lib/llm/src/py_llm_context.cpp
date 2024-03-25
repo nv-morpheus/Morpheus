@@ -58,32 +58,8 @@ py::object PyLLMContext::get_py_input(const std::string& node_name) const
             throw std::runtime_error(MORPHEUS_CONCAT_STR("Input '" << node_name << "' not found in the output map"));
         }
     }
-    // TODO: Make this a method on the parent class
-    auto found = std::find_if(m_inputs.begin(), m_inputs.end(), [&node_name](const auto& map_iterator) {
-        return map_iterator.internal_name == node_name;
-    });
 
-    if (found == m_inputs.end())
-    {
-        std::stringstream error_msg;
-        error_msg << "Input '" << node_name << "' not found in the input list.";
-
-        if (!m_inputs.empty())
-        {
-            error_msg << " Available inputs are:";
-            for (const auto& input : m_inputs)
-            {
-                error_msg << " '" << input.internal_name << "'";
-            }
-        }
-        else
-        {
-            error_msg << " Input list is empty.";
-        }
-
-        throw std::runtime_error(error_msg.str());
-    }
-
+    auto found       = find_input(node_name);
     auto& input_name = found->external_name;
 
     // Get the value from a parent output

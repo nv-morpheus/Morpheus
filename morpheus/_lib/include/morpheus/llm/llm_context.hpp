@@ -198,6 +198,8 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     void ensure_cache() const;
     void invalidate_cache() const;
 
+    input_mappings_t::const_iterator find_input(const std::string& node_name, bool throw_if_not_found = true) const;
+
     std::shared_ptr<LLMContext> m_parent{nullptr};
     std::string m_name;
     input_mappings_t m_inputs;
