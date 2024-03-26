@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/messages/control.hpp"
 #include "morpheus/stages/add_scores_stage_base.hpp"
 
 #include <mrc/segment/builder.hpp>
@@ -43,7 +44,8 @@ namespace morpheus {
  * @brief Add detected classifications to each message. Classification labels based on probabilities calculated in
  * inference stage. Label indexes will be looked up in the idx2label property.
  */
-class AddClassificationsStage : public AddScoresStageBase
+template <typename InputT, typename OutputT>
+class AddClassificationsStage : public AddScoresStageBase<InputT, OutputT>
 {
   public:
     /**
@@ -55,6 +57,12 @@ class AddClassificationsStage : public AddScoresStageBase
     AddClassificationsStage(std::map<std::size_t, std::string> idx2label, float threshold);
 };
 
+template <typename InputT, typename OutputT>
+AddClassificationsStage<InputT, OutputT>::AddClassificationsStage(std::map<std::size_t, std::string> idx2label,
+                                                                  float threshold) :
+  AddScoresStageBase<InputT, OutputT>(std::move(idx2label), threshold)
+{}
+
 /****** AddClassificationStageInterfaceProxy******************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
@@ -62,15 +70,33 @@ class AddClassificationsStage : public AddScoresStageBase
 struct AddClassificationStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a AddClassificationStage, and return the result
+     * @brief Create and initialize a AddClassificationStage that receives MultiResponseMessage and emits
+     * MultiResponseMessage, and return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param idx2label : Index to classification labels map
      * @param threshold : Threshold to consider true/false for each class
-     * @return std::shared_ptr<mrc::segment::Object<AddClassificationsStage>>
+     * @return std::shared_ptr<mrc::segment::Object<AddClassificationsStage<MultiResponseMessage,
+     * MultiResponseMessage>>>
      */
-    static std::shared_ptr<mrc::segment::Object<AddClassificationsStage>> init(
+    static std::shared_ptr<mrc::segment::Object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>>
+    init_multi(mrc::segment::Builder& builder,
+               const std::string& name,
+               std::map<std::size_t, std::string> idx2label,
+               float threshold);
+
+    /**
+     * @brief Create and initialize a AddClassificationStage that receives ControlMessage and emits ControlMessage, and
+     * return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param idx2label : Index to classification labels map
+     * @param threshold : Threshold to consider true/false for each class
+     * @return std::shared_ptr<mrc::segment::Object<AddClassificationsStage<ControlMessage, ControlMessage>>>
+     */
+    static std::shared_ptr<mrc::segment::Object<AddClassificationsStage<ControlMessage, ControlMessage>>> init_cm(
         mrc::segment::Builder& builder,
         const std::string& name,
         std::map<std::size_t, std::string> idx2label,

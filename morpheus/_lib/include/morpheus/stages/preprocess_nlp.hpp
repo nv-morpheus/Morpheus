@@ -186,7 +186,7 @@ std::shared_ptr<OutputT> PreprocessNLPStage<InputT, OutputT>::pre_process_batch(
                                               this->m_sequence_length,
                                               this->m_do_lower_case,
                                               this->m_truncation,
-                                              this->m_string_col,
+                                              string_col,
                                               this->m_stride,
                                               rmm::mr::get_current_device_resource());
 
@@ -249,7 +249,7 @@ std::shared_ptr<OutputT> PreprocessNLPStage<InputT, OutputT>::pre_process_batch(
                                               this->m_sequence_length,
                                               this->m_do_lower_case,
                                               this->m_truncation,
-                                              this->m_string_col,
+                                              string_col,
                                               this->m_stride,
                                               rmm::mr::get_current_device_resource());
 

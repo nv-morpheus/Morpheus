@@ -20,6 +20,7 @@
 #include "mrc/segment/builder.hpp"
 #include "mrc/segment/object.hpp"
 
+#include "morpheus/messages/control.hpp"
 #include "morpheus/stages/add_scores_stage_base.hpp"
 
 #include <cstddef>  // for size_t
@@ -37,10 +38,16 @@ namespace morpheus {
 
 
 // ************ AddScoresStageInterfaceProxy ************* //
-std::shared_ptr<mrc::segment::Object<AddScoresStage>> AddScoresStageInterfaceProxy::init(
+std::shared_ptr<mrc::segment::Object<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>> AddScoresStageInterfaceProxy::init_multi(
     mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label)
 {
-    return builder.construct_object<AddScoresStage>(name, std::move(idx2label));
+    return builder.construct_object<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>(name, std::move(idx2label));
+}
+
+std::shared_ptr<mrc::segment::Object<AddScoresStage<ControlMessage, ControlMessage>>> AddScoresStageInterfaceProxy::init_cm(
+    mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label)
+{
+    return builder.construct_object<AddScoresStage<ControlMessage, ControlMessage>>(name, std::move(idx2label));
 }
 
 }  // namespace morpheus

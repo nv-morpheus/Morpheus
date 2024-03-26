@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "morpheus/messages/control.hpp"
+#include "morpheus/messages/multi_response.hpp"
 #include "morpheus/stages/add_scores_stage_base.hpp"
 
 #include <mrc/segment/builder.hpp>
@@ -66,17 +68,30 @@ AddScoresStage<InputT, OutputT>::AddScoresStage(std::map<std::size_t, std::strin
 struct AddScoresStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a AddScoresStage, and return the result
+     * @brief Create and initialize a AddScoresStage that receives MultiResponseMessage and emits MultiResponseMessage,
+     * and return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
-     * @return std::shared_ptr<mrc::segment::Object<AddScoresStage>>
+     * @return std::shared_ptr<mrc::segment::Object<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>>
      */
-    static std::shared_ptr<mrc::segment::Object<AddScoresStage>> init(mrc::segment::Builder& builder,
-                                                                      const std::string& name,
-                                                                      std::map<std::size_t, std::string> idx2label);
+    static std::shared_ptr<mrc::segment::Object<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>> init_multi(
+        mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label);
+    
+    /**
+     * @brief Create and initialize a AddScoresStage that receives ControlMessage and emits ControlMessage,
+     * and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param num_class_labels : Number of classification labels
+     * @param idx2label : Index to classification labels map
+     * @return std::shared_ptr<mrc::segment::Object<AddScoresStage<ControlMessage, ControlMessage>>>
+     */
+    static std::shared_ptr<mrc::segment::Object<AddScoresStage<ControlMessage, ControlMessage>>> init_cm(
+        mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label);
 };
 
 #pragma GCC visibility pop
