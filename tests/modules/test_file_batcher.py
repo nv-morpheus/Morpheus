@@ -18,7 +18,6 @@ import pytest
 
 import cudf
 
-import morpheus.loaders  # noqa: F401 # pylint: disable=unused-import
 import morpheus.modules  # noqa: F401 # pylint: disable=unused-import
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
