@@ -195,9 +195,6 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     nlohmann::json::const_reference get_const_json_ref() const;
     nlohmann::json get_json() const;
 
-    void ensure_cache() const;
-    void invalidate_cache() const;
-
     input_mappings_t::const_iterator find_input(const std::string& node_name, bool throw_if_not_found = true) const;
 
     std::shared_ptr<LLMContext> m_parent{nullptr};
@@ -208,7 +205,6 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     std::shared_ptr<LLMContextState> m_state;
 
     mrc::pymrc::JSONValues m_outputs;
-    mutable std::unique_ptr<nlohmann::json> m_cached_outputs{nullptr};
 
     mrc::Promise<void> m_outputs_promise;
     mrc::SharedFuture<void> m_outputs_future;

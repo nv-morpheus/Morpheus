@@ -72,7 +72,6 @@ void PyLLMContext::pop()
         }
 
         m_outputs = std::move(mrc::pymrc::JSONValues(std::move(outputs)));
-        invalidate_cache();
     }
     else
     {

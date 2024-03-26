@@ -145,7 +145,6 @@ void LLMContext::pop()
     }
 
     m_outputs = std::move(mrc::pymrc::JSONValues(std::move(outputs)));
-    invalidate_cache();
 }
 
 nlohmann::json::const_reference LLMContext::get_input() const
@@ -230,16 +229,12 @@ nlohmann::json LLMContext::get_inputs() const
 void LLMContext::set_output(nlohmann::json outputs)
 {
     m_outputs = std::move(mrc::pymrc::JSONValues(std::move(outputs)));
-    invalidate_cache();
-
     this->outputs_complete();
 }
 
 void LLMContext::set_output(mrc::pymrc::JSONValues&& outputs)
 {
     m_outputs = std::move(outputs);
-    invalidate_cache();
-
     this->outputs_complete();
 }
 
@@ -247,14 +242,12 @@ void LLMContext::set_output(const std::string& output_name, nlohmann::json outpu
 {
     auto name = ensure_leading_path(output_name);
     m_outputs = std::move(m_outputs.set_value(name, std::move(output)));
-    invalidate_cache();
 }
 
 void LLMContext::set_output(const std::string& output_name, mrc::pymrc::JSONValues&& output)
 {
     auto name = ensure_leading_path(output_name);
     m_outputs = std::move(m_outputs.set_value(name, std::move(output)));
-    invalidate_cache();
 }
 
 void LLMContext::set_output_names(std::vector<std::string> output_names)
@@ -275,29 +268,14 @@ nlohmann::json::const_reference LLMContext::view_outputs() const
     return get_const_json_ref();
 }
 
-void LLMContext::ensure_cache() const
-{
-    if (!m_cached_outputs)
-    {
-        m_cached_outputs = std::make_unique<nlohmann::json>(std::move(m_outputs.to_json()));
-    }
-}
-
 nlohmann::json::const_reference LLMContext::get_const_json_ref() const
 {
-    ensure_cache();
-    return *m_cached_outputs;
+    return m_outputs.to_json();
 }
 
 nlohmann::json LLMContext::get_json() const
 {
-    ensure_cache();
-    return *m_cached_outputs;
-}
-
-void LLMContext::invalidate_cache() const
-{
-    m_cached_outputs.reset();
+    return get_const_json_ref();
 }
 
 }  // namespace morpheus::llm
