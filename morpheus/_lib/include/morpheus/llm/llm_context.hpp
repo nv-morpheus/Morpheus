@@ -192,8 +192,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     nlohmann::json::const_reference view_outputs() const;
 
   protected:
-    nlohmann::json::const_reference get_const_json_ref() const;
-    nlohmann::json get_json() const;
+    nlohmann::json::const_reference get_json() const;
 
     input_mappings_t::const_iterator find_input(const std::string& node_name, bool throw_if_not_found = true) const;
 

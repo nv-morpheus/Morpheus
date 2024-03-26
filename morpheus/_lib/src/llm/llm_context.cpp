@@ -96,7 +96,7 @@ std::shared_ptr<ControlMessage>& LLMContext::message() const
 
 nlohmann::json::const_reference LLMContext::all_outputs() const
 {
-    return get_const_json_ref();
+    return get_json();
 }
 
 std::string LLMContext::full_name() const
@@ -192,7 +192,7 @@ nlohmann::json::const_reference LLMContext::get_input(const std::string& node_na
 {
     if (node_name[0] == '/')
     {
-        nlohmann::json::const_reference outputs = get_const_json_ref();
+        nlohmann::json::const_reference outputs = get_json();
         nlohmann::json::json_pointer node_json_ptr(node_name);
 
         if (!outputs.contains(node_json_ptr))
@@ -265,17 +265,12 @@ nlohmann::json::const_reference LLMContext::view_outputs() const
     // // Wait for the outputs to be available
     // m_outputs_future.wait();
 
-    return get_const_json_ref();
+    return get_json();
 }
 
-nlohmann::json::const_reference LLMContext::get_const_json_ref() const
+nlohmann::json::const_reference LLMContext::get_json() const
 {
     return m_outputs.to_json();
-}
-
-nlohmann::json LLMContext::get_json() const
-{
-    return get_const_json_ref();
 }
 
 }  // namespace morpheus::llm
