@@ -24,17 +24,19 @@ logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = (
-    "NemoLLM not found. Install it and other additional dependencies by running the following command:\n"
+    "The `langchain-nvidia-ai-endpoints` package was not found. Install it and other additional dependencies by running the following command:\n"
     "`conda env update --solver=libmamba -n morpheus "
     "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
 
 try:
-    import nemollm
+    from langchain_core.prompt_values import StringPromptValue
+    from langchain_nvidia_ai_endpoints import ChatNVIDIA
+    from langchain_nvidia_ai_endpoints._common import NVEModel
 except ImportError as import_exc:
     IMPORT_EXCEPTION = import_exc
 
 
-class NeMoLLMClient(LLMClient):
+class NVFoundationLLMClient(LLMClient):
     """
     Client for interacting with a specific model in Nemo. This class should be constructed with the
     `NeMoLLMService.get_client` method.
@@ -50,7 +52,7 @@ class NeMoLLMClient(LLMClient):
         Additional keyword arguments to pass to the model when generating text.
     """
 
-    def __init__(self, parent: "NeMoLLMService", *, model_name: str, **model_kwargs) -> None:
+    def __init__(self, parent: "NVFoundationLLMService", *, model_name: str, **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
@@ -63,7 +65,11 @@ class NeMoLLMClient(LLMClient):
         self._model_kwargs = model_kwargs
         self._prompt_key = "prompt"
 
+        self._client = ChatNVIDIA(client=self._parent._nve_client, model=model_name, **model_kwargs)
+
     def get_input_names(self) -> list[str]:
+        schema = self._client.get_input_schema()
+
         return [self._prompt_key]
 
     def generate(self, **input_dict) -> str:
@@ -86,7 +92,12 @@ class NeMoLLMClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        return (await self.generate_batch_async({self._prompt_key: [input_dict[self._prompt_key]]}))[0]
+
+        inputs = {self._prompt_key: [input_dict[self._prompt_key]]}
+
+        input_dict.pop(self._prompt_key)
+
+        return (await self.generate_batch_async(inputs=inputs, **input_dict))[0]
 
     def generate_batch(self, inputs: dict[str, list], **kwargs) -> list[str]:
         """
@@ -97,12 +108,11 @@ class NeMoLLMClient(LLMClient):
         inputs : dict
             Inputs containing prompt data.
         """
-        return typing.cast(
-            list[str],
-            self._parent._conn.generate_multiple(model=self._model_name,
-                                                 prompts=inputs[self._prompt_key],
-                                                 return_type="text",
-                                                 **self._model_kwargs))
+        prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
+
+        responses = self._client.generate_prompt(prompts=prompts, **self._model_kwargs)  # type: ignore
+
+        return [g[0].text for g in responses.generations]
 
     async def generate_batch_async(self, inputs: dict[str, list], **kwargs) -> list[str]:
         """
@@ -113,28 +123,17 @@ class NeMoLLMClient(LLMClient):
         inputs : dict
             Inputs containing prompt data.
         """
-        prompts = inputs[self._prompt_key]
-        futures = [
-            asyncio.wrap_future(
-                self._parent._conn.generate(self._model_name, p, return_type="async", **self._model_kwargs))
-            for p in prompts
-        ]
 
-        results = await asyncio.gather(*futures)
+        prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
 
-        responses = []
+        final_kwargs = {**self._model_kwargs, **kwargs}
 
-        for result in results:
-            result = nemollm.NemoLLM.post_process_generate_response(result, return_text_completion_only=False)
-            if result.get('status', None) == 'fail':
-                raise RuntimeError(result.get('msg', 'Unknown error'))
+        responses = await self._client.agenerate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
 
-            responses.append(result['text'])
-
-        return responses
+        return [g[0].text for g in responses.generations]
 
 
-class NeMoLLMService(LLMService):
+class NVFoundationLLMService(LLMService):
     """
     A service for interacting with NeMo LLM models, this class should be used to create a client for a specific model.
 
@@ -150,28 +149,22 @@ class NeMoLLMService(LLMService):
         a member of multiple NGC organizations.
     """
 
-    def __init__(self, *, api_key: str = None, org_id: str = None) -> None:
+    def __init__(self, *, api_key: str = None) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
         super().__init__()
-        api_key = api_key if api_key is not None else os.environ.get("NGC_API_KEY", None)
-        org_id = org_id if org_id is not None else os.environ.get("NGC_ORG_ID", None)
 
-        self._conn = nemollm.NemoLLM(
-            api_host=os.environ.get("NGC_API_BASE", None),
-            # The client must configure the authentication and authorization parameters
-            # in accordance with the API server security policy.
-            # Configure Bearer authorization
-            api_key=api_key,
+        self._api_key = api_key
 
-            # If you are in more than one LLM-enabled organization, you must
-            # specify your org ID in the form of a header. This is optional
-            # if you are only in one LLM-enabled org.
-            org_id=org_id,
-        )
+        self._nve_client = NVEModel(
+            nvidia_api_key=self._api_key,
+            fetch_url_format=f"{os.getenv('NVIDIA_API_BASE', 'https://api.nvcf.nvidia.com/v2')}/nvcf/pexec/status/",
+            call_invoke_base=f"{os.getenv('NVIDIA_API_BASE', 'https://api.nvcf.nvidia.com/v2')}/nvcf/pexec/functions",
+            func_list_format=f"{os.getenv('NVIDIA_API_BASE', 'https://api.nvcf.nvidia.com/v2')}/nvcf/functions",
+        )  # type: ignore
 
-    def get_client(self, *, model_name: str, **model_kwargs) -> NeMoLLMClient:
+    def get_client(self, *, model_name: str, **model_kwargs) -> NVFoundationLLMClient:
         """
         Returns a client for interacting with a specific model. This method is the preferred way to create a client.
 
@@ -184,4 +177,4 @@ class NeMoLLMService(LLMService):
             Additional keyword arguments to pass to the model when generating text.
         """
 
-        return NeMoLLMClient(self, model_name=model_name, **model_kwargs)
+        return NVFoundationLLMClient(self, model_name=model_name, **model_kwargs)

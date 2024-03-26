@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib
 import logging
+import typing
 from abc import ABC
 from abc import abstractmethod
 
@@ -33,7 +35,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    def generate(self, input_dict: dict[str, str]) -> str:
+    def generate(self, **input_dict) -> str:
         """
         Issue a request to generate a response based on a given prompt.
 
@@ -45,7 +47,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    async def generate_async(self, input_dict: dict[str, str]) -> str:
+    async def generate_async(self, **input_dict) -> str:
         """
         Issue an asynchronous request to generate a response based on a given prompt.
 
@@ -57,7 +59,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    def generate_batch(self, inputs: dict[str, list[str]]) -> list[str]:
+    def generate_batch(self, inputs: dict[str, list], **kwargs) -> list[str]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -69,7 +71,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    async def generate_batch_async(self, inputs: dict[str, list[str]]) -> list[str]:
+    async def generate_batch_async(self, inputs: dict[str, list], **kwargs) -> list[str]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -100,3 +102,53 @@ class LLMService(ABC):
             Additional keyword arguments to pass to the model.
         """
         pass
+
+    @typing.overload
+    @staticmethod
+    def create(service_type: typing.Literal["nemo"], *service_args,
+               **service_kwargs) -> "morpheus.llm.services.nemo_llm_service.NeMoLLMService":
+        pass
+
+    @typing.overload
+    @staticmethod
+    def create(service_type: typing.Literal["openai"], *service_args,
+               **service_kwargs) -> "morpheus.llm.services.nemo_llm_service.OpenAILLMService":
+        pass
+
+    @typing.overload
+    @staticmethod
+    def create(service_type: str, *service_args, **service_kwargs) -> "LLMService":
+        pass
+
+    @staticmethod
+    def create(service_type: str | typing.Literal["nemo"] | typing.Literal["openai"], *service_args, **service_kwargs):
+        """
+        Returns a service for interacting with LLM models.
+
+        Parameters
+        ----------
+        service_type : str
+            The type of the service to create
+
+        service_kwargs : dict[str, typing.Any]
+            Additional keyword arguments to pass to the service.
+        """
+        module_name = f"morpheus.llm.services.{service_type.lower()}_llm_service"
+        module = importlib.import_module(module_name)
+
+        # Get all of the classes in the module to find the correct service class
+        mod_classes = dict([(name, cls) for name, cls in module.__dict__.items() if isinstance(cls, type)])
+
+        class_name_lower = f"{service_type}LLMService".lower()
+
+        # Find case-insensitive match for the class name
+        matching_classes = [name for name in mod_classes if name.lower() == class_name_lower]
+
+        assert len(matching_classes) == 1, f"Expected to find exactly one class with name {class_name_lower} in module {module_name}, but found {matching_classes}"
+
+        # Create the class
+        class_ = getattr(module, matching_classes[0])
+
+        instance = class_(*service_args, **service_kwargs)
+
+        return instance
