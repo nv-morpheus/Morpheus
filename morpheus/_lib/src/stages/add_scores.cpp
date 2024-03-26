@@ -34,9 +34,7 @@ namespace morpheus {
 
 // Component public implementations
 // ************ AddScoresStage **************************** //
-AddScoresStage::AddScoresStage(std::map<std::size_t, std::string> idx2label) :
-  AddScoresStageBase(std::move(idx2label), std::nullopt)
-{}
+
 
 // ************ AddScoresStageInterfaceProxy ************* //
 std::shared_ptr<mrc::segment::Object<AddScoresStage>> AddScoresStageInterfaceProxy::init(

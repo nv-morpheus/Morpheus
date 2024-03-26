@@ -42,7 +42,8 @@ namespace morpheus {
  * @brief Add probability scores to each message. Score labels based on probabilities calculated in inference stage.
  * Label indexes will be looked up in the idx2label property.
  */
-class AddScoresStage : public AddScoresStageBase
+template <typename InputT, typename OutputT>
+class AddScoresStage : public AddScoresStageBase<InputT, OutputT>
 {
   public:
     /**
@@ -52,6 +53,11 @@ class AddScoresStage : public AddScoresStageBase
      */
     AddScoresStage(std::map<std::size_t, std::string> idx2label);
 };
+
+template <typename InputT, typename OutputT>
+AddScoresStage<InputT, OutputT>::AddScoresStage(std::map<std::size_t, std::string> idx2label) :
+  AddScoresStageBase<InputT, OutputT>(std::move(idx2label), std::nullopt)
+{}
 
 /****** AddScoresStageInterfaceProxy******************/
 /**
