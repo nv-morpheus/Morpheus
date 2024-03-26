@@ -323,7 +323,7 @@ struct PreprocessNLPStageInterfaceProxy
      * equal to stride there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will
      * be repeated on the second sequence and so on until the entire sentence is encoded.
      * @param column : Name of the string column to operate on, defaults to "data".
-     * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>
+     * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>>
      */
     static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>> init_multi(
         mrc::segment::Builder& builder,
@@ -355,7 +355,7 @@ struct PreprocessNLPStageInterfaceProxy
      * equal to stride there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will
      * be repeated on the second sequence and so on until the entire sentence is encoded.
      * @param column : Name of the string column to operate on, defaults to "data".
-     * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>
+     * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>>
      */
     static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>> init_cm(
         mrc::segment::Builder& builder,

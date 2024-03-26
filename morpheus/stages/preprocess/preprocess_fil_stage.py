@@ -49,6 +49,7 @@ class PreprocessFILStage(PreprocessBaseStage):
         Pipeline configuration instance.
 
     """
+
     def __init__(self, c: Config):
         super().__init__(c)
 
@@ -157,13 +158,19 @@ class PreprocessFILStage(PreprocessBaseStage):
 
         # Create the inference memory. Keep in mind count here could be > than input count
         memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seg_ids)
-        
+
         infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
 
         return infer_message
 
-    def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
+    def _get_preprocess_fn(
+        self
+    ) -> typing.Callable[[typing.Union[MultiMessage, ControlMessage]],
+                         typing.Union[MultiInferenceMessage, ControlMessage]]:
         return partial(PreprocessFILStage.pre_process_batch, fea_len=self._fea_length, fea_cols=self.features)
 
     def _get_preprocess_node(self, builder: mrc.Builder):
-        return _stages.PreprocessFILStage(builder, self.unique_name, self.features)
+        if (self._use_control_message):
+            return _stages.PreprocessFILControlMessageStage(builder, self.unique_name, self.features)
+        else:
+            return _stages.PreprocessFILMultiMessageStage(builder, self.unique_name, self.features)

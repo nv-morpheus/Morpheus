@@ -118,14 +118,14 @@ nvtext::tokenizer_result subword_tokenize(const std::string& vocab_hash_file,
 // ************ PreprocessNLPStageInterfaceProxy *********** //
 std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>>
 PreprocessNLPStageInterfaceProxy::init_multi(mrc::segment::Builder& builder,
-                                       const std::string& name,
-                                       std::string vocab_hash_file,
-                                       uint32_t sequence_length,
-                                       bool truncation,
-                                       bool do_lower_case,
-                                       bool add_special_token,
-                                       int stride,
-                                       std::string column)
+                                             const std::string& name,
+                                             std::string vocab_hash_file,
+                                             uint32_t sequence_length,
+                                             bool truncation,
+                                             bool do_lower_case,
+                                             bool add_special_token,
+                                             int stride,
+                                             std::string column)
 {
     auto stage = builder.construct_object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>(
         name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride, column);
@@ -135,14 +135,14 @@ PreprocessNLPStageInterfaceProxy::init_multi(mrc::segment::Builder& builder,
 
 std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>>
 PreprocessNLPStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
-                                       const std::string& name,
-                                       std::string vocab_hash_file,
-                                       uint32_t sequence_length,
-                                       bool truncation,
-                                       bool do_lower_case,
-                                       bool add_special_token,
-                                       int stride,
-                                       std::string column)
+                                          const std::string& name,
+                                          std::string vocab_hash_file,
+                                          uint32_t sequence_length,
+                                          bool truncation,
+                                          bool do_lower_case,
+                                          bool add_special_token,
+                                          int stride,
+                                          std::string column)
 {
     auto stage = builder.construct_object<PreprocessNLPStage<ControlMessage, ControlMessage>>(
         name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride, column);

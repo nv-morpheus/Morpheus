@@ -19,6 +19,7 @@
 
 #include "mrc/segment/object.hpp"
 
+#include "morpheus/messages/control.hpp"
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
 #include "morpheus/messages/meta.hpp"         // for MessageMeta
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
@@ -52,17 +53,74 @@
 namespace morpheus {
 // Component public implementations
 // ************ PreprocessFILStage ************************* //
+void transform_bad_columns(std::vector<std::string>& fea_cols,
+                           morpheus::MutableTableInfo& mutable_info,
+                           std::vector<std::string>& df_meta_col_names)
+{
+    std::vector<std::string> bad_cols;
+    // Only check the feature columns. Leave the rest unchanged
+    for (auto& fea_col : fea_cols)
+    {
+        // Find the index of the column in the dataframe
+        auto col_idx =
+            std::find(df_meta_col_names.begin(), df_meta_col_names.end(), fea_col) - df_meta_col_names.begin();
 
+        if (col_idx == df_meta_col_names.size())
+        {
+            // This feature was not found. Ignore it.
+            continue;
+        }
 
+        if (mutable_info.get_column(col_idx).type().id() == cudf::type_id::STRING)
+        {
+            bad_cols.push_back(fea_col);
+        }
+    }
 
+    // Exit early if there is nothing to do
+    if (!bad_cols.empty())
+    {
+        // Need to ensure all string columns have been converted to numbers. This requires running a
+        // regex which is too difficult to do from C++ at this time. So grab the GIL, make the
+        // conversions, and release. This is horribly inefficient, but so is the JSON lines format for
+        // this workflow
+        using namespace pybind11::literals;
+        pybind11::gil_scoped_acquire gil;
 
+        // pybind11::object df = x->meta->get_py_table();
+        auto pdf = mutable_info.checkout_obj();
+        auto& df = *pdf;
 
+        std::string regex = R"((\d+))";
 
+        for (auto c : bad_cols)
+        {
+            df[pybind11::str(c)] = df[pybind11::str(c)]
+                                       .attr("str")
+                                       .attr("extract")(pybind11::str(regex), "expand"_a = true)
+                                       .attr("astype")(pybind11::str("float32"));
+        }
+
+        mutable_info.return_obj(std::move(pdf));
+    }
+}
 // ************ PreprocessFILStageInterfaceProxy *********** //
-std::shared_ptr<mrc::segment::Object<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>> PreprocessFILStageInterfaceProxy::init(
-    mrc::segment::Builder& builder, const std::string& name, const std::vector<std::string>& features)
+std::shared_ptr<mrc::segment::Object<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>>
+PreprocessFILStageInterfaceProxy::init_multi(mrc::segment::Builder& builder,
+                                             const std::string& name,
+                                             const std::vector<std::string>& features)
 {
     auto stage = builder.construct_object<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>(name, features);
+
+    return stage;
+}
+
+std::shared_ptr<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>>
+PreprocessFILStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
+                                          const std::string& name,
+                                          const std::vector<std::string>& features)
+{
+    auto stage = builder.construct_object<PreprocessFILStage<ControlMessage, ControlMessage>>(name, features);
 
     return stage;
 }

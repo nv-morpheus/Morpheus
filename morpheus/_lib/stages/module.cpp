@@ -206,11 +206,20 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("needed_columns"));
 
-    py::class_<mrc::segment::Object<PreprocessFILStage>,
+    py::class_<mrc::segment::Object<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessFILStage>>>(
-        _module, "PreprocessFILStage", py::multiple_inheritance())
-        .def(py::init<>(&PreprocessFILStageInterfaceProxy::init),
+               std::shared_ptr<mrc::segment::Object<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>>>(
+        _module, "PreprocessFILMultiMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreprocessFILStageInterfaceProxy::init_multi),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("features"));
+     
+     py::class_<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>>>(
+        _module, "PreprocessFILControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreprocessFILStageInterfaceProxy::init_cm),
              py::arg("builder"),
              py::arg("name"),
              py::arg("features"));
