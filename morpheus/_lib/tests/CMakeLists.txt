@@ -149,6 +149,12 @@ add_morpheus_test(
 )
 
 add_morpheus_test(
+  NAME stages
+  FILES
+    stages/test_preprocess_nlp.cpp
+)
+
+add_morpheus_test(
   NAME tensor
   FILES
     test_tensor.cpp
