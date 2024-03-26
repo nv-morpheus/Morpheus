@@ -96,11 +96,9 @@ py::object PyLLMContext::get_py_input(const std::string& node_name) const
     pybind11::gil_scoped_acquire gil;
     if (node_name[0] == '/')
     {
-        auto py_dict = m_outputs.to_python().cast<py::dict>();
-
         try
         {
-            return py_dict[node_name.substr(1).c_str()];
+            return m_outputs.get_python(node_name);
         } catch (py::error_already_set& err)
         {
             throw std::runtime_error(MORPHEUS_CONCAT_STR("Input '" << node_name << "' not found in the output map"));
