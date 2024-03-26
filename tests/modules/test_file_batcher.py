@@ -14,14 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
-
 import pytest
+
+import cudf
 
 import morpheus.loaders  # noqa: F401 # pylint: disable=unused-import
 import morpheus.modules  # noqa: F401 # pylint: disable=unused-import
-from morpheus.messages import ControlMessage
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.stage_decorator import source
@@ -29,6 +29,8 @@ from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
+
+# pylint: disable=redundant-keyword-arg
 
 
 @source
@@ -172,8 +174,8 @@ def test_override_date_regex(config: Config, default_module_config):
     ]
 
     cm_date_regex_pattern = (
-    r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
-    r"_(?P<hour>\d{1,2})(:|_)(?P<minute>\d{1,2})(:|_)(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z")
+        r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
+        r"_(?P<hour>\d{1,2})(:|_)(?P<minute>\d{1,2})(:|_)(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z")
 
     cm_batching_opts = {
         "sampling_rate_s": 0,
