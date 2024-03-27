@@ -153,6 +153,8 @@ add_morpheus_test(
   FILES
     stages/test_preprocess_nlp.cpp
     stages/test_preprocess_fil.cpp
+    stages/test_add_scores.cpp
+    stages/test_add_classification.cpp
 )
 
 add_morpheus_test(

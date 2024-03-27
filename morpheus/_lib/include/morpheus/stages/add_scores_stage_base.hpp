@@ -73,6 +73,8 @@ class AddScoresStageBase : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>
      */
     AddScoresStageBase(std::map<std::size_t, std::string> idx2label, std::optional<float> threshold);
 
+    std::shared_ptr<OutputT> pre_process_batch(std::shared_ptr<InputT> x);
+
   private:
     /**
      * Called every time a message is passed to this stage
@@ -101,6 +103,12 @@ AddScoresStageBase<InputT, OutputT>::AddScoresStageBase(std::map<std::size_t, st
 
 template <typename InputT, typename OutputT>
 AddScoresStageBase<InputT, OutputT>::source_type_t AddScoresStageBase<InputT, OutputT>::on_data(sink_type_t x)
+{
+    return this->pre_process_batch(x);
+}
+
+template <typename InputT, typename OutputT>
+std::shared_ptr<OutputT> AddScoresStageBase<InputT, OutputT>::pre_process_batch(std::shared_ptr<InputT> x)
 {
     if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiResponseMessage>>)
     {
