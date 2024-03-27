@@ -24,7 +24,6 @@ import pytest
 
 from _utils import TEST_DIRS
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceNLPMessage
