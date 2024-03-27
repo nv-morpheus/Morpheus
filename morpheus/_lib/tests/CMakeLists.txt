@@ -152,6 +152,7 @@ add_morpheus_test(
   NAME stages
   FILES
     stages/test_preprocess_nlp.cpp
+    stages/test_preprocess_fil.cpp
 )
 
 add_morpheus_test(

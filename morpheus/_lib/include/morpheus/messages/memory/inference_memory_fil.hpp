@@ -34,7 +34,7 @@ namespace morpheus {
  * @{
  * @file
  */
-
+#pragma GCC visibility push(default)
 /**
  * This is a container class for data that needs to be submitted to the inference server for FIL category
  * usecases.
