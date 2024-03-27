@@ -13,8 +13,6 @@
 
 using namespace morpheus;
 
-// TEST_CLASS(PreprocessNLP);
-
 class TestPreprocessNLP : public morpheus::test::TestWithPythonInterpreter
 {
   protected:
@@ -28,38 +26,52 @@ class TestPreprocessNLP : public morpheus::test::TestWithPythonInterpreter
     }
 };
 
-TEST_F(TestPreprocessNLP, GetIndexColCountNoIdxFromFile)
+TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
 {
-    auto test_data_dir = test::get_morpheus_root() / "tests/tests_data";
+    pybind11::gil_scoped_release no_gil;
+    auto test_data_dir               = test::get_morpheus_root() / "tests/tests_data";
     std::filesystem::path input_file = test_data_dir / "countries.csv";
 
-    auto test_vocab_hash_file_dir = test::get_morpheus_root() / "morpheus/data";
+    auto test_vocab_hash_file_dir         = test::get_morpheus_root() / "morpheus/data";
     std::filesystem::path vocab_hash_file = test_vocab_hash_file_dir / "bert-base-cased-hash.txt";
-
-    auto msg = std::make_shared<ControlMessage>();
 
     // Create a dataframe from a file
     auto table = load_table_from_file(input_file);
-    auto payload = MessageMeta::create_from_cpp(std::move(table));
+    auto meta  = MessageMeta::create_from_cpp(std::move(table));
 
-    // Set the dataframe as the payload
-    msg->payload(payload);
+    // Create ControlMessage
+    auto cm = std::make_shared<ControlMessage>();
+    cm->payload(meta);
 
-    pybind11::gil_scoped_release no_gil;
-    // Create the stage (Passing in the requried parameters)
-    auto stage = std::make_shared<PreprocessNLPStage<ControlMessage, ControlMessage>>(vocab_hash_file /*vocab_hash_file*/,
-                                                                                      1 /*sequence_length*/,
-                                                                                      false /*truncation*/,
-                                                                                      false /*do_lower_case*/,
-                                                                                      false /*add_special_token*/,
-                                                                                      1 /*stride*/,
-                                                                                      "country" /*column*/);
+    // Create PreProcessControlMessageStage
+    auto cm_stage =
+        std::make_shared<PreprocessNLPStage<ControlMessage, ControlMessage>>(vocab_hash_file /*vocab_hash_file*/,
+                                                                             1 /*sequence_length*/,
+                                                                             false /*truncation*/,
+                                                                             false /*do_lower_case*/,
+                                                                             false /*add_special_token*/,
+                                                                             1 /*stride*/,
+                                                                             "country" /*column*/);
 
-    // Call the process method to handle one message
-    auto response = stage->pre_process_batch(msg);
+    auto cm_response         = cm_stage->pre_process_batch(cm);
+    auto cm_response_payload = cm_response->payload();
+    EXPECT_EQ(cm_response_payload->count(), 193);
 
-    // Validate response here
-    auto response_payload = response->payload();
-    
-    std::cout << response_payload->count() << std::endl;
+    // Create MultiMessage
+    auto multi = std::make_shared<MultiMessage>(meta);
+
+    // Create PreProcessMultiMessageStage
+    auto multi_stage =
+        std::make_shared<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>(vocab_hash_file /*vocab_hash_file*/,
+                                                                                  1 /*sequence_length*/,
+                                                                                  false /*truncation*/,
+                                                                                  false /*do_lower_case*/,
+                                                                                  false /*add_special_token*/,
+                                                                                  1 /*stride*/,
+                                                                                  "country" /*column*/);
+    auto multi_response         = multi_stage->pre_process_batch(multi);
+    auto multi_response_payload = multi_response->meta;
+
+    // Check if identical number of rows are returned
+    EXPECT_EQ(multi_response_payload->count(), cm_response_payload->count());
 }
