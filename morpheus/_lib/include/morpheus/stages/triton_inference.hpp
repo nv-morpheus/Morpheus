@@ -67,7 +67,7 @@ struct MORPHEUS_EXPORT TritonInferRequestedOutput
 class MORPHEUS_EXPORT ITritonClient
 {
   public:
-    virtual ~ITritonClient() = 0;
+    virtual ~ITritonClient() = default;
 
     /**
      * @brief Checks if Triton Server is live

@@ -75,7 +75,7 @@ class MORPHEUS_EXPORT IInferenceClientSession
 class MORPHEUS_EXPORT IInferenceClient
 {
   public:
-    virtual ~IInferenceClient() = 0;
+    virtual ~IInferenceClient() = default;
     /**
       @brief Creates an inference session.
     */
