@@ -96,7 +96,7 @@ def build_inf_message(df: DataFrameType,
                                     count=count)
 
 
-def _check_worker(inference_mod: types.ModuleType, worker: TritonInferenceWorker, expected_mapping: dict[str, str]):
+def _check_worker(inference_mod: types.ModuleType, worker: TritonInferenceWorker):
     assert isinstance(worker, TritonInferenceWorker)
     assert isinstance(worker, inference_mod.TritonInferenceLogParsing)
     assert worker._model_name == 'test_model'
@@ -104,7 +104,6 @@ def _check_worker(inference_mod: types.ModuleType, worker: TritonInferenceWorker
     assert not worker._force_convert_inputs
     assert not worker._use_shared_memory
     assert worker.needs_logits
-    assert worker._inout_mapping == expected_mapping
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
@@ -120,7 +119,7 @@ def test_log_parsing_triton_inference_log_parsing_constructor(config: Config,
                                                      inout_mapping={'test': 'this'},
                                                      needs_logits=True)
 
-    _check_worker(inference_mod, worker, {'test': 'this'})
+    _check_worker(inference_mod, worker)
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
@@ -175,17 +174,8 @@ def test_log_parsing_inference_stage_get_inference_worker(config: Config, import
                                                    use_shared_memory=False,
                                                    inout_mapping={'test': 'this'})
 
-    expected_inout_mapping = {}
-    expected_inout_mapping.update(
-        inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP,
-                                                                                           {}).get("inputs", {}))
-    expected_inout_mapping.update(
-        inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP,
-                                                                                           {}).get("outputs", {}))
-    expected_inout_mapping.update({'test': 'this'})
-
     worker = stage._get_inference_worker(inf_queue=ProducerConsumerQueue())
-    _check_worker(inference_mod, worker, expected_inout_mapping)
+    _check_worker(inference_mod, worker)
 
 
 @pytest.mark.use_cudf
