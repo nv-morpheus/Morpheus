@@ -37,7 +37,7 @@ TEST_F(TestAddScores, TestProcessControlMessageAndMultiResponseMessage)
     std::map<std::size_t, std::string> idx2label = {{0, "float"}};
 
     // Create MultiResponseMessage
-    auto tensor = Tensor::create(packed_data, DType::create<double>(), {mess_count, cols_size}, {}, 0);
+    auto tensor        = Tensor::create(packed_data, DType::create<double>(), {mess_count, cols_size}, {}, 0);
     auto tensor_memory = std::make_shared<TensorMemory>(mess_count);
     tensor_memory->set_tensor("probs", std::move(tensor));
     auto multi = std::make_shared<MultiResponseMessage>(meta, 0, mess_count, std::move(tensor_memory));
@@ -50,16 +50,15 @@ TEST_F(TestAddScores, TestProcessControlMessageAndMultiResponseMessage)
     // Create ControlMessage
     auto cm = std::make_shared<ControlMessage>();
     cm->payload(meta);
-    auto cm_tensor = Tensor::create(packed_data, DType::create<double>(), {mess_count, cols_size}, {}, 0);
+    auto cm_tensor        = Tensor::create(packed_data, DType::create<double>(), {mess_count, cols_size}, {}, 0);
     auto cm_tensor_memory = std::make_shared<TensorMemory>(mess_count);
     cm_tensor_memory->set_tensor("probs", std::move(cm_tensor));
     cm->tensors(cm_tensor_memory);
 
     // Create PreProcessControlMessageStage
-    auto cm_stage =
-        std::make_shared<AddScoresStage<ControlMessage, ControlMessage>>(idx2label);
+    auto cm_stage = std::make_shared<AddScoresStage<ControlMessage, ControlMessage>>(idx2label);
 
-    auto cm_response         = cm_stage->pre_process_batch(cm);
+    auto cm_response              = cm_stage->pre_process_batch(cm);
     auto cm_response_probs_tensor = cm_response->tensors()->get_tensor("probs");
 
     // Check the returned tensors have the same size

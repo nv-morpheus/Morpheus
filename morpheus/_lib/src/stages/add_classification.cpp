@@ -19,6 +19,7 @@
 
 #include "mrc/segment/builder.hpp"
 #include "mrc/segment/object.hpp"
+
 #include "morpheus/messages/control.hpp"
 
 #include <cstddef>
@@ -33,24 +34,25 @@ namespace morpheus {
 // Component public implementations
 // ************ AddClassificationStage **************************** //
 
-
 // ************ AddClassificationStageInterfaceProxy ************* //
-std::shared_ptr<mrc::segment::Object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>> AddClassificationStageInterfaceProxy::init_multi(
-    mrc::segment::Builder& builder,
-    const std::string& name,
-    std::map<std::size_t, std::string> idx2label,
-    float threshold)
+std::shared_ptr<mrc::segment::Object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>>
+AddClassificationStageInterfaceProxy::init_multi(mrc::segment::Builder& builder,
+                                                 const std::string& name,
+                                                 std::map<std::size_t, std::string> idx2label,
+                                                 float threshold)
 {
-    return builder.construct_object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>(name, idx2label, threshold);
+    return builder.construct_object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>(
+        name, idx2label, threshold);
 }
 
-std::shared_ptr<mrc::segment::Object<AddClassificationsStage<ControlMessage, ControlMessage>>> AddClassificationStageInterfaceProxy::init_cm(
-    mrc::segment::Builder& builder,
-    const std::string& name,
-    std::map<std::size_t, std::string> idx2label,
-    float threshold)
+std::shared_ptr<mrc::segment::Object<AddClassificationsStage<ControlMessage, ControlMessage>>>
+AddClassificationStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
+                                              const std::string& name,
+                                              std::map<std::size_t, std::string> idx2label,
+                                              float threshold)
 {
-    return builder.construct_object<AddClassificationsStage<ControlMessage, ControlMessage>>(name, idx2label, threshold);
+    return builder.construct_object<AddClassificationsStage<ControlMessage, ControlMessage>>(
+        name, idx2label, threshold);
 }
 
 }  // namespace morpheus

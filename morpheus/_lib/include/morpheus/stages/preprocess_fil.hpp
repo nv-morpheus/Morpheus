@@ -141,7 +141,7 @@ TableInfo PreprocessFILStage<InputT, OutputT>::fix_bad_columns(sink_type_t x)
 
             transform_bad_columns(this->m_fea_cols, mutable_info, df_meta_col_names);
         }
-        
+
         // Now re-get the meta
         auto info        = x->payload()->get_info();
         auto num_columns = info.num_columns();

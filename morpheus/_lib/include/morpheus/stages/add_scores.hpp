@@ -79,7 +79,7 @@ struct AddScoresStageInterfaceProxy
      */
     static std::shared_ptr<mrc::segment::Object<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>> init_multi(
         mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label);
-    
+
     /**
      * @brief Create and initialize a AddScoresStage that receives ControlMessage and emits ControlMessage,
      * and return the result

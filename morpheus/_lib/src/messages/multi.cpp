@@ -199,7 +199,7 @@ void MultiMessage::set_meta(const std::vector<std::string>& column_names, const 
         CHECK(tensors[i].count() == cv.size() &&
               (table_type_id == tensor_type_id ||
                (table_type_id == cudf::type_id::BOOL8 && tensor_type_id == cudf::type_id::UINT8)));
-        
+
         const auto item_size = tensors[i].dtype().item_size();
 
         // Dont use cv.data<>() here since that does not account for the size of each element

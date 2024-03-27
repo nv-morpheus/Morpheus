@@ -40,7 +40,7 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
                                                  .dtypes({cudf::data_type(cudf::data_type{cudf::type_to_id<bool>()})})
                                                  .header(0);
     cudf::io::table_with_metadata table_with_meta = cudf::io::read_csv(read_opts);
-    auto meta = MessageMeta::create_from_cpp(std::move(table_with_meta));
+    auto meta                                     = MessageMeta::create_from_cpp(std::move(table_with_meta));
 
     std::map<std::size_t, std::string> idx2label = {{0, "bool"}};
 

@@ -74,17 +74,18 @@ PYBIND11_MODULE(stages, _module)
 
     mrc::pymrc::from_import(_module, "morpheus._lib.common", "FilterSource");
 
-    py::class_<mrc::segment::Object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>,
-               mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>>>(
+    py::class_<
+        mrc::segment::Object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>,
+        mrc::segment::ObjectProperties,
+        std::shared_ptr<mrc::segment::Object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>>>(
         _module, "AddClassificationsMultiResponseMessageStage", py::multiple_inheritance())
         .def(py::init<>(&AddClassificationStageInterfaceProxy::init_multi),
              py::arg("builder"),
              py::arg("name"),
              py::arg("idx2label"),
              py::arg("threshold"));
-     
-     py::class_<mrc::segment::Object<AddClassificationsStage<ControlMessage, ControlMessage>>,
+
+    py::class_<mrc::segment::Object<AddClassificationsStage<ControlMessage, ControlMessage>>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<AddClassificationsStage<ControlMessage, ControlMessage>>>>(
         _module, "AddClassificationsControlMessageStage", py::multiple_inheritance())
@@ -98,15 +99,19 @@ PYBIND11_MODULE(stages, _module)
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>>>(
         _module, "AddScoresMultiResponseMessageStage", py::multiple_inheritance())
-        .def(
-            py::init<>(&AddScoresStageInterfaceProxy::init_multi), py::arg("builder"), py::arg("name"), py::arg("idx2label"));
-     
-     py::class_<mrc::segment::Object<AddScoresStage<ControlMessage, ControlMessage>>,
+        .def(py::init<>(&AddScoresStageInterfaceProxy::init_multi),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("idx2label"));
+
+    py::class_<mrc::segment::Object<AddScoresStage<ControlMessage, ControlMessage>>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<AddScoresStage<ControlMessage, ControlMessage>>>>(
         _module, "AddScoresControlMessageStage", py::multiple_inheritance())
-        .def(
-            py::init<>(&AddScoresStageInterfaceProxy::init_cm), py::arg("builder"), py::arg("name"), py::arg("idx2label"));
+        .def(py::init<>(&AddScoresStageInterfaceProxy::init_cm),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("idx2label"));
 
     py::class_<mrc::segment::Object<DeserializeStage<MultiMessage>>,
                mrc::segment::ObjectProperties,
@@ -231,8 +236,8 @@ PYBIND11_MODULE(stages, _module)
              py::arg("builder"),
              py::arg("name"),
              py::arg("features"));
-     
-     py::class_<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>,
+
+    py::class_<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>>>(
         _module, "PreprocessFILControlMessageStage", py::multiple_inheritance())
