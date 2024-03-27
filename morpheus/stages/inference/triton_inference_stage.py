@@ -532,8 +532,6 @@ class TritonInferenceWorker(InferenceWorker):
 
                     num_bytes *= y_int
 
-                print(mapping)
-
                 mapped_name = x["name"] if x["name"] not in mapping else mapping[x["name"]]
 
                 return TritonInOut(name=x["name"],
