@@ -29,8 +29,8 @@
 #include <mrc/segment/object.hpp>
 #include <pybind11/pybind11.h>
 #include <pymrc/asyncio_runnable.hpp>
-#include <cstdint>
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <shared_mutex>
@@ -55,6 +55,7 @@ struct MORPHEUS_EXPORT TensorModelMapping
 class MORPHEUS_EXPORT IInferenceClientSession
 {
   public:
+    virtual ~IInferenceClientSession() = default;
     /**
       @brief Gets the inference input mappings
     */
