@@ -15,13 +15,6 @@
  * limitations under the License.
  */
 
-#include <mrc/segment/builder.hpp>  // for Builder
-#include <mrc/segment/object.hpp>
-#include <mrc/utils/string_utils.hpp>
-#include <pybind11/attr.h>      // for multiple_inheritance
-#include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
-#include <pybind11/pytypes.h>   // for dict, sequence
-// for pathlib.Path -> std::filesystem::path conversions
 #include "morpheus/messages/control.hpp"  // for ControlMessage
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
@@ -43,6 +36,12 @@
 #include "morpheus/utilities/http_server.hpp"  // for DefaultMaxPayloadSize
 #include "morpheus/version.hpp"
 
+#include <mrc/segment/builder.hpp>  // for Builder
+#include <mrc/segment/object.hpp>
+#include <mrc/utils/string_utils.hpp>
+#include <pybind11/attr.h>            // for multiple_inheritance
+#include <pybind11/pybind11.h>        // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
+#include <pybind11/pytypes.h>         // for dict, sequence
 #include <pybind11/stl/filesystem.h>  // IWYU pragma: keep
 #include <pymrc/utils.hpp>            // for pymrc::import
 #include <rxcpp/rx.hpp>

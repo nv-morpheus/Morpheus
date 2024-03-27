@@ -17,10 +17,20 @@
 
 #include "morpheus/stages/inference_client_stage.hpp"
 
+#include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/objects/dev_mem_info.hpp"
+#include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/stages/triton_inference.hpp"
+#include "morpheus/utilities/matx_util.hpp"
+
+#include <boost/fiber/policy.hpp>
 #include <cuda_runtime.h>
 #include <glog/logging.h>
-#include <boost/fiber/policy.hpp>
 #include <mrc/cuda/common.hpp>
+
 #include <chrono>
 #include <compare>
 #include <coroutine>
@@ -28,15 +38,6 @@
 #include <ostream>
 #include <ratio>
 #include <utility>
-
-#include "morpheus/messages/memory/response_memory.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"
-#include "morpheus/objects/tensor.hpp"
-#include "morpheus/stages/triton_inference.hpp"
-#include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/objects/dtype.hpp"
-#include "morpheus/objects/tensor_object.hpp"
 
 namespace {
 
@@ -169,6 +170,9 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
             // TensorMap output_tensors;
             // buffer_map_t output_buffers;
 
+            // We want to prevent entering this section of code if the session is being reset, but we also want this
+            // section of code to be entered simultanously by multiple coroutines. To accomplish this, we use a shared
+            // lock instead of a unique lock.
             auto lock = std::shared_lock(m_session_mutex);
 
             auto session = m_client->get_session();
@@ -183,7 +187,6 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
                 }
             }
 
-            // TODO(cwharris): Break inference in to batches and attempt retries on per-batch basis.
             auto model_output_tensors = co_await session->infer(std::move(model_input_tensors));
 
             co_await on->yield();
