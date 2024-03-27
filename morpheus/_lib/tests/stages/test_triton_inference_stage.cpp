@@ -292,20 +292,26 @@ TEST_F(TestTritonInferenceStage, SingleRow)
 
     const std::size_t count = 10;
     const auto dtype        = morpheus::DType::create<int>();
+    
+    // Create a 10-number sequence id vector and store them in the tensor.
     auto buffer = std::make_shared<rmm::device_buffer>(count * dtype.item_size(), rmm::cuda_stream_per_thread);
     std::vector<int> seq_ids({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
     cudaMemcpy(buffer->data(), seq_ids.data(), count * sizeof(int), cudaMemcpyKind::cudaMemcpyHostToDevice);
     auto tensors = morpheus::TensorMap();
     tensors["seq_ids"].swap(morpheus::Tensor::create(buffer, dtype, {count, 1}, {}));
+
+    // create the MultiInferenceMessage using the sequence id tensor.
     auto memory  = std::make_shared<morpheus::TensorMemory>(count, std::move(tensors));
     auto table   = create_test_table_with_metadata(count);
     auto meta    = morpheus::MessageMeta::create_from_cpp(std::move(table), 1);
     auto message = std::make_shared<morpheus::MultiInferenceMessage>(meta, 0, count, memory);
 
+    // create the fake triton client used for testing.
     auto triton_client           = std::make_unique<FakeTritonClient>();
     auto triton_inference_client = std::make_unique<morpheus::TritonInferenceClient>(std::move(triton_client), "");
     auto stage = morpheus::InferenceClientStage(std::move(triton_inference_client), "", false, {}, {});
 
+    // manually invoke the stage and iterate through the inference responses
     auto on           = std::make_shared<mrc::coroutines::TestScheduler>();
     auto results_task = [](auto& stage, auto message, auto on)
         -> mrc::coroutines::Task<std::vector<std::shared_ptr<morpheus::MultiResponseMessage>>> {
