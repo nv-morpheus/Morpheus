@@ -114,7 +114,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      *
      * @return nlohmann::json::const_reference
      */
-    nlohmann::json::const_reference all_outputs() const;
+    const mrc::pymrc::JSONValues& all_outputs() const;
 
     /**
      * @brief Get full name of context containing parents up to root.
@@ -144,7 +144,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      *
      * @return nlohmann::json::const_reference
      */
-    nlohmann::json::const_reference get_input() const;
+    const mrc::pymrc::JSONValues& get_input() const;
 
     /**
      * @brief Get the parent output value corresponding to given internal input name.
@@ -152,14 +152,14 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      * @param node_name internal input name
      * @return nlohmann::json::const_reference
      */
-    nlohmann::json::const_reference get_input(const std::string& node_name) const;
+    const mrc::pymrc::JSONValues& get_input(const std::string& node_name) const;
 
     /**
      * @brief Get parent output values corresponding to all internal input names.
      *
      * @return nlohmann::json
      */
-    nlohmann::json get_inputs() const;
+    const mrc::pymrc::JSONValues get_inputs() const;
 
     /**
      * @brief Set output mappings for this context.
@@ -189,10 +189,10 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     void outputs_complete();
 
-    nlohmann::json::const_reference view_outputs() const;
+    const mrc::pymrc::JSONValues& view_outputs() const;
 
-  protected:
-    nlohmann::json::const_reference get_json() const;
+  private:
+    const mrc::pymrc::JSONValues& get_json() const;
 
     input_mappings_t::const_iterator find_input(const std::string& node_name, bool throw_if_not_found = true) const;
 
