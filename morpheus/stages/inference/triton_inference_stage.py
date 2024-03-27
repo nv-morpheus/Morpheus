@@ -725,12 +725,17 @@ class TritonInferenceStage(InferenceStage):
         if inout_mapping is not None:
 
             if input_mapping is not None:
-                raise RuntimeError("TritonInferenceStages' `inout_mapping` and `input_mapping` arguments cannot be used together`")
+                raise RuntimeError(
+                    "TritonInferenceStages' `inout_mapping` and `input_mapping` arguments cannot be used together`")
 
             if output_mapping is not None:
-                raise RuntimeError("TritonInferenceStages' `inout_mapping` and `output_mapping` arguments cannot be used together`")
+                raise RuntimeError(
+                    "TritonInferenceStages' `inout_mapping` and `output_mapping` arguments cannot be used together`")
 
-            warnings.warn(("TritonInferenceStage's `inout_mapping` argument has been deprecated. Please use `input_mapping` and/or `output_mapping` instead"), DeprecationWarning)
+            warnings.warn((
+                "TritonInferenceStage's `inout_mapping` argument has been deprecated. Please use `input_mapping` and/or `output_mapping` instead"
+            ),
+                          DeprecationWarning)
 
             input_mapping_.update(inout_mapping)
             output_mapping_.update(inout_mapping)
@@ -759,14 +764,15 @@ class TritonInferenceStage(InferenceStage):
         worker.
         """
 
-        return TritonInferenceWorker(inf_queue=inf_queue, c=self._config, 
-            server_url=self._server_url,
-            model_name=self._model_name,
-            force_convert_inputs=self._force_convert_inputs,
-            use_shared_memory=self._use_shared_memory,
-            input_mapping=self._input_mapping,
-            output_mapping=self._output_mapping,
-            needs_logits=self._needs_logits)
+        return TritonInferenceWorker(inf_queue=inf_queue,
+                                     c=self._config,
+                                     server_url=self._server_url,
+                                     model_name=self._model_name,
+                                     force_convert_inputs=self._force_convert_inputs,
+                                     use_shared_memory=self._use_shared_memory,
+                                     input_mapping=self._input_mapping,
+                                     output_mapping=self._output_mapping,
+                                     needs_logits=self._needs_logits)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return _stages.InferenceClientStage(builder,

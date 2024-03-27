@@ -14,27 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #pragma once
 
-#include <pymrc/asyncio_runnable.hpp>
-#include <mrc/segment/builder.hpp>
-#include <pybind11/pybind11.h>
-#include <stdint.h>
+#include "morpheus/export.h"
+#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/messages/multi_response.hpp"
+#include "morpheus/types.hpp"
+
 #include <mrc/coroutines/async_generator.hpp>
 #include <mrc/coroutines/scheduler.hpp>
 #include <mrc/coroutines/task.hpp>
+#include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
+#include <pybind11/pybind11.h>
+#include <pymrc/asyncio_runnable.hpp>
+#include <stdint.h>
+
+#include <map>
+#include <memory>
+#include <shared_mutex>
 #include <string>
 #include <vector>
-#include <memory>
-#include <map>
-#include <shared_mutex>
-
-#include "morpheus/export.h"
-#include "morpheus/types.hpp"
-#include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/messages/multi_response.hpp"
 
 namespace morpheus {
 
@@ -42,12 +43,12 @@ struct MORPHEUS_EXPORT TensorModelMapping
 {
     /**
      * @brief The field name to/from the model used for mapping
-    */
+     */
     std::string model_field_name;
-    
+
     /**
      * @brief The field name to/from the tensor used for mapping
-    */
+     */
     std::string tensor_field_name;
 };
 
@@ -114,7 +115,8 @@ class MORPHEUS_EXPORT InferenceClientStage
                          std::vector<TensorModelMapping> output_mapping);
 
     /**
-     * Process a single MultiInferenceMessage by running the constructor-provided inference client against it's Tensor, and yields the result as a MultiResponseMessage
+     * Process a single MultiInferenceMessage by running the constructor-provided inference client against it's Tensor,
+     * and yields the result as a MultiResponseMessage
      */
     mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> on_data(
         std::shared_ptr<MultiInferenceMessage>&& data, std::shared_ptr<mrc::coroutines::Scheduler> on) override;

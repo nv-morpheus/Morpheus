@@ -44,8 +44,8 @@
 #include <pybind11/gil.h>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>
-#include <stdint.h>
 
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -292,7 +292,7 @@ TEST_F(TestTritonInferenceStage, SingleRow)
 
     const std::size_t count = 10;
     const auto dtype        = morpheus::DType::create<int>();
-    
+
     // Create a 10-number sequence id vector and store them in the tensor.
     auto buffer = std::make_shared<rmm::device_buffer>(count * dtype.item_size(), rmm::cuda_stream_per_thread);
     std::vector<int> seq_ids({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});

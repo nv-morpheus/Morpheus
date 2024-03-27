@@ -24,6 +24,7 @@
 
 #include <http_client.h>
 #include <mrc/coroutines/task.hpp>
+
 #include <cstdint>
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
@@ -39,22 +40,22 @@ struct MORPHEUS_EXPORT TritonInferInput
 {
     /**
      * @brief The name of the triton inference input
-    */
+     */
     std::string name;
 
     /**
      * @brief The shape of the triton inference input
-    */
+     */
     std::vector<int64_t> shape;
 
     /**
      * @brief The type of the triton inference input
-    */
+     */
     std::string type;
 
     /**
      * @brief The triton inference input data
-    */
+     */
     std::vector<uint8_t> data;
 };
 
@@ -66,35 +67,34 @@ struct MORPHEUS_EXPORT TritonInferRequestedOutput
 class MORPHEUS_EXPORT ITritonClient
 {
   public:
-
     /**
-    * @brief Checks if Triton Server is live
-    */
+     * @brief Checks if Triton Server is live
+     */
     virtual triton::client::Error is_server_live(bool* live) = 0;
 
     /**
-    * @brief Checks if Triton Server is ready
-    */
+     * @brief Checks if Triton Server is ready
+     */
     virtual triton::client::Error is_server_ready(bool* ready) = 0;
 
     /**
-    * @brief Checks if the given model is ready
-    */
+     * @brief Checks if the given model is ready
+     */
     virtual triton::client::Error is_model_ready(bool* ready, std::string& model_name) = 0;
 
     /**
-    * @brief Gets metadata for the given model
-    */
+     * @brief Gets metadata for the given model
+     */
     virtual triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) = 0;
 
     /**
-    * @brief Gets the config for the given model
-    */
+     * @brief Gets the config for the given model
+     */
     virtual triton::client::Error model_config(std::string* model_config, std::string& model_name) = 0;
 
     /**
-    * @brief Runs Triton Server inference given the model options, inputs, and outputs
-    */
+     * @brief Runs Triton Server inference given the model options, inputs, and outputs
+     */
     virtual triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
                                               const triton::client::InferOptions& options,
                                               const std::vector<TritonInferInput>& inputs,
@@ -110,33 +110,33 @@ class MORPHEUS_EXPORT HttpTritonClient : public ITritonClient
     HttpTritonClient(std::string server_url);
 
     /**
-    * @brief Checks if Triton Server is live using HTTP protocal
-    */
+     * @brief Checks if Triton Server is live using HTTP protocal
+     */
     triton::client::Error is_server_live(bool* live) override;
 
     /**
-    * @brief Checks if Triton Server is ready using HTTP protocal
-    */
+     * @brief Checks if Triton Server is ready using HTTP protocal
+     */
     triton::client::Error is_server_ready(bool* ready) override;
 
     /**
-    * @brief Checks if the given model is ready using HTTP protocal
-    */
+     * @brief Checks if the given model is ready using HTTP protocal
+     */
     triton::client::Error is_model_ready(bool* ready, std::string& model_name) override;
 
     /**
-    * @brief Gets the config for the given model using HTTP protocal
-    */
+     * @brief Gets the config for the given model using HTTP protocal
+     */
     triton::client::Error model_config(std::string* model_config, std::string& model_name) override;
 
     /**
-    * @brief Gets metadata for the given model using HTTP protocal
-    */
+     * @brief Gets metadata for the given model using HTTP protocal
+     */
     triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) override;
 
     /**
-    * @brief Runs Triton Server inference given the model options, inputs, and outputs, using HTTP protocal
-    */
+     * @brief Runs Triton Server inference given the model options, inputs, and outputs, using HTTP protocal
+     */
     triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
                                       const triton::client::InferOptions& options,
                                       const std::vector<TritonInferInput>& inputs,

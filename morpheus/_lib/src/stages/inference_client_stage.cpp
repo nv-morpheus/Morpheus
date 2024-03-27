@@ -174,7 +174,7 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
             if (m_session == nullptr)
             {
                 auto lock = std::unique_lock(m_session_mutex);
-                if(m_session == nullptr)
+                if (m_session == nullptr)
                 {
                     m_session = m_client->create_session();
                 }
