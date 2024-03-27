@@ -37,9 +37,24 @@ namespace morpheus {
 
 struct MORPHEUS_EXPORT TritonInferInput
 {
+    /**
+     * @brief The name of the triton inference input
+    */
     std::string name;
+
+    /**
+     * @brief The shape of the triton inference input
+    */
     std::vector<int64_t> shape;
+
+    /**
+     * @brief The type of the triton inference input
+    */
     std::string type;
+
+    /**
+     * @brief The triton inference input data
+    */
     std::vector<uint8_t> data;
 };
 

@@ -40,25 +40,48 @@ namespace morpheus {
 
 struct MORPHEUS_EXPORT TensorModelMapping
 {
+    /**
+     * @brief The field name to/from the model used for mapping
+    */
     std::string model_field_name;
+    
+    /**
+     * @brief The field name to/from the tensor used for mapping
+    */
     std::string tensor_field_name;
 };
 
 class MORPHEUS_EXPORT IInferenceClientSession
 {
   public:
+    /**
+      @brief Gets the inference input mappings
+    */
     virtual std::vector<TensorModelMapping> get_input_mappings(std::vector<TensorModelMapping> input_map_overrides) = 0;
 
+    /**
+      @brief Gets the inference output mappings
+    */
     virtual std::vector<TensorModelMapping> get_output_mappings(
         std::vector<TensorModelMapping> output_map_overrides) = 0;
 
+    /**
+      @brief Invokes a single tensor inference
+    */
     virtual mrc::coroutines::Task<TensorMap> infer(TensorMap&& inputs) = 0;
 };
 
 class MORPHEUS_EXPORT IInferenceClient
 {
   public:
+    /**
+      @brief Gets or creates an inference session.
+    */
     virtual std::shared_ptr<IInferenceClientSession> get_session() = 0;
+
+    /**
+      @brief Resets the inference session pointer so it will be recreated on the next call to get_session().
+    */
     virtual void reset_session()                                   = 0;
 };
 
@@ -96,7 +119,7 @@ class MORPHEUS_EXPORT InferenceClientStage
                          std::vector<TensorModelMapping> output_mapping);
 
     /**
-     * TODO(Documentation)
+     * Process a single MultiInferenceMessage by running the constructor-provided inference client against it's Tensor, and yields the result as a MultiResponseMessage
      */
     mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> on_data(
         std::shared_ptr<MultiInferenceMessage>&& data, std::shared_ptr<mrc::coroutines::Scheduler> on) override;
