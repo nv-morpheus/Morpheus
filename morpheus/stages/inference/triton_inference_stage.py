@@ -733,7 +733,7 @@ class TritonInferenceStage(InferenceStage):
                     "TritonInferenceStages' `inout_mapping` and `output_mapping` arguments cannot be used together`")
 
             warnings.warn(("TritonInferenceStage's `inout_mapping` argument has been deprecated. "
-                 "Please use `input_mapping` and/or `output_mapping` instead"),
+                           "Please use `input_mapping` and/or `output_mapping` instead"),
                           DeprecationWarning)
 
             input_mapping_.update(inout_mapping)
