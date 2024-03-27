@@ -101,6 +101,14 @@ PYBIND11_MODULE(messages, _module)
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MessageMeta>, mrc::pymrc::PyObjectHolder>::register_converter();
     mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder, std::shared_ptr<morpheus::MessageMeta>>::register_converter();
 
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiMessage>, mrc::pymrc::PyObjectHolder>::register_converter();
+    mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder, std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
+                             mrc::pymrc::PyObjectHolder>::register_converter();
+    mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder,
+                             std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
+
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiTensorMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
