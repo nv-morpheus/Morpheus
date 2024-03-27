@@ -25,6 +25,7 @@
 
 #include <mrc/types.hpp>
 #include <nlohmann/json.hpp>
+#include <pymrc/utilities/json_values.hpp>
 
 #include <memory>
 #include <string>
@@ -36,7 +37,6 @@ struct LLMContextState
 {
     LLMTask task;
     std::shared_ptr<ControlMessage> message;
-    nlohmann::json values;
 };
 
 /**
@@ -130,14 +130,14 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      * @param inputs input mappings for new context
      * @return std::shared_ptr<LLMContext>
      */
-    std::shared_ptr<LLMContext> push(std::string name, input_mappings_t inputs);
+    virtual std::shared_ptr<LLMContext> push(std::string name, input_mappings_t inputs);
 
     /**
      * @brief Moves output map from this context to parent context. Outputs to move can be selected using
      * set_output_names, otherwise all outputs are noved by default.
      *
      */
-    void pop();
+    virtual void pop();
 
     /**
      * @brief Get the input value from parent context corresponding to first internal input of this context.
@@ -168,6 +168,8 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      */
     void set_output(nlohmann::json outputs);
 
+    void set_output(mrc::pymrc::JSONValues&& outputs);
+
     /**
      * @brief Set an output value for this context.
      *
@@ -175,6 +177,8 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      * @param output output value
      */
     void set_output(const std::string& output_name, nlohmann::json output);
+
+    void set_output(const std::string& output_name, mrc::pymrc::JSONValues&& output);
 
     /**
      * @brief Set the output names to propagate from this context when using pop.
@@ -187,7 +191,11 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     nlohmann::json::const_reference view_outputs() const;
 
-  private:
+  protected:
+    nlohmann::json::const_reference get_json() const;
+
+    input_mappings_t::const_iterator find_input(const std::string& node_name, bool throw_if_not_found = true) const;
+
     std::shared_ptr<LLMContext> m_parent{nullptr};
     std::string m_name;
     input_mappings_t m_inputs;
@@ -195,7 +203,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     std::shared_ptr<LLMContextState> m_state;
 
-    nlohmann::json m_outputs;
+    mrc::pymrc::JSONValues m_outputs;
 
     mrc::Promise<void> m_outputs_promise;
     mrc::SharedFuture<void> m_outputs_future;

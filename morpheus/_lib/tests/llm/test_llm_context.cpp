@@ -262,8 +262,8 @@ TEST_F(TestLLMContext, PopSelectMultipleOutputs)
     child_ctx->pop();
     ASSERT_EQ(child_ctx->all_outputs().size(), 3);
     ASSERT_EQ(child_ctx->all_outputs()["key1"], "val1");
-    ASSERT_EQ(child_ctx->all_outputs()["key2"], "val2");
-    ASSERT_EQ(child_ctx->all_outputs()["key3"], "val3");
+    ASSERT_EQ(child_ctx->all_outputs()["key2"], nullptr);
+    ASSERT_EQ(child_ctx->all_outputs()["key3"], nullptr);
     ASSERT_EQ(child_ctx->parent()->all_outputs()["child"].size(), 2);
     ASSERT_EQ(child_ctx->parent()->all_outputs()["child"]["key2"], "val2");
     ASSERT_EQ(child_ctx->parent()->all_outputs()["child"]["key3"], "val3");

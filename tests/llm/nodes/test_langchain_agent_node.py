@@ -142,4 +142,4 @@ def test_execute_error(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
                              return_intermediate_steps=False)
 
     node = LangChainAgentNode(agent_executor=agent)
-    assert execute_node(node, input="input1") == "Error running agent: unittest"
+    assert isinstance(execute_node(node, input="input1"), RuntimeError)
