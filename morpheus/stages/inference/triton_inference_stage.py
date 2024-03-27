@@ -710,10 +710,10 @@ class TritonInferenceStage(InferenceStage):
                  server_url: str,
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
-                 needs_logits: bool = None,
-                 inout_mapping: dict[str, str] = None,
-                 input_mapping: dict[str, str] = None,
-                 output_mapping: dict[str, str] = None):
+                 needs_logits: bool | None = None,
+                 inout_mapping: dict[str, str] | None = None,
+                 input_mapping: dict[str, str] | None = None,
+                 output_mapping: dict[str, str] | None = None):
         super().__init__(c)
 
         self._config = c
@@ -725,7 +725,15 @@ class TritonInferenceStage(InferenceStage):
         output_mapping_ = self._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {}).get("outputs", {})
 
         if inout_mapping is not None:
+
+            if input_mapping is not None:
+                raise RuntimeError("TritonInferenceStages' `inout_mapping` and `input_mapping` arguments cannot be used together`")
+
+            if output_mapping is not None:
+                raise RuntimeError("TritonInferenceStages' `inout_mapping` and `output_mapping` arguments cannot be used together`")
+
             warnings.warn(("TritonInferenceStage's `inout_mapping` argument has been deprecated. Please use `input_mapping` and/or `output_mapping` instead"), DeprecationWarning)
+
             input_mapping_.update(inout_mapping)
             output_mapping_.update(inout_mapping)
 
