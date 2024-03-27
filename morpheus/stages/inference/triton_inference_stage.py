@@ -439,14 +439,16 @@ class TritonInferenceWorker(InferenceWorker):
                  model_name: str,
                  server_url: str,
                  force_convert_inputs: bool,
-                 inout_mapping: dict[str, str] = None,
+                 input_mapping: dict[str, str] = None,
+                 output_mapping: dict[str, str] = None,
                  use_shared_memory: bool = False,
                  needs_logits: bool = False):
         super().__init__(inf_queue)
 
         self._model_name = model_name
         self._server_url = server_url
-        self._inout_mapping = inout_mapping or {}
+        self._input_mapping = input_mapping or {}
+        self._output_mapping = output_mapping or {}
         self._use_shared_memory = use_shared_memory
 
         self._max_batch_size = c.model_max_batch_size
@@ -515,7 +517,7 @@ class TritonInferenceWorker(InferenceWorker):
 
             shm_config = {}
 
-            def build_inout(x: dict):
+            def build_inout(x: dict, mapping: dict[str, str]):
                 num_bytes = np.dtype(triton_to_np_dtype(x["datatype"])).itemsize
 
                 shape = []
@@ -530,7 +532,9 @@ class TritonInferenceWorker(InferenceWorker):
 
                     num_bytes *= y_int
 
-                mapped_name = x["name"] if x["name"] not in self._inout_mapping else self._inout_mapping[x["name"]]
+                print(mapping)
+
+                mapped_name = x["name"] if x["name"] not in mapping else mapping[x["name"]]
 
                 return TritonInOut(name=x["name"],
                                    bytes=num_bytes,
@@ -539,12 +543,12 @@ class TritonInferenceWorker(InferenceWorker):
                                    mapped_name=mapped_name)
 
             for x in model_meta["inputs"]:
-                self._inputs[x["name"]] = build_inout(x)
+                self._inputs[x["name"]] = build_inout(x, self._input_mapping)
 
             for x in model_meta["outputs"]:
                 assert x["name"] not in self._inputs, "Input/Output names must be unique from eachother"
 
-                self._outputs[x["name"]] = build_inout(x)
+                self._outputs[x["name"]] = build_inout(x, self._output_mapping)
 
             # Combine the inputs/outputs for the shared memory
             shm_config = {**self._inputs, **self._outputs}
@@ -720,12 +724,8 @@ class TritonInferenceStage(InferenceStage):
         input_mapping_ = self._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {}).get("inputs", {})
         output_mapping_ = self._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {}).get("outputs", {})
 
-        inout_mapping_ = {}
-        inout_mapping_.update(input_mapping_)
-        inout_mapping_.update(output_mapping_)
-
         if inout_mapping is not None:
-            inout_mapping_.update(inout_mapping)
+            warnings.warn(("TritonInferenceStage's `inout_mapping` argument has been deprecated. Please use `input_mapping` and/or `output_mapping` instead"), DeprecationWarning)
             input_mapping_.update(inout_mapping)
             output_mapping_.update(inout_mapping)
 
@@ -735,18 +735,9 @@ class TritonInferenceStage(InferenceStage):
         if output_mapping is not None:
             output_mapping_.update(output_mapping)
 
-        self._kwargs = {
-            "server_url": server_url,
-            "model_name": model_name,
-            "force_convert_inputs": force_convert_inputs,
-            "use_shared_memory": use_shared_memory,
-            "inout_mapping": inout_mapping_,
-            "needs_logits": needs_logits
-        }
-
         self._server_url = server_url
         self._model_name = model_name
-        self._force_conver_inputs = force_convert_inputs
+        self._force_convert_inputs = force_convert_inputs
         self._use_shared_memory = use_shared_memory
         self._input_mapping = input_mapping_
         self._output_mapping = output_mapping_
@@ -762,7 +753,14 @@ class TritonInferenceStage(InferenceStage):
         worker.
         """
 
-        return TritonInferenceWorker(inf_queue=inf_queue, c=self._config, **self._kwargs)
+        return TritonInferenceWorker(inf_queue=inf_queue, c=self._config, 
+            server_url=self._server_url,
+            model_name=self._model_name,
+            force_convert_inputs=self._force_convert_inputs,
+            use_shared_memory=self._use_shared_memory,
+            input_mapping=self._input_mapping,
+            output_mapping=self._output_mapping,
+            needs_logits=self._needs_logits)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return _stages.InferenceClientStage(builder,
