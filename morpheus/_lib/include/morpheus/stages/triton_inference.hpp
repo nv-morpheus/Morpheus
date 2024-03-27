@@ -24,7 +24,7 @@
 
 #include <http_client.h>
 #include <mrc/coroutines/task.hpp>
-#include <stdint.h>
+#include <cstdint>
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 #include <memory>
@@ -93,7 +93,7 @@ class MORPHEUS_EXPORT ITritonClient
     virtual triton::client::Error model_config(std::string* model_config, std::string& model_name) = 0;
 
     /**
-    * @brief Runs Triton Server inference given the model options, inputs, and outptus.
+    * @brief Runs Triton Server inference given the model options, inputs, and outputs
     */
     virtual triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
                                               const triton::client::InferOptions& options,
@@ -109,16 +109,34 @@ class MORPHEUS_EXPORT HttpTritonClient : public ITritonClient
   public:
     HttpTritonClient(std::string server_url);
 
+    /**
+    * @brief Checks if Triton Server is live using HTTP protocal
+    */
     triton::client::Error is_server_live(bool* live) override;
 
+    /**
+    * @brief Checks if Triton Server is ready using HTTP protocal
+    */
     triton::client::Error is_server_ready(bool* ready) override;
 
+    /**
+    * @brief Checks if the given model is ready using HTTP protocal
+    */
     triton::client::Error is_model_ready(bool* ready, std::string& model_name) override;
 
+    /**
+    * @brief Gets the config for the given model using HTTP protocal
+    */
     triton::client::Error model_config(std::string* model_config, std::string& model_name) override;
 
+    /**
+    * @brief Gets metadata for the given model using HTTP protocal
+    */
     triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) override;
 
+    /**
+    * @brief Runs Triton Server inference given the model options, inputs, and outputs, using HTTP protocal
+    */
     triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
                                       const triton::client::InferOptions& options,
                                       const std::vector<TritonInferInput>& inputs,
@@ -137,10 +155,19 @@ class MORPHEUS_EXPORT TritonInferenceClientSession : public IInferenceClientSess
   public:
     TritonInferenceClientSession(std::shared_ptr<ITritonClient> client, std::string model_name);
 
+    /**
+      @brief Gets the inference input mappings for Triton
+    */
     std::vector<TensorModelMapping> get_input_mappings(std::vector<TensorModelMapping> input_map_overrides) override;
 
+    /**
+      @brief Gets the inference output mappings for Triton
+    */
     std::vector<TensorModelMapping> get_output_mappings(std::vector<TensorModelMapping> output_map_overrides) override;
 
+    /**
+      @brief Invokes a single tensor inference using the constructor-provided ITritonClient
+    */
     mrc::coroutines::Task<TensorMap> infer(TensorMap&& inputs) override;
 };
 
@@ -154,8 +181,14 @@ class MORPHEUS_EXPORT TritonInferenceClient : public IInferenceClient
   public:
     TritonInferenceClient(std::unique_ptr<ITritonClient>&& client, std::string model_name);
 
+    /**
+      @brief Gets or creates a TritonInferenceClientSession
+    */
     std::shared_ptr<IInferenceClientSession> get_session() override;
 
+    /**
+      @brief Resets the inference session pointer so it will be recreated on the next call to get_session().
+    */
     void reset_session() override;
 };
 
