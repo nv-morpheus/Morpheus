@@ -495,19 +495,9 @@ TritonInferenceClient::TritonInferenceClient(std::unique_ptr<ITritonClient>&& cl
   m_model_name(std::move(model_name))
 {}
 
-std::shared_ptr<IInferenceClientSession> TritonInferenceClient::get_session()
+std::unique_ptr<IInferenceClientSession> TritonInferenceClient::create_session()
 {
-    if (m_session == nullptr)
-    {
-        m_session = std::make_shared<TritonInferenceClientSession>(m_client, m_model_name);
-    }
-
-    return reinterpret_pointer_cast<IInferenceClientSession>(m_session);
-}
-
-void TritonInferenceClient::reset_session()
-{
-    m_session.reset();
+    return std::make_unique<TritonInferenceClientSession>(m_client, m_model_name);
 }
 
 }  // namespace morpheus

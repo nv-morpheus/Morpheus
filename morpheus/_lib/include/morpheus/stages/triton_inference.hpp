@@ -176,20 +176,14 @@ class MORPHEUS_EXPORT TritonInferenceClient : public IInferenceClient
   private:
     std::shared_ptr<ITritonClient> m_client;
     std::string m_model_name;
-    std::shared_ptr<TritonInferenceClientSession> m_session;
 
   public:
     TritonInferenceClient(std::unique_ptr<ITritonClient>&& client, std::string model_name);
 
     /**
-      @brief Gets or creates a TritonInferenceClientSession
+      @brief Creates a TritonInferenceClientSession
     */
-    std::shared_ptr<IInferenceClientSession> get_session() override;
-
-    /**
-      @brief Resets the inference session pointer so it will be recreated on the next call to get_session().
-    */
-    void reset_session() override;
+    std::unique_ptr<IInferenceClientSession> create_session() override;
 };
 
 }  // namespace morpheus

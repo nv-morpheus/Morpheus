@@ -37,6 +37,7 @@
 #include <mutex>
 #include <ostream>
 #include <ratio>
+#include <shared_mutex>
 #include <utility>
 
 namespace {
@@ -170,16 +171,23 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
             // TensorMap output_tensors;
             // buffer_map_t output_buffers;
 
+            if (m_session == nullptr)
+            {
+                auto lock = std::unique_lock(m_session_mutex);
+                if(m_session == nullptr)
+                {
+                    m_session = m_client->create_session();
+                }
+            }
+
             // We want to prevent entering this section of code if the session is being reset, but we also want this
             // section of code to be entered simultanously by multiple coroutines. To accomplish this, we use a shared
             // lock instead of a unique lock.
             auto lock = std::shared_lock(m_session_mutex);
 
-            auto session = m_client->get_session();
-
             TensorMap model_input_tensors;
 
-            for (auto mapping : session->get_input_mappings(m_input_mapping))
+            for (auto mapping : m_session->get_input_mappings(m_input_mapping))
             {
                 if (x->memory->has_tensor(mapping.tensor_field_name))
                 {
@@ -187,7 +195,7 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
                 }
             }
 
-            auto model_output_tensors = co_await session->infer(std::move(model_input_tensors));
+            auto model_output_tensors = co_await m_session->infer(std::move(model_input_tensors));
 
             co_await on->yield();
 
@@ -204,7 +212,7 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
 
             TensorMap output_tensor_map;
 
-            for (auto mapping : session->get_output_mappings(m_output_mapping))
+            for (auto mapping : m_session->get_output_mappings(m_output_mapping))
             {
                 auto pos = model_output_tensors.find(mapping.model_field_name);
 
@@ -231,7 +239,7 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
         {
             auto lock = std::unique_lock(m_session_mutex);
 
-            this->m_client->reset_session();
+            m_session.reset();
 
             if (m_retry_max >= 0 and ++retry_count > m_retry_max)
             {

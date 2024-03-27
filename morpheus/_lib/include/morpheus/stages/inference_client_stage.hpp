@@ -75,14 +75,9 @@ class MORPHEUS_EXPORT IInferenceClient
 {
   public:
     /**
-      @brief Gets or creates an inference session.
+      @brief Creates an inference session.
     */
-    virtual std::shared_ptr<IInferenceClientSession> get_session() = 0;
-
-    /**
-      @brief Resets the inference session pointer so it will be recreated on the next call to get_session().
-    */
-    virtual void reset_session()                                   = 0;
+    virtual std::unique_ptr<IInferenceClientSession> create_session() = 0;
 };
 
 /**
@@ -127,6 +122,7 @@ class MORPHEUS_EXPORT InferenceClientStage
   private:
     std::string m_model_name;
     std::shared_ptr<IInferenceClient> m_client;
+    std::shared_ptr<IInferenceClientSession> m_session;
     bool m_needs_logits{true};
     std::vector<TensorModelMapping> m_input_mapping;
     std::vector<TensorModelMapping> m_output_mapping;
