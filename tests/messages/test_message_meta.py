@@ -41,36 +41,36 @@ def fixture_df(
     dataset: DatasetManager,
     index_type: typing.Literal['normal', 'skip', 'dup', 'down',
                                'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
-    filter_probs_df = dataset["filter_probs.csv"]
+    test_df = dataset["test_dataframe.jsonlines"]
 
     if (index_type == "normal"):
-        return filter_probs_df
+        return test_df
 
     if (index_type == "skip"):
         # Skip some rows
-        return filter_probs_df.iloc[::3, :].copy()
+        return test_df.iloc[::3, :].copy()
 
     if (index_type == "dup"):
         # Duplicate
-        return dataset.dup_index(filter_probs_df, count=2)
+        return dataset.dup_index(test_df, count=2)
 
     if (index_type == "down"):
         # Reverse
-        return filter_probs_df.iloc[::-1, :].copy()
+        return test_df.iloc[::-1, :].copy()
 
     if (index_type == "updown"):
         # Go up then down
-        down = filter_probs_df.iloc[::-1, :].copy()
+        down = test_df.iloc[::-1, :].copy()
 
         # Increase the index to keep them unique
         down.index += len(down)
 
-        if isinstance(filter_probs_df, pd.DataFrame):
+        if isinstance(test_df, pd.DataFrame):
             concat_fn = pd.concat
         else:
             concat_fn = cudf.concat
 
-        out_df = concat_fn([filter_probs_df, down])
+        out_df = concat_fn([test_df, down])
 
         assert out_df.index.is_unique
 
@@ -113,9 +113,9 @@ def test_mutable_dataframe(df: DataFrameType):
     meta = MessageMeta(df)
 
     with meta.mutable_dataframe() as df_:
-        df_['v2'].iloc[3] = 47
+        df_['col1'].iloc[1] = 47
 
-    assert meta.copy_dataframe()['v2'].iloc[3] == 47
+    assert meta.copy_dataframe()['col1'].iloc[1] == 47
 
 
 def test_using_ctx_outside_with_block(df: DataFrameType):
@@ -145,7 +145,7 @@ def test_copy_dataframe(df: DataFrameType):
 
     # Try setting a single value on the copy
     cdf = meta.copy_dataframe()
-    cdf['v2'].iloc[3] = 47
+    cdf['col1'].iloc[1] = 47
     DatasetManager.assert_df_equal(meta.copy_dataframe(), df, assert_msg="Should be identical")
 
 
@@ -154,26 +154,26 @@ def test_pandas_df_cpp(dataset_pandas: DatasetManager):
     """
     Test for issue #821, calling the `df` property returns an empty cudf dataframe.
     """
-    df = dataset_pandas["filter_probs.csv"]
+    df = dataset_pandas["test_dataframe.jsonlines"]
     assert isinstance(df, pd.DataFrame)
 
     meta = MessageMeta(df)
     assert isinstance(meta, MessageMetaCpp)
     assert isinstance(meta.df, cudf.DataFrame)
-    DatasetManager.assert_compare_df(meta.df, df)
+    DatasetManager.assert_df_equal(meta.df, df, assert_msg="Should be identical")
 
 
 def test_cast(config: Config, dataset: DatasetManager):  # pylint: disable=unused-argument
     """
     Test tcopy constructor
     """
-    df = dataset["filter_probs.csv"]
+    df = dataset["test_dataframe.jsonlines"]
     meta1 = MessageMeta(df)
 
     meta2 = MessageMeta(meta1)
     assert isinstance(meta2, MessageMeta)
 
-    DatasetManager.assert_compare_df(meta2.copy_dataframe(), df)
+    DatasetManager.assert_df_equal(meta2.copy_dataframe(), df, assert_msg="Should be identical")
 
 
 @pytest.mark.use_pandas
@@ -182,7 +182,7 @@ def test_cast_python_to_cpp(dataset: DatasetManager):
     """
     Test that we can cast a python MessageMeta to a C++ MessageMeta
     """
-    df = dataset["filter_probs.csv"]
+    df = dataset["test_dataframe.jsonlines"]
 
     py_meta = MessageMeta(df)
     assert isinstance(py_meta, MessageMeta)
@@ -201,7 +201,7 @@ def test_cast_cpp_to_python(dataset: DatasetManager):
     """
     Test that we can cast a a C++ MessageMeta to a python MessageMeta
     """
-    df = dataset["filter_probs.csv"]
+    df = dataset["test_dataframe.jsonlines"]
     cpp_meta = MessageMetaCpp(df)
 
     py_meta = MessageMeta(cpp_meta)
