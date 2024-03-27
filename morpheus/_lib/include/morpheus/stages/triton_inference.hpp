@@ -66,16 +66,35 @@ struct MORPHEUS_EXPORT TritonInferRequestedOutput
 class MORPHEUS_EXPORT ITritonClient
 {
   public:
+
+    /**
+    * @brief Checks if Triton Server is live
+    */
     virtual triton::client::Error is_server_live(bool* live) = 0;
 
+    /**
+    * @brief Checks if Triton Server is ready
+    */
     virtual triton::client::Error is_server_ready(bool* ready) = 0;
 
+    /**
+    * @brief Checks if the given model is ready
+    */
     virtual triton::client::Error is_model_ready(bool* ready, std::string& model_name) = 0;
 
+    /**
+    * @brief Gets metadata for the given model
+    */
     virtual triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) = 0;
 
+    /**
+    * @brief Gets the config for the given model
+    */
     virtual triton::client::Error model_config(std::string* model_config, std::string& model_name) = 0;
 
+    /**
+    * @brief Runs Triton Server inference given the model options, inputs, and outptus.
+    */
     virtual triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
                                               const triton::client::InferOptions& options,
                                               const std::vector<TritonInferInput>& inputs,
