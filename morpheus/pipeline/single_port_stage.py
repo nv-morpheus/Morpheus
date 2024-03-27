@@ -19,6 +19,7 @@ from abc import abstractmethod
 import mrc
 import typing_utils
 
+from morpheus._lib.messages import ControlMessage, MultiResponseMessage
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
 from morpheus.utils.type_utils import pretty_print_type_name
@@ -40,6 +41,7 @@ class SinglePortStage(_pipeline.Stage):
         super().__init__(c)
 
         self._create_ports(1, 1)
+        self._use_control_message = False
 
     @abstractmethod
     def accepted_types(self) -> tuple:
@@ -64,6 +66,14 @@ class SinglePortStage(_pipeline.Stage):
         if (not typing_utils.issubtype(input_type, accepted_types)):
             raise RuntimeError((f"The {self.name} stage cannot handle input of {input_type}. "
                                 f"Accepted input types: {self.accepted_types()}"))
+        out_type = MultiResponseMessage
+        if (schema.input_type == ControlMessage):
+            self._use_control_message = True
+            out_type = ControlMessage
+        else:
+            self._use_control_message = False
+        
+        schema.output_schema.set_type(out_type)
 
     @abstractmethod
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
