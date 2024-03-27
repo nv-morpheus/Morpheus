@@ -202,3 +202,99 @@ def test_override_date_regex(config: Config, default_module_config):
     assert sink_messages[0].get_tasks()["load"][0]["n_groups"] == 2
     assert len(sink_messages[1].get_tasks()["load"][0]["files"]) == 3
     assert sink_messages[1].get_tasks()["load"][0]["n_groups"] == 2
+
+
+def test_sampling_freq(config: Config, default_module_config):
+    pipeline = LinearPipeline(config)
+
+    filenames = [
+        "DUO_2022-08-01T00_05_06.806Z.json",
+        "DUO_2022-08-01T00_05_08.418Z.json",
+        "DUO_2022-08-01T00_05_12.064Z.json",
+        "DUO_2022-08-02T03_02_06.806Z.json",
+        "DUO_2022-08-02T03_02_14.418Z.json",
+        "DUO_2022-08-02T03_02_17.064Z.json"
+    ]
+
+    cm_batching_opts = {
+        "sampling_rate_s": None,
+        "sampling": "30S",
+        "start_time": "2022-08-01",
+        "end_time": "2022-08-31",
+        "parser_kwargs": None,
+        "schema": {
+            "schema_str": None, "encoding": None
+        }
+    }
+
+    pipeline.set_source(source_test_stage(config, filenames=filenames, cm_batching_options=cm_batching_opts))
+
+    pipeline.add_stage(
+        LinearModulesStage(config, default_module_config, input_port_name="input", output_port_name="output"))
+
+    sink_stage = pipeline.add_stage(InMemorySinkStage(config))
+
+    pipeline.run()
+
+    sink_messages = sink_stage.get_messages()
+    assert len(sink_messages) == 2
+    assert len(sink_messages[0].get_tasks()["load"][0]["files"]) == 1
+    assert sink_messages[0].get_tasks()["load"][0]["n_groups"] == 2
+    assert len(sink_messages[1].get_tasks()["load"][0]["files"]) == 1
+    assert sink_messages[1].get_tasks()["load"][0]["n_groups"] == 2
+
+
+def test_sampling_pct(config: Config, default_module_config, default_file_list):
+    pipeline = LinearPipeline(config)
+
+    cm_batching_opts = {
+        "sampling_rate_s": None,
+        "sampling": 0.5,
+        "start_time": "2022-08-01",
+        "end_time": "2022-08-31",
+        "parser_kwargs": None,
+        "schema": {
+            "schema_str": None, "encoding": None
+        }
+    }
+
+    pipeline.set_source(source_test_stage(config, filenames=default_file_list, cm_batching_options=cm_batching_opts))
+
+    pipeline.add_stage(
+        LinearModulesStage(config, default_module_config, input_port_name="input", output_port_name="output"))
+
+    sink_stage = pipeline.add_stage(InMemorySinkStage(config))
+
+    pipeline.run()
+
+    sink_messages = sink_stage.get_messages()
+    msg_counts = [len(m.get_tasks()["load"][0]["files"]) for m in sink_messages]
+    assert sum(msg_counts) == 3
+
+
+def test_sampling_fixed(config: Config, default_module_config, default_file_list):
+    pipeline = LinearPipeline(config)
+
+    cm_batching_opts = {
+        "sampling_rate_s": None,
+        "sampling": 5,
+        "start_time": "2022-08-01",
+        "end_time": "2022-08-31",
+        "parser_kwargs": None,
+        "schema": {
+            "schema_str": None, "encoding": None
+        }
+    }
+
+    pipeline.set_source(source_test_stage(config, filenames=default_file_list, cm_batching_options=cm_batching_opts))
+
+    pipeline.add_stage(
+        LinearModulesStage(config, default_module_config, input_port_name="input", output_port_name="output"))
+
+    sink_stage = pipeline.add_stage(InMemorySinkStage(config))
+
+    pipeline.run()
+
+    sink_messages = sink_stage.get_messages()
+    msg_counts = [len(m.get_tasks()["load"][0]["files"]) for m in sink_messages]
+    assert sum(msg_counts) == 5

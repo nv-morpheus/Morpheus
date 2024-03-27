@@ -136,6 +136,7 @@ def file_batcher(builder: mrc.Builder):
             end_time = params["end_time"]
             period = params["period"]
             sampling_rate_s = params["sampling_rate_s"]
+            sampling = params["sampling"]
 
             if not isinstance(start_time, (str, type(None))) or (start_time is not None
                                                                  and not re.match(r"\d{4}-\d{2}-\d{2}", start_time)):
@@ -145,8 +146,15 @@ def file_batcher(builder: mrc.Builder):
                                                                and not re.match(r"\d{4}-\d{2}-\d{2}", end_time)):
                 raise ValueError(f"Invalid 'end_time' value: {end_time}")
 
-            if not isinstance(sampling_rate_s, int) or sampling_rate_s < 0:
-                raise ValueError(f"Invalid 'sampling_rate_s' value: {sampling_rate_s}")
+            if (sampling_rate_s is not None and sampling_rate_s > 0):
+                assert sampling is None, "Cannot set both sampling and sampling_rate_s at the same time"
+
+                # Show the deprecation message
+                warnings.warn(("The `sampling_rate_s` argument has been deprecated. "
+                               "Please use `sampling={sampling_rate_s}S` instead"),
+                              DeprecationWarning)
+
+                sampling = f"{sampling_rate_s}S"
 
             if (start_time is not None):
                 start_time = datetime.datetime.strptime(start_time, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
