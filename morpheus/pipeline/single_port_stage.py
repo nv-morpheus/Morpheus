@@ -72,7 +72,7 @@ class SinglePortStage(_pipeline.Stage):
             out_type = ControlMessage
         else:
             self._use_control_message = False
-        
+
         schema.output_schema.set_type(out_type)
 
     @abstractmethod
