@@ -26,6 +26,7 @@
 #include "morpheus/utilities/string_util.hpp"
 
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
+#include <mrc/utils/macros.hpp>     // for MRC_PTR_CAST
 #include <pybind11/cast.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
@@ -95,8 +96,7 @@ Task<std::shared_ptr<LLMContext>> PyLLMLambdaNode::execute(std::shared_ptr<LLMCo
     // Grab the GIL
     pybind11::gil_scoped_acquire gil;
 
-    // TODO: I think we have a macro for this
-    auto py_context = std::dynamic_pointer_cast<PyLLMContext>(context);
+    auto py_context = MRC_PTR_CAST(PyLLMContext, context);
 
     // Get the inputs. This will be a dictionary
     auto py_inputs = py_context->get_py_inputs();
