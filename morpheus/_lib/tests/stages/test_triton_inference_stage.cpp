@@ -16,7 +16,6 @@
  */
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
-#include "http_client.h"
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
@@ -25,6 +24,7 @@
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/stages/inference_client_stage.hpp"
 #include "morpheus/stages/triton_inference.hpp"
 #include "morpheus/types.hpp"
 #include "morpheus/utilities/cudf_util.hpp"

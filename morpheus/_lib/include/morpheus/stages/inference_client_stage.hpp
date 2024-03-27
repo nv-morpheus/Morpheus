@@ -29,7 +29,7 @@
 #include <mrc/segment/object.hpp>
 #include <pybind11/pybind11.h>
 #include <pymrc/asyncio_runnable.hpp>
-#include <stdint.h>
+#include <cstdint>
 
 #include <map>
 #include <memory>
@@ -75,6 +75,7 @@ class MORPHEUS_EXPORT IInferenceClientSession
 class MORPHEUS_EXPORT IInferenceClient
 {
   public:
+    virtual ~IInferenceClient() = 0;
     /**
       @brief Creates an inference session.
     */
