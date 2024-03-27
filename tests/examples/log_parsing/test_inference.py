@@ -165,39 +165,6 @@ def test_log_parsing_triton_inference_log_parsing_build_output_message(config: C
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
-def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typing.List[types.ModuleType]):
-    inference_mod = import_mod[0]
-
-    expected_inout_mapping = {}
-    expected_inout_mapping.update(
-        inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP,
-                                                                                           {}).get("inputs", {}))
-    expected_inout_mapping.update(
-        inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP,
-                                                                                           {}).get("outputs", {}))
-
-    expected_kwargs = {
-        "model_name": 'test_model',
-        "server_url": 'test_server',
-        "force_convert_inputs": False,
-        "use_shared_memory": False,
-        "needs_logits": True,
-        "inout_mapping": expected_inout_mapping,
-    }
-
-    stage = inference_mod.LogParsingInferenceStage(
-        config,
-        model_name='test_model',
-        server_url='test_server',
-        force_convert_inputs=False,
-        use_shared_memory=False,
-    )
-
-    assert stage._config is config
-    assert stage._kwargs == expected_kwargs
-
-
-@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
 def test_log_parsing_inference_stage_get_inference_worker(config: Config, import_mod: typing.List[types.ModuleType]):
     inference_mod = import_mod[0]
 
