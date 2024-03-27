@@ -69,4 +69,13 @@ class AddClassificationsStage(AddScoresStageBase):
 
     def _get_cpp_node(self, builder: mrc.Builder):
         import morpheus._lib.stages as _stages
-        return _stages.AddClassificationsStage(builder, self.unique_name, self._idx2label, self._threshold)
+        if (self._use_control_message):
+            return _stages.AddClassificationsControlMessageStage(builder,
+                                                                 self.unique_name,
+                                                                 self._idx2label,
+                                                                 self._threshold)
+        else:
+            return _stages.AddClassificationsMultiResponseMessageStage(builder,
+                                                                       self.unique_name,
+                                                                       self._idx2label,
+                                                                       self._threshold)

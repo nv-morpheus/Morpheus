@@ -18,6 +18,7 @@
 #include "morpheus/messages/control.hpp"  // for ControlMessage
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/messages/multi_inference_nlp.hpp"
 #include "morpheus/objects/file_types.hpp"  // for FileTypes
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
@@ -73,22 +74,44 @@ PYBIND11_MODULE(stages, _module)
 
     mrc::pymrc::from_import(_module, "morpheus._lib.common", "FilterSource");
 
-    py::class_<mrc::segment::Object<AddClassificationsStage>,
-               mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<AddClassificationsStage>>>(
-        _module, "AddClassificationsStage", py::multiple_inheritance())
-        .def(py::init<>(&AddClassificationStageInterfaceProxy::init),
+    py::class_<
+        mrc::segment::Object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>,
+        mrc::segment::ObjectProperties,
+        std::shared_ptr<mrc::segment::Object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>>>(
+        _module, "AddClassificationsMultiResponseMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&AddClassificationStageInterfaceProxy::init_multi),
              py::arg("builder"),
              py::arg("name"),
              py::arg("idx2label"),
              py::arg("threshold"));
 
-    py::class_<mrc::segment::Object<AddScoresStage>,
+    py::class_<mrc::segment::Object<AddClassificationsStage<ControlMessage, ControlMessage>>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<AddScoresStage>>>(
-        _module, "AddScoresStage", py::multiple_inheritance())
-        .def(
-            py::init<>(&AddScoresStageInterfaceProxy::init), py::arg("builder"), py::arg("name"), py::arg("idx2label"));
+               std::shared_ptr<mrc::segment::Object<AddClassificationsStage<ControlMessage, ControlMessage>>>>(
+        _module, "AddClassificationsControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&AddClassificationStageInterfaceProxy::init_cm),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("idx2label"),
+             py::arg("threshold"));
+
+    py::class_<mrc::segment::Object<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>>>(
+        _module, "AddScoresMultiResponseMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&AddScoresStageInterfaceProxy::init_multi),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("idx2label"));
+
+    py::class_<mrc::segment::Object<AddScoresStage<ControlMessage, ControlMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<AddScoresStage<ControlMessage, ControlMessage>>>>(
+        _module, "AddScoresControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&AddScoresStageInterfaceProxy::init_cm),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("idx2label"));
 
     py::class_<mrc::segment::Object<DeserializeStage<MultiMessage>>,
                mrc::segment::ObjectProperties,
@@ -205,20 +228,44 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("needed_columns"));
 
-    py::class_<mrc::segment::Object<PreprocessFILStage>,
+    py::class_<mrc::segment::Object<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessFILStage>>>(
-        _module, "PreprocessFILStage", py::multiple_inheritance())
-        .def(py::init<>(&PreprocessFILStageInterfaceProxy::init),
+               std::shared_ptr<mrc::segment::Object<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>>>(
+        _module, "PreprocessFILMultiMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreprocessFILStageInterfaceProxy::init_multi),
              py::arg("builder"),
              py::arg("name"),
              py::arg("features"));
 
-    py::class_<mrc::segment::Object<PreprocessNLPStage>,
+    py::class_<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>>(
-        _module, "PreprocessNLPStage", py::multiple_inheritance())
-        .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init),
+               std::shared_ptr<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>>>(
+        _module, "PreprocessFILControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreprocessFILStageInterfaceProxy::init_cm),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("features"));
+
+    py::class_<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>>>(
+        _module, "PreprocessNLPMultiMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init_multi),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("vocab_hash_file"),
+             py::arg("sequence_length"),
+             py::arg("truncation"),
+             py::arg("do_lower_case"),
+             py::arg("add_special_token"),
+             py::arg("stride"),
+             py::arg("column"));
+
+    py::class_<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>>>(
+        _module, "PreprocessNLPControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init_cm),
              py::arg("builder"),
              py::arg("name"),
              py::arg("vocab_hash_file"),
