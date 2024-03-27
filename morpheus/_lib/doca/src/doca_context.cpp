@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,86 +45,47 @@ namespace {
 #define FLOW_NB_COUNTERS 524228 /* 1024 x 512 */
 #define MAX_PORT_STR_LEN 128    /* Maximal length of port name */
 
-doca_error_t parse_pci_addr(std::string const& addr, doca_pci_bdf& bdf)
-{
-    uint32_t tmpu;
-
-    auto tmps = std::array<char, 4>();
-
-    if (addr.length() != 7 || addr[2] != ':' || addr[5] != '.')
-        return DOCA_ERROR_INVALID_VALUE;
-
-    tmps[0] = addr[0];
-    tmps[1] = addr[1];
-    tmps[2] = '\0';
-    tmpu    = strtoul(tmps.cbegin(), nullptr, 16);
-
-    if ((tmpu & 0xFFFFFF00) != 0)
-    {
-        return DOCA_ERROR_INVALID_VALUE;
-    }
-
-    bdf.bus = tmpu;
-
-    tmps[0] = addr[3];
-    tmps[1] = addr[4];
-    tmps[2] = '\0';
-    tmpu    = strtoul(tmps.cbegin(), nullptr, 16);
-
-    if ((tmpu & 0xFFFFFFE0) != 0)
-    {
-        return DOCA_ERROR_INVALID_VALUE;
-    }
-
-    bdf.device = tmpu;
-
-    tmps[0] = addr[6];
-    tmps[1] = '\0';
-    tmpu    = strtoul(tmps.cbegin(), nullptr, 16);
-    if ((tmpu & 0xFFFFFFF8) != 0)
-        return DOCA_ERROR_INVALID_VALUE;
-    bdf.function = tmpu;
-
-    return DOCA_SUCCESS;
-}
-
 using jobs_check_t = doca_error_t (*)(doca_devinfo*);
 
-doca_error_t open_doca_device_with_pci(const doca_pci_bdf* value, jobs_check_t func, doca_dev** retval)
+static doca_error_t open_doca_device_with_pci(const char* pcie_value, struct doca_dev** retval)
 {
-    doca_devinfo** dev_list;
+    struct doca_devinfo** dev_list;
     uint32_t nb_devs;
-    doca_pci_bdf buf;
+    doca_error_t res;
     size_t i;
+    uint8_t is_addr_equal = 0;
 
     /* Set default return value */
-    *retval = nullptr;
+    *retval = NULL;
 
-    DOCA_TRY(doca_devinfo_list_create(&dev_list, &nb_devs));
+    res = doca_devinfo_create_list(&dev_list, &nb_devs);
+    if (res != DOCA_SUCCESS)
+    {
+        LOG(ERROR) << "Failed to load doca devices list";
+        return res;
+    }
 
     /* Search */
     for (i = 0; i < nb_devs; i++)
     {
-        DOCA_TRY(doca_devinfo_get_pci_addr(dev_list[i], &buf));
-        if (buf.raw == value->raw)
+        res = doca_devinfo_is_equal_pci_addr(dev_list[i], pcie_value, &is_addr_equal);
+        if (res == DOCA_SUCCESS && is_addr_equal)
         {
-            /* If any special capabilities are needed */
-            if (func != nullptr && func(dev_list[i]) != DOCA_SUCCESS)
-                continue;
-
             /* if device can be opened */
-            auto res = doca_dev_open(dev_list[i], retval);
+            res = doca_dev_open(dev_list[i], retval);
             if (res == DOCA_SUCCESS)
             {
-                doca_devinfo_list_destroy(dev_list);
+                doca_devinfo_destroy_list(dev_list);
                 return res;
             }
         }
     }
 
-    doca_devinfo_list_destroy(dev_list);
+    MORPHEUS_FAIL("Matching device not found");
+    res = DOCA_ERROR_NOT_FOUND;
 
-    return DOCA_ERROR_NOT_FOUND;
+    doca_devinfo_destroy_list(dev_list);
+    return res;
 }
 
 doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
@@ -179,7 +140,7 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
     RTE_TRY(rte_eth_dev_start(port_id));
 
     /* Initialize doca flow framework */
-    rxq_flow_cfg.queues = rxq_num;
+    rxq_flow_cfg.pipe_queues = rxq_num;
     /*
      * HWS: Hardware steering
      * Isolated: don't create RSS rule for DPDK created RX queues
@@ -203,38 +164,6 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
 
 namespace morpheus::doca {
 
-static doca_error_t get_dpdk_port_id_doca_dev(doca_dev* dev_input, uint16_t* port_id)
-{
-    doca_dev* dev_local = nullptr;
-    doca_pci_bdf pci_addr_local;
-    doca_pci_bdf pci_addr_input;
-    uint16_t dpdk_port_id;
-
-    if (dev_input == nullptr || port_id == nullptr)
-        return DOCA_ERROR_INVALID_VALUE;
-
-    *port_id = RTE_MAX_ETHPORTS;
-
-    for (dpdk_port_id = 0; dpdk_port_id < RTE_MAX_ETHPORTS; dpdk_port_id++)
-    {
-        /* search for the probed devices */
-        if (!rte_eth_dev_is_valid_port(dpdk_port_id))
-            continue;
-
-        DOCA_TRY(doca_dpdk_port_as_dev(dpdk_port_id, &dev_local));
-        DOCA_TRY(doca_devinfo_get_pci_addr(doca_dev_as_devinfo(dev_local), &pci_addr_local));
-        DOCA_TRY(doca_devinfo_get_pci_addr(doca_dev_as_devinfo(dev_input), &pci_addr_input));
-
-        if (pci_addr_local.raw == pci_addr_input.raw)
-        {
-            *port_id = dpdk_port_id;
-            break;
-        }
-    }
-
-    return DOCA_SUCCESS;
-}
-
 DocaContext::DocaContext(std::string nic_addr, std::string gpu_addr) : m_max_queue_count(1)
 {
     char* nic_addr_c = new char[nic_addr.size() + 1];
@@ -248,16 +177,13 @@ DocaContext::DocaContext(std::string nic_addr, std::string gpu_addr) : m_max_que
 
     m_rte_context = std::make_unique<RTEContext>();
 
-    DOCA_TRY(parse_pci_addr(nic_addr_c, m_pci_bdf));
-    DOCA_TRY(open_doca_device_with_pci(&m_pci_bdf, nullptr, &m_dev));
+    /* Register a logger backend for internal SDK errors and warnings */
+    // DOCA_TRY(doca_log_backend_create_with_file_sdk(stderr, &sdk_log));
+    // DOCA_TRY(doca_log_backend_set_sdk_level(sdk_log, DOCA_LOG_LEVEL_DEBUG));
+
+    DOCA_TRY(open_doca_device_with_pci(nic_addr_c, &m_dev));
     DOCA_TRY(doca_dpdk_port_probe(m_dev, "dv_flow_en=2"));
-    DOCA_TRY(get_dpdk_port_id_doca_dev(m_dev, &m_nic_port));
-
-    if (m_nic_port == RTE_MAX_ETHPORTS)
-    {
-        throw std::runtime_error("No DPDK port matches the DOCA device");
-    }
-
+    DOCA_TRY(doca_dpdk_get_first_port_id(m_dev, &m_nic_port));
     DOCA_TRY(doca_gpu_create(gpu_addr_c, &m_gpu));
 
     m_flow_port = init_doca_flow(m_nic_port, m_max_queue_count);
@@ -273,13 +199,14 @@ DocaContext::DocaContext(std::string nic_addr, std::string gpu_addr) : m_max_que
 
 DocaContext::~DocaContext()
 {
+    doca_flow_port_stop(m_flow_port);
+    doca_flow_destroy();
+
     if (m_gpu != nullptr)
     {
         auto doca_ret = doca_gpu_destroy(m_gpu);
         if (doca_ret != DOCA_SUCCESS)
-        {
             LOG(WARNING) << "DOCA cleanup failed (" << doca_ret << ")" << std::endl;
-        }
     }
 }
 

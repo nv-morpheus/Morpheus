@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,8 +20,6 @@
 #include "doca_context.hpp"
 #include "doca_rx_queue.hpp"
 
-#include <memory>
-
 namespace morpheus::doca {
 
 /**
@@ -39,12 +37,15 @@ struct DocaRxPipe
 {
   private:
     std::shared_ptr<DocaContext> m_context;
-    std::shared_ptr<DocaRxQueue> m_rxq;
+    std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue>> m_rxq;
+    enum doca_traffic_type m_traffic_type;
     doca_flow_pipe* m_pipe;
     doca_flow_pipe* m_root_pipe;
 
   public:
-    DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<DocaRxQueue> rxq);
+    DocaRxPipe(std::shared_ptr<DocaContext> context,
+               std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue>> rxq,
+               doca_traffic_type const type);
     ~DocaRxPipe();
 };
 
