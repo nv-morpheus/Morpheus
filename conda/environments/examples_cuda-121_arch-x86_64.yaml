@@ -8,7 +8,6 @@ channels:
 - nvidia
 - nvidia/label/dev
 - pytorch
-- defaults
 dependencies:
 - anyio>=3.7
 - appdirs
@@ -70,5 +69,4 @@ dependencies:
   - milvus==2.3.5
   - nemollm
   - pymilvus==2.3.6
-  - python-logging-loki
 name: examples_cuda-121_arch-x86_64
