@@ -31,6 +31,7 @@
 #include <pybind11/stl.h>
 #include <pymrc/coro.hpp>  // IWYU pragma: keep
 #include <pymrc/types.hpp>
+#include <pymrc/utilities/json_values.hpp>
 #include <pymrc/utils.hpp>
 
 #include <coroutine>
@@ -98,7 +99,7 @@ Task<std::shared_ptr<LLMContext>> PyLLMLambdaNode::execute(std::shared_ptr<LLMCo
     pybind11::gil_scoped_acquire gil;
 
     // Convert to python dictionary
-    auto py_inputs = mrc::pymrc::cast_from_json(std::move(inputs));
+    auto py_inputs = inputs.to_python();
 
     // Call the function
     auto py_coro = m_fn(**py_inputs);
@@ -122,7 +123,7 @@ Task<std::shared_ptr<LLMContext>> PyLLMLambdaNode::execute(std::shared_ptr<LLMCo
     }
 
     // Convert back to JSON
-    auto return_val = mrc::pymrc::cast_from_pyobject(std::move(o_result));
+    auto return_val = mrc::pymrc::JSONValues(std::move(o_result));
 
     // Set the object back into the context outputs
     context->set_output(std::move(return_val));
