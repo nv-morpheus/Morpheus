@@ -15,7 +15,6 @@
 list(APPEND CMAKE_MESSAGE_CONTEXT "llm")
 
 set(MODULE_SOURCE_FILES
-   src/py_llm_context.cpp
    src/py_llm_engine.cpp
    src/py_llm_lambda_node.cpp
    src/py_llm_node_base.cpp

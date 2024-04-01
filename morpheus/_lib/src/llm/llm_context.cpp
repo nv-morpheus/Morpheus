@@ -20,6 +20,7 @@
 #include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>
+#include <pymrc/utilities/json_values.hpp>
 
 #include <algorithm>
 #include <memory>
@@ -94,9 +95,9 @@ std::shared_ptr<ControlMessage>& LLMContext::message() const
     return m_state->message;
 }
 
-nlohmann::json::const_reference LLMContext::all_outputs() const
+const mrc::pymrc::JSONValues& LLMContext::all_outputs() const
 {
-    return get_json();
+    return m_outputs;
 }
 
 std::string LLMContext::full_name() const
@@ -118,36 +119,34 @@ std::shared_ptr<LLMContext> LLMContext::push(std::string name, input_mappings_t 
 
 void LLMContext::pop()
 {
-    auto outputs(get_json());
+    mrc::pymrc::JSONValues(view_outputs());
 
     // Copy the outputs from the child context to the parent
     if (m_output_names.empty())
     {
         // Use them all by default
-        m_parent->set_output(m_name, std::move(outputs));
+        m_parent->set_output(m_name, std::move(m_outputs));
     }
     else if (m_output_names.size() == 1)
     {
         // Treat only a single output as the output
-        m_parent->set_output(m_name, std::move(outputs[m_output_names[0]]));
+        m_parent->set_output(m_name, std::move(m_outputs[m_output_names[0]]));
     }
     else
     {
         // Build a new json object with only the specified keys
-        nlohmann::json new_outputs;
+        mrc::pymrc::JSONValues new_outputs;
 
         for (const auto& output_name : m_output_names)
         {
-            new_outputs[output_name] = std::move(outputs[output_name]);
+            new_outputs = new_outputs.set_value(output_name, std::move(m_outputs[output_name]));
         }
 
         m_parent->set_output(m_name, std::move(new_outputs));
     }
-
-    m_outputs = std::move(mrc::pymrc::JSONValues(std::move(outputs)));
 }
 
-nlohmann::json::const_reference LLMContext::get_input() const
+mrc::pymrc::JSONValues LLMContext::get_input() const
 {
     if (m_inputs.size() > 1)
     {
@@ -188,42 +187,24 @@ input_mappings_t::const_iterator LLMContext::find_input(const std::string& node_
     return found;
 }
 
-nlohmann::json::const_reference LLMContext::get_input(const std::string& node_name) const
+mrc::pymrc::JSONValues LLMContext::get_input(const std::string& node_name) const
 {
     if (node_name[0] == '/')
     {
-        nlohmann::json::const_reference outputs = get_json();
-        nlohmann::json::json_pointer node_json_ptr(node_name);
-
-        if (!outputs.contains(node_json_ptr))
-        {
-            throw std::runtime_error(MORPHEUS_CONCAT_STR("Input '" << node_name << "' not found in the output map"));
-        }
-
-        // Get the value from a sibling output
-        return outputs[node_json_ptr];
+        return m_outputs[node_name];
     }
-    else
-    {
-        // Must be on the parent, so find the mapping between this namespace and the parent
-        auto found       = find_input(node_name);
-        auto& input_name = found->external_name;
 
-        // Get the value from a parent output
-        return m_parent->get_input(input_name);
-    }
+    // Must be on the parent, so find the mapping between this namespace and the parent
+    auto found       = find_input(node_name);
+    auto& input_name = found->external_name;
+
+    // Get the value from a parent output
+    return m_parent->get_input(input_name);
 }
 
-nlohmann::json LLMContext::get_inputs() const
+const mrc::pymrc::JSONValues& LLMContext::get_inputs() const
 {
-    nlohmann::json inputs = nlohmann::json::object();
-
-    for (const auto& in_map : m_inputs)
-    {
-        inputs[in_map.internal_name] = this->get_input(in_map.internal_name);
-    }
-
-    return inputs;
+    return m_outputs;
 }
 
 void LLMContext::set_output(nlohmann::json outputs)
@@ -260,17 +241,12 @@ void LLMContext::outputs_complete()
     // m_outputs_promise.set_value();
 }
 
-nlohmann::json::const_reference LLMContext::view_outputs() const
+const mrc::pymrc::JSONValues& LLMContext::view_outputs() const
 {
     // // Wait for the outputs to be available
     // m_outputs_future.wait();
 
-    return get_json();
-}
-
-nlohmann::json::const_reference LLMContext::get_json() const
-{
-    return m_outputs.to_json();
+    return m_outputs;
 }
 
 }  // namespace morpheus::llm

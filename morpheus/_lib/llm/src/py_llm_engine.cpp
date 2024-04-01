@@ -17,7 +17,6 @@
 
 #include "py_llm_engine.hpp"
 
-#include "py_llm_context.hpp"
 #include "py_llm_task_handler.hpp"
 
 #include <pybind11/pybind11.h>
@@ -47,7 +46,7 @@ void PyLLMEngine::add_task_handler(user_input_mappings_t inputs, std::shared_ptr
 
 std::shared_ptr<LLMContext> PyLLMEngine::create_context(LLMTask task, std::shared_ptr<ControlMessage> message)
 {
-    return std::make_shared<PyLLMContext>(task, message);
+    return std::make_shared<LLMContext>(task, message);
 }
 
 }  // namespace morpheus::llm
