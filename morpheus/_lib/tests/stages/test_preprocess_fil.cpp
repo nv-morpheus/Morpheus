@@ -36,7 +36,7 @@ TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
     auto cm_stage =
         std::make_shared<PreprocessFILStage<ControlMessage, ControlMessage>>(std::vector<std::string>{"country"});
 
-    auto cm_response         = cm_stage->pre_process_batch(cm);
+    auto cm_response         = cm_stage->on_data(cm);
     auto cm_response_payload = cm_response->payload();
     EXPECT_EQ(cm_response_payload->count(), 193);
 
@@ -45,7 +45,7 @@ TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
     // Create PreProcessMultiMessageStage
     auto multi_stage =
         std::make_shared<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>(std::vector<std::string>{"country"});
-    auto multi_response         = multi_stage->pre_process_batch(multi);
+    auto multi_response         = multi_stage->on_data(multi);
     auto multi_response_payload = multi_response->meta;
 
     // Check if identical number of rows are returned

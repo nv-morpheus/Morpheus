@@ -53,7 +53,7 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
                                                                              1 /*stride*/,
                                                                              "country" /*column*/);
 
-    auto cm_response         = cm_stage->pre_process_batch(cm);
+    auto cm_response         = cm_stage->on_data(cm);
     auto cm_response_payload = cm_response->payload();
     EXPECT_EQ(cm_response_payload->count(), 193);
 
@@ -69,7 +69,7 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
                                                                                   false /*add_special_token*/,
                                                                                   1 /*stride*/,
                                                                                   "country" /*column*/);
-    auto multi_response         = multi_stage->pre_process_batch(multi);
+    auto multi_response         = multi_stage->on_data(multi);
     auto multi_response_payload = multi_response->meta;
 
     // Check if identical number of rows are returned

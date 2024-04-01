@@ -74,13 +74,16 @@ class PreprocessFILStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>
      */
     PreprocessFILStage(const std::vector<std::string>& features);
 
-    std::shared_ptr<OutputT> pre_process_batch(std::shared_ptr<InputT> x);
+    std::shared_ptr<OutputT> on_data(std::shared_ptr<InputT> x);
 
   private:
     /**
      * TODO(Documentation)
      */
     subscribe_fn_t build_operator();
+
+    std::shared_ptr<MultiInferenceMessage> on_multi_message(std::shared_ptr<MultiMessage> x);
+    std::shared_ptr<ControlMessage> on_control_message(std::shared_ptr<ControlMessage> x);
 
     TableInfo fix_bad_columns(sink_type_t x);
 
@@ -100,7 +103,7 @@ PreprocessFILStage<InputT, OutputT>::subscribe_fn_t PreprocessFILStage<InputT, O
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [&output, this](sink_type_t x) {
-                auto next = this->pre_process_batch(x);
+                auto next = this->on_data(x);
                 output.on_next(std::move(next));
             },
             [&](std::exception_ptr error_ptr) {
@@ -157,127 +160,15 @@ TableInfo PreprocessFILStage<InputT, OutputT>::fix_bad_columns(sink_type_t x)
 }
 
 template <typename InputT, typename OutputT>
-std::shared_ptr<OutputT> PreprocessFILStage<InputT, OutputT>::pre_process_batch(std::shared_ptr<InputT> x)
+std::shared_ptr<OutputT> PreprocessFILStage<InputT, OutputT>::on_data(std::shared_ptr<InputT> x)
 {
-    auto df_meta = this->fix_bad_columns(x);
-
     if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
     {
-        auto packed_data = std::make_shared<rmm::device_buffer>(m_fea_cols.size() * x->mess_count * sizeof(float),
-                                                                rmm::cuda_stream_per_thread);
-
-        for (size_t i = 0; i < df_meta.num_columns(); ++i)
-        {
-            auto curr_col = df_meta.get_column(i);
-
-            auto curr_ptr = static_cast<float*>(packed_data->data()) + i * df_meta.num_rows();
-
-            // Check if we are something other than float
-            if (curr_col.type().id() != cudf::type_id::FLOAT32)
-            {
-                auto float_data = cudf::cast(curr_col, cudf::data_type(cudf::type_id::FLOAT32))->release();
-
-                // Do the copy here before it goes out of scope
-                MRC_CHECK_CUDA(cudaMemcpy(
-                    curr_ptr, float_data.data->data(), df_meta.num_rows() * sizeof(float), cudaMemcpyDeviceToDevice));
-            }
-            else
-            {
-                MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
-                                          curr_col.template data<float>(),
-                                          df_meta.num_rows() * sizeof(float),
-                                          cudaMemcpyDeviceToDevice));
-            }
-        }
-
-        // Need to convert from row major to column major
-        // Easiest way to do this is to transpose the data from [fea_len, row_count] to [row_count, fea_len]
-        auto transposed_data =
-            MatxUtil::transpose(DevMemInfo{packed_data,
-                                           TypeId::FLOAT32,
-                                           {static_cast<TensorIndex>(m_fea_cols.size()), x->mess_count},
-                                           {x->mess_count, 1}});
-
-        // Create the tensor which will be row-major and size [row_count, fea_len]
-        auto input__0 = Tensor::create(transposed_data,
-                                       DType::create<float>(),
-                                       {x->mess_count, static_cast<TensorIndex>(m_fea_cols.size())},
-                                       {},
-                                       0);
-
-        auto seq_id_dtype = DType::create<TensorIndex>();
-        auto seq_ids      = Tensor::create(
-            MatxUtil::create_seq_ids(
-                x->mess_count, m_fea_cols.size(), seq_id_dtype.type_id(), input__0.get_memory(), x->mess_offset),
-            seq_id_dtype,
-            {x->mess_count, 3},
-            {},
-            0);
-
-        // Build the results
-        auto memory = std::make_shared<InferenceMemoryFIL>(x->mess_count, std::move(input__0), std::move(seq_ids));
-
-        auto next = std::make_shared<MultiInferenceMessage>(
-            x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);
-
-        return next;
+        return on_multi_message(x);
     }
     else if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<ControlMessage>>)
     {
-        auto num_rows    = x->payload()->get_info().num_rows();
-        auto packed_data = std::make_shared<rmm::device_buffer>(m_fea_cols.size() * num_rows * sizeof(float),
-                                                                rmm::cuda_stream_per_thread);
-
-        for (size_t i = 0; i < df_meta.num_columns(); ++i)
-        {
-            auto curr_col = df_meta.get_column(i);
-
-            auto curr_ptr = static_cast<float*>(packed_data->data()) + i * df_meta.num_rows();
-
-            // Check if we are something other than float
-            if (curr_col.type().id() != cudf::type_id::FLOAT32)
-            {
-                auto float_data = cudf::cast(curr_col, cudf::data_type(cudf::type_id::FLOAT32))->release();
-
-                // Do the copy here before it goes out of scope
-                MRC_CHECK_CUDA(cudaMemcpy(
-                    curr_ptr, float_data.data->data(), df_meta.num_rows() * sizeof(float), cudaMemcpyDeviceToDevice));
-            }
-            else
-            {
-                MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
-                                          curr_col.template data<float>(),
-                                          df_meta.num_rows() * sizeof(float),
-                                          cudaMemcpyDeviceToDevice));
-            }
-        }
-
-        // Need to convert from row major to column major
-        // Easiest way to do this is to transpose the data from [fea_len, row_count] to [row_count, fea_len]
-        auto transposed_data = MatxUtil::transpose(DevMemInfo{
-            packed_data, TypeId::FLOAT32, {static_cast<TensorIndex>(m_fea_cols.size()), num_rows}, {num_rows, 1}});
-
-        // Create the tensor which will be row-major and size [row_count, fea_len]
-        auto input__0 = Tensor::create(
-            transposed_data, DType::create<float>(), {num_rows, static_cast<TensorIndex>(m_fea_cols.size())}, {}, 0);
-
-        auto seq_id_dtype = DType::create<TensorIndex>();
-        auto seq_ids =
-            Tensor::create(MatxUtil::create_seq_ids(
-                               num_rows, m_fea_cols.size(), seq_id_dtype.type_id(), input__0.get_memory(), num_rows),
-                           seq_id_dtype,
-                           {num_rows, 3},
-                           {},
-                           0);
-
-        // Build the results
-        auto memory = std::make_shared<TensorMemory>(num_rows);
-        memory->set_tensor("input__0", std::move(input__0));
-        memory->set_tensor("seq_ids", std::move(seq_ids));
-        auto next = x;
-        next->tensors(memory);
-
-        return next;
+        return on_control_message(x);
     }
     // sink_type_t not supported
     else
@@ -286,6 +177,126 @@ std::shared_ptr<OutputT> PreprocessFILStage<InputT, OutputT>::pre_process_batch(
         LOG(ERROR) << error_msg;
         throw std::runtime_error(error_msg);
     }
+}
+
+template <typename InputT, typename OutputT>
+std::shared_ptr<MultiInferenceMessage> PreprocessFILStage<InputT, OutputT>::on_multi_message(
+    std::shared_ptr<MultiMessage> x)
+{
+    auto packed_data = std::make_shared<rmm::device_buffer>(m_fea_cols.size() * x->mess_count * sizeof(float),
+                                                            rmm::cuda_stream_per_thread);
+    auto df_meta     = this->fix_bad_columns(x);
+    for (size_t i = 0; i < df_meta.num_columns(); ++i)
+    {
+        auto curr_col = df_meta.get_column(i);
+
+        auto curr_ptr = static_cast<float*>(packed_data->data()) + i * df_meta.num_rows();
+
+        // Check if we are something other than float
+        if (curr_col.type().id() != cudf::type_id::FLOAT32)
+        {
+            auto float_data = cudf::cast(curr_col, cudf::data_type(cudf::type_id::FLOAT32))->release();
+
+            // Do the copy here before it goes out of scope
+            MRC_CHECK_CUDA(cudaMemcpy(
+                curr_ptr, float_data.data->data(), df_meta.num_rows() * sizeof(float), cudaMemcpyDeviceToDevice));
+        }
+        else
+        {
+            MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
+                                      curr_col.template data<float>(),
+                                      df_meta.num_rows() * sizeof(float),
+                                      cudaMemcpyDeviceToDevice));
+        }
+    }
+
+    // Need to convert from row major to column major
+    // Easiest way to do this is to transpose the data from [fea_len, row_count] to [row_count, fea_len]
+    auto transposed_data = MatxUtil::transpose(DevMemInfo{packed_data,
+                                                          TypeId::FLOAT32,
+                                                          {static_cast<TensorIndex>(m_fea_cols.size()), x->mess_count},
+                                                          {x->mess_count, 1}});
+
+    // Create the tensor which will be row-major and size [row_count, fea_len]
+    auto input__0 = Tensor::create(
+        transposed_data, DType::create<float>(), {x->mess_count, static_cast<TensorIndex>(m_fea_cols.size())}, {}, 0);
+
+    auto seq_id_dtype = DType::create<TensorIndex>();
+    auto seq_ids      = Tensor::create(
+        MatxUtil::create_seq_ids(
+            x->mess_count, m_fea_cols.size(), seq_id_dtype.type_id(), input__0.get_memory(), x->mess_offset),
+        seq_id_dtype,
+        {x->mess_count, 3},
+        {},
+        0);
+
+    // Build the results
+    auto memory = std::make_shared<InferenceMemoryFIL>(x->mess_count, std::move(input__0), std::move(seq_ids));
+
+    auto next = std::make_shared<MultiInferenceMessage>(
+        x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);
+
+    return next;
+}
+
+template <typename InputT, typename OutputT>
+std::shared_ptr<ControlMessage> PreprocessFILStage<InputT, OutputT>::on_control_message(
+    std::shared_ptr<ControlMessage> x)
+{
+    auto df_meta  = this->fix_bad_columns(x);
+    auto num_rows = x->payload()->get_info().num_rows();
+    auto packed_data =
+        std::make_shared<rmm::device_buffer>(m_fea_cols.size() * num_rows * sizeof(float), rmm::cuda_stream_per_thread);
+
+    for (size_t i = 0; i < df_meta.num_columns(); ++i)
+    {
+        auto curr_col = df_meta.get_column(i);
+
+        auto curr_ptr = static_cast<float*>(packed_data->data()) + i * df_meta.num_rows();
+
+        // Check if we are something other than float
+        if (curr_col.type().id() != cudf::type_id::FLOAT32)
+        {
+            auto float_data = cudf::cast(curr_col, cudf::data_type(cudf::type_id::FLOAT32))->release();
+
+            // Do the copy here before it goes out of scope
+            MRC_CHECK_CUDA(cudaMemcpy(
+                curr_ptr, float_data.data->data(), df_meta.num_rows() * sizeof(float), cudaMemcpyDeviceToDevice));
+        }
+        else
+        {
+            MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
+                                      curr_col.template data<float>(),
+                                      df_meta.num_rows() * sizeof(float),
+                                      cudaMemcpyDeviceToDevice));
+        }
+    }
+
+    // Need to convert from row major to column major
+    // Easiest way to do this is to transpose the data from [fea_len, row_count] to [row_count, fea_len]
+    auto transposed_data = MatxUtil::transpose(DevMemInfo{
+        packed_data, TypeId::FLOAT32, {static_cast<TensorIndex>(m_fea_cols.size()), num_rows}, {num_rows, 1}});
+
+    // Create the tensor which will be row-major and size [row_count, fea_len]
+    auto input__0 = Tensor::create(
+        transposed_data, DType::create<float>(), {num_rows, static_cast<TensorIndex>(m_fea_cols.size())}, {}, 0);
+
+    auto seq_id_dtype = DType::create<TensorIndex>();
+    auto seq_ids      = Tensor::create(
+        MatxUtil::create_seq_ids(num_rows, m_fea_cols.size(), seq_id_dtype.type_id(), input__0.get_memory(), num_rows),
+        seq_id_dtype,
+        {num_rows, 3},
+        {},
+        0);
+
+    // Build the results
+    auto memory = std::make_shared<TensorMemory>(num_rows);
+    memory->set_tensor("input__0", std::move(input__0));
+    memory->set_tensor("seq_ids", std::move(seq_ids));
+    auto next = x;
+    next->tensors(memory);
+
+    return next;
 }
 
 /****** PreprocessFILStageInferenceProxy********************/
