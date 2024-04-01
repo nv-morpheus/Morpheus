@@ -44,7 +44,7 @@ TEST_F(TestAddScores, TestProcessControlMessageAndMultiResponseMessage)
 
     // Create PreProcessMultiMessageStage
     auto multi_stage    = std::make_shared<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>(idx2label);
-    auto multi_response = multi_stage->pre_process_batch(multi);
+    auto multi_response = multi_stage->on_data(multi);
     auto multi_response_probs_tensor = multi_response->get_tensor(multi_response->probs_tensor_name);
 
     // Create ControlMessage
@@ -58,7 +58,7 @@ TEST_F(TestAddScores, TestProcessControlMessageAndMultiResponseMessage)
     // Create PreProcessControlMessageStage
     auto cm_stage = std::make_shared<AddScoresStage<ControlMessage, ControlMessage>>(idx2label);
 
-    auto cm_response              = cm_stage->pre_process_batch(cm);
+    auto cm_response              = cm_stage->on_data(cm);
     auto cm_response_probs_tensor = cm_response->tensors()->get_tensor("probs");
 
     // Check the returned tensors have the same size
