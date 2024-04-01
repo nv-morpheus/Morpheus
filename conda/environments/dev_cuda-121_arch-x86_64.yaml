@@ -50,7 +50,7 @@ dependencies:
 - nbsphinx
 - networkx=2.8.8
 - ninja=1.11
-- nlohmann_json=3.9
+- nlohmann_json=3.11
 - nodejs=18.*
 - numpydoc=1.5
 - nvtabular=23.08.00

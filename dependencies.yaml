@@ -182,7 +182,7 @@ dependencies:
           - librdkafka>=1.9.2,<1.10.0a0
           - mrc=24.03
           - ninja=1.11
-          - nlohmann_json=3.9
+          - nlohmann_json=3.11
           - pkg-config=0.29 # for mrc cmake
           - protobuf=4.24
           - pybind11-stubgen=0.10.5
