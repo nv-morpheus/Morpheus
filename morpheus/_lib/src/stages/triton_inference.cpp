@@ -480,8 +480,8 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&&
 
             DCHECK_EQ(stop - start, output_shape[0]);
             DCHECK_EQ(output_tensor.bytes(), output_ptr_size);
-            DCHECK_NOTNULL(output_ptr); // NOLINT(Wunused-value)
-            DCHECK_NOTNULL(output_tensor.data()); // NOLINT(Wunused-value)
+            DCHECK_NOTNULL(output_ptr); // NOLINT
+            DCHECK_NOTNULL(output_tensor.data()); // NOLINT
 
             MRC_CHECK_CUDA(cudaMemcpy(output_tensor.data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
         }

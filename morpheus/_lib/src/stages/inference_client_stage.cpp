@@ -37,7 +37,6 @@
 #include <mutex>
 #include <ostream>
 #include <ratio>
-#include <shared_mutex>
 #include <utility>
 
 namespace {
