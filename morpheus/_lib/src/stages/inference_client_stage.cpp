@@ -179,10 +179,8 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
 
                 if (m_session == nullptr)
                 {
-
+                    m_session = m_client->create_session();
                 }
-
-                m_session = m_client->create_session();
 
                 message_session = m_session;
             }
