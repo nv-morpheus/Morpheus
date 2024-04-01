@@ -15,8 +15,8 @@ Checks: >
 
 WarningsAsErrors: >
   *,
-  -clang-diagnostic-unused-command-line-argument
-  -Wno-ignored-optimization-argument
+  -clang-diagnostic-unused-command-line-argument,
+  -Wno-ignored-optimization-argument,
   -Qunused-arguments
 
 #WarningsAsErrors: '*'
