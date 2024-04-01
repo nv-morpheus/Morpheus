@@ -160,6 +160,8 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
 
     while (true)
     {
+        auto message_session = m_session;
+
         try
         {
             // Using the `count` which is the number of rows in the inference tensors. We will check later if this
@@ -169,8 +171,6 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
             // row int he dataframe.
             // TensorMap output_tensors;
             // buffer_map_t output_buffers;
-
-            auto message_session = m_session;
 
             if (message_session == nullptr)
             {
@@ -242,7 +242,9 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
         {
             auto lock = std::unique_lock(m_session_mutex);
 
-            m_session.reset();
+            if (m_session == message_session) {
+                m_session.reset();
+            }
 
             if (m_retry_max >= 0 and ++retry_count > m_retry_max)
             {
