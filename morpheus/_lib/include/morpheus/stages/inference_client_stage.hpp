@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <shared_mutex>
 #include <string>
 #include <vector>
@@ -130,7 +131,7 @@ class MORPHEUS_EXPORT InferenceClientStage
     bool m_needs_logits{true};
     std::vector<TensorModelMapping> m_input_mapping;
     std::vector<TensorModelMapping> m_output_mapping;
-    std::shared_mutex m_session_mutex;
+    std::mutex m_session_mutex;
 
     int32_t m_retry_max = 10;
 };
