@@ -242,7 +242,8 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> Inference
         {
             auto lock = std::unique_lock(m_session_mutex);
 
-            if (m_session == message_session) {
+            if (m_session == message_session)
+            {
                 m_session.reset();
             }
 
