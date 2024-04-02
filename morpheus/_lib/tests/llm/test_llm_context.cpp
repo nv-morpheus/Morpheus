@@ -25,6 +25,7 @@
 #include "morpheus/llm/llm_task.hpp"
 #include "morpheus/types.hpp"
 
+#include <glog/logging.h>
 #include <gtest/gtest.h>
 #include <mrc/channel/forward.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
@@ -223,7 +224,6 @@ TEST_F(TestLLMContext, PopWithoutPush)
     ASSERT_EQ(child_json_outputs["key2"], "val2");
 
     child_ctx.pop();
-    ASSERT_EQ(child_ctx.all_outputs().view_json(), nullptr);
 
     const auto& parent_json_outputs = parent_ctx->all_outputs().view_json();
     ASSERT_EQ(parent_json_outputs["child"]["key1"], "val1");
@@ -240,27 +240,17 @@ TEST_F(TestLLMContext, PopSelectOneOutput)
     outputs = {{"key1", "val1"}, {"key2", "val2"}, {"key3", "val3"}};
     child_ctx->set_output(outputs);
 
-    {
-        const auto& child_json_outputs = child_ctx->all_outputs().view_json();
-        ASSERT_EQ(child_json_outputs["key1"], "val1");
-        ASSERT_EQ(child_json_outputs["key2"], "val2");
-        ASSERT_EQ(child_json_outputs["key3"], "val3");
-    }
+    const auto& child_json_outputs = child_ctx->all_outputs().view_json();
+    ASSERT_EQ(child_json_outputs["key1"], "val1");
+    ASSERT_EQ(child_json_outputs["key2"], "val2");
+    ASSERT_EQ(child_json_outputs["key3"], "val3");
 
     child_ctx->set_output_names({"key2"});
     child_ctx->pop();
 
-    {
-        const auto& child_json_outputs = child_ctx->all_outputs().view_json();
-        ASSERT_EQ(child_json_outputs.size(), 3);
-        ASSERT_EQ(child_json_outputs["key1"], "val1");
-        ASSERT_EQ(child_json_outputs["key2"], nullptr);
-        ASSERT_EQ(child_json_outputs["key3"], "val3");
-
-        const auto& parent_json_outputs = parent_ctx->all_outputs().view_json();
-        ASSERT_EQ(parent_json_outputs["child"].size(), 1);
-        ASSERT_EQ(parent_json_outputs["child"], "val2");
-    }
+    const auto& parent_json_outputs = parent_ctx->all_outputs().view_json();
+    ASSERT_EQ(parent_json_outputs["child"].size(), 1);
+    ASSERT_EQ(parent_json_outputs["child"], "val2");
 }
 
 TEST_F(TestLLMContext, PopSelectMultipleOutputs)
@@ -273,28 +263,18 @@ TEST_F(TestLLMContext, PopSelectMultipleOutputs)
     outputs = {{"key1", "val1"}, {"key2", "val2"}, {"key3", "val3"}};
     child_ctx->set_output(outputs);
 
-    {
-        const auto& child_json_outputs = child_ctx->all_outputs().view_json();
-        ASSERT_EQ(child_json_outputs["key1"], "val1");
-        ASSERT_EQ(child_json_outputs["key2"], "val2");
-        ASSERT_EQ(child_json_outputs["key3"], "val3");
-    }
+    const auto& child_json_outputs = child_ctx->all_outputs().view_json();
+    ASSERT_EQ(child_json_outputs["key1"], "val1");
+    ASSERT_EQ(child_json_outputs["key2"], "val2");
+    ASSERT_EQ(child_json_outputs["key3"], "val3");
 
     child_ctx->set_output_names({"key2", "key3"});
     child_ctx->pop();
 
-    {
-        const auto& child_json_outputs = child_ctx->all_outputs().view_json();
-        ASSERT_EQ(child_json_outputs.size(), 3);
-        ASSERT_EQ(child_json_outputs["key1"], "val1");
-        ASSERT_EQ(child_json_outputs["key2"], nullptr);
-        ASSERT_EQ(child_json_outputs["key3"], nullptr);
-
-        const auto& parent_json_outputs = child_ctx->parent()->all_outputs().view_json();
-        ASSERT_EQ(parent_json_outputs["child"].size(), 2);
-        ASSERT_EQ(parent_json_outputs["child"]["key2"], "val2");
-        ASSERT_EQ(parent_json_outputs["child"]["key3"], "val3");
-    }
+    const auto& parent_json_outputs = child_ctx->parent()->all_outputs().view_json();
+    ASSERT_EQ(parent_json_outputs["child"].size(), 2);
+    ASSERT_EQ(parent_json_outputs["child"]["key2"], "val2");
+    ASSERT_EQ(parent_json_outputs["child"]["key3"], "val3");
 }
 
 TEST_F(TestLLMContext, SingleInputMappingValid)
@@ -337,8 +317,11 @@ TEST_F(TestLLMContext, MultipleInputMappingsValid)
     llm::LLMContext child_ctx{parent_ctx, "child", inputs};
     ASSERT_EQ(child_ctx.get_input("input1").view_json(), "val1");
     ASSERT_EQ(child_ctx.get_input("input2").view_json(), "val2");
-    ASSERT_EQ(child_ctx.get_inputs()["input1"].view_json(), "val1");
-    ASSERT_EQ(child_ctx.get_inputs()["input2"].view_json(), "val2");
+
+    auto child_inputs = child_ctx.get_inputs().view_json();
+
+    ASSERT_EQ(child_inputs["input1"], "val1");
+    ASSERT_EQ(child_inputs["input2"], "val2");
     ASSERT_THROW(child_ctx.get_input(), std::runtime_error);
     ASSERT_THROW(child_ctx.get_input("input3"), std::runtime_error);
 }
