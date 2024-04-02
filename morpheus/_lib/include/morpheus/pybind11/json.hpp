@@ -48,12 +48,19 @@ struct type_caster<nlohmann::json>
      */
     bool load(handle src, bool convert)
     {
-        if (!src || src.is_none())
+        if (!src)
         {
             return false;
         }
 
-        value = mrc::pymrc::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src));
+        if (src.is_none())
+        {
+            value = nlohmann::json(nullptr);
+        }
+        else
+        {
+            value = mrc::pymrc::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src));
+        }
 
         return true;
     }

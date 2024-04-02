@@ -43,12 +43,19 @@ struct type_caster<mrc::pymrc::JSONValues>
      */
     bool load(handle src, bool convert)
     {
-        if (!src || src.is_none())
+        if (!src)
         {
             return false;
         }
 
-        value = mrc::pymrc::JSONValues(pybind11::reinterpret_borrow<pybind11::object>(src));
+        if (src.is_none())
+        {
+            value = mrc::pymrc::JSONValues();
+        }
+        else
+        {
+            value = mrc::pymrc::JSONValues(pybind11::reinterpret_borrow<pybind11::object>(src));
+        }
 
         return true;
     }
