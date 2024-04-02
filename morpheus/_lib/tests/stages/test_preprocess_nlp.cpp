@@ -44,14 +44,13 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
     cm->payload(meta);
 
     // Create PreProcessControlMessageStage
-    auto cm_stage =
-        std::make_shared<PreprocessNLPStageCC>(vocab_hash_file /*vocab_hash_file*/,
-                                                                             1 /*sequence_length*/,
-                                                                             false /*truncation*/,
-                                                                             false /*do_lower_case*/,
-                                                                             false /*add_special_token*/,
-                                                                             1 /*stride*/,
-                                                                             "country" /*column*/);
+    auto cm_stage = std::make_shared<PreprocessNLPStageCC>(vocab_hash_file /*vocab_hash_file*/,
+                                                           1 /*sequence_length*/,
+                                                           false /*truncation*/,
+                                                           false /*do_lower_case*/,
+                                                           false /*add_special_token*/,
+                                                           1 /*stride*/,
+                                                           "country" /*column*/);
 
     auto cm_response         = cm_stage->on_data(cm);
     auto cm_response_payload = cm_response->payload();
@@ -61,14 +60,13 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
     auto multi = std::make_shared<MultiMessage>(meta);
 
     // Create PreProcessMultiMessageStage
-    auto multi_stage =
-        std::make_shared<PreprocessNLPStageMM>(vocab_hash_file /*vocab_hash_file*/,
-                                                                                  1 /*sequence_length*/,
-                                                                                  false /*truncation*/,
-                                                                                  false /*do_lower_case*/,
-                                                                                  false /*add_special_token*/,
-                                                                                  1 /*stride*/,
-                                                                                  "country" /*column*/);
+    auto multi_stage            = std::make_shared<PreprocessNLPStageMM>(vocab_hash_file /*vocab_hash_file*/,
+                                                              1 /*sequence_length*/,
+                                                              false /*truncation*/,
+                                                              false /*do_lower_case*/,
+                                                              false /*add_special_token*/,
+                                                              1 /*stride*/,
+                                                              "country" /*column*/);
     auto multi_response         = multi_stage->on_data(multi);
     auto multi_response_payload = multi_response->meta;
 

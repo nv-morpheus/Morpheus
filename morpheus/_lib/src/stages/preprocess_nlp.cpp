@@ -131,8 +131,8 @@ std::shared_ptr<OutputT> PreprocessNLPStage<InputT, OutputT>::on_data(std::share
     }
 }
 
-template <typename InputT, typename OutputT>
-std::shared_ptr<MultiInferenceMessage> PreprocessNLPStage<InputT, OutputT>::on_multi_message(
+template <>
+std::shared_ptr<MultiInferenceMessage> PreprocessNLPStage<MultiMessage, MultiInferenceMessage>::on_multi_message(
     std::shared_ptr<MultiMessage> x)
 {
     // Convert to string view
@@ -196,8 +196,8 @@ std::shared_ptr<MultiInferenceMessage> PreprocessNLPStage<InputT, OutputT>::on_m
     return std::move(next);
 }
 
-template <typename InputT, typename OutputT>
-std::shared_ptr<ControlMessage> PreprocessNLPStage<InputT, OutputT>::on_control_message(
+template <>
+std::shared_ptr<ControlMessage> PreprocessNLPStage<ControlMessage, ControlMessage>::on_control_message(
     std::shared_ptr<ControlMessage> x)
 {
     // Convert to string view
