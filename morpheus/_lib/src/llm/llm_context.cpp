@@ -28,20 +28,6 @@
 #include <stdexcept>
 #include <utility>
 
-namespace {
-std::string ensure_leading_path(const std::string& path)
-{
-    DCHECK(!path.empty());
-
-    if (path[0] != '/')
-    {
-        return "/" + path;
-    }
-
-    return path;
-}
-}  // namespace
-
 namespace morpheus::llm {
 
 LLMContext::LLMContext() : m_state(std::make_shared<LLMContextState>()) {}
@@ -130,7 +116,7 @@ void LLMContext::pop()
     else if (m_output_names.size() == 1)
     {
         // Treat only a single output as the output
-        m_parent->set_output(m_name, std::move(m_outputs[ensure_leading_path(m_output_names[0])]));
+        m_parent->set_output(m_name, std::move(m_outputs[m_output_names[0]]));
     }
     else
     {
@@ -139,8 +125,7 @@ void LLMContext::pop()
 
         for (const auto& output_name : m_output_names)
         {
-            new_outputs = new_outputs.set_value(ensure_leading_path(output_name),
-                                                std::move(m_outputs[ensure_leading_path(output_name)]));
+            new_outputs = new_outputs.set_value(output_name, std::move(m_outputs[output_name]));
         }
 
         m_parent->set_output(m_name, std::move(new_outputs));
@@ -209,7 +194,7 @@ mrc::pymrc::JSONValues LLMContext::get_inputs() const
     for (const auto& in_map : m_inputs)
     {
         auto input_value = this->get_input(in_map.internal_name);
-        inputs           = inputs.set_value(ensure_leading_path(in_map.internal_name), input_value);
+        inputs           = inputs.set_value(in_map.internal_name, std::move(input_value));
     }
 
     return inputs;
@@ -229,12 +214,12 @@ void LLMContext::set_output(mrc::pymrc::JSONValues&& outputs)
 
 void LLMContext::set_output(const std::string& output_name, nlohmann::json output)
 {
-    m_outputs = std::move(m_outputs.set_value(ensure_leading_path(output_name), std::move(output)));
+    m_outputs = std::move(m_outputs.set_value(output_name, std::move(output)));
 }
 
 void LLMContext::set_output(const std::string& output_name, mrc::pymrc::JSONValues&& output)
 {
-    m_outputs = std::move(m_outputs.set_value(ensure_leading_path(output_name), std::move(output)));
+    m_outputs = std::move(m_outputs.set_value(output_name, std::move(output)));
 }
 
 void LLMContext::set_output_names(std::vector<std::string> output_names)
