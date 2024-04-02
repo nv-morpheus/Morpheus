@@ -56,11 +56,54 @@ class InputMap():
         The internal node name that the external node maps to. Must match an input returned from `get_input_names()` of the desired node. Defaults to '-' which is a placeholder for the default input of the node. Use a wildcard '\*' to match all inputs of the node (Must also use a wild card on the external mapping).
         """
     pass
-class _BaseLLMContext():
+class LLMContext():
+    @typing.overload
+    def __init__(self) -> None: ...
+    @typing.overload
+    def __init__(self, prent: LLMContext, name: str, inputs: typing.List[InputMap]) -> None: ...
+    @typing.overload
+    def __init__(self, task: LLMTask, message: morpheus._lib.messages.ControlMessage) -> None: ...
+    @typing.overload
+    def get_input(self) -> object: ...
+    @typing.overload
+    def get_input(self, node_name: str) -> object: ...
+    def get_inputs(self) -> object: ...
+    def message(self) -> morpheus._lib.messages.ControlMessage: ...
+    def push(self, name: str, inputs: typing.List[InputMap]) -> LLMContext: ...
+    @typing.overload
+    def set_output(self, output_name: str, output: object) -> None: ...
+    @typing.overload
+    def set_output(self, outputs: object) -> None: ...
+    def task(self) -> LLMTask: ...
+    @property
+    def full_name(self) -> str:
+        """
+        :type: str
+        """
+    @property
+    def input_map(self) -> typing.List[InputMap]:
+        """
+        :type: typing.List[InputMap]
+        """
+    @property
+    def name(self) -> str:
+        """
+        :type: str
+        """
+    @property
+    def parent(self) -> LLMContext:
+        """
+        :type: LLMContext
+        """
+    @property
+    def view_outputs(self) -> object:
+        """
+        :type: object
+        """
     pass
 class LLMNodeBase():
     def __init__(self) -> None: ...
-    def execute(self, context: _BaseLLMContext) -> typing.Awaitable[_BaseLLMContext]: 
+    def execute(self, context: LLMContext) -> typing.Awaitable[LLMContext]: 
         """
         Execute the current node with the given `context` instance.
 
@@ -89,7 +132,7 @@ class LLMEngineStage(mrc.core.segment.SegmentObject):
     pass
 class LLMLambdaNode(LLMNodeBase):
     def __init__(self, fn: function) -> None: ...
-    def execute(self, context: _BaseLLMContext) -> typing.Awaitable[_BaseLLMContext]: ...
+    def execute(self, context: LLMContext) -> typing.Awaitable[LLMContext]: ...
     def get_input_names(self) -> typing.List[str]: ...
     pass
 class LLMNode(LLMNodeBase):
@@ -120,7 +163,7 @@ class LLMEngine(LLMNode, LLMNodeBase):
     def run(self, message: morpheus._lib.messages.ControlMessage) -> typing.Awaitable[typing.List[morpheus._lib.messages.ControlMessage]]: ...
     pass
 class LLMNodeRunner():
-    def execute(self, context: _BaseLLMContext) -> typing.Awaitable[_BaseLLMContext]: ...
+    def execute(self, context: LLMContext) -> typing.Awaitable[LLMContext]: ...
     @property
     def inputs(self) -> typing.List[InputMap]:
         """
@@ -174,7 +217,7 @@ class LLMTaskHandler():
         list[str]
             The input names for the task handler.
         """
-    def try_handle(self, context: _BaseLLMContext) -> typing.Awaitable[typing.Optional[typing.List[morpheus._lib.messages.ControlMessage]]]: 
+    def try_handle(self, context: LLMContext) -> typing.Awaitable[typing.Optional[typing.List[morpheus._lib.messages.ControlMessage]]]: 
         """
         Convert the given `context` into a list of `ControlMessage` instances.
 
@@ -186,51 +229,6 @@ class LLMTaskHandler():
         Returns
         -------
         Task[Optional[list[ControlMessage]]]
-        """
-    pass
-class LLMContext(_BaseLLMContext):
-    @typing.overload
-    def __init__(self) -> None: ...
-    @typing.overload
-    def __init__(self, prent: LLMContext, name: str, inputs: typing.List[InputMap]) -> None: ...
-    @typing.overload
-    def __init__(self, task: LLMTask, message: morpheus._lib.messages.ControlMessage) -> None: ...
-    @typing.overload
-    def get_input(self) -> object: ...
-    @typing.overload
-    def get_input(self, node_name: str) -> object: ...
-    def get_inputs(self) -> object: ...
-    def message(self) -> morpheus._lib.messages.ControlMessage: ...
-    def push(self, name: str, inputs: typing.List[InputMap]) -> _BaseLLMContext: ...
-    @typing.overload
-    def set_output(self, output_name: str, output: object) -> None: ...
-    @typing.overload
-    def set_output(self, outputs: object) -> None: ...
-    def task(self) -> LLMTask: ...
-    @property
-    def full_name(self) -> str:
-        """
-        :type: str
-        """
-    @property
-    def input_map(self) -> typing.List[InputMap]:
-        """
-        :type: typing.List[InputMap]
-        """
-    @property
-    def name(self) -> str:
-        """
-        :type: str
-        """
-    @property
-    def parent(self) -> _BaseLLMContext:
-        """
-        :type: _BaseLLMContext
-        """
-    @property
-    def view_outputs(self) -> object:
-        """
-        :type: object
         """
     pass
 __version__ = '24.3.0'
