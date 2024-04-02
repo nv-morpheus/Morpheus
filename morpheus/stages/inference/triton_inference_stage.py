@@ -708,10 +708,10 @@ class TritonInferenceStage(InferenceStage):
                  server_url: str,
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
-                 needs_logits: bool | None = None,
-                 inout_mapping: dict[str, str] | None = None,
-                 input_mapping: dict[str, str] | None = None,
-                 output_mapping: dict[str, str] | None = None):
+                 needs_logits: bool = None,
+                 inout_mapping: dict[str, str] = None,
+                 input_mapping: dict[str, str] = None,
+                 output_mapping: dict[str, str] = None):
         super().__init__(c)
 
         self._config = c
