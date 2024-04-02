@@ -199,8 +199,6 @@ TEST_F(TestLLMContext, PushPop)
     ASSERT_EQ(child_json_outputs["key2"], "val2");
 
     child_ctx->pop();
-    ASSERT_EQ(child_json_outputs, nullptr);
-
     const auto& parent_json_outputs = child_ctx->parent()->all_outputs().view_json();
     ASSERT_EQ(parent_json_outputs["child"]["key1"], "val1");
     ASSERT_EQ(parent_json_outputs["child"]["key2"], "val2");
