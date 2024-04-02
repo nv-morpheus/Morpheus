@@ -45,7 +45,7 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
 
     // Create PreProcessControlMessageStage
     auto cm_stage =
-        std::make_shared<PreprocessNLPStage<ControlMessage, ControlMessage>>(vocab_hash_file /*vocab_hash_file*/,
+        std::make_shared<PreprocessNLPStageCC>(vocab_hash_file /*vocab_hash_file*/,
                                                                              1 /*sequence_length*/,
                                                                              false /*truncation*/,
                                                                              false /*do_lower_case*/,
@@ -62,7 +62,7 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
 
     // Create PreProcessMultiMessageStage
     auto multi_stage =
-        std::make_shared<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>(vocab_hash_file /*vocab_hash_file*/,
+        std::make_shared<PreprocessNLPStageMM>(vocab_hash_file /*vocab_hash_file*/,
                                                                                   1 /*sequence_length*/,
                                                                                   false /*truncation*/,
                                                                                   false /*do_lower_case*/,
