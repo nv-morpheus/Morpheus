@@ -115,7 +115,7 @@ def test_log_parsing_triton_inference_log_parsing_constructor(config: Config,
                                                      server_url='test_server',
                                                      force_convert_inputs=False,
                                                      use_shared_memory=False,
-                                                     inout_mapping={'test': 'this'},
+                                                     input_mapping={'test': 'this'},
                                                      needs_logits=True)
 
     _check_worker(inference_mod, worker)
@@ -171,7 +171,7 @@ def test_log_parsing_inference_stage_get_inference_worker(config: Config, import
                                                    server_url='test_server',
                                                    force_convert_inputs=False,
                                                    use_shared_memory=False,
-                                                   inout_mapping={'test': 'this'})
+                                                   input_mapping={'test': 'this'})
 
     worker = stage._get_inference_worker(inf_queue=ProducerConsumerQueue())
     _check_worker(inference_mod, worker)
