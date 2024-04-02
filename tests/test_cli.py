@@ -406,9 +406,9 @@ class TestCLI:
         assert isinstance(process_fil, PreprocessFILStage)
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs == True
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -529,9 +529,9 @@ class TestCLI:
         assert mlflow_drift._tracking_uri == mlflow_uri
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs == True == True
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -663,9 +663,9 @@ class TestCLI:
         assert mlflow_drift._tracking_uri == mlflow_uri
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs == True
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -744,9 +744,9 @@ class TestCLI:
         assert not process_nlp._add_special_tokens
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -877,9 +877,9 @@ class TestCLI:
         assert mlflow_drift._tracking_uri == mlflow_uri
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'

@@ -722,13 +722,13 @@ class TritonInferenceStage(InferenceStage):
         input_mapping_ = self._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {}).get("inputs", {})
         output_mapping_ = self._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {}).get("outputs", {})
 
-        if inout_mapping is not None:
+        if inout_mapping:
 
-            if input_mapping is not None:
+            if input_mapping:
                 raise RuntimeError(
                     "TritonInferenceStages' `inout_mapping` and `input_mapping` arguments cannot be used together`")
 
-            if output_mapping is not None:
+            if output_mapping:
                 raise RuntimeError(
                     "TritonInferenceStages' `inout_mapping` and `output_mapping` arguments cannot be used together`")
 
