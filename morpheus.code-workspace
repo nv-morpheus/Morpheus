@@ -586,6 +586,33 @@
                 "type": "cppdbg"
             },
             {
+                "MIMode": "gdb",
+                "args": [
+                    "--gtest_filter='TestLLMContext.*'"
+                ],
+                "cwd": "${workspaceFolder}",
+                "environment": [
+                    {
+                        "name": "GLOG_v",
+                        "value": "10"
+                    }
+                ],
+                "externalConsole": false,
+                "miDebuggerPath": "gdb",
+                "name": "Debug LLM C++ Tests",
+                "program": "${workspaceFolder}/build/morpheus/_lib/tests/test_llm.x",
+                "request": "launch",
+                "setupCommands": [
+                    {
+                        "description": "Enable pretty-printing for gdb",
+                        "ignoreFailures": true,
+                        "text": "-enable-pretty-printing"
+                    }
+                ],
+                "stopAtEntry": false,
+                "type": "cppdbg"
+            },
+            {
                 "args": [
                     "--input_file=validation.csv",
                     "--training_file=training.csv",
