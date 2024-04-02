@@ -30,9 +30,9 @@
 #include "morpheus/llm/llm_node_runner.hpp"
 #include "morpheus/llm/llm_task.hpp"
 #include "morpheus/llm/llm_task_handler.hpp"
-#include "morpheus/messages/control.hpp"    // IWYU pragma: keep
-#include "morpheus/pybind11/input_map.hpp"  // IWYU pragma: keep
-#include "morpheus/pybind11/json.hpp"       // IWYU pragma: keep
+#include "morpheus/messages/control.hpp"      // IWYU pragma: keep
+#include "morpheus/pybind11/input_map.hpp"    // IWYU pragma: keep
+#include "morpheus/pybind11/json_values.hpp"  // IWYU pragma: keep
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/json_types.hpp"
 #include "morpheus/version.hpp"
@@ -199,14 +199,10 @@ PYBIND11_MODULE(llm, _module)
         .def("get_input",
              py::overload_cast<const std::string&>(&LLMContext::get_input, py::const_),
              py::arg("node_name"))
-        .def("get_inputs",
-             [](LLMContext& self) {
-                 // Convert the return value
-                 return self.get_inputs().to_python();
-             })
-        .def("set_output", py::overload_cast<nlohmann::json>(&LLMContext::set_output), py::arg("outputs"))
+        .def("get_inputs", &LLMContext::get_inputs)
+        .def("set_output", py::overload_cast<mrc::pymrc::JSONValues&&>(&LLMContext::set_output), py::arg("outputs"))
         .def("set_output",
-             py::overload_cast<const std::string&, nlohmann::json>(&LLMContext::set_output),
+             py::overload_cast<const std::string&, mrc::pymrc::JSONValues&&>(&LLMContext::set_output),
              py::arg("output_name"),
              py::arg("output"))
         .def("push", &LLMContext::push, py::arg("name"), py::arg("inputs"));
