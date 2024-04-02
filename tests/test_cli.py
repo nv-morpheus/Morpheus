@@ -408,7 +408,7 @@ class TestCLI:
         assert isinstance(triton_inf, TritonInferenceStage)
         assert triton_inf._model_name == 'test-model'
         assert triton_inf._server_url == 'test:123'
-        assert triton_inf._force_convert_inputs == True
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -531,7 +531,7 @@ class TestCLI:
         assert isinstance(triton_inf, TritonInferenceStage)
         assert triton_inf._model_name == 'test-model'
         assert triton_inf._server_url == 'test:123'
-        assert triton_inf._force_convert_inputs == True == True
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -665,7 +665,7 @@ class TestCLI:
         assert isinstance(triton_inf, TritonInferenceStage)
         assert triton_inf._model_name == 'test-model'
         assert triton_inf._server_url == 'test:123'
-        assert triton_inf._force_convert_inputs == True
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
