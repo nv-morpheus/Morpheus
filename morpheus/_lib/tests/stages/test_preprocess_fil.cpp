@@ -34,7 +34,7 @@ TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
 
     // Create PreProcessControlMessageStage
     auto cm_stage =
-        std::make_shared<PreprocessFILStage<ControlMessage, ControlMessage>>(std::vector<std::string>{"country"});
+        std::make_shared<PreprocessFILStageCC>(std::vector<std::string>{"country"});
 
     auto cm_response         = cm_stage->on_data(cm);
     auto cm_response_payload = cm_response->payload();
@@ -44,7 +44,7 @@ TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
     auto multi = std::make_shared<MultiMessage>(meta);
     // Create PreProcessMultiMessageStage
     auto multi_stage =
-        std::make_shared<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>(std::vector<std::string>{"country"});
+        std::make_shared<PreprocessFILStageMM>(std::vector<std::string>{"country"});
     auto multi_response         = multi_stage->on_data(multi);
     auto multi_response_payload = multi_response->meta;
 

@@ -311,7 +311,7 @@ template class PreprocessNLPStage<MultiMessage, MultiInferenceMessage>;
 template class PreprocessNLPStage<ControlMessage, ControlMessage>;
 
 // ************ PreprocessNLPStageInterfaceProxy *********** //
-std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>>
+std::shared_ptr<mrc::segment::Object<PreprocessNLPStageMM>>
 PreprocessNLPStageInterfaceProxy::init_multi(mrc::segment::Builder& builder,
                                              const std::string& name,
                                              std::string vocab_hash_file,
@@ -322,13 +322,13 @@ PreprocessNLPStageInterfaceProxy::init_multi(mrc::segment::Builder& builder,
                                              int stride,
                                              std::string column)
 {
-    auto stage = builder.construct_object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>(
+    auto stage = builder.construct_object<PreprocessNLPStageMM>(
         name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride, column);
 
     return stage;
 }
 
-std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>>
+std::shared_ptr<mrc::segment::Object<PreprocessNLPStageCC>>
 PreprocessNLPStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
                                           const std::string& name,
                                           std::string vocab_hash_file,
@@ -339,7 +339,7 @@ PreprocessNLPStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
                                           int stride,
                                           std::string column)
 {
-    auto stage = builder.construct_object<PreprocessNLPStage<ControlMessage, ControlMessage>>(
+    auto stage = builder.construct_object<PreprocessNLPStageCC>(
         name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride, column);
 
     return stage;
