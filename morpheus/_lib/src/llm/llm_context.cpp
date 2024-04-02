@@ -159,11 +159,11 @@ mrc::pymrc::JSONValues LLMContext::get_input() const
 
 input_mappings_t::const_iterator LLMContext::find_input(const std::string& node_name, bool throw_if_not_found) const
 {
-    auto found = std::find_if(m_inputs.begin(), m_inputs.end(), [&node_name](const auto& map_iterator) {
+    auto found = std::find_if(m_inputs.cbegin(), m_inputs.cend(), [&node_name](const auto& map_iterator) {
         return map_iterator.internal_name == node_name;
     });
 
-    if (throw_if_not_found && found == m_inputs.end())
+    if (throw_if_not_found && found == m_inputs.cend())
     {
         std::stringstream error_msg;
         error_msg << "Input '" << node_name << "' not found in the input list.";
@@ -207,7 +207,8 @@ mrc::pymrc::JSONValues LLMContext::get_inputs() const
     mrc::pymrc::JSONValues inputs;
     for (const auto& in_map : m_inputs)
     {
-        inputs = inputs.set_value(in_map.internal_name, this->get_input(in_map.internal_name));
+        auto input_value = this->get_input(in_map.internal_name);
+        inputs           = inputs.set_value(ensure_leading_path(in_map.internal_name), input_value);
     }
 
     return inputs;
