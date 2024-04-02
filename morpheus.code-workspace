@@ -588,7 +588,8 @@
             {
                 "MIMode": "gdb",
                 "args": [
-                    "--gtest_filter='TestLLMContext.*'"
+                    // Uncomment to run a specific test
+                    // "--gtest_filter='TestLLMContext.PopSelectMultipleOutputs'"
                 ],
                 "cwd": "${workspaceFolder}",
                 "environment": [
