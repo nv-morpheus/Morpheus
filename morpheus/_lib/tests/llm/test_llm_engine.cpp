@@ -87,6 +87,7 @@ TEST_F(TestLLMEngine, AsyncTest)
     EXPECT_TRUE(return_val.is_ready());
     EXPECT_EQ(counter, 2);
 
-    EXPECT_EQ(out_context->view_outputs()["start"], 123);
-    EXPECT_EQ(out_context->view_outputs()["test"], 124);
+    const auto& json_outputs = out_context->view_outputs().view_json();
+    EXPECT_EQ(json_outputs["start"], 123);
+    EXPECT_EQ(json_outputs["test"], 124);
 }

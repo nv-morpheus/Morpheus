@@ -134,6 +134,6 @@ TEST_F(TestLLMNodeRunner, Execute)
 
     coroutines::sync_wait(coroutines::when_all(runner_1->execute(context), runner_2->execute(context)));
 
-    ASSERT_EQ(context->view_outputs()["Root1"], 0);
-    ASSERT_EQ(context->view_outputs()["Root2"], 1);
+    ASSERT_EQ(context->view_outputs().view_json()["Root1"], 0);
+    ASSERT_EQ(context->view_outputs().view_json()["Root2"], 1);
 }
