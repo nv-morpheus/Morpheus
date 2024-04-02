@@ -202,9 +202,15 @@ mrc::pymrc::JSONValues LLMContext::get_input(const std::string& node_name) const
     return m_parent->get_input(input_name);
 }
 
-const mrc::pymrc::JSONValues& LLMContext::get_inputs() const
+mrc::pymrc::JSONValues LLMContext::get_inputs() const
 {
-    return m_outputs;
+    mrc::pymrc::JSONValues inputs;
+    for (const auto& in_map : m_inputs)
+    {
+        inputs = inputs.set_value(in_map.internal_name, this->get_input(in_map.internal_name));
+    }
+
+    return inputs;
 }
 
 void LLMContext::set_output(nlohmann::json outputs)

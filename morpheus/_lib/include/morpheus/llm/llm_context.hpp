@@ -159,7 +159,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      *
      * @return nlohmann::json
      */
-    const mrc::pymrc::JSONValues& get_inputs() const;
+    mrc::pymrc::JSONValues get_inputs() const;
 
     /**
      * @brief Set output mappings for this context.
