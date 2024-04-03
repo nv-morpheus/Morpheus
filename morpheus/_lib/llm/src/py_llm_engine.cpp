@@ -48,9 +48,4 @@ void PyLLMEngine::add_task_handler(user_input_mappings_t inputs, std::shared_ptr
     LLMEngine::add_task_handler(std::move(inputs), std::move(task_handler));
 }
 
-std::shared_ptr<LLMContext> PyLLMEngine::create_context(LLMTask task, std::shared_ptr<ControlMessage> message)
-{
-    return std::make_shared<LLMContext>(task, message);
-}
-
 }  // namespace morpheus::llm

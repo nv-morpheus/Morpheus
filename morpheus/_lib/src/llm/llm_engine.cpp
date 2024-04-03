@@ -48,11 +48,6 @@ void LLMEngine::add_task_handler(user_input_mappings_t inputs, std::shared_ptr<L
     m_task_handlers.push_back(std::make_shared<LLMTaskHandlerRunner>(std::move(final_inputs), task_handler));
 }
 
-std::shared_ptr<LLMContext> LLMEngine::create_context(LLMTask task, std::shared_ptr<ControlMessage> message)
-{
-    return std::make_shared<LLMContext>(task, message);
-}
-
 Task<std::vector<std::shared_ptr<ControlMessage>>> LLMEngine::run(std::shared_ptr<ControlMessage> input_message)
 {
     if (!input_message)
@@ -75,7 +70,7 @@ Task<std::vector<std::shared_ptr<ControlMessage>>> LLMEngine::run(std::shared_pt
         LLMTask tmp_task(current_task["task_type"].get<std::string>(), current_task.at("task_dict"));
 
         // Set the name, task, control_message and inputs on the context
-        auto context = this->create_context(tmp_task, input_message);
+        auto context = std::make_shared<LLMContext>(tmp_task, input_message);
 
         // Call the base node
         co_await this->execute(context);
