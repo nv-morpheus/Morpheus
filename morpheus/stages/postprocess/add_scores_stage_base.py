@@ -20,6 +20,7 @@ from abc import abstractmethod
 import mrc
 import mrc.core.operators as ops
 
+from morpheus._lib.messages import ControlMessage
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MultiResponseMessage
@@ -90,7 +91,7 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
             Accepted input types.
 
         """
-        return (MultiResponseMessage, )
+        return (MultiResponseMessage, ControlMessage)
 
     @abstractmethod
     def _get_cpp_node(self, builder: mrc.Builder):
@@ -112,7 +113,7 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
         return node
 
     @staticmethod
-    def _add_labels(x: MultiResponseMessage, idx2label: typing.Dict[int, str], threshold: typing.Optional[float]):
+    def _add_labels(x: typing.Union[MultiResponseMessage, ControlMessage], idx2label: typing.Dict[int, str], threshold: typing.Optional[float]):
 
         probs = x.get_probs_tensor()
 
