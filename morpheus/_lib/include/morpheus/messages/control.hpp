@@ -316,6 +316,22 @@ class ControlMessage
     void tensors(const std::shared_ptr<TensorMemory>& tensor_memory);
 
     /**
+     * @brief Set the meta object with a given column name
+     *
+     * @param col_name
+     * @param tensor
+    */
+    void set_meta(const std::string& col_name, TensorObject tensor);
+
+    /**
+     * @brief Set the meta object with a given column names
+     *
+     * @param column_names
+     * @param tensors
+     */
+    void set_meta(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors);
+
+    /**
      * @brief Get the type of task associated with the control message.
      * @return An enum value indicating the task type.
      */

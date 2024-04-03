@@ -21,5 +21,5 @@
 
 namespace morpheus::test {
 
-using TestControlMessage = TestWithPythonInterpreter;  // NOLINT
+// using TestControlMessage = TestWithPythonInterpreter;  // NOLINT
 }  // namespace morpheus::test

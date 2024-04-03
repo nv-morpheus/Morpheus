@@ -18,6 +18,7 @@
 #include "morpheus/messages/control.hpp"
 
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 
 #include <glog/logging.h>
 #include <pybind11/chrono.h>  // IWYU pragma: keep
@@ -244,6 +245,94 @@ std::shared_ptr<TensorMemory> ControlMessage::tensors()
 void ControlMessage::tensors(const std::shared_ptr<TensorMemory>& tensors)
 {
     m_tensors = tensors;
+}
+
+void ControlMessage::set_meta(const std::string& col_name, TensorObject tensor)
+{
+    set_meta(std::vector<std::string>{col_name}, std::vector<TensorObject>{tensor});
+}
+
+std::string type_id_to_string(cudf::type_id id) {
+    switch(id) {
+        case cudf::type_id::EMPTY: return "EMPTY";
+        case cudf::type_id::INT8: return "INT8";
+        case cudf::type_id::INT16: return "INT16";
+        case cudf::type_id::INT32: return "INT32";
+        case cudf::type_id::INT64: return "INT64";
+        case cudf::type_id::UINT8: return "UINT8";
+        case cudf::type_id::UINT16: return "UINT16";
+        case cudf::type_id::UINT32: return "UINT32";
+        case cudf::type_id::UINT64: return "UINT64";
+        case cudf::type_id::FLOAT32: return "FLOAT32";
+        case cudf::type_id::FLOAT64: return "FLOAT64";
+        case cudf::type_id::BOOL8: return "BOOL8";
+        case cudf::type_id::TIMESTAMP_DAYS: return "TIMESTAMP_DAYS";
+        case cudf::type_id::TIMESTAMP_SECONDS: return "TIMESTAMP_SECONDS";
+        case cudf::type_id::TIMESTAMP_MILLISECONDS: return "TIMESTAMP_MILLISECONDS";
+        case cudf::type_id::TIMESTAMP_MICROSECONDS: return "TIMESTAMP_MICROSECONDS";
+        case cudf::type_id::TIMESTAMP_NANOSECONDS: return "TIMESTAMP_NANOSECONDS";
+        case cudf::type_id::DURATION_DAYS: return "DURATION_DAYS";
+        case cudf::type_id::DURATION_SECONDS: return "DURATION_SECONDS";
+        case cudf::type_id::DURATION_MILLISECONDS: return "DURATION_MILLISECONDS";
+        case cudf::type_id::DURATION_MICROSECONDS: return "DURATION_MICROSECONDS";
+        case cudf::type_id::DURATION_NANOSECONDS: return "DURATION_NANOSECONDS";
+        case cudf::type_id::STRING: return "STRING";
+        // Add more cases as needed for other cudf::type_id values
+        default: return "UNKNOWN";
+    }
+}
+
+void ControlMessage::set_meta(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors)
+{
+    TableInfo sliced_table_meta;
+    try
+    {
+        TableInfo table_meta     = this->payload()->get_info();
+        sliced_table_meta        = table_meta.get_slice(0, table_meta.num_rows(), column_names);
+    } catch (const std::runtime_error& e)
+    {
+        std::ostringstream err_msg;
+        err_msg << e.what() << " Ensure that the stage that needs this column has populated the '_needed_columns' "
+                << "attribute and that at least one stage in the current segment is using the PreallocatorMixin to "
+                << "ensure all needed columns have been allocated.";
+        throw std::runtime_error(err_msg.str());
+    }
+
+    for (std::size_t i = 0; i < tensors.size(); ++i)
+    {
+        const auto& cv            = sliced_table_meta.get_column(i);
+        const auto table_type_id  = cv.type().id();
+        const auto tensor_type    = DType(tensors[i].dtype());
+        const auto tensor_type_id = tensor_type.cudf_type_id();
+        const auto row_stride     = tensors[i].stride(0);
+
+        std::cout << "table_type_id: " << type_id_to_string(table_type_id) << std::endl;
+        std::cout << "tensor_type_id: " << type_id_to_string(tensor_type_id) << std::endl;
+        CHECK(tensors[i].count() == cv.size() &&
+              (table_type_id == tensor_type_id ||
+               (table_type_id == cudf::type_id::BOOL8 && tensor_type_id == cudf::type_id::UINT8)));
+
+        const auto item_size = tensors[i].dtype().item_size();
+
+        // Dont use cv.data<>() here since that does not account for the size of each element
+        auto data_start = const_cast<uint8_t*>(cv.head<uint8_t>()) + cv.offset() * item_size;
+
+        if (row_stride == 1)
+        {
+            // column major just use cudaMemcpy
+            MRC_CHECK_CUDA(cudaMemcpy(data_start, tensors[i].data(), tensors[i].bytes(), cudaMemcpyDeviceToDevice));
+        }
+        else
+        {
+            MRC_CHECK_CUDA(cudaMemcpy2D(data_start,
+                                        item_size,
+                                        tensors[i].data(),
+                                        row_stride * item_size,
+                                        item_size,
+                                        cv.size(),
+                                        cudaMemcpyDeviceToDevice));
+        }
+    }
 }
 
 ControlMessageType ControlMessage::task_type()

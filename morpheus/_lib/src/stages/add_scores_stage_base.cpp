@@ -179,56 +179,8 @@ void AddScoresStageBase<ControlMessage, ControlMessage>::on_control_message(std:
 
         ++i;
     }
-
-    // A copy of MultiMessage::set_meta(const std::vector<std::string>& column_names, const
-    // std::vector<TensorObject>& tensors)
-    TableInfo sliced_table_meta;
-    try
-    {
-        TableInfo table_meta     = x->payload()->get_info();
-        auto table_meta_num_rows = table_meta.num_rows();
-        sliced_table_meta        = table_meta.get_slice(0, table_meta_num_rows, columns);
-    } catch (const std::runtime_error& e)
-    {
-        std::ostringstream err_msg;
-        err_msg << e.what() << " Ensure that the stage that needs this column has populated the '_needed_columns' "
-                << "attribute and that at least one stage in the current segment is using the PreallocatorMixin to "
-                << "ensure all needed columns have been allocated.";
-        throw std::runtime_error(err_msg.str());
-    }
-    for (std::size_t i = 0; i < tensors.size(); ++i)
-    {
-        const auto& cv            = sliced_table_meta.get_column(i);
-        const auto table_type_id  = cv.type().id();
-        const auto tensor_type    = DType(tensors[i].dtype());
-        const auto tensor_type_id = tensor_type.cudf_type_id();
-        const auto row_stride     = tensors[i].stride(0);
-
-        CHECK(tensors[i].count() == cv.size() &&
-              (table_type_id == tensor_type_id ||
-               (table_type_id == cudf::type_id::BOOL8 && tensor_type_id == cudf::type_id::UINT8)));
-
-        const auto item_size = tensors[i].dtype().item_size();
-
-        // Dont use cv.data<>() here since that does not account for the size of each element
-        auto data_start = const_cast<uint8_t*>(cv.head<uint8_t>()) + cv.offset() * item_size;
-
-        if (row_stride == 1)
-        {
-            // column major just use cudaMemcpy
-            MRC_CHECK_CUDA(cudaMemcpy(data_start, tensors[i].data(), tensors[i].bytes(), cudaMemcpyDeviceToDevice));
-        }
-        else
-        {
-            MRC_CHECK_CUDA(cudaMemcpy2D(data_start,
-                                        item_size,
-                                        tensors[i].data(),
-                                        row_stride * item_size,
-                                        item_size,
-                                        cv.size(),
-                                        cudaMemcpyDeviceToDevice));
-        }
-    }
+    
+    x->set_meta(columns, tensors);
 }
 
 template class AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>;

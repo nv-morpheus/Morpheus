@@ -18,15 +18,22 @@
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 #include "test_messages.hpp"
 
+#include "morpheus/io/deserializers.hpp"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/objects/rmm_tensor.hpp"
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
@@ -37,6 +44,19 @@ using namespace morpheus;
 using namespace morpheus::test;
 
 using clock_type_t = std::chrono::system_clock;
+
+class TestControlMessage : public morpheus::test::TestWithPythonInterpreter
+{
+  protected:
+    void SetUp() override
+    {
+        morpheus::test::TestWithPythonInterpreter::SetUp();
+        {
+            pybind11::gil_scoped_acquire gil;
+            CudfHelper::load();
+        }
+    }
+};
 
 TEST_F(TestControlMessage, InitializationTest)
 {
@@ -330,4 +350,40 @@ TEST_F(TestControlMessage, GetTensorMemoryWhenNoneSet)
 
     // Verify that the retrieved tensor memory is nullptr
     EXPECT_EQ(nullptr, retrievedTensorMemory);
+}
+
+// Test ControlMessage::set_meta()
+TEST_F(TestControlMessage, SetMetaWithColumnName)
+{
+    pybind11::gil_scoped_release no_gil;
+    auto test_data_dir               = test::get_morpheus_root() / "tests/tests_data";
+    std::filesystem::path input_file = test_data_dir / "csv_sample.csv";
+
+    auto table = load_table_from_file(input_file);
+    auto meta  = MessageMeta::create_from_cpp(std::move(table));
+
+    auto cm = std::make_shared<ControlMessage>();
+    cm->payload(meta);
+
+    const std::size_t count = 3;
+    DType int_type(TypeId::INT64);
+    std::vector<int64_t> expected_ints{4, 5, 6};
+    auto buffer = std::make_shared<rmm::device_buffer>(count * int_type.item_size(), rmm::cuda_stream_per_thread);
+
+    MRC_CHECK_CUDA(cudaMemcpy(buffer->data(), expected_ints.data(), buffer->size(), cudaMemcpyHostToDevice));
+
+    ShapeType shape{3, 1};
+    auto tensor = std::make_shared<RMMTensor>(buffer, 0, int_type, shape);
+    TensorObject tensor_object(tensor);
+    cm->set_meta("int", tensor_object);
+
+    std::vector<int64_t> actual_ints(expected_ints.size());
+    MRC_CHECK_CUDA(cudaMemcpy(actual_ints.data(), tensor->data(), tensor->bytes(), cudaMemcpyDeviceToHost));
+
+    auto cm_int_meta = cm->payload()->get_info().get_column(0);
+    MRC_CHECK_CUDA(cudaMemcpy(actual_ints.data(),
+                              cm_int_meta.data<int64_t>(),
+                              count * sizeof(int64_t),
+                              cudaMemcpyDeviceToHost));
+    EXPECT_EQ(expected_ints, actual_ints);
 }

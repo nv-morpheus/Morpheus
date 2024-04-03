@@ -25,7 +25,7 @@ TEST_F(TestAddScores, TestProcessControlMessageAndMultiResponseMessage)
     auto test_data_dir               = test::get_morpheus_root() / "tests/tests_data";
     std::filesystem::path input_file = test_data_dir / "floats.csv";
 
-    TensorIndex cols_size  = 3;
+    TensorIndex cols_size  = 1;
     TensorIndex mess_count = 3;
     auto packed_data =
         std::make_shared<rmm::device_buffer>(cols_size * mess_count * sizeof(double), rmm::cuda_stream_per_thread);
