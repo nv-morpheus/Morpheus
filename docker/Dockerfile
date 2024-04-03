@@ -149,75 +149,8 @@ FROM conda_env as base_extended
 # Add one or more optional dependencies to the base environment
 ARG MORPHEUS_ROOT_HOST
 ARG MORPHEUS_SUPPORT_DOCA="FALSE"
-ARG DOCA_VERSION=2.6.0
 # Set this environment variable so it auto builds DOCA
 ENV MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}
-
-ARG DOCA_REPO_LINK=https://linux.mellanox.com/public/repo/doca/${DOCA_VERSION}
-# ${LINUX_DISTRO}${LINUX_VER}
-ENV DOCA_REPO ${DOCA_REPO_LINK}/ubuntu22.04
-ENV DOCA_REPO_ARCH x86_64
-ENV DOCA_UPSTREAM_REPO ${DOCA_REPO}/${DOCA_REPO_ARCH}
-ARG DEBIAN_FRONTEND=noninteractive
-
-# Upgrade the base packages (diff between image and Canonical upstream repo)
-RUN apt update -y && \
-    apt upgrade -y && \
-     # Cleanup apt
-    rm -rf /var/lib/apt/lists/* && \
-    apt autoremove -y
-
-# Configure DOCA Repository, and install packages
-RUN if [ ${MORPHEUS_SUPPORT_DOCA} = "ON" ]; then \
-    apt update -y && \
-    # Install wget & Add the DOCA public repository
-    apt install -y --no-install-recommends \
-        wget \
-        software-properties-common \
-        gpg-agent && \
-    wget -qO - ${DOCA_UPSTREAM_REPO}/GPG-KEY-Mellanox.pub | apt-key add - && \
-    add-apt-repository "deb [trusted=yes] ${DOCA_UPSTREAM_REPO} ./" && \
-    apt update -y && \
-    # Install base-rt content
-    apt install -y --no-install-recommends \
-        rdma-core \
-        flexio \
-        yara \
-        libyara8 \
-        python3-pyverbs \
-        ibverbs-utils \
-        librdmacm1 \
-        libibnetdisc5 \
-        ibacm \
-        mlnx-tools \
-        ofed-scripts \
-        libopensm \
-        libibumad3 \
-        libibmad5 \
-        libopenvswitch \
-        openvswitch-common \
-        openvswitch-switch \
-        srptools \
-        mlnx-ethtool \
-        mlnx-iproute2 \
-        dpcp \
-        openmpi \
-        ucx \
-        doca-prime-runtime \
-        doca-prime-sdk \
-        #doca-runtime \
-        doca-sdk \
-        doca-gpu \
-        doca-gpu-dev && \
-    # Cleanup apt
-    rm -rf /usr/lib/python3/dist-packages && \
-    apt remove -y \
-        wget \
-        software-properties-common \
-        gpg-agent && \
-    rm -rf /var/lib/apt/lists/* && \
-    apt autoremove -y ; \
-    fi
 
 # Copy all of the optional dependency scripts
 COPY ${MORPHEUS_ROOT_HOST}/docker/optional_deps docker/optional_deps

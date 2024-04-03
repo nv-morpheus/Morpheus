@@ -17,6 +17,9 @@
 set -e
 
 MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
+LINUX_DISTRO=${LINUX_DISTRO}
+LINUX_VER=${LINUX_VER}
+DOCA_VERSION="2.6.0"
 
 # Exit early if nothing to do
 if [[ ${MORPHEUS_SUPPORT_DOCA} != @(TRUE|ON) ]]; then
@@ -30,6 +33,63 @@ echo "Installing DOCA using directory: ${WORKING_DIR}"
 DEB_DIR=${WORKING_DIR}/deb
 
 mkdir -p ${DEB_DIR}
+
+DOCA_REPO_LINK="https://linux.mellanox.com/public/repo/doca/${DOCA_VERSION}"
+# ${LINUX_DISTRO}${LINUX_VER}
+DOCA_REPO="${DOCA_REPO_LINK}/ubuntu22.04"
+DOCA_REPO_ARCH="x86_64"
+DOCA_UPSTREAM_REPO="${DOCA_REPO}/${DOCA_REPO_ARCH}"
+
+# Upgrade the base packages (diff between image and Canonical upstream repo)
+apt update -y
+apt upgrade -y
+# Cleanup apt
+rm -rf /var/lib/apt/lists/*
+apt autoremove -y
+
+# Configure DOCA Repository, and install packages
+apt update -y
+# Install wget & Add the DOCA public repository
+apt install -y --no-install-recommends wget software-properties-common gpg-agent
+wget -qO - ${DOCA_UPSTREAM_REPO}/GPG-KEY-Mellanox.pub | apt-key add -
+add-apt-repository "deb [trusted=yes] ${DOCA_UPSTREAM_REPO} ./"
+apt update -y
+# Install base-rt content
+apt install -y --no-install-recommends \
+    doca-gpu \
+    doca-gpu-dev \
+    doca-prime-runtime \
+    doca-prime-sdk \
+    doca-sdk \
+    dpcp \
+    flexio \
+    ibacm \
+    ibverbs-utils \
+    librdmacm1 \
+    libibnetdisc5 \
+    libibumad3 \
+    libibmad5 \
+    libopensm \
+    libopenvswitch \
+    libyara8 \
+    mlnx-tools \
+    ofed-scripts \
+    openmpi \
+    openvswitch-common \
+    openvswitch-switch \
+    srptools \
+    mlnx-ethtool \
+    mlnx-iproute2 \
+    python3-pyverbs \
+    rdma-core \
+    ucx \
+    yara
+
+    # Cleanup apt
+rm -rf /usr/lib/python3/dist-packages
+apt remove -y software-properties-common gpg-agent
+rm -rf /var/lib/apt/lists/*
+apt autoremove -y
 
 # Now install the gdrcopy library according to: https://github.com/NVIDIA/gdrcopy
 GDRCOPY_DIR=${WORKING_DIR}/gdrcopy

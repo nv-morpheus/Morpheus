@@ -112,7 +112,9 @@ def run_pipeline(pipeline_batch_size,
 
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, traffic_type))
-    pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
+
+    if traffic_type == 'udp':
+        pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
 
     if traffic_type == 'tcp':
         # add deserialize stage
