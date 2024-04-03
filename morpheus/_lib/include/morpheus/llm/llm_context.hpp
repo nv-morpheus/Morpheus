@@ -18,10 +18,9 @@
 #pragma once
 
 #include "morpheus/export.h"
+#include "morpheus/llm/fwd.hpp"  // for ControlMessage, LLMTask
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_task.hpp"
-#include "morpheus/messages/control.hpp"
-#include "morpheus/utilities/json_types.hpp"
 
 #include <mrc/types.hpp>
 #include <nlohmann/json.hpp>

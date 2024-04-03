@@ -18,6 +18,7 @@
 #include "py_llm_task_handler.hpp"
 
 #include "morpheus/llm/llm_context.hpp"
+#include "morpheus/messages/control.hpp"  // for ControlMessage
 
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>

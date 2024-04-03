@@ -25,6 +25,7 @@
 #include "morpheus/llm/llm_task.hpp"
 #include "morpheus/llm/llm_task_handler.hpp"
 #include "morpheus/llm/llm_task_handler_runner.hpp"
+#include "morpheus/messages/control.hpp"  // for ControlMessage
 #include "morpheus/types.hpp"
 
 #include <gtest/gtest.h>

@@ -23,7 +23,9 @@
 #include "morpheus/llm/llm_node.hpp"
 #include "morpheus/llm/llm_node_runner.hpp"
 #include "morpheus/llm/llm_task.hpp"
+#include "morpheus/messages/control.hpp"  // for ControlMessage
 #include "morpheus/types.hpp"
+#include "morpheus/utilities/json_types.hpp"  // for LLMTask
 
 #include <glog/logging.h>
 #include <gtest/gtest.h>
