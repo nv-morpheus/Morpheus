@@ -25,6 +25,7 @@
 
 #include <glog/logging.h>           // for DCHECK_EQ
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
+#include <pybind11/gil.h>           // for PyGILState_Check, gil_scoped_acquire, gil_scoped_release
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pymrc/coro.hpp>  // IWYU pragma: keep
