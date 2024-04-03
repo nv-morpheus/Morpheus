@@ -30,9 +30,8 @@
 #include "morpheus/llm/llm_node_runner.hpp"
 #include "morpheus/llm/llm_task.hpp"
 #include "morpheus/llm/llm_task_handler.hpp"
-#include "morpheus/messages/control.hpp"      // IWYU pragma: keep
-#include "morpheus/pybind11/input_map.hpp"    // IWYU pragma: keep
-#include "morpheus/pybind11/json_values.hpp"  // IWYU pragma: keep
+#include "morpheus/messages/control.hpp"    // IWYU pragma: keep
+#include "morpheus/pybind11/input_map.hpp"  // IWYU pragma: keep
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/version.hpp"
 
