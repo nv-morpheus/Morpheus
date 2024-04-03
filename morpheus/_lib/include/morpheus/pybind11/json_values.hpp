@@ -29,6 +29,9 @@ template <>
 struct type_caster<mrc::pymrc::JSONValues>
 {
   public:
+    /**
+     * This macro establishes a local variable 'value' of type JSONValues
+     */
     PYBIND11_TYPE_CASTER(mrc::pymrc::JSONValues, _("object"));
 
     /**
