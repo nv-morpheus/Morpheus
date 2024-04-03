@@ -197,21 +197,10 @@ mrc::pymrc::JSONValues LLMContext::get_inputs() const
     return inputs;
 }
 
-void LLMContext::set_output(nlohmann::json outputs)
-{
-    m_outputs = std::move(mrc::pymrc::JSONValues(std::move(outputs)));
-    this->outputs_complete();
-}
-
 void LLMContext::set_output(mrc::pymrc::JSONValues&& outputs)
 {
     m_outputs = std::move(outputs);
     this->outputs_complete();
-}
-
-void LLMContext::set_output(const std::string& output_name, nlohmann::json output)
-{
-    m_outputs = std::move(m_outputs.set_value(output_name, std::move(output)));
 }
 
 void LLMContext::set_output(const std::string& output_name, mrc::pymrc::JSONValues&& output)

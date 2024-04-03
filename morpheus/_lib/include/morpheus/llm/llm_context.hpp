@@ -23,7 +23,6 @@
 #include "morpheus/llm/llm_task.hpp"
 
 #include <mrc/types.hpp>
-#include <nlohmann/json.hpp>
 #include <pymrc/utilities/json_values.hpp>
 
 #include <memory>
@@ -165,22 +164,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      *
      * @param outputs output mappings
      */
-    void set_output(nlohmann::json outputs);
-
-    /**
-     * @brief Set output mappings for this context.
-     *
-     * @param outputs output mappings
-     */
     void set_output(mrc::pymrc::JSONValues&& outputs);
-
-    /**
-     * @brief Set an output value for this context.
-     *
-     * @param output_name output name
-     * @param output output value
-     */
-    void set_output(const std::string& output_name, nlohmann::json output);
 
     /**
      * @brief Set an output value for this context.
