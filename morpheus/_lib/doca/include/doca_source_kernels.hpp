@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,24 +41,10 @@ std::unique_ptr<cudf::column> integers_to_mac(
     rmm::cuda_stream_view stream        = cudf::detail::default_stream_value,
     rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-void packet_receive_kernel(doca_gpu_eth_rxq* rxq_info,
-                           doca_gpu_semaphore_gpu* sem_in,
-                           int32_t sem_count,
-                           int32_t* sem_idx,
-                           int32_t* packet_count_out,
-                           char* payload_buffer_out,
-                           int32_t* payload_size_total_out,
-                           int32_t* payload_sizes_out,
-                           int64_t* src_mac_out,
-                           int64_t* dst_mac_out,
-                           int64_t* src_ip_out,
-                           int64_t* dst_ip_out,
-                           uint16_t* src_port_out,
-                           uint16_t* dst_port_out,
-                           int32_t* tcp_flags_out,
-                           int32_t* ether_type_out,
-                           int32_t* next_proto_id_out,
-                           uint32_t* timestamp_out,
+void packet_receive_kernel(doca_gpu_eth_rxq* rxq,
+                           doca_gpu_semaphore_gpu* sem,
+                           uint16_t sem_idx,
+                           bool is_tcp,
                            uint32_t* exit_condition,
                            cudaStream_t stream);
 

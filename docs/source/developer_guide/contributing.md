@@ -205,7 +205,7 @@ git submodule update --init --recursive
 
 1. Create the Morpheus Conda environment
    ```bash
-   conda env create --solver=libmamba -n morpheus --file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml
+   conda env create --solver=libmamba -n morpheus --file conda/environments/dev_cuda-121_arch-x86_64.yaml
    conda activate morpheus
    ```
 
