@@ -17,7 +17,7 @@ import typing
 
 import mrc
 
-from morpheus._lib.messages import ControlMessage
+from morpheus.messages import ControlMessage
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
@@ -69,5 +69,5 @@ class AddScoresStage(AddScoresStageBase):
         import morpheus._lib.stages as _stages
         if (self._schema.input_type == ControlMessage):
             return _stages.AddScoresControlMessageStage(builder, self.unique_name, self._idx2label)
-        else:
-            return _stages.AddScoresMultiResponseMessageStage(builder, self.unique_name, self._idx2label)
+
+        return _stages.AddScoresMultiResponseMessageStage(builder, self.unique_name, self._idx2label)

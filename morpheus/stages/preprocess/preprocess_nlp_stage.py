@@ -26,7 +26,7 @@ import cudf
 
 import morpheus._lib.stages as _stages
 # pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import TensorMemory as CppTensorMemory
+from morpheus.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_package_relative_file
@@ -273,13 +273,13 @@ class PreprocessNLPStage(PreprocessBaseStage):
                                                             self._add_special_tokens,
                                                             self._stride,
                                                             self._column)
-        else:
-            return _stages.PreprocessNLPMultiMessageStage(builder,
-                                                          self.unique_name,
-                                                          self._vocab_hash_file,
-                                                          self._seq_length,
-                                                          self._truncation,
-                                                          self._do_lower_case,
-                                                          self._add_special_tokens,
-                                                          self._stride,
-                                                          self._column)
+
+        return _stages.PreprocessNLPMultiMessageStage(builder,
+                                                      self.unique_name,
+                                                      self._vocab_hash_file,
+                                                      self._seq_length,
+                                                      self._truncation,
+                                                      self._do_lower_case,
+                                                      self._add_special_tokens,
+                                                      self._stride,
+                                                      self._column)

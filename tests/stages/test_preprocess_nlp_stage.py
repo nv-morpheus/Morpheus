@@ -21,8 +21,8 @@ import pytest
 
 import cudf
 
-from morpheus._lib.messages import ControlMessage
-from morpheus._lib.messages import MultiMessage
+from morpheus.messages import ControlMessage
+from morpheus.messages import MultiMessage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
@@ -57,9 +57,9 @@ def test_constructor(config: Config):
     assert stage._column == "data"
     assert stage._seq_length == 256
     assert stage._vocab_hash_file.endswith("data/bert-base-cased-hash.txt")
-    assert stage._truncation == False
-    assert stage._do_lower_case == False
-    assert stage._add_special_tokens == False
+    assert stage._truncation is False
+    assert stage._do_lower_case is False
+    assert stage._add_special_tokens is False
 
     accepted_types = stage.accepted_types()
     assert isinstance(accepted_types, tuple)

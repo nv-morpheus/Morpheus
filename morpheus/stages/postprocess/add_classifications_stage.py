@@ -17,7 +17,7 @@ import typing
 
 import mrc
 
-from morpheus._lib.messages import ControlMessage
+from morpheus.messages import ControlMessage
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
@@ -75,8 +75,8 @@ class AddClassificationsStage(AddScoresStageBase):
                                                                  self.unique_name,
                                                                  self._idx2label,
                                                                  self._threshold)
-        else:
-            return _stages.AddClassificationsMultiResponseMessageStage(builder,
-                                                                       self.unique_name,
-                                                                       self._idx2label,
-                                                                       self._threshold)
+
+        return _stages.AddClassificationsMultiResponseMessageStage(builder,
+                                                                   self.unique_name,
+                                                                   self._idx2label,
+                                                                   self._threshold)

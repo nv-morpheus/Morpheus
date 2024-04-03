@@ -24,8 +24,8 @@ import pandas as pd
 import cudf
 
 import morpheus._lib.stages as _stages
-from morpheus._lib.messages import ControlMessage
-from morpheus._lib.messages import TensorMemory as CppTensorMemory
+from morpheus.messages import ControlMessage
+from morpheus.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -172,5 +172,5 @@ class PreprocessFILStage(PreprocessBaseStage):
     def _get_preprocess_node(self, builder: mrc.Builder):
         if (self._use_control_message):
             return _stages.PreprocessFILControlMessageStage(builder, self.unique_name, self.features)
-        else:
-            return _stages.PreprocessFILMultiMessageStage(builder, self.unique_name, self.features)
+
+        return _stages.PreprocessFILMultiMessageStage(builder, self.unique_name, self.features)

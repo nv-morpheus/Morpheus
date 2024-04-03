@@ -20,7 +20,7 @@ from abc import abstractmethod
 import mrc
 import mrc.core.operators as ops
 
-from morpheus._lib.messages import ControlMessage
+from morpheus.messages import ControlMessage
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MultiResponseMessage
