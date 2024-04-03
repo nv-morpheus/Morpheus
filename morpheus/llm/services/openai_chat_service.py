@@ -113,8 +113,8 @@ class OpenAIChatClient(LLMClient):
         self._model_kwargs = copy.deepcopy(model_kwargs)
 
         # Create the client objects for both sync and async
-        self._client = openai.OpenAI(max_retries=max_retries)
-        self._client_async = openai.AsyncOpenAI(max_retries=max_retries)
+        self._client = openai.OpenAI(api_key=parent._api_key, max_retries=max_retries)
+        self._client_async = openai.AsyncOpenAI(api_key=parent._api_key, max_retries=max_retries)
 
     def get_input_names(self) -> list[str]:
         input_names = [self._prompt_key]
@@ -316,7 +316,7 @@ class OpenAIChatService(LLMService):
     A service for interacting with OpenAI Chat models, this class should be used to create clients.
     """
 
-    def __init__(self, *, default_model_kwargs: dict = None) -> None:
+    def __init__(self, *, api_key: str = None, default_model_kwargs: dict = None) -> None:
         """
         Creates a service for interacting with OpenAI Chat models, this class should be used to create clients.
 
@@ -337,6 +337,8 @@ class OpenAIChatService(LLMService):
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
         super().__init__()
+
+        self._api_key = api_key
 
         self._default_model_kwargs = default_model_kwargs or {}
 
