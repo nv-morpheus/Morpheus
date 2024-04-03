@@ -136,7 +136,7 @@ std::shared_ptr<MultiInferenceMessage> PreprocessNLPStage<MultiMessage, MultiInf
     TensorIndex length = token_results.tensor_token_ids->size() / token_results.sequence_length;
     auto input_ids_released =
         cudf::cast(token_results.tensor_token_ids->view(), cudf::data_type(cudf::type_id::INT32))->release();
-
+    std::cout << "multi length: " << length << std::endl;
     memory->set_tensor("input_ids",
                        Tensor::create(std::move(input_ids_released.data),
                                       DType::create<int32_t>(),
@@ -182,8 +182,7 @@ std::shared_ptr<ControlMessage> PreprocessNLPStage<ControlMessage, ControlMessag
     std::shared_ptr<ControlMessage> x)
 {
     // Convert to string view
-    auto num_columns = x->payload()->get_info().num_columns();
-    auto meta        = x->payload()->get_info().get_slice(0, num_columns, std::vector<std::string>{this->m_column});
+    auto meta        = x->get_meta(this->m_column);
 
     auto col        = meta.get_column(0);
     auto string_col = cudf::strings_column_view{col};
@@ -202,7 +201,7 @@ std::shared_ptr<ControlMessage> PreprocessNLPStage<ControlMessage, ControlMessag
     TensorIndex length = token_results.tensor_token_ids->size() / token_results.sequence_length;
     auto input_ids_released =
         cudf::cast(token_results.tensor_token_ids->view(), cudf::data_type(cudf::type_id::INT32))->release();
-
+    std::cout << "cm length: " << length << std::endl;
     memory->set_tensor("input_ids",
                        Tensor::create(std::move(input_ids_released.data),
                                       DType::create<int32_t>(),
