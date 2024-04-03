@@ -21,7 +21,7 @@
 
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
-#include "morpheus/messages/meta.hpp"         // for MessageMeta
+#include "morpheus/messages/meta.hpp"  // for MessageMeta
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
@@ -63,10 +63,11 @@ PreprocessFILStage<InputT, OutputT>::PreprocessFILStage(const std::vector<std::s
   m_fea_cols(std::move(features))
 {}
 
-void transform_bad_columns(std::vector<std::string>& fea_cols,
-                           morpheus::MutableTableInfo& mutable_info,
-                           std::vector<std::string>& df_meta_col_names)
+template <typename InputT, typename OutputT>
+void PreprocessFILStage<InputT, OutputT>::transform_bad_columns(std::vector<std::string>& fea_cols,
+                                                                morpheus::MutableTableInfo& mutable_info)
 {
+    auto df_meta_col_names = mutable_info.get_column_names();
     std::vector<std::string> bad_cols;
     // Only check the feature columns. Leave the rest unchanged
     for (auto& fea_col : fea_cols)
@@ -122,10 +123,8 @@ TableInfo PreprocessFILStage<InputT, OutputT>::fix_bad_columns(sink_type_t x)
     {
         {
             // Get the mutable info for the entire meta object so we only do this once per dataframe
-            auto mutable_info      = x->meta->get_mutable_info();
-            auto df_meta_col_names = mutable_info.get_column_names();
-
-            transform_bad_columns(this->m_fea_cols, mutable_info, df_meta_col_names);
+            auto mutable_info = x->meta->get_mutable_info();
+            transform_bad_columns(this->m_fea_cols, mutable_info);
         }
 
         // Now re-get the meta
@@ -135,16 +134,12 @@ TableInfo PreprocessFILStage<InputT, OutputT>::fix_bad_columns(sink_type_t x)
     {
         {
             // Get the mutable info for the entire meta object so we only do this once per dataframe
-            auto mutable_info      = x->payload()->get_mutable_info();
-            auto df_meta_col_names = mutable_info.get_column_names();
-
-            transform_bad_columns(this->m_fea_cols, mutable_info, df_meta_col_names);
+            auto mutable_info = x->payload()->get_mutable_info();
+            transform_bad_columns(this->m_fea_cols, mutable_info);
         }
 
         // Now re-get the meta
-        auto info        = x->payload()->get_info();
-        auto num_columns = info.num_columns();
-        return info.get_slice(0, num_columns, std::vector<std::string>(m_fea_cols));
+        return x->get_meta(m_fea_cols);
     }
     // sink_type_t not supported
     else
@@ -299,20 +294,16 @@ template class PreprocessFILStage<MultiMessage, MultiInferenceMessage>;
 template class PreprocessFILStage<ControlMessage, ControlMessage>;
 
 // ************ PreprocessFILStageInterfaceProxy *********** //
-std::shared_ptr<mrc::segment::Object<PreprocessFILStageMM>>
-PreprocessFILStageInterfaceProxy::init_multi(mrc::segment::Builder& builder,
-                                             const std::string& name,
-                                             const std::vector<std::string>& features)
+std::shared_ptr<mrc::segment::Object<PreprocessFILStageMM>> PreprocessFILStageInterfaceProxy::init_multi(
+    mrc::segment::Builder& builder, const std::string& name, const std::vector<std::string>& features)
 {
     auto stage = builder.construct_object<PreprocessFILStageMM>(name, features);
 
     return stage;
 }
 
-std::shared_ptr<mrc::segment::Object<PreprocessFILStageCC>>
-PreprocessFILStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
-                                          const std::string& name,
-                                          const std::vector<std::string>& features)
+std::shared_ptr<mrc::segment::Object<PreprocessFILStageCC>> PreprocessFILStageInterfaceProxy::init_cm(
+    mrc::segment::Builder& builder, const std::string& name, const std::vector<std::string>& features)
 {
     auto stage = builder.construct_object<PreprocessFILStageCC>(name, features);
 

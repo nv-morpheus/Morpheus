@@ -82,7 +82,7 @@ class PreprocessFILStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>
   private:
     std::shared_ptr<MultiInferenceMessage> on_multi_message(std::shared_ptr<MultiMessage> x);
     std::shared_ptr<ControlMessage> on_control_message(std::shared_ptr<ControlMessage> x);
-
+    void transform_bad_columns(std::vector<std::string>& fea_cols, morpheus::MutableTableInfo& mutable_info);
     TableInfo fix_bad_columns(sink_type_t x);
 
     std::vector<std::string> m_fea_cols;
