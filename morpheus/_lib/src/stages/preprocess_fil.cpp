@@ -234,11 +234,10 @@ template <>
 std::shared_ptr<ControlMessage> PreprocessFILStage<ControlMessage, ControlMessage>::on_control_message(
     std::shared_ptr<ControlMessage> x)
 {
-    auto df_meta  = this->fix_bad_columns(x);
     auto num_rows = x->payload()->get_info().num_rows();
     auto packed_data =
         std::make_shared<rmm::device_buffer>(m_fea_cols.size() * num_rows * sizeof(float), rmm::cuda_stream_per_thread);
-
+    auto df_meta = this->fix_bad_columns(x);
     for (size_t i = 0; i < df_meta.num_columns(); ++i)
     {
         auto curr_col = df_meta.get_column(i);
@@ -274,7 +273,7 @@ std::shared_ptr<ControlMessage> PreprocessFILStage<ControlMessage, ControlMessag
 
     auto seq_id_dtype = DType::create<TensorIndex>();
     auto seq_ids      = Tensor::create(
-        MatxUtil::create_seq_ids(num_rows, m_fea_cols.size(), seq_id_dtype.type_id(), input__0.get_memory(), num_rows),
+        MatxUtil::create_seq_ids(num_rows, m_fea_cols.size(), seq_id_dtype.type_id(), input__0.get_memory(), 0),
         seq_id_dtype,
         {num_rows, 3},
         {},

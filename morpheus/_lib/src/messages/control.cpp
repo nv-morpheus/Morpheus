@@ -252,36 +252,6 @@ void ControlMessage::set_meta(const std::string& col_name, TensorObject tensor)
     set_meta(std::vector<std::string>{col_name}, std::vector<TensorObject>{tensor});
 }
 
-std::string type_id_to_string(cudf::type_id id) {
-    switch(id) {
-        case cudf::type_id::EMPTY: return "EMPTY";
-        case cudf::type_id::INT8: return "INT8";
-        case cudf::type_id::INT16: return "INT16";
-        case cudf::type_id::INT32: return "INT32";
-        case cudf::type_id::INT64: return "INT64";
-        case cudf::type_id::UINT8: return "UINT8";
-        case cudf::type_id::UINT16: return "UINT16";
-        case cudf::type_id::UINT32: return "UINT32";
-        case cudf::type_id::UINT64: return "UINT64";
-        case cudf::type_id::FLOAT32: return "FLOAT32";
-        case cudf::type_id::FLOAT64: return "FLOAT64";
-        case cudf::type_id::BOOL8: return "BOOL8";
-        case cudf::type_id::TIMESTAMP_DAYS: return "TIMESTAMP_DAYS";
-        case cudf::type_id::TIMESTAMP_SECONDS: return "TIMESTAMP_SECONDS";
-        case cudf::type_id::TIMESTAMP_MILLISECONDS: return "TIMESTAMP_MILLISECONDS";
-        case cudf::type_id::TIMESTAMP_MICROSECONDS: return "TIMESTAMP_MICROSECONDS";
-        case cudf::type_id::TIMESTAMP_NANOSECONDS: return "TIMESTAMP_NANOSECONDS";
-        case cudf::type_id::DURATION_DAYS: return "DURATION_DAYS";
-        case cudf::type_id::DURATION_SECONDS: return "DURATION_SECONDS";
-        case cudf::type_id::DURATION_MILLISECONDS: return "DURATION_MILLISECONDS";
-        case cudf::type_id::DURATION_MICROSECONDS: return "DURATION_MICROSECONDS";
-        case cudf::type_id::DURATION_NANOSECONDS: return "DURATION_NANOSECONDS";
-        case cudf::type_id::STRING: return "STRING";
-        // Add more cases as needed for other cudf::type_id values
-        default: return "UNKNOWN";
-    }
-}
-
 TableInfo ControlMessage::get_meta()
 {
     auto table_info = this->get_meta(std::vector<std::string>{});
@@ -331,8 +301,6 @@ void ControlMessage::set_meta(const std::vector<std::string>& column_names, cons
         const auto tensor_type_id = tensor_type.cudf_type_id();
         const auto row_stride     = tensors[i].stride(0);
 
-        std::cout << "table_type_id: " << type_id_to_string(table_type_id) << std::endl;
-        std::cout << "tensor_type_id: " << type_id_to_string(tensor_type_id) << std::endl;
         CHECK(tensors[i].count() == cv.size() &&
               (table_type_id == tensor_type_id ||
                (table_type_id == cudf::type_id::BOOL8 && tensor_type_id == cudf::type_id::UINT8)));
