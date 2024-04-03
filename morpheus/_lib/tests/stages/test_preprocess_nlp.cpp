@@ -32,7 +32,7 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
 {
     pybind11::gil_scoped_release no_gil;
     auto test_data_dir               = test::get_morpheus_root() / "tests/tests_data";
-    std::filesystem::path input_file = test_data_dir / "countries.csv";
+    std::filesystem::path input_file = test_data_dir / "countries_sample.csv";
 
     auto test_vocab_hash_file_dir         = test::get_morpheus_root() / "morpheus/data";
     std::filesystem::path vocab_hash_file = test_vocab_hash_file_dir / "bert-base-cased-hash.txt";
@@ -72,28 +72,34 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
     auto cm_tensors = cm_response->tensors();
     auto mm_tensors = mm_response->memory;
 
-    // Check if the tensors are the same
+    // Verify output tensors
+    std::vector<int32_t> expected_input_ids = {6469, 10278, 11347, 1262, 27583, 13833};
     auto cm_input_ids = cm_tensors->get_tensor("input_ids");
     auto mm_input_ids = mm_tensors->get_tensor("input_ids");
     std::vector<int32_t> cm_input_ids_host(cm_input_ids.count());
     std::vector<int32_t> mm_input_ids_host(mm_input_ids.count());
     MRC_CHECK_CUDA(cudaMemcpy(cm_input_ids_host.data(), cm_input_ids.data(), cm_input_ids.count() * sizeof(int32_t), cudaMemcpyDeviceToHost));
     MRC_CHECK_CUDA(cudaMemcpy(mm_input_ids_host.data(), mm_input_ids.data(), mm_input_ids.count() * sizeof(int32_t), cudaMemcpyDeviceToHost));
+    EXPECT_EQ(expected_input_ids, cm_input_ids_host);
     EXPECT_EQ(cm_input_ids_host, mm_input_ids_host);
 
+    std::vector<int32_t> expected_input_mask = {1, 1, 1, 1, 1, 1};
     auto cm_input_mask = cm_tensors->get_tensor("input_mask");
     auto mm_input_mask = mm_tensors->get_tensor("input_mask");
     std::vector<int32_t> cm_input_mask_host(cm_input_mask.count());
     std::vector<int32_t> mm_input_mask_host(mm_input_mask.count());
     MRC_CHECK_CUDA(cudaMemcpy(cm_input_mask_host.data(), cm_input_mask.data(), cm_input_mask.count() * sizeof(int32_t), cudaMemcpyDeviceToHost));
     MRC_CHECK_CUDA(cudaMemcpy(mm_input_mask_host.data(), mm_input_mask.data(), mm_input_mask.count() * sizeof(int32_t), cudaMemcpyDeviceToHost));
+    EXPECT_EQ(expected_input_mask, cm_input_mask_host);
     EXPECT_EQ(cm_input_mask_host, mm_input_mask_host);
 
+    std::vector<int32_t> expected_seq_ids = {0, 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0, 3, 0, 0, 4, 0, 0};
     auto cm_seq_ids = cm_tensors->get_tensor("seq_ids");
     auto mm_seq_ids = mm_tensors->get_tensor("seq_ids");
     std::vector<TensorIndex> cm_seq_ids_host(cm_seq_ids.count());
     std::vector<TensorIndex> mm_seq_ids_host(mm_seq_ids.count());
     MRC_CHECK_CUDA(cudaMemcpy(cm_seq_ids_host.data(), cm_seq_ids.data(), cm_seq_ids.count() * sizeof(TensorIndex), cudaMemcpyDeviceToHost));
     MRC_CHECK_CUDA(cudaMemcpy(mm_seq_ids_host.data(), mm_seq_ids.data(), mm_seq_ids.count() * sizeof(TensorIndex), cudaMemcpyDeviceToHost));
+    EXPECT_EQ(expected_seq_ids, cm_seq_ids_host);
     EXPECT_EQ(cm_seq_ids_host, mm_seq_ids_host);
 }

@@ -67,7 +67,8 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
     auto cm_stage = std::make_shared<AddClassificationsStage<ControlMessage, ControlMessage>>(idx2label, 0.0);
     auto cm_response              = cm_stage->on_data(cm);
 
-    // Check if the meta are the same
+    // Verify the output meta
+    std::vector<uint8_t> expected_meta = {'\0', '\x1', '\x1'};
     auto mm_meta = mm_response->get_meta().get_column(0);
     auto cm_meta = cm_response->payload()->get_info().get_column(0);
     // std::vector<bool> is a template specialization which does not have data() method, use std::vector<uint8_t> here
@@ -75,6 +76,6 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
     std::vector<uint8_t> cm_meta_host(cm_meta.size());
     MRC_CHECK_CUDA(cudaMemcpy(mm_meta_host.data(), mm_meta.data<bool>(), mm_meta.size() * sizeof(bool), cudaMemcpyDeviceToHost));
     MRC_CHECK_CUDA(cudaMemcpy(cm_meta_host.data(), cm_meta.data<bool>(), cm_meta.size() * sizeof(bool), cudaMemcpyDeviceToHost));
+    EXPECT_EQ(mm_meta_host, expected_meta);
     EXPECT_EQ(mm_meta_host, cm_meta_host);
-    
 }

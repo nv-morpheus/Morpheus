@@ -45,13 +45,15 @@ TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
     auto cm_tensors = cm_response->tensors();
     auto mm_tensors = mm_response->memory;
 
-    // Check if the tensors are the same
+    // Verify output tensors
+    std::vector<float> expected_input__0 = {1, 4, 2, 5, 3, 6};
     auto cm_input__0 = cm_tensors->get_tensor("input__0");
     auto mm_input__0 = mm_tensors->get_tensor("input__0");
     std::vector<float> cm_input__0_host(cm_input__0.count());
     std::vector<float> mm_input__0_host(mm_input__0.count());
     MRC_CHECK_CUDA(cudaMemcpy(cm_input__0_host.data(), cm_input__0.data(), cm_input__0.count() * sizeof(float), cudaMemcpyDeviceToHost));
     MRC_CHECK_CUDA(cudaMemcpy(mm_input__0_host.data(), mm_input__0.data(), mm_input__0.count() * sizeof(float), cudaMemcpyDeviceToHost));
+    EXPECT_EQ(expected_input__0, cm_input__0_host);
     EXPECT_EQ(cm_input__0_host, mm_input__0_host);
 
     // Col1 in MatxUtil__MatxCreateSegIds is not initialized
