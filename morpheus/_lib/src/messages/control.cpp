@@ -282,13 +282,38 @@ std::string type_id_to_string(cudf::type_id id) {
     }
 }
 
+TableInfo ControlMessage::get_meta()
+{
+    auto table_info = this->get_meta(std::vector<std::string>{});
+
+    return table_info;
+}
+
+TableInfo ControlMessage::get_meta(const std::string& col_name)
+{
+    auto table_view = this->get_meta(std::vector<std::string>{col_name});
+
+    return table_view;
+}
+
+TableInfo ControlMessage::get_meta(const std::vector<std::string>& column_names)
+{
+    TableInfo info = this->payload()->get_info();
+
+    TableInfo sliced_info = info.get_slice(0,
+                                           info.num_rows(),
+                                           column_names.empty() ? info.get_column_names() : column_names);
+
+    return sliced_info;
+}
+
+
 void ControlMessage::set_meta(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors)
 {
-    TableInfo sliced_table_meta;
+    TableInfo table_meta;
     try
     {
-        TableInfo table_meta     = this->payload()->get_info();
-        sliced_table_meta        = table_meta.get_slice(0, table_meta.num_rows(), column_names);
+        table_meta = this->get_meta(column_names);
     } catch (const std::runtime_error& e)
     {
         std::ostringstream err_msg;
@@ -300,7 +325,7 @@ void ControlMessage::set_meta(const std::vector<std::string>& column_names, cons
 
     for (std::size_t i = 0; i < tensors.size(); ++i)
     {
-        const auto& cv            = sliced_table_meta.get_column(i);
+        const auto& cv            = table_meta.get_column(i);
         const auto table_type_id  = cv.type().id();
         const auto tensor_type    = DType(tensors[i].dtype());
         const auto tensor_type_id = tensor_type.cudf_type_id();

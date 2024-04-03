@@ -316,6 +316,32 @@ class ControlMessage
     void tensors(const std::shared_ptr<TensorMemory>& tensor_memory);
 
     /**
+     * @brief Get the meta object
+     *
+     * @return TableInfo
+     */
+    TableInfo get_meta();
+
+    /**
+     * @brief Returns column value from a meta object.
+     *
+     * @param col_name
+     * @throws std::runtime_error
+     * @throws std::runtime_error
+     * @return TableInfo
+     */
+    TableInfo get_meta(const std::string& col_name);
+
+    /**
+     * @brief Returns columns value from a meta object. When `columns_names` is empty all columns are returned.
+     *
+     * @param column_names
+     * @throws std::runtime_error
+     * @return TableInfo
+     */
+    TableInfo get_meta(const std::vector<std::string>& column_names);
+
+    /**
      * @brief Set the meta object with a given column name
      *
      * @param col_name
