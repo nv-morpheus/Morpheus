@@ -378,7 +378,6 @@ TEST_F(TestControlMessage, SetMetaWithColumnName)
     cm->set_meta("int", tensor_object);
 
     std::vector<int64_t> actual_ints(expected_ints.size());
-    MRC_CHECK_CUDA(cudaMemcpy(actual_ints.data(), tensor->data(), tensor->bytes(), cudaMemcpyDeviceToHost));
 
     auto cm_int_meta = cm->payload()->get_info().get_column(0);
     MRC_CHECK_CUDA(cudaMemcpy(actual_ints.data(),

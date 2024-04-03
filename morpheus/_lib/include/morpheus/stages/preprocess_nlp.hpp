@@ -101,14 +101,12 @@ class PreprocessNLPStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>
                        int stride         = -1,
                        std::string column = "data");
 
-    std::shared_ptr<OutputT> on_data(std::shared_ptr<InputT> x);
+    /**
+     * Called every time a message is passed to this stage
+     */
+    source_type_t on_data(sink_type_t x);
 
   private:
-    /**
-     * TODO(Documentation)
-     */
-    subscribe_fn_t build_operator();
-
     std::shared_ptr<MultiInferenceMessage> on_multi_message(std::shared_ptr<MultiMessage> x);
     std::shared_ptr<ControlMessage> on_control_message(std::shared_ptr<ControlMessage> x);
     nvtext::tokenizer_result subword_tokenize(const std::string& vocab_hash_file,
@@ -127,10 +125,10 @@ class PreprocessNLPStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>
     int m_stride{-1};
 };
 
-using PreprocessNLPStageMM = // NOLINT(readability-identifier-naming)
-    PreprocessNLPStage<MultiMessage, MultiInferenceMessage>;  
-using PreprocessNLPStageCC = // NOLINT(readability-identifier-naming)
-    PreprocessNLPStage<ControlMessage, ControlMessage>;  
+using PreprocessNLPStageMM =  // NOLINT(readability-identifier-naming)
+    PreprocessNLPStage<MultiMessage, MultiInferenceMessage>;
+using PreprocessNLPStageCC =  // NOLINT(readability-identifier-naming)
+    PreprocessNLPStage<ControlMessage, ControlMessage>;
 
 /****** PreprocessNLPStageInferenceProxy********************/
 /**

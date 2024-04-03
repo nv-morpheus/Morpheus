@@ -74,14 +74,12 @@ class PreprocessFILStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>
      */
     PreprocessFILStage(const std::vector<std::string>& features);
 
-    std::shared_ptr<OutputT> on_data(std::shared_ptr<InputT> x);
+    /**
+     * Called every time a message is passed to this stage
+     */
+    source_type_t on_data(sink_type_t x);
 
   private:
-    /**
-     * TODO(Documentation)
-     */
-    subscribe_fn_t build_operator();
-
     std::shared_ptr<MultiInferenceMessage> on_multi_message(std::shared_ptr<MultiMessage> x);
     std::shared_ptr<ControlMessage> on_control_message(std::shared_ptr<ControlMessage> x);
 
@@ -91,10 +89,10 @@ class PreprocessFILStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>
     std::string m_vocab_file;
 };
 
-using PreprocessFILStageMM = // NOLINT(readability-identifier-naming)
+using PreprocessFILStageMM =  // NOLINT(readability-identifier-naming)
     PreprocessFILStage<MultiMessage, MultiInferenceMessage>;
-using PreprocessFILStageCC = // NOLINT(readability-identifier-naming)
-    PreprocessFILStage<ControlMessage, ControlMessage>;  
+using PreprocessFILStageCC =  // NOLINT(readability-identifier-naming)
+    PreprocessFILStage<ControlMessage, ControlMessage>;
 
 /****** PreprocessFILStageInferenceProxy********************/
 /**

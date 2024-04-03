@@ -72,7 +72,9 @@ PreprocessNLPStage<InputT, OutputT>::PreprocessNLPStage(std::string vocab_hash_f
                                                         bool add_special_token,
                                                         int stride,
                                                         std::string column) :
-  base_t(base_t::op_factory_from_sub_fn(build_operator())),
+  base_t(rxcpp::operators::map([this](sink_type_t x) {
+      return this->on_data(std::move(x));
+  })),
   m_vocab_hash_file(std::move(vocab_hash_file)),
   m_sequence_length(sequence_length),
   m_truncation(truncation),
@@ -90,29 +92,8 @@ PreprocessNLPStage<InputT, OutputT>::PreprocessNLPStage(std::string vocab_hash_f
     m_stride = stride;
 }
 
-
-
 template <typename InputT, typename OutputT>
-PreprocessNLPStage<InputT, OutputT>::subscribe_fn_t PreprocessNLPStage<InputT, OutputT>::build_operator()
-{
-    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output](sink_type_t x) {
-                auto next = this->on_data(x);
-
-                output.on_next(std::move(next));
-            },
-            [&](std::exception_ptr error_ptr) {
-                output.on_error(error_ptr);
-            },
-            [&]() {
-                output.on_completed();
-            }));
-    };
-}
-
-template <typename InputT, typename OutputT>
-std::shared_ptr<OutputT> PreprocessNLPStage<InputT, OutputT>::on_data(std::shared_ptr<InputT> x)
+PreprocessNLPStage<InputT, OutputT>::source_type_t PreprocessNLPStage<InputT, OutputT>::on_data(sink_type_t x)
 {
     if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
     {
@@ -256,13 +237,14 @@ std::shared_ptr<ControlMessage> PreprocessNLPStage<ControlMessage, ControlMessag
 }
 
 template <typename InputT, typename OutputT>
-nvtext::tokenizer_result PreprocessNLPStage<InputT, OutputT>::subword_tokenize(const std::string& vocab_hash_file,
-                                          uint32_t sequence_length,
-                                          bool do_lower_case,
-                                          bool truncation,
-                                          cudf::strings_column_view const& string_col,
-                                          int stride,
-                                          rmm::mr::device_memory_resource* mr)
+nvtext::tokenizer_result PreprocessNLPStage<InputT, OutputT>::subword_tokenize(
+    const std::string& vocab_hash_file,
+    uint32_t sequence_length,
+    bool do_lower_case,
+    bool truncation,
+    cudf::strings_column_view const& string_col,
+    int stride,
+    rmm::mr::device_memory_resource* mr)
 {
     // Create the hashed vocab
     thread_local std::unique_ptr<nvtext::hashed_vocabulary> vocab = nvtext::load_vocabulary_file(vocab_hash_file);
@@ -311,16 +293,16 @@ template class PreprocessNLPStage<MultiMessage, MultiInferenceMessage>;
 template class PreprocessNLPStage<ControlMessage, ControlMessage>;
 
 // ************ PreprocessNLPStageInterfaceProxy *********** //
-std::shared_ptr<mrc::segment::Object<PreprocessNLPStageMM>>
-PreprocessNLPStageInterfaceProxy::init_multi(mrc::segment::Builder& builder,
-                                             const std::string& name,
-                                             std::string vocab_hash_file,
-                                             uint32_t sequence_length,
-                                             bool truncation,
-                                             bool do_lower_case,
-                                             bool add_special_token,
-                                             int stride,
-                                             std::string column)
+std::shared_ptr<mrc::segment::Object<PreprocessNLPStageMM>> PreprocessNLPStageInterfaceProxy::init_multi(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::string vocab_hash_file,
+    uint32_t sequence_length,
+    bool truncation,
+    bool do_lower_case,
+    bool add_special_token,
+    int stride,
+    std::string column)
 {
     auto stage = builder.construct_object<PreprocessNLPStageMM>(
         name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride, column);
@@ -328,16 +310,16 @@ PreprocessNLPStageInterfaceProxy::init_multi(mrc::segment::Builder& builder,
     return stage;
 }
 
-std::shared_ptr<mrc::segment::Object<PreprocessNLPStageCC>>
-PreprocessNLPStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
-                                          const std::string& name,
-                                          std::string vocab_hash_file,
-                                          uint32_t sequence_length,
-                                          bool truncation,
-                                          bool do_lower_case,
-                                          bool add_special_token,
-                                          int stride,
-                                          std::string column)
+std::shared_ptr<mrc::segment::Object<PreprocessNLPStageCC>> PreprocessNLPStageInterfaceProxy::init_cm(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::string vocab_hash_file,
+    uint32_t sequence_length,
+    bool truncation,
+    bool do_lower_case,
+    bool add_special_token,
+    int stride,
+    std::string column)
 {
     auto stage = builder.construct_object<PreprocessNLPStageCC>(
         name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride, column);

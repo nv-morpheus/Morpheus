@@ -57,28 +57,11 @@ namespace morpheus {
 // ************ PreprocessFILStage ************************* //
 template <typename InputT, typename OutputT>
 PreprocessFILStage<InputT, OutputT>::PreprocessFILStage(const std::vector<std::string>& features) :
-  base_t(base_t::op_factory_from_sub_fn(build_operator())),
+  base_t(rxcpp::operators::map([this](sink_type_t x) {
+      return this->on_data(std::move(x));
+  })),
   m_fea_cols(std::move(features))
 {}
-
-template <typename InputT, typename OutputT>
-PreprocessFILStage<InputT, OutputT>::subscribe_fn_t PreprocessFILStage<InputT, OutputT>::build_operator()
-{
-    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [&output, this](sink_type_t x) {
-                auto next = this->on_data(x);
-                output.on_next(std::move(next));
-            },
-            [&](std::exception_ptr error_ptr) {
-                output.on_error(error_ptr);
-            },
-            [&]() {
-                output.on_completed();
-            }));
-    };
-}  // namespace morpheus
-
 
 void transform_bad_columns(std::vector<std::string>& fea_cols,
                            morpheus::MutableTableInfo& mutable_info,
@@ -173,7 +156,7 @@ TableInfo PreprocessFILStage<InputT, OutputT>::fix_bad_columns(sink_type_t x)
 }
 
 template <typename InputT, typename OutputT>
-std::shared_ptr<OutputT> PreprocessFILStage<InputT, OutputT>::on_data(std::shared_ptr<InputT> x)
+PreprocessFILStage<InputT, OutputT>::source_type_t PreprocessFILStage<InputT, OutputT>::on_data(sink_type_t x)
 {
     if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
     {
