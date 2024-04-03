@@ -113,7 +113,9 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
         return node
 
     @staticmethod
-    def _add_labels(x: typing.Union[MultiResponseMessage, ControlMessage], idx2label: typing.Dict[int, str], threshold: typing.Optional[float]):
+    def _add_labels(x: typing.Union[MultiResponseMessage, ControlMessage],
+                    idx2label: typing.Dict[int, str],
+                    threshold: typing.Optional[float]):
 
         probs = x.get_probs_tensor()
 

@@ -17,7 +17,6 @@ import typing
 from functools import partial
 
 import cupy as cp
-from morpheus._lib.messages import ControlMessage
 import mrc
 import numpy as np
 import pandas as pd
@@ -25,6 +24,7 @@ import pandas as pd
 import cudf
 
 import morpheus._lib.stages as _stages
+from morpheus._lib.messages import ControlMessage
 from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config

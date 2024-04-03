@@ -13,15 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-import cudf
+from unittest.mock import Mock
+from unittest.mock import patch
+
 import cupy as cp
+import pytest
 
-from unittest.mock import patch, Mock
-from morpheus._lib.messages import ControlMessage, MultiMessage
-from morpheus.config import Config, ConfigFIL
+import cudf
+
+from morpheus._lib.messages import ControlMessage
+from morpheus._lib.messages import MultiMessage
+from morpheus.config import Config
+from morpheus.config import ConfigFIL
 from morpheus.messages import MessageMeta
-
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 
 

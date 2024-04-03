@@ -88,10 +88,10 @@ class AddScoresStageBase : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>
     std::size_t m_min_col_count;
 };
 
-using AddScoresStageBaseMM = // NOLINT(readability-identifier-naming)
-    AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>;  
-using AddScoresStageBaseCC = // NOLINT(readability-identifier-naming)
-    AddScoresStageBase<ControlMessage, ControlMessage>;  
+using AddScoresStageBaseMM =  // NOLINT(readability-identifier-naming)
+    AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>;
+using AddScoresStageBaseCC =  // NOLINT(readability-identifier-naming)
+    AddScoresStageBase<ControlMessage, ControlMessage>;
 
 #pragma GCC visibility pop
 /** @} */  // end of group

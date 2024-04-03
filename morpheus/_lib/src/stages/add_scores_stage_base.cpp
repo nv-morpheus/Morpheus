@@ -85,7 +85,8 @@ AddScoresStageBase<InputT, OutputT>::source_type_t AddScoresStageBase<InputT, Ou
 }
 
 template <>
-void AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>::on_multi_response_message(std::shared_ptr<MultiResponseMessage> x)
+void AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>::on_multi_response_message(
+    std::shared_ptr<MultiResponseMessage> x)
 {
     auto probs        = x->get_probs_tensor();
     const auto& shape = probs.get_shape();
@@ -179,7 +180,7 @@ void AddScoresStageBase<ControlMessage, ControlMessage>::on_control_message(std:
 
         ++i;
     }
-    
+
     x->set_meta(columns, tensors);
 }
 

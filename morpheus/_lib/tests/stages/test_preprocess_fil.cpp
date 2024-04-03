@@ -50,7 +50,7 @@ TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
     cm->payload(cm_meta);
 
     // Create PreProcessControlMessageStage
-    auto cm_stage = std::make_shared<PreprocessFILStageCC>(std::vector<std::string>{"float_str1", "float_str2"});
+    auto cm_stage    = std::make_shared<PreprocessFILStageCC>(std::vector<std::string>{"float_str1", "float_str2"});
     auto cm_response = cm_stage->on_data(cm);
 
     // Create MultiMessage
@@ -64,12 +64,14 @@ TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
 
     // Verify output tensors
     std::vector<float> expected_input__0 = {1, 4, 2, 5, 3, 6};
-    auto cm_input__0 = cm_tensors->get_tensor("input__0");
-    auto mm_input__0 = mm_tensors->get_tensor("input__0");
+    auto cm_input__0                     = cm_tensors->get_tensor("input__0");
+    auto mm_input__0                     = mm_tensors->get_tensor("input__0");
     std::vector<float> cm_input__0_host(cm_input__0.count());
     std::vector<float> mm_input__0_host(mm_input__0.count());
-    MRC_CHECK_CUDA(cudaMemcpy(cm_input__0_host.data(), cm_input__0.data(), cm_input__0.count() * sizeof(float), cudaMemcpyDeviceToHost));
-    MRC_CHECK_CUDA(cudaMemcpy(mm_input__0_host.data(), mm_input__0.data(), mm_input__0.count() * sizeof(float), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(
+        cm_input__0_host.data(), cm_input__0.data(), cm_input__0.count() * sizeof(float), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(
+        mm_input__0_host.data(), mm_input__0.data(), mm_input__0.count() * sizeof(float), cudaMemcpyDeviceToHost));
     EXPECT_EQ(expected_input__0, cm_input__0_host);
     EXPECT_EQ(cm_input__0_host, mm_input__0_host);
 
@@ -78,7 +80,7 @@ TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
     // auto mm_seq_ids = mm_tensors->get_tensor("seq_ids");
     // std::vector<TensorIndex> cm_seq_ids_host(cm_seq_ids.count());
     // std::vector<TensorIndex> mm_seq_ids_host(mm_seq_ids.count());
-    // MRC_CHECK_CUDA(cudaMemcpy(cm_seq_ids_host.data(), cm_seq_ids.data(), cm_seq_ids.count() * sizeof(TensorIndex), cudaMemcpyDeviceToHost));
-    // MRC_CHECK_CUDA(cudaMemcpy(mm_seq_ids_host.data(), mm_seq_ids.data(), mm_seq_ids.count() * sizeof(TensorIndex), cudaMemcpyDeviceToHost));
-    // EXPECT_EQ(cm_seq_ids_host, mm_seq_ids_host);
+    // MRC_CHECK_CUDA(cudaMemcpy(cm_seq_ids_host.data(), cm_seq_ids.data(), cm_seq_ids.count() * sizeof(TensorIndex),
+    // cudaMemcpyDeviceToHost)); MRC_CHECK_CUDA(cudaMemcpy(mm_seq_ids_host.data(), mm_seq_ids.data(), mm_seq_ids.count()
+    // * sizeof(TensorIndex), cudaMemcpyDeviceToHost)); EXPECT_EQ(cm_seq_ids_host, mm_seq_ids_host);
 }

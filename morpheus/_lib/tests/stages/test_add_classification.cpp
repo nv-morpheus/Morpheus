@@ -70,7 +70,7 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
     // Create PreProcessMultiMessageStage
     auto mm_stage =
         std::make_shared<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>(idx2label, 0.0);
-    auto mm_response              = mm_stage->on_data(mm);
+    auto mm_response = mm_stage->on_data(mm);
 
     // Create ControlMessage
     auto cm = std::make_shared<ControlMessage>();
@@ -81,18 +81,20 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
     cm->tensors(cm_tensor_memory);
 
     // Create PreProcessControlMessageStage
-    auto cm_stage = std::make_shared<AddClassificationsStage<ControlMessage, ControlMessage>>(idx2label, 0.0);
-    auto cm_response              = cm_stage->on_data(cm);
+    auto cm_stage    = std::make_shared<AddClassificationsStage<ControlMessage, ControlMessage>>(idx2label, 0.0);
+    auto cm_response = cm_stage->on_data(cm);
 
     // Verify the output meta
     std::vector<uint8_t> expected_meta = {'\0', '\x1', '\x1'};
-    auto mm_meta = mm_response->get_meta().get_column(0);
-    auto cm_meta = cm_response->payload()->get_info().get_column(0);
+    auto mm_meta                       = mm_response->get_meta().get_column(0);
+    auto cm_meta                       = cm_response->payload()->get_info().get_column(0);
     // std::vector<bool> is a template specialization which does not have data() method, use std::vector<uint8_t> here
     std::vector<uint8_t> mm_meta_host(mm_meta.size());
     std::vector<uint8_t> cm_meta_host(cm_meta.size());
-    MRC_CHECK_CUDA(cudaMemcpy(mm_meta_host.data(), mm_meta.data<bool>(), mm_meta.size() * sizeof(bool), cudaMemcpyDeviceToHost));
-    MRC_CHECK_CUDA(cudaMemcpy(cm_meta_host.data(), cm_meta.data<bool>(), cm_meta.size() * sizeof(bool), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(
+        cudaMemcpy(mm_meta_host.data(), mm_meta.data<bool>(), mm_meta.size() * sizeof(bool), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(
+        cudaMemcpy(cm_meta_host.data(), cm_meta.data<bool>(), cm_meta.size() * sizeof(bool), cudaMemcpyDeviceToHost));
     EXPECT_EQ(mm_meta_host, expected_meta);
     EXPECT_EQ(mm_meta_host, cm_meta_host);
 }

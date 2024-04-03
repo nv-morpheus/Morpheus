@@ -346,7 +346,7 @@ class ControlMessage
      *
      * @param col_name
      * @param tensor
-    */
+     */
     void set_meta(const std::string& col_name, TensorObject tensor);
 
     /**

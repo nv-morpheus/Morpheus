@@ -64,7 +64,6 @@ TEST_F(TestAddScores, TestProcessControlMessageAndMultiResponseMessage)
     auto mm_stage    = std::make_shared<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>(idx2label);
     auto mm_response = mm_stage->on_data(mm);
 
-
     // Create ControlMessage
     auto cm = std::make_shared<ControlMessage>();
     cm->payload(meta);
@@ -74,17 +73,19 @@ TEST_F(TestAddScores, TestProcessControlMessageAndMultiResponseMessage)
     cm->tensors(cm_tensor_memory);
 
     // Create PreProcessControlMessageStage
-    auto cm_stage = std::make_shared<AddScoresStage<ControlMessage, ControlMessage>>(idx2label);
-    auto cm_response              = cm_stage->on_data(cm);
+    auto cm_stage    = std::make_shared<AddScoresStage<ControlMessage, ControlMessage>>(idx2label);
+    auto cm_response = cm_stage->on_data(cm);
 
     // Verify the output meta
     std::vector<float> expected_meta = {0, 0, 1.4013e-45};
-    auto mm_meta = mm_response->get_meta().get_column(0);
-    auto cm_meta = cm_response->payload()->get_info().get_column(0);
+    auto mm_meta                     = mm_response->get_meta().get_column(0);
+    auto cm_meta                     = cm_response->payload()->get_info().get_column(0);
     std::vector<float> mm_meta_host(mm_meta.size());
     std::vector<float> cm_meta_host(cm_meta.size());
-    MRC_CHECK_CUDA(cudaMemcpy(mm_meta_host.data(), mm_meta.data<double>(), mm_meta.size() * sizeof(double), cudaMemcpyDeviceToHost));
-    MRC_CHECK_CUDA(cudaMemcpy(cm_meta_host.data(), cm_meta.data<double>(), cm_meta.size() * sizeof(double), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(
+        mm_meta_host.data(), mm_meta.data<double>(), mm_meta.size() * sizeof(double), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(
+        cm_meta_host.data(), cm_meta.data<double>(), cm_meta.size() * sizeof(double), cudaMemcpyDeviceToHost));
     EXPECT_EQ(mm_meta_host, expected_meta);
     EXPECT_EQ(mm_meta_host, cm_meta_host);
 }

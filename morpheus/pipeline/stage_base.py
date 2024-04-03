@@ -98,7 +98,7 @@ class StageBase(ABC, collections.abc.Hashable):
 
         # Mapping of {`column_name`: `TyepId`}
         self._needed_columns = collections.OrderedDict()
-        
+
         # Schema of the stage
         self._schema = _pipeline.StageSchema(self)
 

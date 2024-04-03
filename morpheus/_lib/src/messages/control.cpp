@@ -270,13 +270,11 @@ TableInfo ControlMessage::get_meta(const std::vector<std::string>& column_names)
 {
     TableInfo info = this->payload()->get_info();
 
-    TableInfo sliced_info = info.get_slice(0,
-                                           info.num_rows(),
-                                           column_names.empty() ? info.get_column_names() : column_names);
+    TableInfo sliced_info =
+        info.get_slice(0, info.num_rows(), column_names.empty() ? info.get_column_names() : column_names);
 
     return sliced_info;
 }
-
 
 void ControlMessage::set_meta(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors)
 {

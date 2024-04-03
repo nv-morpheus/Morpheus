@@ -71,52 +71,62 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
                                                            1 /*stride*/,
                                                            "country" /*column*/);
 
-    auto cm_response         = cm_stage->on_data(cm);
+    auto cm_response = cm_stage->on_data(cm);
 
     // Create MultiMessage
     auto mm = std::make_shared<MultiMessage>(meta);
 
     // Create PreProcessMultiMessageStage
-    auto mm_stage            = std::make_shared<PreprocessNLPStageMM>(vocab_hash_file /*vocab_hash_file*/,
-                                                              1 /*sequence_length*/,
-                                                              false /*truncation*/,
-                                                              false /*do_lower_case*/,
-                                                              false /*add_special_token*/,
-                                                              1 /*stride*/,
-                                                              "country" /*column*/);
-    auto mm_response         = mm_stage->on_data(mm);
+    auto mm_stage    = std::make_shared<PreprocessNLPStageMM>(vocab_hash_file /*vocab_hash_file*/,
+                                                           1 /*sequence_length*/,
+                                                           false /*truncation*/,
+                                                           false /*do_lower_case*/,
+                                                           false /*add_special_token*/,
+                                                           1 /*stride*/,
+                                                           "country" /*column*/);
+    auto mm_response = mm_stage->on_data(mm);
 
     auto cm_tensors = cm_response->tensors();
     auto mm_tensors = mm_response->memory;
 
     // Verify output tensors
     std::vector<int32_t> expected_input_ids = {6469, 10278, 11347, 1262, 27583, 13833};
-    auto cm_input_ids = cm_tensors->get_tensor("input_ids");
-    auto mm_input_ids = mm_tensors->get_tensor("input_ids");
+    auto cm_input_ids                       = cm_tensors->get_tensor("input_ids");
+    auto mm_input_ids                       = mm_tensors->get_tensor("input_ids");
     std::vector<int32_t> cm_input_ids_host(cm_input_ids.count());
     std::vector<int32_t> mm_input_ids_host(mm_input_ids.count());
-    MRC_CHECK_CUDA(cudaMemcpy(cm_input_ids_host.data(), cm_input_ids.data(), cm_input_ids.count() * sizeof(int32_t), cudaMemcpyDeviceToHost));
-    MRC_CHECK_CUDA(cudaMemcpy(mm_input_ids_host.data(), mm_input_ids.data(), mm_input_ids.count() * sizeof(int32_t), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(
+        cm_input_ids_host.data(), cm_input_ids.data(), cm_input_ids.count() * sizeof(int32_t), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(
+        mm_input_ids_host.data(), mm_input_ids.data(), mm_input_ids.count() * sizeof(int32_t), cudaMemcpyDeviceToHost));
     EXPECT_EQ(expected_input_ids, cm_input_ids_host);
     EXPECT_EQ(cm_input_ids_host, mm_input_ids_host);
 
     std::vector<int32_t> expected_input_mask = {1, 1, 1, 1, 1, 1};
-    auto cm_input_mask = cm_tensors->get_tensor("input_mask");
-    auto mm_input_mask = mm_tensors->get_tensor("input_mask");
+    auto cm_input_mask                       = cm_tensors->get_tensor("input_mask");
+    auto mm_input_mask                       = mm_tensors->get_tensor("input_mask");
     std::vector<int32_t> cm_input_mask_host(cm_input_mask.count());
     std::vector<int32_t> mm_input_mask_host(mm_input_mask.count());
-    MRC_CHECK_CUDA(cudaMemcpy(cm_input_mask_host.data(), cm_input_mask.data(), cm_input_mask.count() * sizeof(int32_t), cudaMemcpyDeviceToHost));
-    MRC_CHECK_CUDA(cudaMemcpy(mm_input_mask_host.data(), mm_input_mask.data(), mm_input_mask.count() * sizeof(int32_t), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(cm_input_mask_host.data(),
+                              cm_input_mask.data(),
+                              cm_input_mask.count() * sizeof(int32_t),
+                              cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(mm_input_mask_host.data(),
+                              mm_input_mask.data(),
+                              mm_input_mask.count() * sizeof(int32_t),
+                              cudaMemcpyDeviceToHost));
     EXPECT_EQ(expected_input_mask, cm_input_mask_host);
     EXPECT_EQ(cm_input_mask_host, mm_input_mask_host);
 
     std::vector<int32_t> expected_seq_ids = {0, 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0, 3, 0, 0, 4, 0, 0};
-    auto cm_seq_ids = cm_tensors->get_tensor("seq_ids");
-    auto mm_seq_ids = mm_tensors->get_tensor("seq_ids");
+    auto cm_seq_ids                       = cm_tensors->get_tensor("seq_ids");
+    auto mm_seq_ids                       = mm_tensors->get_tensor("seq_ids");
     std::vector<TensorIndex> cm_seq_ids_host(cm_seq_ids.count());
     std::vector<TensorIndex> mm_seq_ids_host(mm_seq_ids.count());
-    MRC_CHECK_CUDA(cudaMemcpy(cm_seq_ids_host.data(), cm_seq_ids.data(), cm_seq_ids.count() * sizeof(TensorIndex), cudaMemcpyDeviceToHost));
-    MRC_CHECK_CUDA(cudaMemcpy(mm_seq_ids_host.data(), mm_seq_ids.data(), mm_seq_ids.count() * sizeof(TensorIndex), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(
+        cm_seq_ids_host.data(), cm_seq_ids.data(), cm_seq_ids.count() * sizeof(TensorIndex), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(
+        mm_seq_ids_host.data(), mm_seq_ids.data(), mm_seq_ids.count() * sizeof(TensorIndex), cudaMemcpyDeviceToHost));
     EXPECT_EQ(expected_seq_ids, cm_seq_ids_host);
     EXPECT_EQ(cm_seq_ids_host, mm_seq_ids_host);
 }

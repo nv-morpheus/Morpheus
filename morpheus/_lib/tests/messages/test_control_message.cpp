@@ -380,9 +380,7 @@ TEST_F(TestControlMessage, SetMetaWithColumnName)
     std::vector<int64_t> actual_ints(expected_ints.size());
 
     auto cm_int_meta = cm->payload()->get_info().get_column(0);
-    MRC_CHECK_CUDA(cudaMemcpy(actual_ints.data(),
-                              cm_int_meta.data<int64_t>(),
-                              count * sizeof(int64_t),
-                              cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(
+        cudaMemcpy(actual_ints.data(), cm_int_meta.data<int64_t>(), count * sizeof(int64_t), cudaMemcpyDeviceToHost));
     EXPECT_EQ(expected_ints, actual_ints);
 }

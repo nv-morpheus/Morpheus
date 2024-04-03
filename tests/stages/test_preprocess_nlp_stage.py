@@ -13,15 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-import cudf
-import cupy as cp
+from unittest.mock import Mock
+from unittest.mock import patch
 
-from unittest.mock import patch, Mock
-from morpheus._lib.messages import ControlMessage, MultiMessage
+import cupy as cp
+import pytest
+
+import cudf
+
+from morpheus._lib.messages import ControlMessage
+from morpheus._lib.messages import MultiMessage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 
@@ -137,13 +140,13 @@ def test_process_control_message_and_multi_message(mock_tokenize_text_series, co
     input_multi_message = MultiMessage(meta=meta, mess_offset=mess_offset, mess_count=2)
 
     output_control_message = stage.pre_process_batch(input_control_message,
-                                        stage._vocab_hash_file,
-                                        stage._do_lower_case,
-                                        stage._seq_length,
-                                        stage._stride,
-                                        stage._truncation,
-                                        stage._add_special_tokens,
-                                        stage._column)
+                                                     stage._vocab_hash_file,
+                                                     stage._do_lower_case,
+                                                     stage._seq_length,
+                                                     stage._stride,
+                                                     stage._truncation,
+                                                     stage._add_special_tokens,
+                                                     stage._column)
 
     output_infer_message = stage.pre_process_batch(input_multi_message,
                                                    stage._vocab_hash_file,
@@ -156,4 +159,5 @@ def test_process_control_message_and_multi_message(mock_tokenize_text_series, co
 
     # Check if each tensor in the control message is equal to the corresponding tensor in the inference message
     for tensor_key in output_control_message.tensors().tensor_names:
-        assert cp.array_equal(output_control_message.tensors().get_tensor(tensor_key), getattr(output_infer_message, tensor_key))
+        assert cp.array_equal(output_control_message.tensors().get_tensor(tensor_key),
+                              getattr(output_infer_message, tensor_key))
