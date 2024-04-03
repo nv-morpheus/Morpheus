@@ -28,11 +28,13 @@
 #include <mrc/coroutines/event.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
 #include <mrc/coroutines/task.hpp>
+#include <pymrc/utilities/json_values.hpp>  // for JSONValues
 
 #include <atomic>
 #include <coroutine>
 #include <cstdint>
 #include <memory>
+// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
 
 using namespace morpheus;
 using namespace morpheus::test;

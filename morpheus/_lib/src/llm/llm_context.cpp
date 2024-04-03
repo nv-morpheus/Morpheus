@@ -17,7 +17,7 @@
 
 #include "morpheus/llm/llm_context.hpp"
 
-#include "morpheus/messages/control.hpp"  // for ControlMessage
+#include "morpheus/messages/control.hpp"  // IWYU pragma: keep
 
 #include <algorithm>
 #include <memory>
