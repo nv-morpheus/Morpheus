@@ -34,28 +34,27 @@
 #include "morpheus/pybind11/input_map.hpp"    // IWYU pragma: keep
 #include "morpheus/pybind11/json_values.hpp"  // IWYU pragma: keep
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/json_types.hpp"
 #include "morpheus/version.hpp"
 
+#include <mrc/segment/object.hpp>  // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>
 #include <nlohmann/detail/exceptions.hpp>
-#include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
-#include <pybind11/detail/common.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>    // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
-#include <pybind11/pytypes.h>     // for dict, sequence
 #include <pybind11/stl.h>         // IWYU pragma: keep
 #include <pymrc/coro.hpp>         // IWYU pragma: keep
-#include <pymrc/utils.hpp>        // for pymrc::import
+#include <pymrc/utilities/json_values.hpp>  // for JSONValues
+#include <pymrc/utils.hpp>                  // for pymrc::import
 
 #include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
+// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
+// IWYU pragma: no_include <pybind11/attr.h>
+// IWYU pragma: no_include <pybind11/pytypes.h>
 
 namespace morpheus::llm {
 namespace py = pybind11;
