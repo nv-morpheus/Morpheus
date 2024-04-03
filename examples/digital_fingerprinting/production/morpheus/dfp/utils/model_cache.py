@@ -225,7 +225,7 @@ class ModelManager:
 
                         self._existing_models.update(model.name for model in results)
 
-                        if (len(results.token) == 0):
+                        if (results.token is None or len(results.token) == 0):
                             break
 
                     logger.debug("Updating list of available models... Done.")

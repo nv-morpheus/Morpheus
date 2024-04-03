@@ -161,7 +161,6 @@ channels:
   - nvidia
   - nvidia/label/dev
   - pytorch
-  - defaults
 
 dependencies:
 
