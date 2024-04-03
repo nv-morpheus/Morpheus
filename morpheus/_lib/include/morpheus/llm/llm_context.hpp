@@ -129,14 +129,14 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      * @param inputs input mappings for new context
      * @return std::shared_ptr<LLMContext>
      */
-    virtual std::shared_ptr<LLMContext> push(std::string name, input_mappings_t inputs);
+    std::shared_ptr<LLMContext> push(std::string name, input_mappings_t inputs);
 
     /**
      * @brief Moves output map from this context to parent context. Outputs to move can be selected using
      * set_output_names, otherwise all outputs are noved by default.
      *
      */
-    virtual void pop();
+    void pop();
 
     /**
      * @brief Get the input value from parent context corresponding to first internal input of this context.
