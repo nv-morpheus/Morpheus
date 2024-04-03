@@ -35,14 +35,12 @@ struct type_caster<nlohmann::json>
 {
   public:
     /**
-     * This macro establishes the name 'inty' in
-     * function signatures and declares a local variable
-     * 'value' of type inty
+     * This macro establishes a local variable 'value' of type nlohmann::json
      */
     PYBIND11_TYPE_CASTER(nlohmann::json, _("object"));
 
     /**
-     * Conversion part 1 (Python->C++): convert a PyObject into a inty
+     * Conversion part 1 (Python->C++): convert a PyObject into an nlohmann::json
      * instance or return false upon failure. The second argument
      * indicates whether implicit conversions should be applied.
      */
@@ -66,7 +64,7 @@ struct type_caster<nlohmann::json>
     }
 
     /**
-     * Conversion part 2 (C++ -> Python): convert an inty instance into
+     * Conversion part 2 (C++ -> Python): convert an nlohmann::json instance into
      * a Python object. The second and third arguments are used to
      * indicate the return value policy and parent object (for
      * ``return_value_policy::reference_internal``) and are generally
@@ -83,14 +81,12 @@ struct type_caster<nlohmann::json_dict>
 {
   public:
     /**
-     * This macro establishes the name 'inty' in
-     * function signatures and declares a local variable
-     * 'value' of type inty
+     * This macro establishes a local variable 'value' of type nlohmann::json_dict
      */
     PYBIND11_TYPE_CASTER(nlohmann::json_dict, _("dict[str, typing.Any]"));
 
     /**
-     * Conversion part 1 (Python->C++): convert a PyObject into a inty
+     * Conversion part 1 (Python->C++): convert a PyObject into an nlohmann::json_dict
      * instance or return false upon failure. The second argument
      * indicates whether implicit conversions should be applied.
      */
@@ -113,7 +109,7 @@ struct type_caster<nlohmann::json_dict>
     }
 
     /**
-     * Conversion part 2 (C++ -> Python): convert an inty instance into
+     * Conversion part 2 (C++ -> Python): convert an nlohmann::json_dict instance into
      * a Python object. The second and third arguments are used to
      * indicate the return value policy and parent object (for
      * ``return_value_policy::reference_internal``) and are generally
@@ -130,14 +126,12 @@ struct type_caster<nlohmann::json_list>
 {
   public:
     /**
-     * This macro establishes the name 'inty' in
-     * function signatures and declares a local variable
-     * 'value' of type inty
+     * This macro establishes a local variable 'value' of type nlohmann::json_list
      */
     PYBIND11_TYPE_CASTER(nlohmann::json_list, _("list[typing.Any]"));
 
     /**
-     * Conversion part 1 (Python->C++): convert a PyObject into a inty
+     * Conversion part 1 (Python->C++): convert a PyObject into an nlohmann::json_list
      * instance or return false upon failure. The second argument
      * indicates whether implicit conversions should be applied.
      */
@@ -160,7 +154,7 @@ struct type_caster<nlohmann::json_list>
     }
 
     /**
-     * Conversion part 2 (C++ -> Python): convert an inty instance into
+     * Conversion part 2 (C++ -> Python): convert an nlohmann::json_list instance into
      * a Python object. The second and third arguments are used to
      * indicate the return value policy and parent object (for
      * ``return_value_policy::reference_internal``) and are generally
