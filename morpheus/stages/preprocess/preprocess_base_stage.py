@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import inspect
-from msilib.schema import Control
 import typing
 from abc import abstractmethod
 
