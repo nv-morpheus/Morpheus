@@ -88,7 +88,8 @@ template <>
 void AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>::on_multi_response_message(
     std::shared_ptr<MultiResponseMessage> x)
 {
-    auto probs        = x->get_probs_tensor();
+    auto probs = x->get_probs_tensor();
+
     const auto& shape = probs.get_shape();
 
     // Depending on the input the stride is given in bytes or elements, convert to elements

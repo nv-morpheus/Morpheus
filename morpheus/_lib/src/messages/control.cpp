@@ -21,6 +21,7 @@
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <pybind11/cast.h>    // IWYU pragma: keep
 #include <pybind11/chrono.h>  // IWYU pragma: keep
@@ -523,9 +524,8 @@ pybind11::object ControlMessageProxy::get_meta(ControlMessage& self, pybind11::n
     return ControlMessageProxy::get_meta(self);
 }
 
-std::tuple<py::object, py::object> get_indexers(ControlMessage& self, py::object df, py::object columns)
-{
-    auto num_rows    = self.payload()->get_info().num_rows();
+std::tuple<py::object, py::object> get_indexers(ControlMessage& self, py::object df, py::object columns, cudf::size_type num_rows)
+{   
     auto row_indexer = pybind11::slice(pybind11::int_(0), pybind11::int_(num_rows), pybind11::none());
 
     if (columns.is_none())
@@ -553,6 +553,7 @@ void ControlMessageProxy::set_meta(ControlMessage& self, pybind11::object column
     pybind11::gil_scoped_release no_gil;
 
     auto mutable_info = self.payload()->get_mutable_info();
+    auto num_rows    = mutable_info.num_rows();
 
     // Need the GIL for the remainder
     pybind11::gil_scoped_acquire gil;
@@ -560,7 +561,7 @@ void ControlMessageProxy::set_meta(ControlMessage& self, pybind11::object column
     auto pdf = mutable_info.checkout_obj();
     auto& df = *pdf;
 
-    auto [row_indexer, column_indexer] = get_indexers(self, df, columns);
+    auto [row_indexer, column_indexer] = get_indexers(self, df, columns, num_rows);
 
     // Check to see if this is adding a column. If so, we need to use .loc instead of .iloc
     if (column_indexer.contains(-1))
