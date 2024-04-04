@@ -24,7 +24,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.controllers.serialize_controller import SerializeController
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
+from morpheus.messages import MultiMessage, ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -76,11 +76,14 @@ class SerializeStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple(`morpheus.pipeline.messages.MultiMessage`, )
+        typing.Tuple(`morpheus.pipeline.messages.MultiMessage`, `morpheus.pipeline.messages.ControlMessage`)
             Accepted input types.
 
         """
-        return (MultiMessage, )
+        return (
+            MultiMessage,
+            ControlMessage,
+        )
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)

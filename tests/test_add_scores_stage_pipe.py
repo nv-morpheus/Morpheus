@@ -23,7 +23,7 @@ import cudf
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from _utils.stages.conv_msg import ConvMsg
-from morpheus.config import Config
+from morpheus.config import Config, CppConfig
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -45,6 +45,8 @@ def test_add_scores_stage_pipe(config: Config,
                                order: typing.Literal['F', 'C'],
                                pipeline_batch_size: int,
                                repeat: int):
+    CppConfig.set_should_use_cpp(False)
+    
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.pipeline_batch_size = pipeline_batch_size
 
@@ -66,14 +68,16 @@ def test_add_scores_stage_pipe(config: Config,
 
     assert_results(comp_stage.get_results())
     
-    # pipe_cm = LinearPipeline(config)
-    # pipe_cm.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
-    # pipe_cm.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=ControlMessage))
-    # pipe_cm.add_stage(AddScoresStage(config))
-    # # comp_stage = pipe_cm.add_stage(CompareDataFrameStage(config, expected_df))
-    # pipe_cm.run()
+    pipe_cm = LinearPipeline(config)
+    pipe_cm.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    pipe_cm.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=ControlMessage))
+    pipe_cm.add_stage(ConvMsg(config, message_type=ControlMessage, order=order, columns=list(input_df.columns)))
+    pipe_cm.add_stage(AddScoresStage(config))
+    pipe_cm.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
+    comp_stage = pipe_cm.add_stage(CompareDataFrameStage(config, expected_df))
+    pipe_cm.run()
 
-    # # assert_results(comp_stage.get_results())
+    assert_results(comp_stage.get_results())
 
 
 @pytest.mark.slow

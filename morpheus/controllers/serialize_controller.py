@@ -17,7 +17,7 @@ import re
 import typing
 
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
+from morpheus.messages import MultiMessage, ControlMessage
 
 
 class SerializeController:
@@ -62,7 +62,7 @@ class SerializeController:
         return self._fixed_columns
 
     def convert_to_df(self,
-                      x: MultiMessage,
+                      x: typing.Union[MultiMessage, ControlMessage],
                       include_columns: typing.Pattern,
                       exclude_columns: typing.List[typing.Pattern]):
         """
@@ -70,8 +70,8 @@ class SerializeController:
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
-            MultiMessage instance that contains data.
+        x : `morpheus.pipeline.messages.MultiMessage` or `morpheus.pipeline.messages.ControlMessage`
+            MultiMessage or ControlMessage instance that contains data.
         include_columns : typing.Pattern
             Columns that are required send to downstream stage.
         exclude_columns : typing.List[typing.Pattern]
@@ -85,7 +85,10 @@ class SerializeController:
             columns: typing.List[str] = []
 
             # Minimize access to x.meta.df
-            df_columns = list(x.meta.df.columns)
+            if isinstance(x, MultiMessage):
+                df_columns = list(x.meta.df.columns)
+            elif isinstance(x, ControlMessage):
+                df_columns = list(x.payload().df.columns)
 
             # First build up list of included. If no include regex is specified, select all
             if (include_columns is None):

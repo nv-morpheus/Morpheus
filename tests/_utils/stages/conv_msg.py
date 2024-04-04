@@ -24,7 +24,7 @@ import cudf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.messages import TensorMemory as CppTensorMemory
+from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.messages import MultiMessage
 from morpheus.messages import ControlMessage, MultiResponseMessage
 from morpheus.messages import ResponseMemory
@@ -35,9 +35,10 @@ from morpheus.pipeline.stage_schema import StageSchema
 @register_stage("unittest-conv-msg", ignore_args=["expected_data"])
 class ConvMsg(SinglePortStage):
     """
-    Simple test stage to convert a MultiMessage to a MultiResponseProbsMessage
+    Simple test stage to convert a MultiMessage to a MultiResponseProbsMessage, or a ControlMessage to a ControlMessage with probs tensor.
     Basically a cheap replacement for running an inference stage.
 
+    Setting `message_type` to determine the input type of the stage.
     Setting `expected_data` to a DataFrame will cause the probs array to by populated by the values in the DataFrame.
     Setting `expected_data` to `None` causes the probs array to be a copy of the incoming dataframe.
     Setting `columns` restricts the columns copied into probs to just the ones specified.
@@ -101,11 +102,10 @@ class ConvMsg(SinglePortStage):
             probs = cp.zeros([len(df), 3], 'float')
         else:
             probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
-
-        if isinstance(message, ControlMessage):
+        if self._message_type == ControlMessage:
             message.tensors(CppTensorMemory(count=len(probs), tensors={'probs': probs}))
             return message
-        if isinstance(message, MultiMessage):
+        if self._message_type == MultiResponseMessage:
             memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
             return MultiResponseMessage.from_message(message, memory=memory)
 

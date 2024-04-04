@@ -228,27 +228,27 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("needed_columns"));
 
-    py::class_<mrc::segment::Object<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>,
+    py::class_<mrc::segment::Object<PreprocessFILStageMM>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>>>(
+               std::shared_ptr<mrc::segment::Object<PreprocessFILStageMM>>>(
         _module, "PreprocessFILMultiMessageStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessFILStageInterfaceProxy::init_multi),
              py::arg("builder"),
              py::arg("name"),
              py::arg("features"));
 
-    py::class_<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>,
+    py::class_<mrc::segment::Object<PreprocessFILStageCC>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>>>(
+               std::shared_ptr<mrc::segment::Object<PreprocessFILStageCC>>>(
         _module, "PreprocessFILControlMessageStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessFILStageInterfaceProxy::init_cm),
              py::arg("builder"),
              py::arg("name"),
              py::arg("features"));
 
-    py::class_<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>,
+    py::class_<mrc::segment::Object<PreprocessNLPStageMM>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>>>(
+               std::shared_ptr<mrc::segment::Object<PreprocessNLPStageMM>>>(
         _module, "PreprocessNLPMultiMessageStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init_multi),
              py::arg("builder"),
@@ -261,9 +261,9 @@ PYBIND11_MODULE(stages, _module)
              py::arg("stride"),
              py::arg("column"));
 
-    py::class_<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>,
+    py::class_<mrc::segment::Object<PreprocessNLPStageCC>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>>>(
+               std::shared_ptr<mrc::segment::Object<PreprocessNLPStageCC>>>(
         _module, "PreprocessNLPControlMessageStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init_cm),
              py::arg("builder"),

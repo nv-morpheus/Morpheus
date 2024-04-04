@@ -98,7 +98,6 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
         pass
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-
         # Convert the messages to rows of strings
         if self._build_cpp_node():
             node = self._get_cpp_node(builder=builder)

@@ -17,7 +17,6 @@ import typing
 
 import mrc
 
-from morpheus.messages import ControlMessage
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
