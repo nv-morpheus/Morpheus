@@ -48,7 +48,7 @@ def schema_fixture(config: Config):
     yield schema_builder.build_schema()
 
 
-def test_constructor(config: Config, dfp_arg_parser: "DFPArgParser", schema: "Schema"):
+def test_constructor(config: Config, dfp_arg_parser: "DFPArgParser", schema: "Schema"):  # noqa: F821
     from dfp.utils.config_generator import ConfigGenerator
 
     config_generator = ConfigGenerator(config=config, dfp_arg_parser=dfp_arg_parser, schema=schema, encoding="latin1")
