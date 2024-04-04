@@ -35,6 +35,13 @@ namespace morpheus {
 
 // Component public implementations
 // ************ AddScoresStage **************************** //
+template <typename InputT, typename OutputT>
+AddScoresStage<InputT, OutputT>::AddScoresStage(std::map<std::size_t, std::string> idx2label) :
+  AddScoresStageBase<InputT, OutputT>(std::move(idx2label), std::nullopt)
+{}
+
+template class AddScoresStage<MultiResponseMessage, MultiResponseMessage>;
+template class AddScoresStage<ControlMessage, ControlMessage>;
 
 // ************ AddScoresStageInterfaceProxy ************* //
 std::shared_ptr<mrc::segment::Object<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>>

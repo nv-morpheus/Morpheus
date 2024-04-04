@@ -56,10 +56,10 @@ class AddScoresStage : public AddScoresStageBase<InputT, OutputT>
     AddScoresStage(std::map<std::size_t, std::string> idx2label);
 };
 
-template <typename InputT, typename OutputT>
-AddScoresStage<InputT, OutputT>::AddScoresStage(std::map<std::size_t, std::string> idx2label) :
-  AddScoresStageBase<InputT, OutputT>(std::move(idx2label), std::nullopt)
-{}
+using AddScoresStageMM =  // NOLINT(readability-identifier-naming)
+    AddScoresStage<MultiResponseMessage, MultiResponseMessage>;
+using AddScoresStageCC =  // NOLINT(readability-identifier-naming)
+    AddScoresStage<ControlMessage, ControlMessage>;
 
 /****** AddScoresStageInterfaceProxy******************/
 /**

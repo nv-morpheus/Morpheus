@@ -69,7 +69,7 @@ def test_add_classifications_stage_pipe_with_control_message(config, filter_prob
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
     threshold = 0.75
-    
+
     pipe_cm = LinearPipeline(config)
     pipe_cm.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe_cm.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=ControlMessage))

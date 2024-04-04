@@ -57,11 +57,10 @@ class AddClassificationsStage : public AddScoresStageBase<InputT, OutputT>
     AddClassificationsStage(std::map<std::size_t, std::string> idx2label, float threshold);
 };
 
-template <typename InputT, typename OutputT>
-AddClassificationsStage<InputT, OutputT>::AddClassificationsStage(std::map<std::size_t, std::string> idx2label,
-                                                                  float threshold) :
-  AddScoresStageBase<InputT, OutputT>(std::move(idx2label), threshold)
-{}
+using AddClassificationsStageMM =  // NOLINT(readability-identifier-naming)
+    AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>;
+using AddClassificationsStageCC =  // NOLINT(readability-identifier-naming)
+    AddClassificationsStage<ControlMessage, ControlMessage>;
 
 /****** AddClassificationStageInterfaceProxy******************/
 /**

@@ -82,16 +82,16 @@ def test_add_labels_with_multi_response_message_and_control_message():
     cm.tensors(CppTensorMemory(count=2, tensors={"probs": probs_array}))
 
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=None)
-    
+
     # Check that the labeled control message and labeled multi response message are the same
     DatasetManager.assert_df_equal(labeled_cm.get_meta("frogs"), labeled_mrm.get_meta("frogs"))
     DatasetManager.assert_df_equal(labeled_cm.get_meta("lizards"), labeled_mrm.get_meta("lizards"))
     DatasetManager.assert_df_equal(labeled_cm.get_meta("toads"), labeled_mrm.get_meta("toads"))
-    
+
     # Same thing but change the probs tensor name
     mrm = MultiResponseMessage(meta=MessageMeta(df),
-                                   memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
-                                   probs_tensor_name="other_probs")
+                               memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
+                               probs_tensor_name="other_probs")
 
     labeled_mrm = AddClassificationsStage._add_labels(mrm, idx2label=class_labels, threshold=None)
 
@@ -101,8 +101,8 @@ def test_add_labels_with_multi_response_message_and_control_message():
 
     # Fail in missing probs data
     mrm = MultiResponseMessage(meta=MessageMeta(df),
-                                   memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
-                                   probs_tensor_name="other_probs")
+                               memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
+                               probs_tensor_name="other_probs")
     mrm.probs_tensor_name = "probs"
 
     with pytest.raises(KeyError):
@@ -110,11 +110,11 @@ def test_add_labels_with_multi_response_message_and_control_message():
 
     # Too small of a probs array
     mrm = MultiResponseMessage(meta=MessageMeta(df),
-                                   memory=TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
+                               memory=TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
 
     with pytest.raises(RuntimeError):
         AddClassificationsStage._add_labels(mrm, idx2label=class_labels, threshold=None)
-        
+
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
     cm.tensors(CppTensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
