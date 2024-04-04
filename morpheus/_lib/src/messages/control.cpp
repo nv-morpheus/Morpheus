@@ -19,8 +19,10 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 
 #include <glog/logging.h>
+#include <pybind11/cast.h>    // IWYU pragma: keep
 #include <pybind11/chrono.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -34,6 +36,7 @@
 #include <utility>
 
 namespace py = pybind11;
+using namespace py::literals;
 
 namespace morpheus {
 
@@ -470,6 +473,142 @@ void ControlMessageProxy::config(ControlMessage& self, py::dict& config)
 void ControlMessageProxy::payload_from_python_meta(ControlMessage& self, const pybind11::object& meta)
 {
     self.payload(MessageMetaInterfaceProxy::init_python_meta(meta));
+}
+
+pybind11::object ControlMessageProxy::get_meta(ControlMessage& self)
+{
+    // Need to release the GIL before calling `get_meta()`
+    pybind11::gil_scoped_release no_gil;
+
+    // Get the column and convert to cudf
+    auto info = self.get_meta();
+
+    // Convert to a python datatable. Automatically gets the GIL
+    return CudfHelper::table_from_table_info(info);
+}
+
+pybind11::object ControlMessageProxy::get_meta(ControlMessage& self, std::string col_name)
+{
+    TableInfo info;
+
+    {
+        // Need to release the GIL before calling `get_meta()`
+        pybind11::gil_scoped_release no_gil;
+
+        // Get the column and convert to cudf
+        info = self.get_meta();
+    }
+
+    auto py_table = CudfHelper::table_from_table_info(info);
+
+    // Now convert it to a series by selecting only the column
+    return py_table[col_name.c_str()];
+}
+
+pybind11::object ControlMessageProxy::get_meta(ControlMessage& self, std::vector<std::string> columns)
+{
+    // Need to release the GIL before calling `get_meta()`
+    pybind11::gil_scoped_release no_gil;
+
+    // Get the column and convert to cudf
+    auto info = self.get_meta(columns);
+
+    // Convert to a python datatable. Automatically gets the GIL
+    return CudfHelper::table_from_table_info(info);
+}
+
+pybind11::object ControlMessageProxy::get_meta(ControlMessage& self, pybind11::none none_obj)
+{
+    // Just offload to the overload without columns. This overload is needed to match the python interface
+    return ControlMessageProxy::get_meta(self);
+}
+
+std::tuple<py::object, py::object> get_indexers(ControlMessage& self, py::object df, py::object columns)
+{
+    auto num_rows    = self.payload()->get_info().num_rows();
+    auto row_indexer = pybind11::slice(pybind11::int_(0), pybind11::int_(num_rows), pybind11::none());
+
+    if (columns.is_none())
+    {
+        columns = df.attr("columns").attr("to_list")();
+    }
+    else if (pybind11::isinstance<pybind11::str>(columns))
+    {
+        // Convert a single string into a list so all versions return tables, not series
+        pybind11::list col_list;
+
+        col_list.append(columns);
+
+        columns = std::move(col_list);
+    }
+
+    auto column_indexer = df.attr("columns").attr("get_indexer_for")(columns);
+
+    return std::make_tuple(row_indexer, column_indexer);
+}
+
+void ControlMessageProxy::set_meta(ControlMessage& self, pybind11::object columns, pybind11::object value)
+{
+    // Need to release the GIL before calling `get_meta()`
+    pybind11::gil_scoped_release no_gil;
+
+    auto mutable_info = self.payload()->get_mutable_info();
+
+    // Need the GIL for the remainder
+    pybind11::gil_scoped_acquire gil;
+
+    auto pdf = mutable_info.checkout_obj();
+    auto& df = *pdf;
+
+    auto [row_indexer, column_indexer] = get_indexers(self, df, columns);
+
+    // Check to see if this is adding a column. If so, we need to use .loc instead of .iloc
+    if (column_indexer.contains(-1))
+    {
+        // cudf is really bad at adding new columns. Need to use loc with a unique and monotonic index
+        py::object saved_index = df.attr("index");
+
+        // Check to see if we can use slices
+        if (!(saved_index.attr("is_unique").cast<bool>() && (saved_index.attr("is_monotonic_increasing").cast<bool>() ||
+                                                             saved_index.attr("is_monotonic_decreasing").cast<bool>())))
+        {
+            df.attr("reset_index")("drop"_a = true, "inplace"_a = true);
+        }
+        else
+        {
+            // Erase the saved index so we dont reset it
+            saved_index = py::none();
+        }
+
+        // Perform the update via slices
+        df.attr("loc")[pybind11::make_tuple(df.attr("index")[row_indexer], columns)] = value;
+
+        // Reset the index if we changed it
+        if (!saved_index.is_none())
+        {
+            df.attr("set_index")(saved_index, "inplace"_a = true);
+        }
+    }
+    else
+    {
+        // If we only have one column, convert it to a series (broadcasts work with more types on a series)
+        if (pybind11::len(column_indexer) == 1)
+        {
+            column_indexer = column_indexer.cast<py::list>()[0];
+        }
+
+        try
+        {
+            // Use iloc
+            df.attr("iloc")[pybind11::make_tuple(row_indexer, column_indexer)] = value;
+        } catch (py::error_already_set)
+        {
+            // Try this as a fallback. Works better for strings. See issue #286
+            df[columns].attr("iloc")[row_indexer] = value;
+        }
+    }
+
+    mutable_info.return_obj(std::move(pdf));
 }
 
 }  // namespace morpheus

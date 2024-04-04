@@ -402,8 +402,24 @@ PYBIND11_MODULE(messages, _module)
         .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
-        .def(
-            "task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"));
+        .def("task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"))
+        .def("get_meta",
+             static_cast<pybind11::object (*)(ControlMessage&)>(&ControlMessageProxy::get_meta),
+             py::return_value_policy::move)
+        .def("get_meta",
+             static_cast<pybind11::object (*)(ControlMessage&, std::string)>(&ControlMessageProxy::get_meta),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_meta",
+             static_cast<pybind11::object (*)(ControlMessage&, std::vector<std::string>)>(
+                 &ControlMessageProxy::get_meta),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_meta",
+             static_cast<pybind11::object (*)(ControlMessage&, pybind11::none)>(&ControlMessageProxy::get_meta),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("set_meta", &ControlMessageProxy::set_meta, py::return_value_policy::move);
 
     py::class_<LoaderRegistry, std::shared_ptr<LoaderRegistry>>(_module, "DataLoaderRegistry")
         .def_static("contains", &LoaderRegistry::contains, py::arg("name"))

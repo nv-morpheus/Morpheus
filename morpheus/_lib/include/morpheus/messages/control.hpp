@@ -21,6 +21,7 @@
 
 #include <nlohmann/json.hpp>
 #include <pybind11/pytypes.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
 
 #include <chrono>
 #include <map>
@@ -553,6 +554,31 @@ struct ControlMessageProxy
      * timestamps represented as datetime.datetime objects.
      */
     static pybind11::dict filter_timestamp(ControlMessage& self, const std::string& regex_filter);
+
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object get_meta(ControlMessage& self);
+
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object get_meta(ControlMessage& self, std::string col_name);
+
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object get_meta(ControlMessage& self, std::vector<std::string> columns);
+
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object get_meta(ControlMessage& self, pybind11::none none_obj);
+
+    /**
+      * TODO(Documentation)
+      */
+    static void set_meta(ControlMessage& self, pybind11::object columns, pybind11::object value);
 };
 
 #pragma GCC visibility pop

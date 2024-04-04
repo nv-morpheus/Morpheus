@@ -116,7 +116,34 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
     def _add_labels(x: typing.Union[MultiResponseMessage, ControlMessage],
                     idx2label: typing.Dict[int, str],
                     threshold: typing.Optional[float]):
+        if isinstance(x, ControlMessage):
+            return AddScoresStageBase.process_control_message(x, idx2label, threshold)
+        if isinstance(x, MultiResponseMessage):
+            return AddScoresStageBase.process_multi_message(x, idx2label, threshold)
+        raise TypeError("Unsupported message type")
 
+    @staticmethod
+    def process_control_message(x: ControlMessage, idx2label: typing.Dict[int, str], threshold: typing.Optional[float]):
+        probs = x.tensors().get_tensor("probs")
+
+        if (probs.shape[1] <= max(idx2label.keys())):
+            raise RuntimeError(("Model output did not contain enough columns to fufill the requested labels. "
+                                f"Label indexes: {idx2label}, Model output columns: {probs.shape[1]}"))
+
+        if (threshold is not None):
+            probs = (probs > threshold).astype(bool)
+
+        # Do these one at a time to prevent failures
+        for i, label in idx2label.items():
+            x.set_meta(label, probs[:, i])
+
+        # Return the same object
+        return x
+
+    @staticmethod
+    def process_multi_message(x: MultiResponseMessage,
+                              idx2label: typing.Dict[int, str],
+                              threshold: typing.Optional[float]):
         probs = x.get_probs_tensor()
 
         if (probs.shape[1] <= max(idx2label.keys())):
