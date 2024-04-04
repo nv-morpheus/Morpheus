@@ -75,12 +75,15 @@ TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
     EXPECT_EQ(expected_input__0, cm_input__0_host);
     EXPECT_EQ(cm_input__0_host, mm_input__0_host);
 
-    // Col1 in MatxUtil__MatxCreateSegIds is not initialized
-    // auto cm_seq_ids = cm_tensors->get_tensor("seq_ids");
-    // auto mm_seq_ids = mm_tensors->get_tensor("seq_ids");
-    // std::vector<TensorIndex> cm_seq_ids_host(cm_seq_ids.count());
-    // std::vector<TensorIndex> mm_seq_ids_host(mm_seq_ids.count());
-    // MRC_CHECK_CUDA(cudaMemcpy(cm_seq_ids_host.data(), cm_seq_ids.data(), cm_seq_ids.count() * sizeof(TensorIndex),
-    // cudaMemcpyDeviceToHost)); MRC_CHECK_CUDA(cudaMemcpy(mm_seq_ids_host.data(), mm_seq_ids.data(), mm_seq_ids.count()
-    // * sizeof(TensorIndex), cudaMemcpyDeviceToHost)); EXPECT_EQ(cm_seq_ids_host, mm_seq_ids_host);
+    std::vector<TensorIndex> expected_seq_ids = {0, 0, 1, 1, 0, 1, 2, 0, 1};
+    auto cm_seq_ids = cm_tensors->get_tensor("seq_ids");
+    auto mm_seq_ids = mm_tensors->get_tensor("seq_ids");
+    std::vector<TensorIndex> cm_seq_ids_host(cm_seq_ids.count());
+    std::vector<TensorIndex> mm_seq_ids_host(mm_seq_ids.count());
+    MRC_CHECK_CUDA(cudaMemcpy(
+        cm_seq_ids_host.data(), cm_seq_ids.data(), cm_seq_ids.count() * sizeof(TensorIndex), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(
+        mm_seq_ids_host.data(), mm_seq_ids.data(), mm_seq_ids.count() * sizeof(TensorIndex), cudaMemcpyDeviceToHost));
+    EXPECT_EQ(expected_seq_ids, cm_seq_ids_host);
+    EXPECT_EQ(cm_seq_ids_host, mm_seq_ids_host);
 }
