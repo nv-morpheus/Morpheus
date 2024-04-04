@@ -54,8 +54,8 @@ def default_module_config_fixture():
         "module_name": "file_batcher",
         "namespace": MORPHEUS_MODULE_NAMESPACE,
         "sampling_rate_s": 0,
-        "start_time": "2022-08-01",
-        "end_time": "2022-08-31",
+        "start_time": "2022-08-01T00:00:00",
+        "end_time": "2022-08-31T00:00:00",
         "parser_kwargs": None,
         "schema": {
             "schema_str": None, "encoding": None
