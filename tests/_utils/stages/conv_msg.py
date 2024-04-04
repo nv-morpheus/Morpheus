@@ -48,13 +48,13 @@ class ConvMsg(SinglePortStage):
 
     def __init__(self,
                  c: Config,
-                 message_type: typing.Union[typing.Literal[MultiResponseMessage],
-                                            typing.Literal[ControlMessage]] = MultiResponseMessage,
                  expected_data: typing.Union[pd.DataFrame, cudf.DataFrame] = None,
                  columns: typing.List[str] = None,
                  order: str = 'K',
                  probs_type: str = 'f4',
-                 empty_probs: bool = False):
+                 empty_probs: bool = False,
+                 message_type: typing.Union[typing.Literal[MultiResponseMessage],
+                                            typing.Literal[ControlMessage]] = MultiResponseMessage):
         super().__init__(c)
 
         if expected_data is not None:

@@ -21,6 +21,8 @@ import pytest
 
 from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
+from morpheus.messages import ControlMessage
+from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
@@ -43,42 +45,64 @@ def build_expected(df: pd.DataFrame, threshold: float, class_labels: typing.List
 
 @pytest.mark.use_cudf
 def test_add_classifications_stage_pipe(config, filter_probs_df):
+    CppConfig.set_should_use_cpp(False)
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
     threshold = 0.75
 
-    pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, filter_probs_df))
-    pipe.add_stage(AddClassificationsStage(config, threshold=threshold))
-    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
-    comp_stage = pipe.add_stage(
+    pipe_mm = LinearPipeline(config)
+    pipe_mm.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipe_mm.add_stage(DeserializeStage(config))
+    pipe_mm.add_stage(ConvMsg(config, filter_probs_df))
+    pipe_mm.add_stage(AddClassificationsStage(config, threshold=threshold))
+    pipe_mm.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
+    comp_stage = pipe_mm.add_stage(
         CompareDataFrameStage(config, build_expected(filter_probs_df.to_pandas(), threshold, config.class_labels)))
-    pipe.run()
+    pipe_mm.run()
+
+    assert_results(comp_stage.get_results())
+
+
+@pytest.mark.use_cudf
+def test_add_classifications_stage_pipe_with_control_message(config, filter_probs_df):
+    CppConfig.set_should_use_cpp(False)
+    config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
+    config.num_threads = 1
+    threshold = 0.75
+    
+    pipe_cm = LinearPipeline(config)
+    pipe_cm.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipe_cm.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=ControlMessage))
+    pipe_cm.add_stage(ConvMsg(config, filter_probs_df, message_type=ControlMessage))
+    pipe_cm.add_stage(AddClassificationsStage(config, threshold=threshold))
+    pipe_cm.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
+    comp_stage = pipe_cm.add_stage(
+        CompareDataFrameStage(config, build_expected(filter_probs_df.to_pandas(), threshold, config.class_labels)))
+    pipe_cm.run()
 
     assert_results(comp_stage.get_results())
 
 
 @pytest.mark.use_cudf
 def test_add_classifications_stage_multi_segment_pipe(config, filter_probs_df):
+    CppConfig.set_should_use_cpp(False)
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
     threshold = 0.75
 
-    pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_segment_boundary(MultiMessage)
-    pipe.add_stage(ConvMsg(config, filter_probs_df))
-    pipe.add_segment_boundary(MultiResponseMessage)
-    pipe.add_stage(AddClassificationsStage(config, threshold=threshold))
-    pipe.add_segment_boundary(MultiResponseMessage)
-    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
-    pipe.add_segment_boundary(MessageMeta)
-    comp_stage = pipe.add_stage(
+    pipe_mm = LinearPipeline(config)
+    pipe_mm.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipe_mm.add_segment_boundary(MessageMeta)
+    pipe_mm.add_stage(DeserializeStage(config))
+    pipe_mm.add_segment_boundary(MultiMessage)
+    pipe_mm.add_stage(ConvMsg(config, filter_probs_df))
+    pipe_mm.add_segment_boundary(MultiResponseMessage)
+    pipe_mm.add_stage(AddClassificationsStage(config, threshold=threshold))
+    pipe_mm.add_segment_boundary(MultiResponseMessage)
+    pipe_mm.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
+    pipe_mm.add_segment_boundary(MessageMeta)
+    comp_stage = pipe_mm.add_stage(
         CompareDataFrameStage(config, build_expected(filter_probs_df.to_pandas(), threshold, config.class_labels)))
-    pipe.run()
+    pipe_mm.run()
 
     assert_results(comp_stage.get_results())

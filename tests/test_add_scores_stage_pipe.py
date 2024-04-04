@@ -46,7 +46,7 @@ def test_add_scores_stage_pipe(config: Config,
                                pipeline_batch_size: int,
                                repeat: int):
     CppConfig.set_should_use_cpp(False)
-    
+
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.pipeline_batch_size = pipeline_batch_size
 
@@ -67,7 +67,7 @@ def test_add_scores_stage_pipe(config: Config,
     pipe_mm.run()
 
     assert_results(comp_stage.get_results())
-    
+
     pipe_cm = LinearPipeline(config)
     pipe_cm.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe_cm.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=ControlMessage))
@@ -84,23 +84,24 @@ def test_add_scores_stage_pipe(config: Config,
 @pytest.mark.parametrize('repeat', [1, 2, 5])
 def test_add_scores_stage_multi_segment_pipe(config: Config, dataset_cudf: DatasetManager, repeat: int):
     # Intentionally using FileSourceStage's repeat argument as this triggers a bug in #443
+    CppConfig.set_should_use_cpp(False)
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
 
     filter_probs_df = dataset_cudf.pandas["filter_probs.csv"]
     expected_df = filter_probs_df.rename(columns=dict(zip(filter_probs_df.columns, config.class_labels)))
 
-    pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [dataset_cudf["filter_probs.csv"]], repeat=repeat))
-    pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_segment_boundary(MultiMessage)
-    pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns)))
-    pipe.add_segment_boundary(MultiResponseMessage)
-    pipe.add_stage(AddScoresStage(config))
-    pipe.add_segment_boundary(MultiResponseMessage)
-    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
-    pipe.add_segment_boundary(MessageMeta)
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
-    pipe.run()
+    pipe_mm = LinearPipeline(config)
+    pipe_mm.set_source(InMemorySourceStage(config, [dataset_cudf["filter_probs.csv"]], repeat=repeat))
+    pipe_mm.add_segment_boundary(MessageMeta)
+    pipe_mm.add_stage(DeserializeStage(config))
+    pipe_mm.add_segment_boundary(MultiMessage)
+    pipe_mm.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns)))
+    pipe_mm.add_segment_boundary(MultiResponseMessage)
+    pipe_mm.add_stage(AddScoresStage(config))
+    pipe_mm.add_segment_boundary(MultiResponseMessage)
+    pipe_mm.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
+    pipe_mm.add_segment_boundary(MessageMeta)
+    comp_stage = pipe_mm.add_stage(CompareDataFrameStage(config, expected_df))
+    pipe_mm.run()
 
     assert_results(comp_stage.get_results())
