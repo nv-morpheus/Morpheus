@@ -127,7 +127,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
         int thread_idx = mrc::runnable::Context::get_runtime_context().rank();
 
-        if (thread_idx >= MAX_QUEUE) {
+        if (thread_idx >= MAX_QUEUE)
+        {
             MORPHEUS_FAIL("More CPU threads than allowed queues");
         }
 

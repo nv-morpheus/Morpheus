@@ -35,7 +35,6 @@ DEB_DIR=${WORKING_DIR}/deb
 mkdir -p ${DEB_DIR}
 
 DOCA_REPO_LINK="https://linux.mellanox.com/public/repo/doca/${DOCA_VERSION}"
-# ${LINUX_DISTRO}${LINUX_VER}
 DOCA_REPO="${DOCA_REPO_LINK}/ubuntu22.04"
 DOCA_REPO_ARCH="x86_64"
 DOCA_UPSTREAM_REPO="${DOCA_REPO}/${DOCA_REPO_ARCH}"
@@ -43,17 +42,20 @@ DOCA_UPSTREAM_REPO="${DOCA_REPO}/${DOCA_REPO_ARCH}"
 # Upgrade the base packages (diff between image and Canonical upstream repo)
 apt update -y
 apt upgrade -y
+
 # Cleanup apt
 rm -rf /var/lib/apt/lists/*
 apt autoremove -y
 
 # Configure DOCA Repository, and install packages
 apt update -y
+
 # Install wget & Add the DOCA public repository
 apt install -y --no-install-recommends wget software-properties-common gpg-agent
 wget -qO - ${DOCA_UPSTREAM_REPO}/GPG-KEY-Mellanox.pub | apt-key add -
 add-apt-repository "deb [trusted=yes] ${DOCA_UPSTREAM_REPO} ./"
 apt update -y
+
 # Install base-rt content
 apt install -y --no-install-recommends \
     doca-gpu \
