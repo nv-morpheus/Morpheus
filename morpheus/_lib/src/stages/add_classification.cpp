@@ -43,23 +43,23 @@ template class AddClassificationsStage<MultiResponseMessage, MultiResponseMessag
 template class AddClassificationsStage<ControlMessage, ControlMessage>;
 
 // ************ AddClassificationStageInterfaceProxy ************* //
-std::shared_ptr<mrc::segment::Object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>>
+std::shared_ptr<mrc::segment::Object<AddClassificationsStageMM>>
 AddClassificationStageInterfaceProxy::init_multi(mrc::segment::Builder& builder,
                                                  const std::string& name,
                                                  std::map<std::size_t, std::string> idx2label,
                                                  float threshold)
 {
-    return builder.construct_object<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>(
+    return builder.construct_object<AddClassificationsStageMM>(
         name, idx2label, threshold);
 }
 
-std::shared_ptr<mrc::segment::Object<AddClassificationsStage<ControlMessage, ControlMessage>>>
+std::shared_ptr<mrc::segment::Object<AddClassificationsStageCC>>
 AddClassificationStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
                                               const std::string& name,
                                               std::map<std::size_t, std::string> idx2label,
                                               float threshold)
 {
-    return builder.construct_object<AddClassificationsStage<ControlMessage, ControlMessage>>(
+    return builder.construct_object<AddClassificationsStageCC>(
         name, idx2label, threshold);
 }
 
