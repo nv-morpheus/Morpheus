@@ -24,8 +24,9 @@ import cudf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.messages import TensorMemory as CppTensorMemory
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseMessage
+from morpheus.messages import ControlMessage, MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
@@ -46,6 +47,8 @@ class ConvMsg(SinglePortStage):
 
     def __init__(self,
                  c: Config,
+                 message_type: typing.Union[typing.Literal[MultiResponseMessage],
+                                            typing.Literal[ControlMessage]] = MultiResponseMessage,
                  expected_data: typing.Union[pd.DataFrame, cudf.DataFrame] = None,
                  columns: typing.List[str] = None,
                  order: str = 'K',
@@ -56,6 +59,7 @@ class ConvMsg(SinglePortStage):
         if expected_data is not None:
             assert isinstance(expected_data, (pd.DataFrame, cudf.DataFrame))
 
+        self._message_type = message_type
         self._expected_data = expected_data
         self._columns = columns
         self._order = order
@@ -67,15 +71,20 @@ class ConvMsg(SinglePortStage):
         return "test"
 
     def accepted_types(self) -> typing.Tuple:
-        return (MultiMessage, )
+        return (
+            MultiMessage,
+            ControlMessage,
+        )
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MultiResponseMessage)
+        schema.output_schema.set_type(self._message_type)
 
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _conv_message(self, message: MultiMessage) -> MultiResponseMessage:
+    def _conv_message(
+            self, message: typing.Union[MultiMessage,
+                                        ControlMessage]) -> typing.Union[MultiResponseMessage, ControlMessage]:
         if self._expected_data is not None:
             if (isinstance(self._expected_data, cudf.DataFrame)):
                 df = self._expected_data.copy(deep=True)
@@ -93,8 +102,12 @@ class ConvMsg(SinglePortStage):
         else:
             probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
 
-        memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
-        return MultiResponseMessage.from_message(message, memory=memory)
+        if isinstance(message, ControlMessage):
+            message.tensors(CppTensorMemory(count=len(probs), tensors={'probs': probs}))
+            return message
+        if isinstance(message, MultiMessage):
+            memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
+            return MultiResponseMessage.from_message(message, memory=memory)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._conv_message))
