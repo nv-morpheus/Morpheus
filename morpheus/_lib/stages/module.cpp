@@ -74,10 +74,9 @@ PYBIND11_MODULE(stages, _module)
 
     mrc::pymrc::from_import(_module, "morpheus._lib.common", "FilterSource");
 
-    py::class_<
-        mrc::segment::Object<AddClassificationsStageMM>,
-        mrc::segment::ObjectProperties,
-        std::shared_ptr<mrc::segment::Object<AddClassificationsStageMM>>>(
+    py::class_<mrc::segment::Object<AddClassificationsStageMM>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<AddClassificationsStageMM>>>(
         _module, "AddClassificationsMultiResponseMessageStage", py::multiple_inheritance())
         .def(py::init<>(&AddClassificationStageInterfaceProxy::init_multi),
              py::arg("builder"),

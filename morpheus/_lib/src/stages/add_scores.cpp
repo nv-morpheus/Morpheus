@@ -44,19 +44,14 @@ template class AddScoresStage<MultiResponseMessage, MultiResponseMessage>;
 template class AddScoresStage<ControlMessage, ControlMessage>;
 
 // ************ AddScoresStageInterfaceProxy ************* //
-std::shared_ptr<mrc::segment::Object<AddScoresStageMM>>
-AddScoresStageInterfaceProxy::init_multi(mrc::segment::Builder& builder,
-                                         const std::string& name,
-                                         std::map<std::size_t, std::string> idx2label)
+std::shared_ptr<mrc::segment::Object<AddScoresStageMM>> AddScoresStageInterfaceProxy::init_multi(
+    mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label)
 {
-    return builder.construct_object<AddScoresStageMM>(name,
-                                                                                                std::move(idx2label));
+    return builder.construct_object<AddScoresStageMM>(name, std::move(idx2label));
 }
 
-std::shared_ptr<mrc::segment::Object<AddScoresStageCC>>
-AddScoresStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
-                                      const std::string& name,
-                                      std::map<std::size_t, std::string> idx2label)
+std::shared_ptr<mrc::segment::Object<AddScoresStageCC>> AddScoresStageInterfaceProxy::init_cm(
+    mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label)
 {
     return builder.construct_object<AddScoresStageCC>(name, std::move(idx2label));
 }

@@ -576,8 +576,8 @@ struct ControlMessageProxy
     static pybind11::object get_meta(ControlMessage& self, pybind11::none none_obj);
 
     /**
-      * TODO(Documentation)
-      */
+     * TODO(Documentation)
+     */
     static void set_meta(ControlMessage& self, pybind11::object columns, pybind11::object value);
 };
 

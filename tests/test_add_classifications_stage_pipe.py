@@ -21,8 +21,8 @@ import pytest
 
 from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
-from morpheus.messages import ControlMessage
 from morpheus.config import CppConfig
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage

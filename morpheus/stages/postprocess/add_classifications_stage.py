@@ -23,7 +23,6 @@ from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.stages.postprocess.add_scores_stage_base import AddScoresStageBase
 
-
 logger = logging.getLogger(__name__)
 
 

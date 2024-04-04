@@ -20,9 +20,9 @@ import pytest
 import cudf
 
 from _utils.dataset_manager import DatasetManager
-from morpheus.messages import ControlMessage
-from morpheus.config import Config
 from morpheus._lib.messages import TensorMemory as CppTensorMemory
+from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_response_message import MultiResponseMessage

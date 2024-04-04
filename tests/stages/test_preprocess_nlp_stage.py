@@ -21,10 +21,10 @@ import pytest
 
 import cudf
 
-from morpheus.messages import ControlMessage
-from morpheus.messages import MultiMessage
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 

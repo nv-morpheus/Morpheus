@@ -23,8 +23,9 @@ import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.controllers.serialize_controller import SerializeController
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage, ControlMessage
+from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 

@@ -22,11 +22,12 @@ from mrc.core import operators as ops
 
 import cudf
 
+from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus._lib.messages import TensorMemory as CppTensorMemory
+from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
-from morpheus.messages import ControlMessage, MultiResponseMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema

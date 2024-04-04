@@ -16,8 +16,9 @@ import copy
 import re
 import typing
 
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage, ControlMessage
+from morpheus.messages import MultiMessage
 
 
 class SerializeController:

@@ -76,8 +76,8 @@ TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
     EXPECT_EQ(cm_input__0_host, mm_input__0_host);
 
     std::vector<TensorIndex> expected_seq_ids = {0, 0, 1, 1, 0, 1, 2, 0, 1};
-    auto cm_seq_ids = cm_tensors->get_tensor("seq_ids");
-    auto mm_seq_ids = mm_tensors->get_tensor("seq_ids");
+    auto cm_seq_ids                           = cm_tensors->get_tensor("seq_ids");
+    auto mm_seq_ids                           = mm_tensors->get_tensor("seq_ids");
     std::vector<TensorIndex> cm_seq_ids_host(cm_seq_ids.count());
     std::vector<TensorIndex> mm_seq_ids_host(mm_seq_ids.count());
     MRC_CHECK_CUDA(cudaMemcpy(
