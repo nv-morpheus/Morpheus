@@ -102,8 +102,6 @@ std::shared_ptr<LLMContext> LLMContext::push(std::string name, input_mappings_t 
 
 void LLMContext::pop()
 {
-    mrc::pymrc::JSONValues(view_outputs());
-
     // Copy the outputs from the child context to the parent
     if (m_output_names.empty())
     {
