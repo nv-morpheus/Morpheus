@@ -174,8 +174,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 #### Prerequisites
 
 - Volta architecture GPU or better
-- NVIDIA driver `525.60.13` or higher
-- [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-1-download-archive)
+- [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-0-download-archive)
 - `conda` and `mamba`
   - Refer to the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
   - Install `mamba`:
