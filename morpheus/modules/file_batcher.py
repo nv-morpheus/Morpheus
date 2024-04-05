@@ -157,10 +157,10 @@ def file_batcher(builder: mrc.Builder):
                 sampling = f"{sampling_rate_s}S"
 
             if (start_time is not None):
-                start_time = datetime.datetime.strptime(start_time, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+                start_time = datetime.datetime.fromisoformat(start_time).replace(tzinfo=datetime.timezone.utc)
 
             if (end_time is not None):
-                end_time = datetime.datetime.strptime(end_time, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+                end_time = datetime.datetime.fromisoformat(end_time).replace(tzinfo=datetime.timezone.utc)
 
         except Exception as exec_info:
             logger.error("Error parsing parameters: %s", (exec_info))
