@@ -68,7 +68,7 @@ All of the following instructions assume several variables have been set:
  - `PYTHON_VER`: The desired Python version. Minimum required is `3.10`
  - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. If in doubt use `23.06`
  - `TRITONCLIENT_VERSION`: The desired Triton client. If in doubt use `22.10`
- - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.8`
+ - `CUDA_VER`: The desired CUDA version to use. If in doubt use `12.1`
 
 
 ### Clone the repository and pull large file data from Git LFS
@@ -77,7 +77,7 @@ All of the following instructions assume several variables have been set:
 export PYTHON_VER=3.10
 export RAPIDS_VER=23.06
 export TRITONCLIENT_VERSION=22.10
-export CUDA_VER=11.8
+export CUDA_VER=12.1
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
@@ -175,7 +175,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 - Volta architecture GPU or better
 - NVIDIA driver `525.60.13` or higher
-- [CUDA 11.8](https://developer.nvidia.com/cuda-11-8-0-download-archive)
+- [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-1-download-archive)
 - `conda` and `mamba`
   - Refer to the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
   - Install `mamba`:
@@ -191,7 +191,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    ```bash
    export PYTHON_VER=3.10
    export RAPIDS_VER=23.06
-   export CUDA_VER=11.8
+   export CUDA_VER=12.1
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT
