@@ -27,8 +27,8 @@ The [pre-built Docker containers](#using-pre-built-docker-containers) are the ea
 More advanced users, or those who are interested in using the latest pre-release features, will need to [build the Morpheus container](#building-the-morpheus-container) or [build from source](./developer_guide/contributing.md#building-from-source).
 
 ## Requirements
-- Pascal architecture GPU or better
-- NVIDIA driver `520.61.05` or higher
+- Volta architecture GPU or better
+- NVIDIA driver `525.60.13` or higher
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 - [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `23.06` or higher

@@ -441,7 +441,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
     | pinned_memory_pool_byte_size     | 268435456                                                                                |
     | cuda_memory_pool_byte_size{0}    | 67108864                                                                                 |
     | cuda_memory_pool_byte_size{1}    | 67108864                                                                                 |
-    | min_supported_compute_capability | 6.0                                                                                      |
+    | min_supported_compute_capability | 7.0                                                                                      |
     | strict_readiness                 | 1                                                                                        |
     | exit_timeout                     | 30                                                                                       |
     | cache_enabled                    | 0                                                                                        |

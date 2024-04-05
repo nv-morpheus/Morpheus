@@ -173,8 +173,8 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 #### Prerequisites
 
-- Pascal architecture GPU or better
-- NVIDIA driver `520.61.05` or higher
+- Volta architecture GPU or better
+- NVIDIA driver `525.60.13` or higher
 - [CUDA 11.8](https://developer.nvidia.com/cuda-11-8-0-download-archive)
 - `conda` and `mamba`
   - Refer to the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
