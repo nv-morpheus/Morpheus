@@ -25,12 +25,12 @@
 #include "morpheus/stages/file_source.hpp"
 #include "morpheus/stages/filter_detection.hpp"
 #include "morpheus/stages/http_server_source_stage.hpp"
+#include "morpheus/stages/inference_client_stage.hpp"
 #include "morpheus/stages/kafka_source.hpp"
 #include "morpheus/stages/preallocate.hpp"
 #include "morpheus/stages/preprocess_fil.hpp"
 #include "morpheus/stages/preprocess_nlp.hpp"
 #include "morpheus/stages/serialize.hpp"
-#include "morpheus/stages/triton_inference.hpp"
 #include "morpheus/stages/write_to_file.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/http_server.hpp"  // for DefaultMaxPayloadSize
@@ -39,10 +39,9 @@
 #include <mrc/segment/builder.hpp>  // for Builder
 #include <mrc/segment/object.hpp>
 #include <mrc/utils/string_utils.hpp>
-#include <pybind11/attr.h>      // for multiple_inheritance
-#include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
-#include <pybind11/pytypes.h>   // for dict, sequence
-// for pathlib.Path -> std::filesystem::path conversions
+#include <pybind11/attr.h>            // for multiple_inheritance
+#include <pybind11/pybind11.h>        // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
+#include <pybind11/pytypes.h>         // for dict, sequence
 #include <pybind11/stl/filesystem.h>  // IWYU pragma: keep
 #include <pymrc/utils.hpp>            // for pymrc::import
 #include <rxcpp/rx.hpp>
@@ -151,12 +150,11 @@ PYBIND11_MODULE(stages, _module)
         .def(py::init<>(&InferenceClientStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("model_name"),
              py::arg("server_url"),
-             py::arg("force_convert_inputs"),
-             py::arg("use_shared_memory"),
+             py::arg("model_name"),
              py::arg("needs_logits"),
-             py::arg("inout_mapping") = py::dict());
+             py::arg("input_mapping")  = py::dict(),
+             py::arg("output_mapping") = py::dict());
 
     py::class_<mrc::segment::Object<KafkaSourceStage>,
                mrc::segment::ObjectProperties,
