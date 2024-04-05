@@ -20,6 +20,7 @@ import pytest
 import cudf
 
 from _utils.dataset_manager import DatasetManager
+# pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.config import Config
 from morpheus.messages import ControlMessage

@@ -22,6 +22,7 @@ from mrc.core import operators as ops
 
 import cudf
 
+# pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -36,7 +37,8 @@ from morpheus.pipeline.stage_schema import StageSchema
 @register_stage("unittest-conv-msg", ignore_args=["expected_data"])
 class ConvMsg(SinglePortStage):
     """
-    Simple test stage to convert a MultiMessage to a MultiResponseProbsMessage, or a ControlMessage to a ControlMessage with probs tensor.
+    Simple test stage to convert a MultiMessage to a MultiResponseProbsMessage,
+    or a ControlMessage to a ControlMessage with probs tensor.
     Basically a cheap replacement for running an inference stage.
 
     Setting `message_type` to determine the input type of the stage.
@@ -103,12 +105,13 @@ class ConvMsg(SinglePortStage):
             probs = cp.zeros([len(df), 3], 'float')
         else:
             probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
+
         if self._message_type == ControlMessage:
             message.tensors(CppTensorMemory(count=len(probs), tensors={'probs': probs}))
             return message
-        if self._message_type == MultiResponseMessage:
-            memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
-            return MultiResponseMessage.from_message(message, memory=memory)
+        # if self._message_type == MultiResponseMessage:
+        memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
+        return MultiResponseMessage.from_message(message, memory=memory)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._conv_message))
