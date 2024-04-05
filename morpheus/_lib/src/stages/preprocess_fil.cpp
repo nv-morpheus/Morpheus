@@ -142,7 +142,7 @@ TableInfo PreprocessFILStage<InputT, OutputT>::fix_bad_columns(sink_type_t x)
         }
 
         // Now re-get the meta
-        return x->get_meta(m_fea_cols);
+        return x->payload()->get_info(m_fea_cols);
     }
     // sink_type_t not supported
     else
@@ -304,10 +304,10 @@ std::shared_ptr<mrc::segment::Object<PreprocessFILStageMM>> PreprocessFILStageIn
     return stage;
 }
 
-std::shared_ptr<mrc::segment::Object<PreprocessFILStageCC>> PreprocessFILStageInterfaceProxy::init_cm(
+std::shared_ptr<mrc::segment::Object<PreprocessFILStageCM>> PreprocessFILStageInterfaceProxy::init_cm(
     mrc::segment::Builder& builder, const std::string& name, const std::vector<std::string>& features)
 {
-    auto stage = builder.construct_object<PreprocessFILStageCC>(name, features);
+    auto stage = builder.construct_object<PreprocessFILStageCM>(name, features);
 
     return stage;
 }

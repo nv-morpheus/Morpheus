@@ -50,10 +50,10 @@ std::shared_ptr<mrc::segment::Object<AddScoresStageMM>> AddScoresStageInterfaceP
     return builder.construct_object<AddScoresStageMM>(name, std::move(idx2label));
 }
 
-std::shared_ptr<mrc::segment::Object<AddScoresStageCC>> AddScoresStageInterfaceProxy::init_cm(
+std::shared_ptr<mrc::segment::Object<AddScoresStageCM>> AddScoresStageInterfaceProxy::init_cm(
     mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label)
 {
-    return builder.construct_object<AddScoresStageCC>(name, std::move(idx2label));
+    return builder.construct_object<AddScoresStageCM>(name, std::move(idx2label));
 }
 
 }  // namespace morpheus

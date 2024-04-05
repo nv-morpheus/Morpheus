@@ -82,9 +82,9 @@ PYBIND11_MODULE(stages, _module)
              py::arg("idx2label"),
              py::arg("threshold"));
 
-    py::class_<mrc::segment::Object<AddClassificationsStageCC>,
+    py::class_<mrc::segment::Object<AddClassificationsStageCM>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<AddClassificationsStageCC>>>(
+               std::shared_ptr<mrc::segment::Object<AddClassificationsStageCM>>>(
         _module, "AddClassificationsControlMessageStage", py::multiple_inheritance())
         .def(py::init<>(&AddClassificationStageInterfaceProxy::init_cm),
              py::arg("builder"),
@@ -101,9 +101,9 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("idx2label"));
 
-    py::class_<mrc::segment::Object<AddScoresStageCC>,
+    py::class_<mrc::segment::Object<AddScoresStageCM>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<AddScoresStageCC>>>(
+               std::shared_ptr<mrc::segment::Object<AddScoresStageCM>>>(
         _module, "AddScoresControlMessageStage", py::multiple_inheritance())
         .def(py::init<>(&AddScoresStageInterfaceProxy::init_cm),
              py::arg("builder"),
@@ -233,9 +233,9 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("features"));
 
-    py::class_<mrc::segment::Object<PreprocessFILStageCC>,
+    py::class_<mrc::segment::Object<PreprocessFILStageCM>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessFILStageCC>>>(
+               std::shared_ptr<mrc::segment::Object<PreprocessFILStageCM>>>(
         _module, "PreprocessFILControlMessageStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessFILStageInterfaceProxy::init_cm),
              py::arg("builder"),
@@ -257,9 +257,9 @@ PYBIND11_MODULE(stages, _module)
              py::arg("stride"),
              py::arg("column"));
 
-    py::class_<mrc::segment::Object<PreprocessNLPStageCC>,
+    py::class_<mrc::segment::Object<PreprocessNLPStageCM>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessNLPStageCC>>>(
+               std::shared_ptr<mrc::segment::Object<PreprocessNLPStageCM>>>(
         _module, "PreprocessNLPControlMessageStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init_cm),
              py::arg("builder"),

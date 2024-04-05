@@ -52,13 +52,13 @@ std::shared_ptr<mrc::segment::Object<AddClassificationsStageMM>> AddClassificati
     return builder.construct_object<AddClassificationsStageMM>(name, idx2label, threshold);
 }
 
-std::shared_ptr<mrc::segment::Object<AddClassificationsStageCC>> AddClassificationStageInterfaceProxy::init_cm(
+std::shared_ptr<mrc::segment::Object<AddClassificationsStageCM>> AddClassificationStageInterfaceProxy::init_cm(
     mrc::segment::Builder& builder,
     const std::string& name,
     std::map<std::size_t, std::string> idx2label,
     float threshold)
 {
-    return builder.construct_object<AddClassificationsStageCC>(name, idx2label, threshold);
+    return builder.construct_object<AddClassificationsStageCM>(name, idx2label, threshold);
 }
 
 }  // namespace morpheus

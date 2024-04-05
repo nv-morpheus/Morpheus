@@ -12,8 +12,7 @@
             "ms-python.isort",
             "ms-python.pylint",
             "ms-vscode.cmake-tools",
-            "stkb.rewrap",
-            "twxs.cmake"
+            "stkb.rewrap"
         ],
         // List of extensions recommended by VS Code that should not be recommended for users of this workspace.
         "unwantedRecommendations": [
@@ -669,6 +668,39 @@
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
         "rewrap.wrappingColumn": 120,
+        "testMate.cpp.test.advancedExecutables": [
+            {
+                "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}_*.x",
+                "env": {
+                    "UCX_ERROR_SIGNALS": "", // Prevent UCX from capturing errors
+
+                    "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
+                }
+            }
+        ],
+        "testMate.cpp.debug.configTemplate": {
+            "args": "${argsArray}",
+            "cwd": "${cwd}",
+            "darwin": {
+                "MIMode": "lldb",
+                "type": "cppdbg"
+            },
+            "env": "${envObj}",
+            "environment": "${envObjArray}",
+            "name": "Debug Test Runner (${parentLabel} > ${label})",
+            "program": "${exec}",
+            "request": "launch",
+            "testMate.cpp.debug.setEnv": {
+                "GLOG_v": "10",
+                "GTEST_CATCH_EXCEPTIONS": "0", // Allow the debugger to catch exceptions
+                "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
+                "UCX_ERROR_SIGNALS": "" // Prevent UCX from capturing errors
+            },
+            "type": "lldb",
+            "win32": {
+                "type": "cppvsdbg"
+            }
+        },
         "yapf.args": [
             "--style=${workspaceFolder}/setup.cfg"
         ]

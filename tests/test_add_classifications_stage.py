@@ -87,9 +87,9 @@ def test_add_labels_with_multi_response_message_and_contgrol_message():
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=threshold)
 
     # Check that the labeled control message and labeled multi response message are the same
-    DatasetManager.assert_df_equal(labeled_cm.get_meta("frogs"), labeled_mrm.get_meta("frogs"))
-    DatasetManager.assert_df_equal(labeled_cm.get_meta("lizards"), labeled_mrm.get_meta("lizards"))
-    DatasetManager.assert_df_equal(labeled_cm.get_meta("toads"), labeled_mrm.get_meta("toads"))
+    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("frogs"), labeled_mrm.get_meta("frogs"))
+    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("lizards"), labeled_mrm.get_meta("lizards"))
+    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("toads"), labeled_mrm.get_meta("toads"))
 
     # Same thing but change the probs tensor name
     mrm = MultiResponseMessage(meta=MessageMeta(df),

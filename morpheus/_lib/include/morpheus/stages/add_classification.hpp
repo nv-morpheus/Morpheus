@@ -61,7 +61,7 @@ class AddClassificationsStage : public AddScoresStageBase<InputT, OutputT>
 
 using AddClassificationsStageMM =  // NOLINT(readability-identifier-naming)
     AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>;
-using AddClassificationsStageCC =  // NOLINT(readability-identifier-naming)
+using AddClassificationsStageCM =  // NOLINT(readability-identifier-naming)
     AddClassificationsStage<ControlMessage, ControlMessage>;
 
 /****** AddClassificationStageInterfaceProxy******************/

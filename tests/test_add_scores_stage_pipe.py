@@ -46,8 +46,6 @@ def test_add_scores_stage_pipe(config: Config,
                                order: typing.Literal['F', 'C'],
                                pipeline_batch_size: int,
                                repeat: int):
-    CppConfig.set_should_use_cpp(False)
-
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.pipeline_batch_size = pipeline_batch_size
 
@@ -85,7 +83,6 @@ def test_add_scores_stage_pipe(config: Config,
 @pytest.mark.parametrize('repeat', [1, 2, 5])
 def test_add_scores_stage_multi_segment_pipe(config: Config, dataset_cudf: DatasetManager, repeat: int):
     # Intentionally using FileSourceStage's repeat argument as this triggers a bug in #443
-    CppConfig.set_should_use_cpp(False)
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
 
     filter_probs_df = dataset_cudf.pandas["filter_probs.csv"]

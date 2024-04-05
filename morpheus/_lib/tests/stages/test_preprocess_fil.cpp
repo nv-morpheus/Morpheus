@@ -40,7 +40,7 @@
 
 using namespace morpheus;
 
-TEST_CLASS(PreprocessFIL);
+TEST_CLASS_WITH_PYTHON(PreprocessFIL);
 
 TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
 {
@@ -60,7 +60,7 @@ TEST_F(TestPreprocessFIL, TestProcessControlMessageAndMultiMessage)
     cm->payload(cm_meta);
 
     // Create PreProcessControlMessageStage
-    auto cm_stage    = std::make_shared<PreprocessFILStageCC>(std::vector<std::string>{"float_str1", "float_str2"});
+    auto cm_stage    = std::make_shared<PreprocessFILStageCM>(std::vector<std::string>{"float_str1", "float_str2"});
     auto cm_response = cm_stage->on_data(cm);
 
     // Create MultiMessage

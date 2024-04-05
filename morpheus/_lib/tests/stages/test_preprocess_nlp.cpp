@@ -41,18 +41,7 @@
 
 using namespace morpheus;
 
-class TestPreprocessNLP : public morpheus::test::TestWithPythonInterpreter
-{
-  protected:
-    void SetUp() override
-    {
-        morpheus::test::TestWithPythonInterpreter::SetUp();
-        {
-            pybind11::gil_scoped_acquire gil;
-            CudfHelper::load();
-        }
-    }
-};
+TEST_CLASS_WITH_PYTHON(PreprocessNLP);
 
 TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
 {
@@ -72,7 +61,7 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
     cm->payload(meta);
 
     // Create PreProcessControlMessageStage
-    auto cm_stage = std::make_shared<PreprocessNLPStageCC>(vocab_hash_file /*vocab_hash_file*/,
+    auto cm_stage = std::make_shared<PreprocessNLPStageCM>(vocab_hash_file /*vocab_hash_file*/,
                                                            1 /*sequence_length*/,
                                                            false /*truncation*/,
                                                            false /*do_lower_case*/,

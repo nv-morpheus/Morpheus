@@ -89,7 +89,7 @@ class SerializeController:
             if isinstance(x, MultiMessage):
                 df_columns = list(x.meta.df.columns)
             elif isinstance(x, ControlMessage):
-                df_columns = list(x.payload().df.columns)
+                df_columns = list(x.payload().get_column_names())
 
             # First build up list of included. If no include regex is specified, select all
             if (include_columns is None):
@@ -104,7 +104,10 @@ class SerializeController:
             self._columns = columns
 
         # Get metadata from columns
-        df = x.get_meta(columns)
+        if isinstance(x, MultiMessage):
+            df = x.get_meta(self._columns)
+        elif isinstance(x, ControlMessage):
+            df = x.payload().get_data(columns)
 
         return MessageMeta(df=df)
 

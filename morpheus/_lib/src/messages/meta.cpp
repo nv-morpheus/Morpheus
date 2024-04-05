@@ -21,6 +21,7 @@
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/objects/python_data_table.hpp"
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <cudf/io/types.hpp>
@@ -44,6 +45,7 @@
 namespace morpheus {
 
 namespace py = pybind11;
+using namespace py::literals;
 
 /****** Component public implementations *******************/
 /****** MessageMeta ****************************************/
@@ -56,6 +58,77 @@ TensorIndex MessageMeta::count() const
 TableInfo MessageMeta::get_info() const
 {
     return this->m_data->get_info();
+}
+
+TableInfo MessageMeta::get_info(const std::string& col_name) const
+{
+    auto full_info = this->m_data->get_info();
+
+    return full_info.get_slice(0, full_info.num_rows(), {col_name});
+}
+
+TableInfo MessageMeta::get_info(const std::vector<std::string>& column_names) const
+{
+    auto full_info = this->m_data->get_info();
+
+    return full_info.get_slice(0, full_info.num_rows(), column_names);
+}
+
+void MessageMeta::set_data(const std::string& col_name, TensorObject tensor)
+{
+    this->set_data({col_name}, {tensor});
+}
+
+void MessageMeta::set_data(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors)
+{
+    CHECK_EQ(column_names.size(), tensors.size()) << "Column names and tensors must be the same size";
+
+    TableInfo table_meta;
+    try
+    {
+        table_meta = this->get_info(column_names);
+    } catch (const std::runtime_error& e)
+    {
+        std::ostringstream err_msg;
+        err_msg << e.what() << " Ensure that the stage that needs this column has populated the '_needed_columns' "
+                << "attribute and that at least one stage in the current segment is using the PreallocatorMixin to "
+                << "ensure all needed columns have been allocated.";
+        throw std::runtime_error(err_msg.str());
+    }
+
+    for (std::size_t i = 0; i < tensors.size(); ++i)
+    {
+        const auto& cv            = table_meta.get_column(i);
+        const auto table_type_id  = cv.type().id();
+        const auto tensor_type    = DType(tensors[i].dtype());
+        const auto tensor_type_id = tensor_type.cudf_type_id();
+        const auto row_stride     = tensors[i].stride(0);
+
+        CHECK(tensors[i].count() == cv.size() &&
+              (table_type_id == tensor_type_id ||
+               (table_type_id == cudf::type_id::BOOL8 && tensor_type_id == cudf::type_id::UINT8)));
+
+        const auto item_size = tensors[i].dtype().item_size();
+
+        // Dont use cv.data<>() here since that does not account for the size of each element
+        auto data_start = const_cast<uint8_t*>(cv.head<uint8_t>()) + cv.offset() * item_size;
+
+        if (row_stride == 1)
+        {
+            // column major just use cudaMemcpy
+            MRC_CHECK_CUDA(cudaMemcpy(data_start, tensors[i].data(), tensors[i].bytes(), cudaMemcpyDeviceToDevice));
+        }
+        else
+        {
+            MRC_CHECK_CUDA(cudaMemcpy2D(data_start,
+                                        item_size,
+                                        tensors[i].data(),
+                                        row_stride * item_size,
+                                        item_size,
+                                        cv.size(),
+                                        cudaMemcpyDeviceToDevice));
+        }
+    }
 }
 
 MutableTableInfo MessageMeta::get_mutable_info() const
@@ -178,6 +251,145 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python_meta(const p
 TensorIndex MessageMetaInterfaceProxy::count(MessageMeta& self)
 {
     return self.count();
+}
+
+pybind11::object MessageMetaInterfaceProxy::get_data(MessageMeta& self)
+{
+    // Need to release the GIL before calling `get_meta()`
+    pybind11::gil_scoped_release no_gil;
+
+    // Get the column and convert to cudf
+    auto info = self.get_info();
+
+    // Convert to a python datatable. Automatically gets the GIL
+    return CudfHelper::table_from_table_info(info);
+}
+
+pybind11::object MessageMetaInterfaceProxy::get_data(MessageMeta& self, std::string col_name)
+{
+    TableInfo info;
+
+    {
+        // Need to release the GIL before calling `get_meta()`
+        pybind11::gil_scoped_release no_gil;
+
+        // Get the column and convert to cudf
+        info = self.get_info(col_name);
+    }
+
+    auto py_table = CudfHelper::table_from_table_info(info);
+
+    // Now convert it to a series by selecting only the column
+    return py_table[col_name.c_str()];
+}
+
+pybind11::object MessageMetaInterfaceProxy::get_data(MessageMeta& self, std::vector<std::string> columns)
+{
+    // Need to release the GIL before calling `get_meta()`
+    pybind11::gil_scoped_release no_gil;
+
+    // Get the column and convert to cudf
+    auto info = self.get_info(columns);
+
+    // Convert to a python datatable. Automatically gets the GIL
+    return CudfHelper::table_from_table_info(info);
+}
+
+pybind11::object MessageMetaInterfaceProxy::get_data(MessageMeta& self, pybind11::none none_obj)
+{
+    // Just offload to the overload without columns. This overload is needed to match the python interface
+    return MessageMetaInterfaceProxy::get_data(self);
+}
+
+std::tuple<py::object, py::object> get_indexers(MessageMeta& self,
+                                                py::object df,
+                                                py::object columns,
+                                                cudf::size_type num_rows)
+{
+    auto row_indexer = pybind11::slice(pybind11::int_(0), pybind11::int_(num_rows), pybind11::none());
+
+    if (columns.is_none())
+    {
+        columns = df.attr("columns").attr("to_list")();
+    }
+    else if (pybind11::isinstance<pybind11::str>(columns))
+    {
+        // Convert a single string into a list so all versions return tables, not series
+        pybind11::list col_list;
+
+        col_list.append(columns);
+
+        columns = std::move(col_list);
+    }
+
+    auto column_indexer = df.attr("columns").attr("get_indexer_for")(columns);
+
+    return std::make_tuple(row_indexer, column_indexer);
+}
+
+void MessageMetaInterfaceProxy::set_data(MessageMeta& self, pybind11::object columns, pybind11::object value)
+{
+    // Need to release the GIL before calling `get_meta()`
+    pybind11::gil_scoped_release no_gil;
+
+    auto mutable_info = self.get_mutable_info();
+    auto num_rows     = mutable_info.num_rows();
+
+    // Need the GIL for the remainder
+    pybind11::gil_scoped_acquire gil;
+
+    auto pdf = mutable_info.checkout_obj();
+    auto& df = *pdf;
+
+    auto [row_indexer, column_indexer] = get_indexers(self, df, columns, num_rows);
+
+    // Check to see if this is adding a column. If so, we need to use .loc instead of .iloc
+    if (column_indexer.contains(-1))
+    {
+        // cudf is really bad at adding new columns. Need to use loc with a unique and monotonic index
+        py::object saved_index = df.attr("index");
+
+        // Check to see if we can use slices
+        if (!(saved_index.attr("is_unique").cast<bool>() && (saved_index.attr("is_monotonic_increasing").cast<bool>() ||
+                                                             saved_index.attr("is_monotonic_decreasing").cast<bool>())))
+        {
+            df.attr("reset_index")("drop"_a = true, "inplace"_a = true);
+        }
+        else
+        {
+            // Erase the saved index so we dont reset it
+            saved_index = py::none();
+        }
+
+        // Perform the update via slices
+        df.attr("loc")[pybind11::make_tuple(df.attr("index")[row_indexer], columns)] = value;
+
+        // Reset the index if we changed it
+        if (!saved_index.is_none())
+        {
+            df.attr("set_index")(saved_index, "inplace"_a = true);
+        }
+    }
+    else
+    {
+        // If we only have one column, convert it to a series (broadcasts work with more types on a series)
+        if (pybind11::len(column_indexer) == 1)
+        {
+            column_indexer = column_indexer.cast<py::list>()[0];
+        }
+
+        try
+        {
+            // Use iloc
+            df.attr("iloc")[pybind11::make_tuple(row_indexer, column_indexer)] = value;
+        } catch (py::error_already_set)
+        {
+            // Try this as a fallback. Works better for strings. See issue #286
+            df[columns].attr("iloc")[row_indexer] = value;
+        }
+    }
+
+    mutable_info.return_obj(std::move(pdf));
 }
 
 std::vector<std::string> MessageMetaInterfaceProxy::get_column_names(MessageMeta& self)

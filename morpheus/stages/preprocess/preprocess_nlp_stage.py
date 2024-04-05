@@ -30,7 +30,6 @@ from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-# pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.messages import ControlMessage
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MultiInferenceMessage

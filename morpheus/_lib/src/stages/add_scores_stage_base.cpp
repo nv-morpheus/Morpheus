@@ -181,7 +181,7 @@ void AddScoresStageBase<ControlMessage, ControlMessage>::on_control_message(std:
         ++i;
     }
 
-    x->set_meta(columns, tensors);
+    x->payload()->set_data(columns, tensors);
 }
 
 template class AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>;

@@ -16,6 +16,7 @@
  */
 
 #include "../test_utils/common.hpp"  // for get_morpheus_root, TEST_CLASS, morpheus
+#include "../test_utils/tensor_utils.hpp"
 
 #include "morpheus/io/deserializers.hpp"               // for load_table_from_file
 #include "morpheus/messages/control.hpp"               // for ControlMessage
@@ -26,7 +27,8 @@
 #include "morpheus/objects/table_info.hpp"             // for TableInfo
 #include "morpheus/objects/tensor.hpp"                 // for Tensor
 #include "morpheus/stages/add_scores.hpp"              // for AddScoresStage
-#include "morpheus/types.hpp"                          // for TensorIndex
+#include "morpheus/stages/preallocate.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpyKind
 #include <cudf/column/column_view.hpp>  // for column_view
@@ -44,9 +46,11 @@
 #include <utility>     // for move
 #include <vector>      // for vector
 
+using namespace morpheus::test;
+
 using namespace morpheus;
 
-TEST_CLASS(AddScores);
+TEST_CLASS_WITH_PYTHON(AddScores);
 
 TEST_F(TestAddScores, TestProcessControlMessageAndMultiResponseMessage)
 {
@@ -54,49 +58,63 @@ TEST_F(TestAddScores, TestProcessControlMessageAndMultiResponseMessage)
     auto test_data_dir               = test::get_morpheus_root() / "tests/tests_data";
     std::filesystem::path input_file = test_data_dir / "floats.csv";
 
-    TensorIndex cols_size  = 1;
+    TensorIndex cols_size  = 2;
     TensorIndex mess_count = 3;
-    auto packed_data =
-        std::make_shared<rmm::device_buffer>(cols_size * mess_count * sizeof(double), rmm::cuda_stream_per_thread);
+
+    auto packed_data_host = std::vector<double>{
+        0.1,
+        1.0,
+        0,
+        23456,
+        1.4013e-45,
+        9.3e5,
+    };
+
+    auto packed_data = std::make_shared<rmm::device_buffer>(
+        packed_data_host.data(), cols_size * mess_count * sizeof(double), rmm::cuda_stream_per_thread);
 
     // Create a dataframe from a file
-    auto table = load_table_from_file(input_file);
-    auto meta  = MessageMeta::create_from_cpp(std::move(table));
+    auto meta_mm = MessageMeta::create_from_cpp(load_table_from_file(input_file));
+    preallocate(meta_mm, {{"colA", TypeId::FLOAT64}, {"colB", TypeId::FLOAT64}});
 
-    std::map<std::size_t, std::string> idx2label = {{0, "float"}};
+    std::map<std::size_t, std::string> idx2label = {{0, "colA"}, {1, "colB"}};
 
     // Create MultiResponseMessage
     auto tensor        = Tensor::create(packed_data, DType::create<double>(), {mess_count, cols_size}, {}, 0);
     auto tensor_memory = std::make_shared<TensorMemory>(mess_count);
     tensor_memory->set_tensor("probs", std::move(tensor));
-    auto mm = std::make_shared<MultiResponseMessage>(meta, 0, mess_count, std::move(tensor_memory));
+    auto mm = std::make_shared<MultiResponseMessage>(std::move(meta_mm), 0, mess_count, std::move(tensor_memory));
 
     // Create PreProcessMultiMessageStage
-    auto mm_stage    = std::make_shared<AddScoresStage<MultiResponseMessage, MultiResponseMessage>>(idx2label);
+    auto mm_stage    = std::make_shared<AddScoresStageMM>(idx2label);
     auto mm_response = mm_stage->on_data(mm);
+
+    // Create a separate dataframe from a file (otherwise they will overwrite eachother)
+    auto meta_cm = MessageMeta::create_from_cpp(load_table_from_file(input_file));
+    preallocate(meta_cm, {{"colA", TypeId::FLOAT64}, {"colB", TypeId::FLOAT64}});
 
     // Create ControlMessage
     auto cm = std::make_shared<ControlMessage>();
-    cm->payload(meta);
+    cm->payload(std::move(meta_cm));
     auto cm_tensor        = Tensor::create(packed_data, DType::create<double>(), {mess_count, cols_size}, {}, 0);
     auto cm_tensor_memory = std::make_shared<TensorMemory>(mess_count);
     cm_tensor_memory->set_tensor("probs", std::move(cm_tensor));
     cm->tensors(cm_tensor_memory);
 
     // Create PreProcessControlMessageStage
-    auto cm_stage    = std::make_shared<AddScoresStage<ControlMessage, ControlMessage>>(idx2label);
+    auto cm_stage    = std::make_shared<AddScoresStageCM>(idx2label);
     auto cm_response = cm_stage->on_data(cm);
 
     // Verify the output meta
-    std::vector<float> expected_meta = {0, 0, 1.4013e-45};
-    auto mm_meta                     = mm_response->get_meta().get_column(0);
-    auto cm_meta                     = cm_response->payload()->get_info().get_column(0);
-    std::vector<float> mm_meta_host(mm_meta.size());
-    std::vector<float> cm_meta_host(cm_meta.size());
-    MRC_CHECK_CUDA(cudaMemcpy(
-        mm_meta_host.data(), mm_meta.data<double>(), mm_meta.size() * sizeof(double), cudaMemcpyDeviceToHost));
-    MRC_CHECK_CUDA(cudaMemcpy(
-        cm_meta_host.data(), cm_meta.data<double>(), cm_meta.size() * sizeof(double), cudaMemcpyDeviceToHost));
-    EXPECT_EQ(mm_meta_host, expected_meta);
-    EXPECT_EQ(mm_meta_host, cm_meta_host);
+    std::vector<double> expected_colA = {0.1, 0, 1.4013e-45};
+    std::vector<double> expected_colB = {1.0, 23456, 9.3e5};
+
+    auto mm_table = mm_response->get_meta(std::vector<std::string>{"colA", "colB"});
+    auto cm_table = cm_response->payload()->get_info(std::vector<std::string>{"colA", "colB"});
+
+    assert_eq_device_to_host(mm_table.get_column(0), expected_colA);
+    assert_eq_device_to_host(mm_table.get_column(1), expected_colB);
+
+    assert_eq_device_to_host(cm_table.get_column(0), expected_colA);
+    assert_eq_device_to_host(cm_table.get_column(1), expected_colB);
 }

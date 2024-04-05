@@ -114,7 +114,7 @@ class PreprocessNLPStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>
 
 using PreprocessNLPStageMM =  // NOLINT(readability-identifier-naming)
     PreprocessNLPStage<MultiMessage, MultiInferenceMessage>;
-using PreprocessNLPStageCC =  // NOLINT(readability-identifier-naming)
+using PreprocessNLPStageCM =  // NOLINT(readability-identifier-naming)
     PreprocessNLPStage<ControlMessage, ControlMessage>;
 
 /****** PreprocessNLPStageInferenceProxy********************/

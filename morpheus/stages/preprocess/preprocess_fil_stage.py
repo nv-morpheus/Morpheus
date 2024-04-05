@@ -94,12 +94,12 @@ class PreprocessFILStage(PreprocessBaseStage):
 
     @staticmethod
     def process_control_message(x: ControlMessage, fea_len: int, fea_cols: typing.List[str]) -> ControlMessage:
-        with x.payload().mutable_dataframe() as df:
-            try:
-                df = df[fea_cols]
-            except KeyError:
-                logger.exception("Requested feature columns does not exist in the dataframe.", exc_info=True)
-                raise
+
+        try:
+            df: cudf.DataFrame = x.payload().get_data(fea_cols)
+        except KeyError:
+            logger.exception("Requested feature columns does not exist in the dataframe.", exc_info=True)
+            raise
 
         # Extract just the numbers from each feature col. Not great to operate on x.meta.df here but the operations will
         # only happen once.

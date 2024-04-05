@@ -81,10 +81,7 @@ class SerializeStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (
-            MultiMessage,
-            ControlMessage,
-        )
+        return (MultiMessage, ControlMessage)
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)

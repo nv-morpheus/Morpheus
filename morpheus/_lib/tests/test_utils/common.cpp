@@ -23,6 +23,7 @@
 #include "morpheus/io/loaders/payload.hpp"
 #include "morpheus/io/loaders/rest.hpp"
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
 #include <nlohmann/json.hpp>
@@ -37,9 +38,14 @@
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
+#include <locale>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
+
+#ifndef PYTHON_EXECUTABLE
+    #error PYTHON_EXECUTABLE must be defined to run tests
+#endif
 
 namespace morpheus::test {
 
@@ -47,7 +53,7 @@ bool TestWithPythonInterpreter::m_initialized = false;
 
 void TestWithPythonInterpreter::SetUp()
 {
-    initialize_interpreter();
+    this->initialize_interpreter();
 
     LoaderRegistry::register_factory_fn(
         "file",
@@ -73,6 +79,11 @@ void TestWithPythonInterpreter::SetUp()
             return std::make_unique<RESTDataLoader>(config);
         },
         false);
+
+    pybind11::gil_scoped_acquire gil;
+
+    // Ensure that the cudf helpers are loaded so we can convert dataframes to MessageMeta
+    CudfHelper::load();
 }
 
 void TestWithPythonInterpreter::TearDown() {}
@@ -81,7 +92,43 @@ void TestWithPythonInterpreter::initialize_interpreter() const
 {
     if (!m_initialized)
     {
-        pybind11::initialize_interpreter();
+        using namespace std::string_literals;
+
+        // NOTE: We manually initialize the Python interpreter here because we need to specify the Python executable to
+        // use in order to enable virtual environments. Otherwise, the Python interpreter will be initialized with the
+        // default executable, which may not be the one we want to use (and will make it difficult to discover why tests
+        // are failing).
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
+
+        // Create a wstring from the PYTHON_EXECUTABLE string
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+        auto python_exe_w = converter.from_bytes(PYTHON_EXECUTABLE);
+
+        // Set the program name to the python executable to ensure any virtualenvs are loaded correctly
+        PyStatus status = PyConfig_SetString(&config, &config.program_name, python_exe_w.data());
+        if (PyStatus_Exception(status))
+        {
+            throw std::runtime_error("Failed to set Python program name to "s + PYTHON_EXECUTABLE);
+        }
+
+        // Load the remainder of the configuration
+        status = PyConfig_Read(&config);
+        if (PyStatus_Exception(status))
+        {
+            throw std::runtime_error("Failed to read Python configuration");
+        }
+
+        status = Py_InitializeFromConfig(&config);
+        if (PyStatus_Exception(status))
+        {
+            throw std::runtime_error("Failed to initialize Python interpreter");
+        }
+
+        // Cleanup the configuration object
+        PyConfig_Clear(&config);
+
         m_initialized = true;
     }
 }

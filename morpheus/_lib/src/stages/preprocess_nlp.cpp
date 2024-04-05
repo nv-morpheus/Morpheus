@@ -178,7 +178,7 @@ std::shared_ptr<ControlMessage> PreprocessNLPStage<ControlMessage, ControlMessag
     std::shared_ptr<ControlMessage> x)
 {
     // Convert to string view
-    auto meta = x->get_meta(this->m_column);
+    auto meta = x->payload()->get_info(this->m_column);
 
     auto col        = meta.get_column(0);
     auto string_col = cudf::strings_column_view{col};
@@ -304,7 +304,7 @@ std::shared_ptr<mrc::segment::Object<PreprocessNLPStageMM>> PreprocessNLPStageIn
     return stage;
 }
 
-std::shared_ptr<mrc::segment::Object<PreprocessNLPStageCC>> PreprocessNLPStageInterfaceProxy::init_cm(
+std::shared_ptr<mrc::segment::Object<PreprocessNLPStageCM>> PreprocessNLPStageInterfaceProxy::init_cm(
     mrc::segment::Builder& builder,
     const std::string& name,
     std::string vocab_hash_file,
@@ -315,7 +315,7 @@ std::shared_ptr<mrc::segment::Object<PreprocessNLPStageCC>> PreprocessNLPStageIn
     int stride,
     std::string column)
 {
-    auto stage = builder.construct_object<PreprocessNLPStageCC>(
+    auto stage = builder.construct_object<PreprocessNLPStageCM>(
         name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride, column);
 
     return stage;

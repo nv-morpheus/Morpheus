@@ -111,9 +111,20 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
         # Return input type unchanged
         return node
 
+    @typing.overload
     @staticmethod
-    def _add_labels(x: typing.Union[MultiResponseMessage, ControlMessage],
-                    idx2label: typing.Dict[int, str],
+    def _add_labels(x: MultiResponseMessage, idx2label: dict[int, str],
+                    threshold: typing.Optional[float]) -> MultiResponseMessage:
+        ...
+
+    @typing.overload
+    @staticmethod
+    def _add_labels(x: ControlMessage, idx2label: dict[int, str], threshold: typing.Optional[float]) -> ControlMessage:
+        ...
+
+    @staticmethod
+    def _add_labels(x: MultiResponseMessage | ControlMessage,
+                    idx2label: dict[int, str],
                     threshold: typing.Optional[float]):
         if isinstance(x, ControlMessage):
             return AddScoresStageBase.process_control_message(x, idx2label, threshold)
@@ -134,7 +145,7 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
 
         # Do these one at a time to prevent failures
         for i, label in idx2label.items():
-            x.set_meta(label, probs[:, i])
+            x.payload().set_data(label, probs[:, i])
 
         # Return the same object
         return x

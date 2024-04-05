@@ -40,6 +40,7 @@
 #include "morpheus/version.hpp"
 
 #include <mrc/edge/edge_connector.hpp>
+#include <pybind11/detail/common.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -229,6 +230,22 @@ PYBIND11_MODULE(messages, _module)
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
         .def_property_readonly("df", &MessageMetaInterfaceProxy::df_property, py::return_value_policy::move)
+        .def("get_data",
+             py::overload_cast<MessageMeta&>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move)
+        .def("get_data",
+             py::overload_cast<MessageMeta&, std::string>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_data",
+             py::overload_cast<MessageMeta&, std::vector<std::string>>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_data",
+             py::overload_cast<MessageMeta&, pybind11::none>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("set_data", &MessageMetaInterfaceProxy::set_data, py::return_value_policy::move)
         .def("get_column_names", &MessageMetaInterfaceProxy::get_column_names)
         .def("copy_dataframe", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
         .def("mutable_dataframe", &MessageMetaInterfaceProxy::mutable_dataframe, py::return_value_policy::move)
@@ -410,24 +427,8 @@ PYBIND11_MODULE(messages, _module)
         .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
-        .def("task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"))
-        .def("get_meta",
-             static_cast<pybind11::object (*)(ControlMessage&)>(&ControlMessageProxy::get_meta),
-             py::return_value_policy::move)
-        .def("get_meta",
-             static_cast<pybind11::object (*)(ControlMessage&, std::string)>(&ControlMessageProxy::get_meta),
-             py::return_value_policy::move,
-             py::arg("columns"))
-        .def("get_meta",
-             static_cast<pybind11::object (*)(ControlMessage&, std::vector<std::string>)>(
-                 &ControlMessageProxy::get_meta),
-             py::return_value_policy::move,
-             py::arg("columns"))
-        .def("get_meta",
-             static_cast<pybind11::object (*)(ControlMessage&, pybind11::none)>(&ControlMessageProxy::get_meta),
-             py::return_value_policy::move,
-             py::arg("columns"))
-        .def("set_meta", &ControlMessageProxy::set_meta, py::return_value_policy::move);
+        .def(
+            "task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"));
 
     py::class_<LoaderRegistry, std::shared_ptr<LoaderRegistry>>(_module, "DataLoaderRegistry")
         .def_static("contains", &LoaderRegistry::contains, py::arg("name"))

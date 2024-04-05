@@ -85,7 +85,7 @@ class PreprocessFILStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>
 
 using PreprocessFILStageMM =  // NOLINT(readability-identifier-naming)
     PreprocessFILStage<MultiMessage, MultiInferenceMessage>;
-using PreprocessFILStageCC =  // NOLINT(readability-identifier-naming)
+using PreprocessFILStageCM =  // NOLINT(readability-identifier-naming)
     PreprocessFILStage<ControlMessage, ControlMessage>;
 
 /****** PreprocessFILStageInferenceProxy********************/

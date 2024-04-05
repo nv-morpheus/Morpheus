@@ -21,7 +21,6 @@ import pytest
 
 from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
-from morpheus.config import CppConfig
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -45,7 +44,6 @@ def build_expected(df: pd.DataFrame, threshold: float, class_labels: typing.List
 
 @pytest.mark.use_cudf
 def test_add_classifications_stage_pipe(config, filter_probs_df):
-    CppConfig.set_should_use_cpp(False)
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
     threshold = 0.75
@@ -65,7 +63,6 @@ def test_add_classifications_stage_pipe(config, filter_probs_df):
 
 @pytest.mark.use_cudf
 def test_add_classifications_stage_pipe_with_control_message(config, filter_probs_df):
-    CppConfig.set_should_use_cpp(False)
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
     threshold = 0.75
@@ -85,7 +82,6 @@ def test_add_classifications_stage_pipe_with_control_message(config, filter_prob
 
 @pytest.mark.use_cudf
 def test_add_classifications_stage_multi_segment_pipe(config, filter_probs_df):
-    CppConfig.set_should_use_cpp(False)
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
     threshold = 0.75

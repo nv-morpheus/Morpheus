@@ -16,6 +16,7 @@
  */
 
 #include "../test_utils/common.hpp"  // for get_morpheus_root, TEST_CLASS, morpheus
+#include "../test_utils/tensor_utils.hpp"
 
 #include "morpheus/messages/control.hpp"               // for ControlMessage
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
@@ -50,7 +51,17 @@
 
 using namespace morpheus;
 
-TEST_CLASS(AddClassification);
+TEST_CLASS_WITH_PYTHON(AddClassification);
+
+template <typename T>
+auto convert_to_host(rmm::device_buffer& buffer)
+{
+    std::vector<T> host_buffer(buffer.size() / sizeof(T));
+
+    MRC_CHECK_CUDA(cudaMemcpy(host_buffer.data(), buffer.data(), buffer.size(), cudaMemcpyDeviceToHost));
+
+    return host_buffer;
+}
 
 TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
 {
@@ -60,14 +71,28 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
 
     TensorIndex cols_size  = 3;
     TensorIndex mess_count = 3;
-    auto packed_data =
-        std::make_shared<rmm::device_buffer>(cols_size * mess_count * sizeof(double), rmm::cuda_stream_per_thread);
+
+    double threshold = 0.4;
+
+    auto packed_data_host = std::vector<double>{
+        0.1,
+        0.2,
+        0.3,  // All below
+        0.5,
+        0.0,
+        0.0,  // Only one above
+        0.7,
+        0.1,
+        0.9  // All above
+    };
+
+    auto packed_data = std::make_shared<rmm::device_buffer>(
+        packed_data_host.data(), cols_size * mess_count * sizeof(double), rmm::cuda_stream_per_thread);
 
     cudf::io::csv_reader_options read_opts = cudf::io::csv_reader_options::builder(cudf::io::source_info(input_file))
                                                  .dtypes({cudf::data_type(cudf::data_type{cudf::type_to_id<bool>()})})
                                                  .header(0);
-    cudf::io::table_with_metadata table_with_meta = cudf::io::read_csv(read_opts);
-    auto meta                                     = MessageMeta::create_from_cpp(std::move(table_with_meta));
+    auto meta_mm = MessageMeta::create_from_cpp(cudf::io::read_csv(read_opts));
 
     std::map<std::size_t, std::string> idx2label = {{0, "bool"}};
 
@@ -75,29 +100,32 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
     auto tensor        = Tensor::create(packed_data, DType::create<double>(), {mess_count, cols_size}, {}, 0);
     auto tensor_memory = std::make_shared<TensorMemory>(mess_count);
     tensor_memory->set_tensor("probs", std::move(tensor));
-    auto mm = std::make_shared<MultiResponseMessage>(meta, 0, mess_count, std::move(tensor_memory));
+    auto mm = std::make_shared<MultiResponseMessage>(std::move(meta_mm), 0, mess_count, std::move(tensor_memory));
 
     // Create PreProcessMultiMessageStage
-    auto mm_stage =
-        std::make_shared<AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>>(idx2label, 0.0);
+    auto mm_stage    = std::make_shared<AddClassificationsStageMM>(idx2label, 0.4);
     auto mm_response = mm_stage->on_data(mm);
+
+    // Create a separate dataframe from a file (otherwise they will overwrite eachother)
+    auto meta_cm = MessageMeta::create_from_cpp(cudf::io::read_csv(read_opts));
 
     // Create ControlMessage
     auto cm = std::make_shared<ControlMessage>();
-    cm->payload(meta);
+    cm->payload(std::move(meta_cm));
     auto cm_tensor        = Tensor::create(packed_data, DType::create<double>(), {mess_count, cols_size}, {}, 0);
     auto cm_tensor_memory = std::make_shared<TensorMemory>(mess_count);
     cm_tensor_memory->set_tensor("probs", std::move(cm_tensor));
     cm->tensors(cm_tensor_memory);
 
     // Create PreProcessControlMessageStage
-    auto cm_stage    = std::make_shared<AddClassificationsStage<ControlMessage, ControlMessage>>(idx2label, 0.0);
+    auto cm_stage    = std::make_shared<AddClassificationsStageCM>(idx2label, 0.4);
     auto cm_response = cm_stage->on_data(cm);
 
     // Verify the output meta
     std::vector<uint8_t> expected_meta = {'\0', '\x1', '\x1'};
     auto mm_meta                       = mm_response->get_meta().get_column(0);
     auto cm_meta                       = cm_response->payload()->get_info().get_column(0);
+
     // std::vector<bool> is a template specialization which does not have data() method, use std::vector<uint8_t> here
     std::vector<uint8_t> mm_meta_host(mm_meta.size());
     std::vector<uint8_t> cm_meta_host(cm_meta.size());

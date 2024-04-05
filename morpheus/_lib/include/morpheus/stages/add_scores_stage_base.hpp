@@ -81,7 +81,7 @@ class AddScoresStageBase : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>
 
 using AddScoresStageBaseMM =  // NOLINT(readability-identifier-naming)
     AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>;
-using AddScoresStageBaseCC =  // NOLINT(readability-identifier-naming)
+using AddScoresStageBaseCM =  // NOLINT(readability-identifier-naming)
     AddScoresStageBase<ControlMessage, ControlMessage>;
 
 #pragma GCC visibility pop

@@ -318,48 +318,6 @@ class ControlMessage
     void tensors(const std::shared_ptr<TensorMemory>& tensor_memory);
 
     /**
-     * @brief Get the meta object
-     *
-     * @return TableInfo
-     */
-    TableInfo get_meta();
-
-    /**
-     * @brief Returns column value from a meta object.
-     *
-     * @param col_name
-     * @throws std::runtime_error
-     * @throws std::runtime_error
-     * @return TableInfo
-     */
-    TableInfo get_meta(const std::string& col_name);
-
-    /**
-     * @brief Returns columns value from a meta object. When `columns_names` is empty all columns are returned.
-     *
-     * @param column_names
-     * @throws std::runtime_error
-     * @return TableInfo
-     */
-    TableInfo get_meta(const std::vector<std::string>& column_names);
-
-    /**
-     * @brief Set the meta object with a given column name
-     *
-     * @param col_name
-     * @param tensor
-     */
-    void set_meta(const std::string& col_name, TensorObject tensor);
-
-    /**
-     * @brief Set the meta object with a given column names
-     *
-     * @param column_names
-     * @param tensors
-     */
-    void set_meta(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors);
-
-    /**
      * @brief Get the type of task associated with the control message.
      * @return An enum value indicating the task type.
      */
@@ -555,31 +513,6 @@ struct ControlMessageProxy
      * timestamps represented as datetime.datetime objects.
      */
     static pybind11::dict filter_timestamp(ControlMessage& self, const std::string& regex_filter);
-
-    /**
-     * TODO(Documentation)
-     */
-    static pybind11::object get_meta(ControlMessage& self);
-
-    /**
-     * TODO(Documentation)
-     */
-    static pybind11::object get_meta(ControlMessage& self, std::string col_name);
-
-    /**
-     * TODO(Documentation)
-     */
-    static pybind11::object get_meta(ControlMessage& self, std::vector<std::string> columns);
-
-    /**
-     * TODO(Documentation)
-     */
-    static pybind11::object get_meta(ControlMessage& self, pybind11::none none_obj);
-
-    /**
-     * TODO(Documentation)
-     */
-    static void set_meta(ControlMessage& self, pybind11::object columns, pybind11::object value);
 };
 
 #pragma GCC visibility pop
