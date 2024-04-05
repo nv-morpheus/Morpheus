@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include "rte_context.hpp"
+#include "morpheus/doca/rte_context.hpp"
 
-#include "error.hpp"
+#include "morpheus/doca/error.hpp"
 
 #include <glog/logging.h>
 #include <rte_eal.h>

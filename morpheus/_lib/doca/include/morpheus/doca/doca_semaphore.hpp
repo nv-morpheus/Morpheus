@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "doca_context.hpp"
+#include "morpheus/doca/doca_context.hpp"
 
 namespace morpheus::doca {
 

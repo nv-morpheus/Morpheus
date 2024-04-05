@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "doca_rx_pipe.hpp"
+#include "morpheus/doca/doca_rx_pipe.hpp"
 
 #include <glog/logging.h>
 #include <netinet/in.h>
@@ -37,7 +37,7 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context,
 
     doca_flow_match match_mask{0};
     doca_flow_match match{};
-    match.outer.l3_type        = DOCA_FLOW_L3_TYPE_IP4;
+    match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
     if (m_traffic_type == DOCA_TRAFFIC_TYPE_TCP)
     {
         match.outer.ip4.next_proto = IPPROTO_TCP;
@@ -50,14 +50,14 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context,
     }
 
     doca_flow_fwd fwd{};
-    fwd.type            = DOCA_FLOW_FWD_RSS;
+    fwd.type = DOCA_FLOW_FWD_RSS;
 
     if (m_traffic_type == DOCA_TRAFFIC_TYPE_TCP)
         fwd.rss_outer_flags = DOCA_FLOW_RSS_IPV4 | DOCA_FLOW_RSS_TCP;
     else
         fwd.rss_outer_flags = DOCA_FLOW_RSS_IPV4 | DOCA_FLOW_RSS_UDP;
-    fwd.rss_queues      = rss_queues.begin();
-    fwd.num_of_queues   = m_rxq.size();
+    fwd.rss_queues    = rss_queues.begin();
+    fwd.num_of_queues = m_rxq.size();
 
     doca_flow_fwd miss_fwd{};
     miss_fwd.type = DOCA_FLOW_FWD_DROP;
@@ -68,13 +68,13 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context,
     doca_flow_pipe_cfg pipe_cfg{};
     pipe_cfg.attr.name                   = "GPU_RXQ_PIPE";
     pipe_cfg.attr.enable_strict_matching = true;
-    pipe_cfg.attr.type       = DOCA_FLOW_PIPE_BASIC;
-    pipe_cfg.attr.nb_actions = 0;
-    pipe_cfg.attr.is_root    = false;
-    pipe_cfg.match           = &match;
-    pipe_cfg.match_mask      = &match_mask;
-    pipe_cfg.monitor         = &monitor;
-    pipe_cfg.port            = context->flow_port();
+    pipe_cfg.attr.type                   = DOCA_FLOW_PIPE_BASIC;
+    pipe_cfg.attr.nb_actions             = 0;
+    pipe_cfg.attr.is_root                = false;
+    pipe_cfg.match                       = &match;
+    pipe_cfg.match_mask                  = &match_mask;
+    pipe_cfg.monitor                     = &monitor;
+    pipe_cfg.port                        = context->flow_port();
 
     DOCA_TRY(doca_flow_pipe_create(&pipe_cfg, &fwd, &miss_fwd, &m_pipe));
 
@@ -90,7 +90,7 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context,
     doca_flow_monitor root_monitor  = {};
     root_monitor.counter_type       = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
 
-    doca_flow_pipe_cfg root_pipe_cfg = {};
+    doca_flow_pipe_cfg root_pipe_cfg          = {};
     root_pipe_cfg.attr.name                   = "ROOT_PIPE";
     root_pipe_cfg.attr.enable_strict_matching = true;
     root_pipe_cfg.attr.is_root                = true;

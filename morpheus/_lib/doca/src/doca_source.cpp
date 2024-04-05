@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-#include "doca_source.hpp"
+#include "morpheus/doca/doca_source.hpp"
 
-#include "doca_context.hpp"
-#include "doca_rx_pipe.hpp"
-#include "doca_rx_queue.hpp"
-#include "doca_semaphore.hpp"
-#include "doca_source_kernels.hpp"
-
+#include "morpheus/doca/doca_context.hpp"
+#include "morpheus/doca/doca_rx_pipe.hpp"
+#include "morpheus/doca/doca_rx_queue.hpp"
+#include "morpheus/doca/doca_semaphore.hpp"
+#include "morpheus/doca/doca_source_kernels.hpp"
 #include "morpheus/utilities/error.hpp"
 
 #include <cudf/column/column_factories.hpp>

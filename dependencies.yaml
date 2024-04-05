@@ -52,6 +52,7 @@ files:
       - cudatoolkit
       - data_retrieval
       - development
+      - doca
       - docs
       - python
       - runtime
