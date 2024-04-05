@@ -42,4 +42,11 @@ fi
 
 echo -e "${g}Launching ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}...${x}"
 
-docker run --rm -ti ${DOCKER_ARGS} ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} "${@:-bash}"
+# DPDK requires hugepage and privileged container
+MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
+DOCA_EXTRA_ARGS=""
+if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
+   DOCA_EXTRA_ARGS="-v /dev/hugepages:/dev/hugepages --privileged"
+fi
+
+docker run ${DOCA_EXTRA_ARGS} --rm -ti ${DOCKER_ARGS} ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} "${@:-bash}"
