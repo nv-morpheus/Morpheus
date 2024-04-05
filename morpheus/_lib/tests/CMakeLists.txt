@@ -164,6 +164,12 @@ add_morpheus_test(
 )
 
 add_morpheus_test(
+  NAME triton_inference_stage
+  FILES
+    stages/test_triton_inference_stage.cpp
+)
+
+add_morpheus_test(
   NAME type_util
   FILES
     test_type_util.cpp
