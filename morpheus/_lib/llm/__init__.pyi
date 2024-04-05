@@ -231,4 +231,4 @@ class LLMTaskHandler():
         Task[Optional[list[ControlMessage]]]
         """
     pass
-__version__ = '24.3.0'
+__version__ = '24.6.0'

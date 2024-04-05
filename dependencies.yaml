@@ -179,7 +179,7 @@ dependencies:
           - glog=0.6
           - gxx_linux-64=11.2
           - librdkafka>=1.9.2,<1.10.0a0
-          - mrc=24.03
+          - mrc=24.06
           - ninja=1.11
           - nlohmann_json=3.11
           - pkg-config=0.29 # for mrc cmake
