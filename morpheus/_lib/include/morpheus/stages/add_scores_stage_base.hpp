@@ -17,19 +17,21 @@
 
 #pragma once
 
-#include "morpheus/messages/control.hpp"         // for ControlMessage
-#include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
+#include "morpheus/messages/control.hpp"
+#include "morpheus/messages/multi_response.hpp"
 
-#include <boost/fiber/context.hpp>  // for operator<<
-#include <pymrc/node.hpp>           // for PythonNode
-#include <rxcpp/rx.hpp>             // for observable_member, trace_activity, decay_t, operator|
+#include <boost/fiber/context.hpp>
+#include <pymrc/node.hpp>
+#include <rxcpp/rx.hpp>
 
-#include <cstddef>   // for size_t
-#include <map>       // for map
-#include <memory>    // for shared_ptr
-#include <optional>  // for optional
-#include <string>    // for string
-#include <thread>    // for operator<<
+#include <cstddef>
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
+#include <thread>
+
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 namespace morpheus {
 /****** Component public implementations *******************/

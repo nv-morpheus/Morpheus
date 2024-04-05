@@ -20,11 +20,9 @@
 #include "morpheus/messages/meta.hpp"          // for MessageMeta
 #include "morpheus/objects/table_info.hpp"     // for TableInfo
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
-#include "morpheus/types.hpp"                  // for TensorObject
 
 #include <nlohmann/json.hpp>   // for json, basic_json
 #include <pybind11/pytypes.h>  // for object, dict, list, none
-#include <pybind11/stl.h>
 
 #include <chrono>    // for system_clock, time_point
 #include <map>       // for map

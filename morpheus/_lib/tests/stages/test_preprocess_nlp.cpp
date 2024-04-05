@@ -32,8 +32,8 @@
 #include <gtest/gtest.h>        // for EXPECT_EQ, Message, TestPartResult, TestInfo, TEST_F
 #include <mrc/cuda/common.hpp>  // for __check_cuda_errors, MRC_CHECK_CUDA
 #include <pybind11/gil.h>       // for gil_scoped_acquire, gil_scoped_release
-#include <cstdint>             // for int32_t
 
+#include <cstdint>     // for int32_t
 #include <filesystem>  // for operator/, path
 #include <memory>      // for allocator, make_shared, __shared_ptr_access, shared_ptr
 #include <utility>     // for move

@@ -17,23 +17,25 @@
 
 #pragma once
 
-#include "rxcpp/operators/rx-map.hpp"  // for map
+#include "rxcpp/operators/rx-map.hpp"
 
-#include "morpheus/messages/control.hpp"          // for ControlMessage
-#include "morpheus/messages/multi.hpp"            // for MultiMessage
-#include "morpheus/messages/multi_inference.hpp"  // for MultiInferenceMessage
-#include "morpheus/objects/table_info.hpp"        // for TableInfo, MutableTableInfo
+#include "morpheus/messages/control.hpp"
+#include "morpheus/messages/multi.hpp"
+#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/table_info.hpp"
 
-#include <boost/fiber/context.hpp>  // for operator<<
-#include <mrc/segment/builder.hpp>  // for Builder
-#include <mrc/segment/object.hpp>   // for Object
-#include <pymrc/node.hpp>           // for PythonNode
-#include <rxcpp/rx.hpp>             // for observable_member, trace_activity, decay_t
+#include <boost/fiber/context.hpp>
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
+#include <pymrc/node.hpp>
+#include <rxcpp/rx.hpp>
 
-#include <memory>  // for shared_ptr
-#include <string>  // for string
-#include <thread>  // for operator<<
-#include <vector>  // for vector
+#include <memory>
+#include <string>
+#include <thread>
+#include <vector>
+
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 namespace morpheus {
 
