@@ -28,11 +28,13 @@
 #include <mrc/coroutines/event.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
 #include <mrc/coroutines/task.hpp>
+#include <pymrc/utilities/json_values.hpp>  // for JSONValues
 
 #include <atomic>
 #include <coroutine>
 #include <cstdint>
 #include <memory>
+// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
 
 using namespace morpheus;
 using namespace morpheus::test;
@@ -87,6 +89,7 @@ TEST_F(TestLLMEngine, AsyncTest)
     EXPECT_TRUE(return_val.is_ready());
     EXPECT_EQ(counter, 2);
 
-    EXPECT_EQ(out_context->view_outputs()["start"], 123);
-    EXPECT_EQ(out_context->view_outputs()["test"], 124);
+    const auto& json_outputs = out_context->view_outputs().view_json();
+    EXPECT_EQ(json_outputs["start"], 123);
+    EXPECT_EQ(json_outputs["test"], 124);
 }

@@ -63,7 +63,7 @@ dependencies:
 - networkx=2.8.8
 - newspaper3k=0.2
 - ninja=1.11
-- nlohmann_json=3.9
+- nlohmann_json=3.11
 - nodejs=18.*
 - numexpr
 - numpydoc=1.5
