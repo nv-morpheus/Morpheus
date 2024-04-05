@@ -17,30 +17,19 @@
 
 #pragma once
 
-#include "morpheus/messages/control.hpp"
+#include "morpheus/messages/control.hpp"         // for ControlMessage
 #include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
-#include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
-#include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/tensor_util.hpp"
 
-#include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/sink_properties.hpp>
-#include <mrc/node/source_properties.hpp>
-#include <mrc/types.hpp>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>
+#include <boost/fiber/context.hpp>  // for operator<<
+#include <pymrc/node.hpp>           // for PythonNode
+#include <rxcpp/rx.hpp>             // for observable_member, trace_activity, decay_t, operator|
 
-#include <cstddef>  // for size_t
-#include <map>
-#include <memory>
-#include <optional>
-#include <string>
-#include <thread>
-#include <vector>
+#include <cstddef>   // for size_t
+#include <map>       // for map
+#include <memory>    // for shared_ptr
+#include <optional>  // for optional
+#include <string>    // for string
+#include <thread>    // for operator<<
 
 namespace morpheus {
 /****** Component public implementations *******************/

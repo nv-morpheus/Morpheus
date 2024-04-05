@@ -34,7 +34,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
 
-@register_stage("unittest-conv-msg", ignore_args=["expected_data"])
+@register_stage("unittest-conv-msg", ignore_args=["expected_data", "message_type"])
 class ConvMsg(SinglePortStage):
     """
     Simple test stage to convert a MultiMessage to a MultiResponseProbsMessage,

@@ -17,31 +17,30 @@
 
 #include "morpheus/stages/add_scores_stage_base.hpp"
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/sink_properties.hpp"
-#include "mrc/node/source_properties.hpp"
-#include "mrc/types.hpp"
-#include "pymrc/node.hpp"
-#include "rxcpp/operators/rx-map.hpp"
+#include "rxcpp/operators/rx-map.hpp"  // for map
 
-#include "morpheus/messages/multi_response.hpp"
-#include "morpheus/objects/dtype.hpp"  // for DType
-#include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
-#include "morpheus/types.hpp"                  // for TensorIndex
-#include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/string_util.hpp"
-#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
+#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
+#include "morpheus/messages/multi_response.hpp"        // for MultiResponseMessage
+#include "morpheus/objects/dtype.hpp"                  // for DType
+#include "morpheus/objects/tensor.hpp"                 // for Tensor
+#include "morpheus/objects/tensor_object.hpp"          // for TensorObject
+#include "morpheus/types.hpp"                          // for TensorIndex
+#include "morpheus/utilities/matx_util.hpp"            // for MatxUtil
+#include "morpheus/utilities/string_util.hpp"          // for StringUtil
+#include "morpheus/utilities/tensor_util.hpp"          // for TensorUtils
 
-#include <glog/logging.h>
-#include <rxcpp/rx.hpp>
+#include <glog/logging.h>  // for CHECK, COMPACT_GOOGLE_LOG_FATAL, LogMessageFatal, COMP...
+#include <rxcpp/rx.hpp>    // for observable_member, trace_activity, decay_t, operator|
 
-#include <cstddef>
-#include <iterator>
-#include <memory>
-#include <ostream>  // needed for logging
-#include <utility>  // for move
+#include <cstddef>      // for size_t
+#include <iterator>     // for reverse_iterator
+#include <memory>       // for shared_ptr, allocator, __shared_ptr_access
+#include <ostream>      // for basic_ostream, operator<<, basic_ostream::operator<<
+#include <stdexcept>    // for runtime_error
+#include <type_traits>  // for is_same_v
+#include <typeinfo>     // for type_info
+#include <utility>      // for move, pair
+#include <vector>       // for vector
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
 // IWYU pragma: no_include <ext/alloc_traits.h>
 // IWYU pragma: no_include <operators/rx-map.hpp>

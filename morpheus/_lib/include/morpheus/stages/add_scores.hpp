@@ -17,17 +17,18 @@
 
 #pragma once
 
-#include "morpheus/messages/control.hpp"
-#include "morpheus/messages/multi_response.hpp"
-#include "morpheus/stages/add_scores_stage_base.hpp"
+#include "morpheus/messages/control.hpp"              // for ControlMessage
+#include "morpheus/messages/multi_response.hpp"       // for MultiResponseMessage
+#include "morpheus/stages/add_scores_stage_base.hpp"  // for AddScoresStageBase
 
-#include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>
+#include <mrc/segment/builder.hpp>  // for Builder
+#include <mrc/segment/object.hpp>   // for Object
+#include <rxcpp/rx.hpp>             // for trace_activity
 
 #include <cstddef>  // for size_t
-#include <map>
-#include <memory>
-#include <string>
+#include <map>      // for map
+#include <memory>   // for shared_ptr
+#include <string>   // for string
 
 namespace morpheus {
 /****** Component public implementations *******************/
