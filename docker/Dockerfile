@@ -149,9 +149,6 @@ FROM conda_env as base_extended
 # Add one or more optional dependencies to the base environment
 ARG MORPHEUS_ROOT_HOST
 ARG MORPHEUS_SUPPORT_DOCA="FALSE"
-ARG DOCA_REPO_HOST
-ARG DOCA_VERSION=2.6.0-0.0.1
-
 # Set this environment variable so it auto builds DOCA
 ENV MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}
 

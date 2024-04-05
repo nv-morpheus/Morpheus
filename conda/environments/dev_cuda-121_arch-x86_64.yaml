@@ -10,6 +10,7 @@ channels:
 - pytorch
 dependencies:
 - appdirs
+- automake
 - benchmark=1.8.3
 - boost-cpp=1.84
 - breathe=4.35.0
@@ -43,6 +44,7 @@ dependencies:
 - ipython
 - isort
 - librdkafka>=1.9.2,<1.10.0a0
+- libtool
 - mlflow=2.9.2
 - mrc=24.03
 - myst-parser=0.18.1
@@ -72,6 +74,7 @@ dependencies:
 - pytorch-cuda
 - pytorch=*=*cuda*
 - rapidjson=1.1.0
+- rdma-core>=48
 - requests
 - requests-cache=1.1
 - requests-toolbelt

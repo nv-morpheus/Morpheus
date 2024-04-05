@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "doca_semaphore.hpp"
+#include "morpheus/doca/doca_semaphore.hpp"
 
 namespace morpheus::doca {
 
