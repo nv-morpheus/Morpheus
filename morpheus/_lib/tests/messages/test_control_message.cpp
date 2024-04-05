@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "../test_utils/common.hpp"  // for create_mock_msg_meta, get_morpheus_root, TestWithPytho...
+#include "../test_utils/common.hpp"  // IWYU pragma: associated
 
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/messages/control.hpp"
