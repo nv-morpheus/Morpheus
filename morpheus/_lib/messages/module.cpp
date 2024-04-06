@@ -40,7 +40,6 @@
 #include "morpheus/version.hpp"
 
 #include <mrc/edge/edge_connector.hpp>
-#include <pybind11/detail/common.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>

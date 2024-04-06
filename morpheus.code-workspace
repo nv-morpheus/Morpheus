@@ -673,7 +673,6 @@
                 "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}_*.x",
                 "env": {
                     "UCX_ERROR_SIGNALS": "", // Prevent UCX from capturing errors
-
                     "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
                 }
             }

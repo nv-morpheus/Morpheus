@@ -32,7 +32,8 @@ __all__ = [
     "PreprocessFILMultiMessageStage",
     "PreprocessNLPControlMessageStage",
     "PreprocessNLPMultiMessageStage",
-    "SerializeStage",
+    "SerializeControlMessageStage",
+    "SerializeMultiMessageStage",
     "WriteToFileStage"
 ]
 
@@ -94,7 +95,10 @@ class PreprocessNLPControlMessageStage(mrc.core.segment.SegmentObject):
 class PreprocessNLPMultiMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, vocab_hash_file: str, sequence_length: int, truncation: bool, do_lower_case: bool, add_special_token: bool, stride: int, column: str) -> None: ...
     pass
-class SerializeStage(mrc.core.segment.SegmentObject):
+class SerializeControlMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, include: typing.List[str], exclude: typing.List[str], fixed_columns: bool = True) -> None: ...
+    pass
+class SerializeMultiMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, include: typing.List[str], exclude: typing.List[str], fixed_columns: bool = True) -> None: ...
     pass
 class WriteToFileStage(mrc.core.segment.SegmentObject):

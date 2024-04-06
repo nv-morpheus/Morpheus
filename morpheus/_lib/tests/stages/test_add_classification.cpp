@@ -16,7 +16,6 @@
  */
 
 #include "../test_utils/common.hpp"  // for get_morpheus_root, TEST_CLASS, morpheus
-#include "../test_utils/tensor_utils.hpp"
 
 #include "morpheus/messages/control.hpp"               // for ControlMessage
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory

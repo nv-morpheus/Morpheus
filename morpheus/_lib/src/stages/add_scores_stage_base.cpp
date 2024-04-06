@@ -20,14 +20,15 @@
 #include "rxcpp/operators/rx-map.hpp"  // for map
 
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
-#include "morpheus/messages/multi_response.hpp"        // for MultiResponseMessage
-#include "morpheus/objects/dtype.hpp"                  // for DType
-#include "morpheus/objects/tensor.hpp"                 // for Tensor
-#include "morpheus/objects/tensor_object.hpp"          // for TensorObject
-#include "morpheus/types.hpp"                          // for TensorIndex
-#include "morpheus/utilities/matx_util.hpp"            // for MatxUtil
-#include "morpheus/utilities/string_util.hpp"          // for StringUtil
-#include "morpheus/utilities/tensor_util.hpp"          // for TensorUtils
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
+#include "morpheus/objects/dtype.hpp"            // for DType
+#include "morpheus/objects/tensor.hpp"           // for Tensor
+#include "morpheus/objects/tensor_object.hpp"    // for TensorObject
+#include "morpheus/types.hpp"                    // for TensorIndex
+#include "morpheus/utilities/matx_util.hpp"      // for MatxUtil
+#include "morpheus/utilities/string_util.hpp"    // for StringUtil
+#include "morpheus/utilities/tensor_util.hpp"    // for TensorUtils
 
 #include <glog/logging.h>  // for CHECK, COMPACT_GOOGLE_LOG_FATAL, LogMessageFatal, COMP...
 #include <rxcpp/rx.hpp>    // for observable_member, trace_activity, decay_t, operator|

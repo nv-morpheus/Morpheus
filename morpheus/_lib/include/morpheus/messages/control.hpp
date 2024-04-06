@@ -17,9 +17,7 @@
 
 #pragma once
 
-#include "morpheus/messages/meta.hpp"          // for MessageMeta
-#include "morpheus/objects/table_info.hpp"     // for TableInfo
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/messages/meta.hpp"  // for MessageMeta
 
 #include <nlohmann/json.hpp>   // for json, basic_json
 #include <pybind11/pytypes.h>  // for object, dict, list, none

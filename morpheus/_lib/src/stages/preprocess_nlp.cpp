@@ -22,14 +22,15 @@
 #include "morpheus/messages/control.hpp"                  // for ControlMessage
 #include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
 #include "morpheus/messages/memory/tensor_memory.hpp"     // for TensorMemory
-#include "morpheus/messages/multi.hpp"                    // for MultiMessage
-#include "morpheus/messages/multi_inference.hpp"          // for MultiInferenceMessage
-#include "morpheus/objects/dev_mem_info.hpp"              // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"                     // for DType
-#include "morpheus/objects/table_info.hpp"                // for TableInfo
-#include "morpheus/objects/tensor.hpp"                    // for Tensor
-#include "morpheus/types.hpp"                             // for TensorIndex
-#include "morpheus/utilities/matx_util.hpp"               // for MatxUtil
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi.hpp"            // for MultiMessage
+#include "morpheus/messages/multi_inference.hpp"  // for MultiInferenceMessage
+#include "morpheus/objects/dev_mem_info.hpp"      // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"             // for DType
+#include "morpheus/objects/table_info.hpp"        // for TableInfo
+#include "morpheus/objects/tensor.hpp"            // for Tensor
+#include "morpheus/types.hpp"                     // for TensorIndex
+#include "morpheus/utilities/matx_util.hpp"       // for MatxUtil
 
 #include <cudf/column/column.hpp>                 // for column
 #include <cudf/column/column_factories.hpp>       // for make_column_from_scalar

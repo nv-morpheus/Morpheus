@@ -22,8 +22,7 @@ from mrc.core import operators as ops
 
 import cudf
 
-# pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import TensorMemory as CppTensorMemory
+import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
@@ -56,8 +55,7 @@ class ConvMsg(SinglePortStage):
                  order: str = 'K',
                  probs_type: str = 'f4',
                  empty_probs: bool = False,
-                 message_type: typing.Union[typing.Literal[MultiResponseMessage],
-                                            typing.Literal[ControlMessage]] = MultiResponseMessage):
+                 message_type: type[MultiResponseMessage] | type[ControlMessage] = MultiResponseMessage):
         super().__init__(c)
 
         if expected_data is not None:
@@ -86,9 +84,7 @@ class ConvMsg(SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _conv_message(
-            self, message: typing.Union[MultiMessage,
-                                        ControlMessage]) -> typing.Union[MultiResponseMessage, ControlMessage]:
+    def _conv_message(self, message: MultiMessage | ControlMessage) -> MultiResponseMessage | ControlMessage:
         if self._expected_data is not None:
             if (isinstance(self._expected_data, cudf.DataFrame)):
                 df = self._expected_data.copy(deep=True)
@@ -96,20 +92,23 @@ class ConvMsg(SinglePortStage):
                 df = cudf.DataFrame(self._expected_data)
 
         else:
-            if self._columns is not None:
-                df = message.get_meta(self._columns)
+            if (isinstance(message, MultiMessage)):
+                if (self._columns is None):
+                    df = message.get_meta()
+                else:
+                    df = message.get_meta(self._columns)
             else:
-                df = message.get_meta()
+                df: cudf.DataFrame = message.payload().get_data(self._columns)  # type: ignore
 
         if self._empty_probs:
             probs = cp.zeros([len(df), 3], 'float')
         else:
             probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
 
-        if self._message_type == ControlMessage:
-            message.tensors(CppTensorMemory(count=len(probs), tensors={'probs': probs}))
+        if (isinstance(message, ControlMessage)):
+            message.tensors(_messages.TensorMemory(count=len(probs), tensors={'probs': probs}))
             return message
-        # if self._message_type == MultiResponseMessage:
+
         memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
         return MultiResponseMessage.from_message(message, memory=memory)
 

@@ -30,6 +30,7 @@
 #include <vector>
 
 namespace morpheus {
+
 #pragma GCC visibility push(default)
 /****** Component public implementations ******************/
 /****** MessageMeta****************************************/

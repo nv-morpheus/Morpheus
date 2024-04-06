@@ -24,7 +24,6 @@ from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from _utils.stages.conv_msg import ConvMsg
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage

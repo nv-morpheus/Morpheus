@@ -26,7 +26,6 @@
 #include "morpheus/objects/tensor_object.hpp"          // for TensorObject
 #include "morpheus/stages/preprocess_nlp.hpp"          // for PreprocessNLPStage, PreprocessNLPStageCC, PreprocessNL...
 #include "morpheus/types.hpp"                          // for TensorIndex
-#include "morpheus/utilities/cudf_util.hpp"            // for CudfHelper
 
 #include <cuda_runtime.h>       // for cudaMemcpy, cudaMemcpyKind
 #include <gtest/gtest.h>        // for EXPECT_EQ, Message, TestPartResult, TestInfo, TEST_F

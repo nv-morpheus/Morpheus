@@ -26,15 +26,15 @@
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
+#include <cpython/initconfig.h>  // for PyStatus_Exception, PyConfig_Clear, PyConfig_InitPythonConfig
 #include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
-#include <pybind11/embed.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
+#include <pylifecycle.h>  // for Py_InitializeFromConfig
 
-#include <array>
 #include <cassert>
+#include <codecvt>  // for codecvt_utf8_utf16
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>

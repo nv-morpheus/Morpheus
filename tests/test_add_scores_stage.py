@@ -19,8 +19,8 @@ import pytest
 
 import cudf
 
+import morpheus._lib.messages as _messages
 from _utils.dataset_manager import DatasetManager
-from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
@@ -79,7 +79,7 @@ def test_add_labels_with_multi_response_message_and_control_message():
 
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(CppTensorMemory(count=2, tensors={"probs": probs_array}))
+    cm.tensors(_messages.TensorMemory(count=2, tensors={"probs": probs_array}))
 
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=None)
 
@@ -117,7 +117,7 @@ def test_add_labels_with_multi_response_message_and_control_message():
 
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(CppTensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
+    cm.tensors(_messages.TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
 
     with pytest.raises(RuntimeError):
         AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=None)

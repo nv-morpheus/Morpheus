@@ -17,15 +17,16 @@
 
 #pragma once
 
-#include "driver_types.h"
-
+#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyKind
 #include <cudf/column/column_view.hpp>
+#include <cudf/types.hpp>  // for data_type
 #include <cudf/utilities/type_dispatcher.hpp>
 #include <glog/logging.h>  // IWYU pragma: keep
 #include <gtest/gtest.h>   // IWYU pragma: keep
 #include <mrc/cuda/common.hpp>
 #include <rmm/device_buffer.hpp>
 
+#include <ostream>  // for char_traits, operator<<, basic_ostream
 #include <vector>
 
 namespace morpheus::test {
