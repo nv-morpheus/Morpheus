@@ -229,6 +229,22 @@ PYBIND11_MODULE(messages, _module)
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
         .def_property_readonly("df", &MessageMetaInterfaceProxy::df_property, py::return_value_policy::move)
+        .def("get_data",
+             py::overload_cast<MessageMeta&>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move)
+        .def("get_data",
+             py::overload_cast<MessageMeta&, std::string>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_data",
+             py::overload_cast<MessageMeta&, std::vector<std::string>>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_data",
+             py::overload_cast<MessageMeta&, pybind11::none>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("set_data", &MessageMetaInterfaceProxy::set_data, py::return_value_policy::move)
         .def("get_column_names", &MessageMetaInterfaceProxy::get_column_names)
         .def("copy_dataframe", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
         .def("mutable_dataframe", &MessageMetaInterfaceProxy::mutable_dataframe, py::return_value_policy::move)
