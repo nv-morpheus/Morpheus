@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "morpheus/stages/write_to_file.hpp"  // IWYU pragma: accosiated
+#include "morpheus/stages/write_to_file.hpp"  // IWYU pragma: associated
 
 #include "mrc/segment/builder.hpp"
 #include "mrc/segment/object.hpp"

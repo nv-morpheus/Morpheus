@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "rxcpp/operators/rx-map.hpp"
-
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"

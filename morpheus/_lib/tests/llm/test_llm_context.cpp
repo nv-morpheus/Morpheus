@@ -22,9 +22,9 @@
 #include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_task.hpp"
 #include "morpheus/messages/control.hpp"
-#include "morpheus/types.hpp"
 
 #include <gtest/gtest.h>
+#include <mrc/channel/forward.hpp>
 #include <nlohmann/json.hpp>
 
 #include <memory>

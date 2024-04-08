@@ -26,6 +26,7 @@
 #include "morpheus/types.hpp"
 
 #include <gtest/gtest.h>
+#include <mrc/channel/forward.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
 
 #include <coroutine>

@@ -17,8 +17,6 @@
 
 #include "morpheus/stages/add_scores_stage_base.hpp"
 
-#include "rxcpp/operators/rx-map.hpp"  // for map
-
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage

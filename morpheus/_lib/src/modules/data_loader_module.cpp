@@ -17,8 +17,6 @@
 
 #include "morpheus/modules/data_loader_module.hpp"
 
-#include "rxcpp/operators/rx-map.hpp"
-
 #include "morpheus/io/data_loader_registry.hpp"
 #include "morpheus/messages/control.hpp"
 

@@ -27,6 +27,7 @@
 #include "morpheus/types.hpp"
 
 #include <gtest/gtest.h>
+#include <mrc/channel/forward.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <nlohmann/json.hpp>
