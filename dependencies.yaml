@@ -179,7 +179,6 @@ dependencies:
           - gcc_linux-64=11.2
           - glog=0.6
           - gxx_linux-64=11.2
-          - libarrow
           - librdkafka>=1.9.2,<1.10.0a0
           - mrc=24.03
           - ninja=1.11
