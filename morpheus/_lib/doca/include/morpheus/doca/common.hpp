@@ -42,6 +42,9 @@ enum doca_traffic_type
 
 struct packets_info
 {
+    uintptr_t *pkt_addr;
+    uint32_t *pkt_hdr_size;
+    uint32_t *pkt_pld_size;
     int32_t packet_count_out;
     int32_t payload_size_total_out;
 

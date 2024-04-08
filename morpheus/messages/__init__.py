@@ -59,6 +59,7 @@ __all__ = [
     "MultiResponseMessage",
     "MultiResponseProbsMessage",
     "MultiTensorMessage",
+    "RawPacketMessage",
     "ResponseMemory",
     "ResponseMemoryAE",
     "ResponseMemoryProbs",

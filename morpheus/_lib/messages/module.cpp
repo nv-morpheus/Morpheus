@@ -33,6 +33,7 @@
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/messages/multi_tensor.hpp"
+#include "morpheus/messages/raw_packet.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
@@ -441,6 +442,8 @@ PYBIND11_MODULE(messages, _module)
                     &LoaderRegistry::unregister_factory_fn,
                     py::arg("name"),
                     py::arg("throw_if_not_exists") = true);
+
+    py::class_<RawPacketMessage, std::shared_ptr<RawPacketMessage>>(_module, "RawPacketMessage");
 
     _module.attr("__version__") =
         MORPHEUS_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);

@@ -19,6 +19,7 @@
 
 #include "morpheus/doca/common.hpp"
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/raw_packet.hpp"
 
 #include <mrc/segment/builder.hpp>
 #include <pymrc/node.hpp>
@@ -33,6 +34,7 @@ struct DocaContext;
 struct DocaRxQueue;
 struct DocaRxPipe;
 struct DocaSemaphore;
+struct DocaSemaphorePktInfo;
 }  // namespace doca
 
 #pragma GCC visibility push(default)
@@ -42,10 +44,10 @@ struct DocaSemaphore;
  *
  * Tested only on ConnectX 6-Dx with a single GPU on the same NUMA node running firmware 24.35.2000
  */
-class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
+class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>
 {
   public:
-    using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
+    using base_t = mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>;
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
@@ -61,7 +63,6 @@ class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     std::vector<std::shared_ptr<morpheus::doca::DocaSemaphore>> m_semaphore;
     std::shared_ptr<morpheus::doca::DocaRxPipe> m_rxpipe;
     enum doca_traffic_type m_traffic_type;
-    rmm::cuda_stream rstream;
 };
 
 /****** DocaSourceStageInterfaceProxy***********************/
@@ -78,6 +79,45 @@ struct DocaSourceStageInterfaceProxy
                                                                        std::string const& nic_pci_address,
                                                                        std::string const& gpu_pci_address,
                                                                        std::string const& traffic_type);
+};
+
+/**
+ * @brief Transform DOCA GPUNetIO raw packets into Dataframe for other Morpheus stages.
+ *
+ * Tested only on ConnectX 6-Dx with a single GPU on the same NUMA node running firmware 24.35.2000
+ */
+class DocaConverterStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacketMessage>, std::shared_ptr<MessageMeta>>
+{
+  public:
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<RawPacketMessage>, std::shared_ptr<MessageMeta>>;
+    using base_t::source_type_t;
+    using base_t::subscribe_fn_t;
+
+    DocaConverterStage(RawPacketMessage& raw_msg,
+                    bool const& split_hdr_pld,
+                    int const& hdr_len);
+
+  private:
+    subscribe_fn_t build();
+
+    bool split_hdr_pld;
+    int const& hdr_len;
+    rmm::cuda_stream rstream;
+};
+
+/****** DocaConverterStageInterfaceProxy***********************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct DocaConverterStageInterfaceProxy
+{
+    /**
+     * @brief Create and initialize a DocaConverterStage, and return the result.
+     */
+    static std::shared_ptr<mrc::segment::Object<DocaConverterStage>> init(mrc::segment::Builder& builder,
+                                                                          RawPacketMessage& raw_msg,
+                                                                          bool const& split_hdr_pld,
+                                                                          int const& hdr_len);
 };
 
 #pragma GCC visibility pop

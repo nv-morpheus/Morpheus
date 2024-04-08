@@ -122,9 +122,6 @@ struct eth_ip_udp_hdr {
     struct udp_hdr l4_hdr;		/* UDP header */
 } __attribute__((__packed__));
 
-#define TCP_HDR_SIZE sizeof(struct eth_ip_tcp_hdr)
-#define UDP_HDR_SIZE sizeof(struct eth_ip_udp_hdr)
-
 __device__ __inline__ int
 raw_to_tcp(const uintptr_t buf_addr, struct eth_ip_tcp_hdr **hdr, uint8_t **packet_data)
 {
@@ -266,10 +263,15 @@ __global__ void _packet_receive_kernel(
     __shared__ uint32_t packet_count_received;
     __shared__ uint64_t packet_offset_received;
     __shared__ struct packets_info *pkt_info;
+    // Specialize BlockReduce for a 1D block of 128 threads of type int
+    using BlockReduce = cub::BlockReduce<int32_t, THREADS_PER_BLOCK>;
+    // Allocate shared memory for BlockReduce
+    __shared__ typename BlockReduce::TempStorage temp_storage;
 #if RUN_PERSISTENT
     doca_gpu_semaphore_status sem_status;
 #endif
     int32_t _payload_sizes[PACKETS_PER_THREAD];
+    int32_t _payload_flags[PACKETS_PER_THREAD];
     doca_gpu_buf *buf_ptr;
     uintptr_t buf_addr;
     doca_error_t doca_ret;
@@ -277,6 +279,14 @@ __global__ void _packet_receive_kernel(
     struct eth_ip_udp_hdr *hdr_udp;
     uint8_t *payload;
     // unsigned long long rx_start = 0, rx_stop = 0, pkt_proc = 0, reduce_stop =0, reduce_start = 0;
+
+    // IP address conversion
+    auto ip_to_int64 = []__device__(auto address){
+    return (address & 0x000000ff) << 24
+            | (address & 0x0000ff00) << 8
+            | (address & 0x00ff0000) >> 8
+            | (address & 0xff000000) >> 24;
+    };
 
     //Initial semaphore index 0, assume it's free!
     doca_ret = doca_gpu_dev_semaphore_get_custom_info_addr(sem, sem_idx, (void **)&pkt_info);
@@ -288,6 +298,7 @@ __global__ void _packet_receive_kernel(
 
     if (threadIdx.x == 0) {
         DOCA_GPUNETIO_VOLATILE(pkt_info->packet_count_out) = 0;
+        DOCA_GPUNETIO_VOLATILE(pkt_info->payload_size_total_out) = 0;
         DOCA_GPUNETIO_VOLATILE(packet_count_received) = 0;
     }
     __syncthreads();
@@ -310,6 +321,8 @@ __global__ void _packet_receive_kernel(
         for (auto i = 0; i < PACKETS_PER_THREAD; i++) {
             auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
             if (packet_idx >= DOCA_GPUNETIO_VOLATILE(packet_count_received)) {
+                _payload_sizes[i] = 0;
+                _payload_flags[i] = 0;
                 continue;
             }
 
@@ -324,22 +337,75 @@ __global__ void _packet_receive_kernel(
                 DOCA_GPUNETIO_VOLATILE(*exit_condition) = 1;
                 return;
             }
-            pkt_info->pkt_addr[packet_idx] = buf_addr;
+
             if (is_tcp) {
                 raw_to_tcp(buf_addr, &hdr_tcp, &payload);
-                pkt_info->pkt_hdr_size[packet_idx] = TCP_HDR_SIZE;
-                pkt_info->pkt_pld_size[packet_idx] = get_payload_tcp_size(hdr_tcp->l3_hdr, hdr_tcp->l4_hdr);
+                //Payload
+                auto payload_size = get_payload_tcp_size(hdr_tcp->l3_hdr, hdr_tcp->l4_hdr);
+                for(auto j = 0; j < payload_size; j++)
+                    pkt_info->payload_buffer_out[packet_idx * MAX_PKT_SIZE + j] = payload[j];
+                _payload_sizes[i] = payload_size;
+                _payload_flags[i] = 1;
+                pkt_info->payload_sizes_out[packet_idx] = payload_size;
+                // mac address
+                pkt_info->src_mac_out[packet_idx] = mac_bytes_to_int64(hdr_tcp->l2_hdr.s_addr_bytes);
+                pkt_info->dst_mac_out[packet_idx] = mac_bytes_to_int64(hdr_tcp->l2_hdr.d_addr_bytes);
+                // ip address
+                pkt_info->src_ip_out[packet_idx] = ip_to_int64(hdr_tcp->l3_hdr.src_addr);
+                pkt_info->dst_ip_out[packet_idx] = ip_to_int64(hdr_tcp->l3_hdr.dst_addr);
+                // ports
+                pkt_info->src_port_out[packet_idx] = BYTE_SWAP16(hdr_tcp->l4_hdr.src_port);
+                pkt_info->dst_port_out[packet_idx] = BYTE_SWAP16(hdr_tcp->l4_hdr.dst_port);
+                // tcp flags
+                pkt_info->tcp_flags_out[packet_idx] = static_cast<int32_t> (hdr_tcp->l4_hdr.tcp_flags);
+                // frame type
+                pkt_info->ether_type_out[packet_idx] = static_cast<int32_t> (hdr_tcp->l2_hdr.ether_type);
+                // protocol id
+                pkt_info->next_proto_id_out[packet_idx] = static_cast<int32_t> (hdr_tcp->l3_hdr.next_proto_id);
             } else {
                 raw_to_udp(buf_addr, &hdr_udp, &payload);
-                pkt_info->pkt_hdr_size[packet_idx] = UDP_HDR_SIZE;
-                pkt_info->pkt_pld_size[packet_idx] = get_payload_udp_size(hdr_udp->l3_hdr, hdr_udp->l4_hdr);
+                //Payload
+                auto payload_size = get_payload_udp_size(hdr_udp->l3_hdr, hdr_udp->l4_hdr);
+                for(auto j = 0; j < payload_size; j++)
+                    pkt_info->payload_buffer_out[packet_idx * MAX_PKT_SIZE + j] = payload[j];
+                _payload_sizes[i] = payload_size;
+                _payload_flags[i] = 1;
+                pkt_info->payload_sizes_out[packet_idx] = payload_size;
+                // mac address
+                pkt_info->src_mac_out[packet_idx] = mac_bytes_to_int64(hdr_udp->l2_hdr.s_addr_bytes);
+                pkt_info->dst_mac_out[packet_idx] = mac_bytes_to_int64(hdr_udp->l2_hdr.d_addr_bytes);
+                // ip address
+                pkt_info->src_ip_out[packet_idx] = ip_to_int64(hdr_udp->l3_hdr.src_addr);
+                pkt_info->dst_ip_out[packet_idx] = ip_to_int64(hdr_udp->l3_hdr.dst_addr);
+                // ports
+                pkt_info->src_port_out[packet_idx] = BYTE_SWAP16(hdr_udp->l4_hdr.src_port);
+                pkt_info->dst_port_out[packet_idx] = BYTE_SWAP16(hdr_udp->l4_hdr.dst_port);
+                // frame type
+                pkt_info->ether_type_out[packet_idx] = static_cast<int32_t> (hdr_udp->l2_hdr.ether_type);
+                // protocol id
+                pkt_info->next_proto_id_out[packet_idx] = static_cast<int32_t> (hdr_udp->l3_hdr.next_proto_id);
             }
+
+            auto now = cuda::std::chrono::system_clock::now();
+            auto now_ms = cuda::std::chrono::time_point_cast<cuda::std::chrono::milliseconds>(now);
+            auto epoch = now_ms.time_since_epoch();
+            pkt_info->timestamp_out[packet_idx] = epoch.count();
         }
+
+        // if (threadIdx.x == 0) DEVICE_GET_TIME(reduce_start);
+        auto payload_size_total = BlockReduce(temp_storage).Sum(_payload_sizes);
+        __syncthreads();
+        auto packet_count = BlockReduce(temp_storage).Sum(_payload_flags);
+        __syncthreads();
+        // if (threadIdx.x == 0) DEVICE_GET_TIME(reduce_stop);
 
         if (threadIdx.x == 0) {
             // DEVICE_GET_TIME(pkt_proc);
-            DOCA_GPUNETIO_VOLATILE(pkt_info->packet_count_out) = packet_count_received;
-
+            DOCA_GPUNETIO_VOLATILE(pkt_info->packet_count_out) = packet_count;
+            DOCA_GPUNETIO_VOLATILE(pkt_info->payload_size_total_out) = payload_size_total;
+            // printf("Block %d Update semaphore %d with %d packets %d size\n",
+            //   blockIdx.x,
+            //   sem_idx, DOCA_GPUNETIO_VOLATILE(pkt_info->packet_count_out), DOCA_GPUNETIO_VOLATILE(pkt_info->payload_size_total_out));
             doca_ret = doca_gpu_dev_semaphore_set_status(sem, sem_idx, DOCA_GPU_SEMAPHORE_STATUS_READY);
             if (doca_ret != DOCA_SUCCESS) {
                 printf("Error %d doca_gpu_dev_semaphore_set_status\n", doca_ret);
