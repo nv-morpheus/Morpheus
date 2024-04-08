@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include "morpheus/messages/raw_packet.hpp"
+
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyKind
 #include <glog/logging.h>
 #include <pybind11/gil.h>
@@ -55,28 +57,28 @@ uint32_t RawPacketMessage::get_max_size() const
 
 uintptr_t RawPacketMessage::get_pkt_addr_idx(uint32_t pkt_idx) const
 {
-    if (ptr == NULL || pkt_idx > num || gpu_mem == true)
+    if (pkt_idx > num || gpu_mem == true)
         return 0;
-    return ptr[pkt_idx];
+    return ptr_addr[pkt_idx];
 }
 
 uintptr_t RawPacketMessage::get_pkt_hdr_size_idx(uint32_t pkt_idx) const
 {
-    if (ptr == NULL || pkt_idx > num || gpu_mem == true)
+    if (pkt_idx > num || gpu_mem == true)
         return 0;
     return ptr_hdr_size[pkt_idx];
 }
 
 uintptr_t RawPacketMessage::get_pkt_pld_size_idx(uint32_t pkt_idx) const
 {
-    if (ptr == NULL || pkt_idx > num || gpu_mem == true)
+    if (pkt_idx > num || gpu_mem == true)
         return 0;
     return ptr_pld_size[pkt_idx];
 }
 
 uintptr_t * RawPacketMessage::get_pkt_addr_list() const
 {
-    return ptr;
+    return ptr_addr;
 }
 
 uint32_t * RawPacketMessage::get_pkt_hdr_size_list() const
@@ -128,7 +130,7 @@ RawPacketMessage::RawPacketMessage(uint32_t num_, uint32_t max_size_, uintptr_t 
                     ptr_hdr_size(ptr_hdr_size_),
                     ptr_pld_size(ptr_pld_size_),
                     gpu_mem(gpu_mem_),
-                    queue_idx(queue_idx_),
+                    queue_idx(queue_idx_)
                     {}
 
 // py::object RawPacketMessage::cpp_to_py(cudf::io::table_with_metadata&& table, int index_col_count)

@@ -34,7 +34,6 @@ struct DocaContext;
 struct DocaRxQueue;
 struct DocaRxPipe;
 struct DocaSemaphore;
-struct DocaSemaphorePktInfo;
 }  // namespace doca
 
 #pragma GCC visibility push(default)

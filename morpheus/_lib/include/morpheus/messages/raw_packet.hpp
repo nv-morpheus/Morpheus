@@ -150,6 +150,7 @@ class RawPacketMessage
     uint32_t *ptr_hdr_size;
     uint32_t *ptr_pld_size;
     uint16_t queue_idx;
+    bool gpu_mem;
   
     // std::shared_ptr<uintptr_t> m_data;
 };
