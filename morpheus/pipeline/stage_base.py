@@ -24,7 +24,7 @@ from abc import abstractmethod
 
 import mrc
 
-import morpheus.pipeline as _pipeline
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.utils.atomic_integer import AtomicInteger

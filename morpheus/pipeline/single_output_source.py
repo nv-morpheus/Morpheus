@@ -18,7 +18,7 @@ from abc import abstractmethod
 
 import mrc
 
-import morpheus.pipeline as _pipeline
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
 from morpheus.utils.type_utils import pretty_print_type_name
 
