@@ -31,6 +31,7 @@ dependencies:
 - requests-cache=1.1
 - requests-toolbelt
 - scikit-learn=1.3.2
+- snappy=1.1.10
 - sqlalchemy
 - tqdm=4
 - typing_utils=0.1
