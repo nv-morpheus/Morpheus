@@ -264,7 +264,7 @@ dependencies:
           - requests
           - requests-cache=1.1
           - requests-toolbelt # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
-          - snappy=1.1.10
+          #- snappy=1.1.10
           - sqlalchemy
           - tqdm=4
           - typing_utils=0.1
