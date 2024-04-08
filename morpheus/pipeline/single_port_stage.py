@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ from abc import abstractmethod
 import mrc
 import typing_utils
 
-import morpheus.pipeline as _pipeline
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
 from morpheus.utils.type_utils import pretty_print_type_name
 

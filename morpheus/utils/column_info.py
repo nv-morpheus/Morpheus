@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,10 +17,15 @@ import json
 import logging
 import re
 import typing
+import warnings
 from datetime import datetime
 from functools import partial
 
-import nvtabular as nvt
+with warnings.catch_warnings():
+    # Ignore warning regarding tensorflow not being installed
+    warnings.filterwarnings("ignore", message=".*No module named 'tensorflow'", category=UserWarning)
+    import nvtabular as nvt
+
 import pandas as pd
 
 import cudf
@@ -49,7 +54,7 @@ def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame], input_s
 
     """
 
-    from morpheus.utils import schema_transforms
+    from morpheus.utils import schema_transforms  # pylint: disable=cyclic-import
     return schema_transforms.process_dataframe(df_in, input_schema)
 
 
@@ -382,7 +387,14 @@ class DateTimeColumn(RenameColumn):
             The processed column as a datetime Series.
         """
 
-        return pd.to_datetime(df[self.input_name], infer_datetime_format=True, utc=True).astype(self.get_pandas_dtype())
+        dt_series = pd.to_datetime(df[self.input_name], infer_datetime_format=True, utc=True)
+
+        dtype = self.get_pandas_dtype()
+        if dtype == 'datetime64[ns]':
+            # avoid deprecation warning about using .astype to convert from a tz-aware type to a tz-naive type
+            return dt_series.dt.tz_localize(None)
+
+        return dt_series.astype(dtype)
 
 
 @dataclasses.dataclass

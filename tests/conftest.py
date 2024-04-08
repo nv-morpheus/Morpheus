@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,10 +25,12 @@ import time
 import types
 import typing
 import warnings
+from unittest import mock
 
 import pytest
 import requests
 
+from _utils import import_or_skip
 from _utils.kafka import _init_pytest_kafka
 from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
 from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
@@ -528,7 +530,7 @@ def disable_gc():
     gc.enable()
 
 
-def wait_for_camouflage(host="localhost", port=8000, timeout=10):
+def wait_for_camouflage(host="localhost", port=8000, timeout=30):
 
     start_time = time.time()
     cur_time = start_time
@@ -575,11 +577,12 @@ def _set_pdeathsig(sig=signal.SIGTERM):
     return prctl_fn
 
 
-def _start_camouflage(root_dir: str,
-                      host: str = "localhost",
-                      port: int = 8000) -> typing.Tuple[bool, typing.Optional[subprocess.Popen]]:
+def _start_camouflage(
+        root_dir: str,
+        host: str = "localhost",
+        port: int = 8000) -> typing.Tuple[bool, typing.Optional[subprocess.Popen], typing.Optional[typing.IO]]:
     logger = logging.getLogger(f"morpheus.{__name__}")
-    startup_timeout = 10
+    startup_timeout = 30
 
     launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
     is_running = False
@@ -596,47 +599,58 @@ def _start_camouflage(root_dir: str,
     # Actually launch camoflague
     if launch_camouflage:
         popen = None
+        console_log_fh = None
         try:
             # pylint: disable=subprocess-popen-preexec-fn,consider-using-with
+            # We currently don't have control over camouflage's console logger
+            # https://github.com/testinggospels/camouflage/issues/244
+            console_log = os.path.join(root_dir, 'console.log')
+            camouflage_log = os.path.join(root_dir, 'camouflage.log')
+            console_log_fh = open(console_log, 'w', encoding='utf-8')
             popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
                                      cwd=root_dir,
-                                     stderr=subprocess.DEVNULL,
-                                     stdout=subprocess.DEVNULL,
+                                     stderr=subprocess.STDOUT,
+                                     stdout=console_log_fh,
                                      preexec_fn=_set_pdeathsig(signal.SIGTERM))
             # pylint: enable=subprocess-popen-preexec-fn,consider-using-with
 
             logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
             def read_logs():
-                camouflage_log = os.path.join(root_dir, 'camouflage.log')
-                if os.path.exists(camouflage_log):
-                    with open(camouflage_log, 'r', encoding='utf-8') as f:
-                        return f.read()
-                return ""
+                for log_file in (console_log, camouflage_log):
+                    if os.path.exists(log_file):
+                        with open(log_file, 'r', encoding='utf-8') as f:
+                            logger.error("%s:\n%s", log_file, f.read())
+                            # We only need to display the first log file that exists
+                            return
 
             if not wait_for_camouflage(host=host, port=port, timeout=startup_timeout):
+                if console_log_fh is not None:
+                    console_log_fh.close()
+
+                read_logs()
 
                 if popen.poll() is not None:
-                    raise RuntimeError(f"camouflage server exited with status code={popen.poll()}\n{read_logs()}")
+                    raise RuntimeError(f"camouflage server exited with status code={popen.poll()}")
 
-                raise RuntimeError(f"Failed to launch camouflage server\n{read_logs()}")
+                raise RuntimeError("Failed to launch camouflage server")
 
             # Must have been started by this point
-            return (True, popen)
+            return (True, popen, console_log_fh)
 
         except Exception:
             # Log the error and rethrow
             logger.exception("Error launching camouflage")
             if popen is not None:
-                _stop_camouflage(popen)
+                _stop_camouflage(popen, console_log_fh=console_log_fh)
             raise
 
     else:
 
-        return (is_running, None)
+        return (is_running, None, None)
 
 
-def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5):
+def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5, console_log_fh: typing.IO = None):
     logger = logging.getLogger(f"morpheus.{__name__}")
 
     logger.info("Killing camouflage with pid %s", popen.pid)
@@ -652,6 +666,9 @@ def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5):
         if not stopped:
             time.sleep(sleep_time)
             elapsed_time += sleep_time
+
+    if console_log_fh is not None:
+        console_log_fh.close()
 
 
 @pytest.fixture(scope="session")
@@ -670,10 +687,10 @@ def _triton_camouflage_is_running():
     from _utils import TEST_DIRS
 
     root_dir = TEST_DIRS.mock_triton_servers_dir
-    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8000)
+    (is_running, popen, console_log_fh) = _start_camouflage(root_dir=root_dir, port=8000)
     yield is_running
     if popen is not None:
-        _stop_camouflage(popen)
+        _stop_camouflage(popen, console_log_fh=console_log_fh)
 
 
 @pytest.fixture(scope="session")
@@ -692,11 +709,11 @@ def _rest_camouflage_is_running():
     from _utils import TEST_DIRS
 
     root_dir = TEST_DIRS.mock_rest_server
-    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8080)
+    (is_running, popen, console_log_fh) = _start_camouflage(root_dir=root_dir, port=8080)
 
     yield is_running
     if popen is not None:
-        _stop_camouflage(popen)
+        _stop_camouflage(popen, console_log_fh=console_log_fh)
 
 
 @pytest.fixture(scope="function")
@@ -1007,3 +1024,50 @@ def idx_part_collection_config_fixture():
 def simple_collection_config_fixture():
     from _utils import load_json_file
     yield load_json_file(filename="service/milvus_simple_collection_conf.json")
+
+
+@pytest.fixture(name="nemollm", scope='session')
+def nemollm_fixture(fail_missing: bool):
+    """
+    Fixture to ensure nemollm is installed
+    """
+    skip_reason = ("Tests for the NeMoLLMService require the nemollm package to be installed, to install this run:\n"
+                   "`conda env update --solver=libmamba -n morpheus "
+                   "--file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
+    yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
+
+
+@pytest.fixture(name="openai", scope='session')
+def openai_fixture(fail_missing: bool):
+    """
+    Fixture to ensure openai is installed
+    """
+    skip_reason = ("Tests for the OpenAIChatService require the openai package to be installed, to install this run:\n"
+                   "`conda env update --solver=libmamba -n morpheus "
+                   "--file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
+    yield import_or_skip("openai", reason=skip_reason, fail_missing=fail_missing)
+
+
+@pytest.mark.usefixtures("openai")
+@pytest.fixture(name="mock_chat_completion")
+def mock_chat_completion_fixture():
+    from _utils.llm import mk_mock_openai_response
+    with (mock.patch("openai.OpenAI") as mock_client, mock.patch("openai.AsyncOpenAI") as mock_async_client):
+        mock_client.return_value = mock_client
+        mock_async_client.return_value = mock_async_client
+
+        mock_client.chat.completions.create.return_value = mk_mock_openai_response(['test_output'])
+        mock_async_client.chat.completions.create = mock.AsyncMock(
+            return_value=mk_mock_openai_response(['test_output']))
+        yield (mock_client, mock_async_client)
+
+
+@pytest.mark.usefixtures("nemollm")
+@pytest.fixture(name="mock_nemollm")
+def mock_nemollm_fixture():
+    with mock.patch("nemollm.NemoLLM", autospec=True) as mock_nemollm:
+        mock_nemollm.return_value = mock_nemollm
+        mock_nemollm.generate_multiple.return_value = ["test_output"]
+        mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}
+
+        yield mock_nemollm

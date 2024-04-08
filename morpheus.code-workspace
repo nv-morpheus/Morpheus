@@ -1,4 +1,24 @@
 {
+    "extensions": {
+        // See https://go.microsoft.com/fwlink/?LinkId=827846 to learn about workspace recommendations.
+        // Extension identifier format: ${publisher}.${name}. Example: vscode.csharp
+        // List of extensions which should be recommended for users of this workspace.
+        "recommendations": [
+            "eeyore.yapf",
+            "josetr.cmake-language-support-vscode",
+            "llvm-vs-code-extensions.vscode-clangd",
+            "matepek.vscode-catch2-test-adapter",
+            "ms-python.flake8",
+            "ms-python.isort",
+            "ms-python.pylint",
+            "ms-vscode.cmake-tools",
+            "stkb.rewrap"
+        ],
+        // List of extensions recommended by VS Code that should not be recommended for users of this workspace.
+        "unwantedRecommendations": [
+            "austin.code-gnu-global"
+        ]
+    },
     "folders": [
         {
             "path": "."
@@ -62,7 +82,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -118,7 +138,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -180,7 +200,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -245,7 +265,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -264,7 +284,7 @@
                 "name": "Python: Anomaly Detection Example",
                 "program": "${workspaceFolder}/examples/abp_pcap_detection/run.py",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -282,7 +302,7 @@
                 "module": "sphinx.cmd.build",
                 "name": "Python: Sphinx",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "MIMode": "gdb",
@@ -565,52 +585,54 @@
                 "type": "cppdbg"
             },
             {
-                "name": "Python: GNN DGL inference",
-                "type": "python",
-                "request": "launch",
-                "program": "${workspaceFolder}/examples/gnn_fraud_detection_pipeline/run.py",
-                "console": "integratedTerminal",
-                "cwd": "${workspaceFolder}/examples/gnn_fraud_detection_pipeline",
-                "justMyCode": false,
                 "args": [
                     "--input_file=validation.csv",
                     "--training_file=training.csv",
                     "--output_file=result.csv",
                     "--model_dir=model"
-                ]
+                ],
+                "console": "integratedTerminal",
+                "cwd": "${workspaceFolder}/examples/gnn_fraud_detection_pipeline",
+                "justMyCode": false,
+                "name": "Python: GNN DGL inference",
+                "program": "${workspaceFolder}/examples/gnn_fraud_detection_pipeline/run.py",
+                "request": "launch",
+                "type": "debugpy"
             },
             {
-                "name": "Python: GNN model training",
-                "type": "python",
-                "request": "launch",
-                "program": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models/training.py",
-                "console": "integratedTerminal",
-                "cwd": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models",
-                "justMyCode": false,
                 "args": [
                     "--training-data=${workspaceFolder}/examples/gnn_fraud_detection_pipeline/training.csv",
                     "--validation-data=${workspaceFolder}/examples/gnn_fraud_detection_pipeline/validation.csv",
                     "--output-file=result.csv",
                     "--model-dir=models",
                     "--epochs=5"
-                ]
+                ],
+                "console": "integratedTerminal",
+                "cwd": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models",
+                "justMyCode": false,
+                "name": "Python: GNN model training",
+                "program": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models/training.py",
+                "request": "launch",
+                "type": "debugpy"
             }
         ]
     },
     "settings": {
         "[cpp]": {
+            "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
             "editor.detectIndentation": false,
             "editor.formatOnSave": true,
             "editor.semanticHighlighting.enabled": true,
             "editor.suggest.insertMode": "replace",
             "editor.tabSize": 4,
-            "editor.wordBasedSuggestions": false,
+            "editor.wordBasedSuggestions": "off",
             "editor.wordWrapColumn": 120
         },
         "[python]": {
             "editor.codeActionsOnSave": {
-                "source.organizeImports": true
+                "source.organizeImports": "explicit"
             },
+            "editor.defaultFormatter": "eeyore.yapf",
             "editor.formatOnSave": true,
             "editor.tabSize": 4
         },
@@ -628,6 +650,9 @@
         "files.insertFinalNewline": true,
         "files.trimFinalNewlines": true,
         "files.trimTrailingWhitespace": true,
+        "flake8.args": [
+            "--style=${workspaceFolder}/setup.cfg"
+        ],
         "pylint.args": [
             "--rcfile=${workspaceFolder}/pyproject.toml",
             "--init-hook=import sys; sys.path.append(\"${workspaceFolder}\")"
@@ -636,17 +661,47 @@
         "python.analysis.extraPaths": [
             "./examples/digital_fingerprinting/production/morpheus"
         ],
-        "python.formatting.provider": "yapf",
-        "python.formatting.yapfArgs": [
-            "--style=${workspaceFolder}/setup.cfg"
-        ],
-        "python.linting.flake8Enabled": true,
         "python.testing.pytestArgs": [
             "-s",
             "tests"
         ],
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
-        "rewrap.wrappingColumn": 120
+        "rewrap.wrappingColumn": 120,
+        "testMate.cpp.test.advancedExecutables": [
+            {
+                "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}_*.x",
+                "env": {
+                    "UCX_ERROR_SIGNALS": "", // Prevent UCX from capturing errors
+                    "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
+                }
+            }
+        ],
+        "testMate.cpp.debug.configTemplate": {
+            "args": "${argsArray}",
+            "cwd": "${cwd}",
+            "darwin": {
+                "MIMode": "lldb",
+                "type": "cppdbg"
+            },
+            "env": "${envObj}",
+            "environment": "${envObjArray}",
+            "name": "Debug Test Runner (${parentLabel} > ${label})",
+            "program": "${exec}",
+            "request": "launch",
+            "testMate.cpp.debug.setEnv": {
+                "GLOG_v": "10",
+                "GTEST_CATCH_EXCEPTIONS": "0", // Allow the debugger to catch exceptions
+                "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
+                "UCX_ERROR_SIGNALS": "" // Prevent UCX from capturing errors
+            },
+            "type": "lldb",
+            "win32": {
+                "type": "cppvsdbg"
+            }
+        },
+        "yapf.args": [
+            "--style=${workspaceFolder}/setup.cfg"
+        ]
     }
 }

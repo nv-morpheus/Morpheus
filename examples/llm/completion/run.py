@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,6 +55,18 @@ def run():
               default="NemoLLM",
               type=click.Choice(['NemoLLM', 'OpenAI'], case_sensitive=False),
               help="LLM service to issue requests to.")
+@click.option(
+    "--input_file",
+    type=click.Path(exists=True, readable=True),
+    default=None,
+    required=False,
+    help="Input to read country names from, if undefined an in-memory DataFrame of ten countris will be used.")
+@click.option(
+    "--shuffle",
+    is_flag=True,
+    default=False,
+    help=("Random shuffle order of country names."),
+)
 def pipeline(**kwargs):
     from .pipeline import pipeline as _pipeline
 

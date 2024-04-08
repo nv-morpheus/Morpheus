@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@
 #include "py_llm_engine_stage.hpp"
 #include "py_llm_lambda_node.hpp"
 
+#include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_engine.hpp"
@@ -34,14 +35,13 @@
 #include "morpheus/pybind11/input_map.hpp"  // IWYU pragma: keep
 #include "morpheus/pybind11/json.hpp"       // IWYU pragma: keep
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/json_types.hpp"
 #include "morpheus/version.hpp"
 
+#include <mrc/segment/object.hpp>
 #include <mrc/utils/string_utils.hpp>
 #include <nlohmann/detail/exceptions.hpp>
 #include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
-#include <pybind11/detail/common.h>
+#include <pybind11/attr.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>    // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/pytypes.h>     // for dict, sequence
@@ -54,7 +54,6 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
 
 namespace morpheus::llm {
@@ -301,8 +300,8 @@ PYBIND11_MODULE(llm, _module)
         .def("get_input_names",
              &LLMTaskHandler::get_input_names,
              R"pbdoc(
-                Get the input names for the task handler. 
-                
+                Get the input names for the task handler.
+
                 Returns
                 -------
                 list[str]

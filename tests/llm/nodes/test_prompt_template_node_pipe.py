@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,7 +49,6 @@ def _build_engine(template: str, template_format: str) -> LLMEngine:
     return engine
 
 
-@pytest.mark.use_python
 @pytest.mark.parametrize("template,template_format,values,expected_output",
                          [("Hello {name}!",
                            "f-string", {

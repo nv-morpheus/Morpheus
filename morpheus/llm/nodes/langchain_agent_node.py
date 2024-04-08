@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -66,9 +66,14 @@ class LangChainAgentNode(LLMNodeBase):
             return results
 
         # We are not dealing with a list, so run single
-        return await self._agent_executor.arun(**kwargs)
+        try:
+            return await self._agent_executor.arun(**kwargs)
+        except Exception as e:
+            error_msg = f"Error running agent: {e}"
+            logger.exception(error_msg)
+            return error_msg
 
-    async def execute(self, context: LLMContext) -> LLMContext:
+    async def execute(self, context: LLMContext) -> LLMContext:  # pylint: disable=invalid-overridden-method
 
         input_dict = context.get_inputs()
 

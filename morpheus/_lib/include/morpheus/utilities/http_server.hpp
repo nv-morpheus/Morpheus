@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,12 +17,12 @@
 
 #pragma once
 
-#include <boost/asio/io_context.hpp>    // for io_context
-#include <boost/asio/ip/tcp.hpp>        // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
-#include <boost/beast/core/error.hpp>   // for error_code
-#include <boost/beast/http/verb.hpp>    // for verb
-#include <boost/system/error_code.hpp>  // for error_code
-#include <pybind11/pytypes.h>           // for pybind11::function
+#include <boost/asio/io_context.hpp>   // for io_context
+#include <boost/asio/ip/tcp.hpp>       // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
+#include <boost/beast/core/error.hpp>  // for error_code
+#include <boost/beast/http/verb.hpp>   // for verb
+#include <boost/system/detail/error_code.hpp>
+#include <pybind11/pytypes.h>  // for pybind11::function
 
 #include <atomic>      // for atomic
 #include <chrono>      // for seconds
@@ -46,6 +46,7 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 
 class Listener;
+
 using on_complete_cb_fn_t = std::function<void(const boost::system::error_code& /* error message */)>;
 
 /**

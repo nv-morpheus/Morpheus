@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,20 +32,17 @@
 #include <cudf/types.hpp>
 #include <glog/logging.h>       // for CHECK
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
-#include <pybind11/cast.h>
+#include <pybind11/cast.h>      // IWYU pragma: keep
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
 
 #include <algorithm>  // for transform
-#include <array>      // needed for pybind11::make_tuple
 #include <cstddef>    // for size_t
 #include <cstdint>    // for uint8_t
 #include <sstream>
 #include <stdexcept>  // for runtime_error
 #include <tuple>
-#include <type_traits>
 #include <utility>
 // IWYU pragma: no_include <unordered_map>
 
@@ -166,8 +163,7 @@ std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<Ra
 
     auto table_view                     = table_info.get_view();
     auto sliced_views                   = cudf::slice(table_view, cudf_ranges);
-    cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views, rmm::mr::get_current_device_resource()),
-                                           std::move(metadata)};
+    cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views), std::move(metadata)};
 
     return MessageMeta::create_from_cpp(std::move(table), 1);
 }
@@ -377,7 +373,8 @@ void MultiMessageInterfaceProxy::set_meta(MultiMessage& self, pybind11::object c
     // Need the GIL for the remainder
     pybind11::gil_scoped_acquire gil;
 
-    auto df = mutable_info.checkout_obj();
+    auto pdf = mutable_info.checkout_obj();
+    auto& df = *pdf;
 
     auto [row_indexer, column_indexer] = get_indexers(self, df, columns);
 
@@ -427,7 +424,7 @@ void MultiMessageInterfaceProxy::set_meta(MultiMessage& self, pybind11::object c
         }
     }
 
-    mutable_info.return_obj(std::move(df));
+    mutable_info.return_obj(std::move(pdf));
 }
 
 std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage& self,

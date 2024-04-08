@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,93 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+
+# Morpheus 24.03.00 (7 Apr 2024)
+
+## 🚨 Breaking Changes
+
+- Updating `nlohman_json` to 3.11 to match MRC ([#1596](https://github.com/nv-morpheus/Morpheus/pull/1596)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Add retry logic and proxy support to the NeMo LLM Service ([#1544](https://github.com/nv-morpheus/Morpheus/pull/1544)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Upgrade `openai` version to 1.13 and `langchain` to version 0.1.9 ([#1529](https://github.com/nv-morpheus/Morpheus/pull/1529)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Make `start_async()` available to source stages ([#1523](https://github.com/nv-morpheus/Morpheus/pull/1523)) [@efajardo-nv](https://github.com/efajardo-nv)
+- RAPIDS 24.02 Upgrade ([#1468](https://github.com/nv-morpheus/Morpheus/pull/1468)) [@cwharris](https://github.com/cwharris)
+- Decouple TritonInferenceStage from pipeline mode ([#1402](https://github.com/nv-morpheus/Morpheus/pull/1402)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 🐛 Bug Fixes
+
+- Serialize datetime objects into the module config ([#1592](https://github.com/nv-morpheus/Morpheus/pull/1592)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Remove the defaults channel from `dependencies.yml` ([#1584](https://github.com/nv-morpheus/Morpheus/pull/1584)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Fix `iso_date_regex_pattern` config in `file_batcher` module and allow override ([#1580](https://github.com/nv-morpheus/Morpheus/pull/1580)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Update DFP MLflow ModelManager to handle model retrieval using file URI ([#1578](https://github.com/nv-morpheus/Morpheus/pull/1578)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Fix `configure_logging` in DFP benchmarks ([#1553](https://github.com/nv-morpheus/Morpheus/pull/1553)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Catch langchain agent errors ([#1539](https://github.com/nv-morpheus/Morpheus/pull/1539)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Adding missing dependency on `pydantic` ([#1535](https://github.com/nv-morpheus/Morpheus/pull/1535)) [@yuchenz427](https://github.com/yuchenz427)
+- Fix memory leak in the mutable dataframe checkout/checkin code ([#1534](https://github.com/nv-morpheus/Morpheus/pull/1534)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix pathlib.Path support for FileSourceStage ([#1531](https://github.com/nv-morpheus/Morpheus/pull/1531)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Make `start_async()` available to source stages ([#1523](https://github.com/nv-morpheus/Morpheus/pull/1523)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Update CI Containers ([#1521](https://github.com/nv-morpheus/Morpheus/pull/1521)) [@cwharris](https://github.com/cwharris)
+- Fix intermittent segfault on interpreter shutdown ([#1513](https://github.com/nv-morpheus/Morpheus/pull/1513)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Adopt updated builds of CI runners ([#1503](https://github.com/nv-morpheus/Morpheus/pull/1503)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update mlflow plugin version for deployments fix ([#1499](https://github.com/nv-morpheus/Morpheus/pull/1499)) [@pdmack](https://github.com/pdmack)
+- Add runtime environment output to fix building the release container ([#1496](https://github.com/nv-morpheus/Morpheus/pull/1496)) [@cwharris](https://github.com/cwharris)
+- Fix logging of sleep time ([#1493](https://github.com/nv-morpheus/Morpheus/pull/1493)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Pin pytest to &lt;8 ([#1485](https://github.com/nv-morpheus/Morpheus/pull/1485)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Improve pipeline stop logic to ensure join is called exactly once for all stages ([#1479](https://github.com/nv-morpheus/Morpheus/pull/1479)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Fix expected JSON config file extension in logger ([#1471](https://github.com/nv-morpheus/Morpheus/pull/1471)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Fix Loss Function to Improve Model Convergence for `AutoEncoder` ([#1460](https://github.com/nv-morpheus/Morpheus/pull/1460)) [@hsin-c](https://github.com/hsin-c)
+- GNN fraud detection notebook fix ([#1450](https://github.com/nv-morpheus/Morpheus/pull/1450)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Eliminate Redundant Fetches in RSS Controller ([#1442](https://github.com/nv-morpheus/Morpheus/pull/1442)) [@bsuryadevara](https://github.com/bsuryadevara)
+- Updating the workspace settings to remove deprecated python options ([#1440](https://github.com/nv-morpheus/Morpheus/pull/1440)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Improve camouflage startup issues ([#1436](https://github.com/nv-morpheus/Morpheus/pull/1436)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fixes to modular DFP examples and benchmarks ([#1429](https://github.com/nv-morpheus/Morpheus/pull/1429)) [@efajardo-nv](https://github.com/efajardo-nv)
+
+## 📖 Documentation
+
+- Update minimum compute requirements to Volta ([#1594](https://github.com/nv-morpheus/Morpheus/pull/1594)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix broken link in getting started with Morpheus doc ([#1494](https://github.com/nv-morpheus/Morpheus/pull/1494)) [@edknv](https://github.com/edknv)
+- Update abp-model-card.md ([#1439](https://github.com/nv-morpheus/Morpheus/pull/1439)) [@drobison00](https://github.com/drobison00)
+- Update gnn-fsi-model-card.md ([#1438](https://github.com/nv-morpheus/Morpheus/pull/1438)) [@drobison00](https://github.com/drobison00)
+- Update phishing-model-card.md ([#1437](https://github.com/nv-morpheus/Morpheus/pull/1437)) [@drobison00](https://github.com/drobison00)
+- Document incompatible mlflow models issue ([#1434](https://github.com/nv-morpheus/Morpheus/pull/1434)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 🚀 New Features
+
+- Adding retry logic to the `TritonInferenceStage` to allow recovering from errors ([#1548](https://github.com/nv-morpheus/Morpheus/pull/1548)) [@cwharris](https://github.com/cwharris)
+- Create a base mixin class for ingress &amp; egress stages ([#1473](https://github.com/nv-morpheus/Morpheus/pull/1473)) [@dagardner-nv](https://github.com/dagardner-nv)
+- RAPIDS 24.02 Upgrade ([#1468](https://github.com/nv-morpheus/Morpheus/pull/1468)) [@cwharris](https://github.com/cwharris)
+- Install headers &amp; morpheus-config.cmake ([#1448](https://github.com/nv-morpheus/Morpheus/pull/1448)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 🛠️ Improvements
+
+- Updating `nlohman_json` to 3.11 to match MRC ([#1596](https://github.com/nv-morpheus/Morpheus/pull/1596)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- DOCA 2.6 from public repo ([#1588](https://github.com/nv-morpheus/Morpheus/pull/1588)) [@e-ago](https://github.com/e-ago)
+- Support `ControlMessage` for `PreProcessNLPStage` `PreProcessFILStage` `AddScoreStageBase` ([#1573](https://github.com/nv-morpheus/Morpheus/pull/1573)) [@yuchenz427](https://github.com/yuchenz427)
+- Update MLflow in Production DFP example to use Python 3.10 ([#1572](https://github.com/nv-morpheus/Morpheus/pull/1572)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Fix environment yaml paths ([#1551](https://github.com/nv-morpheus/Morpheus/pull/1551)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Add retry logic and proxy support to the NeMo LLM Service ([#1544](https://github.com/nv-morpheus/Morpheus/pull/1544)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Update to match new MRC function sig for AsyncioRunnable::on_data ([#1541](https://github.com/nv-morpheus/Morpheus/pull/1541)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Expose max_retries parameter to OpenAIChatService &amp; OpenAIChatClient ([#1536](https://github.com/nv-morpheus/Morpheus/pull/1536)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Upgrade `openai` version to 1.13 and `langchain` to version 0.1.9 ([#1529](https://github.com/nv-morpheus/Morpheus/pull/1529)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Update ops-bot.yaml ([#1528](https://github.com/nv-morpheus/Morpheus/pull/1528)) [@AyodeAwe](https://github.com/AyodeAwe)
+- Add the ability to attach Tensor objects and timestamps to `ControlMessage` ([#1511](https://github.com/nv-morpheus/Morpheus/pull/1511)) [@drobison00](https://github.com/drobison00)
+- Fix or silence warnings emitted during tests ([#1501](https://github.com/nv-morpheus/Morpheus/pull/1501)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Support ControlMessage output in the C++ impl of DeserializeStage ([#1478](https://github.com/nv-morpheus/Morpheus/pull/1478)) [@dagardner-nv](https://github.com/dagardner-nv)
+- DOCA Source Stage improvements ([#1475](https://github.com/nv-morpheus/Morpheus/pull/1475)) [@e-ago](https://github.com/e-ago)
+- Update copyright headers for 2024 ([#1474](https://github.com/nv-morpheus/Morpheus/pull/1474)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Add conda builds to CI ([#1466](https://github.com/nv-morpheus/Morpheus/pull/1466)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Grafana log monitoring and error alerting example ([#1463](https://github.com/nv-morpheus/Morpheus/pull/1463)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Misc Conda Improvements ([#1462](https://github.com/nv-morpheus/Morpheus/pull/1462)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Simplification of the streaming RAG ingest example to improve usability ([#1454](https://github.com/nv-morpheus/Morpheus/pull/1454)) [@drobison00](https://github.com/drobison00)
+- Replace GPUtil with pynvml for benchmark reports ([#1451](https://github.com/nv-morpheus/Morpheus/pull/1451)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Misc test improvements ([#1447](https://github.com/nv-morpheus/Morpheus/pull/1447)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add a --manual_seed flag to the CLI ([#1445](https://github.com/nv-morpheus/Morpheus/pull/1445)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Optionally skip ci based on a label in the pr ([#1444](https://github.com/nv-morpheus/Morpheus/pull/1444)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Refactor verification of optional dependencies ([#1443](https://github.com/nv-morpheus/Morpheus/pull/1443)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Use dependencies.yaml as source-of-truth for environment files. ([#1441](https://github.com/nv-morpheus/Morpheus/pull/1441)) [@cwharris](https://github.com/cwharris)
+- Add mocked test &amp; benchmark for LLM agents pipeline ([#1424](https://github.com/nv-morpheus/Morpheus/pull/1424)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add benchmarks for stand-alone RAG &amp; vdb upload pipelines ([#1421](https://github.com/nv-morpheus/Morpheus/pull/1421)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add benchmark for completion pipeline ([#1414](https://github.com/nv-morpheus/Morpheus/pull/1414)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Decouple TritonInferenceStage from pipeline mode ([#1402](https://github.com/nv-morpheus/Morpheus/pull/1402)) [@dagardner-nv](https://github.com/dagardner-nv)
 
 # Morpheus 23.11.01 (7 Dec 2023)
 

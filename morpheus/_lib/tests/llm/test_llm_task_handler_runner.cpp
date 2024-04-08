@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,24 +17,24 @@
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 
+#include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_context.hpp"
-#include "morpheus/llm/llm_lambda_node.hpp"
-#include "morpheus/llm/llm_node.hpp"
-#include "morpheus/llm/llm_node_runner.hpp"
 #include "morpheus/llm/llm_task.hpp"
 #include "morpheus/llm/llm_task_handler.hpp"
 #include "morpheus/llm/llm_task_handler_runner.hpp"
+#include "morpheus/messages/control.hpp"
 #include "morpheus/types.hpp"
 
 #include <gtest/gtest.h>
 #include <mrc/channel/forward.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
-#include <mrc/coroutines/task.hpp>
+#include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
+#include <nlohmann/json.hpp>
 
 #include <coroutine>
 #include <memory>
-#include <stdexcept>
+#include <optional>
 #include <string>
 
 using namespace morpheus;

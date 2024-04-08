@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@
 
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
+#include <pybind11/embed.h>
 
 #include <memory>
 #include <stdexcept>
@@ -55,12 +55,15 @@ TEST_F(TestDataLoaderRegistry, LoaderRegistryRegisterLoaderTest)
     // Should be able to overwrite an existing loader if we request it
     EXPECT_NO_THROW(LoaderRegistry::register_factory_fn(
         "LoaderRegistryRegisterLoaderTest",
-        [](nlohmann::json config) { return std::make_unique<PayloadDataLoader>(config); },
+        [](nlohmann::json config) {
+            return std::make_unique<PayloadDataLoader>(config);
+        },
         false));
 
-    EXPECT_THROW(LoaderRegistry::register_factory_fn(
-                     "LoaderRegistryRegisterLoaderTest",
-                     [](nlohmann::json config) { return std::make_unique<PayloadDataLoader>(config); }),
+    EXPECT_THROW(LoaderRegistry::register_factory_fn("LoaderRegistryRegisterLoaderTest",
+                                                     [](nlohmann::json config) {
+                                                         return std::make_unique<PayloadDataLoader>(config);
+                                                     }),
                  std::runtime_error);
 }
 

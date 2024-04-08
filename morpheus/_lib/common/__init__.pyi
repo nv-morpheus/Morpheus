@@ -7,6 +7,7 @@
 from __future__ import annotations
 import morpheus._lib.common
 import typing
+import os
 
 __all__ = [
     "FiberQueue",
@@ -190,6 +191,10 @@ class TypeId():
     UINT8: morpheus._lib.common.TypeId # value = <TypeId.UINT8: 5>
     __members__: dict # value = {'EMPTY': <TypeId.EMPTY: 0>, 'INT8': <TypeId.INT8: 1>, 'INT16': <TypeId.INT16: 2>, 'INT32': <TypeId.INT32: 3>, 'INT64': <TypeId.INT64: 4>, 'UINT8': <TypeId.UINT8: 5>, 'UINT16': <TypeId.UINT16: 6>, 'UINT32': <TypeId.UINT32: 7>, 'UINT64': <TypeId.UINT64: 8>, 'FLOAT32': <TypeId.FLOAT32: 9>, 'FLOAT64': <TypeId.FLOAT64: 10>, 'BOOL8': <TypeId.BOOL8: 11>, 'STRING': <TypeId.STRING: 12>}
     pass
+@typing.overload
+def determine_file_type(filename: os.PathLike) -> FileTypes:
+    pass
+@typing.overload
 def determine_file_type(filename: str) -> FileTypes:
     pass
 def read_file_to_df(filename: str, file_type: FileTypes = FileTypes.Auto) -> object:
@@ -198,4 +203,4 @@ def typeid_to_numpy_str(arg0: TypeId) -> str:
     pass
 def write_df_to_file(df: object, filename: str, file_type: FileTypes = FileTypes.Auto, **kwargs) -> None:
     pass
-__version__ = '23.11.0'
+__version__ = '24.3.0'

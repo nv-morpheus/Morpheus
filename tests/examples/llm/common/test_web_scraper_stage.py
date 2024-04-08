@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.use_cudf
-@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/web_scraper_stage.py'))
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/module/web_scraper_stage.py'))
 def test_http_client_source_stage_pipe(config: Config, mock_rest_server: str, import_mod: types.ModuleType):
     url = f"{mock_rest_server}/www/index"
 
@@ -42,8 +42,7 @@ def test_http_client_source_stage_pipe(config: Config, mock_rest_server: str, im
     pipe.set_source(InMemorySourceStage(config, [df]))
     pipe.add_stage(import_mod.WebScraperStage(config, chunk_size=config.feature_length))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, compare_df=df_expected))
-    pipe.run()
 
-    print(comp_stage.get_messages())
+    pipe.run()
 
     assert_results(comp_stage.get_results())

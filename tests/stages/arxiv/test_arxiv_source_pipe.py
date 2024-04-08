@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,8 +39,11 @@ def test_arxiv_source_pipeline(mock_arxiv_search: mock.MagicMock, config: Config
     page_content_col = [content]
     source_col = [cached_pdf]
     page_col = [0]
+    type_col = ["Document"]
 
-    expected_df = cudf.DataFrame({"page_content": page_content_col, "source": source_col, "page": page_col})
+    expected_df = cudf.DataFrame({
+        "page_content": page_content_col, "source": source_col, "page": page_col, "type": type_col
+    })
 
     # The ArxivSource sets a pe_count of 6 for the process_pages node, and we need at least that number of threads
     # in the config to run the pipeline

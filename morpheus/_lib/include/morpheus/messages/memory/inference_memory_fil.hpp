@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex
@@ -34,12 +35,11 @@ namespace morpheus {
  * @{
  * @file
  */
-
 /**
  * This is a container class for data that needs to be submitted to the inference server for FIL category
  * usecases.
  */
-class InferenceMemoryFIL : public InferenceMemory
+class MORPHEUS_EXPORT InferenceMemoryFIL : public InferenceMemory
 {
   public:
     /**

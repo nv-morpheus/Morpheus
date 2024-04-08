@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,16 @@
 
 export WORKSPACE_TMP="$(pwd)/ws_tmp"
 mkdir -p ${WORKSPACE_TMP}
-git clone ${GIT_URL} Morpheus
-cd Morpheus/
-git checkout ${GIT_BRANCH}
-git pull
-git checkout ${GIT_COMMIT}
+
+if [[ "${USE_HOST_GIT}" == "1" ]]; then
+    cd Morpheus/
+else
+    git clone ${GIT_URL} Morpheus
+    cd Morpheus/
+    git checkout ${GIT_BRANCH}
+    git pull
+    git checkout ${GIT_COMMIT}
+fi
 
 export MORPHEUS_ROOT=$(pwd)
 export WORKSPACE=${MORPHEUS_ROOT}

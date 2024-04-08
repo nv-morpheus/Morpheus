@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,7 @@ from pynvml.smi import NVSMI_QUERY_GPU
 from pynvml.smi import nvidia_smi
 
 
-def main():
+def main(args):
     query_opts = NVSMI_QUERY_GPU.copy()
 
     # Remove the timestamp and supported clocks from the query
@@ -68,6 +68,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--interval-ms', default=1000, help='interval in ms between writes to output file')
     parser.add_argument("--output-file", default='nvsmi.jsonlines', help='output file to save dataset')
-    args = parser.parse_args()
 
-    main()
+    main(parser.parse_args())

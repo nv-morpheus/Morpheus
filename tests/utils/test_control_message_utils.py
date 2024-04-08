@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import pytest
 
 from morpheus.messages import ControlMessage
 from morpheus.utils.control_message_utils import CMDefaultFailureContextManager
@@ -37,7 +35,7 @@ def test_skip_forward_on_cm_failed():
 
     # pylint: disable=unused-argument
     @cm_skip_processing_if_failed
-    def dummy_func(control_message, *args, **kwargs):
+    def dummy_func(cm, *args, **kwargs):
         return "Function Executed"
 
     assert dummy_func(control_message) == control_message
@@ -50,8 +48,8 @@ def test_cm_default_failure_context_manager_no_exception():
     control_message = ControlMessage()
     with CMDefaultFailureContextManager(control_message):
         pass
-    with pytest.raises(RuntimeError):
-        control_message.get_metadata("cm_failed")
+
+        assert control_message.get_metadata("cm_failed") is None
 
 
 def test_cm_default_failure_context_manager_with_exception():

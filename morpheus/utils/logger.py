@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ def _configure_from_log_file(log_config_file: str):
 
     ext = os.path.splitext(log_config_file)[1].lower()
 
-    if (ext == "json"):
+    if (ext == ".json"):
 
         dict_config: dict = None
 
@@ -95,13 +95,14 @@ def _configure_from_log_file(log_config_file: str):
         logging.config.fileConfig(log_config_file)
 
 
-def _configure_from_log_level(log_level: int):
+def _configure_from_log_level(*extra_handlers: logging.Handler, log_level: int):
     """
     Default config with only option being the logging level. Outputs to both the console and a file. Sets up a logging
     producer/consumer that works well in multi-thread/process environments.
 
     Parameters
     ----------
+    *extra_handlers: List of additional handlers which will handle entries placed on the queue
     log_level : int
         Log level and above to report
     """
@@ -143,6 +144,7 @@ def _configure_from_log_level(log_level: int):
     queue_listener = logging.handlers.QueueListener(morpheus_logging_queue,
                                                     console_handler,
                                                     file_handler,
+                                                    *extra_handlers,
                                                     respect_handler_level=True)
     queue_listener.start()
     queue_listener._thread.name = "Logging Thread"
@@ -155,7 +157,7 @@ def _configure_from_log_level(log_level: int):
     atexit.register(stop_queue_listener)
 
 
-def configure_logging(log_level: int, log_config_file: str = None):
+def configure_logging(*extra_handlers: logging.Handler, log_level: int = None, log_config_file: str = None):
     """
     Configures Morpheus logging in one of two ways. Either specifying a logging config file to load or a logging level
     which will use a default configuration. The default configuration outputs to both the console and a file. Sets up a
@@ -163,6 +165,7 @@ def configure_logging(log_level: int, log_config_file: str = None):
 
     Parameters
     ----------
+    *extra_handlers: List of handlers to add to existing default console and file handlers.
     log_level: int
         Specifies the log level and above to output. Must be one of the available levels in the `logging` module.
     log_config_file: str, optional (default = None):
@@ -180,7 +183,8 @@ def configure_logging(log_level: int, log_config_file: str = None):
         # Configure using log file
         _configure_from_log_file(log_config_file=log_config_file)
     else:
-        _configure_from_log_level(log_level=log_level)
+        assert log_level is not None, "log_level must be specified"
+        _configure_from_log_level(*extra_handlers, log_level=log_level)
 
 
 def set_log_level(log_level: int):
@@ -211,12 +215,12 @@ def set_log_level(log_level: int):
     return old_level
 
 
-def deprecated_stage_warning(logger, cls, name):
+def deprecated_stage_warning(logger, cls, name, reason: str = None):
     """Log a warning about a deprecated stage."""
-    logger.warning(("The '%s' stage ('%s') is no longer required to manage backpressure and has been deprecated. "
-                    "It has no effect and acts as a pass through stage."),
-                   cls.__name__,
-                   name)
+    message = f"The '{cls.__name__}' stage ('{name}') has been deprecated and will be removed in a future version."
+    if reason is not None:
+        message = " ".join((message, reason))
+    logger.warning(message)
 
 
 def deprecated_message_warning(logger, cls, new_cls):

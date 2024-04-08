@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@ limitations under the License.
 # Model Overview
 
 ### Description:
-* This model shows an application of a graph neural network for fraud detection in a credit card transaction graph. A transaction dataset that includes three types of nodes, transaction, client, and merchant nodes is used for modeling. A combination of `GraphSAGE` along `XGBoost` is used to identify frauds in the transaction networks. <br>
+* This model shows an application of a graph neural network for fraud detection in a credit card transaction graph. A transaction dataset that includes three types of nodes, transaction, client, and merchant nodes is used for modeling. A combination of `GraphSAGE` along `XGBoost` is used to identify frauds in the transaction networks.  This model is for demonstration purposes and not for production usage. <br>
 
 ## References(s):
 1. https://stellargraph.readthedocs.io/en/stable/hinsage.html?highlight=hinsage
@@ -93,30 +93,15 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 * Triton <br>
 
 **Test Hardware:** <br>
-* Other   <br>
+* DGX (V100) <br>
+
+## Ethical Considerations:
+NVIDIA believes Trustworthy AI is a shared responsibility and we have established policies and practices to enable development for a wide array of AI applications.  When downloaded or used in accordance with our terms of service, developers should work with their supporting model team to ensure this model meets requirements for the relevant industry and use case and addresses unforeseen product misuse.  For more detailed information on ethical considerations for this model, please see the Model Card++ Explainability, Bias, Safety & Security, and Privacy Subcards below.  Please report security vulnerabilities or NVIDIA AI Concerns [here](https://www.nvidia.com/en-us/support/submit-security-vulnerability/).
 
 # Subcards
 ## Model Card ++ Bias Subcard
 
-### What is the gender balance of the model validation data?  
-* Not Applicable
-
-### What is the racial/ethnicity balance of the model validation data?
-* Not Applicable
-
-### What is the age balance of the model validation data?
-* Not Applicable
-
-### What is the language balance of the model validation data?
-* Not Applicable
-
-### What is the geographic origin language balance of the model validation data?
-* Not Applicable
-
-### What is the educational background balance of the model validation data?
-* Not Applicable
-
-### What is the accent balance of the model validation data?
+### Individuals from the following adversely impacted (protected classes) groups participate in model design and testing.
 * Not Applicable
 
 ### Describe measures taken to mitigate against unwanted bias.
@@ -145,6 +130,10 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ### List the technical limitations of the model.
 * This model version requires a transactional data schema with entities (user, merchant, transaction) as requirement for the model.
 
+### Has this been verified to have met prescribed NVIDIA standards?
+
+* Yes
+
 ### What performance metrics were used to affirm the model's performance?
 * Area under ROC curve and Accuracy
 
@@ -152,7 +141,7 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 * None
 
 ### Link the relevant end user license agreement 
-* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/LICENSE)
+* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/LICENSE)
 
 ## Model Card ++ Saftey & Security Subcard
 
@@ -162,7 +151,7 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ### Is the model used in an application with physical safety impact?
 * No
 
-### Describe physical safety impact (if present).
+### Describe life-critical impact (if present).
 * Not Applicable
 
 ### Was model and dataset assessed for vulnerability for potential form of attack?
@@ -173,9 +162,6 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 
 ### Name use case restrictions for the model.
 * The model's use case is restricted to testing the Morpheus pipeline and may not be suitable for other applications.
-
-### Has this been verified to have met prescribed quality standards?
-* No
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
 * Not Applicable
@@ -195,13 +181,13 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ## Model Card ++ Privacy Subcard
 
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
-* Neither
-
-### Was consent obtained for any PII used?
-* Not Applicable (Data is extracted from synthetically created credit card transaction,refer[3] for the source of data creation)
+* None
 
 ### Protected classes used to create this model? (The following were used in model the model's training:)
 * Not applicable
+
+### Was consent obtained for any PII used?
+* Not Applicable (Data is extracted from synthetically created credit card transaction,refer[3] for the source of data creation)
 
 ### How often is dataset reviewed?
 * The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.

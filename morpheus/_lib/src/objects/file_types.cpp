@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,6 +47,11 @@ FileTypes determine_file_type(const std::string& filename)
                                                      << filename_path.extension()
                                                      << "' with 'auto' type. 'auto' only works with: csv, json"));
     }
+}
+
+FileTypes determine_file_type(const std::filesystem::path& filename)
+{
+    return determine_file_type(filename.string());
 }
 
 }  // namespace morpheus

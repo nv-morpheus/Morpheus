@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,7 +51,7 @@ def test_process_events_on_data(mock_datetime: mock.MagicMock,
 
     # post-process should replace nans, lets add a nan to the DF
     with dfp_multi_ae_message.meta.mutable_dataframe() as df:
-        df['v2'][10] = np.nan
+        df.loc[10, 'v2'] = np.nan
         df['event_time'] = ''
 
     set_log_level(morpheus_log_level)

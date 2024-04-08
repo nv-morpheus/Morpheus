@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,10 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"
 
-// for TensorObject
 #include "morpheus/objects/tensor_object.hpp"  // IWYU pragma: keep
 #include "morpheus/utilities/cupy_util.hpp"    // for CupyUtil::cupy_to_tensors, CupyUtil::py_tensor_map_t
 
-#include <pybind11/cast.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
 
 #include <string>

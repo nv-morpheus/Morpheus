@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,28 +17,25 @@
 
 #pragma once
 
-#include "morpheus/messages/multi.hpp"
-#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/messages/control.hpp"          // for ControlMessage
+#include "morpheus/messages/multi.hpp"            // for MultiMessage
+#include "morpheus/messages/multi_inference.hpp"  // for MultiInferenceMessage
 
-#include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/sink_properties.hpp>
-#include <mrc/node/source_properties.hpp>
-#include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>
-#include <mrc/types.hpp>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
-// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
+#include <boost/fiber/context.hpp>                   // for operator<<
+#include <cudf/strings/strings_column_view.hpp>      // for strings_column_view
+#include <mrc/segment/builder.hpp>                   // for Builder
+#include <mrc/segment/object.hpp>                    // for Object
+#include <nvtext/subword_tokenize.hpp>               // for tokenizer_result
+#include <pymrc/node.hpp>                            // for PythonNode
+#include <rmm/mr/device/device_memory_resource.hpp>  // for device_memory_resource
+#include <rxcpp/rx.hpp>                              // for observable_member, trace_activity, decay_t
 
 #include <cstdint>  // for uint32_t
-#include <map>
-#include <memory>
-#include <string>
-#include <thread>
-#include <vector>
+#include <memory>   // for shared_ptr, allocator
+#include <string>   // for string
+#include <thread>   // for operator<<
+
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -54,11 +51,11 @@ namespace morpheus {
 /**
  * @brief NLP input data for inference
  */
-class PreprocessNLPStage
-  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>
+template <typename InputT, typename OutputT>
+class PreprocessNLPStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
 {
   public:
-    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -89,12 +86,21 @@ class PreprocessNLPStage
                        int stride         = -1,
                        std::string column = "data");
 
-  private:
     /**
-     * TODO(Documentation)
+     * Called every time a message is passed to this stage
      */
-    subscribe_fn_t build_operator();
+    source_type_t on_data(sink_type_t x);
 
+  private:
+    std::shared_ptr<MultiInferenceMessage> on_multi_message(std::shared_ptr<MultiMessage> x);
+    std::shared_ptr<ControlMessage> on_control_message(std::shared_ptr<ControlMessage> x);
+    nvtext::tokenizer_result subword_tokenize(const std::string& vocab_hash_file,
+                                              uint32_t sequence_length,
+                                              bool do_lower_case,
+                                              bool truncation,
+                                              cudf::strings_column_view const& string_col,
+                                              int stride,
+                                              rmm::mr::device_memory_resource* mr);
     std::string m_vocab_hash_file;
     std::string m_column;
     uint32_t m_sequence_length;
@@ -104,6 +110,11 @@ class PreprocessNLPStage
     int m_stride{-1};
 };
 
+using PreprocessNLPStageMM =  // NOLINT(readability-identifier-naming)
+    PreprocessNLPStage<MultiMessage, MultiInferenceMessage>;
+using PreprocessNLPStageCM =  // NOLINT(readability-identifier-naming)
+    PreprocessNLPStage<ControlMessage, ControlMessage>;
+
 /****** PreprocessNLPStageInferenceProxy********************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
@@ -111,7 +122,8 @@ class PreprocessNLPStage
 struct PreprocessNLPStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a ProcessNLPStage, and return the result
+     * @brief Create and initialize a ProcessNLPStage that receives MultiMessage and emits MultiInferenceMessage, and
+     * return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
@@ -129,18 +141,52 @@ struct PreprocessNLPStageInterfaceProxy
      * equal to stride there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will
      * be repeated on the second sequence and so on until the entire sentence is encoded.
      * @param column : Name of the string column to operate on, defaults to "data".
-     * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>
+     * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>>
      */
-    static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> init(mrc::segment::Builder& builder,
-                                                                          const std::string& name,
-                                                                          std::string vocab_hash_file,
-                                                                          uint32_t sequence_length,
-                                                                          bool truncation,
-                                                                          bool do_lower_case,
-                                                                          bool add_special_token,
-                                                                          int stride         = -1,
-                                                                          std::string column = "data");
+    static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<MultiMessage, MultiInferenceMessage>>> init_multi(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        std::string vocab_hash_file,
+        uint32_t sequence_length,
+        bool truncation,
+        bool do_lower_case,
+        bool add_special_token,
+        int stride         = -1,
+        std::string column = "data");
+    /**
+     * @brief Create and initialize a ProcessNLPStage that receives ControlMessage and emits ControlMessage, and return
+     * the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created
+     * from the raw vocabulary using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
+     * @param sequence_length : Sequence Length to use (We add to special tokens for NER classification job).
+     * @param truncation : If set to true, strings will be truncated and padded to max_length. Each input string will
+     * result in exactly one output sequence. If set to false, there may be multiple output sequences when the
+     * max_length is smaller than generated tokens.
+     * @param do_lower_case : If set to true, original text will be lowercased before encoding.
+     * @param add_special_token : Whether or not to encode the sequences with the special tokens of the BERT
+     * classification model.
+     * @param stride : If `truncation` == False and the tokenized string is larger than max_length, the sequences
+     * containing the overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is
+     * equal to stride there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will
+     * be repeated on the second sequence and so on until the entire sentence is encoded.
+     * @param column : Name of the string column to operate on, defaults to "data".
+     * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>>
+     */
+    static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage<ControlMessage, ControlMessage>>> init_cm(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        std::string vocab_hash_file,
+        uint32_t sequence_length,
+        bool truncation,
+        bool do_lower_case,
+        bool add_special_token,
+        int stride         = -1,
+        std::string column = "data");
 };
+
 #pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

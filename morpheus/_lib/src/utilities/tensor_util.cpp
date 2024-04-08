@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,6 @@
 #include <experimental/iterator>  // for make_ostream_joiner
 #include <ostream>      // for operator<<, ostream, stringstream
 #include <string>       // for char_traits, string
-#include <type_traits>  // for decay_t
 #include <vector>       // for vector
 
 namespace morpheus {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,7 @@
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 
-#include <pybind11/cast.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>  // for attribute_error, key_error
 #include <pybind11/stl.h>      // IWYU pragma: keep
 

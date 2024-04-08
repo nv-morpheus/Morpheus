@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -142,7 +142,7 @@ class HttpServerSinkStage(PassThruTypeMixin, SinglePortStage):
         """Indicates whether or not this stage supports a C++ node."""
         return False
 
-    def on_start(self):
+    async def start_async(self):
         """Starts the HTTP server."""
         from morpheus.common import HttpServer
         self._server = HttpServer(parse_fn=self._request_handler,

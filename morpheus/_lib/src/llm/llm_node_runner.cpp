@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@
 #include "morpheus/llm/llm_node_runner.hpp"
 
 #include "morpheus/llm/llm_context.hpp"
+#include "morpheus/llm/llm_node_base.hpp"
 #include "morpheus/llm/utils.hpp"
 #include "morpheus/utilities/string_util.hpp"
 

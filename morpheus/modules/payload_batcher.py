@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -147,7 +147,14 @@ def payload_batcher(builder: mrc.Builder):
             # Period object conversion is not supported in cudf
             df[period_column] = df[period_column].to_pandas().dt.to_period(period).astype('str')
 
-        groups = df.groupby(group_by_columns)
+        if len(group_by_columns) == 1:
+            # Avoid warning from cudf regardning an upcoming change of behavior when applying a groupby to a single
+            # element list.
+            group_by_columns_ = group_by_columns[0]
+        else:
+            group_by_columns_ = group_by_columns
+
+        groups = df.groupby(group_by_columns_)
 
         dfs = []
         for _, group in groups:

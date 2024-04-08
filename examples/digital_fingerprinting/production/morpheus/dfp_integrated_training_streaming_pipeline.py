@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -103,12 +103,14 @@ from morpheus.stages.input.control_message_kafka_source_stage import ControlMess
               help=("The MLflow tracking URI to connect to the tracking backend."))
 @click.option('--mlflow_experiment_name_template',
               type=str,
-              default="dfp/{source}/training/{reg_model_name}",
-              help="The MLflow experiment name template to use when logging experiments. ")
+              default=None,
+              help=("The MLflow experiment name template to use when logging experiments."
+                    "If None, defaults to dfp/source/training/{reg_model_name}"))
 @click.option('--mlflow_model_name_template',
               type=str,
-              default="DFP-{source}-{user_id}",
-              help="The MLflow model name template to use when logging models. ")
+              default=None,
+              help=("The MLflow model name template to use when logging models."
+                    "If None, defaults to DFP-source-{user_id}"))
 @click.option('--bootstrap_servers',
               type=str,
               default="localhost:9092",
@@ -151,6 +153,11 @@ def run_pipeline(source: str,
                  **kwargs):
     if (skip_user and only_user):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
+
+    if mlflow_experiment_name_template is None:
+        mlflow_experiment_name_template = f'dfp/{source}/training/' + '{reg_model_name}'
+    if mlflow_model_name_template is None:
+        mlflow_model_name_template = f'DFP-{source}-' + '{user_id}'
 
     dfp_arg_parser = DFPArgParser(skip_user,
                                   only_user,
@@ -227,7 +234,7 @@ def run_pipeline(source: str,
     # |   |                        |                       |    |                        |                      |   |
     # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |      |         dfp_monitor_module          |   |    |    |           dfp_monitor_module         |   |   |
+    # |   |      |           monitor_module            |   |    |    |             monitor_module           |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |                        |                       |    |                        |                      |   |
     # |   |                        v                       |    |                        v                      |   |
@@ -237,7 +244,7 @@ def run_pipeline(source: str,
     # |   |                        |                       |    |                        |                      |   |
     # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |      |         dfp_monitor_module          |   |    |    |           dfp_monitor_module        |    |   |
+    # |   |      |           monitor_module            |   |    |    |             monitor_module          |    |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |                        |                       |    |                        |                      |   |
     # |   |                        v                       |    |                        v                      |   |
@@ -247,7 +254,7 @@ def run_pipeline(source: str,
     # |   |                        |                       |    |                        |                      |   |
     # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |      |          dfp_monitor_module         |   |    |    |        dfp_post_proc_module          |   |   |
+    # |   |      |            monitor_module           |   |    |    |        dfp_post_proc_module          |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |    ------------------------------------------------     |                        |                      |   |
     # |                                                         |                        v                      |   |
@@ -262,7 +269,7 @@ def run_pipeline(source: str,
     # |                                                         |                        |                      |   |
     # |                                                         |                        v                      |   |
     # |                                                         |    +-------------------------------------+    |   |
-    # |                                                         |    |          dfp_monitor_module         |    |   |
+    # |                                                         |    |            monitor_module           |    |   |
     # |                                                         |    +-------------------------------------+    |   |
     # |                                                         ------------------------------------------------    |
     #  --------------------------------------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ class SimpleTaskHandler(LLMTaskHandler):
     def get_input_names(self) -> list[str]:
         return self._output_columns
 
+    # pylint: disable=invalid-overridden-method
     async def try_handle(self, context: LLMContext) -> list[ControlMessage]:
 
         input_dict = context.get_inputs()

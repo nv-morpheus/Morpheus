@@ -1,5 +1,5 @@
 <!--
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ python run.py \
     --num_threads 1 \
     --input_file ${MORPHEUS_ROOT}/models/datasets/validation-data/log-parsing-validation-data-input.csv \
     --output_file ./log-parsing-output.jsonlines \
-    --model_vocab_hash_file=${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt \
+    --model_vocab_hash_file=data/bert-base-cased-hash.txt \
     --model_vocab_file=${MORPHEUS_ROOT}/models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
     --model_seq_length=256 \
     --model_name log-parsing-onnx \
@@ -110,11 +110,11 @@ PYTHONPATH="examples/log_parsing" \
 morpheus --log_level INFO \
 	--plugin "inference" \
 	--plugin "postprocessing" \
-	run --num_threads 1 --use_cpp False --pipeline_batch_size 1024 --model_max_batch_size 32  \
+	run --num_threads 1 --pipeline_batch_size 1024 --model_max_batch_size 32  \
 	pipeline-nlp \
 	from-file --filename ./models/datasets/validation-data/log-parsing-validation-data-input.csv  \
 	deserialize \
-	preprocess --vocab_hash_file ${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt --stride 64 --column=raw \
+	preprocess --vocab_hash_file data/bert-base-cased-hash.txt --stride 64 --column=raw \
 	monitor --description "Preprocessing rate" \
 	inf-logparsing --model_name log-parsing-onnx --server_url localhost:8001 --force_convert_inputs=True \
 	monitor --description "Inference rate" --unit inf \

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,15 +21,10 @@
 #include "morpheus/types.hpp"
 
 #include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
 #include <cudf/io/types.hpp>
 #include <librdkafka/rdkafkacpp.h>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
-#include <mrc/types.hpp>
 #include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity

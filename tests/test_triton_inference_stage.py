@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,11 +25,14 @@ import cudf
 
 from _utils import assert_results
 from _utils import mk_async_infer
+from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
+from morpheus.stages.inference.triton_inference_stage import ProducerConsumerQueue
 from morpheus.stages.inference.triton_inference_stage import ResourcePool
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
@@ -117,6 +120,33 @@ def test_resource_pool_create_raises_error():
         pool.borrow_obj()
 
     assert pool.borrow_obj() == 20
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
+def test_stage_constructor_worker_class(config: Config, pipeline_mode: PipelineModes):
+    config.mode = pipeline_mode
+    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000')
+    worker = stage._get_inference_worker(ProducerConsumerQueue())
+    assert isinstance(worker, TritonInferenceWorker)
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
+@pytest.mark.parametrize("needs_logits", [True, False, None])
+def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes, needs_logits: bool | None):
+    if needs_logits is None:
+        expexted_needs_logits = (pipeline_mode == PipelineModes.NLP)
+    else:
+        expexted_needs_logits = needs_logits
+
+    config.mode = pipeline_mode
+
+    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', needs_logits=needs_logits)
+
+    worker = stage._get_inference_worker(ProducerConsumerQueue())
+    assert isinstance(worker, TritonInferenceWorker)
+    assert worker.needs_logits == expexted_needs_logits
 
 
 @pytest.mark.slow

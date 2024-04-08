@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import typing
 from abc import abstractmethod
 from functools import partial
@@ -21,13 +22,24 @@ import cupy as cp
 import mrc
 from mrc.core import operators as ops
 
+import cudf
+
+# pylint: disable=morpheus-incorrect-lib-from-import
+from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
+from morpheus.messages import InferenceMemoryNLP
+from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiInferenceNLPMessage
+from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
+
+logger = logging.getLogger(__name__)
 
 
 class InferenceWorker:
@@ -222,12 +234,27 @@ class InferenceStage(MultiMessageStage):
 
             outstanding_requests = 0
 
-            def on_next(x: MultiInferenceMessage):
+            def on_next(message: typing.Union[MultiInferenceMessage, ControlMessage]):
                 nonlocal outstanding_requests
+                _message = None
+                if (isinstance(message, ControlMessage)):
+                    _message = message
+                    tensors = message.tensors()
+                    memory_params: dict = message.get_metadata("inference_memory_params")
+                    inference_type: str = memory_params["inference_type"]
 
-                batches = self._split_batches(x, self._max_batch_size)
+                    if (inference_type == "nlp"):
+                        memory = InferenceMemoryNLP(count=tensors.count, **tensors.get_tensors())
+                        meta_message = MessageMeta(df=message.payload().df)
+                        multi_message = MultiMessage(meta=meta_message)
 
-                output_message = worker.build_output_message(x)
+                        message = MultiInferenceNLPMessage.from_message(multi_message, memory=memory)
+                    else:
+                        raise ValueError(f"Unsupported inference type for ControlMessage: {inference_type}")
+
+                batches = self._split_batches(message, self._max_batch_size)
+
+                output_message = worker.build_output_message(message)
 
                 fut_list = []
 
@@ -250,6 +277,16 @@ class InferenceStage(MultiMessageStage):
 
                 for f in fut_list:
                     f.result()
+
+                # TODO(Devin): This is a hack to support ControlMessage side channel.
+                if (isinstance(_message, ControlMessage)):
+                    _df = cudf.DataFrame(output_message.get_meta())
+                    if (_df is not None and not _df.empty):
+                        embeddings = output_message.get_probs_tensor()
+                        _df["embedding"] = embeddings.tolist()
+                        _message_meta = CppMessageMeta(df=_df)
+                        _message.payload(_message_meta)
+                    output_message = _message
 
                 return output_message
 
@@ -323,7 +360,6 @@ class InferenceStage(MultiMessageStage):
         out_resp = []
 
         for start, stop in out_batches:
-
             out_resp.append(x.get_slice(start, stop))
 
         assert len(out_resp) > 0
@@ -407,4 +443,4 @@ class InferenceStage(MultiMessageStage):
             for i, idx in enumerate(mess_ids):
                 probs[idx, :] = cp.maximum(probs[idx, :], resp_probs[i, :])
 
-        return MultiResponseMessage.from_message(inf, memory=memory, offset=inf.offset, count=inf.mess_count)
+        return MultiResponseMessage.from_message(inf, memory=memory, offset=seq_offset, count=seq_count)

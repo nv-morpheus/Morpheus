@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,14 @@ on:
       run_check:
         required: true
         type: boolean
+      conda_run_build:
+        description: 'Runs the conda-build stage to ensure the conda package builds successfully'
+        required: true
+        type: boolean
+      conda_upload_label:
+        description: 'The label to use when uploading the conda package. Leave empty to disable uploading'
+        required: true
+        type: string
       container:
         required: true
         type: string
@@ -34,7 +42,7 @@ on:
 env:
   CHANGE_TARGET: "${{ github.base_ref }}"
   CUDA_PATH: "/usr/local/cuda/"
-  CUDA_VER: "11.8"
+  CUDA_VER: "12.1"
   GH_TOKEN: "${{ github.token }}"
   GIT_COMMIT: "${{ github.sha }}"
   MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
@@ -132,7 +140,6 @@ jobs:
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
         PARALLEL_LEVEL: '10'
-        MERGE_EXAMPLES_YAML: '1'
     strategy:
       fail-fast: true
 
@@ -164,8 +171,6 @@ jobs:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
       image: ${{ inputs.container }}
-      env:
-        MERGE_DOCS_YAML: '1'
     strategy:
       fail-fast: true
 
@@ -186,3 +191,40 @@ jobs:
       - name: build_docs
         shell: bash
         run: ./morpheus/ci/scripts/github/docs.sh
+
+  package:
+    name: Package
+    if: ${{ inputs.conda_run_build }}
+    needs: [check, documentation, test]
+    runs-on: linux-amd64-cpu16
+    timeout-minutes: 60
+    container:
+      credentials:
+        username: '$oauthtoken'
+        password: ${{ secrets.NGC_API_KEY }}
+      image: ${{ inputs.container }}
+    strategy:
+      fail-fast: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: 'morpheus'
+          fetch-depth: 0
+
+      - name: Get AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 43200 # 12h
+
+      - name: conda
+        shell: bash
+        env:
+          CONDA_TOKEN: "${{ secrets.CONDA_TOKEN }}"
+          SCRIPT_ARGS: "${{ inputs.conda_upload_label != '' && 'upload' || '' }}"
+          CONDA_PKG_LABEL: "${{ inputs.conda_upload_label }}"
+        run: ./morpheus/ci/scripts/github/conda.sh $SCRIPT_ARGS

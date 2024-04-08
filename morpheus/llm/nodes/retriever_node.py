@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ class RetrieverNode(LLMNodeBase):
 
         return ["query"]
 
-    async def execute(self, context: LLMContext):
+    async def execute(self, context: LLMContext):  # pylint: disable=invalid-overridden-method
         """
         Execute the retrieval process based on the provided context.
 
