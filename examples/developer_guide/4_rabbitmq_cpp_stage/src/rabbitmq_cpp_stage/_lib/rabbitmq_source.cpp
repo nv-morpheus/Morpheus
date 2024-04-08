@@ -24,6 +24,7 @@
 #include <glog/logging.h>
 #include <morpheus/messages/meta.hpp>
 #include <pybind11/attr.h>
+#include <pybind11/chrono.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pymrc/utils.hpp>
 
