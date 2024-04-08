@@ -43,7 +43,6 @@ dependencies:
 - include-what-you-use=0.20
 - ipython
 - isort
-- libarrow
 - librdkafka>=1.9.2,<1.10.0a0
 - libtool
 - mlflow=2.9.2
