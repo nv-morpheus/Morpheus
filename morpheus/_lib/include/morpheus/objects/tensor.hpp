@@ -21,6 +21,7 @@
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for ShapeType, TensorIndex, TensorSize
 
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>
 
 #include <cstdint>  // for uint8_t

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex

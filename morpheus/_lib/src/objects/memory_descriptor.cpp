@@ -18,7 +18,6 @@
 #include "morpheus/objects/memory_descriptor.hpp"
 
 #include <rmm/cuda_stream_view.hpp>
-#include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
 
 #include <utility>  // for move
 

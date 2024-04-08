@@ -18,7 +18,6 @@
 #include "morpheus/llm/utils.hpp"
 
 #include "morpheus/llm/input_map.hpp"
-#include "morpheus/llm/llm_node_runner.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>
@@ -26,6 +25,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <functional>
 #include <iterator>
 #include <regex>
 #include <set>
