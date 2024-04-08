@@ -38,6 +38,7 @@ dependencies:
 - watchdog=3.0
 - websockets
 - pip:
+  - databricks-cli < 0.100
   - databricks-connect
   - milvus==2.3.5
   - pymilvus==2.3.6
