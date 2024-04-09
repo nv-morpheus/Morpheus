@@ -19,6 +19,7 @@ import click
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
+from morpheus._lib.messages import RawPacketMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -26,7 +27,7 @@ from morpheus.stages.inference.triton_inference_stage import TritonInferenceStag
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+# from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.logger import configure_logging
 
@@ -87,7 +88,7 @@ def run_pipeline(pipeline_batch_size,
     config.mode = PipelineModes.NLP
 
     # Below properties are specified by the command line
-    config.num_threads = 4
+    config.num_threads = 1
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
     config.feature_length = model_fea_length
@@ -108,17 +109,20 @@ def run_pipeline(pipeline_batch_size,
 
     config.edge_buffer_size = 128
 
+    def count_raw_packets(message: RawPacketMessage):
+        return message.num
+
     pipeline = LinearPipeline(config)
 
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, traffic_type))
 
     if traffic_type == 'udp':
-        pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
+        pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts', determine_count_fn=count_raw_packets))
 
     if traffic_type == 'tcp':
         # add deserialize stage
-        pipeline.add_stage(DeserializeStage(config))
+        # pipeline.add_stage(DeserializeStage(config))
         pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
 
         hashfile = '/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt'

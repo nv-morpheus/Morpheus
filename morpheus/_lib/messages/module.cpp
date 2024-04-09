@@ -443,7 +443,10 @@ PYBIND11_MODULE(messages, _module)
                     py::arg("name"),
                     py::arg("throw_if_not_exists") = true);
 
-    py::class_<RawPacketMessage, std::shared_ptr<RawPacketMessage>>(_module, "RawPacketMessage");
+     py::class_<RawPacketMessage, std::shared_ptr<RawPacketMessage>>(_module, "RawPacketMessage")
+          .def_property_readonly("num", &RawPacketMessage::count)
+          .def_property_readonly("max_size", &RawPacketMessage::get_max_size)
+          .def_property_readonly("gpu_mem", &RawPacketMessage::is_gpu_mem);
 
     _module.attr("__version__") =
         MORPHEUS_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);

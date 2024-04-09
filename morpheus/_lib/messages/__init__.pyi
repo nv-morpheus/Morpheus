@@ -21,7 +21,6 @@ __all__ = [
     "InferenceMemoryFIL",
     "InferenceMemoryNLP",
     "MessageMeta",
-    "RawPacketMessage",
     "MultiInferenceFILMessage",
     "MultiInferenceMessage",
     "MultiInferenceNLPMessage",
@@ -30,6 +29,7 @@ __all__ = [
     "MultiResponseProbsMessage",
     "MultiTensorMessage",
     "MutableTableCtxMgr",
+    "RawPacketMessage",
     "ResponseMemory",
     "ResponseMemoryProbs",
     "TensorMemory",
@@ -325,49 +325,22 @@ class MutableTableCtxMgr():
     def __setitem__(self, *args, **kwargs) -> None: ...
     pass
 class RawPacketMessage():
-    def __init__(self, *, num: int = 0, max_size: int = 0, ptr_addr: object, ptr_size: object, gpu_mem: bool, queue_idx: int = 65535) -> None: ...
     @property
-    def count(self) -> object:
+    def gpu_mem(self) -> bool:
         """
-        :type: object
-        """
-    @property
-    def get_max_size(self) -> object:
-        """
-        :type: object
+        :type: bool
         """
     @property
-    def get_pkt_addr_idx(self, pkt_idx: int) -> object:
-        """
-        :type: object
-        """
-    @property
-    def get_pkt_len_idx(self, pkt_idx: int) -> object:
-        """
-        :type: object
-        """
-    @property
-    def get_pkt_addr_list(self) -> object:
-        """
-        :type: object
-        """
-    @property
-    def get_pkt_size_list(self) -> object:
-        """
-        :type: object
-        """
-    @property
-    def get_queue_idx(self) -> int:
+    def max_size(self) -> int:
         """
         :type: int
         """
     @property
-    def is_gpu_mem(self) -> bool:
+    def num(self) -> int:
         """
-        :type: bool
+        :type: int
         """
     pass
-
 class ResponseMemory(TensorMemory):
     def __init__(self, *, count: int, tensors: object = None) -> None: ...
     def get_output(self, name: str) -> object: ...

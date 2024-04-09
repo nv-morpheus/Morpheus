@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-#include "morpheus/doca/doca_source.hpp"
+#include "morpheus/doca/doca_stages.hpp"
 
 #include "morpheus/doca/doca_context.hpp"
 #include "morpheus/doca/doca_rx_pipe.hpp"
 #include "morpheus/doca/doca_rx_queue.hpp"
 #include "morpheus/doca/doca_semaphore.hpp"
-#include "morpheus/doca/doca_source_kernels.hpp"
+#include "morpheus/doca/doca_kernels.hpp"
 #include "morpheus/utilities/error.hpp"
 
 #include <cudf/column/column_factories.hpp>
@@ -43,30 +43,6 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
-
-#define BE_IPV4_ADDR(a, b, c, d) (RTE_BE32((a << 24) + (b << 16) + (c << 8) + d)) /* Big endian conversion */
-
-std::optional<uint32_t> ip_to_int(std::string const& ip_address)
-{
-    if (ip_address.empty())
-    {
-        return 0;
-    }
-
-    uint8_t a, b, c, d;
-    uint32_t ret;
-
-    ret = sscanf(ip_address.c_str(), "%hhu.%hhu.%hhu.%hhu", &a, &b, &c, &d);
-
-    printf("%u: %u %u %u %u\n", ret, a, b, c, d);
-
-    if (ret == 4)
-    {
-        return BE_IPV4_ADDR(a, b, c, d);
-    }
-
-    return std::nullopt;
-}
 
 #define debug_get_timestamp(ts) clock_gettime(CLOCK_REALTIME, (ts))
 
@@ -110,6 +86,11 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         cudaStream_t rstream = nullptr;
         int thread_idx = mrc::runnable::Context::get_runtime_context().rank();
 
+        // Add per queue
+        auto pkt_addr_unique = std::make_unique<morpheus::doca::DocaMem<uintptr_t>>(m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+        auto pkt_hdr_size_unique = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+        auto pkt_pld_size_unique = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+
         if (thread_idx >= MAX_QUEUE)
         {
             MORPHEUS_FAIL("More CPU threads than allowed queues");
@@ -125,9 +106,9 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         for (int idxs = 0; idxs < MAX_SEM_X_QUEUE; idxs++)
         {
             pkt_ptr = static_cast<struct packets_info*>(m_semaphore[thread_idx]->get_info_cpu(idxs));
-            pkt_ptr->pkt_addr = std::make_unique<morpheus::doca::DocaMem<uintptr_t>>(m_context, MAX_PKT_RECEIVE, DOCA_GPU_MEM_TYPE_GPU)->gpu_ptr();
-            pkt_ptr->pkt_hdr_size = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, MAX_PKT_RECEIVE, DOCA_GPU_MEM_TYPE_GPU)->gpu_ptr();
-            pkt_ptr->pkt_pld_size = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, MAX_PKT_RECEIVE, DOCA_GPU_MEM_TYPE_GPU)->gpu_ptr();
+            pkt_ptr->pkt_addr = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
+            pkt_ptr->pkt_hdr_size = pkt_hdr_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
+            pkt_ptr->pkt_pld_size = pkt_pld_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
         }
 
         auto exit_condition = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, 1, DOCA_GPU_MEM_TYPE_GPU_CPU);
@@ -159,13 +140,15 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
             if (m_semaphore[thread_idx]->is_ready(sem_idx))
             {
                 // const auto start = now_ns();
-                // LOG(WARNING) << "CPU READY sem " << idxs << " queue " << thread_idx << std::endl;
+                // LOG(WARNING) << "CPU READY sem " << sem_idx << " queue " << thread_idx << std::endl;
 
                 pkt_ptr = static_cast<struct packets_info*>(m_semaphore[thread_idx]->get_info_cpu(sem_idx));
 
                 // Should not be necessary
                 if (pkt_ptr->packet_count_out == 0)
                     continue;
+
+                // LOG(WARNING) << "pkts " << pkt_ptr->packet_count_out << " MAX_PKT_SIZE " << MAX_PKT_SIZE << std::endl;
 
                 auto meta = RawPacketMessage::create_from_cpp(pkt_ptr->packet_count_out,
                                                                 MAX_PKT_SIZE,

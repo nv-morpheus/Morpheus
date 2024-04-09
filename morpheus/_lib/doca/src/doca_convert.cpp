@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-#include "morpheus/doca/doca_source.hpp"
+#include "morpheus/doca/doca_stages.hpp"
 
 #include "morpheus/doca/doca_context.hpp"
 #include "morpheus/doca/doca_rx_pipe.hpp"
 #include "morpheus/doca/doca_rx_queue.hpp"
 #include "morpheus/doca/doca_semaphore.hpp"
-#include "morpheus/doca/doca_source_kernels.hpp"
+#include "morpheus/doca/doca_kernels.hpp"
 #include "morpheus/utilities/error.hpp"
 
 #include <cudf/column/column_factories.hpp>
@@ -68,32 +68,6 @@ std::optional<uint32_t> ip_to_int(std::string const& ip_address)
     return std::nullopt;
 }
 
-#define debug_get_timestamp(ts) clock_gettime(CLOCK_REALTIME, (ts))
-
-namespace morpheus {
-
-DocaSourceStage::DocaSourceStage(std::string const& nic_pci_address,
-                                 std::string const& gpu_pci_address,
-                                 std::string const& traffic_type) :
-  PythonSource(build())
-{
-    m_context = std::make_shared<morpheus::doca::DocaContext>(nic_pci_address, gpu_pci_address);
-
-    m_traffic_type = DOCA_TRAFFIC_TYPE_UDP;
-    if (traffic_type == "tcp")
-        m_traffic_type = DOCA_TRAFFIC_TYPE_TCP;
-
-    m_rxq.reserve(MAX_QUEUE);
-    m_semaphore.reserve(MAX_QUEUE);
-    for (int idx = 0; idx < MAX_QUEUE; idx++)
-    {
-        m_rxq.push_back(std::make_shared<morpheus::doca::DocaRxQueue>(m_context));
-        m_semaphore.push_back(std::make_shared<morpheus::doca::DocaSemaphore>(m_context, MAX_SEM_X_QUEUE));
-    }
-
-    m_rxpipe = std::make_shared<morpheus::doca::DocaRxPipe>(m_context, m_rxq, m_traffic_type);
-}
-
 static uint64_t now_ns()
 {
     struct timespec t;
@@ -102,7 +76,124 @@ static uint64_t now_ns()
     return (uint64_t)t.tv_nsec + (uint64_t)t.tv_sec * 1000 * 1000 * 1000;
 }
 
-DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
+#define debug_get_timestamp(ts) clock_gettime(CLOCK_REALTIME, (ts))
+
+namespace morpheus {
+
+DocaConvertStage::DocaConvertStage(bool const& split_hdr_pld) :
+    base_t(rxcpp::operators::map([this](sink_type_t x) {
+        return this->on_data(std::move(x));
+    })),
+    m_split_hdr_pld(split_hdr_pld)
+{
+    cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
+    m_stream_cpp = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
+
+    // Protocol?
+    // Total payload size?
+
+    // assemble metadata
+
+    // if (split_hdr_pld)
+
+    payload_buffer_d = new rmm::device_uvector<uint8_t>(MAX_PKT_RECEIVE * MAX_PKT_SIZE, m_stream_cpp);
+    header_buffer_d = new rmm::device_uvector<uint8_t>(MAX_PKT_RECEIVE * MAX_PKT_HDR, m_stream_cpp);
+    // payload_sizes_d = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, m_stream_cpp);
+
+    fixed_width_inputs_table_view = new cudf::table_view(std::vector<cudf::column_view>{
+        cudf::column_view(cudf::device_span<const uint8_t>(*header_buffer_d)),
+        cudf::column_view(cudf::device_span<const uint8_t>(*payload_buffer_d))
+    });
+}
+
+DocaConvertStage::~DocaConvertStage()
+{
+    cudaStreamDestroy(m_stream);
+}
+
+DocaConvertStage::source_type_t DocaConvertStage::on_data(sink_type_t x)
+{
+    if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<RawPacketMessage>>)
+    {
+        return this->on_raw_packet_message(x);
+    }
+    // sink_type_t not supported
+    else
+    {
+        std::string error_msg{"DocaConvertStage receives unsupported input type: " + std::string(typeid(x).name())};
+        LOG(ERROR) << error_msg;
+        throw std::runtime_error(error_msg);
+    }
+}
+
+DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_type_t raw_msg)
+{
+    auto packet_count = raw_msg->count();
+    auto max_size = raw_msg->get_max_size();
+    auto pkt_addr_list = raw_msg->get_pkt_addr_list();
+    auto pkt_hdr_size_list = raw_msg->get_pkt_hdr_size_list();
+    auto pkt_pld_size_list = raw_msg->get_pkt_pld_size_list();
+    auto queue_idx = raw_msg->get_queue_idx();
+    DocaConvertStage::source_type_t output;
+
+    // gather header data
+    auto header_col = doca::gather_header(
+        packet_count, (uint8_t*)pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
+
+    // gather payload data
+    auto payload_col = doca::gather_payload(
+        packet_count, (uint8_t*)pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
+
+    // const auto gather_payload_stop = now_ns();
+
+    auto iota_col = [packet_count]() {
+        using scalar_type_t = cudf::scalar_type_t<uint32_t>;
+        auto zero =
+            cudf::make_numeric_scalar(cudf::data_type(cudf::data_type{cudf::type_to_id<uint32_t>()}));
+        static_cast<scalar_type_t*>(zero.get())->set_value(0);
+        zero->set_valid_async(false);
+        return cudf::sequence(packet_count, *zero);
+    }();
+
+    // Accept the stream now?
+    auto gathered_table   = cudf::gather(*fixed_width_inputs_table_view,
+                                        iota_col->view(),
+                                        cudf::out_of_bounds_policy::DONT_CHECK,
+                                        m_stream_cpp);
+    auto gathered_columns = gathered_table->release();
+    
+    gathered_columns.emplace_back(std::move(header_col));
+    gathered_columns.emplace_back(std::move(payload_col));
+
+
+    // After this point buffers can be reused -> copies actual packets' data
+    gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
+
+    // const auto gather_table_meta = now_ns();
+
+    auto gathered_metadata = cudf::io::table_metadata();
+    gathered_metadata.schema_info.emplace_back("header");
+    gathered_metadata.schema_info.emplace_back("data");
+
+    auto gathered_table_w_metadata =
+        cudf::io::table_with_metadata{std::move(gathered_table), std::move(gathered_metadata)};
+
+    // const auto create_message_cpp = now_ns();
+
+    auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
+
+    // Do we still need this synchronize?
+    //  const auto gather_meta_stop = now_ns();
+
+    cudaStreamSynchronize(m_stream_cpp);
+    // output.on_next(std::move(meta));
+    
+    return std::move(meta);
+}
+
+#if 0
+
+DocaConvertStage::subscriber_fn_t DocaConvertStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
         struct packets_info* pkt_ptr;
@@ -349,15 +440,14 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         output.on_completed();
     };
 }
+#endif
 
-std::shared_ptr<mrc::segment::Object<DocaSourceStage>> DocaSourceStageInterfaceProxy::init(
-    mrc::segment::Builder& builder,
-    std::string const& name,
-    std::string const& nic_pci_address,
-    std::string const& gpu_pci_address,
-    std::string const& traffic_type)
-{
-    return builder.construct_object<DocaSourceStage>(name, nic_pci_address, gpu_pci_address, traffic_type);
-}
+// std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfaceProxy::init(
+//     mrc::segment::Builder& builder,
+//     bool const& split_hdr_pld)
+// {
+//     return builder.construct_object<DocaConvertStage>(split_hdr_pld);
+// }
+
 
 }  // namespace morpheus

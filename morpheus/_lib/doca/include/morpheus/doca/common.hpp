@@ -30,8 +30,9 @@ uint32_t const PACKET_RX_TIMEOUT_NS = 1000000;  // 1ms //500us
 
 uint32_t const MAX_PKT_RECEIVE = PACKETS_PER_BLOCK;
 uint32_t const MAX_PKT_SIZE    = 4096;
+uint32_t const MAX_PKT_HDR     = 64;
 uint32_t const MAX_PKT_NUM     = 65536;
-uint32_t const MAX_QUEUE       = 4;
+uint32_t const MAX_QUEUE       = 1;
 uint32_t const MAX_SEM_X_QUEUE = 32;
 
 enum doca_traffic_type
