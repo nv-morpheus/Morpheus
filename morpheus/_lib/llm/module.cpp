@@ -22,7 +22,6 @@
 #include "py_llm_engine_stage.hpp"
 #include "py_llm_lambda_node.hpp"
 
-#include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_engine.hpp"

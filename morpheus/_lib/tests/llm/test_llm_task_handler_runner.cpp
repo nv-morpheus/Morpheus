@@ -17,7 +17,6 @@
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 
-#include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_context.hpp"  // for LLMContext
 #include "morpheus/llm/llm_task.hpp"
