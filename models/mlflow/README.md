@@ -89,7 +89,7 @@ Create an MLflow container with a volume mounting the Triton model repository:
 ```bash
 docker run -it -v /opt/triton_models:/triton_models \
 --env TRITON_MODEL_REPO=/triton_models \
---env MLFLOW_TRACKING_URI=localhost:5000 \
+--env MLFLOW_TRACKING_URI="http://localhost:5000" \
 --gpus '"device=0"' \
 --net=host \
 --rm \
