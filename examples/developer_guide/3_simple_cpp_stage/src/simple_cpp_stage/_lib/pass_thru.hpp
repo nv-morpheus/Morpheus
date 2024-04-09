@@ -21,9 +21,14 @@
 #include <mrc/segment/builder.hpp>      // for Segment Builder
 #include <mrc/segment/object.hpp>       // for Segment Object
 #include <pymrc/node.hpp>               // for PythonNode
+#include <rxcpp/rx.hpp>
 
 #include <memory>
 #include <string>
+#include <thread>
+
+// IWYU pragma: no_include "morpheus/objects/data_table.hpp"
+// IWYU pragma: no_include <boost/fiber/context.hpp>
 
 namespace morpheus_example {
 

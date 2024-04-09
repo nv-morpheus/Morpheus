@@ -132,6 +132,7 @@ def _write_to_vector_db(builder: mrc.Builder):
     write_time_interval = write_to_vdb_config.write_time_interval
 
     # Check if service is serialized and convert if needed
+    # pylint: disable=not-a-mapping
     service: VectorDBService = (pickle.loads(bytes(service, "latin1")) if is_service_serialized else
                                 VectorDBServiceFactory.create_instance(service_name=service, **service_kwargs))
 
@@ -210,6 +211,8 @@ def _write_to_vector_db(builder: mrc.Builder):
                                                                >= write_time_interval):
                         if accum_stats.data:
                             merged_df = cudf.concat(accum_stats.data)
+
+                            # pylint: disable=not-a-mapping
                             service.insert_dataframe(name=key, df=merged_df, **resource_kwargs)
                             # Reset accumulator stats
                             accum_stats.data.clear()

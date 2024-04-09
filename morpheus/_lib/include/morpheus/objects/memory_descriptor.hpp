@@ -20,7 +20,8 @@
 #include "morpheus/export.h"
 
 #include <rmm/cuda_stream_view.hpp>
-#include <rmm/mr/device/device_memory_resource.hpp>
+
+#include "cuda/memory_resource"
 
 /**
  * @brief Struct describing device memory resources.

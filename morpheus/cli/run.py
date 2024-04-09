@@ -16,7 +16,7 @@
 
 def run_cli():
     """Main entrypoint for the CLI"""
-    from morpheus.cli.commands import cli
+    from morpheus.cli.commands import cli  # pylint: disable=cyclic-import
     cli(obj={}, auto_envvar_prefix='MORPHEUS', show_default=True, prog_name="morpheus")
 
 

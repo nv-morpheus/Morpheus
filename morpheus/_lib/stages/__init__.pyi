@@ -14,8 +14,10 @@ import mrc.core.segment
 import os
 
 __all__ = [
-    "AddClassificationsStage",
-    "AddScoresStage",
+    "AddClassificationsControlMessageStage",
+    "AddClassificationsMultiResponseMessageStage",
+    "AddScoresControlMessageStage",
+    "AddScoresMultiResponseMessageStage",
     "DeserializeControlMessageStage",
     "DeserializeMultiMessageStage",
     "FileSourceStage",
@@ -26,17 +28,26 @@ __all__ = [
     "KafkaSourceStage",
     "PreallocateMessageMetaStage",
     "PreallocateMultiMessageStage",
-    "PreprocessFILStage",
-    "PreprocessNLPStage",
-    "SerializeStage",
+    "PreprocessFILControlMessageStage",
+    "PreprocessFILMultiMessageStage",
+    "PreprocessNLPControlMessageStage",
+    "PreprocessNLPMultiMessageStage",
+    "SerializeControlMessageStage",
+    "SerializeMultiMessageStage",
     "WriteToFileStage"
 ]
 
 
-class AddClassificationsStage(mrc.core.segment.SegmentObject):
+class AddClassificationsControlMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, idx2label: typing.Dict[int, str], threshold: float) -> None: ...
     pass
-class AddScoresStage(mrc.core.segment.SegmentObject):
+class AddClassificationsMultiResponseMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, idx2label: typing.Dict[int, str], threshold: float) -> None: ...
+    pass
+class AddScoresControlMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, idx2label: typing.Dict[int, str]) -> None: ...
+    pass
+class AddScoresMultiResponseMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, idx2label: typing.Dict[int, str]) -> None: ...
     pass
 class DeserializeControlMessageStage(mrc.core.segment.SegmentObject):
@@ -72,13 +83,22 @@ class PreallocateMessageMetaStage(mrc.core.segment.SegmentObject):
 class PreallocateMultiMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: typing.List[typing.Tuple[str, morpheus._lib.common.TypeId]]) -> None: ...
     pass
-class PreprocessFILStage(mrc.core.segment.SegmentObject):
+class PreprocessFILControlMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, features: typing.List[str]) -> None: ...
     pass
-class PreprocessNLPStage(mrc.core.segment.SegmentObject):
+class PreprocessFILMultiMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, features: typing.List[str]) -> None: ...
+    pass
+class PreprocessNLPControlMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, vocab_hash_file: str, sequence_length: int, truncation: bool, do_lower_case: bool, add_special_token: bool, stride: int, column: str) -> None: ...
     pass
-class SerializeStage(mrc.core.segment.SegmentObject):
+class PreprocessNLPMultiMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, vocab_hash_file: str, sequence_length: int, truncation: bool, do_lower_case: bool, add_special_token: bool, stride: int, column: str) -> None: ...
+    pass
+class SerializeControlMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, include: typing.List[str], exclude: typing.List[str], fixed_columns: bool = True) -> None: ...
+    pass
+class SerializeMultiMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, include: typing.List[str], exclude: typing.List[str], fixed_columns: bool = True) -> None: ...
     pass
 class WriteToFileStage(mrc.core.segment.SegmentObject):

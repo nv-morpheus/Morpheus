@@ -57,7 +57,7 @@ def test_get_module():
     assert fn_constructor is not None
 
     config = {}
-    module_instance = fn_constructor("ToControlMessageTest", config)
+    module_instance = fn_constructor("ToControlMessageTest", config)  # pylint: disable=not-callable
     assert isinstance(module_instance, mrc.core.segment.SegmentModule)
 
 

@@ -17,9 +17,6 @@
 
 #include "morpheus/stages/kafka_source.hpp"
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/source_properties.hpp"
 #include "mrc/segment/object.hpp"
 #include "pymrc/utilities/function_wrappers.hpp"  // for PyFuncWrapper
 
@@ -36,7 +33,7 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/types.hpp>  // for SharedFuture
 #include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
 
@@ -46,8 +43,7 @@
 #include <cstdint>
 #include <exception>
 #include <functional>
-#include <initializer_list>  // for initializer_list
-#include <iterator>          // for back_insert_iterator, back_inserter
+#include <iterator>  // for back_insert_iterator, back_inserter
 #include <list>
 #include <memory>
 #include <mutex>
@@ -210,8 +206,12 @@ void KafkaSourceStage__Rebalancer::rebalance_cb(RdKafka::KafkaConsumer* consumer
     std::vector<RdKafka::TopicPartition*> current_assignment;
     CHECK_KAFKA(consumer->assignment(current_assignment), RdKafka::ERR_NO_ERROR, "Error retrieving current assignment");
 
-    auto old_partition_ids = foreach_map(current_assignment, [](const auto& x) { return x->partition(); });
-    auto new_partition_ids = foreach_map(partitions, [](const auto& x) { return x->partition(); });
+    auto old_partition_ids = foreach_map(current_assignment, [](const auto& x) {
+        return x->partition();
+    });
+    auto new_partition_ids = foreach_map(partitions, [](const auto& x) {
+        return x->partition();
+    });
 
     if (err == RdKafka::ERR__ASSIGN_PARTITIONS)
     {
@@ -334,8 +334,12 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
         std::size_t records_emitted = 0;
         // Build rebalancer
         KafkaSourceStage__Rebalancer rebalancer(
-            [this]() { return this->batch_timeout_ms(); },
-            [this]() { return this->max_batch_size(); },
+            [this]() {
+                return this->batch_timeout_ms();
+            },
+            [this]() {
+                return this->max_batch_size();
+            },
             [this](const std::string str_to_display) {
                 auto& ctx = mrc::runnable::Context::get_runtime_context();
                 return MORPHEUS_CONCAT_STR(ctx.info() << " " << str_to_display);
@@ -552,8 +556,9 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
 
         auto const& parts = *(topic->partitions());
 
-        std::transform(
-            parts.cbegin(), parts.cend(), std::back_inserter(part_ids), [](auto const& part) { return part->id(); });
+        std::transform(parts.cbegin(), parts.cend(), std::back_inserter(part_ids), [](auto const& part) {
+            return part->id();
+        });
 
         auto toppar_list = foreach_map(parts, [&topic](const auto& part) {
             return std::unique_ptr<RdKafka::TopicPartition>{
@@ -561,20 +566,24 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
         });
 
         std::vector<RdKafka::TopicPartition*> toppar_ptrs =
-            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) { return x.get(); });
+            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) {
+                return x.get();
+            });
 
         // Query Kafka to populate the TopicPartitions with the desired offsets
         CHECK_KAFKA(
             consumer->committed(toppar_ptrs, 2000), RdKafka::ERR_NO_ERROR, "Failed retrieve Kafka committed offsets");
 
-        auto committed =
-            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) { return x->offset(); });
+        auto committed = foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) {
+            return x->offset();
+        });
 
         // Query Kafka to populate the TopicPartitions with the desired offsets
         CHECK_KAFKA(consumer->position(toppar_ptrs), RdKafka::ERR_NO_ERROR, "Failed retrieve Kafka positions");
 
-        auto positions =
-            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) { return x->offset(); });
+        auto positions = foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) {
+            return x->offset();
+        });
 
         auto watermarks = foreach_map(toppar_list, [&consumer](const std::unique_ptr<RdKafka::TopicPartition>& x) {
             int64_t low;
