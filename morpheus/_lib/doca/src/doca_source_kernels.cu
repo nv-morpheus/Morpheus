@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "common.hpp"
+#include "morpheus/doca/common.hpp"
 
 #include "morpheus/utilities/error.hpp"
 
@@ -391,7 +391,7 @@ __global__ void _packet_receive_kernel(
             auto epoch = now_ms.time_since_epoch();
             pkt_info->timestamp_out[packet_idx] = epoch.count();
         }
-        
+
         // if (threadIdx.x == 0) DEVICE_GET_TIME(reduce_start);
         auto payload_size_total = BlockReduce(temp_storage).Sum(_payload_sizes);
         __syncthreads();

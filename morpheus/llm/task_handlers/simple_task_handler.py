@@ -43,6 +43,7 @@ class SimpleTaskHandler(LLMTaskHandler):
     def get_input_names(self) -> list[str]:
         return self._output_columns
 
+    # pylint: disable=invalid-overridden-method
     async def try_handle(self, context: LLMContext) -> list[ControlMessage]:
 
         input_dict = context.get_inputs()

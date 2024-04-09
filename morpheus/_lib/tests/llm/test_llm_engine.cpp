@@ -17,6 +17,7 @@
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 
+#include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_engine.hpp"
 #include "morpheus/llm/llm_lambda_node.hpp"

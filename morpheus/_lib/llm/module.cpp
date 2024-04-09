@@ -22,6 +22,7 @@
 #include "py_llm_engine_stage.hpp"
 #include "py_llm_lambda_node.hpp"
 
+#include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_engine.hpp"
@@ -37,11 +38,11 @@
 
 #include <mrc/segment/object.hpp>  // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>
-#include <nlohmann/detail/exceptions.hpp>
-#include <pybind11/functional.h>  // IWYU pragma: keep
-#include <pybind11/pybind11.h>    // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
-#include <pybind11/stl.h>         // IWYU pragma: keep
-#include <pymrc/coro.hpp>         // IWYU pragma: keep
+#include <nlohmann/detail/exceptions.hpp>  // for nlohmann::detail::out_of_range
+#include <pybind11/functional.h>           // IWYU pragma: keep
+#include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
+#include <pybind11/stl.h>       // IWYU pragma: keep
+#include <pymrc/coro.hpp>       // IWYU pragma: keep
 #include <pymrc/utilities/json_values.hpp>  // for JSONValues
 #include <pymrc/utils.hpp>                  // for pymrc::import
 

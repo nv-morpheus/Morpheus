@@ -23,6 +23,7 @@ import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.controllers.serialize_controller import SerializeController
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -76,11 +77,11 @@ class SerializeStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple(`morpheus.pipeline.messages.MultiMessage`, )
+        typing.Tuple(`morpheus.pipeline.messages.MultiMessage`, `morpheus.pipeline.messages.ControlMessage`)
             Accepted input types.
 
         """
-        return (MultiMessage, )
+        return (MultiMessage, ControlMessage)
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
@@ -91,11 +92,18 @@ class SerializeStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if (self._build_cpp_node()):
-            node = _stages.SerializeStage(builder,
-                                          self.unique_name,
-                                          self._controller.include_columns or [],
-                                          self._controller.exclude_columns,
-                                          self._controller.fixed_columns)
+            if (self._schema.input_type == ControlMessage):
+                node = _stages.SerializeControlMessageStage(builder,
+                                                            self.unique_name,
+                                                            self._controller.include_columns or [],
+                                                            self._controller.exclude_columns,
+                                                            self._controller.fixed_columns)
+            else:
+                node = _stages.SerializeMultiMessageStage(builder,
+                                                          self.unique_name,
+                                                          self._controller.include_columns or [],
+                                                          self._controller.exclude_columns,
+                                                          self._controller.fixed_columns)
         else:
             include_columns = self._controller.get_include_col_pattern()
             exclude_columns = self._controller.get_exclude_col_pattern()

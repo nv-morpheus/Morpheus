@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-#include "doca_rx_queue.hpp"
+#include "morpheus/doca/doca_rx_queue.hpp"
 
-#include "common.hpp"
-#include "error.hpp"
-
+#include "morpheus/doca/common.hpp"
+#include "morpheus/doca/error.hpp"
 #include "morpheus/utilities/error.hpp"
 
 #include <glog/logging.h>

@@ -17,41 +17,18 @@
 
 #pragma once
 
-#include "common.hpp"
-#include "error.hpp"
-#include "rte_context.hpp"
-
-#include <doca_eth_rxq.h>
-#include <doca_flow.h>
-#include <doca_gpunetio.h>
-#include <doca_log.h>
-
-#define GPU_PAGE_SIZE (1UL << 16)
-
 namespace morpheus::doca {
 
 /**
- * @brief Manages the lifetime of DOCA as it relates to GPUNetIO
+ * @brief Initializes and manages the lifetime of a DPDK session.
+ *
+ * Must be initialized on a process' primary/root/starting thread.
  */
-struct DocaContext
+struct RTEContext
 {
-  private:
-    doca_gpu* m_gpu;
-    doca_dev* m_dev;
-    doca_flow_port* m_flow_port;
-    uint16_t m_nic_port;
-    uint32_t m_max_queue_count;
-    std::unique_ptr<RTEContext> m_rte_context;
-    doca_log_backend* sdk_log;
-
   public:
-    DocaContext(std::string nic_addr, std::string gpu_addr);
-    ~DocaContext();
-
-    doca_gpu* gpu();
-    doca_dev* dev();
-    uint16_t nic_port();
-    doca_flow_port* flow_port();
+    RTEContext();
+    ~RTEContext();
 };
 
 }  // namespace morpheus::doca

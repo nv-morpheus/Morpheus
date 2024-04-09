@@ -725,7 +725,7 @@ On your AWS EC2 G4 instance, follow the instructions in the linked document to i
 
 ### Prerequisites
 1.  NVIDIA-Certified System
-2.  NVIDIA Pascal GPU or newer (Compute Capability >= 6.0)
+2.  NVIDIA Volta GPU or newer (Compute Capability >= 7.0)
 3.  Ubuntu 20.04 LTS or newer
 
 ## Installing Cloud Native Core Stack on NVIDIA Certified Systems

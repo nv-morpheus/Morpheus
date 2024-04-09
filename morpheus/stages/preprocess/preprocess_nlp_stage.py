@@ -25,8 +25,6 @@ import numpy as np
 import cudf
 
 import morpheus._lib.stages as _stages
-# pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_package_relative_file
@@ -37,6 +35,7 @@ from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiInferenceNLPMessage
 from morpheus.messages import MultiMessage
+from morpheus.messages import TensorMemory as CppTensorMemory
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 from morpheus.utils.cudf_subword_helper import tokenize_text_series
 
@@ -214,7 +213,6 @@ class PreprocessNLPStage(PreprocessBaseStage):
                             }))
 
         message.set_metadata("inference_memory_params", {"inference_type": "nlp"})
-
         return message
 
     @staticmethod
@@ -264,12 +262,23 @@ class PreprocessNLPStage(PreprocessBaseStage):
                        column=self._column)
 
     def _get_preprocess_node(self, builder: mrc.Builder):
-        return _stages.PreprocessNLPStage(builder,
-                                          self.unique_name,
-                                          self._vocab_hash_file,
-                                          self._seq_length,
-                                          self._truncation,
-                                          self._do_lower_case,
-                                          self._add_special_tokens,
-                                          self._stride,
-                                          self._column)
+        if (self._use_control_message):
+            return _stages.PreprocessNLPControlMessageStage(builder,
+                                                            self.unique_name,
+                                                            self._vocab_hash_file,
+                                                            self._seq_length,
+                                                            self._truncation,
+                                                            self._do_lower_case,
+                                                            self._add_special_tokens,
+                                                            self._stride,
+                                                            self._column)
+
+        return _stages.PreprocessNLPMultiMessageStage(builder,
+                                                      self.unique_name,
+                                                      self._vocab_hash_file,
+                                                      self._seq_length,
+                                                      self._truncation,
+                                                      self._do_lower_case,
+                                                      self._add_special_tokens,
+                                                      self._stride,
+                                                      self._column)

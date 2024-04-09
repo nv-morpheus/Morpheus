@@ -22,7 +22,7 @@
 
 #include <memory>
 #include <string>
-#include <variant>
+#include <tuple>
 #include <vector>
 
 namespace morpheus::llm {

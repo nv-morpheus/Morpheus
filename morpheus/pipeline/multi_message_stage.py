@@ -18,7 +18,7 @@ import typing
 
 import mrc
 
-import morpheus.pipeline as _pipeline
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage

@@ -20,6 +20,7 @@
 #include "morpheus/llm/llm_task.hpp"
 
 #include <gtest/gtest.h>
+#include <nlohmann/json.hpp>
 
 using namespace morpheus;
 using namespace morpheus::test;

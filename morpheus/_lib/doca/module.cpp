@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "doca_source.hpp"
+#include "morpheus/doca/doca_source.hpp"
 
 #include <mrc/segment/builder.hpp>  // IWYU pragma: keep
 #include <mrc/segment/object.hpp>

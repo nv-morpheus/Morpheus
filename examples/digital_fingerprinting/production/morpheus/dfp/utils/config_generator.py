@@ -38,6 +38,8 @@ class ConfigGenerator:
         self._source_schema_str = pyobj2str(schema.source, encoding=encoding)
         self._preprocess_schema_str = pyobj2str(schema.preprocess, encoding=encoding)
         self._input_message_type = pyobj2str(MultiMessage, encoding)
+        self._start_time_str = self._dfp_arg_parser.time_fields.start_time.isoformat()
+        self._end_time_str = self._dfp_arg_parser.time_fields.end_time.isoformat()
 
     def get_module_conf(self):
         module_conf = {}
@@ -58,8 +60,8 @@ class ConfigGenerator:
             "cache_dir": self._dfp_arg_parser.cache_dir,
             "batching_options": {
                 "sampling_rate_s": self._dfp_arg_parser.sample_rate_s,
-                "start_time": self._dfp_arg_parser.time_fields.start_time,
-                "end_time": self._dfp_arg_parser.time_fields.end_time,
+                "start_time": self._start_time_str,
+                "end_time": self._end_time_str,
                 "iso_date_regex_pattern": iso_date_regex_pattern,
                 "parser_kwargs": {
                     "lines": False, "orient": "records"
@@ -112,8 +114,8 @@ class ConfigGenerator:
             "cache_dir": self._dfp_arg_parser.cache_dir,
             "batching_options": {
                 "sampling_rate_s": self._dfp_arg_parser.sample_rate_s,
-                "start_time": self._dfp_arg_parser.time_fields.start_time,
-                "end_time": self._dfp_arg_parser.time_fields.end_time,
+                "start_time": self._start_time_str,
+                "end_time": self._end_time_str,
                 "iso_date_regex_pattern": iso_date_regex_pattern,
                 "parser_kwargs": {
                     "lines": False, "orient": "records"
