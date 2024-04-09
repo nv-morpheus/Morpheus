@@ -252,73 +252,85 @@ __device__ uint32_t tcp_parse_timestamp(rte_tcp_hdr const *tcp)
 
 __global__ void _packet_gather_payload_kernel(
   int32_t  packet_count,
-  uint8_t*    packets_buffer,
+  uint8_t*  packets_buffer,
   uint32_t* header_sizes,
   uint32_t* payload_sizes,
   char*    payload_chars_out
 )
 {
-#if 0
   // Specialize BlockScan for a 1D block of 128 threads of type int
   using BlockScan = cub::BlockScan<int32_t, THREADS_PER_BLOCK>;
-
   // Allocate shared memory for BlockScan
   __shared__ typename BlockScan::TempStorage temp_storage;
-
   int32_t payload_offsets[PACKETS_PER_THREAD];
-
-  for (auto i = 0; i < PACKETS_PER_THREAD; i++)
-  {
+  /* Th0 will work on first 4 packets, etc.. */
+  for (auto i = 0; i < PACKETS_PER_THREAD; i++) {
     auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
-
-    if (packet_idx >= packet_count) {
+    if (packet_idx >= packet_count)
       payload_offsets[i] = 0;
-    } else {
-      //Consider only payload, skip header
-      payload_offsets[i] = payload_sizes[packet_idx] + header_sizes[packet_idx];
-    }
+    else
+      payload_offsets[i] = payload_sizes[packet_idx];
   }
-
   __syncthreads();
 
+  /* Calculate the right payload offset for each thread */
   int32_t data_offsets_agg;
   BlockScan(temp_storage).ExclusiveSum(payload_offsets, payload_offsets, data_offsets_agg);
-
   __syncthreads();
-#endif
-  
-  auto packet_idx = threadIdx.x;
-  while (packet_idx < packet_count) {
+
+  for (auto i = 0; i < PACKETS_PER_THREAD; i++) {
+    auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
+    if (packet_idx >= packet_count)
+      continue;
+
     auto payload_size = payload_sizes[packet_idx];
     for (auto j = 0; j < payload_size; j++) {
       auto value = packets_buffer[(packet_idx * MAX_PKT_SIZE) + header_sizes[packet_idx] + j];
-      payload_chars_out[payload_size * packet_idx + j] = value;
+      payload_chars_out[payload_offsets[i] + j] = value;
     }
-
-    packet_idx += blockDim.x;
   }
 }
 
 __global__ void _packet_gather_header_kernel(
-  int32_t  packet_count,
-  uint8_t*    packets_buffer,
+  int32_t   packet_count,
+  uint8_t*  packets_buffer,
   uint32_t* header_sizes,
   uint32_t* payload_sizes,
-  char*    header_chars_out
+  char*     header_chars_out
 )
 {
-  auto packet_idx = threadIdx.x;
-  while (packet_idx < packet_count) {
+  // Specialize BlockScan for a 1D block of 128 threads of type int
+  using BlockScan = cub::BlockScan<int32_t, THREADS_PER_BLOCK>;
+  // Allocate shared memory for BlockScan
+  __shared__ typename BlockScan::TempStorage temp_storage;
+  int32_t header_offsets[PACKETS_PER_THREAD];
+  /* Th0 will work on first 4 packets, etc.. */
+  for (auto i = 0; i < PACKETS_PER_THREAD; i++) {
+    auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
+    if (packet_idx >= packet_count)
+      header_offsets[i] = 0;
+    else
+      header_offsets[i] = header_sizes[packet_idx];
+  }
+  __syncthreads();
+
+  /* Calculate the right payload offset for each thread */
+  int32_t data_offsets_agg;
+  BlockScan(temp_storage).ExclusiveSum(header_offsets, header_offsets, data_offsets_agg);
+  __syncthreads();
+
+  for (auto i = 0; i < PACKETS_PER_THREAD; i++) {
+    auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
+    if (packet_idx >= packet_count)
+      continue;
+
     auto header_size = header_sizes[packet_idx];
     for (auto j = 0; j < header_size; j++) {
       auto value = packets_buffer[(packet_idx * MAX_PKT_SIZE) + j];
-      header_chars_out[header_size * packet_idx + j] = value;
+      header_chars_out[header_offsets[i] + j] = value;
     }
-
-    packet_idx += blockDim.x;
   }
 }
-
 
 namespace morpheus {
 namespace doca {

@@ -43,7 +43,7 @@ struct DocaSemaphore;
  *
  * Tested only on ConnectX 6-Dx with a single GPU on the same NUMA node running firmware 24.35.2000
  */
-class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>
+class MORPHEUS_EXPORT DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>;
@@ -86,7 +86,7 @@ struct DocaSourceStageInterfaceProxy
  *
  * Tested only on ConnectX 6-Dx with a single GPU on the same NUMA node running firmware 24.35.2000
  */
-class DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacketMessage>, std::shared_ptr<MessageMeta>>
+class MORPHEUS_EXPORT DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacketMessage>, std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<RawPacketMessage>, std::shared_ptr<MessageMeta>>;
@@ -107,9 +107,6 @@ class DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacket
     source_type_t on_data(sink_type_t x);
     source_type_t on_raw_packet_message(sink_type_t x);
  
-    rmm::device_uvector<uint8_t> *payload_buffer_d;
-    rmm::device_uvector<uint8_t> *header_buffer_d;
-    cudf::table_view *fixed_width_inputs_table_view;
     bool m_split_hdr_pld;
     cudaStream_t m_stream;
     rmm::cuda_stream_view m_stream_cpp;

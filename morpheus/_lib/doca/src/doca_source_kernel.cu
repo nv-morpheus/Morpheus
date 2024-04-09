@@ -192,7 +192,6 @@ __global__ void _packet_receive_kernel(
 #if RUN_PERSISTENT
     doca_gpu_semaphore_status sem_status;
 #endif
-    int32_t _payload_sizes[PACKETS_PER_THREAD];
     doca_gpu_buf *buf_ptr;
     uintptr_t buf_addr;
     doca_error_t doca_ret;

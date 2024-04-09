@@ -95,15 +95,6 @@ DocaConvertStage::DocaConvertStage(bool const& split_hdr_pld) :
     // assemble metadata
 
     // if (split_hdr_pld)
-
-    payload_buffer_d = new rmm::device_uvector<uint8_t>(MAX_PKT_RECEIVE * MAX_PKT_SIZE, m_stream_cpp);
-    header_buffer_d = new rmm::device_uvector<uint8_t>(MAX_PKT_RECEIVE * MAX_PKT_HDR, m_stream_cpp);
-    // payload_sizes_d = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, m_stream_cpp);
-
-    fixed_width_inputs_table_view = new cudf::table_view(std::vector<cudf::column_view>{
-        cudf::column_view(cudf::device_span<const uint8_t>(*header_buffer_d)),
-        cudf::column_view(cudf::device_span<const uint8_t>(*payload_buffer_d))
-    });
 }
 
 DocaConvertStage::~DocaConvertStage()
@@ -146,28 +137,12 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
 
     // const auto gather_payload_stop = now_ns();
 
-    auto iota_col = [packet_count]() {
-        using scalar_type_t = cudf::scalar_type_t<uint32_t>;
-        auto zero =
-            cudf::make_numeric_scalar(cudf::data_type(cudf::data_type{cudf::type_to_id<uint32_t>()}));
-        static_cast<scalar_type_t*>(zero.get())->set_value(0);
-        zero->set_valid_async(false);
-        return cudf::sequence(packet_count, *zero);
-    }();
-
-    // Accept the stream now?
-    auto gathered_table   = cudf::gather(*fixed_width_inputs_table_view,
-                                        iota_col->view(),
-                                        cudf::out_of_bounds_policy::DONT_CHECK,
-                                        m_stream_cpp);
-    auto gathered_columns = gathered_table->release();
-    
+    std::vector<std::unique_ptr<cudf::column>> gathered_columns;
     gathered_columns.emplace_back(std::move(header_col));
     gathered_columns.emplace_back(std::move(payload_col));
 
-
     // After this point buffers can be reused -> copies actual packets' data
-    gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
+    auto gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
 
     // const auto gather_table_meta = now_ns();
 
@@ -182,12 +157,10 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
 
     auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
 
-    // Do we still need this synchronize?
-    //  const auto gather_meta_stop = now_ns();
-
+    // const auto gather_meta_stop = now_ns();
+        
     cudaStreamSynchronize(m_stream_cpp);
-    // output.on_next(std::move(meta));
-    
+
     return std::move(meta);
 }
 
