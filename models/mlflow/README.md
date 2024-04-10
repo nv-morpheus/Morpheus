@@ -115,7 +115,7 @@ The `publish_model_to_mlflow` script is used to publish `triton` flavor models t
 ```
 python publish_model_to_mlflow.py \
 	--model_name sid-minibert-onnx \
-	--model_directory <path-to-morpheus-models-repo>/models/triton-model-repo/sid-minibert-onnx \
+	--model_directory /triton_models/triton-model-repo/sid-minibert-onnx \
     --flavor triton
 ```
 
