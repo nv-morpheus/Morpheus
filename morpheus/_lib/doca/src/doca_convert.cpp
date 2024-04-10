@@ -127,13 +127,15 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     auto queue_idx = raw_msg->get_queue_idx();
     DocaConvertStage::source_type_t output;
 
+    LOG(WARNING) << "New RawPacketMessage with " << packet_count << " packets from queue id " << queue_idx;
+
     // gather header data
     auto header_col = doca::gather_header(
-        packet_count, (uint8_t*)pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
+        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
 
     // gather payload data
     auto payload_col = doca::gather_payload(
-        packet_count, (uint8_t*)pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
+        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
 
     // const auto gather_payload_stop = now_ns();
 

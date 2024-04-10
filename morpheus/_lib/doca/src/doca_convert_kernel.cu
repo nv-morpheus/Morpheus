@@ -252,7 +252,7 @@ __device__ uint32_t tcp_parse_timestamp(rte_tcp_hdr const *tcp)
 
 __global__ void _packet_gather_payload_kernel(
   int32_t  packet_count,
-  uint8_t*  packets_buffer,
+  uintptr_t*  packets_buffer,
   uint32_t* header_sizes,
   uint32_t* payload_sizes,
   char*    payload_chars_out
@@ -285,15 +285,19 @@ __global__ void _packet_gather_payload_kernel(
 
     auto payload_size = payload_sizes[packet_idx];
     for (auto j = 0; j < payload_size; j++) {
-      auto value = packets_buffer[(packet_idx * MAX_PKT_SIZE) + header_sizes[packet_idx] + j];
+      auto value = *(((char*)packets_buffer[packet_idx]) + header_sizes[packet_idx] + j);
       payload_chars_out[payload_offsets[i] + j] = value;
+      // printf("payload %d size %d : 0x%1x / 0x%1x addr %lx\n",
+      //     payload_offsets[i] + j, payload_size,
+      //     payload_chars_out[payload_offsets[i] + j], value,
+      //     packets_buffer[packet_idx]);
     }
   }
 }
 
 __global__ void _packet_gather_header_kernel(
   int32_t   packet_count,
-  uint8_t*  packets_buffer,
+  uintptr_t*  packets_buffer,
   uint32_t* header_sizes,
   uint32_t* payload_sizes,
   char*     header_chars_out
@@ -326,8 +330,12 @@ __global__ void _packet_gather_header_kernel(
 
     auto header_size = header_sizes[packet_idx];
     for (auto j = 0; j < header_size; j++) {
-      auto value = packets_buffer[(packet_idx * MAX_PKT_SIZE) + j];
+      auto value = *(((char*)packets_buffer[packet_idx]) + j);
       header_chars_out[header_offsets[i] + j] = value;
+      // printf("header %d size %d : 0x%1x / 0x%1x addr %lx\n",
+      //   header_offsets[i] + j, header_size,
+      //   header_chars_out[header_offsets[i] + j], value,
+      //   packets_buffer[packet_idx]);
     }
   }
 }
@@ -337,7 +345,7 @@ namespace doca {
 
 std::unique_ptr<cudf::column> gather_payload(
   int32_t      packet_count,
-  uint8_t *    packets_buffer,
+  uintptr_t*    packets_buffer,
   uint32_t*    header_sizes,
   uint32_t*    payload_sizes,
   rmm::cuda_stream_view stream,
@@ -370,7 +378,7 @@ std::unique_ptr<cudf::column> gather_payload(
 
 std::unique_ptr<cudf::column> gather_header(
   int32_t      packet_count,
-  uint8_t *    packets_buffer,
+  uintptr_t*    packets_buffer,
   uint32_t*    header_sizes,
   uint32_t*    payload_sizes,
   rmm::cuda_stream_view stream,

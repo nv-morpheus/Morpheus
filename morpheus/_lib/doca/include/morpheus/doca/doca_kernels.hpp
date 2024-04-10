@@ -19,19 +19,17 @@
 
 #include <cudf/column/column.hpp>
 #include <cudf/column/column_view.hpp>
-#include <doca_eth_rxq.h>
-#include <doca_flow.h>
-#include <doca_gpunetio.h>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/device/per_device_resource.hpp>
 
+#include <stdio.h>
 #include <memory>
 
 namespace morpheus::doca {
 
 std::unique_ptr<cudf::column> gather_payload(
   int32_t      packet_count,
-  uint8_t*        packets_buffer,
+  uintptr_t*        packets_buffer,
   uint32_t*     header_sizes,
   uint32_t*     payload_sizes,
   rmm::cuda_stream_view stream,
@@ -39,7 +37,7 @@ std::unique_ptr<cudf::column> gather_payload(
 
 std::unique_ptr<cudf::column> gather_header(
   int32_t      packet_count,
-  uint8_t*        packets_buffer,
+  uintptr_t*        packets_buffer,
   uint32_t*     header_sizes,
   uint32_t*     payload_sizes,
   rmm::cuda_stream_view stream,
