@@ -180,7 +180,7 @@ dependencies:
           - glog=0.6
           - gxx_linux-64=11.2
           - librdkafka>=1.9.2,<1.10.0a0
-          - mrc=24.03
+          - mrc=24.06
           - ninja=1.11
           - nlohmann_json=3.11
           - pkg-config=0.29 # for mrc cmake
@@ -271,6 +271,7 @@ dependencies:
           - websockets
           - pip
           - pip:
+            - databricks-cli < 0.100
             - databricks-connect
             - milvus==2.3.5 # update to match pymilvus when available
             - pymilvus==2.3.6
