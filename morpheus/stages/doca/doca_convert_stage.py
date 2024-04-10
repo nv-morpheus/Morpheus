@@ -86,6 +86,7 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
                                             self.unique_name,
                                             self._split_hdr)
             node.launch_options.pe_count = self._max_concurrent
+            builder.make_edge(input_node, node)
             return node
 
         raise NotImplementedError("Does not support Python nodes")
