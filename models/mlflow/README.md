@@ -130,7 +130,7 @@ To create a deployment use the following command
 
 ##### CLI
 ```
-mlflow deployments create -t triton --flavor triton --name sid-minibert-onnx -m models:/sid-minibert-onnx/1
+mlflow deployments create -t triton --flavor triton --name sid-minibert-onnx -m "models:/sid-minibert-onnx/1"
 ```
 
 ##### Python API
@@ -158,14 +158,14 @@ client.delete_deployment("sid-minibert-onnx")
 
 ##### CLI
 ```
-mlflow deployments update -t triton --flavor triton --name sid-minibert-onnx -m models:/sid-minibert-onnx/2
+mlflow deployments update -t triton --flavor triton --name sid-minibert-onnx -m "models:/sid-minibert-onnx/1"
 ```
 
 ##### Python API
 ```
 from mlflow.deployments import get_deploy_client
 client = get_deploy_client('triton')
-client.update_deployment("sid-minibert-onnx", "models:/sid-minibert-onnx/2", flavor="triton")
+client.update_deployment("sid-minibert-onnx", "models:/sid-minibert-onnx/1", flavor="triton")
 ```
 
 ### List Deployments
