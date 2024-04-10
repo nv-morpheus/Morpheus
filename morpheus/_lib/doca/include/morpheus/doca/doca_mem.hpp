@@ -49,7 +49,6 @@ template <typename T>
 DocaMem<T>::DocaMem(std::shared_ptr<morpheus::doca::DocaContext> context, size_t count, doca_gpu_mem_type mem_type) :
   m_context(context)
 {
-  printf("alloc %dB GPU_PAGE_SIZE %d mem_type %d \n", count, GPU_PAGE_SIZE, mem_type);
     DOCA_TRY(doca_gpu_mem_alloc(context->gpu(),
                                 count * sizeof(std::conditional_t<std::is_void_v<T>, uint8_t, T>),
                                 GPU_PAGE_SIZE,
