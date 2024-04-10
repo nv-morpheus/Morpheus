@@ -80,11 +80,11 @@ static uint64_t now_ns()
 
 namespace morpheus {
 
-DocaConvertStage::DocaConvertStage(bool const& split_hdr_pld) :
+DocaConvertStage::DocaConvertStage(bool const& split_hdr) :
     base_t(rxcpp::operators::map([this](sink_type_t x) {
         return this->on_data(std::move(x));
     })),
-    m_split_hdr_pld(split_hdr_pld)
+    m_split_hdr(split_hdr)
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
@@ -94,7 +94,7 @@ DocaConvertStage::DocaConvertStage(bool const& split_hdr_pld) :
 
     // assemble metadata
 
-    // if (split_hdr_pld)
+    // if (split_hdr)
 }
 
 DocaConvertStage::~DocaConvertStage()
@@ -415,12 +415,13 @@ DocaConvertStage::subscriber_fn_t DocaConvertStage::build()
 }
 #endif
 
-// std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfaceProxy::init(
-//     mrc::segment::Builder& builder,
-//     bool const& split_hdr_pld)
-// {
-//     return builder.construct_object<DocaConvertStage>(split_hdr_pld);
-// }
+std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    std::string const& name,
+    bool const& split_hdr)
+{
+    return builder.construct_object<DocaConvertStage>(name, split_hdr);
+}
 
 
 }  // namespace morpheus

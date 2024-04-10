@@ -43,7 +43,7 @@ struct DocaSemaphore;
  *
  * Tested only on ConnectX 6-Dx with a single GPU on the same NUMA node running firmware 24.35.2000
  */
-class MORPHEUS_EXPORT DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>
+class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>;
@@ -53,7 +53,7 @@ class MORPHEUS_EXPORT DocaSourceStage : public mrc::pymrc::PythonSource<std::sha
     DocaSourceStage(std::string const& nic_pci_address,
                     std::string const& gpu_pci_address,
                     std::string const& traffic_type);
-    ~DocaSourceStage();
+    virtual ~DocaSourceStage();
 
   private:
     subscriber_fn_t build();
@@ -86,7 +86,7 @@ struct DocaSourceStageInterfaceProxy
  *
  * Tested only on ConnectX 6-Dx with a single GPU on the same NUMA node running firmware 24.35.2000
  */
-class MORPHEUS_EXPORT DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacketMessage>, std::shared_ptr<MessageMeta>>
+class DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacketMessage>, std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<RawPacketMessage>, std::shared_ptr<MessageMeta>>;
@@ -96,8 +96,8 @@ class MORPHEUS_EXPORT DocaConvertStage : public mrc::pymrc::PythonNode<std::shar
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    DocaConvertStage(bool const& split_hdr_pld);
-    ~DocaConvertStage();
+    DocaConvertStage(bool const& split_hdr);
+    virtual ~DocaConvertStage();
 
   private:
     // subscribe_fn_t build();
@@ -107,7 +107,7 @@ class MORPHEUS_EXPORT DocaConvertStage : public mrc::pymrc::PythonNode<std::shar
     source_type_t on_data(sink_type_t x);
     source_type_t on_raw_packet_message(sink_type_t x);
  
-    bool m_split_hdr_pld;
+    bool m_split_hdr;
     cudaStream_t m_stream;
     rmm::cuda_stream_view m_stream_cpp;
 };
@@ -118,11 +118,12 @@ class MORPHEUS_EXPORT DocaConvertStage : public mrc::pymrc::PythonNode<std::shar
  */
 struct DocaConvertStageInterfaceProxy
 {
-    // /**
-    //  * @brief Create and initialize a DocaConvertStage, and return the result.
-    //  */
-    // static std::shared_ptr<mrc::segment::Object<DocaConvertStage<RawPacketMessage, MessageMeta>>> init(mrc::segment::Builder& builder,
-    //                                                                                                      bool const& split_hdr_pld);
+    /**
+     * @brief Create and initialize a DocaConvertStage, and return the result.
+     */
+    static std::shared_ptr<mrc::segment::Object<DocaConvertStage>> init(mrc::segment::Builder& builder,
+                                                                                                std::string const& name,
+                                                                                                const bool& split_hdr);
 };
 
 #pragma GCC visibility pop

@@ -15,19 +15,19 @@
 import logging
 
 import mrc
-
+import typing
 from morpheus.cli import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
-from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
-@register_stage("from-doca", modes=[PipelineModes.NLP])
-class DocaConvertStage(PreallocatorMixin, SingleOutputSource):
+@register_stage("from-doca-source", modes=[PipelineModes.NLP])
+class DocaConvertStage(PreallocatorMixin, SinglePortStage):
     """
     A source stage used to receive raw packet data from a ConnectX-6 Dx NIC.
 
@@ -35,14 +35,14 @@ class DocaConvertStage(PreallocatorMixin, SingleOutputSource):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    split_hdr_pld : bool
-        Split header/payload packet
+    split_hdr : bool, default False
+        Split header fields as separate items
     """
 
     def __init__(
         self,
         c: Config,
-        split_hdr_pld: bool,
+        split_hdr: bool = False
     ):
 
         super().__init__(c)
@@ -52,17 +52,18 @@ class DocaConvertStage(PreallocatorMixin, SingleOutputSource):
             # pylint: disable=c-extension-no-member
             import morpheus._lib.doca as _doca
 
-            self._doca_source_class = _doca.DocaConvertStage
+            self.doca_convert_class = _doca.DocaConvertStage
         except ImportError as ex:
             raise NotImplementedError(("The Morpheus DOCA components could not be imported. "
                                        "Ensure the DOCA components have been built and installed. Error message: ") +
                                       ex.msg) from ex
 
-        self._split_hdr_pld = c.split_hdr_pld
+        self._split_hdr = split_hdr
+        self._max_concurrent = 1
 
     @property
     def name(self) -> str:
-        return "from-doca"
+        return "from-doca-source"
 
     @property
     def input_count(self) -> int:
@@ -75,12 +76,15 @@ class DocaConvertStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
-    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+    def accepted_types(self) -> tuple:
+        return (typing.Any, )
+
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            node = self._doca_source_class(builder,
-                                           self.unique_name,
-                                           self._split_hdr_pld)
+            node = self.doca_convert_class(builder,
+                                            self.unique_name,
+                                            self._split_hdr)
             node.launch_options.pe_count = self._max_concurrent
             return node
 

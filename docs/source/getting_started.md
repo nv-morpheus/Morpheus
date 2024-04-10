@@ -290,7 +290,8 @@ Commands:
   deserialize   Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
   dropna        Drop null data entries from a DataFrame.
   filter        Filter message by a classification threshold.
-  from-doca     A source stage used to receive raw packet data from a ConnectX-6 Dx NIC.
+  from-doca-source     A source stage used to receive raw packet data from a ConnectX-6 Dx NIC.
+  from-doca-convert    A convert stage used to converrt DOCA source RawPacketMessage to MetaMessage
   from-file     Load messages from a file.
   from-kafka    Load messages from a Kafka cluster.
   gen-viz       (Deprecated) Write out visualization DataFrames.

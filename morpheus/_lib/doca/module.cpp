@@ -43,6 +43,16 @@ PYBIND11_MODULE(doca, m)
              py::arg("nic_pci_address"),
              py::arg("gpu_pci_address"),
              py::arg("traffic_type"));
+
+    py::class_<mrc::segment::Object<DocaConvertStage>,
+            mrc::segment::ObjectProperties,
+            std::shared_ptr<mrc::segment::Object<DocaConvertStage>>>(m, "DocaConvertStage", py::multiple_inheritance())
+        .def(py::init<>(&DocaConvertStageInterfaceProxy::init),
+            py::arg("builder"),
+            py::arg("name"),
+            py::arg("split_hdr") = false
+            );
+
 }
 
 }  // namespace morpheus

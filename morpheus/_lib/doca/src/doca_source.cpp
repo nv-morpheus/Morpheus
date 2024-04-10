@@ -70,6 +70,8 @@ DocaSourceStage::DocaSourceStage(std::string const& nic_pci_address,
     m_rxpipe = std::make_shared<morpheus::doca::DocaRxPipe>(m_context, m_rxq, m_traffic_type);
 }
 
+DocaSourceStage::~DocaSourceStage() = default;
+
 static uint64_t now_ns()
 {
     struct timespec t;

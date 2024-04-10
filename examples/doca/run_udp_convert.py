@@ -64,7 +64,7 @@ def run_pipeline(out_file,
 
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'udp'))
-    pipeline.set_source(DocaConvertStage(config, false))
+    pipeline.add_stage(DocaConvertStage(config, False))
     pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts', determine_count_fn=count_raw_packets))
 
     # Build the pipeline here to see types in the vizualization
