@@ -17,141 +17,175 @@
 
 #pragma once
 
-#include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
+#include "morpheus/export.h"
 #include "morpheus/objects/triton_in_out.hpp"
+#include "morpheus/stages/inference_client_stage.hpp"
 #include "morpheus/types.hpp"
 
-#include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
 #include <http_client.h>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/sink_properties.hpp>
-#include <mrc/node/source_properties.hpp>
-#include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>
-#include <mrc/types.hpp>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
+#include <mrc/coroutines/task.hpp>
+
+#include <cstdint>
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
-#include <map>
 #include <memory>
 #include <string>
-#include <thread>
 #include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceClientStage********************************/
 
-/**
- * @addtogroup stages
- * @{
- * @file
- */
+struct MORPHEUS_EXPORT TritonInferInput
+{
+    /**
+     * @brief The name of the triton inference input
+     */
+    std::string name;
 
-#pragma GCC visibility push(default)
-/**
- * @brief Perform inference with Triton Inference Server.
- * This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
- */
-class InferenceClientStage
-  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>
+    /**
+     * @brief The shape of the triton inference input
+     */
+    std::vector<int64_t> shape;
+
+    /**
+     * @brief The type of the triton inference input
+     */
+    std::string type;
+
+    /**
+     * @brief The triton inference input data
+     */
+    std::vector<uint8_t> data;
+};
+
+struct MORPHEUS_EXPORT TritonInferRequestedOutput
+{
+    std::string name;
+};
+
+class MORPHEUS_EXPORT ITritonClient
 {
   public:
-    using base_t =
-        mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>;
-    using typename base_t::sink_type_t;
-    using typename base_t::source_type_t;
-    using typename base_t::subscribe_fn_t;
+    virtual ~ITritonClient() = default;
 
     /**
-     * @brief Construct a new Inference Client Stage object
-     *
-     * @param model_name : Name of the model specifies which model can handle the inference requests that are sent to
-     * Triton inference
-     * @param server_url : Triton server URL.
-     * @param force_convert_inputs : Instructs the stage to convert the incoming data to the same format that Triton is
-     * expecting. If set to False, data will only be converted if it would not result in the loss of data.
-     * @param use_shared_memory : Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using
-     * CUDA IPC reduces network transfer time but requires that Morpheus and Triton are located on the same machine.
-     * @param needs_logits : Determines if logits are required.
-     * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this
-     * if the Morpheus names do not match the model.
+     * @brief Checks if Triton Server is live
      */
-    InferenceClientStage(std::string model_name,
-                         std::string server_url,
-                         bool force_convert_inputs,
-                         bool use_shared_memory,
-                         bool needs_logits,
-                         std::map<std::string, std::string> inout_mapping = {});
+    virtual triton::client::Error is_server_live(bool* live) = 0;
 
+    /**
+     * @brief Checks if Triton Server is ready
+     */
+    virtual triton::client::Error is_server_ready(bool* ready) = 0;
+
+    /**
+     * @brief Checks if the given model is ready
+     */
+    virtual triton::client::Error is_model_ready(bool* ready, std::string& model_name) = 0;
+
+    /**
+     * @brief Gets metadata for the given model
+     */
+    virtual triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) = 0;
+
+    /**
+     * @brief Gets the config for the given model
+     */
+    virtual triton::client::Error model_config(std::string* model_config, std::string& model_name) = 0;
+
+    /**
+     * @brief Runs Triton Server inference given the model options, inputs, and outputs
+     */
+    virtual triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
+                                              const triton::client::InferOptions& options,
+                                              const std::vector<TritonInferInput>& inputs,
+                                              const std::vector<TritonInferRequestedOutput>& outputs) = 0;
+};
+
+class MORPHEUS_EXPORT HttpTritonClient : public ITritonClient
+{
   private:
-    /**
-     * TODO(Documentation)
-     */
-    bool is_default_grpc_port(std::string& server_url);
+    std::unique_ptr<triton::client::InferenceServerHttpClient> m_client;
+
+  public:
+    HttpTritonClient(std::string server_url);
 
     /**
-     * TODO(Documentation)
+     * @brief Checks if Triton Server is live using HTTP protocal
      */
-    void connect_with_server();
+    triton::client::Error is_server_live(bool* live) override;
 
     /**
-     * TODO(Documentation)
+     * @brief Checks if Triton Server is ready using HTTP protocal
      */
-    subscribe_fn_t build_operator();
+    triton::client::Error is_server_ready(bool* ready) override;
 
+    /**
+     * @brief Checks if the given model is ready using HTTP protocal
+     */
+    triton::client::Error is_model_ready(bool* ready, std::string& model_name) override;
+
+    /**
+     * @brief Gets the config for the given model using HTTP protocal
+     */
+    triton::client::Error model_config(std::string* model_config, std::string& model_name) override;
+
+    /**
+     * @brief Gets metadata for the given model using HTTP protocal
+     */
+    triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) override;
+
+    /**
+     * @brief Runs Triton Server inference given the model options, inputs, and outputs, using HTTP protocal
+     */
+    triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
+                                      const triton::client::InferOptions& options,
+                                      const std::vector<TritonInferInput>& inputs,
+                                      const std::vector<TritonInferRequestedOutput>& outputs) override;
+};
+
+class MORPHEUS_EXPORT TritonInferenceClientSession : public IInferenceClientSession
+{
+  private:
     std::string m_model_name;
-    std::string m_server_url;
-    bool m_force_convert_inputs;
-    bool m_use_shared_memory;
-    bool m_needs_logits{true};
-    std::map<std::string, std::string> m_inout_mapping;
-
-    // Below are settings created during handshake with server
-    // std::shared_ptr<triton::client::InferenceServerHttpClient> m_client;
+    TensorIndex m_max_batch_size = -1;
     std::vector<TritonInOut> m_model_inputs;
     std::vector<TritonInOut> m_model_outputs;
-    triton::client::InferOptions m_options;
-    TensorIndex m_max_batch_size{-1};
+    std::shared_ptr<ITritonClient> m_client;
+
+  public:
+    TritonInferenceClientSession(std::shared_ptr<ITritonClient> client, std::string model_name);
+
+    /**
+      @brief Gets the inference input mappings for Triton
+    */
+    std::vector<TensorModelMapping> get_input_mappings(std::vector<TensorModelMapping> input_map_overrides) override;
+
+    /**
+      @brief Gets the inference output mappings for Triton
+    */
+    std::vector<TensorModelMapping> get_output_mappings(std::vector<TensorModelMapping> output_map_overrides) override;
+
+    /**
+      @brief Invokes a single tensor inference using the constructor-provided ITritonClient
+    */
+    mrc::coroutines::Task<TensorMap> infer(TensorMap&& inputs) override;
 };
 
-/****** InferenceClientStageInferenceProxy******************/
-/**
- * @brief Interface proxy, used to insulate python bindings.
- */
-struct InferenceClientStageInterfaceProxy
+class MORPHEUS_EXPORT TritonInferenceClient : public IInferenceClient
 {
+  private:
+    std::shared_ptr<ITritonClient> m_client;
+    std::string m_model_name;
+
+  public:
+    TritonInferenceClient(std::unique_ptr<ITritonClient>&& client, std::string model_name);
+
     /**
-     * @brief Create and initialize a InferenceClientStage, and return the result
-     *
-     * @param builder : Pipeline context object reference
-     * @param name : Name of a stage reference
-     * @param model_name : Name of the model specifies which model can handle the inference requests that are sent to
-     * Triton inference
-     * @param server_url : Triton server URL.
-     * @param force_convert_inputs : Instructs the stage to convert the incoming data to the same format that Triton is
-     * expecting. If set to False, data will only be converted if it would not result in the loss of data.
-     * @param use_shared_memory : Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using
-     * CUDA IPC reduces network transfer time but requires that Morpheus and Triton are located on the same machine.
-     * @param needs_logits : Determines if logits are required.
-     * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this
-     * if the Morpheus names do not match the model.
-     * @return std::shared_ptr<mrc::segment::Object<InferenceClientStage>>
-     */
-    static std::shared_ptr<mrc::segment::Object<InferenceClientStage>> init(
-        mrc::segment::Builder& builder,
-        const std::string& name,
-        std::string model_name,
-        std::string server_url,
-        bool force_convert_inputs,
-        bool use_shared_memory,
-        bool needs_logits,
-        std::map<std::string, std::string> inout_mapping);
+      @brief Creates a TritonInferenceClientSession
+    */
+    std::unique_ptr<IInferenceClientSession> create_session() override;
 };
-#pragma GCC visibility pop
-/** @} */  // end of group
+
 }  // namespace morpheus

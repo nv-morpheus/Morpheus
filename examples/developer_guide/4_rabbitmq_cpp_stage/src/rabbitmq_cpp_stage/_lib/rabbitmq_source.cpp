@@ -17,16 +17,24 @@
 
 #include "rabbitmq_source.hpp"
 
+#include <SimpleAmqpClient/BasicMessage.h>
+#include <SimpleAmqpClient/Channel.h>
+#include <SimpleAmqpClient/Envelope.h>
 #include <cudf/io/json.hpp>
-#include <cudf/table/table.hpp>
 #include <glog/logging.h>
-#include <pybind11/chrono.h>  // for timedelta->chrono conversions
+#include <morpheus/messages/meta.hpp>
+#include <pybind11/attr.h>
+#include <pybind11/chrono.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
+#include <pymrc/utils.hpp>
 
 #include <exception>
 #include <sstream>
 #include <thread>  // for std::this_thread::sleep_for
-#include <vector>
+#include <utility>
+
+// IWYU pragma: no_include <boost/smart_ptr/detail/operator_bool.hpp>
+// IWYU pragma: no_include <boost/smart_ptr/shared_ptr.hpp>
 
 namespace morpheus_rabbit {
 

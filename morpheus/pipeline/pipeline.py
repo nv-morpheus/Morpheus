@@ -28,19 +28,13 @@ import mrc
 import networkx
 from tqdm import tqdm
 
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
-from morpheus.pipeline.boundary_stage_mixin import BoundaryStageMixin
-from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
-from morpheus.pipeline.receiver import Receiver
-from morpheus.pipeline.sender import Sender
-from morpheus.pipeline.source_stage import SourceStage
-from morpheus.pipeline.stage import Stage
-from morpheus.pipeline.stage_base import StageBase
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
 
-StageT = typing.TypeVar("StageT", bound=StageBase)
+StageT = typing.TypeVar("StageT", bound=_pipeline.StageBase)
 
 
 class PipelineState(Enum):
@@ -75,10 +69,10 @@ class Pipeline():
         self._num_threads = config.num_threads
 
         # Complete set of nodes across segments in this pipeline
-        self._stages: typing.List[Stage] = []
+        self._stages: typing.List[_pipeline.Stage] = []
 
         # Complete set of sources across segments in this pipeline
-        self._sources: typing.List[SourceStage] = []
+        self._sources: typing.List[_pipeline.SourceStage] = []
 
         # Dictionary containing segment information for this pipeline
         self._segments: typing.Dict = defaultdict(lambda: {"nodes": set(), "ingress_ports": [], "egress_ports": []})
@@ -123,10 +117,10 @@ class Pipeline():
         segment_graph = self._segment_graphs[segment_id]
 
         # Add to list of stages if it's a stage, not a source
-        if (isinstance(stage, Stage)):
+        if (isinstance(stage, _pipeline.Stage)):
             segment_nodes.add(stage)
             self._stages.append(stage)
-        elif (isinstance(stage, SourceStage)):
+        elif (isinstance(stage, _pipeline.SourceStage)):
             segment_nodes.add(stage)
             self._sources.append(stage)
         else:
@@ -139,8 +133,8 @@ class Pipeline():
         return stage
 
     def add_edge(self,
-                 start: typing.Union[StageBase, Sender],
-                 end: typing.Union[Stage, Receiver],
+                 start: typing.Union[_pipeline.StageBase, _pipeline.Sender],
+                 end: typing.Union[_pipeline.Stage, _pipeline.Receiver],
                  segment_id: str = "main"):
         """
         Create an edge between two stages and add it to a segment in the pipeline.
@@ -159,7 +153,7 @@ class Pipeline():
         """
         self._assert_not_built()
 
-        if (isinstance(start, StageBase)):
+        if (isinstance(start, _pipeline.StageBase)):
             assert len(start.output_ports) > 0, \
                 "Cannot call `add_edge` with a stage with no output ports as the `start` parameter"
             assert len(start.output_ports) == 1, \
@@ -167,10 +161,10 @@ class Pipeline():
                  "instead `add_edge` must be called for each output port individually.")
             start_port = start.output_ports[0]
 
-        elif (isinstance(start, Sender)):
+        elif (isinstance(start, _pipeline.Sender)):
             start_port = start
 
-        if (isinstance(end, Stage)):
+        if (isinstance(end, _pipeline.Stage)):
             assert len(end.input_ports) > 0, \
                 "Cannot call `add_edge` with a stage with no input ports as the `end` parameter"
             assert len(end.input_ports) == 1, \
@@ -178,7 +172,7 @@ class Pipeline():
                  "instead `add_edge` must be called for each input port individually.")
             end_port = end.input_ports[0]
 
-        elif (isinstance(end, Receiver)):
+        elif (isinstance(end, _pipeline.Receiver)):
             end_port = end
 
         start_port._output_receivers.append(end_port)
@@ -191,9 +185,9 @@ class Pipeline():
                                end_port_idx=end_port.port_number)
 
     def add_segment_edge(self,
-                         egress_stage: BoundaryStageMixin,
+                         egress_stage: _pipeline.BoundaryStageMixin,
                          egress_segment: str,
-                         ingress_stage: BoundaryStageMixin,
+                         ingress_stage: _pipeline.BoundaryStageMixin,
                          ingress_segment: str,
                          port_pair: typing.Union[str, typing.Tuple[str, typing.Type, bool]]):
         """
@@ -221,7 +215,7 @@ class Pipeline():
                 * bool: If the type is a shared pointer (typically should be `False`)
         """
         self._assert_not_built()
-        assert isinstance(egress_stage, BoundaryStageMixin), "Egress stage must be a BoundaryStageMixin"
+        assert isinstance(egress_stage, _pipeline.BoundaryStageMixin), "Egress stage must be a BoundaryStageMixin"
         egress_edges = self._segments[egress_segment]["egress_ports"]
         egress_edges.append({
             "port_pair": port_pair,
@@ -230,7 +224,7 @@ class Pipeline():
             "receiver_segment": ingress_segment
         })
 
-        assert isinstance(ingress_stage, BoundaryStageMixin), "Ingress stage must be a BoundaryStageMixin"
+        assert isinstance(ingress_stage, _pipeline.BoundaryStageMixin), "Ingress stage must be a BoundaryStageMixin"
         ingress_edges = self._segments[ingress_segment]["ingress_ports"]
         ingress_edges.append({
             "port_pair": port_pair,
@@ -256,7 +250,7 @@ class Pipeline():
             # topo_sort provides a reasonable approximation.
             for stage in networkx.topological_sort(segment_graph):
                 needed_columns.update(stage.get_needed_columns())
-                if (isinstance(stage, PreallocatorMixin)):
+                if (isinstance(stage, _pipeline.PreallocatorMixin)):
                     preallocator_stages.append(stage)
 
                 if (stage.can_pre_build()):
@@ -278,7 +272,7 @@ class Pipeline():
             # Finally, execute the link phase (only necessary for circular pipelines)
             # for s in source_and_stages:
             for stage in segment_graph.nodes():
-                for port in typing.cast(StageBase, stage).input_ports:
+                for port in typing.cast(_pipeline.StageBase, stage).input_ports:
                     port.link_schema()
 
             logger.info("====Pre-Building Segment Complete!====")
@@ -334,7 +328,7 @@ class Pipeline():
 
             # Finally, execute the link phase (only necessary for circular pipelines)
             for stage in segment_graph.nodes():
-                for port in typing.cast(StageBase, stage).input_ports:
+                for port in typing.cast(_pipeline.StageBase, stage).input_ports:
                     port.link_node(builder=builder)
 
             # Call the start method for the stages in this segment. Must run on the loop and wait for the result
@@ -512,7 +506,7 @@ class Pipeline():
         start_def_port = ":e" if is_lr else ":s"
         end_def_port = ":w" if is_lr else ":n"
 
-        def has_ports(node: StageBase, is_input):
+        def has_ports(node: _pipeline.StageBase, is_input):
             if (is_input):
                 return len(node.input_ports) > 0
 
@@ -523,7 +517,7 @@ class Pipeline():
             gv_subgraphs[segment_id] = graphviz.Digraph(f"cluster_{segment_id}")
             gv_subgraph = gv_subgraphs[segment_id]
             gv_subgraph.attr(label=segment_id)
-            for name, attrs in typing.cast(typing.Mapping[StageBase, dict],
+            for name, attrs in typing.cast(typing.Mapping[_pipeline.StageBase, dict],
                                            self._segment_graphs[segment_id].nodes).items():
                 node_attrs = attrs.copy()
 
@@ -562,7 +556,7 @@ class Pipeline():
         # Build up edges
         for segment_id in self._segments:
             gv_subgraph = gv_subgraphs[segment_id]
-            for e, attrs in typing.cast(typing.Mapping[typing.Tuple[StageBase, StageBase], dict],
+            for e, attrs in typing.cast(typing.Mapping[typing.Tuple[_pipeline.StageBase, _pipeline.StageBase], dict],
                                         self._segment_graphs[segment_id].edges()).items():  # noqa: E501
 
                 edge_attrs = {}

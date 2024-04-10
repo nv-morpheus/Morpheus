@@ -17,7 +17,7 @@
 
 #include "py_llm_node_base.hpp"
 
-#include "morpheus/llm/llm_context.hpp"
+#include "morpheus/llm/llm_context.hpp"  // IWYU pragma: keep
 #include "morpheus/llm/llm_engine.hpp"
 #include "morpheus/llm/llm_node.hpp"
 #include "morpheus/llm/llm_node_base.hpp"

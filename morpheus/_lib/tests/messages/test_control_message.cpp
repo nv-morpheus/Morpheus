@@ -16,27 +16,30 @@
  */
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
-#include "test_messages.hpp"
+#include "test_messages.hpp"         // for TestMessages
 
-#include "morpheus/messages/control.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/control.hpp"               // for ControlMessage
+#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
+#include "morpheus/messages/meta.hpp"                  // for MessageMeta
 
-#include <gtest/gtest.h>
-#include <nlohmann/json.hpp>
+#include <gtest/gtest.h>      // for Message, TestPartResult, AssertionResult, TestInfo
+#include <nlohmann/json.hpp>  // for basic_json, json_ref, json
 
-#include <algorithm>
-#include <chrono>
-#include <map>
-#include <memory>
-#include <optional>
-#include <stdexcept>
-#include <string>
+#include <algorithm>  // for find
+#include <chrono>     // for system_clock
+#include <map>        // for map
+#include <memory>     // for allocator, make_shared, shared_ptr
+#include <optional>   // for optional
+#include <stdexcept>  // for runtime_error
+#include <string>     // for operator<=>, string, char_traits, basic_string
+#include <vector>     // for vector
 
 using namespace morpheus;
 using namespace morpheus::test;
 
 using clock_type_t = std::chrono::system_clock;
+
+using TestControlMessage = morpheus::test::TestMessages;  // NOLINT(readability-identifier-naming)
 
 TEST_F(TestControlMessage, InitializationTest)
 {

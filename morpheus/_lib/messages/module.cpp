@@ -101,6 +101,14 @@ PYBIND11_MODULE(messages, _module)
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MessageMeta>, mrc::pymrc::PyObjectHolder>::register_converter();
     mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder, std::shared_ptr<morpheus::MessageMeta>>::register_converter();
 
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiMessage>, mrc::pymrc::PyObjectHolder>::register_converter();
+    mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder, std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
+                             mrc::pymrc::PyObjectHolder>::register_converter();
+    mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder,
+                             std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
+
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiTensorMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
@@ -221,6 +229,22 @@ PYBIND11_MODULE(messages, _module)
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
         .def_property_readonly("df", &MessageMetaInterfaceProxy::df_property, py::return_value_policy::move)
+        .def("get_data",
+             py::overload_cast<MessageMeta&>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move)
+        .def("get_data",
+             py::overload_cast<MessageMeta&, std::string>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_data",
+             py::overload_cast<MessageMeta&, std::vector<std::string>>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_data",
+             py::overload_cast<MessageMeta&, pybind11::none>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("set_data", &MessageMetaInterfaceProxy::set_data, py::return_value_policy::move)
         .def("get_column_names", &MessageMetaInterfaceProxy::get_column_names)
         .def("copy_dataframe", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
         .def("mutable_dataframe", &MessageMetaInterfaceProxy::mutable_dataframe, py::return_value_policy::move)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,37 +17,33 @@
 
 #pragma once
 
-#include "doca_context.hpp"
-#include "doca_mem.hpp"
-
-#include <doca_eth_rxq.h>
-#include <doca_gpunetio.h>
-
-#include <memory>
+#include "morpheus/doca/doca_context.hpp"
 
 namespace morpheus::doca {
 
 /**
- * @brief Creates and manages the lifetime of a GPUNetIO Receive Queue.
+ * @brief Creates and manages the lifetime of a GPUNetIO Semaphore.
  *
- * A Receive Queue is used to buffer packets received from a GPUNetIO Pipe.
+ * GPUNetIO Semaphores are used in a round-robin fashion to create locks over regions of Receive
+ * Queue memory so they can be read in device kernels.
  */
-struct DocaRxQueue
+struct DocaSemaphore
 {
   private:
     std::shared_ptr<DocaContext> m_context;
-    doca_gpu_eth_rxq* m_rxq_info_gpu;
-    doca_eth_rxq* m_rxq_info_cpu;
-    doca_mmap* m_packet_buffer;
-    doca_ctx* m_doca_ctx;
-    std::unique_ptr<DocaMem<void>> m_packet_mem;
+    uint16_t m_size;
+    doca_gpu_semaphore* m_semaphore;
+    doca_gpu_semaphore_gpu* m_semaphore_gpu;
 
   public:
-    DocaRxQueue(std::shared_ptr<DocaContext> context);
-    ~DocaRxQueue();
+    DocaSemaphore(std::shared_ptr<DocaContext> context, uint16_t size);
+    ~DocaSemaphore();
 
-    doca_gpu_eth_rxq* rxq_info_gpu();
-    doca_eth_rxq* rxq_info_cpu();
+    doca_gpu_semaphore_gpu* gpu_ptr();
+    uint16_t size();
+    void* get_info_cpu(uint32_t idx);
+    bool is_ready(uint32_t idx);
+    void set_free(uint32_t idx);
 };
 
 }  // namespace morpheus::doca

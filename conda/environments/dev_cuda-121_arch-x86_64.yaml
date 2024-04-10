@@ -8,9 +8,9 @@ channels:
 - nvidia
 - nvidia/label/dev
 - pytorch
-- defaults
 dependencies:
 - appdirs
+- automake
 - benchmark=1.8.3
 - boost-cpp=1.84
 - breathe=4.35.0
@@ -44,13 +44,14 @@ dependencies:
 - ipython
 - isort
 - librdkafka>=1.9.2,<1.10.0a0
+- libtool
 - mlflow=2.9.2
-- mrc=24.03
+- mrc=24.06
 - myst-parser=0.18.1
 - nbsphinx
 - networkx=2.8.8
 - ninja=1.11
-- nlohmann_json=3.9
+- nlohmann_json=3.11
 - nodejs=18.*
 - numpydoc=1.5
 - nvtabular=23.08.00
@@ -73,6 +74,7 @@ dependencies:
 - pytorch-cuda
 - pytorch=*=*cuda*
 - rapidjson=1.1.0
+- rdma-core>=48
 - requests
 - requests-cache=1.1
 - requests-toolbelt
@@ -93,6 +95,7 @@ dependencies:
 - zlib=1.2.13
 - pip:
   - PyMuPDF==1.23.21
+  - databricks-cli < 0.100
   - databricks-connect
   - milvus==2.3.5
   - pymilvus==2.3.6

@@ -44,6 +44,7 @@ set_target_properties(test_cuda
 add_library(
   morpheus_test_utilities
     test_utils/common.cpp
+    test_utils/tensor_utils.cpp
 )
 
 target_link_libraries(
@@ -51,6 +52,12 @@ target_link_libraries(
   PUBLIC
     GTest::gtest
     morpheus
+)
+
+# Ensure that the python executable is defined for the tests
+target_compile_definitions(morpheus_test_utilities
+  PRIVATE
+    PYTHON_EXECUTABLE="${PYTHON_EXECUTABLE}"
 )
 
 # Morpheus Tests
@@ -149,9 +156,24 @@ add_morpheus_test(
 )
 
 add_morpheus_test(
+  NAME stages
+  FILES
+    stages/test_preprocess_nlp.cpp
+    stages/test_preprocess_fil.cpp
+    stages/test_add_scores.cpp
+    stages/test_add_classification.cpp
+)
+
+add_morpheus_test(
   NAME tensor
   FILES
     test_tensor.cpp
+)
+
+add_morpheus_test(
+  NAME triton_inference_stage
+  FILES
+    stages/test_triton_inference_stage.cpp
 )
 
 add_morpheus_test(
