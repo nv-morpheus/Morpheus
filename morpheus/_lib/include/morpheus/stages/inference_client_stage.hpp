@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/export.h"
+#include "morpheus/messages/control.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/types.hpp"
@@ -93,12 +94,13 @@ class MORPHEUS_EXPORT IInferenceClient
  * @brief Perform inference with Triton Inference Server.
  * This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
  */
+template <typename InputT, typename OutputT>
 class MORPHEUS_EXPORT InferenceClientStage
-  : public mrc::pymrc::AsyncioRunnable<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>
+  : public mrc::pymrc::AsyncioRunnable<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
 {
   public:
-    using sink_type_t   = std::shared_ptr<MultiInferenceMessage>;
-    using source_type_t = std::shared_ptr<MultiResponseMessage>;
+    using sink_type_t   = std::shared_ptr<InputT>;
+    using source_type_t = std::shared_ptr<OutputT>;
 
     /**
      * @brief Construct a new Inference Client Stage object
@@ -117,11 +119,11 @@ class MORPHEUS_EXPORT InferenceClientStage
                          std::vector<TensorModelMapping> output_mapping);
 
     /**
-     * Process a single MultiInferenceMessage by running the constructor-provided inference client against it's Tensor,
-     * and yields the result as a MultiResponseMessage
+     * Process a single InputT by running the constructor-provided inference client against it's Tensor,
+     * and yields the result as a OutputT
      */
-    mrc::coroutines::AsyncGenerator<std::shared_ptr<MultiResponseMessage>> on_data(
-        std::shared_ptr<MultiInferenceMessage>&& data, std::shared_ptr<mrc::coroutines::Scheduler> on) override;
+    mrc::coroutines::AsyncGenerator<std::shared_ptr<OutputT>> on_data(
+        std::shared_ptr<InputT>&& data, std::shared_ptr<mrc::coroutines::Scheduler> on) override;
 
   private:
     std::string m_model_name;
@@ -142,7 +144,7 @@ class MORPHEUS_EXPORT InferenceClientStage
 struct MORPHEUS_EXPORT InferenceClientStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a InferenceClientStage, and return the result
+     * @brief Create and initialize a MultiMessage-based InferenceClientStage, and return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
@@ -152,9 +154,31 @@ struct MORPHEUS_EXPORT InferenceClientStageInterfaceProxy
      * @param needs_logits : Determines if logits are required.
      * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this
      * if the Morpheus names do not match the model.
-     * @return std::shared_ptr<mrc::segment::Object<InferenceClientStage>>
+     * @return std::shared_ptr<mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>>
      */
-    static std::shared_ptr<mrc::segment::Object<InferenceClientStage>> init(
+    static std::shared_ptr<mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>> init_mm(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        std::string model_name,
+        std::string server_url,
+        bool needs_logits,
+        std::map<std::string, std::string> input_mapping,
+        std::map<std::string, std::string> output_mapping);
+
+    /**
+     * @brief Create and initialize a ControlMessage-based InferenceClientStage, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param model_name : Name of the model specifies which model can handle the inference requests that are sent to
+     * Triton inference
+     * @param server_url : Triton server URL.
+     * @param needs_logits : Determines if logits are required.
+     * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this
+     * if the Morpheus names do not match the model.
+     * @return std::shared_ptr<mrc::segment::Object<InferenceClientStage<ControlMessage, ControlMessage>>>
+     */
+    static std::shared_ptr<mrc::segment::Object<InferenceClientStage<ControlMessage, ControlMessage>>> init_cm(
         mrc::segment::Builder& builder,
         const std::string& name,
         std::string model_name,

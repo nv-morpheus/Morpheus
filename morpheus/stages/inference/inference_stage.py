@@ -192,7 +192,7 @@ class InferenceStage(MultiMessageStage):
         typing.Tuple
             Tuple of input types.
         """
-        return (MultiInferenceMessage, )
+        return (MultiInferenceMessage, ControlMessage)
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MultiResponseMessage)
@@ -366,6 +366,7 @@ class InferenceStage(MultiMessageStage):
 
         return out_resp
 
+    # TODO(cwharris): find out if this function is used. if not, delete it.
     @staticmethod
     def _convert_response(
             x: typing.Tuple[typing.List[MultiInferenceMessage], typing.List[TensorMemory]]) -> MultiResponseMessage:

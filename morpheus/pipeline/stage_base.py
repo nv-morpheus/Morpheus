@@ -80,6 +80,8 @@ class StageBase(ABC, collections.abc.Hashable):
 
     __ID_COUNTER = AtomicInteger(0)
 
+    _schema: _pipeline.StageSchema
+
     def __init__(self, config: Config):
         # Save the config
         self._config = config
