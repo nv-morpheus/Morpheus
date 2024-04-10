@@ -190,7 +190,7 @@ class NeMoLLMService(LLMService):
     A service for interacting with NeMo LLM models, this class should be used to create a client for a specific model.
     """
 
-    def __init__(self, *, api_key: str = None, org_id: str = None, retry_count=5) -> None:
+    def __init__(self, *, api_key: str = None, org_id: str = None, base_url: str = None, retry_count=5) -> None:
         """
         Creates a service for interacting with NeMo LLM models.
 
@@ -203,6 +203,9 @@ class NeMoLLMService(LLMService):
             The organization ID for the LLM service, by default None. If `None` the organization ID will be read from
             the `NGC_ORG_ID` environment variable. This value is only required if the account associated with the
             `api_key` is a member of multiple NGC organizations., by default None
+        base_url : str, optional
+            The api host url, by default None. If `None` the url will be read from the `NGC_API_BASE` environment
+            variable. If neither are present an error will be raised., by default None
         retry_count : int, optional
             The number of times to retry a request before raising an exception, by default 5
 
@@ -214,11 +217,12 @@ class NeMoLLMService(LLMService):
         super().__init__()
         api_key = api_key if api_key is not None else os.environ.get("NGC_API_KEY", None)
         org_id = org_id if org_id is not None else os.environ.get("NGC_ORG_ID", None)
+        base_url = base_url if base_url is not None else os.environ.get("NGC_API_BASE", None)
 
         self._retry_count = retry_count
 
         self._conn = nemollm.NemoLLM(
-            api_host=os.environ.get("NGC_API_BASE", None),
+            api_host=base_url,
             # The client must configure the authentication and authorization parameters
             # in accordance with the API server security policy.
             # Configure Bearer authorization

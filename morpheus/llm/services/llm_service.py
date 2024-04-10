@@ -144,7 +144,7 @@ class LLMService(ABC):
     @typing.overload
     @staticmethod
     def create(service_type: typing.Literal["openai"], *service_args,
-               **service_kwargs) -> "morpheus.llm.services.nemo_llm_service.OpenAILLMService":
+               **service_kwargs) -> "morpheus.llm.services.openai_chat_service.OpenAIChatService":
         pass
 
     @typing.overload
@@ -163,13 +163,18 @@ class LLMService(ABC):
         service_kwargs : dict[str, typing.Any]
             Additional keyword arguments to pass to the service.
         """
-        module_name = f"morpheus.llm.services.{service_type.lower()}_llm_service"
+        if service_type.lower() == 'openai':
+            llm_or_chat = "chat"
+        else:
+            llm_or_chat = "llm"
+
+        module_name = f"morpheus.llm.services.{service_type.lower()}_{llm_or_chat}_service"
         module = importlib.import_module(module_name)
 
         # Get all of the classes in the module to find the correct service class
         mod_classes = dict([(name, cls) for name, cls in module.__dict__.items() if isinstance(cls, type)])
 
-        class_name_lower = f"{service_type}LLMService".lower()
+        class_name_lower = f"{service_type}{llm_or_chat}Service".lower()
 
         # Find case-insensitive match for the class name
         matching_classes = [name for name in mod_classes if name.lower() == class_name_lower]
