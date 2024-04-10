@@ -37,6 +37,7 @@
 #include <chrono>
 #include <compare>
 #include <coroutine>
+#include <exception>
 #include <mutex>
 #include <ostream>
 #include <ratio>
@@ -72,6 +73,26 @@ static ShapeType get_seq_ids(const InferenceClientStageMM::sink_type_t& message)
     return host_seq_ids;
 }
 
+static bool has_tensor(std::shared_ptr<MultiInferenceMessage> message, std::string const& tensor_name)
+{
+    return message->memory->has_tensor(tensor_name);
+}
+
+static bool has_tensor(std::shared_ptr<ControlMessage> message, std::string const& tensor_name)
+{
+    return message->tensors()->has_tensor(tensor_name);
+}
+
+static TensorObject get_tensor(std::shared_ptr<MultiInferenceMessage> message, std::string const& tensor_name)
+{
+    return message->get_input(tensor_name);
+}
+
+static TensorObject get_tensor(std::shared_ptr<ControlMessage> message, std::string const& tensor_name)
+{
+    return message->tensors()->get_tensor(tensor_name);
+}
+
 static void reduce_outputs(std::shared_ptr<MultiInferenceMessage> const& message, TensorMap& output_tensors)
 {
     if (message->mess_count == message->count)
@@ -105,7 +126,7 @@ static void reduce_outputs(std::shared_ptr<MultiInferenceMessage> const& message
 
 static void reduce_outputs(std::shared_ptr<ControlMessage> const& message, TensorMap& output_tensors)
 {
-    throw std::runtime_error("reduce_outputs not implemented");
+    // throw std::runtime_error("reduce_outputs not implemented");
 }
 
 static void apply_logits(TensorMap& output_tensors)
@@ -169,28 +190,8 @@ struct ExponentialBackoff
     }
 };
 
-static bool has_tensor(std::shared_ptr<MultiInferenceMessage> message, std::string const& tensor_name)
-{
-    return message->memory->has_tensor(tensor_name);
-}
-
-static bool has_tensor(std::shared_ptr<ControlMessage> message, std::string const& tensor_name)
-{
-    return message->tensors()->has_tensor(tensor_name);
-}
-
-static TensorObject get_tensor(std::shared_ptr<MultiInferenceMessage> message, std::string const& tensor_name)
-{
-    return message->get_input(tensor_name);
-}
-
-static TensorObject get_tensor(std::shared_ptr<ControlMessage> message, std::string const& tensor_name)
-{
-    return message->tensors()->get_tensor(tensor_name);
-}
-
 static std::shared_ptr<MultiResponseMessage> make_response(std::shared_ptr<MultiInferenceMessage> message,
-                                                    TensorMap output_tensor_map)
+                                                    TensorMap&& output_tensor_map)
 {
     // Final output of all mini-batches
     auto response_mem = std::make_shared<ResponseMemory>(message->mess_count, std::move(output_tensor_map));
@@ -199,9 +200,10 @@ static std::shared_ptr<MultiResponseMessage> make_response(std::shared_ptr<Multi
         message->meta, message->mess_offset, message->mess_count, std::move(response_mem), 0, response_mem->count);
 }
 
-static std::shared_ptr<ControlMessage> make_response(std::shared_ptr<ControlMessage> message, TensorMap output_tensor_map)
+static std::shared_ptr<ControlMessage> make_response(std::shared_ptr<ControlMessage> message, TensorMap&& output_tensor_map)
 {
-    throw std::runtime_error("make_response not implemented");
+    message->tensors()->set_tensors(std::move(output_tensor_map));
+    return message;
 }
 
 template <typename InputT, typename OutputT>
@@ -281,10 +283,25 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<OutputT>> InferenceClientStage<I
                 }
             }
 
-            co_yield make_response(message, output_tensor_map);
+            co_yield make_response(message, std::move(output_tensor_map));
 
             co_return;
 
+        } catch (std::runtime_error ex)
+        {
+            auto lock = std::unique_lock(m_session_mutex);
+
+            if (m_session == message_session)
+            {
+                m_session.reset();
+            }
+
+            if (m_retry_max >= 0 and ++retry_count > m_retry_max)
+            {
+                throw;
+            }
+
+            LOG(WARNING) << "Exception while processing message for InferenceClientStage, attempting retry. ex.what(): " << ex.what();
         } catch (...)
         {
             auto lock = std::unique_lock(m_session_mutex);

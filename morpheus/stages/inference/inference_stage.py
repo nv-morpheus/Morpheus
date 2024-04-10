@@ -195,7 +195,10 @@ class InferenceStage(MultiMessageStage):
         return (MultiInferenceMessage, ControlMessage)
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MultiResponseMessage)
+        if schema.input_type == ControlMessage:
+            schema.output_schema.set_type(ControlMessage)
+        else:
+            schema.output_schema.set_type(MultiResponseMessage)
 
     def supports_cpp_node(self):
         # Default to False unless derived classes override this value

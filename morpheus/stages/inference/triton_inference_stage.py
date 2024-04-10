@@ -777,13 +777,13 @@ class TritonInferenceStage(InferenceStage):
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         
         if self._schema.input_type == ControlMessage:
-            return _stages.InferenceClientControlCM(builder,
-                                                    self.unique_name,
-                                                    self._server_url,
-                                                    self._model_name,
-                                                    self._needs_logits,
-                                                    self._input_mapping,
-                                                    self._output_mapping)
+            return _stages.InferenceClientStageCM(builder,
+                                                  self.unique_name,
+                                                  self._server_url,
+                                                  self._model_name,
+                                                  self._needs_logits,
+                                                  self._input_mapping,
+                                                  self._output_mapping)
 
 
         return _stages.InferenceClientStageMM(builder,
