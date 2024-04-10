@@ -27,7 +27,7 @@ from morpheus.pipeline.stage_schema import StageSchema
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-doca-convert", modes=[PipelineModes.NLP])
+@register_stage("from-doca-source", modes=[PipelineModes.NLP])
 class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     A source stage used to receive raw packet data from a ConnectX-6 Dx NIC.
@@ -75,7 +75,7 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
 
     @property
     def name(self) -> str:
-        return "from-doca-convert"
+        return "from-doca-source"
 
     @property
     def input_count(self) -> int:
