@@ -116,11 +116,12 @@ def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-def test_abp_cpp(config, tmp_path):
+@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
+def test_abp_cpp(config, tmp_path, message_type):
     config.mode = PipelineModes.FIL
     config.class_labels = ["mining"]
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
-    config.pipeline_batch_size = 2048
+    config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
     config.edge_buffer_size = 128
     config.num_threads = 1
@@ -132,36 +133,29 @@ def test_abp_cpp(config, tmp_path):
     out_file = os.path.join(tmp_path, 'results.csv')
     results_file_name = os.path.join(tmp_path, 'results.json')
 
-    def create_pipeline(message_type):
-        pipe = LinearPipeline(config)
-        pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
-        pipe.add_stage(DeserializeStage(config, message_type=message_type))
-        pipe.add_stage(PreprocessFILStage(config))
+    pipe = LinearPipeline(config)
+    pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
+    pipe.add_stage(DeserializeStage(config, message_type=message_type))
+    pipe.add_stage(PreprocessFILStage(config))
 
-        # We are feeding TritonInferenceStage the port to the grpc server because that is what the validation tests do
-        # but the code under-the-hood replaces this with the port number of the http server
-        pipe.add_stage(
-            TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='localhost:8001',
-                                force_convert_inputs=True))
-        pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
-        pipe.add_stage(AddClassificationsStage(config))
-        pipe.add_stage(AddScoresStage(config, prefix="score_"))
-        pipe.add_stage(
-            ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05, overwrite=True))
-        pipe.add_stage(SerializeStage(config))
-        pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=True))
+    # We are feeding TritonInferenceStage the port to the grpc server because that is what the validation tests do
+    # but the code under-the-hood replaces this with the port number of the http server
+    pipe.add_stage(
+        TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='localhost:8001',
+                            force_convert_inputs=True))
+    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(AddClassificationsStage(config))
+    pipe.add_stage(AddScoresStage(config, prefix="score_"))
+    pipe.add_stage(
+        ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05, overwrite=True))
+    pipe.add_stage(SerializeStage(config))
+    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=True))
 
-        return pipe
-
-    # pipe = create_pipeline(MultiMessage)
-    # pipe.run()
-
-    # compare_class_to_scores(out_file, config.class_labels, '', 'score_', threshold=0.5)
-    # results = calc_error_val(results_file_name)
-    # assert results.diff_rows == 0
-
-    pipe = create_pipeline(ControlMessage)
     pipe.run()
+
+    compare_class_to_scores(out_file, config.class_labels, '', 'score_', threshold=0.5)
+    results = calc_error_val(results_file_name)
+    assert results.diff_rows == 0
 
 
 @pytest.mark.slow

@@ -24,6 +24,7 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
 logger = logging.getLogger(__name__)
@@ -114,7 +115,7 @@ class ValidationStage(CompareDataFrameStage):
             Accepted input types.
 
         """
-        return (MultiMessage, )
+        return (MultiMessage, ControlMessage)
 
     def _do_comparison(self):
         results = self.get_results(clear=False)

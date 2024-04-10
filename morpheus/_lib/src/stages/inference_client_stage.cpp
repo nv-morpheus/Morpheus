@@ -126,7 +126,6 @@ static void reduce_outputs(std::shared_ptr<MultiInferenceMessage> const& message
 
 static void reduce_outputs(std::shared_ptr<ControlMessage> const& message, TensorMap& output_tensors)
 {
-    // throw std::runtime_error("reduce_outputs not implemented");
 }
 
 static void apply_logits(TensorMap& output_tensors)
