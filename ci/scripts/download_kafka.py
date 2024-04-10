@@ -20,8 +20,8 @@ import os
 import pytest_kafka
 from pytest_kafka.install import set_up_kafka
 
-DEFAULT_KAFKA_URL = 'https://downloads.apache.org/kafka/3.4.1/kafka_2.13-3.4.1.tgz'
-DEFAULT_KAFKA_TAR_ROOTDIR = 'kafka_2.13-3.4.1/'
+DEFAULT_KAFKA_URL = 'https://downloads.apache.org/kafka/3.7.0/kafka_2.13-3.7.0.tgz'
+DEFAULT_KAFKA_TAR_ROOTDIR = 'kafka_2.13-3.7.0/'
 
 
 def main():

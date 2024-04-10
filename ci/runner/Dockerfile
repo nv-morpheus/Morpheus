@@ -94,3 +94,16 @@ RUN source activate ${PROJ_NAME} && \
 RUN source activate ${PROJ_NAME} && \
     python /tmp/scripts/download_kafka.py && \
     rm -rf /tmp/scripts
+
+# ============ doca ==================
+
+ENV MORPHEUS_SUPPORT_DOCA=ON
+
+COPY ./docker/optional_deps/doca.sh /tmp/doca/
+
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt install --no-install-recommends -y \
+        build-essential && \
+    apt clean && \
+    /tmp/doca/doca.sh /tmp/doca
