@@ -16,13 +16,13 @@ import logging
 
 import click
 
+from morpheus._lib.messages import RawPacketMessage
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
-from morpheus._lib.messages import RawPacketMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
+from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.utils.logger import configure_logging
 
@@ -43,9 +43,7 @@ from morpheus.utils.logger import configure_logging
     help="GPU PCI Address",
     required=True,
 )
-def run_pipeline(out_file,
-                 nic_addr,
-                 gpu_addr):
+def run_pipeline(out_file, nic_addr, gpu_addr):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 

@@ -16,10 +16,10 @@ import logging
 
 import click
 
+from morpheus._lib.messages import RawPacketMessage
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
-from morpheus._lib.messages import RawPacketMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -67,12 +67,7 @@ from morpheus.utils.logger import configure_logging
     help="GPU PCI Address",
     required=True,
 )
-def run_pipeline(pipeline_batch_size,
-                 model_max_batch_size,
-                 model_fea_length,
-                 out_file,
-                 nic_addr,
-                 gpu_addr):
+def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, out_file, nic_addr, gpu_addr):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 
@@ -111,7 +106,6 @@ def run_pipeline(pipeline_batch_size,
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'tcp'))
     # pipeline.set_source(DocaConvertStage(config, true))
-    
 
     # add deserialize stage
     # pipeline.add_stage(DeserializeStage(config))
@@ -122,11 +116,11 @@ def run_pipeline(pipeline_batch_size,
     # add preprocessing stage
     pipeline.add_stage(
         PreprocessNLPStage(config,
-                            vocab_hash_file=hashfile,
-                            do_lower_case=True,
-                            truncation=True,
-                            add_special_tokens=False,
-                            column='data'))
+                           vocab_hash_file=hashfile,
+                           do_lower_case=True,
+                           truncation=True,
+                           add_special_tokens=False,
+                           column='data'))
 
     pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
 

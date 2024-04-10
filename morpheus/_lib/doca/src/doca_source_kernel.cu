@@ -319,16 +319,25 @@ __global__ void _packet_receive_kernel(
 namespace morpheus {
 namespace doca {
 
-void packet_receive_kernel(
-  doca_gpu_eth_rxq*       rxq,
-  doca_gpu_semaphore_gpu* sem,
-  uint16_t sem_idx,
-  bool is_tcp,
-  uint32_t*               exit_condition,
-  cudaStream_t            stream
-)
+int packet_receive_kernel(doca_gpu_eth_rxq* rxq,
+                           doca_gpu_semaphore_gpu* sem,
+                           uint16_t sem_idx,
+                           bool is_tcp,
+                           uint32_t* exit_condition,
+                           cudaStream_t stream)
 {
-  _packet_receive_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(rxq, sem, sem_idx, is_tcp, exit_condition);
+    cudaError_t result = cudaSuccess;
+
+    _packet_receive_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(rxq, sem, sem_idx, is_tcp, exit_condition);
+
+	/* Check no previous CUDA errors */
+	result = cudaGetLastError();
+	if (cudaSuccess != result) {
+		fprintf(stderr, "[%s:%d] cuda failed with %s\n", __FILE__, __LINE__, cudaGetErrorString(result));
+		return -1;
+	}
+
+    return 0;
 }
 
 } //doca

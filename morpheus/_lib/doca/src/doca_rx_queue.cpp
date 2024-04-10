@@ -21,7 +21,12 @@
 #include "morpheus/doca/error.hpp"
 #include "morpheus/utilities/error.hpp"
 
+#include <doca_error.h>
+#include <doca_types.h>
 #include <glog/logging.h>
+#include <stdint.h>
+
+#include <ostream>
 
 namespace morpheus::doca {
 

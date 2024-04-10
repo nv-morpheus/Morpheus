@@ -45,14 +45,13 @@ PYBIND11_MODULE(doca, m)
              py::arg("traffic_type"));
 
     py::class_<mrc::segment::Object<DocaConvertStage>,
-            mrc::segment::ObjectProperties,
-            std::shared_ptr<mrc::segment::Object<DocaConvertStage>>>(m, "DocaConvertStage", py::multiple_inheritance())
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<DocaConvertStage>>>(
+        m, "DocaConvertStage", py::multiple_inheritance())
         .def(py::init<>(&DocaConvertStageInterfaceProxy::init),
-            py::arg("builder"),
-            py::arg("name"),
-            py::arg("split_hdr") = false
-            );
-
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("split_hdr") = false);
 }
 
 }  // namespace morpheus

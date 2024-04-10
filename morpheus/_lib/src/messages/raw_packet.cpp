@@ -17,21 +17,10 @@
 
 #include "morpheus/messages/raw_packet.hpp"
 
-#include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyKind
-#include <glog/logging.h>
-#include <pybind11/gil.h>
-#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <pyerrors.h>  // for PyExc_DeprecationWarning
-#include <warnings.h>  // for PyErr_WarnEx
 
-#include <cstddef>  // for size_t
 #include <cstdint>  // for uint8_t
 #include <memory>
-#include <optional>
-#include <ostream>    // for operator<< needed by glog
-#include <stdexcept>  // for runtime_error
-#include <utility>
 // We're already including pybind11.h and don't need to include cast.
 // For some reason IWYU also thinks we need array for the `isinsance` call.
 // IWYU pragma: no_include <pybind11/cast.h>
@@ -76,17 +65,17 @@ uintptr_t RawPacketMessage::get_pkt_pld_size_idx(uint32_t pkt_idx) const
     return ptr_pld_size[pkt_idx];
 }
 
-uintptr_t * RawPacketMessage::get_pkt_addr_list() const
+uintptr_t* RawPacketMessage::get_pkt_addr_list() const
 {
     return ptr_addr;
 }
 
-uint32_t * RawPacketMessage::get_pkt_hdr_size_list() const
+uint32_t* RawPacketMessage::get_pkt_hdr_size_list() const
 {
     return ptr_hdr_size;
 }
 
-uint32_t * RawPacketMessage::get_pkt_pld_size_list() const
+uint32_t* RawPacketMessage::get_pkt_pld_size_list() const
 {
     return ptr_pld_size;
 }
@@ -101,15 +90,17 @@ bool RawPacketMessage::is_gpu_mem() const
     return gpu_mem;
 }
 
-std::shared_ptr<RawPacketMessage> RawPacketMessage::create_from_cpp(uint32_t num, uint32_t max_size, uintptr_t *ptr_addr,
-                                                            uint32_t *ptr_hdr_size,
-                                                            uint32_t *ptr_pld_size,
-                                                            bool gpu_mem,
-                                                            uint16_t queue_idx)
+std::shared_ptr<RawPacketMessage> RawPacketMessage::create_from_cpp(uint32_t num,
+                                                                    uint32_t max_size,
+                                                                    uintptr_t* ptr_addr,
+                                                                    uint32_t* ptr_hdr_size,
+                                                                    uint32_t* ptr_pld_size,
+                                                                    bool gpu_mem,
+                                                                    uint16_t queue_idx)
 {
-    return std::shared_ptr<RawPacketMessage>(new RawPacketMessage(num, max_size, ptr_addr, ptr_hdr_size, ptr_pld_size, gpu_mem, queue_idx));
+    return std::shared_ptr<RawPacketMessage>(
+        new RawPacketMessage(num, max_size, ptr_addr, ptr_hdr_size, ptr_pld_size, gpu_mem, queue_idx));
 }
-
 
 // std::shared_ptr<RawPacketMessage> RawPacketMessage::create_from_python(py::object&& data_table)
 // {
@@ -118,20 +109,21 @@ std::shared_ptr<RawPacketMessage> RawPacketMessage::create_from_cpp(uint32_t num
 //     return std::shared_ptr<RawPacketMessage>(new RawPacketMessage(std::move(data)));
 // }
 
-RawPacketMessage::RawPacketMessage(uint32_t num_, uint32_t max_size_, uintptr_t *ptr_addr_,
-                                    uint32_t *ptr_hdr_size_,
-                                    uint32_t *ptr_pld_size_,
-                                    bool gpu_mem_,
-                                    int queue_idx_)
-                    :
-                    num(num_),
-                    max_size(max_size_),
-                    ptr_addr(ptr_addr_),
-                    ptr_hdr_size(ptr_hdr_size_),
-                    ptr_pld_size(ptr_pld_size_),
-                    gpu_mem(gpu_mem_),
-                    queue_idx(queue_idx_)
-                    {}
+RawPacketMessage::RawPacketMessage(uint32_t num_,
+                                   uint32_t max_size_,
+                                   uintptr_t* ptr_addr_,
+                                   uint32_t* ptr_hdr_size_,
+                                   uint32_t* ptr_pld_size_,
+                                   bool gpu_mem_,
+                                   int queue_idx_) :
+  num(num_),
+  max_size(max_size_),
+  ptr_addr(ptr_addr_),
+  ptr_hdr_size(ptr_hdr_size_),
+  ptr_pld_size(ptr_pld_size_),
+  gpu_mem(gpu_mem_),
+  queue_idx(queue_idx_)
+{}
 
 // py::object RawPacketMessage::cpp_to_py(cudf::io::table_with_metadata&& table, int index_col_count)
 // {

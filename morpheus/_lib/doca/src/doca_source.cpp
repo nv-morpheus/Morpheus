@@ -15,34 +15,36 @@
  * limitations under the License.
  */
 
-#include "morpheus/doca/doca_stages.hpp"
-
+#include "morpheus/doca/common.hpp"
 #include "morpheus/doca/doca_context.hpp"
+#include "morpheus/doca/doca_kernels.hpp"
+#include "morpheus/doca/doca_mem.hpp"
 #include "morpheus/doca/doca_rx_pipe.hpp"
 #include "morpheus/doca/doca_rx_queue.hpp"
 #include "morpheus/doca/doca_semaphore.hpp"
-#include "morpheus/doca/doca_kernels.hpp"
+#include "morpheus/doca/doca_stages.hpp"
+#include "morpheus/messages/raw_packet.hpp"
 #include "morpheus/utilities/error.hpp"
 
-#include <cudf/column/column_factories.hpp>
-#include <cudf/column/column_view.hpp>
-#include <cudf/copying.hpp>
-#include <cudf/filling.hpp>
-#include <cudf/scalar/scalar_factories.hpp>
-#include <cudf/strings/convert/convert_ipv4.hpp>
-#include <cudf/strings/detail/utilities.cuh>
-#include <cudf/strings/detail/utilities.hpp>
-#include <cudf/table/table.hpp>
-#include <glog/logging.h>
+#include <boost/fiber/context.hpp>
+#include <cuda_runtime.h>
+#include <doca_gpunetio.h>
+#include <doca_types.h>
+#include <mrc/core/utils.hpp>
+#include <mrc/runnable/context.hpp>
 #include <mrc/segment/builder.hpp>
-#include <rmm/cuda_stream_view.hpp>
-#include <rmm/device_scalar.hpp>
-#include <rmm/mr/device/per_device_resource.hpp>
-#include <rte_byteorder.h>
+#include <mrc/segment/object.hpp>
+#include <pymrc/node.hpp>
+#include <rxcpp/rx.hpp>
+#include <stdint.h>
+#include <time.h>
 
-#include <iostream>
+#include <functional>
 #include <memory>
-#include <stdexcept>
+#include <string>
+#include <thread>
+#include <utility>
+#include <vector>
 
 #define debug_get_timestamp(ts) clock_gettime(CLOCK_REALTIME, (ts))
 
@@ -89,9 +91,12 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         int thread_idx = mrc::runnable::Context::get_runtime_context().rank();
 
         // Add per queue
-        auto pkt_addr_unique = std::make_unique<morpheus::doca::DocaMem<uintptr_t>>(m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
-        auto pkt_hdr_size_unique = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
-        auto pkt_pld_size_unique = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+        auto pkt_addr_unique = std::make_unique<morpheus::doca::DocaMem<uintptr_t>>(
+            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+        auto pkt_hdr_size_unique = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(
+            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+        auto pkt_pld_size_unique = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(
+            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
 
         if (thread_idx >= MAX_QUEUE)
         {
@@ -108,12 +113,13 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         for (int idxs = 0; idxs < MAX_SEM_X_QUEUE; idxs++)
         {
             pkt_ptr = static_cast<struct packets_info*>(m_semaphore[thread_idx]->get_info_cpu(idxs));
-            pkt_ptr->pkt_addr = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
+            pkt_ptr->pkt_addr     = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
             pkt_ptr->pkt_hdr_size = pkt_hdr_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
             pkt_ptr->pkt_pld_size = pkt_pld_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
         }
 
-        auto exit_condition = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, 1, DOCA_GPU_MEM_TYPE_GPU_CPU);
+        auto exit_condition =
+            std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, 1, DOCA_GPU_MEM_TYPE_GPU_CPU);
         DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) = 0;
 
         auto cancel_thread = std::thread([&] {
@@ -150,15 +156,16 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                 if (pkt_ptr->packet_count_out == 0)
                     continue;
 
-                // LOG(WARNING) << "pkts " << pkt_ptr->packet_count_out << " MAX_PKT_SIZE " << MAX_PKT_SIZE << std::endl;
+                // LOG(WARNING) << "pkts " << pkt_ptr->packet_count_out << " MAX_PKT_SIZE " << MAX_PKT_SIZE <<
+                // std::endl;
 
                 auto meta = RawPacketMessage::create_from_cpp(pkt_ptr->packet_count_out,
-                                                                MAX_PKT_SIZE,
-                                                                pkt_ptr->pkt_addr,
-                                                                pkt_ptr->pkt_hdr_size,
-                                                                pkt_ptr->pkt_pld_size,
-                                                                true,
-                                                                thread_idx);
+                                                              MAX_PKT_SIZE,
+                                                              pkt_ptr->pkt_addr,
+                                                              pkt_ptr->pkt_hdr_size,
+                                                              pkt_ptr->pkt_pld_size,
+                                                              true,
+                                                              thread_idx);
 
                 //  const auto gather_meta_stop = now_ns();
 

@@ -21,23 +21,22 @@
 #include "morpheus/doca/error.hpp"
 #include "morpheus/utilities/error.hpp"
 
-#include <cuda_runtime.h>
-#include <doca_argp.h>
 #include <doca_dpdk.h>
 #include <doca_error.h>
-#include <doca_eth_rxq.h>
 #include <doca_gpunetio.h>
-#include <doca_mmap.h>
-#include <doca_types.h>
-#include <doca_version.h>
 #include <glog/logging.h>
-#include <rte_eal.h>
 #include <rte_ethdev.h>
+#include <rte_flow.h>
+#include <rte_mbuf.h>
+#include <rte_mempool.h>
+#include <stdio.h>
 
+#include <algorithm>
+#include <array>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string>
-#include <utility>
 
 namespace {
 

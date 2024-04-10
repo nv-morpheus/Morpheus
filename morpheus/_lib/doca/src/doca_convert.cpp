@@ -15,34 +15,36 @@
  * limitations under the License.
  */
 
-#include "morpheus/doca/doca_stages.hpp"
-
-#include "morpheus/doca/doca_context.hpp"
-#include "morpheus/doca/doca_rx_pipe.hpp"
-#include "morpheus/doca/doca_rx_queue.hpp"
-#include "morpheus/doca/doca_semaphore.hpp"
 #include "morpheus/doca/doca_kernels.hpp"
-#include "morpheus/utilities/error.hpp"
+#include "morpheus/doca/doca_stages.hpp"
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/raw_packet.hpp"
 
-#include <cudf/column/column_factories.hpp>
-#include <cudf/column/column_view.hpp>
-#include <cudf/copying.hpp>
-#include <cudf/filling.hpp>
-#include <cudf/scalar/scalar_factories.hpp>
-#include <cudf/strings/convert/convert_ipv4.hpp>
-#include <cudf/strings/detail/utilities.cuh>
-#include <cudf/strings/detail/utilities.hpp>
+#include <boost/fiber/context.hpp>
+#include <cuda_runtime.h>
+#include <cudf/column/column.hpp>
+#include <cudf/io/types.hpp>
 #include <cudf/table/table.hpp>
+#include <generic/rte_byteorder.h>
 #include <glog/logging.h>
 #include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
 #include <rmm/cuda_stream_view.hpp>
-#include <rmm/device_scalar.hpp>
-#include <rmm/mr/device/per_device_resource.hpp>
-#include <rte_byteorder.h>
+#include <rxcpp/rx.hpp>
+#include <stdint.h>
+#include <stdio.h>
+#include <time.h>
 
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <stdexcept>
+#include <string>
+#include <thread>
+#include <type_traits>
+#include <typeinfo>
+#include <utility>
+#include <vector>
 
 #define BE_IPV4_ADDR(a, b, c, d) (RTE_BE32((a << 24) + (b << 16) + (c << 8) + d)) /* Big endian conversion */
 
@@ -81,10 +83,10 @@ static uint64_t now_ns()
 namespace morpheus {
 
 DocaConvertStage::DocaConvertStage(bool const& split_hdr) :
-    base_t(rxcpp::operators::map([this](sink_type_t x) {
-        return this->on_data(std::move(x));
-    })),
-    m_split_hdr(split_hdr)
+  base_t(rxcpp::operators::map([this](sink_type_t x) {
+      return this->on_data(std::move(x));
+  })),
+  m_split_hdr(split_hdr)
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
@@ -119,23 +121,23 @@ DocaConvertStage::source_type_t DocaConvertStage::on_data(sink_type_t x)
 
 DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_type_t raw_msg)
 {
-    auto packet_count = raw_msg->count();
-    auto max_size = raw_msg->get_max_size();
-    auto pkt_addr_list = raw_msg->get_pkt_addr_list();
+    auto packet_count      = raw_msg->count();
+    auto max_size          = raw_msg->get_max_size();
+    auto pkt_addr_list     = raw_msg->get_pkt_addr_list();
     auto pkt_hdr_size_list = raw_msg->get_pkt_hdr_size_list();
     auto pkt_pld_size_list = raw_msg->get_pkt_pld_size_list();
-    auto queue_idx = raw_msg->get_queue_idx();
+    auto queue_idx         = raw_msg->get_queue_idx();
     DocaConvertStage::source_type_t output;
 
     LOG(WARNING) << "New RawPacketMessage with " << packet_count << " packets from queue id " << queue_idx;
 
     // gather header data
-    auto header_col = doca::gather_header(
-        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
+    auto header_col =
+        doca::gather_header(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
 
     // gather payload data
-    auto payload_col = doca::gather_payload(
-        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
+    auto payload_col =
+        doca::gather_payload(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
 
     // const auto gather_payload_stop = now_ns();
 
@@ -160,7 +162,7 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
 
     // const auto gather_meta_stop = now_ns();
-        
+
     cudaStreamSynchronize(m_stream_cpp);
 
     return std::move(meta);
@@ -418,12 +420,9 @@ DocaConvertStage::subscriber_fn_t DocaConvertStage::build()
 #endif
 
 std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfaceProxy::init(
-    mrc::segment::Builder& builder,
-    std::string const& name,
-    bool const& split_hdr)
+    mrc::segment::Builder& builder, std::string const& name, bool const& split_hdr)
 {
     return builder.construct_object<DocaConvertStage>(name, split_hdr);
 }
-
 
 }  // namespace morpheus
