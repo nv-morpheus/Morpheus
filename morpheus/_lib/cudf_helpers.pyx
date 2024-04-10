@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import cudf
-from cudf.api.types import is_struct_dtype
+from cudf.core.dtypes import StructDtype
 
 from libcpp.string cimport string
 from libcpp.utility cimport move
@@ -55,11 +55,7 @@ cdef public api:
 
         data, index = data_from_unique_ptr(move(table.tbl), column_names=column_names, index_names=index_names)
 
-        df = cudf.DataFrame._from_data(data, index)
-
-        update_struct_field_names(df, table.metadata.schema_info)
-
-        return df
+        return cudf.DataFrame._from_data(data, index)
 
     object make_table_from_table_info_data(TableInfoData table_info, object owner):
 
@@ -227,26 +223,23 @@ cdef update_struct_field_names(
             col, schema_info[i]
         )
 
+
 cdef Column update_column_struct_field_names(
     Column col,
     column_name_info& info
 ):
     cdef vector[string] field_names
 
-    # Commented out because it causes failure of test_multi_message.py::test_set_meta_new_column[use_cpp-use_cudf]
-    # Specifically adding new string column on sliced meta dataframe.
-    #
-    if col.children:
-       children = list(col.children)
-       for i, child in enumerate(children):
-           children[i] = update_column_struct_field_names(
-               child,
-               info.children[i]
-           )
-       col.set_base_children(tuple(children))
+    if col.dtype != "object" and col.children:
+        children = list(col.children)
+        for i, child in enumerate(children):
+            children[i] = update_column_struct_field_names(
+                child,
+                info.children[i]
+            )        
+            col.set_base_children(tuple(children))
 
-    if is_struct_dtype(col):
-        print("is_struct_dtype")
+    if isinstance(col.dtype, StructDtype):
         field_names.reserve(len(col.base_children))
         for i in range(info.children.size()):
             field_names.push_back(info.children[i].name)

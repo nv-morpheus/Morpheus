@@ -92,7 +92,35 @@ def mk_mock_openai_response(messages: list[str]) -> mock.MagicMock:
     Creates a mocked openai.types.chat.chat_completion.ChatCompletion response with the given messages.
     """
     response = mock.MagicMock()
-    mock_choices = [_mk_mock_choice(message) for message in messages]
-    response.choices = mock_choices
+
+    response.choices = [_mk_mock_choice(message) for message in messages]
+    response.dict.return_value = {
+        "choices": [{
+            'message': {
+                'role': 'assistant', 'content': message
+            }
+        } for message in messages]
+    }
 
     return response
+
+
+def mk_mock_langchain_tool(responses: list[str]) -> mock.MagicMock:
+    """
+    Creates a mocked LangChainTestTool with the given responses.
+    """
+
+    # Langchain will call inspect.signature on the tool methods, typically mock objects don't have a signature,
+    # explicitly providing one here
+    async def _arun_spec(*_, **__):
+        pass
+
+    def run_spec(*_, **__):
+        pass
+
+    tool = mock.MagicMock()
+    tool.arun = mock.create_autospec(spec=_arun_spec)
+    tool.arun.side_effect = responses
+    tool.run = mock.create_autospec(run_spec)
+    tool.run.side_effect = responses
+    return tool

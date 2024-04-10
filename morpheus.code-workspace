@@ -83,7 +83,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -139,7 +139,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -201,7 +201,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -266,7 +266,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -285,7 +285,7 @@
                 "name": "Python: Anomaly Detection Example",
                 "program": "${workspaceFolder}/examples/abp_pcap_detection/run.py",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -303,7 +303,7 @@
                 "module": "sphinx.cmd.build",
                 "name": "Python: Sphinx",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "MIMode": "gdb",
@@ -598,7 +598,7 @@
                 "name": "Python: GNN DGL inference",
                 "program": "${workspaceFolder}/examples/gnn_fraud_detection_pipeline/run.py",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -614,7 +614,7 @@
                 "name": "Python: GNN model training",
                 "program": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models/training.py",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             }
         ]
     },

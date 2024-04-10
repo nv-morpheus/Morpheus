@@ -19,8 +19,7 @@ import datetime
 import cupy as cp
 import pytest
 
-import cudf
-
+from _utils.dataset_manager import DatasetManager
 from morpheus import messages
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.messages import TensorMemory
@@ -204,13 +203,8 @@ def test_control_message_set():
     assert (control_message.has_task("load"))
 
 
-def test_control_message_set_and_get_payload():
-    df = cudf.DataFrame({
-        'col1': [1, 2, 3, 4, 5],
-        'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
-        'col3': ['a', 'b', 'c', 'd', 'e'],
-        'col4': [True, False, True, False, True]
-    })
+def test_control_message_set_and_get_payload(dataset: DatasetManager):
+    df = dataset["test_dataframe.jsonlines"]
 
     msg = messages.ControlMessage()
     payload = messages.MessageMeta(df)
@@ -218,7 +212,8 @@ def test_control_message_set_and_get_payload():
 
     payload2 = msg.payload()
     assert payload2 is not None
-    assert payload.df == payload2.df
+
+    DatasetManager.assert_df_equal(payload.df, payload2.df)
 
 
 @pytest.mark.usefixtures("config_only_cpp")

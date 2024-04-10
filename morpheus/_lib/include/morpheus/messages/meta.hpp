@@ -88,6 +88,8 @@ class MessageMeta
      */
     virtual std::optional<std::string> ensure_sliceable_index();
 
+    pybind11::object get_py_object() const;
+
     /**
      * @brief Create MessageMeta cpp object from a python object
      *

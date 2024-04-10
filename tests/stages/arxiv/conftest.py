@@ -23,7 +23,7 @@ from _utils import import_or_skip
 SKIP_REASON = ("Tests for the arxiv_source require a number of packages not installed in the Morpheus development "
                "environment. To install these run:\n"
                "`conda env update --solver=libmamba -n morpheus "
-               "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
+               "--file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
 
 
 @pytest.fixture(name="arxiv", autouse=True, scope='session')
