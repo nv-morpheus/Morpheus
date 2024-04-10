@@ -137,7 +137,7 @@ mlflow deployments create -t triton --flavor triton --name sid-minibert-onnx -m 
 ```
 from mlflow.deployments import get_deploy_client
 client = get_deploy_client('triton')
-client.create_deployment("sid-minibert-onnx", " models:/sid-minibert-onnx/1", flavor="triton")
+client.create_deployment("sid-minibert-onnx", "models:/sid-minibert-onnx/1", flavor="triton")
 ```
 
 ### Delete Deployment
