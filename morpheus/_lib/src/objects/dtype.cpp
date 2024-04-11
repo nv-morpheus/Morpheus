@@ -225,8 +225,8 @@ DType DType::from_numpy(const std::string& numpy_str)
     char type_char    = numpy_str[0];
     size_t size_start = 1;
 
-    // Can start with < or > or none
-    if (numpy_str[0] == '<' || numpy_str[0] == '>')
+    // Can start with <, >, | or none
+    if (numpy_str[0] == '<' || numpy_str[0] == '>' || numpy_str[0] == '|')
     {
         type_char  = numpy_str[1];
         size_start = 2;
