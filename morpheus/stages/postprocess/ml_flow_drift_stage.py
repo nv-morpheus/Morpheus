@@ -25,6 +25,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -119,27 +120,36 @@ class MLFlowDriftStage(PassThruTypeMixin, SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiResponseMessage`, ]
+        typing.Tuple[`morpheus.pipeline.messages.MultiResponseMessage`, ControlMessage]
             Accepted input types.
 
         """
-        return (MultiResponseMessage, )
+        return (MultiResponseMessage, ControlMessage)
 
     def supports_cpp_node(self):
         return False
 
-    def _calc_drift(self, x: MultiResponseMessage):
+    def _calc_drift(self, x: MultiResponseMessage | ControlMessage):
+        if isinstance(x, MultiResponseMessage):
+            probs_tensor = x.get_probs_tensor()
+        elif isinstance(x, ControlMessage):
+            probs_tensor = x.tensors().get_tensor("probs")
 
         # All probs in a batch will be calculated
-        shifted = cp.abs(x.get_probs_tensor() - 0.5) + 0.5
+        shifted = cp.abs(probs_tensor - 0.5) + 0.5
 
         # Make sure the labels list is long enough
         for label in range(len(self._labels), shifted.shape[1]):
             self._labels.append(str(label))
 
-        for i in list(range(0, x.count, self._batch_size)):
+        if isinstance(x, MultiResponseMessage):
+            count = x.count
+        elif isinstance(x, ControlMessage):
+            count = x.payload().count()
+
+        for i in list(range(0, count, self._batch_size)):
             start = i
-            end = min(start + self._batch_size, x.count)
+            end = min(start + self._batch_size, count)
             mean = cp.mean(shifted[start:end, :], axis=0, keepdims=True)
 
             # For each column, report the metric
