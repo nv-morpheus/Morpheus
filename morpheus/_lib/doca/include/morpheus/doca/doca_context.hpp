@@ -17,14 +17,16 @@
 
 #pragma once
 
-#include "morpheus/doca/common.hpp"
-#include "morpheus/doca/error.hpp"
 #include "morpheus/doca/rte_context.hpp"
 
-#include <doca_eth_rxq.h>
+#include <doca_ctx.h>
+#include <doca_dev.h>
 #include <doca_flow.h>
-#include <doca_gpunetio.h>
 #include <doca_log.h>
+#include <stdint.h>
+
+#include <memory>
+#include <string>
 
 #define GPU_PAGE_SIZE (1UL << 16)
 

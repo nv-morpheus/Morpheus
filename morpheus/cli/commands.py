@@ -703,4 +703,6 @@ add_command("train-ae", "morpheus.stages.preprocess.train_ae_stage.TrainAEStage"
 add_command("trigger", "morpheus.stages.general.trigger_stage.TriggerStage", modes=ALL)
 add_command("validate", "morpheus.stages.postprocess.validation_stage.ValidationStage", modes=ALL)
 
-add_command("from-doca", "morpheus.stages.doca.doca_source_stage.DocaSourceStage", modes=NLP_ONLY)
+add_command("from-doca-source", "morpheus.stages.doca.doca_source_stage.DocaSourceStage", modes=NLP_ONLY)
+add_command("from-doca-convert", "morpheus.stages.doca.doca_convert_stage.DocaConvertStage", modes=NLP_ONLY)
+
