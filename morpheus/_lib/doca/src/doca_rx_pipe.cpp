@@ -17,8 +17,14 @@
 
 #include "morpheus/doca/doca_rx_pipe.hpp"
 
-#include <glog/logging.h>
+#include "morpheus/doca/error.hpp"
+
+#include <doca_eth_rxq.h>
+#include <doca_flow_net.h>
 #include <netinet/in.h>
+#include <stdint.h>
+
+#include <array>
 
 namespace morpheus::doca {
 

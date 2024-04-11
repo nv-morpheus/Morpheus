@@ -20,8 +20,11 @@
 #include "morpheus/doca/doca_context.hpp"
 #include "morpheus/doca/doca_mem.hpp"
 
+#include <doca_ctx.h>
 #include <doca_eth_rxq.h>
-#include <doca_gpunetio.h>
+#include <doca_mmap.h>
+
+#include <memory>
 
 namespace morpheus::doca {
 
