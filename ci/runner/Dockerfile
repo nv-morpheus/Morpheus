@@ -65,7 +65,7 @@ RUN apt update && \
     apt install --no-install-recommends -y \
         build-essential \
         libtool \
-        autoconf && \
+        automake && \
     apt clean && \
     /tmp/doca/doca.sh /tmp/doca
 
