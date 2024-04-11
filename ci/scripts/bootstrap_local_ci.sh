@@ -26,6 +26,7 @@ else
     git pull
     git checkout ${GIT_COMMIT}
     git fetch --tags
+    git submodule update --init --recursive
 fi
 
 export MORPHEUS_ROOT=$(pwd)

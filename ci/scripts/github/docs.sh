@@ -37,8 +37,6 @@ cd ${MORPHEUS_ROOT}
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs examples
 
-git submodule update --init --recursive
-
 rapids-logger "Configuring for docs"
 cmake ${CMAKE_BUILD_ALL_FEATURES} -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_BUILD_DOCS=ON .
 

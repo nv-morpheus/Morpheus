@@ -27,8 +27,6 @@ update_conda_env "${WORKSPACE_TMP}/env.yaml"
 
 log_toolchain
 
-git submodule update --init --recursive
-
 CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF"
