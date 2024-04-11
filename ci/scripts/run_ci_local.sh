@@ -45,6 +45,9 @@ MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 # match CI, the default)
 USE_HOST_GIT=${USE_HOST_GIT:-0}
 
+# Useful when using a host git repo to avoid conflicting with a potentially existing 'build' directory
+BUILD_DIR=${BUILD_DIR:-build-ci}
+
 GIT_URL=${GIT_URL:-$(git remote get-url origin)}
 GIT_URL=$(git_ssh_to_https ${GIT_URL})
 
@@ -71,6 +74,7 @@ ENV_LIST="${ENV_LIST} --env PARALLEL_LEVEL=$(nproc)"
 ENV_LIST="${ENV_LIST} --env CUDA_VER=${CUDA_VER}"
 ENV_LIST="${ENV_LIST} --env SKIP_CONDA_ENV_UPDATE=${SKIP_CONDA_ENV_UPDATE}"
 ENV_LIST="${ENV_LIST} --env USE_HOST_GIT=${USE_HOST_GIT}"
+ENV_LIST="${ENV_LIST} --env BUILD_DIR=${BUILD_DIR}"
 
 mkdir -p ${LOCAL_CI_TMP}
 cp ${MORPHEUS_ROOT}/ci/scripts/bootstrap_local_ci.sh ${LOCAL_CI_TMP}
