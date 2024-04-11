@@ -36,12 +36,9 @@ CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=OFF"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_PERFORM_INSTALL=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX}"
-if [[ "${LOCAL_CI}" == "" ]]; then
-    CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
-fi
 
 rapids-logger "Configuring cmake for Morpheus with ${CMAKE_FLAGS}"
-cmake -B build -G Ninja ${CMAKE_FLAGS} .
+cmake ${CMAKE_FLAGS} .
 
 rapids-logger "Building Morpheus"
 cmake --build build --parallel ${PARALLEL_LEVEL} --target install

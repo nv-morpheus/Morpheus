@@ -37,11 +37,8 @@ rapids-logger "Configuring cmake for Morpheus"
 CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF"
 export CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_INPLACE_BUILD=ON"
-if [[ "${LOCAL_CI}" == "" ]]; then
-    CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
-fi
 
-cmake -B build -G Ninja ${CMAKE_FLAGS} .
+cmake ${CMAKE_FLAGS} .
 
 rapids-logger "Building Morpheus"
 cmake --build build --parallel ${PARALLEL_LEVEL}
