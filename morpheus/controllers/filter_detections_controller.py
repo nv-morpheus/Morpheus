@@ -22,6 +22,7 @@ import typing_utils
 from morpheus.common import FilterSource
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
+from morpheus.messages import ControlMessage
 
 logger = logging.getLogger(__name__)
 
@@ -66,12 +67,18 @@ class FilterDetectionsController:
         """
         return self._field_name
 
-    def _find_detections(self, x: MultiMessage) -> typing.Union[cp.ndarray, np.ndarray]:
-        # Determind the filter source
-        if self._filter_source == FilterSource.TENSOR:
-            filter_source = x.get_output(self._field_name)
-        else:
-            filter_source = x.get_meta(self._field_name).values
+    def _find_detections(self, x: MultiMessage | ControlMessage) -> typing.Union[cp.ndarray, np.ndarray]:
+        # Determine the filter source
+        if isinstance(x, MultiMessage):
+            if self._filter_source == FilterSource.TENSOR:
+                filter_source = x.get_output(self._field_name)
+            else:
+                filter_source = x.get_meta(self._field_name).values
+        elif isinstance(x, ControlMessage):
+            if self._filter_source == FilterSource.TENSOR:
+                filter_source = x.tensors().get_tensor(self._field_name)
+            else:
+                filter_source = x.payload().get_data(self._field_name).values
 
         if (isinstance(filter_source, np.ndarray)):
             array_mod = np
@@ -89,7 +96,7 @@ class FilterDetectionsController:
 
         return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
-    def filter_copy(self, x: MultiMessage) -> MultiMessage:
+    def filter_copy(self, x: MultiMessage | ControlMessage) -> MultiMessage:
         """
         This function uses a threshold value to filter the messages.
 
@@ -112,10 +119,11 @@ class FilterDetectionsController:
         # If we didnt have any detections, return None
         if (true_pairs.shape[0] == 0):
             return None
-
+        
+        # TODO(Yuchen): Implement copy_ranges() for CM
         return x.copy_ranges(true_pairs)
 
-    def filter_slice(self, x: MultiMessage) -> typing.List[MultiMessage]:
+    def filter_slice(self, x: MultiMessage | ControlMessage) -> typing.List[MultiMessage | ControlMessage]:
         """
         This function uses a threshold value to filter the messages.
 
@@ -137,6 +145,7 @@ class FilterDetectionsController:
             for pair in true_pairs:
                 pair = tuple(pair.tolist())
                 if ((pair[1] - pair[0]) > 0):
+                    # TODO(Yuchen): Implement get_slice() for CM
                     output_list.append(x.get_slice(*pair))
 
         return output_list
