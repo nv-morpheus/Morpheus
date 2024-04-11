@@ -69,7 +69,7 @@ add_library(morpheus
   src/stages/add_scores.cpp
   src/stages/deserialize.cpp
   src/stages/file_source.cpp
-  src/stages/filter_detection.cpp
+  src/stages/filter_detections.cpp
   src/stages/http_server_source_stage.cpp
   src/stages/inference_client_stage.cpp
   src/stages/kafka_source.cpp

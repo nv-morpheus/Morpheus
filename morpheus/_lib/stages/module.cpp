@@ -23,7 +23,7 @@
 #include "morpheus/stages/add_scores.hpp"
 #include "morpheus/stages/deserialize.hpp"
 #include "morpheus/stages/file_source.hpp"
-#include "morpheus/stages/filter_detection.hpp"
+#include "morpheus/stages/filter_detections.hpp"
 #include "morpheus/stages/http_server_source_stage.hpp"
 #include "morpheus/stages/inference_client_stage.hpp"
 #include "morpheus/stages/kafka_source.hpp"
@@ -152,11 +152,23 @@ PYBIND11_MODULE(stages, _module)
              py::arg("repeat"),
              py::arg("parser_kwargs"));
 
-    py::class_<mrc::segment::Object<FilterDetectionsStage>,
+    py::class_<mrc::segment::Object<FilterDetectionsStageMM>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>>>(
-        _module, "FilterDetectionsStage", py::multiple_inheritance())
-        .def(py::init<>(&FilterDetectionStageInterfaceProxy::init),
+               std::shared_ptr<mrc::segment::Object<FilterDetectionsStageMM>>>(
+        _module, "FilterDetectionsMultiMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&FilterDetectionStageInterfaceProxy::init_mm),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("threshold"),
+             py::arg("copy"),
+             py::arg("filter_source"),
+             py::arg("field_name") = "probs");
+
+    py::class_<mrc::segment::Object<FilterDetectionsStageCM>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<FilterDetectionsStageCM>>>(
+        _module, "FilterDetectionsControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&FilterDetectionStageInterfaceProxy::init_cm),
              py::arg("builder"),
              py::arg("name"),
              py::arg("threshold"),
