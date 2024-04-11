@@ -104,4 +104,4 @@ class SerializeMultiMessageStage(mrc.core.segment.SegmentObject):
 class WriteToFileStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: str, mode: str = 'w', file_type: morpheus._lib.common.FileTypes = FileTypes.Auto, include_index_col: bool = True, flush: bool = False) -> None: ...
     pass
-__version__ = '24.3.0'
+__version__ = '24.6.0'
