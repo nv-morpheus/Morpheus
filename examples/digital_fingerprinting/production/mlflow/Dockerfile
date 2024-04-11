@@ -24,7 +24,7 @@ RUN apt update && \
     rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
 # Install python packages
-RUN pip install "mlflow >=2.2.1,<3" boto3 pymysql pyyaml
+RUN pip install "mlflow >=2.10.0,<3" boto3 pymysql pyyaml
 
 # We run on port 5000
 EXPOSE 5000
