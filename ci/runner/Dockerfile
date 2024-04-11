@@ -63,7 +63,9 @@ COPY ./docker/optional_deps/doca.sh /tmp/doca/
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-        build-essential && \
+        build-essential \
+        libtool \
+        autoconf && \
     apt clean && \
     /tmp/doca/doca.sh /tmp/doca
 
