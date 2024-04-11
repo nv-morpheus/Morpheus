@@ -45,7 +45,7 @@ MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 # match CI, the default)
 USE_HOST_GIT=${USE_HOST_GIT:-0}
 
-GIT_URL=$(git remote get-url origin)
+GIT_URL=${GIT_URL:-$(git remote get-url origin)}
 GIT_URL=$(git_ssh_to_https ${GIT_URL})
 
 GIT_UPSTREAM_URL=$(git remote get-url upstream)
