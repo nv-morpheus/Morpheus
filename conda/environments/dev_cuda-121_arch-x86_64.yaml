@@ -45,7 +45,7 @@ dependencies:
 - isort
 - librdkafka>=1.9.2,<1.10.0a0
 - libtool
-- mlflow=2.9.2
+- mlflow>=2.10.0,<3
 - mrc=24.03
 - myst-parser=0.18.1
 - nbsphinx
@@ -95,6 +95,7 @@ dependencies:
 - zlib=1.2.13
 - pip:
   - PyMuPDF==1.23.21
+  - databricks-cli < 0.100
   - databricks-connect
   - milvus==2.3.5
   - pymilvus==2.3.6

@@ -253,7 +253,7 @@ dependencies:
           - elasticsearch==8.9.0
           - feedparser=6.0.10
           - grpcio=1.59
-          - mlflow=2.9.2
+          - mlflow>=2.10.0,<3
           - networkx=2.8.8
           - nvtabular=23.08.00
           - pydantic
@@ -271,6 +271,7 @@ dependencies:
           - websockets
           - pip
           - pip:
+            - databricks-cli < 0.100
             - databricks-connect
             - milvus==2.3.5 # update to match pymilvus when available
             - pymilvus==2.3.6
@@ -300,7 +301,7 @@ dependencies:
           - dask=2023.12.1
           - distributed=2023.12.1
           - kfp
-          - mlflow=2.9.2
+          - mlflow>=2.10.0,<3
           - papermill=2.4.0
           - s3fs=2023.12.2
 

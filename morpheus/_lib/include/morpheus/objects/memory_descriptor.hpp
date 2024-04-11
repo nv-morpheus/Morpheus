@@ -23,6 +23,13 @@
 
 #include "cuda/memory_resource"
 
+namespace morpheus {
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
+
 /**
  * @brief Struct describing device memory resources.
  *
@@ -47,3 +54,6 @@ struct MORPHEUS_EXPORT MemoryDescriptor
     // Memory resource
     cuda::mr::async_resource_ref<cuda::mr::device_accessible> memory_resource;
 };
+
+/** @} */  // end of group
+}  // namespace morpheus
