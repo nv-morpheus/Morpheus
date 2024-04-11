@@ -86,4 +86,3 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
             return node
 
         raise NotImplementedError("Does not support Python nodes")
-

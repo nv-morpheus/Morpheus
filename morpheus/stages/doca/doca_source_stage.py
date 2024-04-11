@@ -100,4 +100,3 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
             return node
 
         raise NotImplementedError("Does not support Python nodes")
-

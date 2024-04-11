@@ -705,4 +705,3 @@ add_command("validate", "morpheus.stages.postprocess.validation_stage.Validation
 
 add_command("from-doca-source", "morpheus.stages.doca.doca_source_stage.DocaSourceStage", modes=NLP_ONLY)
 add_command("from-doca-convert", "morpheus.stages.doca.doca_convert_stage.DocaConvertStage", modes=NLP_ONLY)
-
