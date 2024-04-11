@@ -25,6 +25,7 @@ else
     git checkout ${GIT_BRANCH}
     git pull
     git checkout ${GIT_COMMIT}
+    git fetch --tags
 fi
 
 export MORPHEUS_ROOT=$(pwd)

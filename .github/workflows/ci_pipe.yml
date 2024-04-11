@@ -180,6 +180,7 @@ jobs:
         with:
           lfs: false
           path: 'morpheus'
+          fetch-tags: true
 
       - name: Get AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v1-node16
