@@ -19,12 +19,13 @@
 
 #include <cudf/column/column.hpp>
 #include <cudf/column/column_view.hpp>
-#include <rmm/cuda_stream_view.hpp>
-#include <rmm/mr/device/per_device_resource.hpp>
 #include <doca_eth_rxq.h>
 #include <doca_flow.h>
 #include <doca_gpunetio.h>
+#include <rmm/cuda_stream_view.hpp>
+#include <rmm/mr/device/per_device_resource.hpp>
 #include <stdio.h>
+
 #include <memory>
 
 namespace morpheus::doca {
@@ -51,9 +52,9 @@ std::unique_ptr<cudf::column> integers_to_mac(
     rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
 int packet_receive_kernel(doca_gpu_eth_rxq* rxq,
-                           doca_gpu_semaphore_gpu* sem,
-                           uint16_t sem_idx,
-                           bool is_tcp,
-                           uint32_t* exit_condition,
-                           cudaStream_t stream);
+                          doca_gpu_semaphore_gpu* sem,
+                          uint16_t sem_idx,
+                          bool is_tcp,
+                          uint32_t* exit_condition,
+                          cudaStream_t stream);
 }  // namespace morpheus::doca
