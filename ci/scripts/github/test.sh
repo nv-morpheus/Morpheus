@@ -54,7 +54,7 @@ if [[ $(git status --short --untracked | grep .pyi) != "" ]]; then
     exit 1
 fi
 
-CPP_TESTS=($(find ${MORPHEUS_ROOT}/build -name "*.x"))
+CPP_TESTS=($(find ${MORPHEUS_ROOT}/${BUILD_DIR} -name "*.x"))
 
 rapids-logger "Pulling LFS assets"
 

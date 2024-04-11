@@ -29,7 +29,7 @@ download_artifact "wheel.tar.bz"
 
 tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
 
-pip install ${MORPHEUS_ROOT}/build/dist/*.whl
+pip install ${MORPHEUS_ROOT}/${BUILD_DIR}/dist/*.whl
 
 rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
@@ -45,7 +45,7 @@ cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target install
 cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target morpheus_docs
 
 rapids-logger "Archiving the docs"
-tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/docs/html
+tar cfj "${WORKSPACE_TMP}/docs.tar.bz" ${BUILD_DIR}/docs/html
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 set_job_summary_preamble

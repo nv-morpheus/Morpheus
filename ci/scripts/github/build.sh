@@ -41,13 +41,13 @@ cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL}
 log_sccache_stats
 
 rapids-logger "Archiving results"
-tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/dist
+tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" ${BUILD_DIR}/dist
 
-MORPHEUS_LIBS=($(find ${MORPHEUS_ROOT}/build/morpheus/_lib -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;) \
+MORPHEUS_LIBS=($(find ${MORPHEUS_ROOT}/${BUILD_DIR}/morpheus/_lib -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;) \
                 $(find ${MORPHEUS_ROOT}/examples -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;))
 tar cfj "${WORKSPACE_TMP}/morhpeus_libs.tar.bz" "${MORPHEUS_LIBS[@]}"
 
-CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/morpheus/_lib/tests -name "*.x" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;))
+CPP_TESTS=($(find ${MORPHEUS_ROOT}/${BUILD_DIR}/morpheus/_lib/tests -name "*.x" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;))
 tar cfj "${WORKSPACE_TMP}/cpp_tests.tar.bz" "${CPP_TESTS[@]}"
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
