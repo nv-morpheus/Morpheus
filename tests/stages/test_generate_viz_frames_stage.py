@@ -71,7 +71,7 @@ def test_process_control_message_and_multi_message(config: Config):
                                                     probs_tensor_name="probs")
 
     output_list = stage._to_vis_df(input_multi_resp_message)
-    print("-----------result-----------") 
+    print("-----------result-----------")
     print(output_list)
 
     # TODO(Yuchen): Check if the output message has identical tensors after supporting ControlMessage
