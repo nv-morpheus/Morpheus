@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "morpheus/doca/doca_source.hpp"
+#include "morpheus/doca/doca_stages.hpp"
 
 #include <mrc/segment/builder.hpp>  // IWYU pragma: keep
 #include <mrc/segment/object.hpp>
@@ -43,6 +43,15 @@ PYBIND11_MODULE(doca, m)
              py::arg("nic_pci_address"),
              py::arg("gpu_pci_address"),
              py::arg("traffic_type"));
+
+    py::class_<mrc::segment::Object<DocaConvertStage>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<DocaConvertStage>>>(
+        m, "DocaConvertStage", py::multiple_inheritance())
+        .def(py::init<>(&DocaConvertStageInterfaceProxy::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("split_hdr") = false);
 }
 
 }  // namespace morpheus

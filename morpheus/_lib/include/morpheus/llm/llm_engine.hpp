@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/export.h"
-#include "morpheus/llm/fwd.hpp"
+#include "morpheus/llm/fwd.hpp"  // for ControlMessage, LLMContext, LLMTask, LLMTaskHandler, LLMTaskHandlerRunner
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_node.hpp"
 #include "morpheus/types.hpp"

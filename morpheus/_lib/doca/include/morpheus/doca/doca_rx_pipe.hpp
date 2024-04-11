@@ -17,8 +17,14 @@
 
 #pragma once
 
+#include "morpheus/doca/common.hpp"
 #include "morpheus/doca/doca_context.hpp"
 #include "morpheus/doca/doca_rx_queue.hpp"
+
+#include <doca_flow.h>
+
+#include <memory>
+#include <vector>
 
 namespace morpheus::doca {
 

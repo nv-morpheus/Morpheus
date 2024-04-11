@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/llm/fwd.hpp"
+#include "morpheus/llm/fwd.hpp"  // for LLMContext
 #include "morpheus/llm/llm_node_base.hpp"
 #include "morpheus/types.hpp"
 

@@ -29,6 +29,7 @@ __all__ = [
     "MultiResponseProbsMessage",
     "MultiTensorMessage",
     "MutableTableCtxMgr",
+    "RawPacketMessage",
     "ResponseMemory",
     "ResponseMemoryProbs",
     "TensorMemory",
@@ -323,6 +324,23 @@ class MutableTableCtxMgr():
     def __setattr__(self, *args, **kwargs) -> None: ...
     def __setitem__(self, *args, **kwargs) -> None: ...
     pass
+class RawPacketMessage():
+    @property
+    def gpu_mem(self) -> bool:
+        """
+        :type: bool
+        """
+    @property
+    def max_size(self) -> int:
+        """
+        :type: int
+        """
+    @property
+    def num(self) -> int:
+        """
+        :type: int
+        """
+    pass
 class ResponseMemory(TensorMemory):
     def __init__(self, *, count: int, tensors: object = None) -> None: ...
     def get_output(self, name: str) -> object: ...
@@ -358,4 +376,4 @@ class InferenceMemoryFIL(InferenceMemory, TensorMemory):
     def seq_ids(self, arg1: object) -> None:
         pass
     pass
-__version__ = '24.3.0'
+__version__ = '24.6.0'

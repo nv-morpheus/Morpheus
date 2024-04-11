@@ -19,18 +19,18 @@
 
 #include "pymrc/coro.hpp"
 
-#include "morpheus/llm/llm_context.hpp"
+#include "morpheus/llm/llm_context.hpp"  // for LLMContext
 #include "morpheus/llm/llm_node_base.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
-#include <glog/logging.h>
+#include <glog/logging.h>           // for DCHECK_EQ
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
-#include <pybind11/gil.h>
+#include <pybind11/gil.h>           // for PyGILState_Check, gil_scoped_acquire, gil_scoped_release
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pymrc/coro.hpp>  // IWYU pragma: keep
 #include <pymrc/types.hpp>
-#include <pymrc/utils.hpp>
+#include <pymrc/utilities/json_values.hpp>
 
 #include <coroutine>
 #include <sstream>
@@ -97,7 +97,7 @@ Task<std::shared_ptr<LLMContext>> PyLLMLambdaNode::execute(std::shared_ptr<LLMCo
     pybind11::gil_scoped_acquire gil;
 
     // Convert to python dictionary
-    auto py_inputs = mrc::pymrc::cast_from_json(std::move(inputs));
+    auto py_inputs = inputs.to_python();
 
     // Call the function
     auto py_coro = m_fn(**py_inputs);
@@ -121,7 +121,7 @@ Task<std::shared_ptr<LLMContext>> PyLLMLambdaNode::execute(std::shared_ptr<LLMCo
     }
 
     // Convert back to JSON
-    auto return_val = mrc::pymrc::cast_from_pyobject(std::move(o_result));
+    auto return_val = mrc::pymrc::JSONValues(std::move(o_result));
 
     // Set the object back into the context outputs
     context->set_output(std::move(return_val));

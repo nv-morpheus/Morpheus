@@ -17,6 +17,13 @@
 
 #include "morpheus/doca/doca_semaphore.hpp"
 
+#include "morpheus/doca/common.hpp"
+#include "morpheus/doca/error.hpp"
+
+#include <doca_types.h>
+
+#include <utility>
+
 namespace morpheus::doca {
 
 DocaSemaphore::DocaSemaphore(std::shared_ptr<DocaContext> context, uint16_t size) :
