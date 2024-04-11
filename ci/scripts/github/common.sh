@@ -157,6 +157,13 @@ function log_toolchain() {
     sccache --version
 }
 
+function log_sccache_stats() {
+    if [[ "${LOCAL_CI}" == "" ]]; then
+        rapids-logger "sccache usage for morpheus build:"
+        sccache --show-stats
+    fi
+}
+
 function upload_artifact() {
     FILE_NAME=$1
     BASE_NAME=$(basename "${FILE_NAME}")

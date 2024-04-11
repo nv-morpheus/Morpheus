@@ -39,12 +39,9 @@ rapids-logger "Configuring cmake for Morpheus with ${CMAKE_FLAGS}"
 cmake ${CMAKE_FLAGS} .
 
 rapids-logger "Building Morpheus"
-cmake --build build --parallel ${PARALLEL_LEVEL} --target install
+cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target install
 
-if [[ "${LOCAL_CI}" == "" ]]; then
-    rapids-logger "sccache usage for morpheus build:"
-    sccache --show-stats
-fi
+log_sccache_stats
 
 rapids-logger "Checking Python stub files"
 

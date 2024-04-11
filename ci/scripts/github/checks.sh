@@ -39,12 +39,9 @@ export CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_INPLACE_BUILD=ON"
 cmake ${CMAKE_FLAGS} .
 
 rapids-logger "Building Morpheus"
-cmake --build build --parallel ${PARALLEL_LEVEL}
+cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL}
 
-if [[ "${LOCAL_CI}" == "" ]]; then
-    rapids-logger "sccache usage for source build:"
-    sccache --show-stats
-fi
+log_sccache_stats
 
 rapids-logger "Installing Morpheus"
 pip install ./
