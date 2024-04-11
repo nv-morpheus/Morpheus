@@ -122,7 +122,9 @@ function fetch_base_branch_gh_api() {
 
 function fetch_base_branch_local() {
     rapids-logger "Retrieving base branch from git"
-    git remote add upstream ${GIT_UPSTREAM_URL}
+    if [[ "${USE_HOST_GIT}" == "" ]]; then
+        git remote add upstream ${GIT_UPSTREAM_URL}
+    fi
     git fetch upstream --tags
     source ${MORPHEUS_ROOT}/ci/scripts/common.sh
     export BASE_BRANCH=$(get_base_branch)
