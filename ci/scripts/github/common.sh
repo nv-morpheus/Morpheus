@@ -122,7 +122,7 @@ function fetch_base_branch_gh_api() {
 
 function fetch_base_branch_local() {
     rapids-logger "Retrieving base branch from git"
-    if [[ "${USE_HOST_GIT}" == "" ]]; then
+    if [[ "${USE_HOST_GIT}" == "0" ]]; then
         git remote add upstream ${GIT_UPSTREAM_URL}
         git fetch upstream --tags
     fi
