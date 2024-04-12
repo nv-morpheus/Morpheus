@@ -62,7 +62,26 @@ def pipeline(pipeline_config: Config,
 
     pipe = Pipeline(pipeline_config)
 
-    vdb_sources = process_vdb_sources(pipe, pipeline_config, source_config)
+    # vdb_sources = process_vdb_sources(pipe, pipeline_config, source_config)
+
+    from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
+    from morpheus.stages.doca.doca_source_stage import DocaSourceStage
+    from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+
+    source_stage = pipe.add_stage(DocaSourceStage(pipeline_config, "ca:00.0", "17:00.0", "udp"))
+    convert_stage = pipe.add_stage(DocaConvertStage(pipeline_config, False))
+    deserialize_stage = pipe.add_stage(DeserializeStage(pipeline_config))
+
+    # test_mon = pipe.add_stage(MonitorStage(pipeline_config, description="DOCA GPUNetIO Source rate", unit='pkts'))
+
+    # pipe.add_edge(source_stage, test_mon)
+    # pipe.add_edge(test_mon, convert_stage)
+    # pipe.add_edge(convert_stage, deserialize_stage)
+
+    pipe.add_edge(source_stage, convert_stage)
+    pipe.add_edge(convert_stage, deserialize_stage)
+
+    vdb_sources = [deserialize_stage]
 
     trigger = None
     if (isolate_embeddings):
@@ -78,17 +97,22 @@ def pipeline(pipeline_config: Config,
     monitor_2 = pipe.add_stage(
         MonitorStage(pipeline_config, description="Inference rate", unit="events", delayed_start=True))
 
-    vector_db = pipe.add_stage(WriteToVectorDBStage(pipeline_config, **vdb_config))
+    # vector_db = pipe.add_stage(WriteToVectorDBStage(pipeline_config, **vdb_config))
 
-    monitor_3 = pipe.add_stage(
-        MonitorStage(pipeline_config, description="Upload rate", unit="events", delayed_start=True))
+    # monitor_3 = pipe.add_stage(
+    #     MonitorStage(pipeline_config, description="Upload rate", unit="events", delayed_start=True))
 
     # Connect the pipeline
     for source_output in vdb_sources:
+        mon_stage = pipe.add_stage(
+            MonitorStage(pipeline_config, description="Source Rate", unit="events", delayed_start=False))
+
+        pipe.add_edge(source_output, mon_stage)
+
         if (isolate_embeddings):
-            pipe.add_edge(source_output, trigger)
+            pipe.add_edge(mon_stage, trigger)
         else:
-            pipe.add_edge(source_output, nlp_stage)
+            pipe.add_edge(mon_stage, nlp_stage)
 
     if (isolate_embeddings):
         pipe.add_edge(trigger, nlp_stage)
@@ -96,8 +120,8 @@ def pipeline(pipeline_config: Config,
     pipe.add_edge(nlp_stage, monitor_1)
     pipe.add_edge(monitor_1, embedding_stage)
     pipe.add_edge(embedding_stage, monitor_2)
-    pipe.add_edge(monitor_2, vector_db)
-    pipe.add_edge(vector_db, monitor_3)
+    # pipe.add_edge(monitor_2, vector_db)
+    # pipe.add_edge(vector_db, monitor_3)
 
     start_time = time.time()
 

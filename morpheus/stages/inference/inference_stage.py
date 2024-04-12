@@ -300,7 +300,7 @@ class InferenceStage(MultiMessageStage):
             node = builder.make_node(self.unique_name, ops.build(py_inference_fn))
 
         # Set the concurrency level to be up with the thread count
-        node.launch_options.pe_count = self._thread_count
+        # node.launch_options.pe_count = self._thread_count
         builder.make_edge(input_node, node)
 
         return node

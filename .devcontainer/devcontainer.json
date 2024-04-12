@@ -18,6 +18,7 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
+    "privileged": true,
 
     "hostRequirements": {
         "gpu": true
@@ -33,7 +34,8 @@
     ],
 
     "runArgs": [
-        "--network=morpheus"
+        "--network=morpheus",
+        "-v=/dev/hugepages:/dev/hugepages"
     ],
 
     "containerEnv": {
@@ -93,8 +95,12 @@
             "type": "bind",
             "source": "${localWorkspaceFolder}/.devcontainer/opt/morpheus",
             "target": "/opt/morpheus"
-        },
-
+        }
+        // {
+        //     "type": "volume",
+        //     "source": "/dev/hugepages",
+        //     "target": "/dev/hugepages"
+        // }
     ],
 
     "features": {

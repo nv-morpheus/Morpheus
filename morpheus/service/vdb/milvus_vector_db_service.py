@@ -316,7 +316,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         # Note: dataframe columns has to be in the order of collection schema fields.s
         result = self._collection.insert(data=df[column_names], **kwargs)
-        self._collection.flush()
+        # self._collection.flush()
 
         return self._insert_result_to_dict(result=result)
 
