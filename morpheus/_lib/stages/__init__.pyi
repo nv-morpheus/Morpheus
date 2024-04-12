@@ -27,6 +27,7 @@ __all__ = [
     "InferenceClientStageCM",
     "InferenceClientStageMM",
     "KafkaSourceStage",
+    "PreallocateControlMessageStage",
     "PreallocateMessageMetaStage",
     "PreallocateMultiMessageStage",
     "PreprocessFILControlMessageStage",
@@ -80,6 +81,9 @@ class KafkaSourceStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, max_batch_size: int, topic: str, batch_timeout_ms: int, config: typing.Dict[str, str], disable_commits: bool = False, disable_pre_filtering: bool = False, stop_after: int = 0, async_commits: bool = True, oauth_callback: typing.Optional[function] = None) -> None: ...
     @typing.overload
     def __init__(self, builder: mrc.core.segment.Builder, name: str, max_batch_size: int, topics: typing.List[str], batch_timeout_ms: int, config: typing.Dict[str, str], disable_commits: bool = False, disable_pre_filtering: bool = False, stop_after: int = 0, async_commits: bool = True, oauth_callback: typing.Optional[function] = None) -> None: ...
+    pass
+class PreallocateControlMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: typing.List[typing.Tuple[str, morpheus._lib.common.TypeId]]) -> None: ...
     pass
 class PreallocateMessageMetaStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: typing.List[typing.Tuple[str, morpheus._lib.common.TypeId]]) -> None: ...

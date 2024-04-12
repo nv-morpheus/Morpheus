@@ -219,6 +219,15 @@ PYBIND11_MODULE(stages, _module)
              py::arg("async_commits")         = true,
              py::arg("oauth_callback")        = py::none());
 
+    py::class_<mrc::segment::Object<PreallocateStage<ControlMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PreallocateStage<ControlMessage>>>>(
+        _module, "PreallocateControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreallocateStageInterfaceProxy<ControlMessage>::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("needed_columns"));
+
     py::class_<mrc::segment::Object<PreallocateStage<MessageMeta>>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageMeta>>>>(
