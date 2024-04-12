@@ -303,5 +303,5 @@ def test_abp_multi_segment_cpp(config, tmp_path, message_type):
 
     pipe.run()
 
-    # results = calc_error_val(results_file_name)
-    # assert results.diff_rows == 0
+    results = calc_error_val(results_file_name)
+    assert results.diff_rows == 0
