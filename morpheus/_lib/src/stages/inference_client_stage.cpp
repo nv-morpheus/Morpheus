@@ -20,6 +20,7 @@
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/memory/response_memory.hpp"
 #include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/objects/data_table.hpp"
@@ -38,6 +39,7 @@
 #include <chrono>
 #include <compare>
 #include <coroutine>
+#include <memory>
 #include <mutex>
 #include <ostream>
 #include <ratio>
@@ -48,12 +50,7 @@ namespace {
 
 using namespace morpheus;
 
-using InferenceClientStageMM =
-    InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>;  // NOLINT(readability-identifier-naming)
-using InferenceClientStageCM =
-    InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>;  // NOLINT(readability-identifier-naming)
-
-static ShapeType get_seq_ids(const InferenceClientStageMM::sink_type_t& message)
+static ShapeType get_seq_ids(const std::shared_ptr<MultiInferenceMessage>& message)
 {
     // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
     // The output tensors we store in `reponse_memory` will all be of the same length as the the
@@ -124,7 +121,15 @@ static void reduce_outputs(std::shared_ptr<MultiInferenceMessage> const& message
     }
 }
 
-static void reduce_outputs(std::shared_ptr<ControlMessage> const& message, TensorMap& output_tensors) {}
+static void reduce_outputs(std::shared_ptr<ControlMessage> const& message, TensorMap& output_tensors)
+{
+    if (message->payload()->count() == message->tensors()->count)
+    {
+        return;
+    }
+
+    throw std::runtime_error("reduce_outputs not implemented");
+}
 
 static void apply_logits(TensorMap& output_tensors)
 {
