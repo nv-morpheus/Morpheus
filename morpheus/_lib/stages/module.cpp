@@ -18,6 +18,8 @@
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/messages/multi_response.hpp"
 #include "morpheus/objects/file_types.hpp"
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"

@@ -28,7 +28,6 @@
 #include <mrc/coroutines/task.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
-#include <pybind11/pybind11.h>
 #include <pymrc/asyncio_runnable.hpp>
 
 #include <cstdint>
