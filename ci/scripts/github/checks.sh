@@ -29,7 +29,10 @@ log_toolchain
 
 cd ${MORPHEUS_ROOT}
 
+# Fetching the base branch will try methods that might fail, then fallback to one that does, set +e for this section
+set +e
 fetch_base_branch
+set -e
 
 rapids-logger "Configuring cmake for Morpheus"
 CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
@@ -45,9 +48,6 @@ log_sccache_stats
 
 rapids-logger "Installing Morpheus"
 pip install ./
-
-# Setting this prevents loading of cudf since we don't have a GPU
-export MORPHEUS_IN_SPHINX_BUILD=1
 
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
