@@ -479,7 +479,6 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&&
             const uint8_t* output_ptr = nullptr;
             size_t output_ptr_size    = 0;
 
-
             CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
 
             // DCHECK_EQ(stop - start, output_shape[0]);

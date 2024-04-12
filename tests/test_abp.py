@@ -142,12 +142,16 @@ def test_abp_cpp(config, tmp_path, message_type):
     # but the code under-the-hood replaces this with the port number of the http server
     pipe.add_stage(
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='localhost:8001',
-                            force_convert_inputs=True))
+                             force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(AddScoresStage(config, prefix="score_"))
     pipe.add_stage(
-        ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05, overwrite=True))
+        ValidationStage(config,
+                        val_file_name=val_file_name,
+                        results_file_name=results_file_name,
+                        rel_tol=0.05,
+                        overwrite=True))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=True))
 

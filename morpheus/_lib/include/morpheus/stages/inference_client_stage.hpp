@@ -156,14 +156,14 @@ struct MORPHEUS_EXPORT InferenceClientStageInterfaceProxy
      * if the Morpheus names do not match the model.
      * @return std::shared_ptr<mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>>
      */
-    static std::shared_ptr<mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>> init_mm(
-        mrc::segment::Builder& builder,
-        const std::string& name,
-        std::string model_name,
-        std::string server_url,
-        bool needs_logits,
-        std::map<std::string, std::string> input_mapping,
-        std::map<std::string, std::string> output_mapping);
+    static std::shared_ptr<mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>>
+    init_mm(mrc::segment::Builder& builder,
+            const std::string& name,
+            std::string model_name,
+            std::string server_url,
+            bool needs_logits,
+            std::map<std::string, std::string> input_mapping,
+            std::map<std::string, std::string> output_mapping);
 
     /**
      * @brief Create and initialize a ControlMessage-based InferenceClientStage, and return the result

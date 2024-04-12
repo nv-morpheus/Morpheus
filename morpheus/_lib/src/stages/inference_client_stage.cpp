@@ -124,9 +124,7 @@ static void reduce_outputs(std::shared_ptr<MultiInferenceMessage> const& message
     }
 }
 
-static void reduce_outputs(std::shared_ptr<ControlMessage> const& message, TensorMap& output_tensors)
-{
-}
+static void reduce_outputs(std::shared_ptr<ControlMessage> const& message, TensorMap& output_tensors) {}
 
 static void apply_logits(TensorMap& output_tensors)
 {
@@ -190,7 +188,7 @@ struct ExponentialBackoff
 };
 
 static std::shared_ptr<MultiResponseMessage> make_response(std::shared_ptr<MultiInferenceMessage> message,
-                                                    TensorMap&& output_tensor_map)
+                                                           TensorMap&& output_tensor_map)
 {
     // Final output of all mini-batches
     auto response_mem = std::make_shared<ResponseMemory>(message->mess_count, std::move(output_tensor_map));
@@ -199,7 +197,8 @@ static std::shared_ptr<MultiResponseMessage> make_response(std::shared_ptr<Multi
         message->meta, message->mess_offset, message->mess_count, std::move(response_mem), 0, response_mem->count);
 }
 
-static std::shared_ptr<ControlMessage> make_response(std::shared_ptr<ControlMessage> message, TensorMap&& output_tensor_map)
+static std::shared_ptr<ControlMessage> make_response(std::shared_ptr<ControlMessage> message,
+                                                     TensorMap&& output_tensor_map)
 {
     message->tensors()->set_tensors(std::move(output_tensor_map));
     return message;
@@ -300,7 +299,8 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<OutputT>> InferenceClientStage<I
                 throw;
             }
 
-            LOG(WARNING) << "Exception while processing message for InferenceClientStage, attempting retry. ex.what(): " << ex.what();
+            LOG(WARNING) << "Exception while processing message for InferenceClientStage, attempting retry. ex.what(): "
+                         << ex.what();
         } catch (...)
         {
             auto lock = std::unique_lock(m_session_mutex);

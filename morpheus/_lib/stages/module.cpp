@@ -164,9 +164,10 @@ PYBIND11_MODULE(stages, _module)
              py::arg("filter_source"),
              py::arg("field_name") = "probs");
 
-    py::class_<mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>,
-               mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>>>(
+    py::class_<
+        mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>,
+        mrc::segment::ObjectProperties,
+        std::shared_ptr<mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>>>(
         _module, "InferenceClientStageMM", py::multiple_inheritance())
         .def(py::init<>(&InferenceClientStageInterfaceProxy::init_mm),
              py::arg("builder"),
