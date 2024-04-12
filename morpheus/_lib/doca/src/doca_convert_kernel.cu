@@ -255,7 +255,7 @@ __global__ void _packet_gather_payload_kernel(
   uintptr_t*  packets_buffer,
   uint32_t* header_sizes,
   uint32_t* payload_sizes,
-  char*    payload_chars_out
+  uint8_t*    payload_chars_out
 )
 {
   // Specialize BlockScan for a 1D block of 128 threads of type int
@@ -285,7 +285,7 @@ __global__ void _packet_gather_payload_kernel(
 
     auto payload_size = payload_sizes[packet_idx];
     for (auto j = 0; j < payload_size; j++) {
-      auto value = *(((char*)packets_buffer[packet_idx]) + header_sizes[packet_idx] + j);
+      auto value = *(((uint8_t*)packets_buffer[packet_idx]) + header_sizes[packet_idx] + j);
       payload_chars_out[payload_offsets[i] + j] = value;
       // printf("payload %d size %d : 0x%1x / 0x%1x addr %lx\n",
       //     payload_offsets[i] + j, payload_size,
@@ -300,7 +300,7 @@ __global__ void _packet_gather_header_kernel(
   uintptr_t*  packets_buffer,
   uint32_t* header_sizes,
   uint32_t* payload_sizes,
-  char*     header_chars_out
+  uint8_t*  header_chars_out
 )
 {
   // Specialize BlockScan for a 1D block of 128 threads of type int
@@ -328,14 +328,16 @@ __global__ void _packet_gather_header_kernel(
     if (packet_idx >= packet_count)
       continue;
 
-    auto header_size = header_sizes[packet_idx];
+    uint32_t header_size = header_sizes[packet_idx];
+    uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[packet_idx]);
+
     for (auto j = 0; j < header_size; j++) {
-      auto value = *(((char*)packets_buffer[packet_idx]) + j);
-      header_chars_out[header_offsets[i] + j] = value;
-      // printf("header %d size %d : 0x%1x / 0x%1x addr %lx\n",
-      //   header_offsets[i] + j, header_size,
-      //   header_chars_out[header_offsets[i] + j], value,
-      //   packets_buffer[packet_idx]);
+      printf("thread %d header %d size %d : 0x%1x - %c / 0x%1x source addr %lx dst addr %lx\n",
+        threadIdx.x, header_offsets[i], header_size,
+        header_chars_out[header_offsets[i] + j], header_chars_out[header_offsets[i] + j], pkt_hdr_addr[j],
+        pkt_hdr_addr + j, header_chars_out + header_offsets[i] + j);
+        
+      header_chars_out[header_offsets[i] + j] = pkt_hdr_addr[j];
     }
   }
 }
@@ -359,7 +361,7 @@ std::unique_ptr<cudf::column> gather_payload(
   );
 
   auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
-  auto d_chars      = chars_column->mutable_view().data<char>();
+  auto d_chars      = chars_column->mutable_view().data<uint8_t>();
 
   _packet_gather_payload_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     packet_count,
@@ -392,7 +394,7 @@ std::unique_ptr<cudf::column> gather_header(
   );
 
   auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
-  auto d_chars      = chars_column->mutable_view().data<char>();
+  uint8_t *d_chars      = chars_column->mutable_view().data<uint8_t>();
 
   _packet_gather_header_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     packet_count,
@@ -407,6 +409,42 @@ std::unique_ptr<cudf::column> gather_header(
     std::move(chars_column),
     0,
     {});
+}
+
+void gather_header_scalar(
+  int32_t      packet_count,
+  uintptr_t*    packets_buffer,
+  uint32_t*    header_sizes,
+  uint32_t*    payload_sizes,
+  uint8_t*      header_col,
+  rmm::cuda_stream_view stream,
+  rmm::mr::device_memory_resource* mr)
+{
+   _packet_gather_header_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
+    packet_count,
+    packets_buffer,
+    header_sizes,
+    payload_sizes,
+    header_col
+  );
+}
+
+void gather_payload_scalar(
+  int32_t      packet_count,
+  uintptr_t*    packets_buffer,
+  uint32_t*    header_sizes,
+  uint32_t*    payload_sizes,
+  uint8_t*      payload_col,
+  rmm::cuda_stream_view stream,
+  rmm::mr::device_memory_resource* mr)
+{
+  _packet_gather_payload_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
+    packet_count,
+    packets_buffer,
+    header_sizes,
+    payload_sizes,
+    payload_col
+  );
 }
 
 

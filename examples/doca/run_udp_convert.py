@@ -25,6 +25,8 @@ from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.utils.logger import configure_logging
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 
 @click.command()
@@ -53,13 +55,15 @@ def run_pipeline(out_file, nic_addr, gpu_addr):
     config.mode = PipelineModes.NLP
 
     # Below properties are specified by the command line
-    config.num_threads = 1
+    config.num_threads = 5
 
     pipeline = LinearPipeline(config)
 
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'udp'))
     pipeline.add_stage(DocaConvertStage(config, False))
+    pipeline.add_stage(DeserializeStage(config))
+    pipeline.add_stage(PreprocessNLPStage(config))
     pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
 
     # Build the pipeline here to see types in the vizualization

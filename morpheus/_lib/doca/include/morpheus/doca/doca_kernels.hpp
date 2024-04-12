@@ -46,6 +46,24 @@ std::unique_ptr<cudf::column> gather_header(
     rmm::cuda_stream_view stream,
     rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
+void gather_header_scalar(
+    int32_t      packet_count,
+    uintptr_t*    packets_buffer,
+    uint32_t*    header_sizes,
+    uint32_t*    payload_sizes,
+    uint8_t*      header_col,
+    rmm::cuda_stream_view stream,
+    rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+
+void gather_payload_scalar(
+  int32_t      packet_count,
+  uintptr_t*    packets_buffer,
+  uint32_t*    header_sizes,
+  uint32_t*    payload_sizes,
+  uint8_t*      payload_col,
+  rmm::cuda_stream_view stream,
+  rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+
 std::unique_ptr<cudf::column> integers_to_mac(
     cudf::column_view const& integers,
     rmm::cuda_stream_view stream        = cudf::detail::default_stream_value,

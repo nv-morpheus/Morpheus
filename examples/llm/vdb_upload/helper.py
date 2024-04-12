@@ -106,6 +106,21 @@ def setup_filesystem_source(pipe: Pipeline, config: Config, source_name: str, fs
 
     return file_pipe
 
+def setup_doca_source(pipe: Pipeline, config: Config, source_name: str, stage_config: typing.Dict[str, typing.Any]):
+    """
+    """
+    from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
+    from morpheus.stages.doca.doca_source_stage import DocaSourceStage
+    from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+
+    source_stage = pipe.add_stage(DocaSourceStage(config, stage_config.pop('nic_addr'), stage_config.pop('gpu_addr'), stage_config.pop('traffic_type')))
+    convert_stage = pipe.add_stage(DocaConvertStage(config, False))
+    deserialize_stage = pipe.add_stage(DeserializeStage(config))
+
+    pipe.add_edge(source_stage, convert_stage)
+    pipe.add_edge(convert_stage, deserialize_stage)
+
+    return deserialize_stage
 
 def setup_custom_source(pipe: Pipeline, config: Config, source_name: str, custom_config: typing.Dict[str, typing.Any]):
     """
@@ -191,6 +206,8 @@ def process_vdb_sources(pipe: Pipeline, config: Config, vdb_source_config: typin
             vdb_sources.append(setup_filesystem_source(pipe, config, source_name, source_config))
         elif (source_type == 'custom'):
             vdb_sources.append(setup_custom_source(pipe, config, source_name, source_config))
+        elif (source_type == "doca"):
+            vdb_sources.append(setup_doca_source(pipe, config, source_name, source_config))
         else:
             raise ValueError(f"Unsupported source type: {source_type}")
 
