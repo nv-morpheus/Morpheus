@@ -358,4 +358,4 @@ class InferenceMemoryFIL(InferenceMemory, TensorMemory):
     def seq_ids(self, arg1: object) -> None:
         pass
     pass
-__version__ = '24.3.0'
+__version__ = '24.6.0'

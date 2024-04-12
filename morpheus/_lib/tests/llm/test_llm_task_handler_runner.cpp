@@ -17,25 +17,25 @@
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 
-#include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/input_map.hpp"
-#include "morpheus/llm/llm_context.hpp"
+#include "morpheus/llm/llm_context.hpp"  // for LLMContext
 #include "morpheus/llm/llm_task.hpp"
 #include "morpheus/llm/llm_task_handler.hpp"
 #include "morpheus/llm/llm_task_handler_runner.hpp"
-#include "morpheus/messages/control.hpp"
+#include "morpheus/messages/control.hpp"  // for ControlMessage
 #include "morpheus/types.hpp"
 
 #include <gtest/gtest.h>
 #include <mrc/channel/forward.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
-#include <nlohmann/json.hpp>
+#include <nlohmann/json.hpp>        // for nlohmann::json
 
 #include <coroutine>
 #include <memory>
-#include <optional>
+#include <optional>  // for optional
 #include <string>
+// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
 
 using namespace morpheus;
 using namespace morpheus::test;

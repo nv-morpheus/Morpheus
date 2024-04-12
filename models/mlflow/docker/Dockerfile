@@ -44,7 +44,7 @@ RUN sed -i 's/conda activate base/conda activate mlflow/g' ~/.bashrc
 SHELL ["/opt/conda/bin/conda", "run", "-n", "mlflow", "/bin/bash", "-c"]
 
 ARG TRITON_DIR=/mlflow/triton-inference-server
-ARG TRITON_VER=r24.01
+ARG TRITON_VER=r24.03
 
 RUN mkdir ${TRITON_DIR} && \
     cd ${TRITON_DIR} && \

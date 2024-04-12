@@ -14,6 +14,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+# Morpheus 24.03.01 (10 Apr 2024)
+
+## 🚨 Breaking Changes
+
+- Move MemoryDescriptor to the morpheus namespace ([#1602](https://github.com/nv-morpheus/Morpheus/pull/1602)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 🐛 Bug Fixes
+
+- Switch to kafka 3.5.2 ([#1612](https://github.com/nv-morpheus/Morpheus/pull/1612)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update mlflow to avoid  CVE-2024-27132 and CVE-2024-27133 ([#1609](https://github.com/nv-morpheus/Morpheus/pull/1609)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix for databricks_cli import error ([#1604](https://github.com/nv-morpheus/Morpheus/pull/1604)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Move MemoryDescriptor to the morpheus namespace ([#1602](https://github.com/nv-morpheus/Morpheus/pull/1602)) [@dagardner-nv](https://github.com/dagardner-nv)
+
 
 # Morpheus 24.03.00 (7 Apr 2024)
 
