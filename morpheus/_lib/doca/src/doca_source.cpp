@@ -166,7 +166,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                 if (pkt_ptr->packet_count_out == 0)
                     continue;
 
-                // LOG(WARNING) << "pkts " << pkt_ptr->packet_count_out << " MAX_PKT_SIZE " << MAX_PKT_SIZE <<
+                // LOG(WARNING) << "pkts " << pkt_ptr->packet_count_out << " MAX_PKT_SIZE " << MAX_PKT_SIZE;
                 // std::endl;
 
                 auto meta = RawPacketMessage::create_from_cpp(pkt_ptr->packet_count_out,

@@ -121,25 +121,29 @@ def run_pipeline(out_file, nic_addr, gpu_addr):
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'udp'))
     pipeline.add_stage(DocaConvertStage(config, False))
+    pipeline.add_stage(MonitorStage(config, description="Packet rate", unit='pkts'))
+
     pipeline.add_stage(DeserializeStage(config))
     pipeline.add_stage(PreprocessNLPStage(config))
-    pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO Source rate", unit='pkts'))
+    # pipeline.add_stage(MonitorStage(config, description="Batch rate", unit='batch'))
 
-    # pipeline.add_stage(
-    #     TritonInferenceStage(config,
-    #                          force_convert_inputs=True,
-    #                          model_name="all-MiniLM-L6-v2",
-    #                          server_url="localhost:8001",
-    #                          use_shared_memory=True))
+    pipeline.add_stage(
+        TritonInferenceStage(config,
+                             force_convert_inputs=True,
+                             model_name="all-MiniLM-L6-v2",
+                             server_url="localhost:8001",
+                             use_shared_memory=True))
 
-    # pipeline.add_stage(
-    #     WriteToVectorDBStage(config,
-    #                          service=build_milvus_service("http://localhost:19530", 384),
-    #                          resource_name="vdb_doca",
-    #                          batch_size=16896,
-    #                          recreate=True))
+    pipeline.add_stage(MonitorStage(config, description="Inference rate", unit='batch'))
 
-    # pipeline.add_stage(MonitorStage(config, description="Embedding rate", unit='pkts'))
+    pipeline.add_stage(
+        WriteToVectorDBStage(config,
+                             service=build_milvus_service("http://localhost:19530", 384),
+                             resource_name="vdb_doca",
+                             batch_size=16896,
+                             recreate=True))
+
+    pipeline.add_stage(MonitorStage(config, description="Embedding rate", unit='batch'))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()

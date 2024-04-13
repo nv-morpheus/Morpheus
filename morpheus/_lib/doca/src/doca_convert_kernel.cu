@@ -332,13 +332,18 @@ __global__ void _packet_gather_header_kernel(
     uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[packet_idx]);
 
     for (auto j = 0; j < header_size; j++) {
-      printf("thread %d header %d size %d : 0x%1x - %c / 0x%1x source addr %lx dst addr %lx\n",
-        threadIdx.x, header_offsets[i], header_size,
-        header_chars_out[header_offsets[i] + j], header_chars_out[header_offsets[i] + j], pkt_hdr_addr[j],
-        pkt_hdr_addr + j, header_chars_out + header_offsets[i] + j);
+      // printf("thread %d header %d size %d : 0x%1x - %c / 0x%1x source addr %lx dst addr %lx\n",
+      //   threadIdx.x, header_offsets[i], header_size,
+      //   header_chars_out[header_offsets[i] + j], header_chars_out[header_offsets[i] + j], pkt_hdr_addr[j],
+      //   pkt_hdr_addr + j, header_chars_out + header_offsets[i] + j);
         
       header_chars_out[header_offsets[i] + j] = pkt_hdr_addr[j];
     }
+
+    // if (threadIdx.x == 0) {
+    //   for(int x = 0; x < 42; x++)
+    //     header_chars_out[x] = 0xFF;
+    // }
   }
 }
 
