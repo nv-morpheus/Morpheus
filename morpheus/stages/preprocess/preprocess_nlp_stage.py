@@ -227,9 +227,9 @@ class PreprocessNLPStage(PreprocessBaseStage):
         # Existing logic for MultiMessage
         
         # print(message.get_meta_column_names())
-        print(message.get_meta())
+        # print(message.get_meta())
         text_ser = cudf.Series(message.get_meta(column))
-        print(text_ser)
+        # print(text_ser)
         tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
                                          do_lower_case=do_lower_case,
                                          text_ser=text_ser,

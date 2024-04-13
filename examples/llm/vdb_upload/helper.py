@@ -206,7 +206,7 @@ def process_vdb_sources(pipe: Pipeline, config: Config, vdb_source_config: typin
             vdb_sources.append(setup_filesystem_source(pipe, config, source_name, source_config))
         elif (source_type == 'custom'):
             vdb_sources.append(setup_custom_source(pipe, config, source_name, source_config))
-        elif (source_type == "doca"):
+        elif (source_type == 'doca'):
             vdb_sources.append(setup_doca_source(pipe, config, source_name, source_config))
         else:
             raise ValueError(f"Unsupported source type: {source_type}")

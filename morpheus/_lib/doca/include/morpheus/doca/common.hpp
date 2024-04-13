@@ -23,8 +23,8 @@
 #include <type_traits>
 #include <vector>
 
-uint32_t const PACKETS_PER_THREAD   = 4;
-uint32_t const THREADS_PER_BLOCK    = 1024;
+uint32_t const PACKETS_PER_THREAD   = 8;
+uint32_t const THREADS_PER_BLOCK    = 512;
 uint32_t const PACKETS_PER_BLOCK    = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
 uint32_t const PACKET_RX_TIMEOUT_NS = 1000000;  // 1ms //500us
 
