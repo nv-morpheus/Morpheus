@@ -52,7 +52,7 @@ MODEL_MAX_BATCH_SIZE = 1024
 @pytest.mark.slow
 @pytest.mark.use_python
 @mock.patch('tritonclient.grpc.InferenceServerClient')
-def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
+def test_abp_no_cpp(mock_triton_client: mock.MagicMock, config: Config, tmp_path: str, morpheus_log_level: int):
     mock_metadata = {
         "inputs": [{
             'name': 'input__0', 'datatype': 'FP32', "shape": [-1, FEATURE_LENGTH]
@@ -98,7 +98,8 @@ def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
     pipe.add_stage(PreprocessFILStage(config))
     pipe.add_stage(
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='test:0000', force_convert_inputs=True))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(AddScoresStage(config, prefix="score_"))
     pipe.add_stage(
@@ -115,7 +116,7 @@ def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-def test_abp_cpp(config, tmp_path):
+def test_abp_cpp(config: Config, tmp_path: str, morpheus_log_level: int):
     config.mode = PipelineModes.FIL
     config.class_labels = ["mining"]
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
@@ -141,7 +142,8 @@ def test_abp_cpp(config, tmp_path):
     pipe.add_stage(
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='localhost:8001',
                              force_convert_inputs=True))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(AddScoresStage(config, prefix="score_"))
     pipe.add_stage(
