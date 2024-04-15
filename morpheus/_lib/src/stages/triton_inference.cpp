@@ -113,7 +113,6 @@ struct TritonInferOperation
     {
         CHECK_TRITON(m_client.async_infer(
             [this, handle](triton::client::InferResult* result) {
-                std::cout << "resuming..." << std::endl;
                 m_result.reset(result);
                 handle();
             },

@@ -70,6 +70,26 @@ static ShapeType get_seq_ids(const std::shared_ptr<MultiInferenceMessage>& messa
     return host_seq_ids;
 }
 
+static ShapeType get_seq_ids(const std::shared_ptr<ControlMessage>& message)
+{
+    // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
+    // The output tensors we store in `reponse_memory` will all be of the same length as the the
+    // dataframe. seq_ids has three columns, but we are only interested in the first column.
+    auto seq_ids         = message->tensors()->get_tensor("seq_ids");
+    const auto item_size = seq_ids.dtype().item_size();
+
+    ShapeType host_seq_ids(message->tensors()->count);
+    MRC_CHECK_CUDA(cudaMemcpy2D(host_seq_ids.data(),
+                                item_size,
+                                seq_ids.data(),
+                                seq_ids.stride(0) * item_size,
+                                item_size,
+                                host_seq_ids.size(),
+                                cudaMemcpyDeviceToHost));
+
+    return host_seq_ids;
+}
+
 static bool has_tensor(std::shared_ptr<MultiInferenceMessage> message, std::string const& tensor_name)
 {
     return message->memory->has_tensor(tensor_name);
@@ -128,7 +148,28 @@ static void reduce_outputs(std::shared_ptr<ControlMessage> const& message, Tenso
         return;
     }
 
-    throw std::runtime_error("reduce_outputs not implemented");
+    // When our tensor lengths are longer than our dataframe we will need to use the seq_ids array to
+    // lookup how the values should map back into the dataframe.
+    auto host_seq_ids = get_seq_ids(message);
+
+    for (auto& mapping : output_tensors)
+    {
+        auto& output_tensor = mapping.second;
+
+        ShapeType shape  = output_tensor.get_shape();
+        ShapeType stride = output_tensor.get_stride();
+
+        ShapeType reduced_shape{shape};
+        reduced_shape[0] = message->payload()->count();
+
+        auto reduced_buffer = MatxUtil::reduce_max(
+            DevMemInfo{output_tensor.data(), output_tensor.dtype(), output_tensor.get_memory(), shape, stride},
+            host_seq_ids,
+            0,
+            reduced_shape);
+            
+        output_tensor.swap(Tensor::create(std::move(reduced_buffer), output_tensor.dtype(), reduced_shape, stride, 0));
+    }
 }
 
 static void apply_logits(TensorMap& output_tensors)
@@ -205,7 +246,7 @@ static std::shared_ptr<MultiResponseMessage> make_response(std::shared_ptr<Multi
 static std::shared_ptr<ControlMessage> make_response(std::shared_ptr<ControlMessage> message,
                                                      TensorMap&& output_tensor_map)
 {
-    message->tensors()->set_tensors(std::move(output_tensor_map));
+    message->tensors(std::make_shared<TensorMemory>(message->payload()->count(), std::move(output_tensor_map)));
     return message;
 }
 
@@ -286,7 +327,9 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<OutputT>> InferenceClientStage<I
                 }
             }
 
-            co_yield make_response(message, std::move(output_tensor_map));
+            auto result = make_response(message, std::move(output_tensor_map));
+
+            co_yield result;
 
             co_return;
 

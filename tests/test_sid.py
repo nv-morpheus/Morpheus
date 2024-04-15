@@ -27,6 +27,8 @@ from _utils import compare_class_to_scores
 from _utils import mk_async_infer
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
+from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -44,7 +46,7 @@ FEATURE_LENGTH = 256
 MODEL_MAX_BATCH_SIZE = 32
 
 
-def _run_minibert_pipeline(config, tmp_path, model_name, truncated, data_col_name: str = "data"):
+def _run_minibert_pipeline(config, tmp_path, message_type, model_name, truncated, data_col_name: str = "data"):
     """
     Runs just the Minibert Pipeline
     """
@@ -90,7 +92,7 @@ def _run_minibert_pipeline(config, tmp_path, model_name, truncated, data_col_nam
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
-    pipe.add_stage(DeserializeStage(config))
+    pipe.add_stage(DeserializeStage(config, message_type=message_type))
     pipe.add_stage(
         PreprocessNLPStage(config,
                            vocab_hash_file=vocab_file_name,
@@ -113,7 +115,7 @@ def _run_minibert_pipeline(config, tmp_path, model_name, truncated, data_col_nam
     return calc_error_val(results_file_name)
 
 
-def _run_minibert(config, tmp_path, model_name, truncated, data_col_name: str = "data"):
+def _run_minibert(config, tmp_path, message_type, model_name, truncated, data_col_name: str = "data"):
     """
     Runs the minibert pipeline and mocks the Triton Python interface
     """
@@ -145,15 +147,16 @@ def _run_minibert(config, tmp_path, model_name, truncated, data_col_name: str = 
         async_infer = mk_async_infer(inf_results)
         mock_triton_client.async_infer.side_effect = async_infer
 
-        return _run_minibert_pipeline(config, tmp_path, model_name, truncated, data_col_name)
+        return _run_minibert_pipeline(config, tmp_path, message_type, model_name, truncated, data_col_name)
 
 
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-def test_minibert_no_trunc(config, tmp_path):
+@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
+def test_minibert_no_trunc(config, tmp_path, message_type):
 
-    results = _run_minibert(config, tmp_path, "sid-minibert-onnx-no-trunc", False)
+    results = _run_minibert(config, tmp_path, message_type, "sid-minibert-onnx-no-trunc", False)
 
     # Not sure why these are different
     if (CppConfig.get_should_use_cpp()):
@@ -164,9 +167,10 @@ def test_minibert_no_trunc(config, tmp_path):
 
 @pytest.mark.slow
 @pytest.mark.usefixtures("launch_mock_triton")
-def test_minibert_truncated(config, tmp_path):
+@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
+def test_minibert_truncated(config, tmp_path, message_type):
 
-    results = _run_minibert(config, tmp_path, 'sid-minibert-onnx', True)
+    results = _run_minibert(config, tmp_path, message_type, 'sid-minibert-onnx', True)
 
     # Not sure why these are different
     if (CppConfig.get_should_use_cpp()):
@@ -177,9 +181,10 @@ def test_minibert_truncated(config, tmp_path):
 
 @pytest.mark.slow
 @pytest.mark.usefixtures("launch_mock_triton")
-def test_minibert_data_col_name(config, tmp_path):
+@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
+def test_minibert_data_col_name(config, tmp_path, message_type):
 
-    results = _run_minibert(config, tmp_path, 'sid-minibert-onnx', True, "definitely_not_data")
+    results = _run_minibert(config, tmp_path, message_type, 'sid-minibert-onnx', True, "definitely_not_data")
 
     # Not sure why these are different
     if (CppConfig.get_should_use_cpp()):
