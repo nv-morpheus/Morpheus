@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-#include "doca_context.hpp"
+#include "morpheus/doca/doca_context.hpp"
 
-#include "common.hpp"
-#include "error.hpp"
-
+#include "morpheus/doca/common.hpp"
+#include "morpheus/doca/error.hpp"
 #include "morpheus/utilities/error.hpp"
 
 #include <cuda_runtime.h>
@@ -97,11 +96,11 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
     rte_eth_dev_info dev_info  = {nullptr};
     rte_eth_conf eth_conf      = {
              .rxmode =
-                 {
+            {
                      .mtu = 2048, /* Not really used, just to initialize DPDK */
             },
              .txmode =
-                 {
+            {
                      .offloads = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM | RTE_ETH_TX_OFFLOAD_UDP_CKSUM | RTE_ETH_TX_OFFLOAD_TCP_CKSUM,
             },
     };

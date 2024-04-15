@@ -87,7 +87,7 @@ def infer(validationdata, vocab, model, output):
     df.to_json(output, orient='records', lines=True)
 
 
-def main():
+def main(args):
 
     infer(args.validationdata, args.vocab, args.model, args.output)
 
@@ -98,6 +98,5 @@ if __name__ == "__main__":
     parser.add_argument("--vocab", required=True, help="BERT voabulary file")
     parser.add_argument("--model", required=True, help="pretrained model")
     parser.add_argument("--output", required=True, help="output filename")
-    args = parser.parse_args()
 
-main()
+    main(parser.parse_args())

@@ -19,7 +19,6 @@
 
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_engine.hpp"
-#include "morpheus/llm/llm_node_base.hpp"
 
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>

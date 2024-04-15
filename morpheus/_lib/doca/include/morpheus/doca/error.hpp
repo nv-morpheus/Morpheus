@@ -17,8 +17,9 @@
 
 #pragma once
 
+#include "morpheus/utilities/string_util.hpp"
+
 #include <doca_error.h>
-#include <morpheus/utilities/string_util.hpp>
 
 #include <stdexcept>
 

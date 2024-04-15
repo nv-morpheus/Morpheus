@@ -17,35 +17,41 @@
 
 #pragma once
 
-#include "doca_context.hpp"
-#include "doca_mem.hpp"
+#include "morpheus/doca/common.hpp"
+#include "morpheus/doca/error.hpp"
+#include "morpheus/doca/rte_context.hpp"
 
 #include <doca_eth_rxq.h>
+#include <doca_flow.h>
 #include <doca_gpunetio.h>
+#include <doca_log.h>
+
+#define GPU_PAGE_SIZE (1UL << 16)
 
 namespace morpheus::doca {
 
 /**
- * @brief Creates and manages the lifetime of a GPUNetIO Receive Queue.
- *
- * A Receive Queue is used to buffer packets received from a GPUNetIO Pipe.
+ * @brief Manages the lifetime of DOCA as it relates to GPUNetIO
  */
-struct DocaRxQueue
+struct DocaContext
 {
   private:
-    std::shared_ptr<DocaContext> m_context;
-    doca_gpu_eth_rxq* m_rxq_info_gpu;
-    doca_eth_rxq* m_rxq_info_cpu;
-    doca_mmap* m_packet_mmap;
-    doca_ctx* m_doca_ctx;
-    std::unique_ptr<DocaMem<void>> m_packet_memory;
+    doca_gpu* m_gpu;
+    doca_dev* m_dev;
+    doca_flow_port* m_flow_port;
+    uint16_t m_nic_port;
+    uint32_t m_max_queue_count;
+    std::unique_ptr<RTEContext> m_rte_context;
+    doca_log_backend* sdk_log;
 
   public:
-    DocaRxQueue(std::shared_ptr<DocaContext> context);
-    ~DocaRxQueue();
+    DocaContext(std::string nic_addr, std::string gpu_addr);
+    ~DocaContext();
 
-    doca_gpu_eth_rxq* rxq_info_gpu();
-    doca_eth_rxq* rxq_info_cpu();
+    doca_gpu* gpu();
+    doca_dev* dev();
+    uint16_t nic_port();
+    doca_flow_port* flow_port();
 };
 
 }  // namespace morpheus::doca

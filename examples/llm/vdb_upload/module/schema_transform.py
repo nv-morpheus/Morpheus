@@ -96,12 +96,12 @@ def _schema_transform(builder: mrc.Builder):
 
         raise
 
-    schema_config = validated_config.schema_transform_config
+    schema_config: dict[str, dict[str, Any]] = validated_config.schema_transform_config
 
     source_column_info = []
     preserve_columns = []
 
-    for col_name, col_config in schema_config.items():
+    for col_name, col_config in schema_config.items():  # pylint: disable=no-member
         op_type = col_config.get("op_type")
         if (op_type == "rename"):
             # Handling renamed columns

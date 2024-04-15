@@ -17,16 +17,22 @@
 
 #pragma once
 
-#include <SimpleAmqpClient/SimpleAmqpClient.h>  // for AmqpClient::Channel::ptr_t
-#include <cudf/io/types.hpp>                    // for cudf::io::table_with_metadata
-#include <morpheus/messages/meta.hpp>           // for MessageMeta
-#include <mrc/segment/builder.hpp>              // for Segment Builder
-#include <mrc/segment/object.hpp>               // for Segment Object
-#include <pymrc/node.hpp>                       // for mrc::pymrc::PythonSource
+#include <SimpleAmqpClient/Channel.h>
+#include <cudf/io/types.hpp>           // for cudf::io::table_with_metadata
+#include <morpheus/messages/meta.hpp>  // for MessageMeta
+#include <mrc/segment/builder.hpp>     // for Segment Builder
+#include <mrc/segment/object.hpp>      // for Segment Object
+#include <pymrc/node.hpp>              // for mrc::pymrc::PythonSource
+#include <rxcpp/rx.hpp>
 
 #include <chrono>  // for chrono::milliseconds
 #include <memory>  // for shared_ptr
 #include <string>
+#include <string_view>
+#include <thread>
+
+// IWYU pragma: no_include "morpheus/objects/data_table.hpp"
+// IWYU pragma: no_include <boost/fiber/context.hpp>
 
 namespace morpheus_rabbit {
 

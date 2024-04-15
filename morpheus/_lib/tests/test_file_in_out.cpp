@@ -32,7 +32,6 @@
 #include <filesystem>
 #include <fstream>  // IWYU pragma: keep
 #include <memory>   // for shared_ptr
-#include <sstream>  // for stringstream
 #include <string>
 #include <utility>  // for move
 #include <vector>

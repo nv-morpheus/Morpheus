@@ -21,24 +21,16 @@
 #include "morpheus/objects/file_types.hpp"
 
 #include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/sink_properties.hpp>
-#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
-#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
 #include <fstream>
 #include <functional>  // for function
-#include <map>
 #include <memory>
 #include <string>
 #include <thread>
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/

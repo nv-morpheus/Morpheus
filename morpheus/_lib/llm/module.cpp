@@ -32,30 +32,28 @@
 #include "morpheus/llm/llm_task_handler.hpp"
 #include "morpheus/messages/control.hpp"    // IWYU pragma: keep
 #include "morpheus/pybind11/input_map.hpp"  // IWYU pragma: keep
-#include "morpheus/pybind11/json.hpp"       // IWYU pragma: keep
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/json_types.hpp"
 #include "morpheus/version.hpp"
 
+#include <mrc/segment/object.hpp>  // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>
-#include <nlohmann/detail/exceptions.hpp>
-#include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
-#include <pybind11/detail/common.h>
-#include <pybind11/functional.h>  // IWYU pragma: keep
-#include <pybind11/pybind11.h>    // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
-#include <pybind11/pytypes.h>     // for dict, sequence
-#include <pybind11/stl.h>         // IWYU pragma: keep
-#include <pymrc/coro.hpp>         // IWYU pragma: keep
-#include <pymrc/utils.hpp>        // for pymrc::import
+#include <nlohmann/detail/exceptions.hpp>  // for nlohmann::detail::out_of_range
+#include <pybind11/functional.h>           // IWYU pragma: keep
+#include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
+#include <pybind11/stl.h>       // IWYU pragma: keep
+#include <pymrc/coro.hpp>       // IWYU pragma: keep
+#include <pymrc/utilities/json_values.hpp>  // for JSONValues
+#include <pymrc/utils.hpp>                  // for pymrc::import
 
 #include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
+// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
+// IWYU pragma: no_include <pybind11/attr.h>
+// IWYU pragma: no_include <pybind11/pytypes.h>
 
 namespace morpheus::llm {
 namespace py = pybind11;
@@ -199,14 +197,10 @@ PYBIND11_MODULE(llm, _module)
         .def("get_input",
              py::overload_cast<const std::string&>(&LLMContext::get_input, py::const_),
              py::arg("node_name"))
-        .def("get_inputs",
-             [](LLMContext& self) {
-                 // Convert the return value
-                 return mrc::pymrc::cast_from_json(self.get_inputs()).cast<py::dict>();
-             })
-        .def("set_output", py::overload_cast<nlohmann::json>(&LLMContext::set_output), py::arg("outputs"))
+        .def("get_inputs", &LLMContext::get_inputs)
+        .def("set_output", py::overload_cast<mrc::pymrc::JSONValues&&>(&LLMContext::set_output), py::arg("outputs"))
         .def("set_output",
-             py::overload_cast<const std::string&, nlohmann::json>(&LLMContext::set_output),
+             py::overload_cast<const std::string&, mrc::pymrc::JSONValues&&>(&LLMContext::set_output),
              py::arg("output_name"),
              py::arg("output"))
         .def("push", &LLMContext::push, py::arg("name"), py::arg("inputs"));
@@ -301,8 +295,8 @@ PYBIND11_MODULE(llm, _module)
         .def("get_input_names",
              &LLMTaskHandler::get_input_names,
              R"pbdoc(
-                Get the input names for the task handler. 
-                
+                Get the input names for the task handler.
+
                 Returns
                 -------
                 list[str]
