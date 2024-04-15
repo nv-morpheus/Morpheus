@@ -16,7 +16,6 @@ import logging
 import typing
 from abc import abstractmethod
 from functools import partial
-from functools import reduce
 
 import cupy as cp
 import mrc
