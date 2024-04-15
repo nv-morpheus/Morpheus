@@ -167,7 +167,7 @@ static void reduce_outputs(std::shared_ptr<ControlMessage> const& message, Tenso
             host_seq_ids,
             0,
             reduced_shape);
-            
+
         output_tensor.swap(Tensor::create(std::move(reduced_buffer), output_tensor.dtype(), reduced_shape, stride, 0));
     }
 }
