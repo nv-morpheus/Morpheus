@@ -27,8 +27,8 @@ import cudf
 import morpheus._lib.stages as _stages
 from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
-from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import MorpheusRelativePath
+from morpheus.cli.utils import get_package_relative_file
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
