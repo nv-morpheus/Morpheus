@@ -37,20 +37,6 @@ SHELL ["/bin/bash",  "-c"]
 # Create conda environment
 COPY ./dependencies.yaml /tmp/conda/
 
-ENV MORPHEUS_SUPPORT_DOCA=ON
-
-COPY ./docker/optional_deps/doca.sh /tmp/doca/
-
-RUN apt update && \
-    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
-    apt install --no-install-recommends -y \
-        build-essential \
-        libtool \
-        automake && \
-    apt clean && \
-    /tmp/doca/doca.sh /tmp/doca && \
-    rm -rf /tmp/doca
-
 # ============ build ==================
 FROM base as build
 
@@ -68,6 +54,20 @@ RUN rapids-dependency-file-generator \
     sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
     conda clean -afy && \
     rm -rf /tmp/conda
+
+ENV MORPHEUS_SUPPORT_DOCA=ON
+
+COPY ./docker/optional_deps/doca.sh /tmp/doca/
+
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt install --no-install-recommends -y \
+        build-essential \
+        libtool \
+        automake && \
+    apt clean && \
+    /tmp/doca/doca.sh /tmp/doca && \
+    rm -rf /tmp/doca
 
 # ============ test ==================
 FROM base as test
