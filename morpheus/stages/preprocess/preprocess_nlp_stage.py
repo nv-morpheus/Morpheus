@@ -35,7 +35,7 @@ from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiInferenceNLPMessage
 from morpheus.messages import MultiMessage
-from morpheus.messages import TensorMemory as CppTensorMemory
+from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 from morpheus.utils.cudf_subword_helper import tokenize_text_series
 

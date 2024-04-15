@@ -285,10 +285,10 @@ class InferenceStage(MultiMessageStage):
                 if (isinstance(_message, ControlMessage)):
                     _df = cudf.DataFrame(output_message.get_meta())
                     if (_df is not None and not _df.empty):
-                        embeddings = output_message.get_probs_tensor()
-                        _df["embedding"] = embeddings.tolist()
                         _message_meta = CppMessageMeta(df=_df)
                         _message.payload(_message_meta)
+                        _message.tensors().set_tensor("probs", output_message.get_probs_tensor())
+                        print(_df)
                     output_message = _message
 
                 return output_message
