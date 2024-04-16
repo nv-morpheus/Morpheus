@@ -55,6 +55,7 @@ python examples/doca/vdb_realtime/vdb.py --nic_addr=ca:00.0 --gpu_addr=17:00.0
 On another machine, run the following command:
 
 ```bash
+pip install scapy
 sudo python3 examples/doca/vdb_realtime/sender/send.py
 ```
 
