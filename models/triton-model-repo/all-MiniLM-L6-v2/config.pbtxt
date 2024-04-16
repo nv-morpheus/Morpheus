@@ -40,6 +40,14 @@ optimization {
         key: "precision_mode"
         value: "FP16"
       }
+      parameters {
+        key: "trt_engine_cache_enable"
+        value: "true"
+      }
+      parameters {
+        key: "trt_engine_cache_path"
+        value: "/models/triton-model-repo/.cache/triton"
+      }
     }
   }
 }

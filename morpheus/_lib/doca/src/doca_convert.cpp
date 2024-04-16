@@ -135,8 +135,9 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
 #if 1
     // LOG(WARNING) << "New RawPacketMessage with " << packet_count << " packets from queue id " << queue_idx;
     // gather header data
-    auto header_col =
-        doca::gather_header(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
+    auto header_col = cudf::make_column_from_scalar(cudf::string_scalar("The header"), packet_count);
+    // auto header_col =
+    //     doca::gather_header(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
 
     // gather payload data
     auto payload_col =
