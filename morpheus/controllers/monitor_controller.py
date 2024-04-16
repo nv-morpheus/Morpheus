@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import os
 import typing
 from functools import reduce
 
@@ -99,7 +100,8 @@ class MonitorController:
         """
 
         if self._enabled is None:
-            self._enabled = logger.isEnabledFor(self._log_level)
+            self._enabled = (os.environ.get('MORPHEUS_MONITOR_ALWAYS_ENABLED') is not None
+                             or logger.isEnabledFor(self._log_level))
 
         return self._enabled
 
