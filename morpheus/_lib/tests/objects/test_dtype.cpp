@@ -17,10 +17,11 @@
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 
-#include <gtest/gtest.h>
-#include <stdexcept>
+#include "morpheus/objects/dtype.hpp"  // for DType
 
-#include "morpheus/objects/dtype.hpp"   // for DType
+#include <gtest/gtest.h>
+
+#include <stdexcept>
 
 using namespace morpheus;
 using namespace morpheus::test;
@@ -85,8 +86,8 @@ TEST_F(TestDType, FromNumpyValidStr)
     ASSERT_EQ(dtype.type_str(), "<f8");
 }
 
-TEST_F(TestDType, FromNumpyInValidStr) {
-
+TEST_F(TestDType, FromNumpyInValidStr)
+{
     // invalid byte order char
     EXPECT_THROW(DType::from_numpy("{i2"), std::invalid_argument);
 
