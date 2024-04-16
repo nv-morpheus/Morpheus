@@ -314,9 +314,9 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         # From the schema, this is the list of columns we need, excluding any auto_id columns
         column_names = [field.name for field in self._fields if not field.auto_id]
 
-        # Note: dataframe columns has to be in the order of collection schema fields.s
+        # Note: dataframe columns has to be in the order of collection schema fields.
         result = self._collection.insert(data=df[column_names], **kwargs)
-        # self._collection.flush()
+        self._collection.flush()
 
         return self._insert_result_to_dict(result=result)
 

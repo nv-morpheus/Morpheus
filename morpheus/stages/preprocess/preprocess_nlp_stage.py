@@ -138,7 +138,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
         return "preprocess-nlp"
 
     def supports_cpp_node(self):
-        return False
+        return True
 
     @staticmethod
     def pre_process_batch(message: typing.Union[MultiMessage, ControlMessage],
@@ -226,10 +226,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
                               column: str) -> MultiInferenceNLPMessage:
         # Existing logic for MultiMessage
         
-        # print(message.get_meta_column_names())
-        # print(message.get_meta())
         text_ser = cudf.Series(message.get_meta(column))
-        # print(text_ser)
         tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
                                          do_lower_case=do_lower_case,
                                          text_ser=text_ser,
