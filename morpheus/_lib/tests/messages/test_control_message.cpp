@@ -33,6 +33,8 @@
 #include <stdexcept>  // for runtime_error
 #include <string>     // for operator<=>, string, char_traits, basic_string
 #include <vector>     // for vector
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h> // IWYU pragma: keep
 
 using namespace morpheus;
 using namespace morpheus::test;
@@ -40,6 +42,11 @@ using namespace morpheus::test;
 using clock_type_t = std::chrono::system_clock;
 
 using TestControlMessage = morpheus::test::TestMessages;  // NOLINT(readability-identifier-naming)
+
+namespace py = pybind11;
+using namespace pybind11::literals;
+using namespace std::string_literals;
+
 
 TEST_F(TestControlMessage, InitializationTest)
 {
@@ -333,4 +340,30 @@ TEST_F(TestControlMessage, GetTensorMemoryWhenNoneSet)
 
     // Verify that the retrieved tensor memory is nullptr
     EXPECT_EQ(nullptr, retrievedTensorMemory);
+}
+
+TEST_F(TestControlMessage, SetAndGetPyObject)
+{
+    auto msg = ControlMessage();
+
+    std::array<std::string, 3> alphabet = {"a", "b", "c"};
+    auto py_dict = py::dict("this"_a     = py::dict("is"_a = "a test"s),
+                    "alphabet"_a = py::cast(alphabet),
+                    "ncc"_a      = 1701,
+                    "cost"_a     = 47.47);
+
+    // <path, expected_result>
+    std::vector<std::pair<std::string, py::object>> tests = {{"", py_dict},
+                                                             {"this", py::dict("is"_a = "a test"s)},
+                                                             {"this/is", py::str("a test"s)},
+                                                             {"alphabet", py_dict["alphabet"]},
+                                                             {"ncc", py::int_(1701)},
+                                                             {"cost", py::float_(47.47)}};
+    
+    for (auto& [path, expected_object] : tests)
+    {
+        msg.set_py_object(path, expected_object);
+        auto object = msg.get_py_object(path);
+        EXPECT_TRUE(object.equal(expected_object));
+    }
 }

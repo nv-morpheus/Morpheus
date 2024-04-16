@@ -156,6 +156,16 @@ nlohmann::json ControlMessage::remove_task(const std::string& task_type)
     throw std::runtime_error("No tasks of type " + task_type + " found");
 }
 
+void ControlMessage::set_py_object(const std::string& path, const pybind11::object& value)
+{
+    m_py_objects = std::move(m_py_objects.set_value(path, value));
+}
+
+pybind11::object ControlMessage::get_py_object(const std::string& path) const {
+    auto abs_path = "/" + path;
+    return m_py_objects.get_python(abs_path);
+}
+
 void ControlMessage::set_timestamp(const std::string& key, time_point_t timestamp_ns)
 {
     // Insert or update the timestamp in the map

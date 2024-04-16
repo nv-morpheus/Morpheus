@@ -21,6 +21,7 @@
 
 #include <nlohmann/json.hpp>   // for json, basic_json
 #include <pybind11/pytypes.h>  // for object, dict, list, none
+#include <pymrc/utilities/json_values.hpp>
 
 #include <chrono>    // for system_clock, time_point
 #include <map>       // for map
@@ -329,6 +330,20 @@ class ControlMessage
     void task_type(ControlMessageType task_type);
 
     /**
+     * @brief Set a Python object at a specific path
+     * @param path the path in the JSON object where the value should be set
+     * @param value the Python object to set
+     */
+    void set_py_object(const std::string& path, const pybind11::object& value);
+
+    /**
+     * @brief Get the Python object at a specific path
+     * @param path Path to the specified object
+     * @return The Python representation of the object at the specified path
+     */
+    pybind11::object get_py_object(const std::string& path) const;
+
+    /**
      * @brief Sets a timestamp for a specific key.
      *
      * This method stores a timestamp associated with a unique identifier,
@@ -374,6 +389,7 @@ class ControlMessage
 
     nlohmann::json m_tasks{};
     nlohmann::json m_config{};
+    mrc::pymrc::JSONValues m_py_objects;
 
     std::map<std::string, time_point_t> m_timestamps{};
 };
