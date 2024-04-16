@@ -86,7 +86,7 @@ TEST_F(TestDType, FromNumpyValidStr)
     ASSERT_EQ(dtype.type_str(), "<f8");
 }
 
-TEST_F(TestDType, FromNumpyInValidStr)
+TEST_F(TestDType, FromNumpyInvalidStr)
 {
     // invalid byte order char
     EXPECT_THROW(DType::from_numpy("{i2"), std::invalid_argument);
