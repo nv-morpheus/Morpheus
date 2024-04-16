@@ -25,7 +25,6 @@ import numpy as np
 import cudf
 
 import morpheus._lib.stages as _stages
-from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_package_relative_file
@@ -36,6 +35,7 @@ from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiInferenceNLPMessage
 from morpheus.messages import MultiMessage
+from morpheus.messages import TensorMemory
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 from morpheus.utils.cudf_subword_helper import tokenize_text_series
 
@@ -205,12 +205,12 @@ class PreprocessNLPStage(PreprocessBaseStage):
         del text_series
 
         message.tensors(
-            CppTensorMemory(count=tokenized.input_ids.shape[0],
-                            tensors={
-                                "input_ids": tokenized.input_ids,
-                                "input_mask": tokenized.input_mask,
-                                "seq_ids": tokenized.segment_ids
-                            }))
+            TensorMemory(count=tokenized.input_ids.shape[0],
+                         tensors={
+                             "input_ids": tokenized.input_ids,
+                             "input_mask": tokenized.input_mask,
+                             "seq_ids": tokenized.segment_ids
+                         }))
 
         message.set_metadata("inference_memory_params", {"inference_type": "nlp"})
         return message
