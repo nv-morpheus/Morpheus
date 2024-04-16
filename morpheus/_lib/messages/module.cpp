@@ -427,7 +427,9 @@ PYBIND11_MODULE(messages, _module)
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
         .def(
-            "task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"));
+            "task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"))
+        .def("set_py_object", &ControlMessage::set_py_object, py::arg("path"), py::arg("value"))
+        .def("get_py_object", &ControlMessage::get_py_object, py::arg("path"));
 
     py::class_<LoaderRegistry, std::shared_ptr<LoaderRegistry>>(_module, "DataLoaderRegistry")
         .def_static("contains", &LoaderRegistry::contains, py::arg("name"))
