@@ -206,7 +206,7 @@ DType DType::from_cudf(cudf::type_id tid)
     case cudf::type_id::EMPTY:
     case cudf::type_id::NUM_TYPE_IDS:
     default:
-        throw std::runtime_error("Not supported");
+        throw std::invalid_argument("Not supported");
     }
 }
 
@@ -300,7 +300,7 @@ DType DType::from_triton(const std::string& type_str)
     }
     else
     {
-        throw std::runtime_error("Not supported");
+        throw std::invalid_argument("Not supported");
     }
 }
 
