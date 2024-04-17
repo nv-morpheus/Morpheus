@@ -85,9 +85,9 @@ TableInfo MessageMeta::get_info(const std::vector<std::string>& column_names) co
 }
 
 void MessageMeta::set_data(const std::string& col_name, TensorObject tensor)
-{   
-    // This causes a segfault in copy ctor of TensorObject, when the shared_ptr<MemoryDescriptor> increases the ref count
-    // this->set_data({col_name}, {tensor});
+{
+    // This causes a segfault in copy ctor of TensorObject, when the shared_ptr<MemoryDescriptor> increases the ref
+    // count this->set_data({col_name}, {tensor});
     this->set_data({col_name}, std::vector<TensorObject>{tensor});
 }
 
@@ -123,7 +123,7 @@ void MessageMeta::set_data(const std::vector<std::string>& column_names, const s
         // Dont use cv.data<>() here since that does not account for the size of each element
         auto data_start = const_cast<uint8_t*>(cv.head<uint8_t>()) + cv.offset() * item_size;
         if (row_stride == 1)
-        {   
+        {
             // column major just use cudaMemcpy
             MRC_CHECK_CUDA(cudaMemcpy(data_start, tensors[i].data(), tensors[i].bytes(), cudaMemcpyDeviceToDevice));
         }
