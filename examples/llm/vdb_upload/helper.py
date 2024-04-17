@@ -106,6 +106,7 @@ def setup_filesystem_source(pipe: Pipeline, config: Config, source_name: str, fs
 
     return file_pipe
 
+
 def setup_doca_source(pipe: Pipeline, config: Config, source_name: str, stage_config: typing.Dict[str, typing.Any]):
     """
     """
@@ -113,7 +114,11 @@ def setup_doca_source(pipe: Pipeline, config: Config, source_name: str, stage_co
     from morpheus.stages.doca.doca_source_stage import DocaSourceStage
     from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
-    source_stage = pipe.add_stage(DocaSourceStage(config, stage_config.pop('nic_addr'), stage_config.pop('gpu_addr'), stage_config.pop('traffic_type')))
+    source_stage = pipe.add_stage(
+        DocaSourceStage(config,
+                        stage_config.pop('nic_addr'),
+                        stage_config.pop('gpu_addr'),
+                        stage_config.pop('traffic_type')))
     convert_stage = pipe.add_stage(DocaConvertStage(config, False))
     deserialize_stage = pipe.add_stage(DeserializeStage(config))
 
@@ -121,6 +126,7 @@ def setup_doca_source(pipe: Pipeline, config: Config, source_name: str, stage_co
     pipe.add_edge(convert_stage, deserialize_stage)
 
     return deserialize_stage
+
 
 def setup_custom_source(pipe: Pipeline, config: Config, source_name: str, custom_config: typing.Dict[str, typing.Any]):
     """

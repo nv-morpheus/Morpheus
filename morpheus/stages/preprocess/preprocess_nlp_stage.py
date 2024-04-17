@@ -225,7 +225,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
                               add_special_tokens: bool,
                               column: str) -> MultiInferenceNLPMessage:
         # Existing logic for MultiMessage
-        
+
         text_ser = cudf.Series(message.get_meta(column))
         tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
                                          do_lower_case=do_lower_case,
