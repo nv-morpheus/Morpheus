@@ -115,7 +115,6 @@ void MessageMeta::set_data(const std::vector<std::string>& column_names, const s
         const auto tensor_type    = DType(tensors[i].dtype());
         const auto tensor_type_id = tensor_type.cudf_type_id();
         const auto row_stride     = tensors[i].stride(0);
-        
         CHECK(tensors[i].count() == cv.size() &&
               (table_type_id == tensor_type_id ||
                (table_type_id == cudf::type_id::BOOL8 && tensor_type_id == cudf::type_id::UINT8)));
