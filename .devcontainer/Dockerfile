@@ -13,6 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM rapidsai/devcontainers:23.10-cpp-mambaforge-ubuntu22.04 AS base
+FROM rapidsai/devcontainers:23.12-cpp-mambaforge-ubuntu22.04 AS base
 
 ENV PATH="${PATH}:/workspaces/morpheus/.devcontainer/bin"
