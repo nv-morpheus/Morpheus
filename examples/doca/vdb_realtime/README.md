@@ -15,7 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# DOCA Sensitive Information Detection Example
+# DOCA real-time embeddings creation
+
+In this example, the DOCA stages are used to receive packets from the network and provide packets' information to Triton server in order to create embeddings on those packets. Embeddings are then stored in the Milvus database which can be used to query an LLM about packets' content.
 
 ## Run Milvus
 
@@ -52,6 +54,7 @@ python examples/doca/vdb_realtime/vdb.py --nic_addr=ca:00.0 --gpu_addr=17:00.0
 
 ## Send data to the NIC to be indexed
 
+As the subject of the experiment we created an Ethernet packet generator taking packets' payload from DOCA SDK and DOCA GPUNetIO documentation.
 On another machine, run the following command to send packets:
 
 ```bash
