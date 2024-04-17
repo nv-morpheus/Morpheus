@@ -186,8 +186,6 @@ TEST_F(TestDType, FromTritonInvalidStr)
     EXPECT_THROW(DType::from_triton("zzzzz"), std::invalid_argument);
     EXPECT_THROW(DType::from_triton("123456"), std::invalid_argument);
     EXPECT_THROW(DType::from_triton("*&()#%"), std::invalid_argument);
-
-    // empty string
     EXPECT_THROW(DType::from_triton(""), std::invalid_argument);
 }
 
