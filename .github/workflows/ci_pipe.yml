@@ -183,6 +183,7 @@ jobs:
         with:
           lfs: false
           path: 'morpheus'
+          # Fetch tags so that documentation builds for releases will report the version number correctly
           fetch-tags: true
           submodules: 'recursive'
 
