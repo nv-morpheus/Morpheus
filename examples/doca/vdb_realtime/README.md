@@ -52,12 +52,15 @@ python examples/doca/vdb_realtime/vdb.py --nic_addr=ca:00.0 --gpu_addr=17:00.0
 
 ## Send data to the NIC to be indexed
 
-On another machine, run the following command:
+On another machine, run the following command to send packets:
 
 ```bash
 pip install scapy
 sudo python3 examples/doca/vdb_realtime/sender/send.py
 ```
+
+Please modify inside the script all the 
+
 
 On the original machine, wait for the "Upload rate" to match the "DOCA GPUNetIO Source rate" and then press `Ctrl+C` to stop the script. The output should look like the following
 

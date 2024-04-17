@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include "cuda.h"
+
 #include "morpheus/doca/common.hpp"
 #include "morpheus/doca/doca_context.hpp"
 #include "morpheus/doca/doca_kernels.hpp"
@@ -88,7 +90,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         CUdevice cuDevice;
         CUcontext cuContext;
 
-        cudaSetDevice(0); //Need to rely on GPU 0
+        cudaSetDevice(0);  // Need to rely on GPU 0
         cudaFree(0);
         cuDeviceGet(&cuDevice, 0);
         cuCtxCreate(&cuContext, CU_CTX_SCHED_SPIN | CU_CTX_MAP_HOST, cuDevice);
@@ -98,7 +100,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         int sem_idx          = 0;
         cudaStream_t rstream = nullptr;
         int thread_idx = mrc::runnable::Context::get_runtime_context().rank();
-
 
         // Add per queue
         auto pkt_addr_unique = std::make_unique<morpheus::doca::DocaMem<uintptr_t>>(

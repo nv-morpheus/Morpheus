@@ -27,7 +27,6 @@
 #include <cudf/io/types.hpp>
 #include <cudf/scalar/scalar.hpp>
 #include <cudf/table/table.hpp>
-#include <cudf/types.hpp>
 #include <generic/rte_byteorder.h>
 #include <glog/logging.h>
 #include <mrc/segment/builder.hpp>
@@ -38,7 +37,6 @@
 #include <stdio.h>
 #include <time.h>
 
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -201,46 +199,6 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     auto meta = MessageMeta::create_from_cpp(std::move(final_table), 0);
 #endif
 
-#if 0
-    // gather header data
-    auto header_col = cudf::make_column_from_scalar(cudf::string_scalar("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), packet_count);
-    uint8_t * header_addr      = header_col->mutable_view().data<uint8_t>();
-    printf("header_col.size() = %d ptr %lx\n", header_col->size(), header_addr);
-    doca::gather_header_scalar(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, header_addr, m_stream_cpp);
-
-    auto payload_col = cudf::make_column_from_scalar(cudf::string_scalar("this is my test string"), packet_count);
-    uint8_t * payload_addr      = payload_col->mutable_view().data<uint8_t>();
-    printf("payload_col.size() = %d ptr %lx\n", payload_col->size(), payload_addr);
-    doca::gather_payload_scalar(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, payload_addr, m_stream_cpp);
-
-    // // gather payload data
-    // auto payload_col =
-    //     doca::gather_payload(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
-
-    cudaStreamSynchronize(m_stream_cpp);
-
-    std::vector<std::unique_ptr<cudf::column>> gathered_columns;
-    gathered_columns.emplace_back(std::move(header_col));
-    gathered_columns.emplace_back(std::move(payload_col));
-
-    // After this point buffers can be reused -> copies actual packets' data
-    auto gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
-
-    // const auto gather_table_meta = now_ns();
-
-    auto gathered_metadata = cudf::io::table_metadata();
-    gathered_metadata.schema_info.emplace_back("header");
-    gathered_metadata.schema_info.emplace_back("data");
-
-    auto gathered_table_w_metadata =
-        cudf::io::table_with_metadata{std::move(gathered_table), std::move(gathered_metadata)};
-
-    // const auto create_message_cpp = now_ns();
-    auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
-#endif
-
-
-    // gathered_table->release();
     // const auto gather_meta_stop = now_ns();
 
     cudaStreamSynchronize(m_stream_cpp);

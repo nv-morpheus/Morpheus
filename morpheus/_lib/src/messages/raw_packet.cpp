@@ -19,7 +19,6 @@
 
 #include <pybind11/pytypes.h>
 
-#include <cstdint>  // for uint8_t
 #include <memory>
 // We're already including pybind11.h and don't need to include cast.
 // For some reason IWYU also thinks we need array for the `isinsance` call.
