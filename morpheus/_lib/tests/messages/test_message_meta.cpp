@@ -54,7 +54,7 @@ TEST_F(TestMessageMeta, SetdataWithColumnName)
 
     auto meta  = MessageMeta::create_from_cpp(load_table_from_file(input_file));
 
-    std::vector<int64_t> packed_data_host{4, 5, 6};
+    std::vector<int64_t> packed_data_host{9, 8, 7, 6, 5, 4, 3, 2, 1};
     int mess_count = packed_data_host.size();
     int cols_size = 1;
     auto packed_data = std::make_shared<rmm::device_buffer>(packed_data_host.data(), mess_count * cols_size * sizeof(int64_t), rmm::cuda_stream_per_thread);
