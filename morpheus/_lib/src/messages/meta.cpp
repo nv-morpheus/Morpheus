@@ -27,6 +27,8 @@
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyKind
 #include <cudf/column/column_view.hpp>  // for column_view
+#include <cudf/concatenate.hpp>
+#include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/types.hpp>  // for type_id, data_type, size_type
 #include <glog/logging.h>
@@ -83,8 +85,10 @@ TableInfo MessageMeta::get_info(const std::vector<std::string>& column_names) co
 }
 
 void MessageMeta::set_data(const std::string& col_name, TensorObject tensor)
-{
-    this->set_data({col_name}, {tensor});
+{   
+    // This causes a segfault in copy ctor of TensorObject, when the shared_ptr<MemoryDescriptor> increases the ref count
+    // this->set_data({col_name}, {tensor});
+    this->set_data({col_name}, std::vector<TensorObject>{tensor});
 }
 
 void MessageMeta::set_data(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors)
@@ -115,14 +119,12 @@ void MessageMeta::set_data(const std::vector<std::string>& column_names, const s
         CHECK(tensors[i].count() == cv.size() &&
               (table_type_id == tensor_type_id ||
                (table_type_id == cudf::type_id::BOOL8 && tensor_type_id == cudf::type_id::UINT8)));
-
         const auto item_size = tensors[i].dtype().item_size();
 
         // Dont use cv.data<>() here since that does not account for the size of each element
         auto data_start = const_cast<uint8_t*>(cv.head<uint8_t>()) + cv.offset() * item_size;
-
         if (row_stride == 1)
-        {
+        {   
             // column major just use cudaMemcpy
             MRC_CHECK_CUDA(cudaMemcpy(data_start, tensors[i].data(), tensors[i].bytes(), cudaMemcpyDeviceToDevice));
         }
@@ -191,6 +193,41 @@ bool MessageMeta::has_sliceable_index() const
 {
     const auto table = get_info();
     return table.has_sliceable_index();
+}
+
+std::shared_ptr<MessageMeta> MessageMeta::copy_ranges(const std::vector<RangeType>& ranges) const
+{
+    // copy ranges into a sequntial list of values
+    // https://github.com/rapidsai/cudf/issues/11223
+    std::vector<TensorIndex> cudf_ranges;
+    for (const auto& p : ranges)
+    {
+        // Append the message offset to the range here
+        cudf_ranges.push_back(p.first);
+        cudf_ranges.push_back(p.second);
+    }
+    auto table_info   = this->get_info();
+    auto column_names = table_info.get_column_names();
+    auto metadata     = cudf::io::table_metadata{};
+
+    metadata.schema_info.reserve(column_names.size() + 1);
+    metadata.schema_info.emplace_back("");
+
+    for (auto column_name : column_names)
+    {
+        metadata.schema_info.emplace_back(column_name);
+    }
+
+    auto table_view                     = table_info.get_view();
+    auto sliced_views                   = cudf::slice(table_view, cudf_ranges);
+    cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views), std::move(metadata)};
+
+    return MessageMeta::create_from_cpp(std::move(table), 1);
+}
+
+std::shared_ptr<MessageMeta> MessageMeta::get_slice(TensorIndex start, TensorIndex stop) const
+{
+    return this->copy_ranges({{start, stop}});
 }
 
 std::optional<std::string> MessageMeta::ensure_sliceable_index()

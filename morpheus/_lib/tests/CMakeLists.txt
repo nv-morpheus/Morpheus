@@ -105,6 +105,7 @@ add_morpheus_test(
     messages/test_control_message.cpp
     messages/test_dev_doc_ex3.cpp
     messages/test_sliced_message_meta.cpp
+    messages/test_message_meta.cpp
 )
 
 add_morpheus_test(

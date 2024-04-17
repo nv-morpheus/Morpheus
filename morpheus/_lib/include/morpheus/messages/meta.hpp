@@ -123,6 +123,23 @@ class MessageMeta
     virtual std::optional<std::string> ensure_sliceable_index();
 
     /**
+     * @brief Creates a deep copy of DataFrame with the specified ranges.
+     *
+     * @param ranges the tensor index ranges to copy
+     * @return std::shared_ptr<MessageMeta> the deep copy of the specified ranges
+     */
+    virtual std::shared_ptr<MessageMeta> copy_ranges(const std::vector<RangeType>& ranges) const;
+
+    /**
+     * @brief Get a slice of the underlying DataFrame by creating a deep copy
+     *
+     * @param start the tensor index of the start of the copy
+     * @param stop the tensor index of the end of the copy
+     * @return std::shared_ptr<MessageMeta> the deep copy of the speicifed slice
+     */
+    virtual std::shared_ptr<MessageMeta> get_slice(TensorIndex start, TensorIndex stop) const;
+
+    /**
      * @brief Create MessageMeta cpp object from a python object
      *
      * @param data_table
