@@ -589,7 +589,7 @@ class MilvusVectorDBService(VectorDBService):
                  password: str = "",
                  db_name: str = "",
                  token: str = "",
-                 **kwargs: dict[str, typing.Any]):
+                 **kwargs):
 
         self._client = MilvusClient(uri=uri, user=user, password=password, db_name=db_name, token=token, **kwargs)
 
