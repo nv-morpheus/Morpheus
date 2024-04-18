@@ -199,13 +199,15 @@ DocaContext::~DocaContext()
 {
     doca_flow_port_stop(m_flow_port);
     doca_flow_destroy();
-
-    if (m_gpu != nullptr)
-    {
+    if (m_gpu != nullptr) {
         auto doca_ret = doca_gpu_destroy(m_gpu);
         if (doca_ret != DOCA_SUCCESS)
             LOG(WARNING) << "DOCA cleanup failed (" << doca_ret << ")" << std::endl;
     }
+
+    int ret = rte_eth_dev_stop(m_nic_port);
+	if (ret != 0)
+		LOG(ERROR) << "Couldn't stop DPDK port " << m_nic_port << "err " << ret;
 }
 
 doca_gpu* DocaContext::gpu()
