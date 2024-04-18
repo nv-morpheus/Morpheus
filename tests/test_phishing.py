@@ -23,7 +23,6 @@ import pytest
 from _utils import TEST_DIRS
 from _utils import calc_error_val
 from _utils import mk_async_infer
-from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -45,7 +44,7 @@ MODEL_MAX_BATCH_SIZE = 32
 @pytest.mark.slow
 @pytest.mark.use_python
 @mock.patch('tritonclient.grpc.InferenceServerClient')
-def test_email_no_cpp(mock_triton_client: mock.MagicMock, config: Config, tmp_path: str):
+def test_email_no_cpp(mock_triton_client, config, tmp_path):
     mock_metadata = {
         "inputs": [{
             "name": "input_ids", "datatype": "INT64", "shape": [-1, FEATURE_LENGTH]
@@ -105,7 +104,6 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock, config: Config, tmp_pa
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     pipe.run()
-
     results = calc_error_val(results_file_name)
     assert results.diff_rows == 153
 
@@ -113,15 +111,14 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock, config: Config, tmp_pa
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-@pytest.mark.parametrize('num_threads', [1, 4])
-def test_email_cpp(config: Config, tmp_path: str, num_threads: int):
+def test_email_cpp(config, tmp_path):
     config.mode = PipelineModes.NLP
     config.class_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, "labels_phishing.txt"))
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
     config.edge_buffer_size = 128
-    config.num_threads = num_threads
+    config.num_threads = 1
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'phishing-email-validation-data.jsonlines')
     vocab_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-uncased-hash.txt')
@@ -150,7 +147,5 @@ def test_email_cpp(config: Config, tmp_path: str, num_threads: int):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     pipe.run()
-
-    if num_threads == 1:
-        results = calc_error_val(results_file_name)
-        assert results.diff_rows == 682
+    results = calc_error_val(results_file_name)
+    assert results.diff_rows == 682

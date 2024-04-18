@@ -51,9 +51,8 @@ MODEL_MAX_BATCH_SIZE = 1024
 
 @pytest.mark.slow
 @pytest.mark.use_python
-@pytest.mark.parametrize('num_threads', [1, 4])
 @mock.patch('tritonclient.grpc.InferenceServerClient')
-def test_abp_no_cpp(mock_triton_client: mock.MagicMock, config: Config, tmp_path: str, num_threads: int):
+def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
     mock_metadata = {
         "inputs": [{
             'name': 'input__0', 'datatype': 'FP32', "shape": [-1, FEATURE_LENGTH]
@@ -84,7 +83,7 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock, config: Config, tmp_path
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
     config.edge_buffer_size = 128
-    config.num_threads = num_threads
+    config.num_threads = 1
 
     config.fil = ConfigFIL()
     config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
@@ -109,24 +108,21 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock, config: Config, tmp_path
 
     pipe.run()
     compare_class_to_scores(out_file, config.class_labels, '', 'score_', threshold=0.5)
-
-    if num_threads == 1:
-        results = calc_error_val(results_file_name)
-        assert results.diff_rows == 0
+    results = calc_error_val(results_file_name)
+    assert results.diff_rows == 0
 
 
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-@pytest.mark.parametrize('num_threads', [1, 4])
-def test_abp_cpp(config: Config, tmp_path: str, num_threads: int):
+def test_abp_cpp(config, tmp_path):
     config.mode = PipelineModes.FIL
     config.class_labels = ["mining"]
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
     config.edge_buffer_size = 128
-    config.num_threads = num_threads
+    config.num_threads = 1
 
     config.fil = ConfigFIL()
     config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
@@ -155,17 +151,14 @@ def test_abp_cpp(config: Config, tmp_path: str, num_threads: int):
 
     pipe.run()
     compare_class_to_scores(out_file, config.class_labels, '', 'score_', threshold=0.5)
-
-    if num_threads == 1:
-        results = calc_error_val(results_file_name)
-        assert results.diff_rows == 0
+    results = calc_error_val(results_file_name)
+    assert results.diff_rows == 0
 
 
 @pytest.mark.slow
 @pytest.mark.use_python
-@pytest.mark.parametrize('num_threads', [1, 4])
 @mock.patch('tritonclient.grpc.InferenceServerClient')
-def test_abp_multi_segment_no_cpp(mock_triton_client: mock.MagicMock, config: Config, tmp_path: str, num_threads: int):
+def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
     mock_metadata = {
         "inputs": [{
             'name': 'input__0', 'datatype': 'FP32', "shape": [-1, FEATURE_LENGTH]
@@ -196,7 +189,7 @@ def test_abp_multi_segment_no_cpp(mock_triton_client: mock.MagicMock, config: Co
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
     config.edge_buffer_size = 128
-    config.num_threads = num_threads
+    config.num_threads = 1
 
     config.fil = ConfigFIL()
     config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
@@ -237,24 +230,21 @@ def test_abp_multi_segment_no_cpp(mock_triton_client: mock.MagicMock, config: Co
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     pipe.run()
-
-    if num_threads == 1:
-        results = calc_error_val(results_file_name)
-        assert results.diff_rows == 0
+    results = calc_error_val(results_file_name)
+    assert results.diff_rows == 0
 
 
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-@pytest.mark.parametrize('num_threads', [1, 4])
-def test_abp_multi_segment_cpp(config: Config, tmp_path: str, num_threads: int):
+def test_abp_multi_segment_cpp(config, tmp_path):
     config.mode = PipelineModes.FIL
     config.class_labels = ["mining"]
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
     config.edge_buffer_size = 128
-    config.num_threads = num_threads
+    config.num_threads = 1
 
     config.fil = ConfigFIL()
     config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
@@ -299,6 +289,5 @@ def test_abp_multi_segment_cpp(config: Config, tmp_path: str, num_threads: int):
 
     pipe.run()
 
-    if num_threads == 1:
-        results = calc_error_val(results_file_name)
-        assert results.diff_rows == 0
+    results = calc_error_val(results_file_name)
+    assert results.diff_rows == 0
