@@ -85,6 +85,7 @@ jobs:
           lfs: false
           path: 'morpheus'
           fetch-depth: 0
+          submodules: 'recursive'
 
       - name: Get AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v1-node16
@@ -115,6 +116,7 @@ jobs:
         with:
           lfs: false
           path: 'morpheus'
+          submodules: 'recursive'
 
       - name: Get AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v1-node16
@@ -149,6 +151,7 @@ jobs:
         with:
           lfs: false
           path: 'morpheus'
+          submodules: 'recursive'
 
       - name: Get AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v1-node16
@@ -180,6 +183,9 @@ jobs:
         with:
           lfs: false
           path: 'morpheus'
+          # Fetch tags so that documentation builds for releases will report the version number correctly
+          fetch-tags: true
+          submodules: 'recursive'
 
       - name: Get AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v1-node16
@@ -213,6 +219,7 @@ jobs:
           lfs: false
           path: 'morpheus'
           fetch-depth: 0
+          submodules: 'recursive'
 
       - name: Get AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v1-node16
