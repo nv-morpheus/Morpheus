@@ -128,14 +128,13 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     auto pkt_hdr_size_list = raw_msg->get_pkt_hdr_size_list();
     auto pkt_pld_size_list = raw_msg->get_pkt_pld_size_list();
     auto queue_idx         = raw_msg->get_queue_idx();
-    DocaConvertStage::source_type_t output;
 
-#if 1
     // LOG(WARNING) << "New RawPacketMessage with " << packet_count << " packets from queue id " << queue_idx;
+
     // gather header data
-    auto header_col = cudf::make_column_from_scalar(cudf::string_scalar("The header"), packet_count);
-    // auto header_col =
-    //     doca::gather_header(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
+    auto header_src_ip_col = cudf::make_column_from_scalar(cudf::string_scalar("111.111.111.111"), packet_count);
+    auto header_src_ip_addr = header_src_ip_col->mutable_view().data<uint8_t>();
+    doca::gather_header_scalar(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, header_src_ip_addr, m_stream_cpp);
 
     // gather payload data
     auto payload_col =
@@ -144,7 +143,7 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     // const auto gather_payload_stop = now_ns();
 
     std::vector<std::unique_ptr<cudf::column>> gathered_columns;
-    gathered_columns.emplace_back(std::move(header_col));
+    gathered_columns.emplace_back(std::move(header_src_ip_col));
     gathered_columns.emplace_back(std::move(payload_col));
 
     // After this point buffers can be reused -> copies actual packets' data
@@ -153,7 +152,7 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     // const auto gather_table_meta = now_ns();
 
     auto gathered_metadata = cudf::io::table_metadata();
-    gathered_metadata.schema_info.emplace_back("header");
+    gathered_metadata.schema_info.emplace_back("src_ip");
     gathered_metadata.schema_info.emplace_back("data");
 
     auto gathered_table_w_metadata =
@@ -162,42 +161,6 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     // const auto create_message_cpp = now_ns();
 
     auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
-#endif
-
-#if 0
-    std::vector<std::unique_ptr<cudf::column>> columns;
-    cudf::data_type cudf_data_type_hdr{cudf::type_to_id<char>(), 42};
-
-    auto column_hdr = cudf::make_fixed_width_column(cudf_data_type_hdr, packet_count);
-    auto hdr_addr = column_hdr->mutable_view().data<uint8_t>();
-    doca::gather_header_scalar(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, hdr_addr, m_stream_cpp);
-
-
-    cudf::data_type cudf_data_type_pld{cudf::type_to_id<char>(), (int)max_size};
-
-    auto column_pld = cudf::make_fixed_width_column(cudf_data_type_pld, packet_count);
-    auto pld_addr = column_pld->mutable_view().data<uint8_t>();
-    doca::gather_payload_scalar(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, pld_addr, m_stream_cpp);
-
-    cudaStreamSynchronize(m_stream_cpp);
-
-    // std::vector<char> data(packet_count);
-    // std::iota(data.begin(), data.end(), 0);
-    // cudaMemcpy(column_hdr->mutable_view().data<int>(),
-    //            data.data(),
-    //            data.size() * sizeof(int),
-    //            cudaMemcpyKind::cudaMemcpyHostToDevice);
-
-    columns.emplace_back(std::move(column_hdr));
-    columns.emplace_back(std::move(column_pld));
-
-    auto table = std::make_unique<cudf::table>(std::move(columns));
-
-    auto column_names = std::vector<cudf::io::column_name_info>({cudf::io::column_name_info{"header"}, cudf::io::column_name_info{"data"}});
-    auto metadata     = cudf::io::table_metadata{std::move(column_names), {}, {}};
-    auto final_table = cudf::io::table_with_metadata{std::move(table), metadata};
-    auto meta = MessageMeta::create_from_cpp(std::move(final_table), 0);
-#endif
 
     // const auto gather_meta_stop = now_ns();
 
