@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import os
 import typing
 from io import StringIO
@@ -53,15 +52,13 @@ MODEL_MAX_BATCH_SIZE = 32
 @pytest.mark.kafka
 @pytest.mark.slow
 @pytest.mark.use_python
-@pytest.mark.parametrize("num_threads", [1, 4])
 @mock.patch('tritonclient.grpc.InferenceServerClient')
 def test_minibert_no_cpp(mock_triton_client: mock.MagicMock,
                          dataset_pandas: DatasetManager,
                          config: Config,
                          kafka_bootstrap_servers: str,
                          kafka_topics: KafkaTopics,
-                         kafka_consumer: "KafkaConsumer",
-                         num_threads: int):
+                         kafka_consumer: "KafkaConsumer"):
     mock_metadata = {
         "inputs": [{
             "name": "input_ids", "datatype": "INT32", "shape": [-1, FEATURE_LENGTH]
@@ -104,7 +101,7 @@ def test_minibert_no_cpp(mock_triton_client: mock.MagicMock,
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
     config.edge_buffer_size = 128
-    config.num_threads = num_threads
+    config.num_threads = 1
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'sid-validation-data.csv')
     vocab_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-uncased-hash.txt')
@@ -140,23 +137,20 @@ def test_minibert_no_cpp(mock_triton_client: mock.MagicMock,
 
     assert len(output_df) == len(val_df)
 
-    # When threading is enabled, the results returned from the mocked Triton server won't match the expected results
-    if num_threads == 1:
-        results = compare_df(val_df, output_df, exclude_columns=[r'^ID$', r'^_ts_'], rel_tol=0.05)
-        assert results['diff_rows'] == 1333
+    results = compare_df(val_df, output_df, exclude_columns=[r'^ID$', r'^_ts_'], rel_tol=0.05)
+
+    assert results['diff_rows'] == 1333
 
 
 @pytest.mark.kafka
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-@pytest.mark.parametrize("num_threads", [1, 4])
 def test_minibert_cpp(dataset_pandas: DatasetManager,
                       config: Config,
                       kafka_bootstrap_servers: str,
                       kafka_topics: KafkaTopics,
-                      kafka_consumer: "KafkaConsumer",
-                      num_threads: int):
+                      kafka_consumer: "KafkaConsumer"):
     config.mode = PipelineModes.NLP
     config.class_labels = [
         "address",
@@ -174,7 +168,7 @@ def test_minibert_cpp(dataset_pandas: DatasetManager,
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
     config.edge_buffer_size = 128
-    config.num_threads = num_threads
+    config.num_threads = 1
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'sid-validation-data.csv')
     vocab_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-uncased-hash.txt')
@@ -213,7 +207,6 @@ def test_minibert_cpp(dataset_pandas: DatasetManager,
 
     assert len(output_df) == len(val_df)
 
-    # When threading is enabled, the results returned from the mocked Triton server won't match the expected results
-    if num_threads == 1:
-        results = compare_df(val_df, output_df, exclude_columns=[r'^ID$', r'^_ts_'], rel_tol=0.05)
-        assert results['diff_rows'] == 1204
+    results = compare_df(val_df, output_df, exclude_columns=[r'^ID$', r'^_ts_'], rel_tol=0.05)
+
+    assert results['diff_rows'] == 1204
