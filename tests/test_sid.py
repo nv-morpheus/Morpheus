@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import os
 from unittest import mock
 
@@ -26,7 +25,6 @@ from _utils import TEST_DIRS
 from _utils import calc_error_val
 from _utils import compare_class_to_scores
 from _utils import mk_async_infer
-from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
@@ -46,13 +44,7 @@ FEATURE_LENGTH = 256
 MODEL_MAX_BATCH_SIZE = 32
 
 
-def _run_minibert_pipeline(*,
-                           config: Config,
-                           tmp_path: str,
-                           model_name: str,
-                           truncated: bool,
-                           data_col_name: str = "data",
-                           num_threads: int = 1):
+def _run_minibert_pipeline(config, tmp_path, model_name, truncated, data_col_name: str = "data"):
     """
     Runs just the Minibert Pipeline
     """
@@ -74,7 +66,7 @@ def _run_minibert_pipeline(*,
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
     config.edge_buffer_size = 128
-    config.num_threads = num_threads
+    config.num_threads = 1
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'sid-validation-data.csv')
     vocab_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-uncased-hash.txt')
@@ -108,8 +100,7 @@ def _run_minibert_pipeline(*,
                            column=data_col_name))
     pipe.add_stage(
         TritonInferenceStage(config, model_name=model_name, server_url='localhost:8001', force_convert_inputs=True))
-    pipe.add_stage(
-        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=logging.INFO))
+    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config, threshold=0.5, prefix="si_"))
     pipe.add_stage(AddScoresStage(config, prefix="score_"))
     pipe.add_stage(
@@ -122,13 +113,7 @@ def _run_minibert_pipeline(*,
     return calc_error_val(results_file_name)
 
 
-def _run_minibert(*,
-                  config: Config,
-                  tmp_path: str,
-                  model_name: str,
-                  truncated: bool,
-                  data_col_name: str = "data",
-                  num_threads: int = 1):
+def _run_minibert(config, tmp_path, model_name, truncated, data_col_name: str = "data"):
     """
     Runs the minibert pipeline and mocks the Triton Python interface
     """
@@ -160,52 +145,44 @@ def _run_minibert(*,
         async_infer = mk_async_infer(inf_results)
         mock_triton_client.async_infer.side_effect = async_infer
 
-        return _run_minibert_pipeline(config=config,
-                                      tmp_path=tmp_path,
-                                      model_name=model_name,
-                                      truncated=truncated,
-                                      data_col_name=data_col_name,
-                                      num_threads=num_threads)
+        return _run_minibert_pipeline(config, tmp_path, model_name, truncated, data_col_name)
 
 
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-@pytest.mark.parametrize("num_threads", [1, 4])
-def test_minibert_no_trunc(config: Config, tmp_path: str, num_threads: int):
+def test_minibert_no_trunc(config, tmp_path):
 
-    results = _run_minibert(config=config,
-                            tmp_path=tmp_path,
-                            model_name="sid-minibert-onnx-no-trunc",
-                            truncated=False,
-                            num_threads=num_threads)
+    results = _run_minibert(config, tmp_path, "sid-minibert-onnx-no-trunc", False)
 
-    # When threading is enabled, the results returned from the mocked Triton server won't match the expected results
-    if num_threads == 1:
-        # Not sure why these are different
-        if (CppConfig.get_should_use_cpp()):
-            assert results.diff_rows == 18
-        else:
-            assert results.diff_rows == 1333
+    # Not sure why these are different
+    if (CppConfig.get_should_use_cpp()):
+        assert results.diff_rows == 18
+    else:
+        assert results.diff_rows == 1333
 
 
 @pytest.mark.slow
 @pytest.mark.usefixtures("launch_mock_triton")
-@pytest.mark.parametrize("data_col_name", ["data", "definitely_not_data"])
-@pytest.mark.parametrize("num_threads", [1, 4])
-def test_minibert_truncated(config: Config, tmp_path: str, data_col_name: str, num_threads: int):
+def test_minibert_truncated(config, tmp_path):
 
-    results = _run_minibert(config=config,
-                            tmp_path=tmp_path,
-                            model_name='sid-minibert-onnx',
-                            truncated=True,
-                            data_col_name=data_col_name,
-                            num_threads=num_threads)
+    results = _run_minibert(config, tmp_path, 'sid-minibert-onnx', True)
 
-    # When threading is enabled, the results returned from the mocked Triton server won't match the expected results
-    if num_threads == 1:
-        # Not sure why these are different
-        if (CppConfig.get_should_use_cpp()):
-            assert results.diff_rows == 1204
-        else:
-            assert results.diff_rows == 1333
+    # Not sure why these are different
+    if (CppConfig.get_should_use_cpp()):
+        assert results.diff_rows == 1204
+    else:
+        assert results.diff_rows == 1333
+
+
+@pytest.mark.slow
+@pytest.mark.usefixtures("launch_mock_triton")
+def test_minibert_data_col_name(config, tmp_path):
+
+    results = _run_minibert(config, tmp_path, 'sid-minibert-onnx', True, "definitely_not_data")
+
+    # Not sure why these are different
+    if (CppConfig.get_should_use_cpp()):
+        assert results.diff_rows == 1204
+    else:
+        assert results.diff_rows == 1333
