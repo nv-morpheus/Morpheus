@@ -17,6 +17,7 @@
 import operator
 import typing
 
+from nvtabular import Dataset
 import pandas as pd
 import pytest
 
@@ -219,3 +220,21 @@ def test_get_column_names(df: DataFrameType):
     meta = MessageMeta(df)
 
     assert sorted(meta.get_column_names()) == expected_columns
+
+
+def test_cpp_meta_slicing(dataset_cudf: DatasetManager):
+    """
+    Test copy_range() and get_slice() of MessageMetaCpp
+    """
+    df = dataset_cudf["filter_probs.csv"]
+
+    cpp_meta = MessageMetaCpp(df)
+    ranges = [(0, 1), (3, 6)]
+    copy_range_cpp_meta = cpp_meta.copy_ranges(ranges)
+    expected_copy_range_df = cudf.concat([df[start:stop] for start, stop in ranges])
+    DatasetManager.assert_compare_df(copy_range_cpp_meta.df, expected_copy_range_df)
+
+    slice_idx = [2, 4]
+    sliced_cpp_meta = cpp_meta.get_slice(slice_idx[0], slice_idx[1])
+    expected_sliced_df = df[slice_idx[0]:slice_idx[1]]
+    DatasetManager.assert_compare_df(sliced_cpp_meta.df, expected_sliced_df)

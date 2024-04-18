@@ -314,6 +314,23 @@ struct MessageMetaInterfaceProxy
      * @return std::string The name of the column with the old index or nullopt if no changes were made.
      */
     static std::optional<std::string> ensure_sliceable_index(MessageMeta& self);
+
+    /**
+     * @brief Creates a deep copy of DataFrame with the specified ranges.
+     *
+     * @param ranges the tensor index ranges to copy
+     * @return std::shared_ptr<MessageMeta> the deep copy of the specified ranges
+     */
+    static std::shared_ptr<MessageMeta> copy_ranges(MessageMeta& self, const std::vector<RangeType>& ranges);
+
+    /**
+     * @brief Get a slice of the underlying DataFrame by creating a deep copy
+     *
+     * @param start the tensor index of the start of the copy
+     * @param stop the tensor index of the end of the copy
+     * @return std::shared_ptr<MessageMeta> the deep copy of the speicifed slice
+     */
+    static std::shared_ptr<MessageMeta> get_slice(MessageMeta& self, TensorIndex start, TensorIndex stop);
 };
 
 #pragma GCC visibility pop

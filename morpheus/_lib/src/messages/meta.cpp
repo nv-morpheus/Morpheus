@@ -86,7 +86,7 @@ TableInfo MessageMeta::get_info(const std::vector<std::string>& column_names) co
 
 void MessageMeta::set_data(const std::string& col_name, TensorObject tensor)
 {
-    // This causes a segfault in copy ctor of TensorObject, when the shared_ptr<MemoryDescriptor> increases the ref count
+    // This causes a segfault in copy ctor of TensorObject, when shared_ptr<MemoryDescriptor> increases the ref count
     // this->set_data({col_name}, {tensor});
     this->set_data({col_name}, std::vector<TensorObject>{tensor});
 }
@@ -498,6 +498,20 @@ std::optional<std::string> MessageMetaInterfaceProxy::ensure_sliceable_index(Mes
     return self.ensure_sliceable_index();
 }
 
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::copy_ranges(MessageMeta& self, const std::vector<RangeType>& ranges)
+{
+    pybind11::gil_scoped_release no_gil;
+
+    return self.copy_ranges(ranges);
+}
+
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::get_slice(MessageMeta& self, TensorIndex start, TensorIndex stop)
+{
+    pybind11::gil_scoped_release no_gil;
+
+    return self.get_slice(start, stop);
+}
+
 SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
                                      TensorIndex start,
                                      TensorIndex stop,
@@ -527,5 +541,7 @@ std::optional<std::string> SlicedMessageMeta::ensure_sliceable_index()
 {
     throw std::runtime_error{"Unable to set a new index on the DataFrame from a partial view of the columns/rows."};
 }
+
+
 
 }  // namespace morpheus

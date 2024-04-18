@@ -250,6 +250,8 @@ PYBIND11_MODULE(messages, _module)
         .def("mutable_dataframe", &MessageMetaInterfaceProxy::mutable_dataframe, py::return_value_policy::move)
         .def("has_sliceable_index", &MessageMetaInterfaceProxy::has_sliceable_index)
         .def("ensure_sliceable_index", &MessageMetaInterfaceProxy::ensure_sliceable_index)
+        .def("copy_ranges", &MessageMetaInterfaceProxy::copy_ranges, py::return_value_policy::move, py::arg("ranges"))
+        .def("get_slice", &MessageMetaInterfaceProxy::get_slice, py::return_value_policy::move, py::arg("start"), py::arg("stop"))
         .def_static("make_from_file", &MessageMetaInterfaceProxy::init_cpp);
 
     py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(_module, "MultiMessage")
