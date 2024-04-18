@@ -38,15 +38,6 @@ from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.utils.logger import set_log_level
 
 
-@pytest.fixture(scope="module", autouse=True)
-def monitor_stage_always_enabled():
-    """
-    Overriding the global fixture of the same name to ensure the MORPHEUS_MONITOR_ALWAYS_ENABLED environment variable
-    is unset
-    """
-    os.environ.pop("MORPHEUS_MONITOR_ALWAYS_ENABLED", None)
-
-
 def test_constructor(config: Config):
     # Intentionally not making assumptions about the defaults other than they exist
     # and still create a valid stage.

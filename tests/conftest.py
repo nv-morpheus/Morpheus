@@ -1071,13 +1071,3 @@ def mock_nemollm_fixture():
         mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}
 
         yield mock_nemollm
-
-
-@pytest.fixture(scope="function", autouse=True)
-def monitor_stage_always_enabled():
-    """
-    Fixture to ensure the monitor stage is always enabled for tests.
-
-    Setting the scope to function, since some tests will unset this environment variable.
-    """
-    os.environ["MORPHEUS_MONITOR_ALWAYS_ENABLED"] = "1"
