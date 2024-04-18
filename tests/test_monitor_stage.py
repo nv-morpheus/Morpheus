@@ -178,15 +178,12 @@ def test_log_level(mock_progress_sink: mock.MagicMock,
     assert mock_sink_on_completed.call_count == expected_call_count
 
 
-@pytest.mark.usefixtures("reset_loglevel")
 @pytest.mark.use_python
-def test_thread(config: Config):
+def test_thread(config: Config, morpheus_log_level: int):
     """
-    Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
+    Test ensures the monitor stage executes on the same thread as the parent stage
     """
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-
-    set_log_level(log_level=logging.INFO)
 
     monitor_thread_id = None
 
@@ -201,8 +198,9 @@ def test_thread(config: Config):
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file))
     dummy_stage = pipe.add_stage(RecordThreadIdStage(config))
-    pipe.add_stage(MonitorStage(config, determine_count_fn=fake_determine_count_fn))
+    pipe.add_stage(MonitorStage(config, determine_count_fn=fake_determine_count_fn, log_level=morpheus_log_level))
     pipe.run()
 
     # Check that the thread ids are the same
+    assert monitor_thread_id is not None
     assert dummy_stage.thread_id == monitor_thread_id

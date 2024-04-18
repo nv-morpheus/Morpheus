@@ -160,7 +160,10 @@ def test_abp_cpp(config: Config, tmp_path: str, morpheus_log_level: int):
 @pytest.mark.slow
 @pytest.mark.use_python
 @mock.patch('tritonclient.grpc.InferenceServerClient')
-def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
+def test_abp_multi_segment_no_cpp(mock_triton_client: mock.MagicMock,
+                                  config: Config,
+                                  tmp_path: str,
+                                  morpheus_log_level: int):
     mock_metadata = {
         "inputs": [{
             'name': 'input__0', 'datatype': 'FP32', "shape": [-1, FEATURE_LENGTH]
@@ -215,7 +218,8 @@ def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
 
     pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 3
 
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config))
 
     pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 4
