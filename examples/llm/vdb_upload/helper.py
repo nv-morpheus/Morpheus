@@ -17,6 +17,7 @@ import typing
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_source import LinearModuleSourceStage
 
@@ -73,7 +74,7 @@ def setup_rss_source(pipe: Pipeline, config: Config, source_name: str, rss_confi
         module_config={"rss_config": rss_config},
     )
     rss_pipe = pipe.add_stage(
-        LinearModuleSourceStage(config, module_definition, output_type=ControlMessage, output_port_name="output"))
+        LinearModuleSourceStage(config, module_definition, output_type=MessageMeta, output_port_name="output"))
 
     return rss_pipe
 

@@ -24,6 +24,7 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 logger = logging.getLogger(__name__)
@@ -64,6 +65,8 @@ def pipeline(pipeline_config: Config,
 
     vdb_sources = process_vdb_sources(pipe, pipeline_config, source_config)
 
+    deserialize_stage = pipe.add_stage(DeserializeStage(pipeline_config))
+
     trigger = None
     if (isolate_embeddings):
         trigger = pipe.add_stage(TriggerStage(pipeline_config))
@@ -85,13 +88,13 @@ def pipeline(pipeline_config: Config,
 
     # Connect the pipeline
     for source_output in vdb_sources:
-        if (isolate_embeddings):
-            pipe.add_edge(source_output, trigger)
-        else:
-            pipe.add_edge(source_output, nlp_stage)
+        pipe.add_edge(source_output, deserialize_stage)
 
     if (isolate_embeddings):
+        pipe.add_edge(deserialize_stage, trigger)
         pipe.add_edge(trigger, nlp_stage)
+    else:
+        pipe.add_edge(deserialize_stage, nlp_stage)
 
     pipe.add_edge(nlp_stage, monitor_1)
     pipe.add_edge(monitor_1, embedding_stage)
