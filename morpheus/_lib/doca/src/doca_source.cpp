@@ -97,7 +97,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         cuCtxPushCurrent(cuContext);
 
         struct packets_info* pkt_ptr;
-        int sem_idx          = 0;
+        int sem_idx[MAX_QUEUE] = {0};
         cudaStream_t rstream = nullptr;
         int thread_idx = mrc::runnable::Context::get_runtime_context().rank();
 
@@ -109,9 +109,9 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         auto pkt_pld_size_unique = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(
             m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
 
-        if (thread_idx >= MAX_QUEUE)
+        if (thread_idx > 1)
         {
-            MORPHEUS_FAIL("More CPU threads than allowed queues");
+            MORPHEUS_FAIL("Only 1 CPU threads is allowed to run the DOCA Source Stage");
         }
 
         // Dedicated CUDA stream for the receiver kernel
@@ -121,12 +121,13 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
             cudaStreamDestroy(rstream);
         });
 
-        for (int idxs = 0; idxs < MAX_SEM_X_QUEUE; idxs++)
-        {
-            pkt_ptr = static_cast<struct packets_info*>(m_semaphore[thread_idx]->get_info_cpu(idxs));
-            pkt_ptr->pkt_addr     = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
-            pkt_ptr->pkt_hdr_size = pkt_hdr_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
-            pkt_ptr->pkt_pld_size = pkt_pld_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
+        for (int queue_idx = 0; queue_idx < MAX_QUEUE; queue_idx++) {
+            for (int idxs = 0; idxs < MAX_SEM_X_QUEUE; idxs++) {
+                pkt_ptr = static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(idxs));
+                pkt_ptr->pkt_addr     = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
+                pkt_ptr->pkt_hdr_size = pkt_hdr_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
+                pkt_ptr->pkt_pld_size = pkt_pld_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
+            }
         }
 
         auto exit_condition =
@@ -146,59 +147,57 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                 continue;
             }
 
-            // printf("Launching kernel with idx0 %d idx1 %d idx2 %d\n", sem_idx[0], sem_idx[1], sem_idx[2]);
             // const auto start_kernel = now_ns();
-            morpheus::doca::packet_receive_kernel(m_rxq[thread_idx]->rxq_info_gpu(),
-                                                  m_semaphore[thread_idx]->gpu_ptr(),
-                                                  sem_idx,
+
+            // Assume MAX_QUEUE == 2
+            morpheus::doca::packet_receive_kernel(m_rxq[0]->rxq_info_gpu(), m_rxq[1]->rxq_info_gpu(),
+                                                  m_semaphore[0]->gpu_ptr(), m_semaphore[1]->gpu_ptr(),
+                                                  sem_idx[0], sem_idx[1],
                                                   (m_traffic_type == DOCA_TRAFFIC_TYPE_TCP) ? true : false,
                                                   exit_condition->gpu_ptr(),
                                                   rstream);
             cudaStreamSynchronize(rstream);
 
-            if (m_semaphore[thread_idx]->is_ready(sem_idx))
-            {
-                // const auto start = now_ns();
-                // LOG(WARNING) << "CPU READY sem " << sem_idx << " queue " << thread_idx << std::endl;
+            // const auto end_kernel = now_ns();
 
-                pkt_ptr = static_cast<struct packets_info*>(m_semaphore[thread_idx]->get_info_cpu(sem_idx));
+            for (int queue_idx = 0; queue_idx < MAX_QUEUE; queue_idx++) {
+                if (m_semaphore[queue_idx]->is_ready(sem_idx[queue_idx])) {
+                    // const auto start_sem = now_ns();
+                    // LOG(WARNING) << "CPU READY sem " << sem_idx[queue_idx] << " queue " << thread_idx << std::endl;
 
-                // Should not be necessary
-                if (pkt_ptr->packet_count_out == 0)
-                    continue;
+                    pkt_ptr = static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(sem_idx[queue_idx]));
 
-                // LOG(WARNING) << "pkts " << pkt_ptr->packet_count_out << " MAX_PKT_SIZE " << MAX_PKT_SIZE;
-                // std::endl;
+                    // Should not be necessary
+                    if (pkt_ptr->packet_count_out == 0)
+                        continue;
 
-                auto meta = RawPacketMessage::create_from_cpp(pkt_ptr->packet_count_out,
-                                                              MAX_PKT_SIZE,
-                                                              pkt_ptr->pkt_addr,
-                                                              pkt_ptr->pkt_hdr_size,
-                                                              pkt_ptr->pkt_pld_size,
-                                                              true,
-                                                              thread_idx);
+                    // LOG(WARNING) << "pkts " << pkt_ptr->packet_count_out << " MAX_PKT_SIZE " << MAX_PKT_SIZE;
+                    // std::endl;
 
-                //  const auto gather_meta_stop = now_ns();
+                    auto meta = RawPacketMessage::create_from_cpp(pkt_ptr->packet_count_out,
+                                                                MAX_PKT_SIZE,
+                                                                pkt_ptr->pkt_addr,
+                                                                pkt_ptr->pkt_hdr_size,
+                                                                pkt_ptr->pkt_pld_size,
+                                                                true,
+                                                                queue_idx);
 
-                output.on_next(std::move(meta));
+                    // const auto create_msg = now_ns();
 
-                m_semaphore[thread_idx]->set_free(sem_idx);
-                sem_idx = (sem_idx + 1) % MAX_SEM_X_QUEUE;
+                    output.on_next(std::move(meta));
 
-                // const auto end = now_ns();
-                // LOG(WARNING) << "Queue " << thread_idx
-                //             << " packets " << packet_count
-                //             << " kernel time ns " << start - start_kernel
-                //             << " CPU time ns " << end - start
-                //             << " table creation ns " << table_stop - start
-                //             << " gather payload ns " << gather_payload_stop - table_stop
-                //             << " table create ns " << table_create_stop - gather_payload_stop
-                //             << " gather column ns " << gathered_columns_stop - table_create_stop
-                //             << " gather meta schema ns " << gather_table_meta - gathered_columns_stop
-                //             << " gather meta table ns " << create_message_cpp - gather_table_meta
-                //             << " create message cpp ns " << gather_meta_stop - create_message_cpp
-                //             << " final ns " << end - gather_meta_stop
-                //             << std::endl;
+                    m_semaphore[queue_idx]->set_free(sem_idx[queue_idx]);
+                    sem_idx[queue_idx] = (sem_idx[queue_idx] + 1) % MAX_SEM_X_QUEUE;
+
+                    // const auto end = now_ns();
+
+                    // LOG(WARNING) << "Queue " << queue_idx
+                    //             << " packets " << pkt_ptr->packet_count_out
+                    //             << " kernel time ns " << end_kernel - start_kernel
+                    //             << " Sem + msg ns " << create_msg - start_sem
+                    //             << " End ns " << end - create_msg
+                    //             << std::endl;
+                }
             }
         }
 
