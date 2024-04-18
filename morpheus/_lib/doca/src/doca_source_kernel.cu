@@ -46,11 +46,10 @@
 #define DEVICE_GET_TIME(globaltimer) asm volatile("mov.u64 %0, %globaltimer;" : "=l"(globaltimer))
 
 __global__ void _packet_receive_kernel(
-    doca_gpu_eth_rxq*       rxq,
-    doca_gpu_semaphore_gpu* sem,
-    uint16_t sem_idx,
-    const bool is_tcp,
-    uint32_t* exit_condition
+                                        doca_gpu_eth_rxq* rxq_0, doca_gpu_eth_rxq* rxq_1,
+                                        doca_gpu_semaphore_gpu* sem_0, doca_gpu_semaphore_gpu* sem_1,
+                                        uint16_t sem_idx_0, uint16_t sem_idx_1,
+                                        const bool is_tcp, uint32_t* exit_condition
 )
 {
     __shared__ uint32_t packet_count_received;
@@ -65,7 +64,20 @@ __global__ void _packet_receive_kernel(
     struct eth_ip_tcp_hdr *hdr_tcp;
     struct eth_ip_udp_hdr *hdr_udp;
     uint8_t *payload;
+    doca_gpu_eth_rxq* rxq;
+    doca_gpu_semaphore_gpu* sem;
+    uint16_t sem_idx;
     // unsigned long long rx_start = 0, rx_stop = 0, pkt_proc = 0, reduce_stop =0, reduce_start = 0;
+
+    if (blockIdx.x == 0) {
+        rxq = rxq_0;
+        sem = sem_0;
+        sem_idx = sem_idx_0;
+    } else {
+        rxq = rxq_1;
+        sem = sem_1;
+        sem_idx = sem_idx_1;
+    }
 
     //Initial semaphore index 0, assume it's free!
     doca_ret = doca_gpu_dev_semaphore_get_custom_info_addr(sem, sem_idx, (void **)&pkt_info);
@@ -93,7 +105,7 @@ __global__ void _packet_receive_kernel(
             return;
 
         // if (threadIdx.x == 0)
-        //   printf("Block %d sem id %d received %d\n", blockIdx.x, sem_idx, DOCA_GPUNETIO_VOLATILE(packet_count_received));
+        //     printf("Block %d sem id %d received %d\n", blockIdx.x, sem_idx, DOCA_GPUNETIO_VOLATILE(packet_count_received));
         // if (threadIdx.x == 0) DEVICE_GET_TIME(rx_stop);
 
         for (auto i = 0; i < PACKETS_PER_THREAD; i++) {
@@ -126,7 +138,7 @@ __global__ void _packet_receive_kernel(
         }
 
         if (threadIdx.x == 0) {
-          // printf("Update semaphore %d with pkts %d\n", sem_idx, packet_count_received);
+        //   printf("Update semaphore %d with pkts %d\n", sem_idx, packet_count_received);
             // DEVICE_GET_TIME(pkt_proc);
             DOCA_GPUNETIO_VOLATILE(pkt_info->packet_count_out) = packet_count_received;
 
@@ -186,16 +198,16 @@ __global__ void _packet_receive_kernel(
 namespace morpheus {
 namespace doca {
 
-int packet_receive_kernel(doca_gpu_eth_rxq* rxq,
-                           doca_gpu_semaphore_gpu* sem,
-                           uint16_t sem_idx,
+int packet_receive_kernel(doca_gpu_eth_rxq* rxq_0, doca_gpu_eth_rxq* rxq_1,
+                           doca_gpu_semaphore_gpu* sem_0, doca_gpu_semaphore_gpu* sem_1,
+                           uint16_t sem_idx_0, uint16_t sem_idx_1,
                            bool is_tcp,
                            uint32_t* exit_condition,
                            cudaStream_t stream)
 {
     cudaError_t result = cudaSuccess;
 
-    _packet_receive_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(rxq, sem, sem_idx, is_tcp, exit_condition);
+    _packet_receive_kernel<<<MAX_QUEUE, THREADS_PER_BLOCK, 0, stream>>>(rxq_0, rxq_1, sem_0, sem_1, sem_idx_0, sem_idx_1, is_tcp, exit_condition);
 
 	/* Check no previous CUDA errors */
 	result = cudaGetLastError();
