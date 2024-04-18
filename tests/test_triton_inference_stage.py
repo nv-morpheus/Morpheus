@@ -152,8 +152,9 @@ def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.parametrize('num_records', [1000, 2000, 4000])
+@pytest.mark.parametrize('num_threads', [1, 4, 12])
 @mock.patch('tritonclient.grpc.InferenceServerClient')
-def test_triton_stage_pipe(mock_triton_client, config, num_records):
+def test_triton_stage_pipe(mock_triton_client: mock.MagicMock, config: Config, num_records: int, num_threads: int):
     mock_metadata = {
         "inputs": [{
             'name': 'input__0', 'datatype': 'FP32', "shape": [-1, 1]
@@ -185,7 +186,7 @@ def test_triton_stage_pipe(mock_triton_client, config, num_records):
     config.pipeline_batch_size = 1024
     config.feature_length = 1
     config.edge_buffer_size = 128
-    config.num_threads = 1
+    config.num_threads = num_threads
 
     config.fil = ConfigFIL()
     config.fil.feature_columns = ['v']
@@ -202,4 +203,5 @@ def test_triton_stage_pipe(mock_triton_client, config, num_records):
 
     pipe.run()
 
-    assert_results(comp_stage.get_results())
+    if num_threads == 1:
+        assert_results(comp_stage.get_results())
