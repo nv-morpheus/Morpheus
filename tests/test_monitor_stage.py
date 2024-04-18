@@ -151,23 +151,22 @@ def test_progress_sink(mock_morph_tqdm: mock.MagicMock, config: Config):
 
 
 @pytest.mark.usefixtures("reset_loglevel")
-@pytest.mark.parametrize('morpheus_log_level',
-                         [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
+@pytest.mark.parametrize('log_level', [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
 @mock.patch('morpheus.stages.general.monitor_stage.MonitorController.sink_on_completed', autospec=True)
 @mock.patch('morpheus.stages.general.monitor_stage.MonitorController.progress_sink', autospec=True)
 def test_log_level(mock_progress_sink: mock.MagicMock,
                    mock_sink_on_completed: mock.MagicMock,
                    config: Config,
-                   morpheus_log_level: int):
+                   log_level: int):
     """
     Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
     """
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
-    set_log_level(morpheus_log_level)
+    set_log_level(log_level)
     monitor_stage_level = logging.INFO
 
-    should_be_included = (morpheus_log_level <= monitor_stage_level)
+    should_be_included = (log_level <= monitor_stage_level)
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file))

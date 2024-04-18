@@ -35,14 +35,13 @@ def test_constructor(config: Config):
 
 @pytest.mark.usefixtures("reset_loglevel")
 @pytest.mark.parametrize('use_on_data', [True, False])
-@pytest.mark.parametrize('morpheus_log_level',
-                         [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
+@pytest.mark.parametrize('log_level', [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
 @mock.patch('dfp.stages.dfp_postprocessing_stage.datetime')
 def test_process_events_on_data(mock_datetime: mock.MagicMock,
                                 config: Config,
                                 dfp_multi_ae_message: MultiAEMessage,
                                 use_on_data: bool,
-                                morpheus_log_level: int):
+                                log_level: int):
     from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 
     mock_dt_obj = mock.MagicMock()
@@ -54,7 +53,7 @@ def test_process_events_on_data(mock_datetime: mock.MagicMock,
         df.loc[10, 'v2'] = np.nan
         df['event_time'] = ''
 
-    set_log_level(morpheus_log_level)
+    set_log_level(log_level)
     stage = DFPPostprocessingStage(config)
 
     # on_data is a thin wrapper around process_events, tests should be the same for non-empty messages
