@@ -45,15 +45,14 @@ def test_stage_raises_exception(config: Config, filter_probs_df: pd.DataFrame, e
 
 @pytest.mark.use_python
 @pytest.mark.parametrize("delayed_start", [False, True])
-def test_monitor_not_impl(config: Config, delayed_start: bool, morpheus_log_level: int):
+def test_monitor_not_impl(config: Config, delayed_start: bool):
 
     class UnsupportedType:
         pass
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemSourceXStage(config, [UnsupportedType()]))
-    monitor_stage = pipe.add_stage(
-        MonitorStage(config, log_level=logging.WARNING, delayed_start=delayed_start, log_level=morpheus_log_level))
+    monitor_stage = pipe.add_stage(MonitorStage(config, log_level=logging.WARNING, delayed_start=delayed_start))
     sink_stage = pipe.add_stage(InMemorySinkStage(config))
 
     assert monitor_stage._mc.is_enabled()
