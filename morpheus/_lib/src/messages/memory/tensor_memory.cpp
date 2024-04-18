@@ -22,7 +22,7 @@
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 
-#include <pybind11/cast.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>  // for attribute_error, key_error
 #include <pybind11/stl.h>      // IWYU pragma: keep
 

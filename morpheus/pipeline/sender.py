@@ -17,7 +17,7 @@ import typing
 
 import mrc
 
-import morpheus.pipeline as _pipeline
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 
 logger = logging.getLogger(__name__)
 

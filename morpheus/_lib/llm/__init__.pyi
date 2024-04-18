@@ -210,7 +210,7 @@ class LLMTaskHandler():
     def __init__(self) -> None: ...
     def get_input_names(self) -> typing.List[str]: 
         """
-        Get the input names for the task handler. 
+        Get the input names for the task handler.
 
         Returns
         -------

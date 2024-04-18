@@ -25,7 +25,6 @@
 #include <pybind11/pytypes.h>
 #include <pymrc/utils.hpp>
 
-#include <chrono>
 #include <optional>
 #include <ostream>
 #include <regex>
@@ -33,6 +32,7 @@
 #include <utility>
 
 namespace py = pybind11;
+using namespace py::literals;
 
 namespace morpheus {
 

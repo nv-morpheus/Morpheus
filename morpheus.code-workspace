@@ -82,7 +82,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -138,7 +138,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -200,7 +200,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -265,7 +265,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -284,7 +284,7 @@
                 "name": "Python: Anomaly Detection Example",
                 "program": "${workspaceFolder}/examples/abp_pcap_detection/run.py",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -302,7 +302,7 @@
                 "module": "sphinx.cmd.build",
                 "name": "Python: Sphinx",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "MIMode": "gdb",
@@ -597,7 +597,7 @@
                 "name": "Python: GNN DGL inference",
                 "program": "${workspaceFolder}/examples/gnn_fraud_detection_pipeline/run.py",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -613,7 +613,7 @@
                 "name": "Python: GNN model training",
                 "program": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models/training.py",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             }
         ]
     },
@@ -668,6 +668,38 @@
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
         "rewrap.wrappingColumn": 120,
+        "testMate.cpp.test.advancedExecutables": [
+            {
+                "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}_*.x",
+                "env": {
+                    "UCX_ERROR_SIGNALS": "", // Prevent UCX from capturing errors
+                    "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
+                }
+            }
+        ],
+        "testMate.cpp.debug.configTemplate": {
+            "args": "${argsArray}",
+            "cwd": "${cwd}",
+            "darwin": {
+                "MIMode": "lldb",
+                "type": "cppdbg"
+            },
+            "env": "${envObj}",
+            "environment": "${envObjArray}",
+            "name": "Debug Test Runner (${parentLabel} > ${label})",
+            "program": "${exec}",
+            "request": "launch",
+            "testMate.cpp.debug.setEnv": {
+                "GLOG_v": "10",
+                "GTEST_CATCH_EXCEPTIONS": "0", // Allow the debugger to catch exceptions
+                "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
+                "UCX_ERROR_SIGNALS": "" // Prevent UCX from capturing errors
+            },
+            "type": "lldb",
+            "win32": {
+                "type": "cppvsdbg"
+            }
+        },
         "yapf.args": [
             "--style=${workspaceFolder}/setup.cfg"
         ]

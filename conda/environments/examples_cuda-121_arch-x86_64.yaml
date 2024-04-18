@@ -8,7 +8,6 @@ channels:
 - nvidia
 - nvidia/label/dev
 - pytorch
-- defaults
 dependencies:
 - anyio>=3.7
 - appdirs
@@ -28,7 +27,7 @@ dependencies:
 - jsonpatch>=1.33
 - kfp
 - libwebp=1.3.2
-- mlflow=2.9.2
+- mlflow>=2.10.0,<3
 - networkx=2.8.8
 - newspaper3k=0.2
 - nodejs=18.*
@@ -46,7 +45,9 @@ dependencies:
 - python=3.10
 - pytorch-cuda
 - pytorch=*=*cuda*
+- requests
 - requests-cache=1.1
+- requests-toolbelt
 - s3fs=2023.12.2
 - scikit-learn=1.3.2
 - sentence-transformers
@@ -60,8 +61,9 @@ dependencies:
   - --find-links https://data.dgl.ai/wheels-test/repo.html
   - --find-links https://data.dgl.ai/wheels/cu121/repo.html
   - PyMuPDF==1.23.21
+  - databricks-cli < 0.100
   - databricks-connect
-  - dgl
+  - dgl==2.0.0
   - dglgo
   - google-search-results==2.4
   - langchain==0.1.9

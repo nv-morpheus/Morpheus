@@ -17,25 +17,21 @@
 
 #pragma once
 
-#include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
+#include "morpheus/messages/control.hpp"
+#include "morpheus/messages/multi_response.hpp"
 
 #include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/sink_properties.hpp>
-#include <mrc/node/source_properties.hpp>
-#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
-#include <cstddef>  // for size_t
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <optional>
 #include <string>
 #include <thread>
-#include <vector>
+
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -51,11 +47,11 @@ namespace morpheus {
 /**
  * @brief Base class for both `AddScoresStage` and `AddClassificationStage`
  */
-class AddScoresStageBase
-  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseMessage>, std::shared_ptr<MultiResponseMessage>>
+template <typename InputT, typename OutputT>
+class AddScoresStageBase : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
 {
   public:
-    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseMessage>, std::shared_ptr<MultiResponseMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -68,18 +64,25 @@ class AddScoresStageBase
      */
     AddScoresStageBase(std::map<std::size_t, std::string> idx2label, std::optional<float> threshold);
 
-  private:
     /**
      * Called every time a message is passed to this stage
      */
     source_type_t on_data(sink_type_t x);
 
+  private:
+    void on_multi_response_message(std::shared_ptr<MultiResponseMessage> x);
+    void on_control_message(std::shared_ptr<ControlMessage> x);
     std::map<std::size_t, std::string> m_idx2label;
     std::optional<float> m_threshold;
 
     // The minimum number of columns needed to extract the label data
     std::size_t m_min_col_count;
 };
+
+using AddScoresStageBaseMM =  // NOLINT(readability-identifier-naming)
+    AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>;
+using AddScoresStageBaseCM =  // NOLINT(readability-identifier-naming)
+    AddScoresStageBase<ControlMessage, ControlMessage>;
 
 #pragma GCC visibility pop
 /** @} */  // end of group

@@ -17,17 +17,17 @@
 
 #pragma once
 
-#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/meta.hpp"  // for MessageMeta
 
-#include <nlohmann/json.hpp>
-#include <pybind11/pytypes.h>
+#include <nlohmann/json.hpp>   // for json, basic_json
+#include <pybind11/pytypes.h>  // for object, dict, list, none
 
-#include <chrono>
-#include <map>
-#include <memory>
-#include <optional>
-#include <string>
-#include <vector>
+#include <chrono>    // for system_clock, time_point
+#include <map>       // for map
+#include <memory>    // for shared_ptr
+#include <optional>  // for optional
+#include <string>    // for string
+#include <vector>    // for vector
 
 namespace morpheus {
 

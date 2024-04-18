@@ -17,18 +17,14 @@
 set -e
 
 MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
+LINUX_DISTRO=${LINUX_DISTRO:-ubuntu}
+LINUX_VER=${LINUX_VER:-22.04}
+DOCA_VERSION=${DOCA_VERSION:-2.6.0}
 
 # Exit early if nothing to do
 if [[ ${MORPHEUS_SUPPORT_DOCA} != @(TRUE|ON) ]]; then
    exit 0
 fi
-
-DOCA_REPO_HOST=${DOCA_REPO_HOST:?"Must set \$DOCA_REPO_HOST to build DOCA."}
-DOCA_ARTIFACTS_HOST=${DOCA_ARTIFACTS_HOST:?"Must set \$DOCA_ARTIFACTS_HOST to build DOCA."}
-
-DOCA_BUILD_ID=${DOCA_BUILD_ID:-7930666}
-DOCA_VERSION=${DOCA_VERSION:-2.2.0002-1}
-DPDK_VERSION=${DPDK_VERSION:-22.11.0-1.4.1}
 
 WORKING_DIR=$1
 
@@ -38,31 +34,64 @@ DEB_DIR=${WORKING_DIR}/deb
 
 mkdir -p ${DEB_DIR}
 
-# Download all files with -nc to skip download if its already there
-wget -nc -P ${DEB_DIR} https://${DOCA_REPO_HOST}/doca-repo-2.2.0/doca-repo-2.2.0-0.0.1-230405-143032-daily/doca-host-repo-ubuntu2204_2.2.0-0.0.1-230405-143032-daily.2.0.2004.2devflexio.23.04.0.2.3.0_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-apps-dev_${DOCA_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-apps_${DOCA_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-grpc-dev_${DOCA_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-grpc_${DOCA_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-libs_${DOCA_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-runtime_${DOCA_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-sdk_${DOCA_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-tools_${DOCA_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-samples_${DOCA_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-services_${DOCA_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/libdoca-libs-dev_${DOCA_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk-dev_${DPDK_VERSION}_amd64.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk-doc_${DPDK_VERSION}_all.deb
-wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk_${DPDK_VERSION}_amd64.deb
+DOCA_REPO_LINK="https://linux.mellanox.com/public/repo/doca/${DOCA_VERSION}"
+DOCA_REPO="${DOCA_REPO_LINK}/ubuntu22.04"
+DOCA_REPO_ARCH="x86_64"
+DOCA_UPSTREAM_REPO="${DOCA_REPO}/${DOCA_REPO_ARCH}"
 
-# Install the doca host repo
-dpkg -i ${DEB_DIR}/doca-host-repo*.deb
+# Upgrade the base packages (diff between image and Canonical upstream repo)
+apt update -y
+apt upgrade -y
 
-# Install all other packages
-apt-get update
-# apt-get install -y libjson-c-dev meson cmake pkg-config
-apt-get install -y ${DEB_DIR}/mlnx-dpdk*.deb
-apt-get install -y ${DEB_DIR}/*doca*.deb
+# Cleanup apt
+rm -rf /var/lib/apt/lists/*
+apt autoremove -y
+
+# Configure DOCA Repository, and install packages
+apt update -y
+
+# Install wget & Add the DOCA public repository
+apt install -y --no-install-recommends wget software-properties-common gpg-agent
+wget -qO - ${DOCA_UPSTREAM_REPO}/GPG-KEY-Mellanox.pub | apt-key add -
+add-apt-repository "deb [trusted=yes] ${DOCA_UPSTREAM_REPO} ./"
+apt update -y
+
+# Install base-rt content
+apt install -y --no-install-recommends \
+    doca-gpu \
+    doca-gpu-dev \
+    doca-prime-runtime \
+    doca-prime-sdk \
+    doca-sdk \
+    dpcp \
+    flexio \
+    ibacm \
+    ibverbs-utils \
+    librdmacm1 \
+    libibnetdisc5 \
+    libibumad3 \
+    libibmad5 \
+    libopensm \
+    libopenvswitch \
+    libyara8 \
+    mlnx-tools \
+    ofed-scripts \
+    openmpi \
+    openvswitch-common \
+    openvswitch-switch \
+    srptools \
+    mlnx-ethtool \
+    mlnx-iproute2 \
+    python3-pyverbs \
+    rdma-core \
+    ucx \
+    yara
+
+    # Cleanup apt
+rm -rf /usr/lib/python3/dist-packages
+apt remove -y software-properties-common gpg-agent
+rm -rf /var/lib/apt/lists/*
+apt autoremove -y
 
 # Now install the gdrcopy library according to: https://github.com/NVIDIA/gdrcopy
 GDRCOPY_DIR=${WORKING_DIR}/gdrcopy
@@ -71,7 +100,7 @@ if [[ ! -d "${GDRCOPY_DIR}" ]] ; then
     git clone https://github.com/NVIDIA/gdrcopy.git ${GDRCOPY_DIR}
     cd ${GDRCOPY_DIR}
 else
-    cd cd ${GDRCOPY_DIR}
+    cd ${GDRCOPY_DIR}
     git pull https://github.com/NVIDIA/gdrcopy.git
 fi
 

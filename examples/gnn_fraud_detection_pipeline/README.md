@@ -21,10 +21,10 @@ limitations under the License.
 Prior to running the GNN fraud detection pipeline, additional requirements must be installed in to your Conda environment. A supplemental requirements file has been provided in this example directory.
 
 ```bash
-export CUDA_VER=11.8
+export CUDA_VER=12.1
 mamba env update \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./morpheus/conda/environments/examples_cuda-121_arch-x86_64.yaml
+  --file ./conda/environments/examples_cuda-121_arch-x86_64.yaml
 ```
 
 ## Running

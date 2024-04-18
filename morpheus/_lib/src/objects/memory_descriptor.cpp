@@ -18,12 +18,15 @@
 #include "morpheus/objects/memory_descriptor.hpp"
 
 #include <rmm/cuda_stream_view.hpp>
-#include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
 
 #include <utility>  // for move
+
+namespace morpheus {
 
 MemoryDescriptor::MemoryDescriptor(rmm::cuda_stream_view stream,
                                    cuda::mr::async_resource_ref<cuda::mr::device_accessible> mem_resource) :
   cuda_stream(std::move(stream)),
   memory_resource(mem_resource)
 {}
+
+}  // namespace morpheus

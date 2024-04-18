@@ -26,7 +26,7 @@ Install packages for training GNN model.
 ```bash
 mamba env update \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./morpheus/conda/environments/model-utils-121_arch-x86_64.yaml
+  --file ./conda/environments/model-utils-121_arch-x86_64.yaml
 ```
 
 ### Options for training and tuning models.

@@ -17,45 +17,33 @@
 
 #include "morpheus/stages/triton_inference.hpp"
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/sink_properties.hpp"
-#include "mrc/node/source_properties.hpp"
-#include "mrc/segment/builder.hpp"
-#include "mrc/segment/object.hpp"
-#include "mrc/types.hpp"
-
-#include "morpheus/messages/memory/response_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
-#include "morpheus/objects/dev_mem_info.hpp"           // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"                  // for DType
-#include "morpheus/objects/tensor.hpp"                 // for Tensor::create
-#include "morpheus/objects/tensor_object.hpp"          // for TensorObject
-#include "morpheus/objects/triton_in_out.hpp"          // for TritonInOut
-#include "morpheus/types.hpp"                          // for TensorIndex, TensorMap
-#include "morpheus/utilities/matx_util.hpp"            // for MatxUtil::logits, MatxUtil::reduce_max
-#include "morpheus/utilities/stage_util.hpp"           // for foreach_map
-#include "morpheus/utilities/string_util.hpp"          // for MORPHEUS_CONCAT_STR
-#include "morpheus/utilities/tensor_util.hpp"          // for get_elem_count
+#include "morpheus/objects/dtype.hpp"          // for DType
+#include "morpheus/objects/tensor.hpp"         // for Tensor::create
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/objects/triton_in_out.hpp"  // for TritonInOut
+#include "morpheus/types.hpp"                  // for TensorIndex, TensorMap
+#include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
+#include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <glog/logging.h>
 #include <http_client.h>
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <nlohmann/json.hpp>
-#include <pymrc/node.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
 #include <algorithm>  // for min
+#include <coroutine>
 #include <cstddef>
-#include <cstdint>
-#include <exception>
 #include <functional>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <stdexcept>  // for runtime_error, out_of_range
+#include <string>
 #include <utility>
+#include <vector>
 // IWYU pragma: no_include <initializer_list>
 
 /**
@@ -64,16 +52,13 @@
  * @file
  */
 
+namespace {
+
 /**
  * @brief Checks the status object returned by a Triton client call logging any potential errors.
  *
  */
 #define CHECK_TRITON(method) ::InferenceClientStage__check_triton_errors(method, #method, __FILE__, __LINE__);
-
-namespace {
-
-using namespace morpheus;
-using buffer_map_t = std::map<std::string, std::shared_ptr<rmm::device_buffer>>;
 
 // Component-private free functions.
 void InferenceClientStage__check_triton_errors(triton::client::Error status,
@@ -91,298 +76,89 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
     }
 }
 
-void build_output_tensors(TensorIndex count,
-                          const std::vector<TritonInOut>& model_outputs,
-                          buffer_map_t& output_buffers,
-                          TensorMap& output_tensors)
+using namespace morpheus;
+using buffer_map_t = std::map<std::string, std::shared_ptr<rmm::device_buffer>>;
+
+static bool is_default_grpc_port(std::string& server_url)
 {
-    // Create the output memory blocks
-    for (auto& model_output : model_outputs)
+    // Check if we are the default gRPC port of 8001 and try 8000 for http client instead
+    size_t colon_loc = server_url.find_last_of(':');
+
+    if (colon_loc == -1)
     {
-        ShapeType total_shape = model_output.shape;
-
-        // First dimension will always end up being the number of rows in the dataframe
-        total_shape[0]  = count;
-        auto elem_count = TensorUtils::get_elem_count(total_shape);
-
-        // Create the output memory
-        auto output_buffer = std::make_shared<rmm::device_buffer>(elem_count * model_output.datatype.item_size(),
-                                                                  rmm::cuda_stream_per_thread);
-
-        output_buffers[model_output.mapped_name] = output_buffer;
-
-        // Triton results are always in row-major as required by the KServe protocol
-        // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
-        ShapeType stride{total_shape[1], 1};
-        output_tensors[model_output.mapped_name].swap(
-            Tensor::create(std::move(output_buffer), model_output.datatype, total_shape, stride, 0));
-    }
-}
-
-ShapeType get_seq_ids(const InferenceClientStage::sink_type_t& message)
-{
-    // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
-    // The output tensors we store in `reponse_memory` will all be of the same length as the the
-    // dataframe. seq_ids has three columns, but we are only interested in the first column.
-    auto seq_ids         = message->get_input("seq_ids");
-    const auto item_size = seq_ids.dtype().item_size();
-
-    ShapeType host_seq_ids(message->count);
-    MRC_CHECK_CUDA(cudaMemcpy2D(host_seq_ids.data(),
-                                item_size,
-                                seq_ids.data(),
-                                seq_ids.stride(0) * item_size,
-                                item_size,
-                                host_seq_ids.size(),
-                                cudaMemcpyDeviceToHost));
-
-    return host_seq_ids;
-}
-
-std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>> build_input(
-    const InferenceClientStage::sink_type_t& msg_slice, const TritonInOut& model_input)
-{
-    DCHECK(msg_slice->memory->has_tensor(model_input.mapped_name))
-        << "Model input '" << model_input.mapped_name << "' not found in InferenceMemory";
-
-    auto const& inp_tensor = msg_slice->get_input(model_input.mapped_name);
-
-    // Convert to the right type. Make shallow if necessary
-    auto final_tensor = inp_tensor.as_type(model_input.datatype);
-
-    std::vector<uint8_t> inp_data = final_tensor.get_host_data();
-
-    // Test
-    triton::client::InferInput* inp_ptr;
-
-    triton::client::InferInput::Create(
-        &inp_ptr, model_input.name, {inp_tensor.shape(0), inp_tensor.shape(1)}, model_input.datatype.triton_str());
-
-    std::shared_ptr<triton::client::InferInput> inp_shared;
-    inp_shared.reset(inp_ptr);
-
-    inp_ptr->AppendRaw(inp_data);
-
-    return std::make_pair(inp_shared, std::move(inp_data));
-}
-
-std::shared_ptr<const triton::client::InferRequestedOutput> build_output(const TritonInOut& model_output)
-{
-    triton::client::InferRequestedOutput* out_ptr;
-
-    triton::client::InferRequestedOutput::Create(&out_ptr, model_output.name);
-    std::shared_ptr<const triton::client::InferRequestedOutput> out_shared;
-    out_shared.reset(out_ptr);
-
-    return out_shared;
-}
-
-void reduce_outputs(const InferenceClientStage::sink_type_t& x, buffer_map_t& output_buffers, TensorMap& output_tensors)
-{
-    // When our tensor lengths are longer than our dataframe we will need to use the seq_ids array to
-    // lookup how the values should map back into the dataframe.
-    auto host_seq_ids = get_seq_ids(x);
-
-    TensorMap reduced_outputs;
-
-    for (const auto& output : output_tensors)
-    {
-        auto& tensor = output.second;
-
-        ShapeType shape  = tensor.get_shape();
-        ShapeType stride = tensor.get_stride();
-
-        ShapeType reduced_shape{shape};
-        reduced_shape[0] = x->mess_count;
-
-        auto& buffer = output_buffers[output.first];
-        auto reduced_buffer =
-            MatxUtil::reduce_max(DevMemInfo{buffer, tensor.dtype(), shape, stride}, host_seq_ids, 0, reduced_shape);
-
-        output_buffers[output.first] = reduced_buffer;
-
-        reduced_outputs[output.first].swap(
-            Tensor::create(std::move(reduced_buffer), tensor.dtype(), reduced_shape, stride, 0));
+        return false;
     }
 
-    output_tensors = std::move(reduced_outputs);
-}
-
-void apply_logits(buffer_map_t& output_buffers, TensorMap& output_tensors)
-{
-    TensorMap logit_outputs;
-
-    for (const auto& output : output_tensors)
+    // Check if the port matches 8001
+    if (server_url.size() < colon_loc + 1 || server_url.substr(colon_loc + 1) != "8001")
     {
-        auto& input_tensor = output.second;
-
-        auto shape  = input_tensor.get_shape();
-        auto stride = input_tensor.get_stride();
-
-        auto& buffer = output_buffers[output.first];
-
-        auto output_buffer = MatxUtil::logits(DevMemInfo{buffer, input_tensor.dtype(), shape, stride});
-
-        output_buffers[output.first] = output_buffer;
-
-        // For logits the input and output shapes will be the same
-        logit_outputs[output.first].swap(
-            Tensor::create(std::move(output_buffer), input_tensor.dtype(), shape, stride, 0));
+        return false;
     }
 
-    output_tensors = std::move(logit_outputs);
+    // It matches, change to 8000
+    server_url = server_url.substr(0, colon_loc) + ":8000";
+
+    return true;
 }
+
+struct TritonInferOperation
+{
+    bool await_ready() const noexcept
+    {
+        return false;
+    }
+
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        CHECK_TRITON(m_client.async_infer(
+            [this, handle](triton::client::InferResult* result) {
+                m_result.reset(result);
+                handle();
+            },
+            m_options,
+            m_inputs,
+            m_outputs));
+    }
+
+    std::unique_ptr<triton::client::InferResult> await_resume()
+    {
+        return std::move(m_result);
+    }
+
+    ITritonClient& m_client;
+    triton::client::InferOptions const& m_options;
+    std::vector<TritonInferInput> const& m_inputs;
+    std::vector<TritonInferRequestedOutput> const& m_outputs;
+    std::unique_ptr<triton::client::InferResult> m_result;
+};
 
 }  // namespace
 
 namespace morpheus {
-// Component public implementations
-// ************ InferenceClientStage ************************* //
-InferenceClientStage::InferenceClientStage(std::string model_name,
-                                           std::string server_url,
-                                           bool force_convert_inputs,
-                                           bool use_shared_memory,
-                                           bool needs_logits,
-                                           std::map<std::string, std::string> inout_mapping) :
-  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
-  m_model_name(std::move(model_name)),
-  m_server_url(std::move(server_url)),
-  m_force_convert_inputs(force_convert_inputs),
-  m_use_shared_memory(use_shared_memory),
-  m_needs_logits(needs_logits),
-  m_inout_mapping(std::move(inout_mapping)),
-  m_options(m_model_name)
+
+HttpTritonClient::HttpTritonClient(std::string server_url)
 {
-    // Connect with the server to setup the inputs/outputs
-    this->connect_with_server();  // TODO(Devin)
-}
-
-InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
-{
-    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        std::unique_ptr<triton::client::InferenceServerHttpClient> client;
-
-        CHECK_TRITON(triton::client::InferenceServerHttpClient::Create(&client, m_server_url, false));
-
-        return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output, &client](sink_type_t x) {
-                // Using the `count` which is the number of rows in the inference tensors. We will check later if this
-                // doesn't match the number of rows in the dataframe (`mess_count`). This happens when the size of the
-                // input is too large and needs to be broken up in chunks in the pre-process stage. When this is the
-                // case we will reduce the rows in the response outputs such that we have a single response for each
-                // row int he dataframe.
-                TensorMap output_tensors;
-                buffer_map_t output_buffers;
-                build_output_tensors(x->count, m_model_outputs, output_buffers, output_tensors);
-
-                for (TensorIndex start = 0; start < x->count; start += m_max_batch_size)
-                {
-                    triton::client::InferInput* input1;
-
-                    TensorIndex stop = std::min(start + m_max_batch_size, x->count);
-
-                    sink_type_t mini_batch_input = x->get_slice(start, stop);
-
-                    // Iterate on the model inputs in case the model takes less than what tensors are available
-                    std::vector<std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>>>
-                        saved_inputs = foreach_map(m_model_inputs, [&mini_batch_input](auto const& model_input) {
-                            return (build_input(mini_batch_input, model_input));
-                        });
-
-                    std::vector<std::shared_ptr<const triton::client::InferRequestedOutput>> saved_outputs =
-                        foreach_map(m_model_outputs, [](auto const& model_output) {
-                            // Generate the outputs to be requested.
-                            return build_output(model_output);
-                        });
-
-                    std::vector<triton::client::InferInput*> inputs =
-                        foreach_map(saved_inputs, [](auto x) { return x.first.get(); });
-
-                    std::vector<const triton::client::InferRequestedOutput*> outputs =
-                        foreach_map(saved_outputs, [](auto x) { return x.get(); });
-
-                    auto results = std::unique_ptr<triton::client::InferResult>([&]() {
-                        triton::client::InferResult* results;
-                        CHECK_TRITON(client->Infer(&results, m_options, inputs, outputs));
-                        return results;
-                    }());
-
-                    for (auto& model_output : m_model_outputs)
-                    {
-                        std::vector<int64_t> output_shape;
-
-                        CHECK_TRITON(results->Shape(model_output.name, &output_shape));
-
-                        // Make sure we have at least 2 dims
-                        while (output_shape.size() < 2)
-                        {
-                            output_shape.push_back(1);
-                        }
-
-                        const uint8_t* output_ptr = nullptr;
-                        size_t output_ptr_size    = 0;
-                        CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
-
-                        auto output_tensor = output_tensors[model_output.mapped_name].slice({start, 0}, {stop, -1});
-
-                        DCHECK_EQ(stop - start, output_shape[0]);
-                        DCHECK_EQ(output_tensor.bytes(), output_ptr_size);
-                        DCHECK_NOTNULL(output_ptr);
-                        DCHECK_NOTNULL(output_tensor.data());
-
-                        MRC_CHECK_CUDA(
-                            cudaMemcpy(output_tensor.data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
-                    }
-                }
-
-                if (x->mess_count != x->count)
-                {
-                    reduce_outputs(x, output_buffers, output_tensors);
-                }
-
-                // If we need to do logits, do that here
-                if (m_needs_logits)
-                {
-                    apply_logits(output_buffers, output_tensors);
-                }
-
-                // Final output of all mini-batches
-                auto response_mem = std::make_shared<ResponseMemory>(x->mess_count, std::move(output_tensors));
-                auto response     = std::make_shared<MultiResponseMessage>(
-                    x->meta, x->mess_offset, x->mess_count, std::move(response_mem), 0, response_mem->count);
-
-                output.on_next(std::move(response));
-            },
-            [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-            [&]() { output.on_completed(); }));
-    };
-}
-
-void InferenceClientStage::connect_with_server()
-{
-    std::string server_url = m_server_url;
-
     std::unique_ptr<triton::client::InferenceServerHttpClient> client;
 
-    auto result = triton::client::InferenceServerHttpClient::Create(&client, server_url, false);
+    CHECK_TRITON(triton::client::InferenceServerHttpClient::Create(&client, server_url, false));
 
-    // Now load the input/outputs for the model
-    bool is_server_live = false;
+    bool is_server_live;
 
-    triton::client::Error status = client->IsServerLive(&is_server_live);
+    auto status = client->IsServerLive(&is_server_live);
 
-    if (!status.IsOk())
+    if (not status.IsOk())
     {
-        if (this->is_default_grpc_port(server_url))
+        std::string new_server_url = server_url;
+        if (is_default_grpc_port(new_server_url))
         {
-            LOG(WARNING) << "Failed to connect to Triton at '" << m_server_url
+            LOG(WARNING) << "Failed to connect to Triton at '" << server_url
                          << "'. Default gRPC port of (8001) was detected but C++ "
                             "InferenceClientStage uses HTTP protocol. Retrying with default HTTP port (8000)";
 
             // We are using the default gRPC port, try the default HTTP
             std::unique_ptr<triton::client::InferenceServerHttpClient> unique_client;
 
-            auto result = triton::client::InferenceServerHttpClient::Create(&unique_client, server_url, false);
+            CHECK_TRITON(triton::client::InferenceServerHttpClient::Create(&unique_client, new_server_url, false));
 
             client = std::move(unique_client);
 
@@ -392,44 +168,130 @@ void InferenceClientStage::connect_with_server()
         {
             throw std::runtime_error(MORPHEUS_CONCAT_STR(
                 "Failed to connect to Triton at '"
-                << m_server_url
+                << server_url
                 << "'. Received 'Unsupported Protocol' error. Are you using the right port? The C++ "
                    "InferenceClientStage uses Triton's HTTP protocol instead of gRPC. Ensure you have "
                    "specified the HTTP port (Default 8000)."));
         }
 
-        if (!status.IsOk())
+        if (not status.IsOk())
             throw std::runtime_error(
                 MORPHEUS_CONCAT_STR("Unable to connect to Triton at '"
-                                    << m_server_url << "'. Check the URL and port and ensure the server is running."));
+                                    << server_url << "'. Check the URL and port and ensure the server is running."));
     }
 
-    // Save this for new clients
-    m_server_url = server_url;
+    m_client = std::move(client);
+}
 
-    if (!is_server_live)
+triton::client::Error HttpTritonClient::is_server_live(bool* live)
+{
+    return m_client->IsServerLive(live);
+}
+
+triton::client::Error HttpTritonClient::is_server_ready(bool* ready)
+{
+    return m_client->IsServerReady(ready);
+}
+
+triton::client::Error HttpTritonClient::is_model_ready(bool* ready, std::string& model_name)
+{
+    return m_client->IsModelReady(ready, model_name);
+}
+
+triton::client::Error HttpTritonClient::model_config(std::string* model_config, std::string& model_name)
+{
+    return m_client->ModelConfig(model_config, model_name);
+}
+
+triton::client::Error HttpTritonClient::model_metadata(std::string* model_metadata, std::string& model_name)
+{
+    return m_client->ModelMetadata(model_metadata, model_name);
+}
+
+triton::client::Error HttpTritonClient::async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
+                                                    const triton::client::InferOptions& options,
+                                                    const std::vector<TritonInferInput>& inputs,
+                                                    const std::vector<TritonInferRequestedOutput>& outputs)
+{
+    std::vector<std::unique_ptr<triton::client::InferInput>> inference_inputs;
+    std::vector<triton::client::InferInput*> inference_input_ptrs;
+
+    for (auto& input : inputs)
+    {
+        triton::client::InferInput* inference_input_ptr;
+        triton::client::InferInput::Create(&inference_input_ptr, input.name, input.shape, input.type);
+
+        inference_input_ptr->AppendRaw(input.data);
+
+        inference_input_ptrs.emplace_back(inference_input_ptr);
+        inference_inputs.emplace_back(inference_input_ptr);
+    }
+
+    std::vector<std::unique_ptr<const triton::client::InferRequestedOutput>> inference_outputs;
+    std::vector<const triton::client::InferRequestedOutput*> inference_output_ptrs;
+
+    for (auto& output : outputs)
+    {
+        triton::client::InferRequestedOutput* inference_output_ptr;
+        triton::client::InferRequestedOutput::Create(&inference_output_ptr, output.name);
+        inference_output_ptrs.emplace_back(inference_output_ptr);
+        inference_outputs.emplace_back(inference_output_ptr);
+    }
+
+    triton::client::InferResult* result;
+
+    auto status = m_client->Infer(&result, options, inference_input_ptrs, inference_output_ptrs);
+
+    callback(result);
+
+    return status;
+
+    // TODO(cwharris): either fix tests or make this ENV-flagged, as AsyncInfer gives different results.
+
+    // return m_client->AsyncInfer(
+    //     [callback](triton::client::InferResult* result) {
+    //         callback(result);
+    //     },
+    //     options,
+    //     inference_input_ptrs,
+    //     inference_output_ptrs);
+}
+
+TritonInferenceClientSession::TritonInferenceClientSession(std::shared_ptr<ITritonClient> client,
+                                                           std::string model_name) :
+  m_client(std::move(client)),
+  m_model_name(std::move(model_name))
+{
+    // Now load the input/outputs for the model
+
+    bool is_server_live = false;
+    CHECK_TRITON(m_client->is_server_live(&is_server_live));
+    if (not is_server_live)
+    {
         throw std::runtime_error("Server is not live");
+    }
 
     bool is_server_ready = false;
-    CHECK_TRITON(client->IsServerReady(&is_server_ready));
-
-    if (!is_server_ready)
+    CHECK_TRITON(m_client->is_server_ready(&is_server_ready));
+    if (not is_server_ready)
+    {
         throw std::runtime_error("Server is not ready");
+    }
 
     bool is_model_ready = false;
-    CHECK_TRITON(client->IsModelReady(&is_model_ready, this->m_model_name));
-
-    if (!is_model_ready)
+    CHECK_TRITON(m_client->is_model_ready(&is_model_ready, this->m_model_name));
+    if (not is_model_ready)
+    {
         throw std::runtime_error("Model is not ready");
+    }
 
     std::string model_metadata_json;
-    CHECK_TRITON(client->ModelMetadata(&model_metadata_json, this->m_model_name));
+    CHECK_TRITON(m_client->model_metadata(&model_metadata_json, this->m_model_name));
 
     auto model_metadata = nlohmann::json::parse(model_metadata_json);
 
     std::string model_config_json;
-    CHECK_TRITON(client->ModelConfig(&model_config_json, this->m_model_name));
-
+    CHECK_TRITON(m_client->model_config(&model_config_json, this->m_model_name));
     auto model_config = nlohmann::json::parse(model_config_json);
 
     if (model_config.contains("max_batch_size"))
@@ -455,18 +317,11 @@ void InferenceClientStage::connect_with_server()
             bytes *= y;
         }
 
-        auto mapped_name = input.at("name").get<std::string>();
-
-        if (m_inout_mapping.find(mapped_name) != m_inout_mapping.end())
-        {
-            mapped_name = m_inout_mapping[mapped_name];
-        }
-
         m_model_inputs.push_back(TritonInOut{input.at("name").get<std::string>(),
                                              bytes,
                                              DType::from_triton(input.at("datatype").get<std::string>()),
                                              shape,
-                                             mapped_name,
+                                             "",
                                              0});
     }
 
@@ -488,54 +343,161 @@ void InferenceClientStage::connect_with_server()
             bytes *= y;
         }
 
-        auto mapped_name = output.at("name").get<std::string>();
+        m_model_outputs.push_back(TritonInOut{output.at("name").get<std::string>(), bytes, dtype, shape, "", 0});
+    }
+}
 
-        if (m_inout_mapping.find(mapped_name) != m_inout_mapping.end())
+std::vector<TensorModelMapping> TritonInferenceClientSession::get_input_mappings(
+    std::vector<TensorModelMapping> input_map_overrides)
+{
+    auto mappings = std::vector<TensorModelMapping>();
+
+    for (auto map : m_model_inputs)
+    {
+        mappings.emplace_back(TensorModelMapping(map.name, map.name));
+    }
+
+    for (auto override : input_map_overrides)
+    {
+        mappings.emplace_back(override);
+    }
+
+    return mappings;
+};
+
+std::vector<TensorModelMapping> TritonInferenceClientSession::get_output_mappings(
+    std::vector<TensorModelMapping> output_map_overrides)
+{
+    auto mappings = std::vector<TensorModelMapping>();
+
+    for (auto map : m_model_outputs)
+    {
+        mappings.emplace_back(TensorModelMapping(map.name, map.name));
+    }
+
+    for (auto override : output_map_overrides)
+    {
+        auto pos = std::find_if(mappings.begin(), mappings.end(), [override](TensorModelMapping m) {
+            return m.model_field_name == override.model_field_name;
+        });
+
+        if (pos != mappings.end())
         {
-            mapped_name = m_inout_mapping[mapped_name];
+            mappings.erase(pos);
         }
 
-        m_model_outputs.push_back(
-            TritonInOut{output.at("name").get<std::string>(), bytes, dtype, shape, mapped_name, 0});
+        mappings.emplace_back(override);
     }
+
+    return mappings;
 }
 
-bool InferenceClientStage::is_default_grpc_port(std::string& server_url)
+mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&& inputs)
 {
-    // Check if we are the default gRPC port of 8001 and try 8000 for http client instead
-    size_t colon_loc = server_url.find_last_of(':');
+    CHECK_EQ(inputs.size(), m_model_inputs.size()) << "Input tensor count does not match model input count";
 
-    if (colon_loc == -1)
+    auto element_count = inputs.begin()->second.shape(0);
+
+    for (auto& input : inputs)
     {
-        return false;
+        CHECK_EQ(element_count, input.second.shape(0)) << "Input tensors are different sizes";
     }
 
-    // Check if the port matches 8001
-    if (server_url.size() < colon_loc + 1 || server_url.substr(colon_loc + 1) != "8001")
+    TensorMap model_output_tensors;
+
+    // create full inference output
+    for (auto& model_output : m_model_outputs)
     {
-        return false;
+        ShapeType full_output_shape    = model_output.shape;
+        full_output_shape[0]           = element_count;
+        auto full_output_element_count = TensorUtils::get_elem_count(full_output_shape);
+
+        auto full_output_buffer = std::make_shared<rmm::device_buffer>(
+            full_output_element_count * model_output.datatype.item_size(), rmm::cuda_stream_per_thread);
+
+        ShapeType stride{full_output_shape[1], 1};
+
+        model_output_tensors[model_output.name].swap(
+            Tensor::create(std::move(full_output_buffer), model_output.datatype, full_output_shape, stride, 0));
     }
 
-    // It matches, change to 8000
-    server_url = server_url.substr(0, colon_loc) + ":8000";
+    // process all batches
 
-    return true;
-}
+    for (TensorIndex start = 0; start < element_count; start += m_max_batch_size)
+    {
+        TensorIndex stop = std::min(start + m_max_batch_size, static_cast<TensorIndex>(element_count));
 
-// ************ InferenceClientStageInterfaceProxy********* //
-std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
-    mrc::segment::Builder& builder,
-    const std::string& name,
-    std::string model_name,
-    std::string server_url,
-    bool force_convert_inputs,
-    bool use_shared_memory,
-    bool needs_logits,
-    std::map<std::string, std::string> inout_mapping)
+        // create batch inputs
+
+        std::vector<TritonInferInput> inference_inputs;
+
+        for (auto model_input : m_model_inputs)
+        {
+            auto inference_input_slice =
+                inputs[model_input.name].slice({start, 0}, {stop, -1}).as_type(model_input.datatype);
+
+            inference_inputs.emplace_back(
+                TritonInferInput{model_input.name,
+                                 {inference_input_slice.shape(0), inference_input_slice.shape(1)},
+                                 model_input.datatype.triton_str(),
+                                 inference_input_slice.get_host_data()});
+        }
+
+        // create batch outputs
+
+        std::vector<TritonInferRequestedOutput> outputs;
+
+        for (auto model_output : m_model_outputs)
+        {
+            outputs.emplace_back(TritonInferRequestedOutput{model_output.name});
+        }
+
+        // infer batch results
+
+        auto options = triton::client::InferOptions(m_model_name);
+
+        auto results = co_await TritonInferOperation(*m_client, options, inference_inputs, outputs);
+
+        // verify batch results and copy to full output tensors
+
+        for (auto model_output : m_model_outputs)
+        {
+            auto output_tensor = model_output_tensors[model_output.name].slice({start, 0}, {stop, -1});
+
+            std::vector<int64_t> output_shape;
+
+            CHECK_TRITON(results->Shape(model_output.name, &output_shape));
+
+            // Make sure we have at least 2 dims
+            while (output_shape.size() < 2)
+            {
+                output_shape.push_back(1);
+            }
+
+            const uint8_t* output_ptr = nullptr;
+            size_t output_ptr_size    = 0;
+            CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
+
+            DCHECK_EQ(stop - start, output_shape[0]);
+            DCHECK_EQ(output_tensor.bytes(), output_ptr_size);
+            DCHECK_NOTNULL(output_ptr);            // NOLINT
+            DCHECK_NOTNULL(output_tensor.data());  // NOLINT
+
+            MRC_CHECK_CUDA(cudaMemcpy(output_tensor.data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
+        }
+    }
+
+    co_return model_output_tensors;
+};
+
+TritonInferenceClient::TritonInferenceClient(std::unique_ptr<ITritonClient>&& client, std::string model_name) :
+  m_client(std::move(client)),
+  m_model_name(std::move(model_name))
+{}
+
+std::unique_ptr<IInferenceClientSession> TritonInferenceClient::create_session()
 {
-    auto stage = builder.construct_object<InferenceClientStage>(
-        name, model_name, server_url, force_convert_inputs, use_shared_memory, needs_logits, inout_mapping);
-
-    return stage;
+    return std::make_unique<TritonInferenceClientSession>(m_client, m_model_name);
 }
+
 }  // namespace morpheus

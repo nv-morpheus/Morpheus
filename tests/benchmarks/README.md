@@ -200,5 +200,5 @@ You can use the same Dev container created here to run the Production DFP benchm
 ```bash
 mamba env update \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./morpheus/conda/environments/examples_cuda-121_arch-x86_64.yaml
+  --file ./conda/environments/examples_cuda-121_arch-x86_64.yaml
 ```
