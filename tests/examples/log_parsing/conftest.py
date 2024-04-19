@@ -17,7 +17,7 @@ import pytest
 
 
 @pytest.fixture(name="config")
-def config_fixture(config):
+def config_fixture(config, use_cpp: bool):
     """
     The log_parsing pipelie requires NLP mode. Set this here so all the tests don't need to set it themselves.
     """
