@@ -29,7 +29,7 @@ from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 
 @pytest.fixture(name='config')
-def fixture_config(config: Config):
+def fixture_config(config: Config, use_cpp: bool):
     config.class_labels = [
         "address",
         "bank_acct",
