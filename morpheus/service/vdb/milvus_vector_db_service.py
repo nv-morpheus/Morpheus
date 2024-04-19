@@ -32,6 +32,9 @@ logger = logging.getLogger(__name__)
 IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = "MilvusVectorDBResourceService requires the milvus and pymilvus packages to be installed."
 
+# https://milvus.io/docs/limitations.md#Length-of-a-string
+MAX_STRING_LENGTH = 65535
+
 try:
     import pymilvus
     from pymilvus.orm.mutation import MutationResult
@@ -275,7 +278,10 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         return self._insert_result_to_dict(result=result)
 
-    def insert_dataframe(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs: dict[str, typing.Any]) -> dict:
+    def insert_dataframe(self,
+                         df: typing.Union[cudf.DataFrame, pd.DataFrame],
+                         truncate_long_strings: bool = False,
+                         **kwargs: dict[str, typing.Any]) -> dict:
         """
         Insert a dataframe entires into the vector database.
 
@@ -283,6 +289,8 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         ----------
         df : typing.Union[cudf.DataFrame, pd.DataFrame]
             Dataframe to be inserted into the collection.
+        truncate_long_strings : bool, optional
+            When true, truncate strings values that are longer than the max length supported by Milvus (65535).
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
 
@@ -294,6 +302,19 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         if isinstance(df, cudf.DataFrame):
             df = df.to_pandas()
+
+        if truncate_long_strings:
+            for col in df:
+                str_series = df[col]
+                if str_series.dtype == "object":
+                    max_len = str_series.str.len().max()
+                    if max_len > MAX_STRING_LENGTH:
+                        logger.warning(("Column '%s' has a string length of %d, larger than the max of %d"
+                                        "supported by Milvus, truncating"),
+                                       col,
+                                       max_len,
+                                       MAX_STRING_LENGTH)
+                        df[col] = str_series.str.slice(0, MAX_STRING_LENGTH)
 
         # Ensure that there are no None values in the DataFrame entries.
         for field_name, dtype in self._fillna_fields_dict.items():
