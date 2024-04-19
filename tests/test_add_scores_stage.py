@@ -31,7 +31,7 @@ from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 
 
 @pytest.fixture(name='config')
-def fixture_config(config: Config):
+def fixture_config(config: Config, use_cpp: bool):
     config.class_labels = ['frogs', 'lizards', 'toads']
     config.feature_length = 12
     yield config
