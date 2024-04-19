@@ -27,7 +27,6 @@ from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
-
 @register_stage("from-doca-convert", modes=[PipelineModes.NLP])
 class DocaConvertStage(PreallocatorMixin, SinglePortStage):
     """
@@ -37,11 +36,9 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    split_hdr : bool, default False
-        Split header fields as separate items
     """
 
-    def __init__(self, c: Config, split_hdr: bool = False):
+    def __init__(self, c: Config):
 
         super().__init__(c)
 
@@ -56,8 +53,7 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
                                        "Ensure the DOCA components have been built and installed. Error message: ") +
                                       ex.msg) from ex
 
-        self._split_hdr = split_hdr
-        self._max_concurrent = 1
+        self._max_concurrent = c.num_threads
 
     @property
     def name(self) -> str:
@@ -80,7 +76,7 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            node = self.doca_convert_class(builder, self.unique_name, self._split_hdr)
+            node = self.doca_convert_class(builder, self.unique_name)
             node.launch_options.pe_count = self._max_concurrent
             builder.make_edge(input_node, node)
             return node

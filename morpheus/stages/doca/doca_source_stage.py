@@ -65,7 +65,7 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._batch_size = c.pipeline_batch_size
         self._input_count = None
-        self._max_concurrent = c.num_threads
+        self._max_concurrent = 1 # Only 1 thread is enough for 2 queues
         self._nic_pci_address = nic_pci_address
         self._gpu_pci_address = gpu_pci_address
         self._traffic_type = traffic_type.lower()

@@ -83,21 +83,13 @@ static uint64_t now_ns()
 
 namespace morpheus {
 
-DocaConvertStage::DocaConvertStage(bool const& split_hdr) :
+DocaConvertStage::DocaConvertStage() :
   base_t(rxcpp::operators::map([this](sink_type_t x) {
       return this->on_data(std::move(x));
-  })),
-  m_split_hdr(split_hdr)
+  }))
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
-
-    // Protocol?
-    // Total payload size?
-
-    // assemble metadata
-
-    // if (split_hdr)
 }
 
 DocaConvertStage::~DocaConvertStage()
@@ -170,9 +162,9 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
 }
 
 std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfaceProxy::init(
-    mrc::segment::Builder& builder, std::string const& name, bool const& split_hdr)
+    mrc::segment::Builder& builder, std::string const& name)
 {
-    return builder.construct_object<DocaConvertStage>(name, split_hdr);
+    return builder.construct_object<DocaConvertStage>(name);
 }
 
 }  // namespace morpheus

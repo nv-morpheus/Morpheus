@@ -22,12 +22,13 @@ from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
+from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-# from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.logger import configure_logging
 
@@ -105,10 +106,10 @@ def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, ou
 
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'tcp'))
-    # pipeline.set_source(DocaConvertStage(config, true))
+    pipeline.add_stage(DocaConvertStage(config))
 
     # add deserialize stage
-    # pipeline.add_stage(DeserializeStage(config))
+    pipeline.add_stage(DeserializeStage(config))
     pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
 
     hashfile = '/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt'
