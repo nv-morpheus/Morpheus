@@ -96,7 +96,7 @@ class DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacket
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    DocaConvertStage(bool const& split_hdr);
+    DocaConvertStage();
     virtual ~DocaConvertStage();
 
   private:
@@ -107,7 +107,6 @@ class DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacket
     source_type_t on_data(sink_type_t x);
     source_type_t on_raw_packet_message(sink_type_t x);
 
-    bool m_split_hdr;
     cudaStream_t m_stream;
     rmm::cuda_stream_view m_stream_cpp;
 };
@@ -122,8 +121,7 @@ struct DocaConvertStageInterfaceProxy
      * @brief Create and initialize a DocaConvertStage, and return the result.
      */
     static std::shared_ptr<mrc::segment::Object<DocaConvertStage>> init(mrc::segment::Builder& builder,
-                                                                        std::string const& name,
-                                                                        const bool& split_hdr);
+                                                                        std::string const& name);
 };
 
 #pragma GCC visibility pop

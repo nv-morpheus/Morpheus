@@ -50,8 +50,7 @@ PYBIND11_MODULE(doca, m)
         m, "DocaConvertStage", py::multiple_inheritance())
         .def(py::init<>(&DocaConvertStageInterfaceProxy::init),
              py::arg("builder"),
-             py::arg("name"),
-             py::arg("split_hdr") = false);
+             py::arg("name"));
 }
 
 }  // namespace morpheus

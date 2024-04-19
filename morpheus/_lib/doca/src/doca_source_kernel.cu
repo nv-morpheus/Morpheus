@@ -125,6 +125,7 @@ __global__ void _packet_receive_kernel(
                 DOCA_GPUNETIO_VOLATILE(*exit_condition) = 1;
                 return;
             }
+
             pkt_info->pkt_addr[packet_idx] = buf_addr;
             if (is_tcp) {
                 raw_to_tcp(buf_addr, &hdr_tcp, &payload);
@@ -138,10 +139,13 @@ __global__ void _packet_receive_kernel(
         }
 
         if (threadIdx.x == 0) {
-        //   printf("Update semaphore %d with pkts %d\n", sem_idx, packet_count_received);
+            // printf("Update semaphore %d with pkts %d\n", sem_idx, packet_count_received);
             // DEVICE_GET_TIME(pkt_proc);
+            /* Quick fix waiting for doca 2.7 */
+            if (packet_count_received > PACKETS_PER_BLOCK)
+                packet_count_received = PACKETS_PER_BLOCK;
             DOCA_GPUNETIO_VOLATILE(pkt_info->packet_count_out) = packet_count_received;
-
+            DOCA_GPUNETIO_VOLATILE(packet_count_received) = 0;
             doca_ret = doca_gpu_dev_semaphore_set_status(sem, sem_idx, DOCA_GPU_SEMAPHORE_STATUS_READY);
             if (doca_ret != DOCA_SUCCESS) {
                 printf("Error %d doca_gpu_dev_semaphore_set_status\n", doca_ret);

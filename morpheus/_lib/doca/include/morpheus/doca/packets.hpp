@@ -18,7 +18,7 @@
 #pragma once
 
 #define ETHER_ADDR_LEN  6 /**< Length of Ethernet address. */
-#define IP_ADDR_STRING_LEN  16
+#define IP_ADDR_STRING_LEN 15
 
 #define BYTE_SWAP16(v) \
     ((((uint16_t)(v) & UINT16_C(0x00ff)) << 8) | (((uint16_t)(v) & UINT16_C(0xff00)) >> 8))
