@@ -45,13 +45,11 @@ The model architecture consists of an Autoencoder, where the reconstruction loss
 
 ## Output:
 **Output Format:**
-* Anomaly score and the reconstruction loss for each feature in a pandas dataframe
+* Anomaly score (per feature)
+* Reconstruction loss (per feature)
 
 **Output Parameters:**
-* None
-
-**Other Properties Related to Output:**
-* Not Applicable
+* Pandas Dataframe
 
 ## Software Integration:
 **Runtime(s):**
@@ -102,45 +100,21 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 **Test Hardware:**
 * Other
 
+## Ethical Considerations (For NVIDIA Models Only):
+NVIDIA believes Trustworthy AI is a shared responsibility and we have established policies and practices to enable development for a wide array of AI applications.  When downloaded or used in accordance with our terms of service, developers should work with their internal model team to ensure this model meets requirements for the relevant industry and use case and addresses unforeseen product misuse.  For more detailed information on ethical considerations for this model, please see the Model Card++ Explainability, Bias, Safety & Security, and Privacy Subcard
+
 # Subcards
 
 ## Model Card ++ Bias Subcard
 
-### What is the gender balance of the model validation data?
-* Not Applicable
-
-### What is the racial/ethnicity balance of the model validation data?
-* Not Applicable
-
-### What is the age balance of the model validation data?
-* Not Applicable
-
 ### What is the language balance of the model validation data?
 * English (cloudtrail logs): 100%
 
-### What is the geographic origin language balance of the model validation data?
-* Not Applicable
-
-### What is the educational background balance of the model validation data?
-* Not Applicable
-
-### What is the accent balance of the model validation data?
-* Not Applicable
-
-### What is the face/key point balance of the model validation data?
-* Not Applicable
-
-### What is the skin/tone balance of the model validation data?
-* Not Applicable
-
-### What is the religion balance of the model validation data?
-* Not Applicable
-
 ### Individuals from the following adversely impacted (protected classes) groups participate in model design and testing.
-* Not Applicable
+* None of the Above. 
 
 ### Describe measures taken to mitigate against unwanted bias.
-* Not Applicable
+* None of the Above. 
 
 ## Model Card ++ Explainability Subcard
 
@@ -161,11 +135,11 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 * The model works by training on baseline behaviors and subsequently detecting deviations from the established baseline, triggering alerts accordingly.
 * [Training notebook](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/training-tuning-scripts/dfp-models/hammah-20211017.ipynb)
 
-### Name the adversely impacted groups (protected classes) this has been tested to deliver comparable outcomes regardless of:
-* Not Applicable
-
 ### List the technical limitations of the model.
 * The model expects cloudtrail logs with specific features that match the training dataset. Data lacking the required features or requiring a different feature set may not be compatible with the model.
+
+### Has this been verified to have met prescribed quality standards?
+* Yes
 
 ### What performance metrics were used to affirm the model's performance?
 * The model's performance was evaluated based on its ability to correctly identify anomalous behavior in the synthetic dataset during testing.
@@ -181,10 +155,7 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 ### Link the location of the training dataset's repository (if able to share).
 * https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/models/datasets/training-data/cloudtrail
 
-### Is the model used in an application with physical safety impact?
-* No
-
-### Describe physical safety impact (if present).
+### Describe the life critical impact (if present).
 * None
 
 ### Was model and dataset assessed for vulnerability for potential form of attack?
@@ -196,22 +167,10 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 ### Name use case restrictions for the model.
 * The model's use case is restricted to testing the Morpheus pipeline and may not be suitable for other applications.
 
-### Has this been verified to have met prescribed quality standards?
-* No
-
-### Name target quality Key Performance Indicators (KPIs) for which this has been tested.
-* None
-
-### Is the model and dataset compliant with National Classification Management Society (NCMS)?
-* No
-
-### Are there explicit model and dataset restrictions?
-* No
+### Name explicit model and/or dataset restrictions.
+* The Principle of least privilege (PoLP) is applied limiting access for dataset generation and model development.
 
 ### Are there access restrictions to systems, model, and data?
-* No
-
-### Is there a digital signature?
 * No
 
 
@@ -219,7 +178,7 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 
 
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
-* Neither
+* None
 
 ### Was consent obtained for any PII used?
 * The synthetic data used in this model is generated using the [faker](https://github.com/joke2k/faker/blob/master/LICENSE.txt)  python package. The user agent field is generated by faker, which pulls items from its own dataset of fictitious values (located in the linked repo). Similarly, the event source field is randomly chosen from a list of event names provided in the AWS documentation. There are no privacy concerns or PII involved in this synthetic data generation process.
@@ -228,22 +187,22 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 * Not applicable
 
 ### How often is dataset reviewed?
-* The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.
+* The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for changes.
 
 ### Is a mechanism in place to honor data subject right of access or deletion of personal data?
-* No (as the dataset is fully synthetic)
+* No (dataset is fully synthetic)
 
 ### If PII collected for the development of this AI model, was it minimized to only what was required?
 * Not Applicable (no PII collected)
 
-### Is data in dataset traceable?
+### Is there data provenance?
 * No
 
 ### Are we able to identify and trace source of dataset?
 * Yes ([fully synthetic dataset](https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/models/datasets/training-data/cloudtrail))
 
 ### Does data labeling (annotation, metadata) comply with privacy laws?
-* Not applicable (as the dataset is fully synthetic)
+* Not applicable (dataset is fully synthetic)
 
 ### Is data compliant with data subject requests for data correction or removal, if such a request was made?
-* Not applicable (as the dataset is fully synthetic)
+* Not applicable (dataset is fully synthetic)
