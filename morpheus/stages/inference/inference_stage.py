@@ -192,7 +192,7 @@ class InferenceStage(MultiMessageStage):
         typing.Tuple
             Tuple of input types.
         """
-        return (MultiInferenceMessage, )
+        return (MultiInferenceMessage, ControlMessage)
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MultiResponseMessage)
