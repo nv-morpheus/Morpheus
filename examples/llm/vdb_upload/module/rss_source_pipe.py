@@ -48,7 +48,7 @@ class RSSSourcePipeSchema(BaseModel):
     output_batch_size: int = 2048
     request_timeout_sec: float = 2.0
     run_indefinitely: bool = True
-    stop_after_sec: int = 0
+    stop_after_rec: int = 0
     vdb_resource_name: str
     web_scraper_config: Optional[Dict[Any, Any]] = None
 
@@ -130,7 +130,7 @@ def _rss_source_pipe(builder: mrc.Builder):
         "cooldown_interval_sec": validated_config.cooldown_interval_sec,
         "request_timeout_sec": validated_config.request_timeout_sec,
         "interval_sec": validated_config.interval_sec,
-        "stop_after_sec": validated_config.stop_after_sec,
+        "stop_after_rec": validated_config.stop_after_rec,
     }
     rss_source_loader = RSSSourceLoaderFactory.get_instance("rss_source", {"rss_source": rss_source_config})
 
