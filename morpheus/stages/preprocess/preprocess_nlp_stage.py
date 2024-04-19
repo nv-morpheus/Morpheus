@@ -24,10 +24,8 @@ import numpy as np
 
 import cudf
 
+import morpheus._lib.messages as _messages
 import morpheus._lib.stages as _stages
-# We need the C++ impl of TensorMemory until #1646 is resolved
-# pylint: disable-next=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_package_relative_file
@@ -206,13 +204,14 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
         del text_series
 
+        # We need the C++ impl of TensorMemory until #1646 is resolved
         message.tensors(
-            CppTensorMemory(count=tokenized.input_ids.shape[0],
-                            tensors={
-                                "input_ids": tokenized.input_ids,
-                                "input_mask": tokenized.input_mask,
-                                "seq_ids": tokenized.segment_ids
-                            }))
+            _messages.TensorMemory(count=tokenized.input_ids.shape[0],
+                                   tensors={
+                                       "input_ids": tokenized.input_ids,
+                                       "input_mask": tokenized.input_mask,
+                                       "seq_ids": tokenized.segment_ids
+                                   }))
 
         message.set_metadata("inference_memory_params", {"inference_type": "nlp"})
         return message
