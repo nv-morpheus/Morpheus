@@ -192,6 +192,9 @@ class InferenceStage(MultiMessageStage):
         typing.Tuple
             Tuple of input types.
         """
+        if (self._build_cpp_node()):
+            return (MultiInferenceMessage, )
+
         return (MultiInferenceMessage, ControlMessage)
 
     def compute_schema(self, schema: StageSchema):
