@@ -25,6 +25,8 @@ import numpy as np
 import cudf
 
 import morpheus._lib.stages as _stages
+# We need the C++ impl of TensorMemory until #1646 is resolved
+# pylint: disable-next=morpheus-incorrect-lib-from-import
 from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.utils import MorpheusRelativePath
