@@ -113,8 +113,8 @@ class OpenAIChatClient(LLMClient):
         self._model_kwargs = copy.deepcopy(model_kwargs)
 
         # Create the client objects for both sync and async
-        self._client = openai.OpenAI(max_retries=max_retries)
-        self._client_async = openai.AsyncOpenAI(max_retries=max_retries)
+        self._client = openai.OpenAI(api_key=parent._api_key, base_url=parent._base_url, max_retries=max_retries)
+        self._client_async = openai.AsyncOpenAI(api_key=parent._api_key, base_url=parent._base_url, max_retries=max_retries)
 
     def get_input_names(self) -> list[str]:
         input_names = [self._prompt_key]
@@ -316,12 +316,18 @@ class OpenAIChatService(LLMService):
     A service for interacting with OpenAI Chat models, this class should be used to create clients.
     """
 
-    def __init__(self, *, default_model_kwargs: dict = None) -> None:
+    def __init__(self, *, api_key: str = None, base_url: str = None, default_model_kwargs: dict = None) -> None:
         """
         Creates a service for interacting with OpenAI Chat models, this class should be used to create clients.
 
         Parameters
         ----------
+        api_key : str, optional
+            The API key for the LLM service, by default None. If `None` the API key will be read from the
+            `OPENAI_API_KEY` environment variable. If neither are present an error will be raised.
+        base_url : str, optional
+            The api host url, by default None. If `None` the url will be read from the `OPENAI_API_BASE` environment
+            variable. If neither are present the OpenAI default will be used., by default None
         default_model_kwargs : dict, optional
             Default arguments to use when creating a client via the `get_client` function. Any argument specified here
             will automatically be used when calling `get_client`. Arguments specified in the `get_client` function will
@@ -337,6 +343,9 @@ class OpenAIChatService(LLMService):
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
         super().__init__()
+
+        self._api_key = api_key
+        self._base_url = base_url
 
         self._default_model_kwargs = default_model_kwargs or {}
 
