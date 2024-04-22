@@ -142,8 +142,6 @@ __global__ void _packet_receive_kernel(
             // printf("Update semaphore %d with pkts %d\n", sem_idx, packet_count_received);
             // DEVICE_GET_TIME(pkt_proc);
             /* Quick fix waiting for doca 2.7 */
-            if (packet_count_received > PACKETS_PER_BLOCK)
-                packet_count_received = PACKETS_PER_BLOCK;
             DOCA_GPUNETIO_VOLATILE(pkt_info->packet_count_out) = packet_count_received;
             DOCA_GPUNETIO_VOLATILE(packet_count_received) = 0;
             doca_ret = doca_gpu_dev_semaphore_set_status(sem, sem_idx, DOCA_GPU_SEMAPHORE_STATUS_READY);
