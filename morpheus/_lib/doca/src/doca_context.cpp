@@ -94,11 +94,11 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
     doca_flow_cfg rxq_flow_cfg = {0};
     rte_eth_dev_info dev_info  = {nullptr};
     rte_eth_conf eth_conf      = {
-            .rxmode =
+             .rxmode =
             {
                      .mtu = 1024, /* Not really used, just to initialize DPDK */
             },
-            .txmode =
+             .txmode =
             {
                      .offloads = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM | RTE_ETH_TX_OFFLOAD_UDP_CKSUM | RTE_ETH_TX_OFFLOAD_TCP_CKSUM,
             },
@@ -199,15 +199,16 @@ DocaContext::~DocaContext()
 {
     doca_flow_port_stop(m_flow_port);
     doca_flow_destroy();
-    if (m_gpu != nullptr) {
+    if (m_gpu != nullptr)
+    {
         auto doca_ret = doca_gpu_destroy(m_gpu);
         if (doca_ret != DOCA_SUCCESS)
             LOG(WARNING) << "DOCA cleanup failed (" << doca_ret << ")" << std::endl;
     }
 
     int ret = rte_eth_dev_stop(m_nic_port);
-	if (ret != 0)
-		LOG(ERROR) << "Couldn't stop DPDK port " << m_nic_port << "err " << ret;
+    if (ret != 0)
+        LOG(ERROR) << "Couldn't stop DPDK port " << m_nic_port << "err " << ret;
 }
 
 doca_gpu* DocaContext::gpu()

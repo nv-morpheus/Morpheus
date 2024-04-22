@@ -30,6 +30,7 @@
 #include <cuda_runtime.h>
 #include <glog/logging.h>
 #include <mrc/cuda/common.hpp>
+#include <rxcpp/rx.hpp>
 
 #include <chrono>
 #include <compare>
