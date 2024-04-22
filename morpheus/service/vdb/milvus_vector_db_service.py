@@ -303,6 +303,19 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         if isinstance(df, cudf.DataFrame):
             df = df.to_pandas()
 
+        if truncate_long_strings:
+            for col in df:
+                str_series = df[col]
+                if str_series.dtype == "object":
+                    max_len = str_series.str.len().max()
+                    if max_len > MAX_STRING_LENGTH:
+                        logger.warning(("Column '%s' has a string length of %d, larger than the max of %d"
+                                        "supported by Milvus, truncating"),
+                                       col,
+                                       max_len,
+                                       MAX_STRING_LENGTH)
+                        df[col] = str_series.str.slice(0, MAX_STRING_LENGTH)
+
         # Ensure that there are no None values in the DataFrame entries.
         for field_name, dtype in self._fillna_fields_dict.items():
             if dtype in (pymilvus.DataType.VARCHAR, pymilvus.DataType.STRING):
@@ -321,19 +334,6 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         # From the schema, this is the list of columns we need, excluding any auto_id columns
         column_names = [field.name for field in self._fields if not field.auto_id]
-
-        if truncate_long_strings:
-            for col in [column_names]:
-                if df[col].dtype == "object":
-                    max_len = df[col].str.len().max()
-                    if max_len > MAX_STRING_LENGTH:
-                        logger.warning(("Column '%s' has a string length of %d, larger than the max of %d "
-                                        "supported by Milvus, truncating"),
-                                       col,
-                                       max_len,
-                                       MAX_STRING_LENGTH)
-                        df[col] = df[col].str.slice(0, MAX_STRING_LENGTH)
-                        logger.warning("Column '%s' has been truncated to a max length of %d", col, df[col].len().max())
 
         # Note: dataframe columns has to be in the order of collection schema fields.s
         result = self._collection.insert(data=df[column_names], **kwargs)
