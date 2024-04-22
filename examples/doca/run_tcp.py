@@ -21,8 +21,8 @@ from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
+from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "morpheus/doca/common.hpp"
 #include "morpheus/doca/doca_kernels.hpp"
 #include "morpheus/doca/doca_stages.hpp"
 #include "morpheus/messages/meta.hpp"
@@ -24,6 +25,7 @@
 #include <cuda_runtime.h>
 #include <cudf/column/column.hpp>
 #include <cudf/column/column_factories.hpp>
+#include <cudf/column/column_view.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/scalar/scalar.hpp>
 #include <cudf/table/table.hpp>
@@ -35,6 +37,7 @@
 #include <rxcpp/rx.hpp>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include <memory>
@@ -89,9 +92,9 @@ DocaConvertStage::DocaConvertStage() :
   }))
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
-    m_stream_cpp = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
-    fixed_size_list_cpu = (uint32_t *) calloc(MAX_PKT_RECEIVE * 4, sizeof(uint32_t));
-    cudaMalloc((void **)&fixed_size_list, MAX_PKT_RECEIVE * 4 * sizeof(uint32_t));
+    m_stream_cpp        = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
+    fixed_size_list_cpu = (uint32_t*)calloc(MAX_PKT_RECEIVE * 4, sizeof(uint32_t));
+    cudaMalloc((void**)&fixed_size_list, MAX_PKT_RECEIVE * 4 * sizeof(uint32_t));
     for (int idx = 0; idx < MAX_PKT_RECEIVE * 4; idx++)
         fixed_size_list_cpu[idx] = MAX_PKT_SIZE;
     cudaMemcpy(fixed_size_list, fixed_size_list_cpu, MAX_PKT_RECEIVE * 4 * sizeof(uint32_t), cudaMemcpyDefault);
@@ -133,17 +136,16 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     // const auto t0 = now_ns();
 
     // gather header data
-    auto header_src_ip_col = cudf::make_column_from_scalar(cudf::string_scalar("111.111.111.111"), packet_count);
+    auto header_src_ip_col  = cudf::make_column_from_scalar(cudf::string_scalar("111.111.111.111"), packet_count);
     auto header_src_ip_addr = header_src_ip_col->mutable_view().data<uint8_t>();
-    doca::gather_header_scalar(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, header_src_ip_addr, m_stream_cpp);
+    doca::gather_header_scalar(
+        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, header_src_ip_addr, m_stream_cpp);
 
     // const auto t1 = now_ns();
 
     // gather payload data
-    auto payload_col =
-        doca::gather_payload(packet_count, pkt_addr_list,
-                            pkt_hdr_size_list, pkt_pld_size_list,
-                            fixed_size_list, m_stream_cpp);
+    auto payload_col = doca::gather_payload(
+        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, fixed_size_list, m_stream_cpp);
 
     // const auto t2 = now_ns();
 

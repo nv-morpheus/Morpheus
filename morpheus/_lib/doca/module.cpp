@@ -48,9 +48,7 @@ PYBIND11_MODULE(doca, m)
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<DocaConvertStage>>>(
         m, "DocaConvertStage", py::multiple_inheritance())
-        .def(py::init<>(&DocaConvertStageInterfaceProxy::init),
-             py::arg("builder"),
-             py::arg("name"));
+        .def(py::init<>(&DocaConvertStageInterfaceProxy::init), py::arg("builder"), py::arg("name"));
 }
 
 }  // namespace morpheus

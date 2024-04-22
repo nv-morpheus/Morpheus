@@ -27,6 +27,7 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 # from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.utils.logger import configure_logging
 
+
 @click.command()
 @click.option(
     "--out_file",

@@ -35,6 +35,7 @@
 #include <glog/logging.h>
 #include <mrc/cuda/common.hpp>
 #include <pybind11/pybind11.h>
+#include <rxcpp/rx.hpp>
 
 #include <chrono>
 #include <compare>

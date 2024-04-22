@@ -98,7 +98,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
         struct packets_info* pkt_ptr;
         int sem_idx[MAX_QUEUE] = {0};
-        cudaStream_t rstream = nullptr;
+        cudaStream_t rstream   = nullptr;
         int thread_idx = mrc::runnable::Context::get_runtime_context().rank();
 
         // Add per queue
@@ -121,9 +121,11 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
             cudaStreamDestroy(rstream);
         });
 
-        for (int queue_idx = 0; queue_idx < MAX_QUEUE; queue_idx++) {
-            for (int idxs = 0; idxs < MAX_SEM_X_QUEUE; idxs++) {
-                pkt_ptr = static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(idxs));
+        for (int queue_idx = 0; queue_idx < MAX_QUEUE; queue_idx++)
+        {
+            for (int idxs = 0; idxs < MAX_SEM_X_QUEUE; idxs++)
+            {
+                pkt_ptr               = static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(idxs));
                 pkt_ptr->pkt_addr     = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
                 pkt_ptr->pkt_hdr_size = pkt_hdr_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
                 pkt_ptr->pkt_pld_size = pkt_pld_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
@@ -150,9 +152,12 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
             // const auto start_kernel = now_ns();
 
             // Assume MAX_QUEUE == 2
-            morpheus::doca::packet_receive_kernel(m_rxq[0]->rxq_info_gpu(), m_rxq[1]->rxq_info_gpu(),
-                                                  m_semaphore[0]->gpu_ptr(), m_semaphore[1]->gpu_ptr(),
-                                                  sem_idx[0], sem_idx[1],
+            morpheus::doca::packet_receive_kernel(m_rxq[0]->rxq_info_gpu(),
+                                                  m_rxq[1]->rxq_info_gpu(),
+                                                  m_semaphore[0]->gpu_ptr(),
+                                                  m_semaphore[1]->gpu_ptr(),
+                                                  sem_idx[0],
+                                                  sem_idx[1],
                                                   (m_traffic_type == DOCA_TRAFFIC_TYPE_TCP) ? true : false,
                                                   exit_condition->gpu_ptr(),
                                                   rstream);
@@ -160,12 +165,15 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
             // const auto end_kernel = now_ns();
 
-            for (int queue_idx = 0; queue_idx < MAX_QUEUE; queue_idx++) {
-                if (m_semaphore[queue_idx]->is_ready(sem_idx[queue_idx])) {
+            for (int queue_idx = 0; queue_idx < MAX_QUEUE; queue_idx++)
+            {
+                if (m_semaphore[queue_idx]->is_ready(sem_idx[queue_idx]))
+                {
                     // const auto start_sem = now_ns();
                     // LOG(WARNING) << "CPU READY sem " << sem_idx[queue_idx] << " queue " << thread_idx << std::endl;
 
-                    pkt_ptr = static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(sem_idx[queue_idx]));
+                    pkt_ptr =
+                        static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(sem_idx[queue_idx]));
 
                     // Should not be necessary
                     if (pkt_ptr->packet_count_out == 0)
@@ -175,12 +183,12 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                     // std::endl;
 
                     auto meta = RawPacketMessage::create_from_cpp(pkt_ptr->packet_count_out,
-                                                                MAX_PKT_SIZE,
-                                                                pkt_ptr->pkt_addr,
-                                                                pkt_ptr->pkt_hdr_size,
-                                                                pkt_ptr->pkt_pld_size,
-                                                                true,
-                                                                queue_idx);
+                                                                  MAX_PKT_SIZE,
+                                                                  pkt_ptr->pkt_addr,
+                                                                  pkt_ptr->pkt_hdr_size,
+                                                                  pkt_ptr->pkt_pld_size,
+                                                                  true,
+                                                                  queue_idx);
 
                     // const auto create_msg = now_ns();
 
