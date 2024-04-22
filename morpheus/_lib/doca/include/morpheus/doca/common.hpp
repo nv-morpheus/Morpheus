@@ -29,7 +29,8 @@ uint32_t const PACKETS_PER_BLOCK    = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
 uint32_t const PACKET_RX_TIMEOUT_NS = 500000;  // 1ms //500us
 
 uint32_t const MAX_PKT_RECEIVE = PACKETS_PER_BLOCK;
-uint32_t const MAX_PKT_SIZE    = 4096;
+uint32_t const MAX_PKT_CONVERT = MAX_PKT_RECEIVE * 5;
+uint32_t const MAX_PKT_SIZE    = 2048;
 uint32_t const MAX_PKT_HDR     = 64;
 uint32_t const MAX_PKT_NUM     = 65536;
 uint32_t const MAX_QUEUE       = 2;

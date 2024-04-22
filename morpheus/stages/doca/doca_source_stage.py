@@ -65,7 +65,6 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._batch_size = c.pipeline_batch_size
         self._input_count = None
-        self._max_concurrent = 1 # Only 1 thread is enough for 2 queues
         self._nic_pci_address = nic_pci_address
         self._gpu_pci_address = gpu_pci_address
         self._traffic_type = traffic_type.lower()
@@ -96,7 +95,8 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
                                            self._nic_pci_address,
                                            self._gpu_pci_address,
                                            self._traffic_type)
-            # node.launch_options.pe_count = self._max_concurrent
+            # Only 1 thread is enough for 2 queues
+            node.launch_options.pe_count = 1
             return node
 
         raise NotImplementedError("Does not support Python nodes")

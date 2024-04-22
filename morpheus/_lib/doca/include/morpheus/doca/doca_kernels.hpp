@@ -35,6 +35,7 @@ std::unique_ptr<cudf::column> gather_payload(
     uintptr_t* packets_buffer,
     uint32_t* header_sizes,
     uint32_t* payload_sizes,
+    uint32_t*    fixed_size_list,
     rmm::cuda_stream_view stream,
     rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 

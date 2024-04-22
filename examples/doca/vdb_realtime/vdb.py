@@ -98,17 +98,16 @@ def run_pipeline(out_file, nic_addr, gpu_addr):
 
     config = Config()
     config.mode = PipelineModes.NLP
-    config.pipeline_batch_size = 2048
+    config.pipeline_batch_size = 1024
     config.feature_length = 512
-
-    # Below properties are specified by the command line
-    # config.num_threads = 5
+    config.edge_buffer_size = 512
+    config.num_threads = 15
 
     pipeline = LinearPipeline(config)
 
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'udp'))
-    pipeline.add_stage(DocaConvertStage(config, False))
+    pipeline.add_stage(DocaConvertStage(config))
 
     pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO Source rate", unit='pkts'))
 

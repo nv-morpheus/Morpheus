@@ -52,7 +52,8 @@ def run_pipeline(out_file, nic_addr, gpu_addr):
     config.mode = PipelineModes.NLP
 
     # Below properties are specified by the command line
-    config.num_threads = 1
+    config.num_threads = 4
+    config.edge_buffer_size = 512
 
     def count_raw_packets(message: RawPacketMessage):
         return message.num
@@ -61,8 +62,7 @@ def run_pipeline(out_file, nic_addr, gpu_addr):
 
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'udp'))
-    pipeline.add_stage(
-        MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts', determine_count_fn=count_raw_packets))
+    pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts', determine_count_fn=count_raw_packets))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()

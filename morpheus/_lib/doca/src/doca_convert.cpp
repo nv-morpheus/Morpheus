@@ -90,10 +90,17 @@ DocaConvertStage::DocaConvertStage() :
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
+    fixed_size_list_cpu = (uint32_t *) calloc(MAX_PKT_RECEIVE * 4, sizeof(uint32_t));
+    cudaMalloc((void **)&fixed_size_list, MAX_PKT_RECEIVE * 4 * sizeof(uint32_t));
+    for (int idx = 0; idx < MAX_PKT_RECEIVE * 4; idx++)
+        fixed_size_list_cpu[idx] = MAX_PKT_SIZE;
+    cudaMemcpy(fixed_size_list, fixed_size_list_cpu, MAX_PKT_RECEIVE * 4 * sizeof(uint32_t), cudaMemcpyDefault);
 }
 
 DocaConvertStage::~DocaConvertStage()
 {
+    free(fixed_size_list_cpu);
+    cudaFree(fixed_size_list);
     cudaStreamDestroy(m_stream);
 }
 
@@ -123,16 +130,22 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
 
     // LOG(WARNING) << "New RawPacketMessage with " << packet_count << " packets from queue id " << queue_idx;
 
+    // const auto t0 = now_ns();
+
     // gather header data
     auto header_src_ip_col = cudf::make_column_from_scalar(cudf::string_scalar("111.111.111.111"), packet_count);
     auto header_src_ip_addr = header_src_ip_col->mutable_view().data<uint8_t>();
     doca::gather_header_scalar(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, header_src_ip_addr, m_stream_cpp);
 
+    // const auto t1 = now_ns();
+
     // gather payload data
     auto payload_col =
-        doca::gather_payload(packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
+        doca::gather_payload(packet_count, pkt_addr_list,
+                            pkt_hdr_size_list, pkt_pld_size_list,
+                            fixed_size_list, m_stream_cpp);
 
-    // const auto gather_payload_stop = now_ns();
+    // const auto t2 = now_ns();
 
     std::vector<std::unique_ptr<cudf::column>> gathered_columns;
     gathered_columns.emplace_back(std::move(header_src_ip_col));
@@ -141,7 +154,7 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     // After this point buffers can be reused -> copies actual packets' data
     auto gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
 
-    // const auto gather_table_meta = now_ns();
+    // const auto t3 = now_ns();
 
     auto gathered_metadata = cudf::io::table_metadata();
     gathered_metadata.schema_info.emplace_back("src_ip");
@@ -150,11 +163,11 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     auto gathered_table_w_metadata =
         cudf::io::table_with_metadata{std::move(gathered_table), std::move(gathered_metadata)};
 
-    // const auto create_message_cpp = now_ns();
+    // const auto t4 = now_ns();
 
     auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
 
-    // const auto gather_meta_stop = now_ns();
+    // const auto t5 = now_ns();
 
     cudaStreamSynchronize(m_stream_cpp);
 
