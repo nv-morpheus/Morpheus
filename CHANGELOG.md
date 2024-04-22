@@ -14,6 +14,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+# Morpheus 24.03.02 (22 Apr 2024)
+
+## 🐛 Bug Fixes
+
+- Don't set pe_count for the C++ impl of the TritonInferenceStage ([#1640](https://github.com/nv-morpheus/Morpheus/pull/1640)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix vdb_upload runtime error ([#1643](https://github.com/nv-morpheus/Morpheus/pull/1643)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 📖 Documentation
+
+- Document current known issues in 24.03.02 ([#1656](https://github.com/nv-morpheus/Morpheus/pull/1656)) [@dagardner-nv](https://github.com/dagardner-nv)
+
 # Morpheus 24.03.01 (10 Apr 2024)
 
 ## 🚨 Breaking Changes
