@@ -432,4 +432,7 @@ InferenceClientStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
     return stage;
 }
 
+template class InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>;
+template class InferenceClientStage<ControlMessage, ControlMessage>;
+
 }  // namespace morpheus
