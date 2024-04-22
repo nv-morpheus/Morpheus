@@ -128,7 +128,7 @@ def run():
 @click.option(
     "--vector_db_resource_name",
     type=str,
-    default="VDBUploadExample",
+    default="RSS",
     help="The identifier of the resource on which operations are to be performed in the vector database.",
 )
 @click.option(

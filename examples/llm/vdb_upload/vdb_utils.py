@@ -448,7 +448,7 @@ def build_final_config(vdb_conf_path,
                                       interval_secs=60,
                                       run_indefinitely=True,
                                       stop_after=None,
-                                      vector_db_resource_name="VDBUploadExample",
+                                      vector_db_resource_name="RSS",
                                       content_chunking_size=128,
                                       rss_request_timeout_sec=30,
                                       feed_inputs=build_rss_urls()))
