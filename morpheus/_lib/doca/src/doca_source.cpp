@@ -147,7 +147,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                 continue;
             }
 
-            const auto start_kernel = now_ns();
+            // const auto start_kernel = now_ns();
 
             // Assume MAX_QUEUE == 2
             morpheus::doca::packet_receive_kernel(m_rxq[0]->rxq_info_gpu(), m_rxq[1]->rxq_info_gpu(),
@@ -158,11 +158,11 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                                                   rstream);
             cudaStreamSynchronize(rstream);
 
-            const auto end_kernel = now_ns();
+            // const auto end_kernel = now_ns();
 
             for (int queue_idx = 0; queue_idx < MAX_QUEUE; queue_idx++) {
                 if (m_semaphore[queue_idx]->is_ready(sem_idx[queue_idx])) {
-                    const auto start_sem = now_ns();
+                    // const auto start_sem = now_ns();
                     // LOG(WARNING) << "CPU READY sem " << sem_idx[queue_idx] << " queue " << thread_idx << std::endl;
 
                     pkt_ptr = static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(sem_idx[queue_idx]));
@@ -182,21 +182,21 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                                                                 true,
                                                                 queue_idx);
 
-                    const auto create_msg = now_ns();
+                    // const auto create_msg = now_ns();
 
                     output.on_next(std::move(meta));
 
                     m_semaphore[queue_idx]->set_free(sem_idx[queue_idx]);
                     sem_idx[queue_idx] = (sem_idx[queue_idx] + 1) % MAX_SEM_X_QUEUE;
 
-                    const auto end = now_ns();
+                    // const auto end = now_ns();
 
-                    LOG(WARNING) << "Queue " << queue_idx
-                                << " packets " << pkt_ptr->packet_count_out
-                                << " kernel time ns " << end_kernel - start_kernel
-                                << " Sem + msg ns " << create_msg - start_sem
-                                << " End ns " << end - create_msg
-                                << std::endl;
+                    // LOG(WARNING) << "Queue " << queue_idx
+                    //             << " packets " << pkt_ptr->packet_count_out
+                    //             << " kernel time ns " << end_kernel - start_kernel
+                    //             << " Sem + msg ns " << create_msg - start_sem
+                    //             << " End ns " << end - create_msg
+                    //             << std::endl;
                 }
             }
         }

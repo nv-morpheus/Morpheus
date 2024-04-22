@@ -48,9 +48,23 @@ __global__ void _packet_gather_payload_kernel(
   uintptr_t*  packets_buffer,
   uint32_t* header_sizes,
   uint32_t* payload_sizes,
-  uint8_t*    payload_chars_out
+  uint8_t*  payload_chars_out
 )
 {
+  int pkt_idx = threadIdx.x;
+  int j = 0;
+
+  while (pkt_idx < packet_count) {
+    uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx] + header_sizes[pkt_idx]);
+    for (j = 0; j < payload_sizes[pkt_idx]; j++)
+      payload_chars_out[(MAX_PKT_SIZE * pkt_idx) + j] = pkt_hdr_addr[j];
+    for (; j < MAX_PKT_SIZE; j++)
+      payload_chars_out[(MAX_PKT_SIZE * pkt_idx) + j] = '\0';
+    pkt_idx += blockDim.x;
+  }
+
+#if 0
+
   // Specialize BlockScan for a 1D block of 128 threads of type int
   using BlockScan = cub::BlockScan<int32_t, THREADS_PER_BLOCK>;
   // Allocate shared memory for BlockScan
@@ -86,6 +100,7 @@ __global__ void _packet_gather_payload_kernel(
       //     packets_buffer[packet_idx]);
     }
   }
+#endif
 }
 
 __global__ void _packet_gather_header_kernel(
@@ -115,12 +130,13 @@ std::unique_ptr<cudf::column> gather_payload(
   uintptr_t*    packets_buffer,
   uint32_t*    header_sizes,
   uint32_t*    payload_sizes,
+  uint32_t*    fixed_size_list,
   rmm::cuda_stream_view stream,
   rmm::mr::device_memory_resource* mr)
 {
   auto [offsets_column, bytes] = cudf::detail::make_offsets_child_column(
-    payload_sizes,
-    payload_sizes + packet_count,
+    fixed_size_list,
+    fixed_size_list + packet_count,
     stream,
     mr
   );
