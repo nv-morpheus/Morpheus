@@ -32,10 +32,8 @@ logger = logging.getLogger(__name__)
 IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = "MilvusVectorDBResourceService requires the milvus and pymilvus packages to be installed."
 
-# Milvus has a max string length in bytes of 65535, that is strings a first encoded into UTF-8, while multi-byte
-# characters like "ñ" will have a string length of 1, the actual byte length will be 2
 # https://milvus.io/docs/limitations.md#Length-of-a-string
-MAX_STRING_LENGTH_BYTES = 65535
+MAX_STRING_LENGTH = 65535
 
 try:
     import pymilvus
@@ -329,13 +327,13 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
                 str_series = df[col]
                 if str_series.dtype == "object":
                     max_len = str_series.str.len().max()
-                    if max_len > MAX_STRING_LENGTH_BYTES:
+                    if max_len > MAX_STRING_LENGTH:
                         logger.warning(("Column '%s' has a string length of %d, larger than the max of %d "
                                         "supported by Milvus, truncating"),
                                        col,
                                        max_len,
-                                       MAX_STRING_LENGTH_BYTES)
-                        df[col] = str_series.str.slice(0, MAX_STRING_LENGTH_BYTES)
+                                       MAX_STRING_LENGTH)
+                        df[col] = str_series.str.slice(0, MAX_STRING_LENGTH)
                         logger.warning("Column '%s' has been truncated to a max length of %d",
                                        col,
                                        df[col].str.len().max())
