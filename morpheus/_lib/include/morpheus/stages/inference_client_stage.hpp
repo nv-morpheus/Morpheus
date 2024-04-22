@@ -23,11 +23,13 @@
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/types.hpp"
 
+#include <boost/fiber/policy.hpp>
 #include <mrc/coroutines/async_generator.hpp>
 #include <mrc/coroutines/scheduler.hpp>
 #include <mrc/coroutines/task.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
+#include <pybind11/pybind11.h>
 #include <pymrc/asyncio_runnable.hpp>
 
 #include <cstdint>
