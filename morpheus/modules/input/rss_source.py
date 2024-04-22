@@ -101,7 +101,7 @@ def _rss_source(builder: mrc.Builder):
 
                     records_emitted += df_size
 
-                    if (0 < validated_config.stop_after_sec <= records_emitted):
+                    if (0 < validated_config.stop_after_rec <= records_emitted):
                         stop_requested = True
                         logger.info("Stop limit reached... preparing to halt the source.")
                         break
