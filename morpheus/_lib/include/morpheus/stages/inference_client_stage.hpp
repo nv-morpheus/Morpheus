@@ -31,6 +31,7 @@
 #include <mrc/segment/object.hpp>
 #include <pybind11/pybind11.h>
 #include <pymrc/asyncio_runnable.hpp>
+#include <rxcpp/rx.hpp>
 
 #include <cstdint>
 #include <map>
