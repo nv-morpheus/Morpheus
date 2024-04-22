@@ -30,7 +30,7 @@ class RSSSourceSchema(BaseModel):
     cooldown_interval_sec: int = 600
     request_timeout_sec: float = 2.0
     interval_sec: int = 600
-    stop_after_sec: int = 0
+    stop_after_rec: int = 0
 
     class Config:
         extra = "forbid"
