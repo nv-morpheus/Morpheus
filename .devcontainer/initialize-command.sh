@@ -16,5 +16,5 @@
 
 set -e
 
-# create a docker network for morpheus
+# create a docker network for morpheus if it does not exist
 docker network inspect morpheus >/dev/null 2>&1 || docker network create morpheus
