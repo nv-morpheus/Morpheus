@@ -52,6 +52,7 @@ def test_cudf_needs_truncate(data: list[str], max_bytes: int, expected: bool):
     assert io_utils._cudf_needs_truncate(df, max_bytes) is expected
 
 
+@pytest.mark.parametrize("warn_on_truncate", [True, False])
 @pytest.mark.parametrize(
     "data, max_bytes, expected_data",
     [(MULTI_BYTE_STRINGS[:], 4, ["ñä", "Moρ", "río"]), (MULTI_BYTE_STRINGS[:], 5, ["ñä", "Moρ", "río"]),
@@ -61,7 +62,8 @@ def test_cudf_needs_truncate(data: list[str], max_bytes: int, expected: bool):
 def test_truncate_string_cols_by_bytes(dataset: DatasetManager,
                                        data: list[str],
                                        max_bytes: int,
-                                       expected_data: list[str]):
+                                       expected_data: list[str],
+                                       warn_on_truncate: bool):
     input_df = _mk_df(dataset.df_class, data)
 
     if data == expected_data:
@@ -71,7 +73,7 @@ def test_truncate_string_cols_by_bytes(dataset: DatasetManager,
 
     expected_df = _mk_df(expected_df_class, expected_data)
 
-    result_df = io_utils.truncate_string_cols_by_bytes(input_df, max_bytes)
+    result_df = io_utils.truncate_string_cols_by_bytes(input_df, max_bytes, warn_on_truncate=warn_on_truncate)
 
     assert isinstance(result_df, expected_df_class)
     dataset.assert_df_equal(result_df, expected_df)

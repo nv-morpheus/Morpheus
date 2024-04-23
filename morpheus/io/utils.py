@@ -14,11 +14,15 @@
 # limitations under the License.
 """IO utilities."""
 
+import logging
+
 import pandas as pd
 
 import cudf
 
 from morpheus.utils.type_aliases import DataFrameType
+
+logger = logging.getLogger(__name__)
 
 
 def filter_null_data(x: DataFrameType):
@@ -50,7 +54,7 @@ def _cudf_needs_truncate(df: cudf.DataFrame, max_bytes: int) -> bool:
     return False
 
 
-def truncate_string_cols_by_bytes(df: DataFrameType, max_bytes: int) -> DataFrameType:
+def truncate_string_cols_by_bytes(df: DataFrameType, max_bytes: int, warn_on_truncate: bool = True) -> DataFrameType:
     """
     Truncates all string columns in a dataframe to a maximum number of bytes.
 
@@ -83,6 +87,9 @@ def truncate_string_cols_by_bytes(df: DataFrameType, max_bytes: int) -> DataFram
         if series.dtype == 'object':
             encoded_series = series.str.encode(encoding='utf-8', errors='strict')
             if encoded_series.str.len().max() > max_bytes:
+                if warn_on_truncate:
+                    logger.warning("Truncating column '%s' to %d bytes", col, max_bytes)
+
                 sliced_series = encoded_series.str.slice(0, max_bytes)
 
                 # There is a possibility that slicing by max_len will slice a multi-byte character in half setting
