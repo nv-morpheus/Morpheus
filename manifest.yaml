@@ -1,0 +1,16 @@
+repos:
+- name: morpheus
+  path: morpheus
+  cpp:
+    - name: morpheus
+      sub_dir: ""
+      args: |
+        -DMORPHEUS_PYTHON_INPLACE_BUILD=ON
+  python:
+    - name: morpheus
+      sub_dir: ""
+  git:
+    host: github
+    tag: branch-24.06
+    upstream: nv-morpheus
+    repo: morpheus

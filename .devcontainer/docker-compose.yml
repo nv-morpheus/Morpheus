@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version: "3"
-
 services:
 
   triton:
@@ -54,5 +52,5 @@ services:
 
 networks:
   default:
-    external:
-      name: morpheus
+    name: morpheus
+    external: true
