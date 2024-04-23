@@ -81,7 +81,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
             "rss_source": {
                 "feed_input": feed_input,
                 "interval_sec": interval_secs,
-                "stop_after_sec": stop_after,
+                "stop_after_rec": stop_after,
                 "run_indefinitely": run_indefinitely,
                 "batch_size": batch_size,
                 "enable_cache": enable_cache,

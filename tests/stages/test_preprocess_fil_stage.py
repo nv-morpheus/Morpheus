@@ -27,7 +27,7 @@ from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 
 
 @pytest.fixture(name='config')
-def fixture_config(config: Config):
+def fixture_config(config: Config, use_cpp: bool):  # pylint: disable=unused-argument
     config.feature_length = 1
     config.fil = ConfigFIL()
     config.fil.feature_columns = ["data"]
