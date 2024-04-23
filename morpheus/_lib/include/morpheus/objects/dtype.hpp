@@ -173,6 +173,7 @@ struct DType
     }
 
   private:
+    char byte_order_char() const;
     char type_char() const;
 
     TypeId m_type_id;
