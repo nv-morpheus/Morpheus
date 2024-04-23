@@ -204,6 +204,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
         del text_series
 
+        # We need the C++ impl of TensorMemory until #1646 is resolved
         message.tensors(
             _messages.TensorMemory(count=tokenized.input_ids.shape[0],
                                    tensors={
