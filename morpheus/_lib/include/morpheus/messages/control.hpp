@@ -30,6 +30,7 @@
 #include <string>    // for string
 #include <vector>    // for vector
 
+namespace py = pybind11;
 namespace morpheus {
 
 #pragma GCC visibility push(default)
@@ -186,13 +187,14 @@ class ControlMessage
      * @brief Set the configuration object for the control message.
      * @param config A json object containing configuration information.
      */
-    void config(const nlohmann::json& config);
+    // void config(const nlohmann::json& config);
+    void config(const mrc::pymrc::JSONValues& config);
 
     /**
      * @brief Get the configuration object for the control message.
      * @return A const reference to the json object containing configuration information.
      */
-    [[nodiscard]] const nlohmann::json& config() const;
+    [[nodiscard]] const mrc::pymrc::JSONValues& config() const;
 
     /**
      * @brief Add a task of the given type to the control message.
@@ -218,7 +220,7 @@ class ControlMessage
     /**
      * @brief Get the tasks for the control message.
      */
-    [[nodiscard]] const nlohmann::json& get_tasks() const;
+    [[nodiscard]] const mrc::pymrc::JSONValues& get_tasks() const;
 
     /**
      * @brief Add a key-value pair to the metadata for the control message.
@@ -330,20 +332,6 @@ class ControlMessage
     void task_type(ControlMessageType task_type);
 
     /**
-     * @brief Set a Python object at a specific path
-     * @param path the path in the JSON object where the value should be set
-     * @param value the Python object to set
-     */
-    void set_py_object(const std::string& path, const pybind11::object& value);
-
-    /**
-     * @brief Get the Python object at a specific path
-     * @param path Path to the specified object
-     * @return The Python representation of the object at the specified path
-     */
-    pybind11::object get_py_object(const std::string& path) const;
-
-    /**
      * @brief Sets a timestamp for a specific key.
      *
      * This method stores a timestamp associated with a unique identifier,
@@ -387,11 +375,15 @@ class ControlMessage
     std::shared_ptr<MessageMeta> m_payload{nullptr};
     std::shared_ptr<TensorMemory> m_tensors{nullptr};
 
-    nlohmann::json m_tasks{};
-    nlohmann::json m_config{};
-    mrc::pymrc::JSONValues m_py_objects;
+    mrc::pymrc::JSONValues m_tasks{};
+    mrc::pymrc::JSONValues m_config{};
 
     std::map<std::string, time_point_t> m_timestamps{};
+
+    mrc::pymrc::unserializable_handler_fn_t m_unserializable_handler = [](const py::object& src,
+                                                                        const std::string& path) -> nlohmann::json {
+        throw std::runtime_error("Unserializable object at path: " + path);
+    };
 };
 
 struct ControlMessageProxy
@@ -418,13 +410,6 @@ struct ControlMessageProxy
     static std::shared_ptr<ControlMessage> copy(ControlMessage& self);
 
     /**
-     * @brief Retrieves the configuration of the ControlMessage as a dictionary.
-     * @param self Reference to the underlying ControlMessage object.
-     * @return A pybind11::dict representing the ControlMessage's configuration.
-     */
-    static pybind11::dict config(ControlMessage& self);
-
-    /**
      * @brief Updates the configuration of the ControlMessage from a dictionary.
      * @param self Reference to the underlying ControlMessage object.
      * @param config A pybind11::dict representing the new configuration.
@@ -447,12 +432,6 @@ struct ControlMessageProxy
      */
     static pybind11::dict remove_task(ControlMessage& self, const std::string& type);
 
-    /**
-     * @brief Retrieves all tasks from the ControlMessage.
-     * @param self Reference to the underlying ControlMessage object.
-     * @return A pybind11::dict containing all tasks.
-     */
-    static pybind11::dict get_tasks(ControlMessage& self);
 
     /**
      * @brief Sets a metadata key-value pair.

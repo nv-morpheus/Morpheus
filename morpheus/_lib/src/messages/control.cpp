@@ -23,8 +23,10 @@
 #include <pybind11/chrono.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
+#include <pymrc/types.hpp>
 #include <pymrc/utils.hpp>
 
+#include <cstddef>
 #include <optional>
 #include <ostream>
 #include <regex>
@@ -41,11 +43,11 @@ const std::string ControlMessage::s_config_schema = R"()";
 std::map<std::string, ControlMessageType> ControlMessage::s_task_type_map{{"inference", ControlMessageType::INFERENCE},
                                                                           {"training", ControlMessageType::TRAINING}};
 
-ControlMessage::ControlMessage() : m_config({{"metadata", nlohmann::json::object()}}), m_tasks({}) {}
+ControlMessage::ControlMessage() : m_config(nlohmann::json{{"metadata", nlohmann::json::object()}}), m_tasks() {}
 
 ControlMessage::ControlMessage(const nlohmann::json& _config) :
-  m_config({{"metadata", nlohmann::json::object()}}),
-  m_tasks({})
+  m_config(nlohmann::json{{"metadata", nlohmann::json::object()}}),
+  m_tasks()
 {
     config(_config);
 }
@@ -56,7 +58,7 @@ ControlMessage::ControlMessage(const ControlMessage& other)
     m_tasks  = other.m_tasks;
 }
 
-const nlohmann::json& ControlMessage::config() const
+const mrc::pymrc::JSONValues& ControlMessage::config() const
 {
     return m_config;
 }
@@ -76,15 +78,22 @@ void ControlMessage::add_task(const std::string& task_type, const nlohmann::json
         throw std::runtime_error("Cannot add inference and training tasks to the same control message");
     }
 
-    m_tasks[task_type].push_back(task);
+    m_tasks.get_json(task_type, m_unserializable_handler).push_back(task);
 }
 
 bool ControlMessage::has_task(const std::string& task_type) const
 {
-    return m_tasks.contains(task_type) && m_tasks.at(task_type).size() > 0;
+    try
+    {
+        auto tasks = m_tasks.get_json(task_type, m_unserializable_handler);
+        return tasks.size() > 0;
+    } catch (const std::runtime_error& e)
+    {
+        return false;
+    }
 }
 
-const nlohmann::json& ControlMessage::get_tasks() const
+const mrc::pymrc::JSONValues& ControlMessage::get_tasks() const
 {
     return m_tasks;
 }
@@ -92,8 +101,8 @@ const nlohmann::json& ControlMessage::get_tasks() const
 std::vector<std::string> ControlMessage::list_metadata() const
 {
     std::vector<std::string> key_list{};
-
-    for (auto it = m_config["metadata"].begin(); it != m_config["metadata"].end(); ++it)
+    auto metadata = m_config.get_json("metadata", m_unserializable_handler);
+    for (auto it = metadata.begin(); it != metadata.end(); ++it)
     {
         key_list.push_back(it.key());
     }
@@ -103,30 +112,27 @@ std::vector<std::string> ControlMessage::list_metadata() const
 
 void ControlMessage::set_metadata(const std::string& key, const nlohmann::json& value)
 {
-    if (m_config["metadata"].contains(key))
+    if (m_config.get_json("metadata", m_unserializable_handler).contains(key))
     {
         VLOG(20) << "Overwriting metadata key " << key << " with value " << value;
     }
-
-    m_config["metadata"][key] = value;
+    m_config.get_json("metadata", m_unserializable_handler)[key] = value;
 }
 
 bool ControlMessage::has_metadata(const std::string& key) const
 {
-    return m_config["metadata"].contains(key);
+    return m_config.get_json("metadata", m_unserializable_handler).contains(key);
 }
 
 nlohmann::json ControlMessage::get_metadata() const
 {
-    auto metadata = m_config["metadata"];
-
-    return metadata;
+    return m_config.get_json("metadata", m_unserializable_handler);
 }
 
 nlohmann::json ControlMessage::get_metadata(const std::string& key, bool fail_on_nonexist) const
 {
     // Assuming m_metadata is a std::map<std::string, nlohmann::json> storing metadata
-    auto metadata = m_config["metadata"];
+    auto metadata = m_config.get_json("metadata", m_unserializable_handler);
     auto it       = metadata.find(key);
     if (it != metadata.end())
     {
@@ -142,7 +148,7 @@ nlohmann::json ControlMessage::get_metadata(const std::string& key, bool fail_on
 
 nlohmann::json ControlMessage::remove_task(const std::string& task_type)
 {
-    auto& task_set = m_tasks.at(task_type);
+    auto task_set  = m_tasks.get_json(task_type, m_unserializable_handler);
     auto iter_task = task_set.begin();
 
     if (iter_task != task_set.end())
@@ -154,16 +160,6 @@ nlohmann::json ControlMessage::remove_task(const std::string& task_type)
     }
 
     throw std::runtime_error("No tasks of type " + task_type + " found");
-}
-
-void ControlMessage::set_py_object(const std::string& path, const pybind11::object& value)
-{
-    m_py_objects = std::move(m_py_objects.set_value(path, value));
-}
-
-pybind11::object ControlMessage::get_py_object(const std::string& path) const {
-    auto abs_path = "/" + path;
-    return m_py_objects.get_python(abs_path);
 }
 
 void ControlMessage::set_timestamp(const std::string& key, time_point_t timestamp_ns)
@@ -203,11 +199,11 @@ std::optional<time_point_t> ControlMessage::get_timestamp(const std::string& key
     return std::nullopt;
 }
 
-void ControlMessage::config(const nlohmann::json& config)
+void ControlMessage::config(const mrc::pymrc::JSONValues& config)
 {
-    if (config.contains("type"))
+    try
     {
-        auto task_type = config.at("type");
+        auto task_type = config.get_json("/type", m_unserializable_handler);
         auto _task_type =
             s_task_type_map.contains(task_type) ? s_task_type_map.at(task_type) : ControlMessageType::NONE;
 
@@ -215,24 +211,33 @@ void ControlMessage::config(const nlohmann::json& config)
         {
             this->task_type(_task_type);
         }
+    } catch (const std::runtime_error& e)
+    {
+        // config does not contain a task type
     }
 
-    if (config.contains("tasks"))
+    try
     {
-        auto& tasks = config["tasks"];
+        auto tasks = config.get_json("/tasks", m_unserializable_handler);
         for (const auto& task : tasks)
         {
             add_task(task.at("type"), task.at("properties"));
         }
+    } catch (const std::runtime_error& e)
+    {
+        // config does not contain tasks
     }
 
-    if (config.contains("metadata"))
+    try
     {
-        auto& metadata = config["metadata"];
+        auto metadata = config.get_json("/metadata", m_unserializable_handler);
         for (auto it = metadata.begin(); it != metadata.end(); ++it)
         {
             set_metadata(it.key(), it.value());
         }
+    } catch (const std::runtime_error& e)
+    {
+        // config does not contain metadata
     }
 }
 
@@ -293,18 +298,6 @@ py::dict ControlMessageProxy::remove_task(ControlMessage& self, const std::strin
     auto task = self.remove_task(task_type);
 
     return mrc::pymrc::cast_from_json(task);
-}
-
-py::dict ControlMessageProxy::get_tasks(ControlMessage& self)
-{
-    return mrc::pymrc::cast_from_json(self.get_tasks());
-}
-
-py::dict ControlMessageProxy::config(ControlMessage& self)
-{
-    auto dict = mrc::pymrc::cast_from_json(self.config());
-
-    return dict;
 }
 
 py::object ControlMessageProxy::get_metadata(ControlMessage& self,
