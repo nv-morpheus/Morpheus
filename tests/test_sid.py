@@ -198,7 +198,11 @@ def test_minibert_no_trunc(config: Config, tmp_path: str, message_type: type, mo
 @pytest.mark.usefixtures("launch_mock_triton")
 @pytest.mark.parametrize("data_col_name", ["data", "definitely_not_data"])
 @pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
-def test_minibert_truncated(config: Config, tmp_path: str, message_type: type, morpheus_log_level: int, data_col_name: str):
+def test_minibert_truncated(config: Config,
+                            tmp_path: str,
+                            message_type: type,
+                            morpheus_log_level: int,
+                            data_col_name: str):
 
     results = _run_minibert(config=config,
                             tmp_path=tmp_path,
