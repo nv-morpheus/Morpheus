@@ -91,14 +91,8 @@ void ControlMessage::add_task(const std::string& task_type, const nlohmann::json
 
 bool ControlMessage::has_task(const std::string& task_type) const
 {
-    try
-    {
-        auto tasks = m_tasks.get_json(task_type, m_unserializable_handler);
-        return tasks.size() > 0;
-    } catch (const std::runtime_error& e)
-    {
-        return false;
-    }
+    auto tasks = m_tasks.view_json();
+    return tasks.contains(task_type) && tasks[task_type].size() > 0;
 }
 
 const mrc::pymrc::JSONValues& ControlMessage::get_tasks() const

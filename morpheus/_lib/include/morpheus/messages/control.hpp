@@ -379,7 +379,7 @@ class ControlMessage
 
     std::map<std::string, time_point_t> m_timestamps{};
 
-    mrc::pymrc::unserializable_handler_fn_t m_unserializable_handler = [](const py::object& src,
+    mrc::pymrc::unserializable_handler_fn_t m_unserializable_handler = [](const pybind11::object& src,
                                                                           const std::string& path) -> nlohmann::json {
         throw std::runtime_error("Unserializable object at path: " + path);
     };
