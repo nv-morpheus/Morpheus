@@ -24,6 +24,7 @@ import pandas as pd
 
 import cudf
 
+from morpheus.io.utils import truncate_string_cols_by_bytes
 from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus.service.vdb.vector_db_service import VectorDBService
 
@@ -222,9 +223,11 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         Name of the resource.
     client : MilvusClient
         An instance of the MilvusClient for interaction with the Milvus Vector Database.
+    truncate_long_strings : bool, optional
+        When true, truncate strings values that are longer than the max length of the field
     """
 
-    def __init__(self, name: str, client: "MilvusClient") -> None:
+    def __init__(self, name: str, client: "MilvusClient", truncate_long_strings: bool = False) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
@@ -239,12 +242,21 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         self._vector_field = None
         self._fillna_fields_dict = {}
 
+        # Mapping of field name to max length for string fields
+        self._fields_max_length: dict[str, int] = {}
+
         for field in self._fields:
             if field.dtype == pymilvus.DataType.FLOAT_VECTOR:
                 self._vector_field = field.name
             else:
+                if field.dtype in (pymilvus.DataType.VARCHAR, pymilvus.DataType.STRING):
+                    max_length = field.params.get('max_length')
+                    if max_length is not None:
+                        self._fields_max_length[field.name] = max_length
                 if not field.auto_id:
                     self._fillna_fields_dict[field.name] = field.dtype
+
+        self._truncate_long_strings = truncate_long_strings
 
         self._collection.load()
 
@@ -291,10 +303,6 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         dict
             Returns response content as a dictionary.
         """
-
-        if isinstance(df, cudf.DataFrame):
-            df = df.to_pandas()
-
         # Ensure that there are no None values in the DataFrame entries.
         for field_name, dtype in self._fillna_fields_dict.items():
             if dtype in (pymilvus.DataType.VARCHAR, pymilvus.DataType.STRING):
@@ -311,11 +319,18 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
             else:
                 logger.info("Skipped checking 'None' in the field: %s, with datatype: %s", field_name, dtype)
 
+        if self._truncate_long_strings:
+            df = truncate_string_cols_by_bytes(df, self._fields_max_length, warn_on_truncate=True)
+
         # From the schema, this is the list of columns we need, excluding any auto_id columns
         column_names = [field.name for field in self._fields if not field.auto_id]
 
+        collection_df = df[column_names]
+        if isinstance(collection_df, cudf.DataFrame):
+            collection_df = collection_df.to_pandas()
+
         # Note: dataframe columns has to be in the order of collection schema fields.s
-        result = self._collection.insert(data=df[column_names], **kwargs)
+        result = self._collection.insert(data=collection_df, **kwargs)
         self._collection.flush()
 
         return self._insert_result_to_dict(result=result)
