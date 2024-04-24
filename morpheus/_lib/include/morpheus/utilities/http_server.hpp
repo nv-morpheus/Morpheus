@@ -43,7 +43,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 
 class Listener;
 

@@ -44,7 +44,7 @@ namespace morpheus {
  * array. Helps ensure the proper outputs are set and eases debugging
  *
  */
-#pragma GCC visibility push(default)
+
 class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsMessage, MultiResponseMessage>
 {
   public:
@@ -128,6 +128,6 @@ struct MultiResponseProbsMessageInterfaceProxy : public MultiResponseMessageInte
      */
     static pybind11::object probs(MultiResponseProbsMessage& self);
 };
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

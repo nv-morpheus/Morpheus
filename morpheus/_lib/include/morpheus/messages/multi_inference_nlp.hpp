@@ -39,7 +39,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 /**
  * A stronger typed version of `MultiInferenceMessage` that is used for NLP workloads. Helps ensure the
  * proper inputs are set and eases debugging.
@@ -171,5 +171,5 @@ struct MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInte
      */
     static pybind11::object seq_ids(MultiInferenceNLPMessage& self);
 };
-#pragma GCC visibility pop
+
 }  // namespace morpheus

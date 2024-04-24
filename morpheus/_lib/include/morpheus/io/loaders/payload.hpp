@@ -25,7 +25,7 @@
 #include <memory>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 /**
  * @brief Very simple raw data loader that takes payload data on the control message and returns it
  *
@@ -40,5 +40,5 @@ class PayloadDataLoader : public Loader
 
     std::shared_ptr<ControlMessage> load(std::shared_ptr<ControlMessage> control_message, nlohmann::json task) final;
 };
-#pragma GCC visibility pop
+
 }  // namespace morpheus

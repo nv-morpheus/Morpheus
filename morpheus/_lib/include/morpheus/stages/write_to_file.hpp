@@ -42,7 +42,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 /**
  * @brief Write all messages to a file. Messages are written to a file by this class.
  * This class does not maintain an open file or buffer messages.
@@ -133,6 +133,6 @@ struct WriteToFileStageInterfaceProxy
                                                                         bool flush              = false);
 };
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

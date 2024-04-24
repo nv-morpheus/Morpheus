@@ -31,7 +31,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 enum class FileTypes : int32_t
 {
     Auto,
@@ -94,7 +94,7 @@ FileTypes determine_file_type(const std::string& filename);
  */
 FileTypes determine_file_type(const std::filesystem::path& filename);
 
-#pragma GCC visibility pop
+
 
 /** @} */  // end of group
 }  // namespace morpheus

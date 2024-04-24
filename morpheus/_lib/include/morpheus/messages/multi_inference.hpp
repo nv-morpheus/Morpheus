@@ -42,7 +42,7 @@ namespace morpheus {
  * of the data contained within it. Builds on top of the `MultiInferenceMessage` and `MultiTensorMessage` class
  * to add additional data for inferencing.
  */
-#pragma GCC visibility push(default)
+
 class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiTensorMessage>
 {
   public:
@@ -121,6 +121,6 @@ struct MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceP
                                                        TensorIndex count,
                                                        std::string id_tensor_name);
 };
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

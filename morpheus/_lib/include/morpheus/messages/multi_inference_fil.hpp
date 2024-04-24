@@ -44,7 +44,7 @@ namespace morpheus {
  * proper inputs are set and eases debugging.
  *
  */
-#pragma GCC visibility push(default)
+
 class MultiInferenceFILMessage : public DerivedMultiMessage<MultiInferenceFILMessage, MultiInferenceMessage>
 {
   public:
@@ -146,6 +146,6 @@ struct MultiInferenceFILMessageInterfaceProxy : public MultiInferenceMessageInte
      */
     static pybind11::object seq_ids(MultiInferenceFILMessage& self);
 };
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

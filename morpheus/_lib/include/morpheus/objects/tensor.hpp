@@ -45,7 +45,7 @@ namespace morpheus {
  *
  */
 
-#pragma GCC visibility push(default)
+
 class Tensor
 {
   public:
@@ -93,6 +93,6 @@ class Tensor
     std::shared_ptr<rmm::device_buffer> m_device_buffer;
 };
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

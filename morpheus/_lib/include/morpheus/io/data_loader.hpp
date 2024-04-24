@@ -28,7 +28,7 @@
 
 namespace morpheus {
 
-#pragma GCC visibility push(default)
+
 
 /**
  * @brief Abstract class for loading data from a source.
@@ -136,5 +136,5 @@ class DataLoader
     nlohmann::json m_config;
 };
 
-#pragma GCC visibility pop
+
 }  // namespace morpheus

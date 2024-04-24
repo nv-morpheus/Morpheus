@@ -75,7 +75,7 @@ class ResponseMemoryProbs : public ResponseMemory
 };
 
 /****** ResponseMemoryProbsInterfaceProxy*******************/
-#pragma GCC visibility push(default)
+
 /**
  * @brief Interface proxy, used to insulate python bindings
  */
@@ -107,7 +107,7 @@ struct ResponseMemoryProbsInterfaceProxy : public ResponseMemoryInterfaceProxy
      */
     static void set_probs(ResponseMemoryProbs& self, pybind11::object cupy_values);
 };
-#pragma GCC visibility pop
+
 
 /** @} */  // end of group
 }  // namespace morpheus

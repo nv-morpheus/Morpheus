@@ -31,7 +31,7 @@
 #include <string>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 template <typename ObjectReturnTypeT>
 class FactoryRegistry
 {
@@ -112,6 +112,6 @@ template <typename ObjectReturnTypeT>
 std::map<std::string, std::function<std::shared_ptr<ObjectReturnTypeT>(nlohmann::json)>>
     FactoryRegistry<ObjectReturnTypeT>::m_object_constructors;
 
-#pragma GCC visibility pop
+
 
 }  // namespace morpheus

@@ -35,7 +35,7 @@ struct DocaRxPipe;
 struct DocaSemaphore;
 }  // namespace doca
 
-#pragma GCC visibility push(default)
+
 
 /**
  * @brief Receives a firehose of raw packets from a GPUNetIO-enabled device.
@@ -80,6 +80,6 @@ struct DocaSourceStageInterfaceProxy
                                                                        std::string const& traffic_type);
 };
 
-#pragma GCC visibility pop
+
 
 }  // namespace morpheus

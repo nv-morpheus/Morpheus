@@ -37,7 +37,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 /**
  * @brief Container for holding a collection of named `TensorObject`s in a `std::map` keyed by name.
  * Base class for `InferenceMemory` & `ResponseMemory`
@@ -237,6 +237,6 @@ struct TensorMemoryInterfaceProxy
     static void set_tensor(TensorMemory& self, const std::string name, const pybind11::object& cupy_tensor);
 };
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

@@ -31,7 +31,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 class MutableTableCtxMgr
 {
   public:
@@ -48,6 +48,6 @@ class MutableTableCtxMgr
     std::unique_ptr<pybind11::object> m_py_table;
 };
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

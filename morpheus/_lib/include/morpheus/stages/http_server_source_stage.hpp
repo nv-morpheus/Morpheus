@@ -50,7 +50,7 @@ using request_queue_t = boost::fibers::buffered_channel<table_t>;
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 
 // TODO(dagardner): optionally add headers to the dataframe
 
@@ -112,6 +112,6 @@ struct HttpServerSourceStageInterfaceProxy
                                                                              bool lines,
                                                                              std::size_t stop_after);
 };
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

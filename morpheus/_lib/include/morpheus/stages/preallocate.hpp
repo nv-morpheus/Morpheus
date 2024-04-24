@@ -34,7 +34,7 @@
 #include <vector>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 namespace {
 /**
  * @brief Performs preallocation to the underlying dataframe. These functions ensure that the MutableTableInfo object
@@ -130,5 +130,5 @@ std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageT>>> PreallocateSta
 {
     return builder.construct_object<PreallocateStage<MessageT>>(name, needed_columns);
 }
-#pragma GCC visibility pop
+
 }  // namespace morpheus

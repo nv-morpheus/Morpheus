@@ -43,7 +43,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 /**
  * @brief Base class for both `AddScoresStage` and `AddClassificationStage`
  */
@@ -84,6 +84,6 @@ using AddScoresStageBaseMM =  // NOLINT(readability-identifier-naming)
 using AddScoresStageBaseCM =  // NOLINT(readability-identifier-naming)
     AddScoresStageBase<ControlMessage, ControlMessage>;
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

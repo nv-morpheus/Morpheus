@@ -42,7 +42,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 /**
  * @brief Load messages from a file. Source stage is used to load messages from a file and
  * dumping the contents into the pipeline immediately. Useful for testing performance and accuracy of a pipeline.
@@ -98,6 +98,6 @@ struct FileSourceStageInterfaceProxy
                                                                        int repeat                   = 1,
                                                                        pybind11::dict parser_kwargs = pybind11::dict());
 };
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

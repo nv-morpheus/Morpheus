@@ -33,7 +33,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
@@ -43,6 +43,6 @@ struct TensorObjectInterfaceProxy
     static pybind11::object to_cupy(TensorObject& self);
     static TensorObject from_cupy(pybind11::object cupy_array);
 };
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

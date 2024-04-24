@@ -30,7 +30,7 @@
 #include <utility>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 /**
  * @addtogroup IO
  * @{
@@ -190,5 +190,5 @@ struct SerializersProxy
 };
 
 /** @} */  // end of group
-#pragma GCC visibility pop
+
 }  // namespace morpheus

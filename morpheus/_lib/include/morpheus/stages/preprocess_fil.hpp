@@ -46,7 +46,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 /**
  * @brief FIL input data for inference
  */
@@ -115,6 +115,6 @@ struct PreprocessFILStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>> init_cm(
         mrc::segment::Builder& builder, const std::string& name, const std::vector<std::string>& features);
 };
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

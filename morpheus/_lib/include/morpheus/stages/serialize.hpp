@@ -45,7 +45,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 /**
  * @brief Include & exclude columns from messages. This class filters columns from a `MultiMessage` object emitting a
  * `MessageMeta`.
@@ -134,6 +134,6 @@ struct SerializeStageInterfaceProxy
                                                                            bool fixed_columns = true);
 };
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

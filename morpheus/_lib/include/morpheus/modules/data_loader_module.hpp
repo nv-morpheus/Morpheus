@@ -26,7 +26,7 @@
 #include <string>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules::PersistentModule
 {
     using type_t = DataLoaderModule;
@@ -46,5 +46,5 @@ class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules
 
     DataLoader m_data_loader{};
 };
-#pragma GCC visibility pop
+
 }  // namespace morpheus

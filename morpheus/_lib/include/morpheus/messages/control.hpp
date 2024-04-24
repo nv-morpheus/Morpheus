@@ -31,7 +31,7 @@
 
 namespace morpheus {
 
-#pragma GCC visibility push(default)
+
 enum class ControlMessageType
 {
     NONE,
@@ -513,5 +513,5 @@ struct ControlMessageProxy
     static pybind11::dict filter_timestamp(ControlMessage& self, const std::string& regex_filter);
 };
 
-#pragma GCC visibility pop
+
 }  // namespace morpheus

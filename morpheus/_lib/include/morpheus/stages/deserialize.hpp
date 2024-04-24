@@ -49,7 +49,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 using cm_task_t = std::pair<std::string, nlohmann::json>;
 
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
@@ -186,6 +186,6 @@ typename DeserializeStage<OutputT>::subscribe_fn_t DeserializeStage<OutputT>::bu
     };
 }
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

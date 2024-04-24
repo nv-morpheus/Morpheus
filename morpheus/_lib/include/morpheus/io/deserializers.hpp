@@ -27,7 +27,7 @@
 #include <vector>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 /**
  * @addtogroup IO
  * @{
@@ -78,6 +78,6 @@ int prepare_df_index(cudf::io::table_with_metadata& data_table);
  */
 pybind11::object read_file_to_df(const std::string& filename, FileTypes file_type = FileTypes::Auto);
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

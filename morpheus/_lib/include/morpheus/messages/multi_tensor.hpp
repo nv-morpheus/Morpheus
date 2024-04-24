@@ -30,7 +30,7 @@
 #include <vector>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 
 /****** MultiTensorMessage*******************************/
 
@@ -229,6 +229,6 @@ struct MultiTensorMessageInterfaceProxy
     static pybind11::object get_tensor_property(MultiTensorMessage& self, const std::string name);
 };
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

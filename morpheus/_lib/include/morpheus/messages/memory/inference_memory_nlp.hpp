@@ -103,7 +103,7 @@ class InferenceMemoryNLP : public InferenceMemory
 };
 
 /****** InferenceMemoryNLPInterfaceProxy********************/
-#pragma GCC visibility push(default)
+
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
@@ -175,7 +175,7 @@ struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
      */
     static void set_seq_ids(InferenceMemoryNLP& self, pybind11::object cupy_values);
 };
-#pragma GCC visibility pop
+
 
 /** @} */  // end of group
 }  // namespace morpheus

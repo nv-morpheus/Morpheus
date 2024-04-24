@@ -47,7 +47,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 /**
  * @brief NLP input data for inference
  */
@@ -187,6 +187,6 @@ struct PreprocessNLPStageInterfaceProxy
         std::string column = "data");
 };
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

@@ -32,7 +32,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 /**
  * @brief This is a base container class for data that will be used for inference stages. This class is designed to
     hold generic data as a `TensorObject`s
@@ -81,7 +81,7 @@ struct InferenceMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
      */
     static std::shared_ptr<InferenceMemory> init(TensorIndex count, pybind11::object& tensors);
 };
-#pragma GCC visibility pop
+
 
 /** @} */  // end of group
 }  // namespace morpheus

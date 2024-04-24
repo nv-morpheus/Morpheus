@@ -66,7 +66,7 @@ class ResponseMemory : public TensorMemory
 };
 
 /****** ResponseMemoryInterfaceProxy *************************/
-#pragma GCC visibility push(default)
+
 /**
  * @brief Interface proxy, used to insulate python bindings.
  *
@@ -83,7 +83,7 @@ struct ResponseMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
      */
     static std::shared_ptr<ResponseMemory> init(TensorIndex count, pybind11::object& tensors);
 };
-#pragma GCC visibility pop
+
 
 /** @} */  // end of group
 }  // namespace morpheus

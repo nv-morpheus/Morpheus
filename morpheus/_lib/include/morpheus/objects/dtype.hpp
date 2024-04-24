@@ -41,7 +41,7 @@ constexpr std::size_t size_in_bits()
 }
 
 // Pulled from cudf
-#pragma GCC visibility push(default)
+
 enum class TypeId : int32_t
 {
     EMPTY,    ///< Always null with no underlying data
@@ -180,5 +180,5 @@ struct DType
 };
 
 /** @} */  // end of group
-#pragma GCC visibility pop
+
 }  // namespace morpheus

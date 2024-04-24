@@ -84,7 +84,7 @@ class FiberQueue
     boost::fibers::buffered_channel<pybind11::object> m_queue;
 };
 
-#pragma GCC visibility push(default)
+
 /****** FiberQueueInterfaceProxy *************************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
@@ -123,6 +123,6 @@ struct FiberQueueInterfaceProxy
                      const pybind11::object& value,
                      const pybind11::object& traceback);
 };
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

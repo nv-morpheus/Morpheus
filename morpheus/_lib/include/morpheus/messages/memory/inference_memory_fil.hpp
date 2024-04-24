@@ -86,7 +86,7 @@ class MORPHEUS_EXPORT InferenceMemoryFIL : public InferenceMemory
 };
 
 /****** InferenceMemoryFILInterfaceProxy *************************/
-#pragma GCC visibility push(default)
+
 /**
  * @brief Interface proxy, used to insulate python bindings
  */
@@ -137,7 +137,7 @@ struct InferenceMemoryFILInterfaceProxy : public InferenceMemoryInterfaceProxy
      */
     static void set_seq_ids(InferenceMemoryFIL& self, pybind11::object cupy_values);
 };
-#pragma GCC visibility pop
+
 
 /** @} */  // end of group
 }  // namespace morpheus

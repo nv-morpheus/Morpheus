@@ -44,7 +44,7 @@ namespace morpheus {
  * from ResponseMemory.
  *
  */
-#pragma GCC visibility push(default)
+
 class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, MultiTensorMessage>
 {
   public:
@@ -175,6 +175,6 @@ struct MultiResponseMessageInterfaceProxy : public MultiTensorMessageInterfacePr
      */
     static pybind11::object get_probs_tensor(MultiResponseMessage& self);
 };
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

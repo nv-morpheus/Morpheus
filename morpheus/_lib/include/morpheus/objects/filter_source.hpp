@@ -28,7 +28,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 enum class FilterSource : int32_t
 {
     Auto,
@@ -36,7 +36,7 @@ enum class FilterSource : int32_t
     DATAFRAME
 };
 
-#pragma GCC visibility pop
+
 
 /** @} */  // end of group
 }  // namespace morpheus

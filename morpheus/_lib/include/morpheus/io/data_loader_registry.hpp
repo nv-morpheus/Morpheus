@@ -28,7 +28,7 @@
 #include <string>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 
 extern template class FactoryRegistry<Loader>;
 
@@ -45,5 +45,5 @@ struct LoaderRegistryProxy
     static void register_factory_cleanup_fn(const std::string& name);
 };
 
-#pragma GCC visibility pop
+
 }  // namespace morpheus

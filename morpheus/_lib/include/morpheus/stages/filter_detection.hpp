@@ -43,7 +43,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+
 /**
  * @brief FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor or dataframe column
  * using a specified criteria. Rows in the `meta` dataframe are excluded if their associated value in the datasource
@@ -127,6 +127,6 @@ struct FilterDetectionStageInterfaceProxy
                                                                              std::string field_name);
 };
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus

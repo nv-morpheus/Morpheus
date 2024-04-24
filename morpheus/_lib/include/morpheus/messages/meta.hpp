@@ -32,7 +32,7 @@
 
 namespace morpheus {
 
-#pragma GCC visibility push(default)
+
 /****** Component public implementations ******************/
 /****** MessageMeta****************************************/
 
@@ -299,6 +299,6 @@ struct MessageMetaInterfaceProxy
     static std::optional<std::string> ensure_sliceable_index(MessageMeta& self);
 };
 
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus
