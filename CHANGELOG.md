@@ -26,6 +26,7 @@ limitations under the License.
 - Document current known issues in 24.03.02 ([#1656](https://github.com/nv-morpheus/Morpheus/pull/1656)) [@dagardner-nv](https://github.com/dagardner-nv)
 - Fix documentation for building examples ([#1659](https://github.com/nv-morpheus/Morpheus/pull/1659)) [@dagardner-nv](https://github.com/dagardner-nv)
 - Fix type-o in documentation ([#1662](https://github.com/nv-morpheus/Morpheus/pull/1662)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix mis-spelling of examples ([#1664](https://github.com/nv-morpheus/Morpheus/pull/1664)) [@dagardner-nv](https://github.com/dagardner-nv)
 
 # Morpheus 24.03.01 (10 Apr 2024)
 
