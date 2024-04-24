@@ -139,7 +139,7 @@ TEST_F(TestControlMessage, SetMessageTest)
 {
     auto msg = ControlMessage();
 
-    ASSERT_EQ(msg.config().contains("nope"), false);
+    ASSERT_THROW(msg.config()["nope"], std::runtime_error);
 
     auto config = nlohmann::json();
     nlohmann::json task_properties;
@@ -159,7 +159,7 @@ TEST_F(TestControlMessage, TaskTest)
     auto msg_infer = ControlMessage();
     auto msg_train = ControlMessage();
 
-    ASSERT_EQ(msg_infer.config().contains("some_value"), false);
+    ASSERT_THROW(msg_infer.config()["some_value"], std::runtime_error);
 
     auto config = nlohmann::json();
     nlohmann::json task_properties;
@@ -340,30 +340,4 @@ TEST_F(TestControlMessage, GetTensorMemoryWhenNoneSet)
 
     // Verify that the retrieved tensor memory is nullptr
     EXPECT_EQ(nullptr, retrievedTensorMemory);
-}
-
-TEST_F(TestControlMessage, SetAndGetPyObject)
-{
-    auto msg = ControlMessage();
-
-    std::array<std::string, 3> alphabet = {"a", "b", "c"};
-    auto py_dict = py::dict("this"_a     = py::dict("is"_a = "a test"s),
-                    "alphabet"_a = py::cast(alphabet),
-                    "ncc"_a      = 1701,
-                    "cost"_a     = 47.47);
-
-    // <path, expected_result>
-    std::vector<std::pair<std::string, py::object>> tests = {{"", py_dict},
-                                                             {"this", py::dict("is"_a = "a test"s)},
-                                                             {"this/is", py::str("a test"s)},
-                                                             {"alphabet", py_dict["alphabet"]},
-                                                             {"ncc", py::int_(1701)},
-                                                             {"cost", py::float_(47.47)}};
-    
-    for (auto& [path, expected_object] : tests)
-    {
-        msg.set_py_object(path, expected_object);
-        auto object = msg.get_py_object(path);
-        EXPECT_TRUE(object.equal(expected_object));
-    }
 }

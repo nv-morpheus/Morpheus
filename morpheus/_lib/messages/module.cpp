@@ -392,13 +392,13 @@ PYBIND11_MODULE(messages, _module)
         .def("config",
              pybind11::overload_cast<ControlMessage&, py::dict&>(&ControlMessageProxy::config),
              py::arg("config"))
-        .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
+        .def("config",&ControlMessageProxy::config)
         .def("copy", &ControlMessageProxy::copy)
         .def("get_metadata",
              &ControlMessageProxy::get_metadata,
              py::arg("key")           = py::none(),
              py::arg("default_value") = py::none())
-        .def("get_tasks", &ControlMessageProxy::get_tasks)
+        .def("get_tasks", &ControlMessage::get_tasks)
         .def("filter_timestamp",
              py::overload_cast<ControlMessage&, const std::string&>(&ControlMessageProxy::filter_timestamp),
              "Retrieve timestamps matching a regex filter within a given group.",
@@ -429,9 +429,7 @@ PYBIND11_MODULE(messages, _module)
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
         .def(
-            "task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"))
-        .def("set_py_object", &ControlMessage::set_py_object, py::arg("path"), py::arg("value"))
-        .def("get_py_object", &ControlMessage::get_py_object, py::arg("path"));
+            "task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"));
 
     py::class_<LoaderRegistry, std::shared_ptr<LoaderRegistry>>(_module, "DataLoaderRegistry")
         .def_static("contains", &LoaderRegistry::contains, py::arg("name"))

@@ -43,11 +43,14 @@ const std::string ControlMessage::s_config_schema = R"()";
 std::map<std::string, ControlMessageType> ControlMessage::s_task_type_map{{"inference", ControlMessageType::INFERENCE},
                                                                           {"training", ControlMessageType::TRAINING}};
 
-ControlMessage::ControlMessage() : m_config(nlohmann::json{{"metadata", nlohmann::json::object()}}), m_tasks() {}
+ControlMessage::ControlMessage() :
+  m_config(nlohmann::json{{"metadata", nlohmann::json::object()}}),
+  m_tasks(nlohmann::json{})
+{}
 
 ControlMessage::ControlMessage(const nlohmann::json& _config) :
   m_config(nlohmann::json{{"metadata", nlohmann::json::object()}}),
-  m_tasks()
+  m_tasks(nlohmann::json{})
 {
     config(_config);
 }
@@ -77,8 +80,13 @@ void ControlMessage::add_task(const std::string& task_type, const nlohmann::json
     {
         throw std::runtime_error("Cannot add inference and training tasks to the same control message");
     }
-
-    m_tasks.get_json(task_type, m_unserializable_handler).push_back(task);
+    if (!m_tasks.view_json().contains(task_type))
+    {
+        m_tasks = m_tasks.set_value(task_type, nlohmann::json::array());
+    }
+    auto new_tasks = m_tasks.get_json(task_type, m_unserializable_handler);
+    new_tasks.push_back(task);
+    m_tasks = m_tasks.set_value(task_type, new_tasks);
 }
 
 bool ControlMessage::has_task(const std::string& task_type) const
@@ -116,7 +124,9 @@ void ControlMessage::set_metadata(const std::string& key, const nlohmann::json& 
     {
         VLOG(20) << "Overwriting metadata key " << key << " with value " << value;
     }
-    m_config.get_json("metadata", m_unserializable_handler)[key] = value;
+    auto new_metadata = m_config.get_json("metadata", m_unserializable_handler);
+    new_metadata[key] = value;
+    m_config          = m_config.set_value("metadata", new_metadata);
 }
 
 bool ControlMessage::has_metadata(const std::string& key) const
@@ -155,7 +165,7 @@ nlohmann::json ControlMessage::remove_task(const std::string& task_type)
     {
         auto task = *iter_task;
         task_set.erase(iter_task);
-
+        m_tasks = m_tasks.set_value(task_type, task_set);
         return task;
     }
 
@@ -201,9 +211,10 @@ std::optional<time_point_t> ControlMessage::get_timestamp(const std::string& key
 
 void ControlMessage::config(const mrc::pymrc::JSONValues& config)
 {
-    try
+    auto config_json = config.view_json();
+    if (config_json.contains("type"))
     {
-        auto task_type = config.get_json("/type", m_unserializable_handler);
+        auto task_type = config.get_json("type", m_unserializable_handler);
         auto _task_type =
             s_task_type_map.contains(task_type) ? s_task_type_map.at(task_type) : ControlMessageType::NONE;
 
@@ -211,33 +222,24 @@ void ControlMessage::config(const mrc::pymrc::JSONValues& config)
         {
             this->task_type(_task_type);
         }
-    } catch (const std::runtime_error& e)
-    {
-        // config does not contain a task type
     }
 
-    try
+    if (config_json.contains("tasks"))
     {
-        auto tasks = config.get_json("/tasks", m_unserializable_handler);
+        auto tasks = config.get_json("tasks", m_unserializable_handler);
         for (const auto& task : tasks)
         {
             add_task(task.at("type"), task.at("properties"));
         }
-    } catch (const std::runtime_error& e)
-    {
-        // config does not contain tasks
     }
 
-    try
+    if (config_json.contains("metadata"))
     {
-        auto metadata = config.get_json("/metadata", m_unserializable_handler);
+        auto metadata = config.get_json("metadata", m_unserializable_handler);
         for (auto it = metadata.begin(); it != metadata.end(); ++it)
         {
             set_metadata(it.key(), it.value());
         }
-    } catch (const std::runtime_error& e)
-    {
-        // config does not contain metadata
     }
 }
 
