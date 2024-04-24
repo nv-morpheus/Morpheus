@@ -16,7 +16,6 @@ import logging
 import typing
 from abc import abstractmethod
 from functools import partial
-from functools import reduce
 
 import cupy as cp
 import mrc
@@ -192,13 +191,13 @@ class InferenceStage(MultiMessageStage):
         typing.Tuple
             Tuple of input types.
         """
-        if (self._build_cpp_node()):
-            return (MultiInferenceMessage, )
-
         return (MultiInferenceMessage, ControlMessage)
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MultiResponseMessage)
+        if schema.input_type == ControlMessage:
+            schema.output_schema.set_type(ControlMessage)
+        else:
+            schema.output_schema.set_type(MultiResponseMessage)
 
     def supports_cpp_node(self):
         # Default to False unless derived classes override this value
@@ -285,10 +284,10 @@ class InferenceStage(MultiMessageStage):
                 if (isinstance(_message, ControlMessage)):
                     _df = cudf.DataFrame(output_message.get_meta())
                     if (_df is not None and not _df.empty):
-                        embeddings = output_message.get_probs_tensor()
-                        _df["embedding"] = embeddings.tolist()
                         _message_meta = CppMessageMeta(df=_df)
                         _message.payload(_message_meta)
+                        _message.tensors().set_tensor("probs", output_message.get_probs_tensor())
+                        print(_df)
                     output_message = _message
 
                 return output_message
@@ -368,54 +367,6 @@ class InferenceStage(MultiMessageStage):
         assert len(out_resp) > 0
 
         return out_resp
-
-    @staticmethod
-    def _convert_response(
-            x: typing.Tuple[typing.List[MultiInferenceMessage], typing.List[TensorMemory]]) -> MultiResponseMessage:
-
-        # Convert a MultiInferenceMessage into a MultiResponseMessage
-        in_message = x[0]
-        out_message = x[1]
-
-        assert len(in_message) == len(out_message)
-
-        # Get the total output size
-        total_mess_count = reduce(lambda y, z: y + z.mess_count, in_message, 0)
-
-        # Create a message data to store the entire list
-        probs = cp.zeros((total_mess_count, out_message[0].get_tensor('probs').shape[1]))
-
-        saved_offset = in_message[0].mess_offset
-        saved_count = 0
-
-        for inf, res in zip(in_message, out_message):
-
-            # Ensure they all share the same meta object. Otherwise this doesn't work
-            # assert inf.meta is saved_meta
-
-            # Make sure we have a continuous list
-            assert inf.mess_offset == saved_offset + saved_count
-
-            assert inf.count == res.count
-
-            # Two scenarios:
-            if (inf.mess_count == inf.count):
-                # In message and out message have same count. Just use probs as is
-                probs[inf.offset:inf.offset + inf.count, :] = res.get_output('probs')
-            else:
-                mess_ids = inf.get_tensor("seq_ids")[:, 0].get().tolist()
-
-                # Out message has more reponses, so we have to do key based blending of probs
-                for i, idx in enumerate(mess_ids):
-                    probs[idx, :] = cp.maximum(probs[idx, :], res.get_output('probs')[i, :])
-
-            saved_count += inf.mess_count
-
-        assert saved_count == total_mess_count, "Did not set every element in output"
-
-        memory = TensorMemory(count=total_mess_count, tensors={'probs': probs})
-
-        return MultiResponseMessage.from_message(in_message[0], mess_count=saved_count, memory=memory)
 
     @staticmethod
     def _convert_one_response(output: MultiResponseMessage, inf: MultiInferenceMessage, res: TensorMemory):
