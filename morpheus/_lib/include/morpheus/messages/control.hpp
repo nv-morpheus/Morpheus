@@ -30,7 +30,6 @@
 #include <string>    // for string
 #include <vector>    // for vector
 
-namespace py = pybind11;
 namespace morpheus {
 
 #pragma GCC visibility push(default)
@@ -381,7 +380,7 @@ class ControlMessage
     std::map<std::string, time_point_t> m_timestamps{};
 
     mrc::pymrc::unserializable_handler_fn_t m_unserializable_handler = [](const py::object& src,
-                                                                        const std::string& path) -> nlohmann::json {
+                                                                          const std::string& path) -> nlohmann::json {
         throw std::runtime_error("Unserializable object at path: " + path);
     };
 };
@@ -431,7 +430,6 @@ struct ControlMessageProxy
      * @return A pybind11::dict representing the removed task.
      */
     static pybind11::dict remove_task(ControlMessage& self, const std::string& type);
-
 
     /**
      * @brief Sets a metadata key-value pair.
