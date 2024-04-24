@@ -60,7 +60,8 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock,
                       config: Config,
                       kafka_bootstrap_servers: str,
                       kafka_topics: KafkaTopics,
-                      kafka_consumer: "KafkaConsumer"):
+                      kafka_consumer: "KafkaConsumer",
+                      morpheus_log_level: int):
     mock_metadata = {
         "inputs": [{
             "name": "input_ids", "datatype": "INT64", "shape": [-1, FEATURE_LENGTH]
@@ -120,7 +121,8 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock,
     pipe.add_stage(
         TritonInferenceStage(config, model_name='phishing-bert-onnx', server_url='test:0000',
                              force_convert_inputs=True))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config, labels=["is_phishing"], threshold=0.7))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
@@ -153,7 +155,8 @@ def test_email_cpp(dataset_pandas: DatasetManager,
                    config: Config,
                    kafka_bootstrap_servers: str,
                    kafka_topics: KafkaTopics,
-                   kafka_consumer: "KafkaConsumer"):
+                   kafka_consumer: "KafkaConsumer",
+                   morpheus_log_level: int):
     config.mode = PipelineModes.NLP
     config.class_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, "labels_phishing.txt"))
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
@@ -187,7 +190,8 @@ def test_email_cpp(dataset_pandas: DatasetManager,
                              model_name='phishing-bert-onnx',
                              server_url='localhost:8001',
                              force_convert_inputs=True))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config, labels=["is_phishing"], threshold=0.7))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
