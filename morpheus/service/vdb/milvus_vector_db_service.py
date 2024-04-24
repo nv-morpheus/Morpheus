@@ -20,8 +20,6 @@ import time
 import typing
 from functools import wraps
 
-import pandas as pd
-
 import cudf
 
 from morpheus.io.utils import truncate_string_cols_by_bytes
@@ -752,7 +750,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection.
-        df : Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             The dataframe to create the collection from.
         overwrite : bool, optional
             Whether to overwrite the collection if it already exists. Default is False.
