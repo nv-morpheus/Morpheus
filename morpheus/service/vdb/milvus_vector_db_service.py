@@ -27,6 +27,7 @@ import cudf
 from morpheus.io.utils import truncate_string_cols_by_bytes
 from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus.service.vdb.vector_db_service import VectorDBService
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -287,13 +288,13 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         return self._insert_result_to_dict(result=result)
 
-    def insert_dataframe(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs: dict[str, typing.Any]) -> dict:
+    def insert_dataframe(self, df: DataFrameType, **kwargs: dict[str, typing.Any]) -> dict:
         """
         Insert a dataframe entires into the vector database.
 
         Parameters
         ----------
-        df : typing.Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             Dataframe to be inserted into the collection.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
@@ -703,7 +704,7 @@ class MilvusVectorDBService(VectorDBService):
                 for part in partition_conf["partitions"]:
                     self._client.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
 
-    def _build_schema_conf(self, df: typing.Union[cudf.DataFrame, pd.DataFrame]) -> list[dict]:
+    def _build_schema_conf(self, df: DataFrameType) -> list[dict]:
         fields = []
 
         # Always add a primary key
@@ -741,7 +742,7 @@ class MilvusVectorDBService(VectorDBService):
 
     def create_from_dataframe(self,
                               name: str,
-                              df: typing.Union[cudf.DataFrame, pd.DataFrame],
+                              df: DataFrameType,
                               overwrite: bool = False,
                               **kwargs: dict[str, typing.Any]) -> None:
         """
@@ -812,10 +813,7 @@ class MilvusVectorDBService(VectorDBService):
         return resource.insert(data, **kwargs)
 
     @with_collection_lock
-    def insert_dataframe(self,
-                         name: str,
-                         df: typing.Union[cudf.DataFrame, pd.DataFrame],
-                         **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    def insert_dataframe(self, name: str, df: DataFrameType, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
         """
         Converts dataframe to rows and insert to a collection in the Milvus vector database.
 
@@ -823,7 +821,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection to be inserted.
-        df : typing.Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             Dataframe to be inserted in the collection.
         **kwargs : dict[str, typing.Any]
             Additional keyword arguments containing collection configuration.
