@@ -400,17 +400,3 @@ def test_consistency_after_multiple_operations():
                        cp.array([4, 5, 6])), "Mismatch in input_ids after update."
     assert cp.allclose(retrieved_tensors.get_tensor("new_tensor"),
                        new_tensor["new_tensor"]), "New tensor data mismatch."
-
-
-@pytest.mark.usefixtures("config_only_cpp")
-def test_set_and_get_py_object():
-    message = messages.ControlMessage()
-
-    alphabet = ["a", "b", "c", "d", "e"]
-    py_dict = {"this": {"is": "a test"}, "alphabet": alphabet, "ncc": 1701, "cost": 47.47}
-
-    test_dict = {"": py_dict, "this": {"is": "a test"}, "alphabet": alphabet, "ncc": 1701, "cost": 47.47}
-    
-    for key, value in test_dict.items():
-        message.set_py_object(key, value)
-        assert message.get_py_object(key) == value

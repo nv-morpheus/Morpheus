@@ -392,7 +392,7 @@ PYBIND11_MODULE(messages, _module)
         .def("config",
              pybind11::overload_cast<ControlMessage&, py::dict&>(&ControlMessageProxy::config),
              py::arg("config"))
-        .def("config",&ControlMessageProxy::config)
+        .def("config", &ControlMessageProxy::config)
         .def("copy", &ControlMessageProxy::copy)
         .def("get_metadata",
              &ControlMessageProxy::get_metadata,
