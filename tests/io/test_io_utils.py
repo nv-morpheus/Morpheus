@@ -25,68 +25,100 @@ from _utils.dataset_manager import DatasetManager
 from morpheus.io import utils as io_utils
 from morpheus.utils.type_aliases import DataFrameType
 
-MULTI_BYTE_STRINGS = ["ñäμɛ", "Moρφευσ", "río"]
+MULTI_BYTE_STRINGS = ["ñäμɛ", "Moρφευσ", "taç"]
 
 
-def _mk_df(df_class: Callable[..., DataFrameType], data: list[str]) -> DataFrameType:
+def _mk_df(df_class: Callable[..., DataFrameType], data: dict[str, list[str]]) -> DataFrameType:
     """
     Create a dataframe with a 'data' column containing the given data, and some other columns with different data types
     """
+    num_rows = len(data[list(data.keys())[0]])
+
     float_col = []
     int_col = []
     short_str_col = []
-    for i in range(len(data)):
+    for i in range(num_rows):
         float_col.append(i)
         int_col.append(i)
         short_str_col.append(f"{i}"[0:3])
 
-    return df_class({"data": data, "float_col": float_col, "int_col": int_col, "short_str_col": short_str_col})
+    df_data = data.copy()
+    df_data.update({"float_col": float_col, "int_col": int_col, "short_str_col": short_str_col})
+
+    return df_class(df_data)
 
 
-@pytest.mark.parametrize("data, max_bytes, expected",
-                         [(MULTI_BYTE_STRINGS[:], {
-                             "data": 8
-                         }, True), (MULTI_BYTE_STRINGS[:], {
-                             "data": 12
-                         }, False), (MULTI_BYTE_STRINGS[:], {
-                             "data": 20
-                         }, False), (["." * 20], {
-                             "data": 19
-                         }, True), (["." * 20], {
-                             "data": 20
-                         }, False), (["." * 20], {
-                             "data": 21
-                         }, False)])
+@pytest.mark.parametrize(
+    "data, max_bytes, expected",
+    [({
+        "data": MULTI_BYTE_STRINGS[:]
+    }, {
+        "data": 8
+    }, True), ({
+        "data": MULTI_BYTE_STRINGS[:], "ignored_col": ["a" * 20, "b" * 20, "c" * 20]
+    }, {
+        "data": 12
+    }, False), ({
+        "data": MULTI_BYTE_STRINGS[:]
+    }, {
+        "data": 20
+    }, False), ({
+        "data": ["." * 20]
+    }, {
+        "data": 19
+    }, True), ({
+        "data": ["." * 20]
+    }, {
+        "data": 20
+    }, False), ({
+        "data": ["." * 20]
+    }, {
+        "data": 21
+    }, False)])
 def test_cudf_needs_truncate(data: list[str], max_bytes: int, expected: bool):
     df = _mk_df(cudf.DataFrame, data)
     assert io_utils._cudf_needs_truncate(df, max_bytes) is expected
 
 
 @pytest.mark.parametrize("warn_on_truncate", [True, False])
-@pytest.mark.parametrize("data, max_bytes, expected_data",
-                         [(MULTI_BYTE_STRINGS[:], {
-                             "data": 4
-                         }, ["ñä", "Moρ", "río"]), (MULTI_BYTE_STRINGS[:], {
-                             "data": 5
-                         }, ["ñä", "Moρ", "río"]), (MULTI_BYTE_STRINGS[:], {
-                             "data": 8
-                         }, ["ñäμɛ", "Moρφε", "río"]), (MULTI_BYTE_STRINGS[:], {
-                             "data": 9
-                         }, ["ñäμɛ", "Moρφε", "río"]), (MULTI_BYTE_STRINGS[:], {
-                             "data": 12
-                         }, MULTI_BYTE_STRINGS[:]), (MULTI_BYTE_STRINGS[:], {
-                             "data": 20
-                         }, MULTI_BYTE_STRINGS[:]), (["." * 20], {
-                             "data": 19
-                         }, ["." * 19]), (["." * 20], {
-                             "data": 20
-                         }, ["." * 20]), (["." * 20], {
-                             "data": 21
-                         }, ["." * 20])])
+@pytest.mark.parametrize(
+    "data, max_bytes, expected_data",
+    [({
+        "multibyte_strings": MULTI_BYTE_STRINGS[:], "ascii_strings": ["a" * 20, "b" * 21, "c" * 19]
+    }, {
+        "multibyte_strings": 4, "ascii_strings": 20
+    }, {
+        "multibyte_strings": ["ñä", "Moρ", "taç"], "ascii_strings": ["a" * 20, "b" * 20, "c" * 19]
+    }),
+     ({
+         "data": MULTI_BYTE_STRINGS[:], "ignored_col": ["a" * 20, "b" * 20, "c" * 20]
+     }, {
+         "data": 5
+     }, {
+         "data": ["ñä", "Moρ", "taç"], "ignored_col": ["a" * 20, "b" * 20, "c" * 20]
+     }), ({
+         "data": MULTI_BYTE_STRINGS[:]
+     }, {
+         "data": 8
+     }, {
+         "data": ["ñäμɛ", "Moρφε", "taç"]
+     }), ({
+         "data": MULTI_BYTE_STRINGS[:]
+     }, {
+         "data": 9
+     }, {
+         "data": ["ñäμɛ", "Moρφε", "taç"]
+     }), ({
+         "data": MULTI_BYTE_STRINGS[:]
+     }, {
+         "data": 12
+     }, {
+         "data": MULTI_BYTE_STRINGS[:]
+     })])
 def test_truncate_string_cols_by_bytes(dataset: DatasetManager,
-                                       data: list[str],
+                                       data: dict[str, list[str]],
                                        max_bytes: int,
-                                       expected_data: list[str],
+                                       expected_data: dict[str, list[str]],
                                        warn_on_truncate: bool):
     input_df = _mk_df(dataset.df_class, data)
 
