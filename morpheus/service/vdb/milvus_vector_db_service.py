@@ -591,6 +591,8 @@ class MilvusVectorDBService(VectorDBService):
         The port number for connecting to the Milvus server.
     alias : str, optional
         Alias for the Milvus connection, by default "default".
+    truncate_long_strings : bool, optional
+        When true, truncate strings values that are longer than the max length of the field
     **kwargs : dict
         Additional keyword arguments specific to the Milvus connection configuration.
     """
