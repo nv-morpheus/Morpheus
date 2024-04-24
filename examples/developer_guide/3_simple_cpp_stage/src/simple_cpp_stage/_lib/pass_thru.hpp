@@ -33,7 +33,7 @@
 namespace morpheus_example {
 
 // pybind11 sets visibility to hidden by default; we want to export our symbols
-#pragma GCC visibility push(default)
+
 
 using namespace morpheus;
 
@@ -56,5 +56,5 @@ struct PassThruStageInterfaceProxy
                                                                      const std::string& name);
 };
 
-#pragma GCC visibility pop
+
 }  // namespace morpheus_example

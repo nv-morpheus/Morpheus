@@ -37,7 +37,7 @@
 namespace morpheus_rabbit {
 
 // pybind11 sets visibility to hidden by default; we want to export our symbols
-#pragma GCC visibility push(default)
+
 
 using namespace std::literals;
 using namespace morpheus;
@@ -85,5 +85,5 @@ struct RabbitMQSourceStageInterfaceProxy
                                                                            const std::string& queue_name,
                                                                            std::chrono::milliseconds poll_interval);
 };
-#pragma GCC visibility pop
+
 }  // namespace morpheus_rabbit

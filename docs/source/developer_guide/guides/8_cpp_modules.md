@@ -36,7 +36,7 @@ The following example will create a simple C++ module that passes through the in
 #include <nlohmann/json.hpp>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 class MyTestModule: public mrc::modules::SegmentModule, public mrc::modules::PersistentModule
 {
     using type_t = MyTestModule;
@@ -52,7 +52,7 @@ class MyTestModule: public mrc::modules::SegmentModule, public mrc::modules::Per
   private:
     int my_persistent_value{0};
 };
-#pragma GCC visibility pop
+
 }  // namespace morpheus
 ```
 
