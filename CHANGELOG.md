@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-# Morpheus 24.03.02 (22 Apr 2024)
+# Morpheus 24.03.02 (24 Apr 2024)
 
 ## 🐛 Bug Fixes
 
@@ -24,6 +24,7 @@ limitations under the License.
 ## 📖 Documentation
 
 - Document current known issues in 24.03.02 ([#1656](https://github.com/nv-morpheus/Morpheus/pull/1656)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix documentation for building examples ([#1659](https://github.com/nv-morpheus/Morpheus/pull/1659)) [@dagardner-nv](https://github.com/dagardner-nv)
 
 # Morpheus 24.03.01 (10 Apr 2024)
 
