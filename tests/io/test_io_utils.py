@@ -44,21 +44,45 @@ def _mk_df(df_class: Callable[..., DataFrameType], data: list[str]) -> DataFrame
 
 
 @pytest.mark.parametrize("data, max_bytes, expected",
-                         [(MULTI_BYTE_STRINGS[:], 8, True), (MULTI_BYTE_STRINGS[:], 12, False),
-                          (MULTI_BYTE_STRINGS[:], 20, False), (["." * 20], 19, True), (["." * 20], 20, False),
-                          (["." * 20], 21, False)])
+                         [(MULTI_BYTE_STRINGS[:], {
+                             "data": 8
+                         }, True), (MULTI_BYTE_STRINGS[:], {
+                             "data": 12
+                         }, False), (MULTI_BYTE_STRINGS[:], {
+                             "data": 20
+                         }, False), (["." * 20], {
+                             "data": 19
+                         }, True), (["." * 20], {
+                             "data": 20
+                         }, False), (["." * 20], {
+                             "data": 21
+                         }, False)])
 def test_cudf_needs_truncate(data: list[str], max_bytes: int, expected: bool):
     df = _mk_df(cudf.DataFrame, data)
     assert io_utils._cudf_needs_truncate(df, max_bytes) is expected
 
 
 @pytest.mark.parametrize("warn_on_truncate", [True, False])
-@pytest.mark.parametrize(
-    "data, max_bytes, expected_data",
-    [(MULTI_BYTE_STRINGS[:], 4, ["ñä", "Moρ", "río"]), (MULTI_BYTE_STRINGS[:], 5, ["ñä", "Moρ", "río"]),
-     (MULTI_BYTE_STRINGS[:], 8, ["ñäμɛ", "Moρφε", "río"]), (MULTI_BYTE_STRINGS[:], 9, ["ñäμɛ", "Moρφε", "río"]),
-     (MULTI_BYTE_STRINGS[:], 12, MULTI_BYTE_STRINGS[:]), (MULTI_BYTE_STRINGS[:], 20, MULTI_BYTE_STRINGS[:]),
-     (["." * 20], 19, ["." * 19]), (["." * 20], 20, ["." * 20]), (["." * 20], 21, ["." * 20])])
+@pytest.mark.parametrize("data, max_bytes, expected_data",
+                         [(MULTI_BYTE_STRINGS[:], {
+                             "data": 4
+                         }, ["ñä", "Moρ", "río"]), (MULTI_BYTE_STRINGS[:], {
+                             "data": 5
+                         }, ["ñä", "Moρ", "río"]), (MULTI_BYTE_STRINGS[:], {
+                             "data": 8
+                         }, ["ñäμɛ", "Moρφε", "río"]), (MULTI_BYTE_STRINGS[:], {
+                             "data": 9
+                         }, ["ñäμɛ", "Moρφε", "río"]), (MULTI_BYTE_STRINGS[:], {
+                             "data": 12
+                         }, MULTI_BYTE_STRINGS[:]), (MULTI_BYTE_STRINGS[:], {
+                             "data": 20
+                         }, MULTI_BYTE_STRINGS[:]), (["." * 20], {
+                             "data": 19
+                         }, ["." * 19]), (["." * 20], {
+                             "data": 20
+                         }, ["." * 20]), (["." * 20], {
+                             "data": 21
+                         }, ["." * 20])])
 def test_truncate_string_cols_by_bytes(dataset: DatasetManager,
                                        data: list[str],
                                        max_bytes: int,

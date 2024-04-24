@@ -41,20 +41,24 @@ def filter_null_data(x: DataFrameType):
     return x[~x['data'].isna()]
 
 
-def _cudf_needs_truncate(df: cudf.DataFrame, max_bytes: int) -> bool:
+def _cudf_needs_truncate(df: cudf.DataFrame, column_max_bytes: dict[str, int]) -> bool:
     """
     Optimization, cudf contains a byte_count() method that pandas lacks.
     """
-    for col in df.columns:
+    for (col, max_bytes) in column_max_bytes.items():
         series: cudf.Series = df[col]
-        if series.dtype == 'object':
-            if series.str.byte_count().max() > max_bytes:
-                return True
+
+        assert series.dtype == 'object'
+
+        if series.str.byte_count().max() > max_bytes:
+            return True
 
     return False
 
 
-def truncate_string_cols_by_bytes(df: DataFrameType, max_bytes: int, warn_on_truncate: bool = True) -> DataFrameType:
+def truncate_string_cols_by_bytes(df: DataFrameType,
+                                  column_max_bytes: dict[str, int],
+                                  warn_on_truncate: bool = True) -> DataFrameType:
     """
     Truncates all string columns in a dataframe to a maximum number of bytes.
 
@@ -65,8 +69,8 @@ def truncate_string_cols_by_bytes(df: DataFrameType, max_bytes: int, warn_on_tru
     ----------
     df : DataFrameType
         The dataframe to truncate.
-    max_bytes : int
-        The maximum number of bytes to truncate the strings to.
+    column_max_bytes: dict[str, int]
+        A mapping of string column names to the maximum number of bytes for each column.
 
     Returns
     -------
@@ -76,13 +80,13 @@ def truncate_string_cols_by_bytes(df: DataFrameType, max_bytes: int, warn_on_tru
 
     if isinstance(df, cudf.DataFrame):
         # cudf specific optimization
-        if not _cudf_needs_truncate(df, max_bytes):
+        if not _cudf_needs_truncate(df, column_max_bytes):
             return df
 
         # If truncating is needed we need to convert to pandas to use the str.encode() method
         df = df.to_pandas()
 
-    for col in df.columns:
+    for (col, max_bytes) in column_max_bytes.items():
         series: pd.Series = df[col]
         if series.dtype == 'object':
             encoded_series = series.str.encode(encoding='utf-8', errors='strict')
