@@ -248,7 +248,9 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
             if field.dtype == pymilvus.DataType.FLOAT_VECTOR:
                 self._vector_field = field.name
             else:
-                if field.dtype in (pymilvus.DataType.VARCHAR, pymilvus.DataType.STRING):
+                # Intentionally excluding pymilvus.DataType.STRING, in our current version it isn't supported, and in
+                # some database systems string types don't have a max length.
+                if field.dtype == pymilvus.DataType.VARCHAR:
                     max_length = field.params.get('max_length')
                     if max_length is not None:
                         self._fields_max_length[field.name] = max_length
