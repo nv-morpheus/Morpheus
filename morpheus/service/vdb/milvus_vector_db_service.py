@@ -605,13 +605,17 @@ class MilvusVectorDBService(VectorDBService):
                  password: str = "",
                  db_name: str = "",
                  token: str = "",
+                 truncate_long_strings: bool = False,
                  **kwargs: dict[str, typing.Any]):
 
+        self._truncate_long_strings = truncate_long_strings
         self._client = MilvusClient(uri=uri, user=user, password=password, db_name=db_name, token=token, **kwargs)
 
     def load_resource(self, name: str, **kwargs: dict[str, typing.Any]) -> MilvusVectorDBResourceService:
-
-        return MilvusVectorDBResourceService(name=name, client=self._client, **kwargs)
+        return MilvusVectorDBResourceService(name=name,
+                                             client=self._client,
+                                             truncate_long_strings=self._truncate_long_strings,
+                                             **kwargs)
 
     def has_store_object(self, name: str) -> bool:
         """
