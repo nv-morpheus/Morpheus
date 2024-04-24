@@ -71,6 +71,8 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
         The dataframe to truncate.
     column_max_bytes: dict[str, int]
         A mapping of string column names to the maximum number of bytes for each column.
+    warn_on_truncate: bool, default True
+        Whether to log a warning when truncating a column.
 
     Returns
     -------
