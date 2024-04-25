@@ -88,7 +88,7 @@ mrc::pymrc::JSONValues ControlMessage::add_task(const std::string& task_type, co
     {
         m_tasks = m_tasks.set_value(task_type, mrc::pymrc::JSONValues{});
     }
-    // TODO(Yuchen): how to store the JSONValues tasks into an array?
+    // TODO(Yuchen): how to store the JSONValues tasks into an array(collection)?
     // auto new_tasks = m_tasks.get_json(task_type, m_unserializable_handler);
     // new_tasks.push_back(task);
     // m_tasks = m_tasks.set_value(task_type, new_tasks);
@@ -96,8 +96,9 @@ mrc::pymrc::JSONValues ControlMessage::add_task(const std::string& task_type, co
 
 bool ControlMessage::has_task(const std::string& task_type) const
 {
-    const auto& tasks = m_tasks.view_json();
-    return tasks.contains(task_type) && tasks[task_type].size() > 0;
+    // TODO(Yuchen): for JSONValues, needs contains() and size() functions
+    const auto& tasks_json = m_tasks.view_json();
+    return tasks_json.contains(task_type) && tasks_json[task_type].size() > 0;
 }
 
 const mrc::pymrc::JSONValues& ControlMessage::get_tasks() const
@@ -108,8 +109,8 @@ const mrc::pymrc::JSONValues& ControlMessage::get_tasks() const
 std::vector<std::string> ControlMessage::list_metadata() const
 {
     std::vector<std::string> key_list{};
-
-    auto metadata = m_config.get_json("metadata", m_unserializable_handler);
+    // TODO(Yuchen): if JSONValues are stored in an array, need a method to iterate over the array
+    auto metadata = this->get_metadata().view_json();
     for (auto it = metadata.begin(); it != metadata.end(); ++it)
     {
         key_list.push_back(it.key());
@@ -125,15 +126,14 @@ const mrc::pymrc::JSONValues& ControlMessage::set_metadata(const std::string& ke
     {
         VLOG(20) << "Overwriting metadata key " << key << " with value " << value.view_json().dump(4);
     }
-    // auto new_metadata = m_config.get_json("metadata", m_unserializable_handler);
-    // new_metadata[key] = value;
-    // m_config          = m_config.set_value("metadata", new_metadata);
     m_config = m_config.set_value("metadata/" + key, value);
-    return m_config;
+    // TODO(Yuchen): What do we want to return here?
+    return value;
 }
 
 bool ControlMessage::has_metadata(const std::string& key) const
 {
+    // TODO(Yuchen): for JSONValues, needs contains() function
     const auto& config_json = m_config.view_json();
     return config_json["metadata"].contains(key);
 }
@@ -146,6 +146,7 @@ mrc::pymrc::JSONValues ControlMessage::get_metadata() const
 mrc::pymrc::JSONValues ControlMessage::get_metadata(const std::string& key, bool fail_on_nonexist) const
 {
     // Assuming m_metadata is a std::map<std::string, nlohmann::json> storing metadata
+    // TODO(Yuchen): if JSONValues are stored in an array, need a method to iterate over the array
     auto metadata = this->get_metadata();
     auto metadata_json = metadata.view_json();
     auto it       = metadata_json.find(key);
@@ -217,6 +218,7 @@ std::optional<time_point_t> ControlMessage::get_timestamp(const std::string& key
 
 void ControlMessage::config(const mrc::pymrc::JSONValues& config)
 {
+    // TODO(Yuchen): For JSONValues, needs contains() method
     const auto& config_json = config.view_json();
     if (config_json.contains("type"))
     {
@@ -232,6 +234,7 @@ void ControlMessage::config(const mrc::pymrc::JSONValues& config)
 
     if (config_json.contains("tasks"))
     {
+        // TODO(Yuchen): for JSONValues, need a way to store collections of JSONValues
         const auto& tasks = config["tasks"].view_json();
         for (const auto& task : tasks)
         {
@@ -241,6 +244,7 @@ void ControlMessage::config(const mrc::pymrc::JSONValues& config)
 
     if (config_json.contains("metadata"))
     {
+        // TODO(Yuchen): for JSONValues, need a way to store collections of JSONValues
         const auto& metadata = config["metadata"].view_json();
         for (auto it = metadata.begin(); it != metadata.end(); ++it)
         {
