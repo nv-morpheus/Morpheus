@@ -327,7 +327,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
                 logger.info("Skipped checking 'None' in the field: %s, with datatype: %s", field_name, dtype)
 
         needs_truncate = self._truncate_long_strings
-        if isinstance(df, cudf.DataFrame):
+        if needs_truncate and isinstance(df, cudf.DataFrame):
             # Cudf specific optimization, we can avoid a costly call to truncate_string_cols_by_bytes if all of the
             # string columns are already below the max length
             needs_truncate = cudf_string_cols_exceed_max_bytes(df, self._fields_max_length)
