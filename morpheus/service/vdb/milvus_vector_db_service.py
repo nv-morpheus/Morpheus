@@ -33,6 +33,11 @@ logger = logging.getLogger(__name__)
 IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = "MilvusVectorDBResourceService requires the milvus and pymilvus packages to be installed."
 
+# Milvus has a max string length in bytes of 65,535. Multi-byte characters like "ñ" will have a string length of 1, the
+# byte length encoded as UTF-8 will be 2
+# https://milvus.io/docs/limitations.md#Length-of-a-string
+MAX_STRING_LENGTH_BYTES = 65_535
+
 try:
     import pymilvus
     from pymilvus.orm.mutation import MutationResult
@@ -737,7 +742,7 @@ class MilvusVectorDBService(VectorDBService):
             }
 
             if (field_dict["dtype"] == pymilvus.DataType.VARCHAR):
-                field_dict["max_length"] = 65_535
+                field_dict["max_length"] = MAX_STRING_LENGTH_BYTES
 
             if (field_dict["dtype"] == pymilvus.DataType.FLOAT_VECTOR
                     or field_dict["dtype"] == pymilvus.DataType.BINARY_VECTOR):
