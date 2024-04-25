@@ -178,7 +178,7 @@ class ControlMessage
 {
   public:
     ControlMessage();
-    explicit ControlMessage(const nlohmann::json& config);
+    explicit ControlMessage(const mrc::pymrc::JSONValues& config);
 
     ControlMessage(const ControlMessage& other);  // Copies config and metadata, but not payload
 
@@ -200,7 +200,7 @@ class ControlMessage
      * @param task_type A string indicating the type of the task.
      * @param task A json object describing the task.
      */
-    void add_task(const std::string& task_type, const nlohmann::json& task);
+    mrc::pymrc::JSONValues add_task(const std::string& task_type, const mrc::pymrc::JSONValues& task);
 
     /**
      * @brief Check if a task of the given type exists in the control message.
@@ -214,7 +214,7 @@ class ControlMessage
      * @param task_type A string indicating the type of the task.
      * @return A json object describing the task.
      */
-    nlohmann::json remove_task(const std::string& task_type);
+    mrc::pymrc::JSONValues remove_task(const std::string& task_type);
 
     /**
      * @brief Get the tasks for the control message.
@@ -226,7 +226,7 @@ class ControlMessage
      * @param key A string key for the metadata value.
      * @param value A json object describing the metadata value.
      */
-    void set_metadata(const std::string& key, const nlohmann::json& value);
+    const mrc::pymrc::JSONValues& set_metadata(const std::string& key, const mrc::pymrc::JSONValues& value);
 
     /**
      * @brief Check if a metadata key exists in the control message.
@@ -238,7 +238,7 @@ class ControlMessage
     /**
      * @brief Get the metadata for the control message.
      */
-    [[nodiscard]] nlohmann::json get_metadata() const;
+    [[nodiscard]] mrc::pymrc::JSONValues get_metadata() const;
 
     /**
      * @brief Get the metadata value for the given key from the control message.
@@ -249,7 +249,7 @@ class ControlMessage
      *                         If false, returns std::nullopt for non-existing keys.
      * @return An optional json object describing the metadata value if it exists.
      */
-    [[nodiscard]] nlohmann::json get_metadata(const std::string& key, bool fail_on_nonexist = false) const;
+    [[nodiscard]] mrc::pymrc::JSONValues get_metadata(const std::string& key, bool fail_on_nonexist = false) const;
 
     /**
      * @brief Lists all metadata keys currently stored in the control message.
@@ -378,11 +378,6 @@ class ControlMessage
     mrc::pymrc::JSONValues m_config{};
 
     std::map<std::string, time_point_t> m_timestamps{};
-
-    mrc::pymrc::unserializable_handler_fn_t m_unserializable_handler = [](const pybind11::object& src,
-                                                                          const std::string& path) -> nlohmann::json {
-        throw std::runtime_error("Unserializable object at path: " + path);
-    };
 };
 
 struct ControlMessageProxy
