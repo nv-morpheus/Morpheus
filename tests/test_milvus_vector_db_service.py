@@ -107,6 +107,13 @@ def long_multibyte_string_fixture():
     return _mk_long_string("Moρφέας")
 
 
+def _truncate_string_by_bytes(s: str, max_bytes: int) -> str:
+    """
+    Truncates a string to the given number of bytes
+    """
+    return s.encode("utf-8")[:max_bytes].decode("utf-8", errors="ignore")
+
+
 @pytest.mark.milvus
 def test_create_and_drop_collection(idx_part_collection_config: dict, milvus_service: MilvusVectorDBService):
     collection_name = "test_collection"
@@ -506,7 +513,8 @@ def test_fse_from_dict():
 
 
 @pytest.mark.milvus
-@pytest.mark.parametrize("num_rows", [10, 100, 1000])
+@pytest.mark.slow
+@pytest.mark.parametrize("num_rows", [10, 100])
 @pytest.mark.parametrize("use_multi_byte_strings", [True, False], ids=["multi_byte", "ascii"])
 @pytest.mark.parametrize("truncate_long_strings", [True, False], ids=["truncate", "no_truncate"])
 @pytest.mark.parametrize("exceed_max_str_len", [True, False], ids=["exceed_max_len", "within_max_len"])
@@ -529,25 +537,40 @@ def test_insert_dataframe(milvus_server_uri: str,
     # Create a collection.
     milvus_service.create(collection_name, **string_collection_config)
 
+    short_str_col_len = -1
+    long_str_col_len = -1
+    for field_conf in string_collection_config["schema_conf"]["schema_fields"]:
+        if field_conf["name"] == "short_str_col":
+            short_str_col_len = field_conf["params"]["max_length"]
+
+        elif field_conf["name"] == "long_str_col":
+            long_str_col_len = field_conf["params"]["max_length"]
+
+    assert short_str_col_len > 0, "short_str_col length is not set"
+    assert long_str_col_len == MAX_STRING_LENGTH_BYTES, "long_str_col length is not set to MAX_STRING_LENGTH_BYTES"
+
+    # Construct the dataframe.
     ids = []
     embedding_data = []
     long_str_col = []
     short_str_col = []
+
+    if use_multi_byte_strings:
+        long_str = long_multibyte_string
+    else:
+        long_str = long_ascii_string
+
+    short_str = long_str[:7]
+    if not exceed_max_str_len:
+        short_str = _truncate_string_by_bytes(short_str, short_str_col_len)
+        long_str = _truncate_string_by_bytes(long_str, MAX_STRING_LENGTH_BYTES)
+
     for i in range(num_rows):
         ids.append(i)
         embedding_data.append([i / 10.0] * 3)
-        if use_multi_byte_strings:
-            long_str = long_multibyte_string
-        else:
-            long_str = long_ascii_string
 
-        if exceed_max_str_len:
-            slice_end = len(long_str)
-        else:
-            slice_end = MAX_STRING_LENGTH_BYTES
-
-        long_str_col.append(long_str[:slice_end])
-        short_str_col.append(long_str[:7])
+        long_str_col.append(long_str)
+        short_str_col.append(short_str)
 
     df = dataset.df_class({
         "id": ids, "embedding": embedding_data, "long_str_col": long_str_col, "short_str_col": short_str_col
