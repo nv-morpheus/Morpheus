@@ -287,7 +287,7 @@ class InferenceStage(MultiMessageStage):
                         _message_meta = CppMessageMeta(df=_df)
                         _message.payload(_message_meta)
                         _message.tensors().set_tensor("probs", output_message.get_probs_tensor())
-                        print(_df)
+
                     output_message = _message
 
                 return output_message
