@@ -22,6 +22,7 @@ from functools import wraps
 
 import cudf
 
+from morpheus.io.utils import cudf_string_cols_exceed_max_bytes
 from morpheus.io.utils import truncate_string_cols_by_bytes
 from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus.service.vdb.vector_db_service import VectorDBService
@@ -320,8 +321,11 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
             else:
                 logger.info("Skipped checking 'None' in the field: %s, with datatype: %s", field_name, dtype)
 
-        if self._truncate_long_strings:
-            df = truncate_string_cols_by_bytes(df, self._fields_max_length, warn_on_truncate=True)
+        needs_truncate = self._truncate_long_strings
+        if isinstance(df, cudf.DataFrame):
+            # Cudf specific optimization, we can avoid a costly call to truncate_string_cols_by_bytes if all of the
+            # string columns are already below the max length
+            needs_truncate = cudf_string_cols_exceed_max_bytes(df, self._fields_max_length)
 
         # From the schema, this is the list of columns we need, excluding any auto_id columns
         column_names = [field.name for field in self._fields if not field.auto_id]
@@ -329,6 +333,9 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         collection_df = df[column_names]
         if isinstance(collection_df, cudf.DataFrame):
             collection_df = collection_df.to_pandas()
+
+        if needs_truncate:
+            truncate_string_cols_by_bytes(collection_df, self._fields_max_length, warn_on_truncate=True)
 
         # Note: dataframe columns has to be in the order of collection schema fields.s
         result = self._collection.insert(data=collection_df, **kwargs)
