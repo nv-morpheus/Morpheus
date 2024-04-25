@@ -592,8 +592,8 @@ def test_insert_dataframe(milvus_server_uri: str,
             milvus_service.insert_dataframe(collection_name, df)
 
         return  # Skip the rest of the test if the string column exceeds the maximum length.
-    else:
-        milvus_service.insert_dataframe(collection_name, df)
+
+    milvus_service.insert_dataframe(collection_name, df)
 
     # Retrieve inserted data by primary keys.
     retrieved_data = milvus_service.retrieve_by_keys(collection_name, ids)

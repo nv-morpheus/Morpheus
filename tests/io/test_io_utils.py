@@ -16,7 +16,6 @@
 
 from collections.abc import Callable
 
-import pandas as pd
 import pytest
 
 import cudf
