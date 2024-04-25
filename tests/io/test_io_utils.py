@@ -25,7 +25,7 @@ from _utils.dataset_manager import DatasetManager
 from morpheus.io import utils as io_utils
 from morpheus.utils.type_aliases import DataFrameType
 
-MULTI_BYTE_STRINGS = ["ñäμɛ", "Moρφευσ", "taç"]
+MULTI_BYTE_STRINGS = ["ñäμɛ", "Moρφέας", "taç"]
 
 
 def _mk_df(df_class: Callable[..., DataFrameType], data: dict[str, list[str]]) -> DataFrameType:
@@ -77,7 +77,7 @@ def _mk_df(df_class: Callable[..., DataFrameType], data: dict[str, list[str]]) -
     }, False)])
 def test_cudf_needs_truncate(data: list[str], max_bytes: int, expected: bool):
     df = _mk_df(cudf.DataFrame, data)
-    assert io_utils._cudf_needs_truncate(df, max_bytes) is expected
+    assert io_utils.cudf_string_cols_exceed_max_bytes(df, max_bytes) is expected
 
 
 @pytest.mark.parametrize("warn_on_truncate", [True, False])
@@ -101,13 +101,13 @@ def test_cudf_needs_truncate(data: list[str], max_bytes: int, expected: bool):
      }, {
          "data": 8
      }, {
-         "data": ["ñäμɛ", "Moρφε", "taç"]
+         "data": ["ñäμɛ", "Moρφέ", "taç"]
      }), ({
          "data": MULTI_BYTE_STRINGS[:]
      }, {
          "data": 9
      }, {
-         "data": ["ñäμɛ", "Moρφε", "taç"]
+         "data": ["ñäμɛ", "Moρφέ", "taç"]
      }), ({
          "data": MULTI_BYTE_STRINGS[:]
      }, {
@@ -120,16 +120,16 @@ def test_truncate_string_cols_by_bytes(dataset: DatasetManager,
                                        max_bytes: int,
                                        expected_data: dict[str, list[str]],
                                        warn_on_truncate: bool):
-    input_df = _mk_df(dataset.df_class, data)
+    df = _mk_df(dataset.df_class, data)
 
-    if data == expected_data:
-        expected_df_class = dataset.df_class
-    else:
-        expected_df_class = pd.DataFrame
+    expect_truncation = (data != expected_data)
+    expected_df_class = dataset.df_class
 
     expected_df = _mk_df(expected_df_class, expected_data)
 
-    result_df = io_utils.truncate_string_cols_by_bytes(input_df, max_bytes, warn_on_truncate=warn_on_truncate)
+    performed_truncation = io_utils.truncate_string_cols_by_bytes(df, max_bytes, warn_on_truncate=warn_on_truncate)
 
-    assert isinstance(result_df, expected_df_class)
-    dataset.assert_df_equal(result_df, expected_df)
+    assert performed_truncation is expect_truncation
+    assert isinstance(df, expected_df_class)
+
+    dataset.assert_df_equal(df, expected_df)
