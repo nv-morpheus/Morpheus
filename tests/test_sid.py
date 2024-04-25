@@ -28,6 +28,8 @@ from _utils import mk_async_infer
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
+from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -49,6 +51,7 @@ def _run_minibert_pipeline(
     *,
     config: Config,
     tmp_path: str,
+    message_type: type,
     model_name: str,
     truncated: bool,
     morpheus_log_level: int,
@@ -99,7 +102,7 @@ def _run_minibert_pipeline(
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
-    pipe.add_stage(DeserializeStage(config))
+    pipe.add_stage(DeserializeStage(config, message_type=message_type))
     pipe.add_stage(
         PreprocessNLPStage(config,
                            vocab_hash_file=vocab_file_name,
@@ -126,6 +129,7 @@ def _run_minibert_pipeline(
 def _run_minibert(*,
                   config: Config,
                   tmp_path: str,
+                  message_type: type,
                   model_name: str,
                   truncated: bool,
                   morpheus_log_level: int,
@@ -163,6 +167,7 @@ def _run_minibert(*,
 
         return _run_minibert_pipeline(config=config,
                                       tmp_path=tmp_path,
+                                      message_type=message_type,
                                       model_name=model_name,
                                       truncated=truncated,
                                       data_col_name=data_col_name,
@@ -172,10 +177,12 @@ def _run_minibert(*,
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-def test_minibert_no_trunc(config: Config, tmp_path: str, morpheus_log_level: int):
+@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
+def test_minibert_no_trunc(config: Config, tmp_path: str, message_type: type, morpheus_log_level: int):
 
     results = _run_minibert(config=config,
                             tmp_path=tmp_path,
+                            message_type=message_type,
                             model_name="sid-minibert-onnx-no-trunc",
                             truncated=False,
                             morpheus_log_level=morpheus_log_level)
@@ -190,10 +197,16 @@ def test_minibert_no_trunc(config: Config, tmp_path: str, morpheus_log_level: in
 @pytest.mark.slow
 @pytest.mark.usefixtures("launch_mock_triton")
 @pytest.mark.parametrize("data_col_name", ["data", "definitely_not_data"])
-def test_minibert_truncated(config: Config, tmp_path: str, morpheus_log_level: int, data_col_name: str):
+@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
+def test_minibert_truncated(config: Config,
+                            tmp_path: str,
+                            message_type: type,
+                            morpheus_log_level: int,
+                            data_col_name: str):
 
     results = _run_minibert(config=config,
                             tmp_path=tmp_path,
+                            message_type=message_type,
                             model_name='sid-minibert-onnx',
                             truncated=True,
                             data_col_name=data_col_name,
