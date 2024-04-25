@@ -92,7 +92,7 @@ def pipeline(pipeline_config: Config,
 
         return message
 
-    embedding_tensor_to_df_stage = pipe.add_stage(embedding_tensor_to_df(config=pipeline_config))
+    embedding_tensor_to_df_stage = pipe.add_stage(embedding_tensor_to_df(pipeline_config))
 
     vector_db = pipe.add_stage(WriteToVectorDBStage(pipeline_config, **vdb_config))
 
