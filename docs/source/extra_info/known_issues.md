@@ -19,7 +19,5 @@ limitations under the License.
 
 - TrainAEStage fails with a Segmentation fault ([#1641](https://github.com/nv-morpheus/Morpheus/pull/1641))
 - vdb_upload example pipeline triggers an internal error in Triton ([#1649](https://github.com/nv-morpheus/Morpheus/pull/1649))
-- vdb_upload example pipeline error on inserting large strings ([#1650](https://github.com/nv-morpheus/Morpheus/pull/1650))
-- vdb_upload example pipeline only works with C++ mode disabled ([#1651](https://github.com/nv-morpheus/Morpheus/pull/1651))
 
 Refer to [open issues in the Morpheus project](https://github.com/nv-morpheus/Morpheus/issues)
