@@ -519,7 +519,6 @@ def test_fse_from_dict():
 @pytest.mark.parametrize("exceed_max_str_len", [True, False], ids=["exceed_max_len", "within_max_len"])
 def test_insert_dataframe(milvus_server_uri: str,
                           string_collection_config: dict,
-                          num_rows: int,
                           dataset: DatasetManager,
                           use_multi_byte_strings: bool,
                           truncate_long_strings: bool,
