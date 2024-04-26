@@ -26,6 +26,7 @@ import cudf
 from _utils import TEST_DIRS
 from morpheus.controllers.rss_controller import FeedStats
 from morpheus.controllers.rss_controller import RSSController
+from morpheus.utils.type_aliases import SeriesType
 
 test_urls = ["https://fake.nvidia.com/rss/HomePage.xml"]
 
@@ -64,6 +65,11 @@ def mock_get_response_fixture() -> Mock:
     mock_response.text = file_content
 
     return mock_response
+
+
+@pytest.fixture(scope="module", name="cisa_rss_feed")
+def cisa_rss_feed_fixture() -> str:
+    return [path.join(TEST_DIRS.tests_data_dir, 'service/cisa_rss_feed.xml')]
 
 
 @pytest.mark.parametrize("feed_input, expected_output", [(url, True) for url in test_urls])
@@ -248,3 +254,18 @@ def test_redundant_fetch(feed_input: str,
         dataframes_generator = controller.fetch_dataframes()
         next(dataframes_generator, None)
         assert mocked_session_get.call_count == 1
+
+
+@pytest.mark.parametrize("strip_markup", [False, True])
+def test_strip_markup(cisa_rss_feed: list[str], strip_markup: bool):
+    controller = RSSController(feed_input=cisa_rss_feed, strip_markup=strip_markup)
+    dataframes = list(controller.fetch_dataframes())
+
+    # The length number of dataframes and rows should be the same regardless if strip_markup is True or False
+    assert len(dataframes) == 1
+    dataframe = dataframes[0]
+    assert isinstance(dataframe, cudf.DataFrame)
+    assert len(dataframe) == 10
+
+    series: SeriesType = dataframe["summary"]
+    assert series.str.contains("<p>").any() == (not strip_markup)
