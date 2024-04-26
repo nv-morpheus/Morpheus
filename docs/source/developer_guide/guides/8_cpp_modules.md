@@ -31,13 +31,14 @@ The following example will create a simple C++ module that passes through the in
 
 ```c++
 #pragma once
+#include "morpheus/export.h"
 #include <mrc/modules/properties/persistent.hpp>
 #include <mrc/modules/segment_modules.hpp>
 #include <nlohmann/json.hpp>
 
 namespace morpheus {
 
-class MyTestModule: public mrc::modules::SegmentModule, public mrc::modules::PersistentModule
+class MORPHEUS_EXPORT MyTestModule: public mrc::modules::SegmentModule, public mrc::modules::PersistentModule
 {
     using type_t = MyTestModule;
 

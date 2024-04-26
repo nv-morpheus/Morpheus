@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"           // for exporting symbols
 #include <SimpleAmqpClient/Channel.h>
 #include <cudf/io/types.hpp>           // for cudf::io::table_with_metadata
 #include <morpheus/messages/meta.hpp>  // for MessageMeta
@@ -36,13 +37,11 @@
 
 namespace morpheus_rabbit {
 
-// pybind11 sets visibility to hidden by default; we want to export our symbols
-
-
 using namespace std::literals;
 using namespace morpheus;
 
-class RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
+// pybind11 sets visibility to hidden by default; we want to export our symbols
+class MORPHEUS_EXPORT RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
@@ -72,7 +71,7 @@ class RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Mess
 /**
  * @brief Interface proxy, used to insulate Python bindings.
  */
-struct RabbitMQSourceStageInterfaceProxy
+struct MORPHEUS_EXPORT RabbitMQSourceStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a RabbitMQSourceStage, and return the result.

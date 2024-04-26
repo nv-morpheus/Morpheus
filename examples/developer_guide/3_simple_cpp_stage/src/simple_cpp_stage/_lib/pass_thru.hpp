@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"            // for exporting symbols
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
 #include <mrc/segment/builder.hpp>      // for Segment Builder
 #include <mrc/segment/object.hpp>       // for Segment Object
@@ -32,12 +33,10 @@
 
 namespace morpheus_example {
 
-// pybind11 sets visibility to hidden by default; we want to export our symbols
-
-
 using namespace morpheus;
 
-class PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
+// pybind11 sets visibility to hidden by default; we want to export our symbols
+class MORPHEUS_EXPORT PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
@@ -50,11 +49,10 @@ class PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage
     subscribe_fn_t build_operator();
 };
 
-struct PassThruStageInterfaceProxy
+struct MORPHEUS_EXPORT PassThruStageInterfaceProxy
 {
     static std::shared_ptr<mrc::segment::Object<PassThruStage>> init(mrc::segment::Builder& builder,
                                                                      const std::string& name);
 };
-
 
 }  // namespace morpheus_example
