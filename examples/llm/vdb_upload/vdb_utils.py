@@ -142,6 +142,7 @@ def _build_default_rss_source(enable_cache,
             "interval_sec": interval_secs,
             "request_timeout_sec": rss_request_timeout_sec,
             "run_indefinitely": run_indefinitely,
+            "strip_markup": True,
             "vdb_resource_name": vector_db_resource_name,
             "web_scraper_config": {
                 "chunk_size": content_chunking_size,
