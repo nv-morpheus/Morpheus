@@ -95,9 +95,11 @@ def test_parse_feed_invalid_input(feed_input: list[str]):
         RSSController(feed_input=feed_input)
 
 
+@pytest.mark.parametrize("strip_markup", [False, True])
 @pytest.mark.parametrize("feed_input, expected_count", [(test_file_paths[0], 30)])
-def test_skip_duplicates_feed_inputs(feed_input: str, expected_count: int):
-    controller = RSSController(feed_input=[feed_input, feed_input])  # Pass duplicate feed inputs
+def test_skip_duplicates_feed_inputs(feed_input: str, expected_count: int, strip_markup: bool):
+    controller = RSSController(feed_input=[feed_input, feed_input],
+                               strip_markup=strip_markup)  # Pass duplicate feed inputs
     dataframes_generator = controller.fetch_dataframes()
     dataframe = next(dataframes_generator, None)
     assert isinstance(dataframe, cudf.DataFrame)
@@ -130,9 +132,10 @@ def test_fetch_dataframes_url(feed_input: str | list[str],
         assert len(dataframe) > 0
 
 
+@pytest.mark.parametrize("strip_markup", [False, True])
 @pytest.mark.parametrize("feed_input", [test_file_paths, test_file_paths[0]])
-def test_fetch_dataframes_filepath(feed_input: str | list[str]):
-    controller = RSSController(feed_input=feed_input)
+def test_fetch_dataframes_filepath(feed_input: str | list[str], strip_markup: bool):
+    controller = RSSController(feed_input=feed_input, strip_markup=strip_markup)
     dataframes_generator = controller.fetch_dataframes()
     dataframe = next(dataframes_generator, None)
     assert isinstance(dataframe, cudf.DataFrame)
@@ -140,18 +143,23 @@ def test_fetch_dataframes_filepath(feed_input: str | list[str]):
     assert len(dataframe) > 0
 
 
+@pytest.mark.parametrize("strip_markup", [False, True])
 @pytest.mark.parametrize("feed_input, batch_size", [(test_file_paths, 5)])
-def test_batch_size(feed_input: list[str], batch_size: int):
-    controller = RSSController(feed_input=feed_input, batch_size=batch_size)
+def test_batch_size(feed_input: list[str], batch_size: int, strip_markup: bool):
+    controller = RSSController(feed_input=feed_input, batch_size=batch_size, strip_markup=strip_markup)
     for df in controller.fetch_dataframes():
         assert isinstance(df, cudf.DataFrame)
         assert len(df) <= batch_size
 
 
+@pytest.mark.parametrize("strip_markup", [False, True])
 @pytest.mark.parametrize("feed_input, enable_cache", [(test_file_paths[0], False), (test_urls[0], True),
                                                       (test_urls[0], False)])
-def test_try_parse_feed_with_beautiful_soup(feed_input: str, enable_cache: bool, mock_get_response: Mock):
-    controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
+def test_try_parse_feed_with_beautiful_soup(feed_input: str,
+                                            enable_cache: bool,
+                                            mock_get_response: Mock,
+                                            strip_markup: bool):
+    controller = RSSController(feed_input=feed_input, enable_cache=enable_cache, strip_markup=strip_markup)
 
     # When enable_cache is set to 'True', the feed content is provided as input.
     feed_data = controller._try_parse_feed_with_beautiful_soup(mock_get_response.text)
@@ -226,10 +234,14 @@ def test_parse_feeds(mock_feed: feedparser.FeedParserDict):
             controller.get_feed_stats("http://testfeed.com")
 
 
+@pytest.mark.parametrize("strip_markup", [False, True])
 @pytest.mark.parametrize("feed_input", [test_urls[0]])
-def test_redundant_fetch(feed_input: str, mock_feed: feedparser.FeedParserDict, mock_get_response: Mock):
+def test_redundant_fetch(feed_input: str,
+                         mock_feed: feedparser.FeedParserDict,
+                         mock_get_response: Mock,
+                         strip_markup: bool):
 
-    controller = RSSController(feed_input=feed_input)
+    controller = RSSController(feed_input=feed_input, strip_markup=strip_markup)
     mock_feedparser_parse = patch("morpheus.controllers.rss_controller.feedparser.parse")
     with mock_feedparser_parse, patch("requests.Session.get", return_value=mock_get_response) as mocked_session_get:
         mock_feedparser_parse.return_value = mock_feed
