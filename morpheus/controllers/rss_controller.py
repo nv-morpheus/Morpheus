@@ -70,7 +70,16 @@ class RSSController:
          Cooldown interval in seconds if there is a failure in fetching or parsing the feed.
     request_timeout : float, optional, default = 2.0
         Request timeout in secs to fetch the feed.
+    strip_markup : bool, optional, default = False
+        When true, strip HTML & XML markup from the from the content, summary and title fields.
     """
+
+    # Fields which may contain HTML or XML content
+    MARKUP_FIELDS = (
+        "content",
+        "summary",
+        "title",
+    )
 
     def __init__(self,
                  feed_input: str | list[str],
@@ -79,7 +88,8 @@ class RSSController:
                  enable_cache: bool = False,
                  cache_dir: str = "./.cache/http",
                  cooldown_interval: int = 600,
-                 request_timeout: float = 2.0):
+                 request_timeout: float = 2.0,
+                 strip_markup: bool = False):
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
@@ -92,6 +102,7 @@ class RSSController:
         self._previous_entries = set()  # Stores the IDs of previous entries to prevent the processing of duplicates.
         self._cooldown_interval = cooldown_interval
         self._request_timeout = request_timeout
+        self._strip_makrup = strip_markup
 
         # Validate feed_input
         for f in self._feed_input:
@@ -236,6 +247,44 @@ class RSSController:
 
         return feed
 
+    @staticmethod
+    def _strip_markup_from_field(field: str, mime_type: str) -> str:
+        if mime_type.endswith("xml"):
+            parser = "xml"
+        else:
+            parser = "html.parser"
+
+        try:
+            soup = BeautifulSoup(field, features=parser)
+            return soup.get_text()
+        except Exception as ex:
+            logger.error("Failed to strip tags from field: %s: %s", field, ex)
+            return field
+
+    def _strip_markup_from_fields(self, entry: "feedparser.FeedParserDict"):
+        """
+        Strip HTML & XML tags from the content, summary and title fields.
+
+        Per note in feedparser documentation even if a field is advertized as plain text, it may still contain HTML
+        https://feedparser.readthedocs.io/en/latest/html-sanitization.html
+        """
+        for field in self.MARKUP_FIELDS:
+            field_value = entry.get(field)
+            if field_value is not None:
+                if isinstance(field_value, list):
+                    for field_item in field_value:
+                        mime_type = field_item.get("type", "text/plain")
+                        field_item["value"] = self._strip_markup_from_field(field_item["value"], mime_type)
+                        field_item["type"] = "text/plain"
+                else:
+                    detail_field_name = f"{field}_detail"
+                    detail_field: dict = entry.get(detail_field_name, {})
+                    mime_type = detail_field.get("type", "text/plain")
+
+                    entry[field] = self._strip_markup_from_field(field_value, mime_type)
+                    detail_field["type"] = "text/plain"
+                    entry[detail_field_name] = detail_field
+
     def parse_feeds(self):
         """
         Parse the RSS feed using the feedparser library.
@@ -291,6 +340,9 @@ class RSSController:
                     entry_id = entry.get('id')
                     current_entries.add(entry_id)
                     if entry_id not in self._previous_entries:
+                        if self._strip_makrup:
+                            self._strip_markup_from_fields(entry)
+
                         entry_accumulator.append(entry)
 
                         if self._batch_size > 0 and len(entry_accumulator) >= self._batch_size:
