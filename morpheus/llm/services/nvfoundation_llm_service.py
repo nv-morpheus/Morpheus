@@ -140,8 +140,8 @@ class NVFoundationLLMService(LLMService):
         `NGC_ORG_ID` environment variable. This value is only required if the account associated with the `api_key` is
         a member of multiple NGC organizations.
     base_url : str, optional
-            The api host url, by default None. If `None` the url will be read from the `NVIDIA_API_BASE` environment
-            variable. If neither are present `https://api.nvcf.nvidia.com/v2` will be used., by default None
+            The api host url, by default None. If `None` the url will be read from the `NVAI_BASE_URL` environment
+            variable. If neither are present `https://api.nvai.nvidia.com/v2` will be used., by default None
     """
 
     def __init__(self, *, api_key: str = None, base_url: str = None) -> None:
@@ -152,15 +152,15 @@ class NVFoundationLLMService(LLMService):
 
         self._api_key = api_key
         if base_url is None:
-            self._base_url = os.getenv('NVIDIA_API_BASE', 'https://api.nvcf.nvidia.com/v2')
+            self._base_url = os.getenv('NVAI_BASE_URL', 'https://api.nvai.nvidia.com/v2')
         else:
             self._base_url = base_url
 
         self._nve_client = NVEModel(
             nvidia_api_key=self._api_key,
-            fetch_url_format=f"{self._base_url}/nvcf/pexec/status/",
-            call_invoke_base=f"{self._base_url}/nvcf/pexec/functions",
-            func_list_format=f"{self._base_url}/nvcf/functions",
+            fetch_url_format=f"{self._base_url}/nvai/pexec/status/",
+            call_invoke_base=f"{self._base_url}/nvai/pexec/functions",
+            func_list_format=f"{self._base_url}/nvai/functions",
         )  # type: ignore
 
     def get_client(self, *, model_name: str, **model_kwargs) -> NVFoundationLLMClient:
