@@ -861,6 +861,15 @@ def loglevel_fatal():
     _wrap_set_log_level(logging.FATAL)
 
 
+@pytest.fixture(scope="function")
+def morpheus_log_level():
+    """
+    Returns the log level of the morpheus logger
+    """
+    logger = logging.getLogger("morpheus")
+    yield logger.getEffectiveLevel()
+
+
 # ==== DataFrame Fixtures ====
 @pytest.fixture(scope="function")
 def dataset(df_type: typing.Literal['cudf', 'pandas']):

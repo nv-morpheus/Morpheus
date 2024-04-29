@@ -71,19 +71,18 @@ def test_get_model(config: Config, mock_mlflow_client: mock.MagicMock, mock_mode
 
 
 @pytest.mark.usefixtures("reset_loglevel")
-@pytest.mark.parametrize('morpheus_log_level',
-                         [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
+@pytest.mark.parametrize('log_level', [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
 def test_on_data(
         config: Config,
         mock_mlflow_client: mock.MagicMock,  # pylint: disable=unused-argument
         mock_model_manager: mock.MagicMock,
         dfp_multi_message: "MultiDFPMessage",  # noqa: F821
-        morpheus_log_level: int,
+        log_level: int,
         dataset_pandas: DatasetManager):
     from dfp.messages.multi_dfp_message import MultiDFPMessage
     from dfp.stages.dfp_inference_stage import DFPInferenceStage
 
-    set_log_level(morpheus_log_level)
+    set_log_level(log_level)
 
     expected_results = list(range(1000, dfp_multi_message.mess_count + 1000))
 

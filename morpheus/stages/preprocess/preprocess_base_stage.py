@@ -61,15 +61,15 @@ class PreprocessBaseStage(MultiMessageStage):
         if (schema.input_type == ControlMessage):
             self._use_control_message = True
             out_type = ControlMessage
+            self._preprocess_fn = self._get_preprocess_fn()
         else:
             self._use_control_message = False
-
-        self._preprocess_fn = self._get_preprocess_fn()
-        preproc_sig = inspect.signature(self._preprocess_fn)
-        # If the innerfunction returns a type annotation, update the output type
-        if (preproc_sig.return_annotation
-                and typing_utils.issubtype(preproc_sig.return_annotation, MultiInferenceMessage)):
-            out_type = preproc_sig.return_annotation
+            self._preprocess_fn = self._get_preprocess_fn()
+            preproc_sig = inspect.signature(self._preprocess_fn)
+            # If the innerfunction returns a type annotation, update the output type
+            if (preproc_sig.return_annotation
+                    and typing_utils.issubtype(preproc_sig.return_annotation, MultiInferenceMessage)):
+                out_type = preproc_sig.return_annotation
 
         schema.output_schema.set_type(out_type)
 
