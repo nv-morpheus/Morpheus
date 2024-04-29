@@ -12,6 +12,7 @@ dependencies:
 - anyio>=3.7
 - appdirs
 - arxiv=1.4
+- beautifulsoup4
 - boto3
 - click >=8
 - cuml=24.02.*
