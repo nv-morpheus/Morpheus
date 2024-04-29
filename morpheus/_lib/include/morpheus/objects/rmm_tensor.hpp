@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
@@ -42,7 +43,7 @@ namespace morpheus {
 /**
  * TODO(Documentation)
  */
-class RMMTensor : public ITensor
+class MORPHEUS_EXPORT RMMTensor : public ITensor
 {
   public:
     RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
@@ -166,7 +167,5 @@ class RMMTensor : public ITensor
     ShapeType m_shape;
     ShapeType m_stride;
 };
-
-
 /** @} */  // end of group
 }  // namespace morpheus

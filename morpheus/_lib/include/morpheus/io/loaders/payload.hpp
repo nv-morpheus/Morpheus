@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/io/data_loader.hpp"
 #include "morpheus/messages/control.hpp"
 
@@ -30,7 +31,7 @@ namespace morpheus {
  * @brief Very simple raw data loader that takes payload data on the control message and returns it
  *
  */
-class PayloadDataLoader : public Loader
+class MORPHEUS_EXPORT PayloadDataLoader : public Loader
 {
   public:
     ~PayloadDataLoader() = default;

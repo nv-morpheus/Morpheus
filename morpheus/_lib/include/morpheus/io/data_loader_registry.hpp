@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/io/data_loader.hpp"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/objects/factory_registry.hpp"
@@ -29,12 +30,11 @@
 
 namespace morpheus {
 
-
-extern template class FactoryRegistry<Loader>;
+extern template class MORPHEUS_EXPORT FactoryRegistry<Loader>;
 
 using LoaderRegistry = FactoryRegistry<Loader>;  // NOLINT
 
-struct LoaderRegistryProxy
+struct MORPHEUS_EXPORT LoaderRegistryProxy
 {
     static void register_proxy_factory_fn(
         const std::string& name,
@@ -44,6 +44,5 @@ struct LoaderRegistryProxy
 
     static void register_factory_cleanup_fn(const std::string& name);
 };
-
 
 }  // namespace morpheus

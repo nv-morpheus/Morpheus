@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/tensor_object.hpp"
@@ -40,9 +41,7 @@ namespace morpheus {
  * @file
  */
 
-
-
-class MultiMessage;
+class MORPHEUS_EXPORT MultiMessage;
 
 /**
  * @brief All classes that are derived from MultiMessage should use this class. It will automatically add the
@@ -56,7 +55,7 @@ class MultiMessage;
  *         DerivedMultiMessage<MyDerivedMultiMessage, MyBaseMultiMessage>` shoud be used.
  */
 template <typename DerivedT, typename... BasesT>
-class DerivedMultiMessage : public BasesT...
+class MORPHEUS_EXPORT DerivedMultiMessage : public BasesT...
 {
   public:
     virtual ~DerivedMultiMessage() = default;
@@ -138,7 +137,7 @@ class DerivedMultiMessage : public BasesT...
 
 // Single base class version. Should be the version used by default
 template <typename DerivedT, typename BaseT>
-class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
+class MORPHEUS_EXPORT DerivedMultiMessage<DerivedT, BaseT> : public BaseT
 {
   public:
     using BaseT::BaseT;
@@ -188,7 +187,7 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
 
 // No base class version. This should only be used by `MultiMessage` itself.
 template <typename DerivedT>
-class DerivedMultiMessage<DerivedT>
+class MORPHEUS_EXPORT DerivedMultiMessage<DerivedT>
 {
   public:
     virtual ~DerivedMultiMessage() = default;
@@ -236,7 +235,7 @@ class DerivedMultiMessage<DerivedT>
  slicing operations, it holds a reference to a batched metadata object and stores the offset and count into that batch.
  *
  */
-class MultiMessage : public DerivedMultiMessage<MultiMessage>
+class MORPHEUS_EXPORT MultiMessage : public DerivedMultiMessage<MultiMessage>
 {
   public:
     /**
@@ -329,7 +328,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiMessageInterfaceProxy
+struct MORPHEUS_EXPORT MultiMessageInterfaceProxy
 {
     /**
      * TODO(Documentation)
@@ -389,7 +388,5 @@ struct MultiMessageInterfaceProxy
                                                      const std::vector<RangeType>& ranges,
                                                      pybind11::object num_selected_rows);
 };
-
-
 /** @} */  // end of group
 }  // namespace morpheus

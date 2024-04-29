@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for ShapeType, TensorIndex, TensorSize
@@ -45,8 +46,7 @@ namespace morpheus {
  *
  */
 
-
-class Tensor
+class MORPHEUS_EXPORT Tensor
 {
   public:
     Tensor(std::shared_ptr<rmm::device_buffer> buffer,
@@ -92,7 +92,5 @@ class Tensor
     TensorSize m_offset;
     std::shared_ptr<rmm::device_buffer> m_device_buffer;
 };
-
-
 /** @} */  // end of group
 }  // namespace morpheus

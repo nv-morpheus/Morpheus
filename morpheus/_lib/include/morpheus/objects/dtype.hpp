@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include <cudf/types.hpp>
 
 #include <climits>  // for CHAR_BIT
@@ -41,8 +42,7 @@ constexpr std::size_t size_in_bits()
 }
 
 // Pulled from cudf
-
-enum class TypeId : int32_t
+enum class MORPHEUS_EXPORT TypeId : int32_t
 {
     EMPTY,    ///< Always null with no underlying data
     INT8,     ///< 1 byte signed integer
@@ -79,7 +79,7 @@ enum class TypeId : int32_t
 };
 
 /****** DType****************************************/
-struct DType
+struct MORPHEUS_EXPORT DType
 {
     DType(TypeId tid);
     DType(const DType& dtype) = default;
@@ -178,7 +178,5 @@ struct DType
 
     TypeId m_type_id;
 };
-
 /** @} */  // end of group
-
 }  // namespace morpheus

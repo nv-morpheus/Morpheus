@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex
@@ -39,7 +40,7 @@ namespace morpheus {
     usecases.
  *
  */
-class InferenceMemoryNLP : public InferenceMemory
+class MORPHEUS_EXPORT InferenceMemoryNLP : public InferenceMemory
 {
   public:
     /**
@@ -107,7 +108,7 @@ class InferenceMemoryNLP : public InferenceMemory
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
+struct MORPHEUS_EXPORT InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize an InferenceMemoryNLP object, and return a shared pointer to the result
@@ -175,7 +176,5 @@ struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
      */
     static void set_seq_ids(InferenceMemoryNLP& self, pybind11::object cupy_values);
 };
-
-
 /** @} */  // end of group
 }  // namespace morpheus

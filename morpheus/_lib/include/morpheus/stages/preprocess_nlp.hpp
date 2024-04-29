@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"                      // for exporting symbols
 #include "morpheus/messages/control.hpp"          // for ControlMessage
 #include "morpheus/messages/multi.hpp"            // for MultiMessage
 #include "morpheus/messages/multi_inference.hpp"  // for MultiInferenceMessage
@@ -52,7 +53,7 @@ namespace morpheus {
  * @brief NLP input data for inference
  */
 template <typename InputT, typename OutputT>
-class PreprocessNLPStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
+class MORPHEUS_EXPORT PreprocessNLPStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
@@ -119,7 +120,7 @@ using PreprocessNLPStageCM =  // NOLINT(readability-identifier-naming)
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct PreprocessNLPStageInterfaceProxy
+struct MORPHEUS_EXPORT PreprocessNLPStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a ProcessNLPStage that receives MultiMessage and emits MultiInferenceMessage, and
@@ -186,7 +187,5 @@ struct PreprocessNLPStageInterfaceProxy
         int stride         = -1,
         std::string column = "data");
 };
-
-
 /** @} */  // end of group
 }  // namespace morpheus

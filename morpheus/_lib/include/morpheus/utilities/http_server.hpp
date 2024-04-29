@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"           // for exporting symbols
 #include <boost/asio/io_context.hpp>   // for io_context
 #include <boost/asio/ip/tcp.hpp>       // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
 #include <boost/beast/core/error.hpp>  // for error_code
@@ -43,9 +44,7 @@ namespace morpheus {
  * @file
  */
 
-
-
-class Listener;
+MORPHEUS_EXPORT class Listener;
 
 using on_complete_cb_fn_t = std::function<void(const boost::system::error_code& /* error message */)>;
 
@@ -71,7 +70,7 @@ using parse_status_t = std::tuple<unsigned /*http status code*/,
  */
 using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* post body */)>;
 
-constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
+MORPHEUS_EXPORT constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
 
 /**
  * @brief A simple HTTP server that listens for POST or PUT requests on a given endpoint.
@@ -89,7 +88,7 @@ constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
  * @param max_payload_size The maximum size in bytes of the payload that the server will accept in a single request.
  * @param request_timeout The timeout for a request.
  */
-class HttpServer
+class MORPHEUS_EXPORT HttpServer
 {
   public:
     HttpServer(payload_parse_fn_t payload_parse_fn,
@@ -127,7 +126,7 @@ class HttpServer
  *
  * @details Constructed by the HttpServer class and should not be used directly.
  */
-class Listener : public std::enable_shared_from_this<Listener>
+class MORPHEUS_EXPORT Listener : public std::enable_shared_from_this<Listener>
 {
   public:
     Listener(boost::asio::io_context& io_context,
@@ -165,7 +164,7 @@ class Listener : public std::enable_shared_from_this<Listener>
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct HttpServerInterfaceProxy
+struct MORPHEUS_EXPORT HttpServerInterfaceProxy
 {
     static std::shared_ptr<HttpServer> init(pybind11::function py_parse_fn,
                                             std::string bind_address,
@@ -186,5 +185,4 @@ struct HttpServerInterfaceProxy
                      const pybind11::object& value,
                      const pybind11::object& traceback);
 };
-
 }  // namespace morpheus

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/io/data_loader.hpp"
 
 #include <mrc/modules/properties/persistent.hpp>
@@ -27,7 +28,7 @@
 
 namespace morpheus {
 
-class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules::PersistentModule
+class MORPHEUS_EXPORT DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules::PersistentModule
 {
     using type_t = DataLoaderModule;
 
@@ -46,5 +47,4 @@ class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules
 
     DataLoader m_data_loader{};
 };
-
 }  // namespace morpheus

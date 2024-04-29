@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 
 #include <boost/fiber/context.hpp>
@@ -47,7 +48,7 @@ namespace morpheus {
  * @brief Load messages from a file. Source stage is used to load messages from a file and
  * dumping the contents into the pipeline immediately. Useful for testing performance and accuracy of a pipeline.
  */
-class FileSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
+class MORPHEUS_EXPORT FileSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
@@ -75,7 +76,7 @@ class FileSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct FileSourceStageInterfaceProxy
+struct MORPHEUS_EXPORT FileSourceStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a FileSourceStage, and return the result
@@ -98,6 +99,5 @@ struct FileSourceStageInterfaceProxy
                                                                        int repeat                   = 1,
                                                                        pybind11::dict parser_kwargs = pybind11::dict());
 };
-
 /** @} */  // end of group
 }  // namespace morpheus

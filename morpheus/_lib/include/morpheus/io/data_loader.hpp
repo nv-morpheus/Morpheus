@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 
@@ -28,8 +29,6 @@
 
 namespace morpheus {
 
-
-
 /**
  * @brief Abstract class for loading data from a source.
  *
@@ -37,7 +36,7 @@ namespace morpheus {
  * protected method for accessing the configuration information. It can be extended to implement
  * specific loading logic for different types of data sources.
  */
-class Loader
+class MORPHEUS_EXPORT Loader
 {
   public:
     /**
@@ -89,7 +88,7 @@ class Loader
  * loading data using these objects. It also defines a method for loading control messages from data
  * sources using the registered loaders.
  */
-class DataLoader
+class MORPHEUS_EXPORT DataLoader
 {
   public:
     /**
@@ -135,6 +134,5 @@ class DataLoader
     std::map<std::string, std::shared_ptr<Loader>> m_loaders{};  // Map of registered loader instances.
     nlohmann::json m_config;
 };
-
 
 }  // namespace morpheus

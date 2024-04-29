@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include <cstdint>
 #include <string>
 
@@ -27,16 +28,11 @@ namespace morpheus {
  * @{
  * @file
  */
-
-
-enum class FilterSource : int32_t
+MORPHEUS_EXPORT enum class FilterSource : int32_t
 {
     Auto,
     TENSOR,
     DATAFRAME
 };
-
-
-
 /** @} */  // end of group
 }  // namespace morpheus

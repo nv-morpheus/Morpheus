@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"                   // for exporting symbols
 #include "morpheus/messages/meta.hpp"          // for MessageMeta
 #include "morpheus/utilities/http_server.hpp"  // for HttpServer
 
@@ -50,11 +51,9 @@ using request_queue_t = boost::fibers::buffered_channel<table_t>;
  * @file
  */
 
-
-
 // TODO(dagardner): optionally add headers to the dataframe
 
-class HttpServerSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
+class MORPHEUS_EXPORT HttpServerSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
@@ -94,7 +93,7 @@ class HttpServerSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Me
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct HttpServerSourceStageInterfaceProxy
+struct MORPHEUS_EXPORT HttpServerSourceStageInterfaceProxy
 {
     static std::shared_ptr<mrc::segment::Object<HttpServerSourceStage>> init(mrc::segment::Builder& builder,
                                                                              const std::string& name,
@@ -112,6 +111,5 @@ struct HttpServerSourceStageInterfaceProxy
                                                                              bool lines,
                                                                              std::size_t stop_after);
 };
-
 /** @} */  // end of group
 }  // namespace morpheus

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/types.hpp"  // for TensorMap
 
@@ -38,7 +39,7 @@ namespace morpheus {
     hold generic data as a `TensorObject`s
  *
  */
-class InferenceMemory : public TensorMemory
+class MORPHEUS_EXPORT InferenceMemory : public TensorMemory
 {
   public:
     /**
@@ -69,7 +70,7 @@ class InferenceMemory : public TensorMemory
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct InferenceMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
+struct MORPHEUS_EXPORT InferenceMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize a InferenceMemory object, and return a shared pointer to the result. Each array in
@@ -81,7 +82,5 @@ struct InferenceMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
      */
     static std::shared_ptr<InferenceMemory> init(TensorIndex count, pybind11::object& tensors);
 };
-
-
 /** @} */  // end of group
 }  // namespace morpheus

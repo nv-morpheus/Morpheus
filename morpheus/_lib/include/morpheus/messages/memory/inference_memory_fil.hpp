@@ -86,11 +86,10 @@ class MORPHEUS_EXPORT InferenceMemoryFIL : public InferenceMemory
 };
 
 /****** InferenceMemoryFILInterfaceProxy *************************/
-
 /**
  * @brief Interface proxy, used to insulate python bindings
  */
-struct InferenceMemoryFILInterfaceProxy : public InferenceMemoryInterfaceProxy
+struct MORPHEUS_EXPORT InferenceMemoryFILInterfaceProxy : public InferenceMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize an InferenceMemoryFIL object, and return a shared pointer to the result
@@ -137,7 +136,5 @@ struct InferenceMemoryFILInterfaceProxy : public InferenceMemoryInterfaceProxy
      */
     static void set_seq_ids(InferenceMemoryFIL& self, pybind11::object cupy_values);
 };
-
-
 /** @} */  // end of group
 }  // namespace morpheus

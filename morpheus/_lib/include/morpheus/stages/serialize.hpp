@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"  // for MessageMeta
 #include "morpheus/messages/multi.hpp"
@@ -51,7 +52,7 @@ namespace morpheus {
  * `MessageMeta`.
  */
 template <typename InputT>
-class SerializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<MessageMeta>>
+class MORPHEUS_EXPORT SerializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<MessageMeta>>;
@@ -97,7 +98,7 @@ using SerializeStageCM = SerializeStage<ControlMessage>;  // NOLINT(readability-
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct SerializeStageInterfaceProxy
+struct MORPHEUS_EXPORT SerializeStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a SerializeStage, and return the result
@@ -133,7 +134,5 @@ struct SerializeStageInterfaceProxy
                                                                            const std::vector<std::string>& exclude,
                                                                            bool fixed_columns = true);
 };
-
-
 /** @} */  // end of group
 }  // namespace morpheus

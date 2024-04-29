@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"  // for exporting symbols
 #include "morpheus/messages/meta.hpp"  // for MessageMeta
 
 #include <nlohmann/json.hpp>   // for json, basic_json
@@ -31,8 +32,7 @@
 
 namespace morpheus {
 
-
-enum class ControlMessageType
+enum class MORPHEUS_EXPORT ControlMessageType
 {
     NONE,
     INFERENCE,
@@ -161,7 +161,7 @@ enum class ControlMessageType
 //     std::shared_ptr<TensorMemory> m_tensors;
 // };
 
-class TensorMemory;
+MORPHEUS_EXPORT class TensorMemory;
 
 // System-clock for better compatibility with pybind11/chrono
 using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
@@ -173,7 +173,7 @@ using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
  * pointer to an associated message payload. It provides methods for accessing and modifying these
  * elements of the control message.
  */
-class ControlMessage
+class MORPHEUS_EXPORT ControlMessage
 {
   public:
     ControlMessage();
@@ -378,7 +378,7 @@ class ControlMessage
     std::map<std::string, time_point_t> m_timestamps{};
 };
 
-struct ControlMessageProxy
+struct MORPHEUS_EXPORT ControlMessageProxy
 {
     /**
      * @brief Creates a new ControlMessage instance from a configuration dictionary.
@@ -512,6 +512,5 @@ struct ControlMessageProxy
      */
     static pybind11::dict filter_timestamp(ControlMessage& self, const std::string& regex_filter);
 };
-
 
 }  // namespace morpheus

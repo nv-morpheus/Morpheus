@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/objects/file_types.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/utilities/string_util.hpp"
@@ -46,7 +47,7 @@ namespace morpheus {
  * @param include_index_col : Determines whether or not to include the dataframe index
  * @param flush : When `true` flush `out_stream`.
  */
-void df_to_csv(const TableInfo& tbl,
+void MORPHEUS_EXPORT df_to_csv(const TableInfo& tbl,
                std::ostream& out_stream,
                bool include_header,
                bool include_index_col = true,
@@ -60,7 +61,7 @@ void df_to_csv(const TableInfo& tbl,
  * @param include_index_col : Determines whether or not to include the dataframe index
  * @return std::string
  */
-std::string df_to_csv(const TableInfo& tbl, bool include_header, bool include_index_col = true);
+std::string MORPHEUS_EXPORT df_to_csv(const TableInfo& tbl, bool include_header, bool include_index_col = true);
 
 /**
  * @brief Serialize a dataframe into a JSON formatted string
@@ -69,7 +70,7 @@ std::string df_to_csv(const TableInfo& tbl, bool include_header, bool include_in
  * @param include_index_col : Determines whether or not to include the dataframe index
  * @param flush : When `true` flush `out_stream`.
  */
-void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col = true, bool flush = false);
+void MORPHEUS_EXPORT df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col = true, bool flush = false);
 
 /**
  * @brief Serialize a dataframe into a JSON formatted string
@@ -80,7 +81,7 @@ void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_ind
  * Note the include_index_col is currently being ignored in both versions of `df_to_json` due to a known issue in
  * Pandas: https://github.com/pandas-dev/pandas/issues/37600
  */
-std::string df_to_json(const TableInfo& tbl, bool include_index_col = true);
+std::string MORPHEUS_EXPORT df_to_json(const TableInfo& tbl, bool include_index_col = true);
 
 /**
  * @brief Serialize a dataframe to an output stream in Parquet format
@@ -91,7 +92,7 @@ std::string df_to_json(const TableInfo& tbl, bool include_index_col = true);
  * @param include_index_col : Determines whether or not to include the dataframe index
  * @param flush : When `true` flush `out_stream`.
  */
-void df_to_parquet(const TableInfo& tbl,
+void MORPHEUS_EXPORT df_to_parquet(const TableInfo& tbl,
                    std::ostream& out_stream,
                    bool include_header,
                    bool include_index_col = true,
@@ -105,7 +106,7 @@ void df_to_parquet(const TableInfo& tbl,
  * @param include_index_col : Determines whether or not to include the dataframe index
  * @return std::string
  */
-std::string df_to_parquet(const TableInfo& tbl, bool include_header, bool include_index_col = true);
+std::string MORPHEUS_EXPORT df_to_parquet(const TableInfo& tbl, bool include_header, bool include_index_col = true);
 
 /**
  * @brief Loads a cudf table from a CSV, JSON or Parquet file returning the DataFrame as a Python object
@@ -114,7 +115,7 @@ std::string df_to_parquet(const TableInfo& tbl, bool include_header, bool includ
  * @return pybind11::object
  */
 template <typename... ArgsT>
-void write_df_to_file(const TableInfo& tbl,
+void MORPHEUS_EXPORT write_df_to_file(const TableInfo& tbl,
                       const std::string& filename,
                       FileTypes file_type = FileTypes::Auto,
                       ArgsT&&... args)
@@ -148,7 +149,7 @@ void write_df_to_file(const TableInfo& tbl,
 }
 
 template <typename... ArgsT>
-void write_df_to_file(const MutableTableInfo& tbl,
+void MORPHEUS_EXPORT write_df_to_file(const MutableTableInfo& tbl,
                       const std::string& filename,
                       FileTypes file_type = FileTypes::Auto,
                       ArgsT&&... args)
@@ -181,14 +182,12 @@ void write_df_to_file(const MutableTableInfo& tbl,
     }
 }
 
-struct SerializersProxy
+struct MORPHEUS_EXPORT SerializersProxy
 {
     static void write_df_to_file(pybind11::object df,
                                  std::string filename,
                                  FileTypes file_type,
                                  const pybind11::kwargs& kwargs);
 };
-
 /** @} */  // end of group
-
 }  // namespace morpheus

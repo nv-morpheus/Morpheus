@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/io/data_loader.hpp"
 #include "morpheus/messages/control.hpp"
 
@@ -31,7 +32,7 @@ namespace morpheus {
  * DataFrame. Loads the files into a cuDF DataFrame and returns a ControlMessage containing the DataFrame.
  *
  */
-class FileDataLoader : public Loader
+class MORPHEUS_EXPORT FileDataLoader : public Loader
 {
   public:
     ~FileDataLoader() = default;

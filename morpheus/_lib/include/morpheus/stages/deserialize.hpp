@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
@@ -49,16 +50,15 @@ namespace morpheus {
  * @file
  */
 
-
 using cm_task_t = std::pair<std::string, nlohmann::json>;
 
-void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
+void MORPHEUS_EXPORT make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
                          TensorIndex stop,
                          cm_task_t* task,
                          std::shared_ptr<MultiMessage>& windowed_message);
 
-void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
+void MORPHEUS_EXPORT make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
                          TensorIndex stop,
                          cm_task_t* task,
@@ -66,7 +66,7 @@ void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
 
 /****** DeserializationStage********************************/
 template <typename OutputT>
-class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<OutputT>>
+class MORPHEUS_EXPORT DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<OutputT>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<OutputT>>;
@@ -101,7 +101,7 @@ class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct DeserializeStageInterfaceProxy
+struct MORPHEUS_EXPORT DeserializeStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a DeserializationStage that emits MultiMessage's, and return the result
@@ -137,7 +137,7 @@ struct DeserializeStageInterfaceProxy
 };
 
 template <typename OutputT>
-typename DeserializeStage<OutputT>::subscribe_fn_t DeserializeStage<OutputT>::build_operator()
+typename DeserializeStage<OutputT>::subscribe_fn_t MORPHEUS_EXPORT DeserializeStage<OutputT>::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
@@ -185,7 +185,5 @@ typename DeserializeStage<OutputT>::subscribe_fn_t DeserializeStage<OutputT>::bu
             }));
     };
 }
-
-
 /** @} */  // end of group
 }  // namespace morpheus

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/types.hpp"  // for TensorMap
 
@@ -38,7 +39,7 @@ namespace morpheus {
  * @brief Output memory block holding the results of inference
  *
  */
-class ResponseMemory : public TensorMemory
+class MORPHEUS_EXPORT ResponseMemory : public TensorMemory
 {
   public:
     /**
@@ -71,7 +72,7 @@ class ResponseMemory : public TensorMemory
  * @brief Interface proxy, used to insulate python bindings.
  *
  */
-struct ResponseMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
+struct MORPHEUS_EXPORT ResponseMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize a ResponseMemory object, and return a shared pointer to the result. Each array in
@@ -83,7 +84,5 @@ struct ResponseMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
      */
     static std::shared_ptr<ResponseMemory> init(TensorIndex count, pybind11::object& tensors);
 };
-
-
 /** @} */  // end of group
 }  // namespace morpheus

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
@@ -43,7 +44,7 @@ namespace morpheus {
  * to add additional data for inferencing.
  */
 
-class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiTensorMessage>
+class MORPHEUS_EXPORT MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiTensorMessage>
 {
   public:
     /**
@@ -98,7 +99,7 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceProxy
+struct MORPHEUS_EXPORT MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiInferenceMessage object, and return a shared pointer to the result
@@ -121,6 +122,5 @@ struct MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceP
                                                        TensorIndex count,
                                                        std::string id_tensor_name);
 };
-
 /** @} */  // end of group
 }  // namespace morpheus

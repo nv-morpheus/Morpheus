@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"                   // for exporting symbols
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/types.hpp"                  // for TensorMap, TensorIndex
 #include "morpheus/utilities/cupy_util.hpp"    // for CupyUtil
@@ -43,7 +44,7 @@ namespace morpheus {
  * Base class for `InferenceMemory` & `ResponseMemory`
  *
  */
-class TensorMemory
+class MORPHEUS_EXPORT TensorMemory
 {
   public:
     /**
@@ -157,7 +158,7 @@ class TensorMemory
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct TensorMemoryInterfaceProxy
+struct MORPHEUS_EXPORT TensorMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize a TensorMemory object, and return a shared pointer to the result. Each array in
@@ -236,7 +237,5 @@ struct TensorMemoryInterfaceProxy
      */
     static void set_tensor(TensorMemory& self, const std::string name, const pybind11::object& cupy_tensor);
 };
-
-
 /** @} */  // end of group
 }  // namespace morpheus

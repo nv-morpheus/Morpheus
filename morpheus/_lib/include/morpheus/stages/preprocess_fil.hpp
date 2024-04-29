@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
@@ -51,7 +52,7 @@ namespace morpheus {
  * @brief FIL input data for inference
  */
 template <typename InputT, typename OutputT>
-class PreprocessFILStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
+class MORPHEUS_EXPORT PreprocessFILStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
@@ -90,7 +91,7 @@ using PreprocessFILStageCM =  // NOLINT(readability-identifier-naming)
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct PreprocessFILStageInterfaceProxy
+struct MORPHEUS_EXPORT PreprocessFILStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a PreprocessFILStage that receives MultiMessage and emits MultiInferenceMessage,
@@ -115,6 +116,5 @@ struct PreprocessFILStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>> init_cm(
         mrc::segment::Builder& builder, const std::string& name, const std::vector<std::string>& features);
 };
-
 /** @} */  // end of group
 }  // namespace morpheus

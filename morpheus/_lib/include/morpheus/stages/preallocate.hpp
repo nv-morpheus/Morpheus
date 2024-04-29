@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
@@ -44,14 +45,14 @@ namespace {
  * @param columns
  */
 //@{
-void preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
+void MORPHEUS_EXPORT preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
                  const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
 {
     auto table = msg->get_mutable_info();
     table.insert_missing_columns(columns);
 }
 
-void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
+void MORPHEUS_EXPORT preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
                  const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
 {
     preallocate(msg->meta, columns);
@@ -65,7 +66,7 @@ void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
  * `PreallocateMultiMessageStage`
  */
 template <typename MessageT>
-class PreallocateStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
+class MORPHEUS_EXPORT PreallocateStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>;
@@ -86,7 +87,7 @@ class PreallocateStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>
  * @brief Interface proxy, used to insulate python bindings.
  */
 template <typename MessageT>
-struct PreallocateStageInterfaceProxy
+struct MORPHEUS_EXPORT PreallocateStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a DeserializationStage, and return the result.
@@ -98,7 +99,7 @@ struct PreallocateStageInterfaceProxy
 };
 
 template <typename MessageT>
-PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::string, TypeId>>& needed_columns) :
+MORPHEUS_EXPORT PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::string, TypeId>>& needed_columns) :
   base_t(base_t::op_factory_from_sub_fn(build_operator()))
 {
     for (const auto& col : needed_columns)
@@ -108,7 +109,7 @@ PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::s
 }
 
 template <typename MessageT>
-typename PreallocateStage<MessageT>::subscribe_fn_t PreallocateStage<MessageT>::build_operator()
+typename PreallocateStage<MessageT>::subscribe_fn_t MORPHEUS_EXPORT PreallocateStage<MessageT>::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
@@ -123,7 +124,7 @@ typename PreallocateStage<MessageT>::subscribe_fn_t PreallocateStage<MessageT>::
 }
 
 template <typename MessageT>
-std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageT>>> PreallocateStageInterfaceProxy<MessageT>::init(
+MORPHEUS_EXPORT std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageT>>> PreallocateStageInterfaceProxy<MessageT>::init(
     mrc::segment::Builder& builder,
     const std::string& name,
     std::vector<std::tuple<std::string, TypeId>> needed_columns)

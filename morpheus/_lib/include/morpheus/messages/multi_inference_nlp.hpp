@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"  // for MessageMeta
 #include "morpheus/messages/multi.hpp"
@@ -45,7 +46,7 @@ namespace morpheus {
  * proper inputs are set and eases debugging.
  *
  */
-class MultiInferenceNLPMessage : public DerivedMultiMessage<MultiInferenceNLPMessage, MultiInferenceMessage>
+class MORPHEUS_EXPORT MultiInferenceNLPMessage : public DerivedMultiMessage<MultiInferenceNLPMessage, MultiInferenceMessage>
 {
   public:
     /**
@@ -121,7 +122,7 @@ class MultiInferenceNLPMessage : public DerivedMultiMessage<MultiInferenceNLPMes
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInterfaceProxy
+struct MORPHEUS_EXPORT MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiInferenceNLPMessage, and return a shared pointer to the result
@@ -171,5 +172,4 @@ struct MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInte
      */
     static pybind11::object seq_ids(MultiInferenceNLPMessage& self);
 };
-
 }  // namespace morpheus

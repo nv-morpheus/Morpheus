@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/multi_response.hpp"
 
@@ -48,7 +49,7 @@ namespace morpheus {
  * @brief Base class for both `AddScoresStage` and `AddClassificationStage`
  */
 template <typename InputT, typename OutputT>
-class AddScoresStageBase : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
+class MORPHEUS_EXPORT AddScoresStageBase : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
@@ -83,7 +84,6 @@ using AddScoresStageBaseMM =  // NOLINT(readability-identifier-naming)
     AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>;
 using AddScoresStageBaseCM =  // NOLINT(readability-identifier-naming)
     AddScoresStageBase<ControlMessage, ControlMessage>;
-
 
 /** @} */  // end of group
 }  // namespace morpheus

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include <sys/types.h>
 
 #include <string>
@@ -36,9 +37,8 @@ namespace morpheus::utilities {
  * @param category A Python warning message type such as `PyExc_DeprecationWarning`
  * @param stack_level If the warning should appear earlier up in the stack, set this to >1
  */
-void show_warning_message(const std::string& deprecation_message,
+MORPHEUS_EXPORT void show_warning_message(const std::string& deprecation_message,
                           PyObject* category  = nullptr,
                           ssize_t stack_level = 1);
-
 
 }  // namespace morpheus::utilities

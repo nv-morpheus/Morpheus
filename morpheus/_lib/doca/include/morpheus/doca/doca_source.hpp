@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/doca/common.hpp"
 #include "morpheus/messages/meta.hpp"
 
@@ -35,14 +36,12 @@ struct DocaRxPipe;
 struct DocaSemaphore;
 }  // namespace doca
 
-
-
 /**
  * @brief Receives a firehose of raw packets from a GPUNetIO-enabled device.
  *
  * Tested only on ConnectX 6-Dx with a single GPU on the same NUMA node running firmware 24.35.2000
  */
-class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
+class MORPHEUS_EXPORT DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
@@ -68,7 +67,7 @@ class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct DocaSourceStageInterfaceProxy
+struct MORPHEUS_EXPORT DocaSourceStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a DocaSourceStage, and return the result.
@@ -79,7 +78,5 @@ struct DocaSourceStageInterfaceProxy
                                                                        std::string const& gpu_pci_address,
                                                                        std::string const& traffic_type);
 };
-
-
 
 }  // namespace morpheus
