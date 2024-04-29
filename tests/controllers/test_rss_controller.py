@@ -265,10 +265,12 @@ def test_strip_markup(cisa_rss_feed: list[str], strip_markup: bool):
 
     # feedparser will map the description field to the summary field
     description_tags = tree.findall('./channel/item/description')
-    summary_col = [(tag.text or "").strip() for tag in description_tags]
+    expected_summary_col = [(tag.text or "").strip() for tag in description_tags]
 
     if strip_markup:
-        summary_col = [BeautifulSoup(summary, features="html.parser").get_text() for summary in summary_col]
+        expected_summary_col = [
+            BeautifulSoup(summary, features="html.parser").get_text() for summary in expected_summary_col
+        ]
 
     controller = RSSController(feed_input=cisa_rss_feed, strip_markup=strip_markup)
     dataframes = list(controller.fetch_dataframes())
@@ -280,4 +282,4 @@ def test_strip_markup(cisa_rss_feed: list[str], strip_markup: bool):
     assert len(dataframe) == 10
 
     series: SeriesType = dataframe["summary"]
-    assert (series.to_pandas().values == summary_col).all()
+    assert (series.to_pandas().values == expected_summary_col).all()
