@@ -17,9 +17,11 @@ import time
 from os import path
 from unittest.mock import Mock
 from unittest.mock import patch
+from xml.etree import ElementTree
 
 import feedparser
 import pytest
+from bs4 import BeautifulSoup
 
 import cudf
 
@@ -258,6 +260,16 @@ def test_redundant_fetch(feed_input: str,
 
 @pytest.mark.parametrize("strip_markup", [False, True])
 def test_strip_markup(cisa_rss_feed: list[str], strip_markup: bool):
+    # Construct expected data
+    tree = ElementTree.parse(cisa_rss_feed[0])
+
+    # feedparser will map the description field to the summary field
+    description_tags = tree.findall('./channel/item/description')
+    summary_col = [(tag.text or "").strip() for tag in description_tags]
+
+    if strip_markup:
+        summary_col = [BeautifulSoup(summary, features="html.parser").get_text() for summary in summary_col]
+
     controller = RSSController(feed_input=cisa_rss_feed, strip_markup=strip_markup)
     dataframes = list(controller.fetch_dataframes())
 
@@ -268,4 +280,4 @@ def test_strip_markup(cisa_rss_feed: list[str], strip_markup: bool):
     assert len(dataframe) == 10
 
     series: SeriesType = dataframe["summary"]
-    assert series.str.contains("<p>").any() == (not strip_markup)
+    assert (series.to_pandas().values == summary_col).all()
