@@ -28,17 +28,10 @@ mamba env update \
 ```
 
 ## Running
-
-##### Setup Env Variable
-```bash
-export MORPHEUS_ROOT=$(pwd)
-```
-
 Use Morpheus to run the GNN fraud detection Pipeline with the transaction data. A pipeline has been configured in `run.py` with several command line options:
 
 ```bash
-cd ${MORPHEUS_ROOT}/examples/gnn_fraud_detection_pipeline
-python run.py --help
+python examples/gnn_fraud_detection_pipeline/run.py --help
 ```
 ```
 Usage: run.py [OPTIONS]
@@ -63,11 +56,10 @@ Options:
   --help                          Show this message and exit.
 ```
 
-To launch the configured Morpheus pipeline with the sample data that is provided at `$MORPHEUS_ROOT/models/dataset`, run the following:
+To launch the configured Morpheus pipeline with the sample data that is provided at `examples/gnn_fraud_detection_pipeline/model`, run the following:
 
 ```bash
-cd ${MORPHEUS_ROOT}/examples/gnn_fraud_detection_pipeline
-python run.py
+python examples/gnn_fraud_detection_pipeline/run.py
 ```
 ```
 ====Registering Pipeline====
