@@ -46,14 +46,13 @@ namespace {
  * @param columns
  */
 //@{
-void MORPHEUS_EXPORT preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
+void preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
                  const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
 {
     auto table = msg->get_mutable_info();
     table.insert_missing_columns(columns);
 }
 
-void MORPHEUS_EXPORT preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
 void preallocate(std::shared_ptr<morpheus::ControlMessage> msg,
                  const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
 {
@@ -108,7 +107,7 @@ struct MORPHEUS_EXPORT PreallocateStageInterfaceProxy
 };
 
 template <typename MessageT>
-MORPHEUS_EXPORT PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::string, TypeId>>& needed_columns) :
+PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::string, TypeId>>& needed_columns) :
   base_t(base_t::op_factory_from_sub_fn(build_operator()))
 {
     for (const auto& col : needed_columns)
@@ -118,7 +117,7 @@ MORPHEUS_EXPORT PreallocateStage<MessageT>::PreallocateStage(const std::vector<s
 }
 
 template <typename MessageT>
-typename PreallocateStage<MessageT>::subscribe_fn_t MORPHEUS_EXPORT PreallocateStage<MessageT>::build_operator()
+typename PreallocateStage<MessageT>::subscribe_fn_t PreallocateStage<MessageT>::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
@@ -133,7 +132,7 @@ typename PreallocateStage<MessageT>::subscribe_fn_t MORPHEUS_EXPORT PreallocateS
 }
 
 template <typename MessageT>
-MORPHEUS_EXPORT std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageT>>> PreallocateStageInterfaceProxy<MessageT>::init(
+std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageT>>> PreallocateStageInterfaceProxy<MessageT>::init(
     mrc::segment::Builder& builder,
     const std::string& name,
     std::vector<std::tuple<std::string, TypeId>> needed_columns)
