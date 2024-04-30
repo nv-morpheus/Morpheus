@@ -52,13 +52,13 @@ namespace morpheus {
 
 using cm_task_t = std::pair<std::string, nlohmann::json>;
 
-void MORPHEUS_EXPORT make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
+void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
                          TensorIndex stop,
                          cm_task_t* task,
                          std::shared_ptr<MultiMessage>& windowed_message);
 
-void MORPHEUS_EXPORT make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
+void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
                          TensorIndex stop,
                          cm_task_t* task,
@@ -137,7 +137,7 @@ struct MORPHEUS_EXPORT DeserializeStageInterfaceProxy
 };
 
 template <typename OutputT>
-typename DeserializeStage<OutputT>::subscribe_fn_t MORPHEUS_EXPORT DeserializeStage<OutputT>::build_operator()
+typename DeserializeStage<OutputT>::subscribe_fn_t DeserializeStage<OutputT>::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(

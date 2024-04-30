@@ -107,10 +107,10 @@ class MORPHEUS_EXPORT FactoryRegistry
 };
 
 template <typename ObjectReturnTypeT>
-std::mutex MORPHEUS_EXPORT FactoryRegistry<ObjectReturnTypeT>::m_mutex;
+std::mutex FactoryRegistry<ObjectReturnTypeT>::m_mutex;
 
 template <typename ObjectReturnTypeT>
 std::map<std::string, std::function<std::shared_ptr<ObjectReturnTypeT>(nlohmann::json)>>
-    MORPHEUS_EXPORT FactoryRegistry<ObjectReturnTypeT>::m_object_constructors;
+    FactoryRegistry<ObjectReturnTypeT>::m_object_constructors;
 
 }  // namespace morpheus

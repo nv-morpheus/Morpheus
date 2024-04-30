@@ -70,7 +70,7 @@ using parse_status_t = std::tuple<unsigned /*http status code*/,
  */
 using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* post body */)>;
 
-MORPHEUS_EXPORT constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
+constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
 
 /**
  * @brief A simple HTTP server that listens for POST or PUT requests on a given endpoint.
