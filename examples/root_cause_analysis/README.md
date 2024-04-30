@@ -113,7 +113,7 @@ deserialize \
 `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
 preprocess --column=log --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
 `# 4th Stage: Send messages to Triton for inference. Specify the binary model loaded in Setup` \
-inf-triton --force_convert_inputs=True --model_name=root-cause-binary-onnx --server_url=localhost:8001 \
+inf-triton --model_name=root-cause-binary-onnx --server_url=localhost:8001 \
 `# 5th Stage: Monitor stage prints throughput information to the console` \
 monitor --description='Inference rate' --smoothing=0.001 --unit inf \
 `# 6th Stage: Add scores from inference to the messages` \
