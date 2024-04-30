@@ -32,6 +32,7 @@ import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.stages.inference.inference_stage import InferenceStage
@@ -774,13 +775,22 @@ class TritonInferenceStage(InferenceStage):
                                      needs_logits=self._needs_logits)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return _stages.InferenceClientStage(builder,
-                                            self.unique_name,
-                                            self._server_url,
-                                            self._model_name,
-                                            self._needs_logits,
-                                            self._input_mapping,
-                                            self._output_mapping)
+        if self._schema.input_type == ControlMessage:
+            return _stages.InferenceClientStageCM(builder,
+                                                  self.unique_name,
+                                                  self._server_url,
+                                                  self._model_name,
+                                                  self._needs_logits,
+                                                  self._input_mapping,
+                                                  self._output_mapping)
+
+        return _stages.InferenceClientStageMM(builder,
+                                              self.unique_name,
+                                              self._server_url,
+                                              self._model_name,
+                                              self._needs_logits,
+                                              self._input_mapping,
+                                              self._output_mapping)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = super()._build_single(builder, input_node)

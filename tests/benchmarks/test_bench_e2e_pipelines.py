@@ -67,7 +67,7 @@ def nlp_pipeline(config: Config, input_file, repeat, vocab_hash_file, output_fil
                              server_url=E2E_TEST_CONFIGS["triton_server_url"],
                              force_convert_inputs=True))
     pipeline.add_stage(AddClassificationsStage(config, threshold=0.5, prefix=""))
-    pipeline.add_stage(MonitorStage(config))
+    pipeline.add_stage(MonitorStage(config, log_level=logging.INFO))
     pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
 
@@ -89,7 +89,7 @@ def fil_pipeline(config: Config, input_file, repeat, output_file, model_name):
                              server_url=E2E_TEST_CONFIGS["triton_server_url"],
                              force_convert_inputs=True))
     pipeline.add_stage(AddClassificationsStage(config, threshold=0.5, prefix=""))
-    pipeline.add_stage(MonitorStage(config))
+    pipeline.add_stage(MonitorStage(config, log_level=logging.INFO))
     pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
 
@@ -111,7 +111,7 @@ def ae_pipeline(config: Config, input_glob, repeat, train_data_glob, output_file
     pipeline.add_stage(PreprocessAEStage(config))
     pipeline.add_stage(AutoEncoderInferenceStage(config))
     pipeline.add_stage(AddScoresStage(config))
-    pipeline.add_stage(MonitorStage(config))
+    pipeline.add_stage(MonitorStage(config, log_level=logging.INFO))
     pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
 

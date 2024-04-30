@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/export.h"
+#include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
@@ -53,10 +54,18 @@ void MORPHEUS_EXPORT preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
 }
 
 void MORPHEUS_EXPORT preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
+void preallocate(std::shared_ptr<morpheus::ControlMessage> msg,
+                 const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
+{
+    preallocate(msg->payload(), columns);
+}
+
+void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
                  const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
 {
     preallocate(msg->meta, columns);
 }
+
 }  // namespace
 
 /****** Component public implementations *******************/
