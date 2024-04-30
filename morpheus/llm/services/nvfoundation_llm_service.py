@@ -63,7 +63,10 @@ class NVFoundationLLMClient(LLMClient):
         self._model_kwargs = model_kwargs
         self._prompt_key = "prompt"
 
-        self._client = ChatNVIDIA(client=self._parent._nve_client, model=model_name, **model_kwargs)
+        self._client = ChatNVIDIA(api_key=self._parent._api_key,
+                                  base_url=self._parent._base_url,
+                                  model=model_name,
+                                  **model_kwargs)  # type: ignore
 
     def get_input_names(self) -> list[str]:
         schema = self._client.get_input_schema()
@@ -152,16 +155,9 @@ class NVFoundationLLMService(LLMService):
 
         self._api_key = api_key
         if base_url is None:
-            self._base_url = os.getenv('NVIDIA_API_BASE', 'https://api.nvcf.nvidia.com/v2')
+            self._base_url = os.getenv('NVIDIA_API_BASE', None)
         else:
             self._base_url = base_url
-
-        self._nve_client = NVEModel(
-            nvidia_api_key=self._api_key,
-            fetch_url_format=f"{self._base_url}/nvcf/pexec/status/",
-            call_invoke_base=f"{self._base_url}/nvcf/pexec/functions",
-            func_list_format=f"{self._base_url}/nvcf/functions",
-        )  # type: ignore
 
     def get_client(self, *, model_name: str, **model_kwargs) -> NVFoundationLLMClient:
         """
