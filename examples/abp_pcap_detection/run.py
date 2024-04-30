@@ -111,8 +111,6 @@ def run_pipeline(
     # Enable the default logger.
     configure_logging(log_level=logging.INFO)
 
-    CppConfig.set_should_use_cpp(False)
-
     # Its necessary to get the global config object and configure it for FIL mode.
     config = Config()
     config.mode = PipelineModes.FIL
