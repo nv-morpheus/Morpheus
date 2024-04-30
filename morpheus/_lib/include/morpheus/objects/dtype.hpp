@@ -111,6 +111,10 @@ struct DType
     // From triton
     static DType from_triton(const std::string& type_str);
 
+    // Returns true if the type is fully supported, that is the type can be fully represented as both a triton type and
+    // a cudf type.
+    bool is_fully_supported() const;
+
     // from template
     template <typename T>
     static DType create()
