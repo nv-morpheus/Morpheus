@@ -106,8 +106,8 @@ From the Morpheus repo root directory, run:
 export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
 morpheus --log_level=DEBUG \
-   `# Run a pipeline with 8 threads and a model batch size of 32 (Must match Triton config)` \
-   run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+   `# Run a pipeline with a model batch size of 32 (Must match Triton config)` \
+   run --pipeline_batch_size=1024 --model_max_batch_size=32 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-nlp --model_seq_length=256 \
    `# 1st Stage: Read from file` \
@@ -117,7 +117,7 @@ morpheus --log_level=DEBUG \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
    preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
    `# 4th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
-   inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8000 --force_convert_inputs=True \
+   inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8001 --force_convert_inputs=True \
    `# 5th Stage: Monitor stage prints throughput information to the console` \
    monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
    `# 6th Stage: Add results from inference to the messages` \
