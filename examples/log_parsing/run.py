@@ -81,7 +81,7 @@ from morpheus.utils.logger import configure_logging
     help="The name of the model that is deployed on Tritonserver.",
 )
 @click.option("--model_config_file", required=True, help="Model config file.")
-@click.option("--server_url", required=True, help="Tritonserver url.")
+@click.option("--server_url", required=True, help="Tritonserver url.", default="localhost:8001")
 def run_pipeline(
     num_threads,
     pipeline_batch_size,
