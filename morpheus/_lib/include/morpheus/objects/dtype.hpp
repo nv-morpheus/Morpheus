@@ -33,6 +33,13 @@ namespace morpheus {
  */
 
 // Pulled from cuDF
+
+/**
+ * @brief Template function to calculate the size in bits of a given type.
+ *
+ * @tparam T The type to calculate the size for.
+ * @return The size in bits of the given type.
+ */
 template <typename T>
 constexpr std::size_t size_in_bits()
 {
@@ -40,8 +47,11 @@ constexpr std::size_t size_in_bits()
     return sizeof(T) * CHAR_BIT;
 }
 
-// Pulled from cudf
 #pragma GCC visibility push(default)
+
+/**
+ * @brief Enum class for representing data types used in Tensors and DataFrame columns.
+ */
 enum class TypeId : int32_t
 {
     EMPTY,    ///< Always null with no underlying data
@@ -78,44 +88,112 @@ enum class TypeId : int32_t
     NUM_TYPE_IDS  ///< Total number of type ids
 };
 
-/****** DType****************************************/
+/**
+ * @class DType
+ * @brief This class represents a data type specified by a TypeId.
+ */
 struct DType
 {
+    /**
+     * @brief Construct a DType for a given type specified by a TypeId.
+     *
+     * @param tid The TypeId to initialize the DType object with.
+     */
     DType(TypeId tid);
+
+    /**
+     * @brief Copy constructor.
+     *
+     * @param dtype The DType object to copy from.
+     */
     DType(const DType& dtype) = default;
+
+    /**
+     * @brief Equality operator.
+     *
+     * @param other The DType object to compare with.
+     * @return True if the two DType objects represent the same TypeId, false otherwise.
+     */
     bool operator==(const DType& other) const;
 
+    /**
+     * @brief Get the TypeId of the DType object.
+     *
+     * @return The TypeId of the DType object.
+     */
     TypeId type_id() const;
 
-    // Number of bytes per item
+    /**
+     * @brief Get the number of bytes per item.
+     *
+     * @return The number of bytes per item.
+     */
     size_t item_size() const;
 
-    // Pretty print
+    /**
+     * @brief Get the name of the DType object.
+     *
+     * @return The name of the DType object.
+     */
     std::string name() const;
 
-    // Returns the numpy string representation
+    /**
+     * @brief Get the numpy string representation of the DType object.
+     *
+     * @return The numpy string representation of the DType object.
+     */
     std::string type_str() const;
 
-    // Cudf representation
+    /**
+     * @brief Get the cudf type id of the DType object.
+     *
+     * @return The cudf type id of the DType object.
+     */
     cudf::type_id cudf_type_id() const;
 
-    // Returns the triton string representation
+    /**
+     * @brief Get the triton string representation of the DType object.
+     *
+     * @return The triton string representation of the DType object.
+     */
     std::string triton_str() const;
 
-    // From cudf
+    /**
+     * @brief Create a DType object from a cudf type id.
+     *
+     * @param id The cudf type id.
+     * @return A DType object.
+     */
     static DType from_cudf(cudf::type_id tid);
 
-    // From numpy
+    /**
+     * @brief Create a DType object from a numpy type string.
+     *
+     * @param type_str The numpy type string.
+     * @return A DType object.
+     */
     static DType from_numpy(const std::string& numpy_str);
 
-    // From triton
+    /**
+     * @brief Create a DType object from a triton type string.
+     *
+     * @param type_str The triton type string.
+     * @return A DType object.
+     */
     static DType from_triton(const std::string& type_str);
 
-    // Returns true if the type is fully supported, that is the type can be fully represented as both a triton type and
-    // a cudf type.
+    /**
+     * @brief Check if the DType object is fully supported.
+     *
+     * @return True if the DType object is fully supported, false otherwise.
+     */
     bool is_fully_supported() const;
 
-    // from template
+    /**
+     * @brief Construct a DType object from a C++ type.
+     *
+     * @return A DType object.
+     */
     template <typename T>
     static DType create()
     {
