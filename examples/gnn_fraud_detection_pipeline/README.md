@@ -56,7 +56,7 @@ Options:
   --help                          Show this message and exit.
 ```
 
-To launch the configured Morpheus pipeline with the sample data that is provided at `examples/gnn_fraud_detection_pipeline/model`, run the following:
+To launch the configured Morpheus pipeline, run the following:
 
 ```bash
 python examples/gnn_fraud_detection_pipeline/run.py
