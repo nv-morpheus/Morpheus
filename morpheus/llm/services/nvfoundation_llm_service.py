@@ -144,7 +144,7 @@ class NVFoundationLLMService(LLMService):
         a member of multiple NGC organizations.
     base_url : str, optional
             The api host url, by default None. If `None` the url will be read from the `NVAI_BASE_URL` environment
-            variable. If neither are present `https://api.nvcf.nvidia.com/v2` will be used., by default None
+            variable. If neither are present `https://api.nvcf.nvidia.com/v2/nvcf` will be used by langchain.
     """
 
     def __init__(self, *, api_key: str = None, base_url: str = None) -> None:
