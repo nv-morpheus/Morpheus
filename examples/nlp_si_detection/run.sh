@@ -24,7 +24,7 @@ morpheus --log_level=DEBUG \
     from-file --filename=${MORPHEUS_ROOT}/examples/data/pcap_dump.jsonlines \
     deserialize \
     preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
-    inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8001 --force_convert_inputs=True \
+    inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8000 --force_convert_inputs=True \
     monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
     add-class \
     filter --filter_source=TENSOR \
