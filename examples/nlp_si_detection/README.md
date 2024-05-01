@@ -103,7 +103,6 @@ The following command line is the entire command to build and launch the pipelin
 
 From the Morpheus repo root directory, run:
 ```bash
-export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
 morpheus --log_level=DEBUG \
    `# Run a pipeline with a model batch size of 32 (Must match Triton config)` \
