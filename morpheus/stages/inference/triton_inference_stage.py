@@ -788,6 +788,7 @@ class TritonInferenceStage(InferenceStage):
                                                   self._server_url,
                                                   self._model_name,
                                                   self._needs_logits,
+                                                  self._force_convert_inputs,
                                                   self._input_mapping,
                                                   self._output_mapping)
 
@@ -796,6 +797,7 @@ class TritonInferenceStage(InferenceStage):
                                               self._server_url,
                                               self._model_name,
                                               self._needs_logits,
+                                              self._force_convert_inputs,
                                               self._input_mapping,
                                               self._output_mapping)
 
