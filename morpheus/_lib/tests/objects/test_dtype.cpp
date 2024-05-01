@@ -22,6 +22,8 @@
 #include <cudf/types.hpp>
 #include <gtest/gtest.h>
 
+#include <cstdint>  // for int32_t
+#include <set>      // for set
 #include <stdexcept>
 
 using namespace morpheus;
