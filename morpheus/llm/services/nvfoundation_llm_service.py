@@ -143,7 +143,7 @@ class NVFoundationLLMService(LLMService):
         `NGC_ORG_ID` environment variable. This value is only required if the account associated with the `api_key` is
         a member of multiple NGC organizations.
     base_url : str, optional
-            The api host url, by default None. If `None` the url will be read from the `NVIDIA_API_BASE` environment
+            The api host url, by default None. If `None` the url will be read from the `NVAI_BASE_URL` environment
             variable. If neither are present `https://api.nvcf.nvidia.com/v2` will be used., by default None
     """
 
@@ -155,7 +155,7 @@ class NVFoundationLLMService(LLMService):
 
         self._api_key = api_key
         if base_url is None:
-            self._base_url = os.getenv('NVIDIA_API_BASE', None)
+            self._base_url = os.getenv('NVAI_BASE_URL', None)
         else:
             self._base_url = base_url
 
