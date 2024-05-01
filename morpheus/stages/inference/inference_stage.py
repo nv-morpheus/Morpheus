@@ -286,8 +286,12 @@ class InferenceStage(MultiMessageStage):
                     if (_df is not None and not _df.empty):
                         _message_meta = CppMessageMeta(df=_df)
                         _message.payload(_message_meta)
-                        _message.tensors().set_tensor("probs", output_message.get_probs_tensor())
-                        print(_df)
+
+                        response_tensors = output_message.tensors
+                        cm_tensors = _message.tensors()
+                        for (name, tensor) in response_tensors.items():
+                            cm_tensors.set_tensor(name, tensor)
+
                     output_message = _message
 
                 return output_message
