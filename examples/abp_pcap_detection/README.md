@@ -99,7 +99,7 @@ Alternately, the Morpheus command line could have been used to accomplish the sa
 From the root of the Morpheus repo, run:
 ```bash
 morpheus --log_level INFO --plugin "examples/abp_pcap_detection/abp_pcap_preprocessing.py" \
-    run --pipeline_batch_size 100000 --model_max_batch_size 100000 \
+    run --use_cpp False --pipeline_batch_size 100000 --model_max_batch_size 100000 \
     pipeline-fil --model_fea_length 13 --label=probs \
     from-file --filename examples/data/abp_pcap_dump.jsonlines --filter_null False \
     deserialize \

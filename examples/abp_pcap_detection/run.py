@@ -21,6 +21,7 @@ from abp_pcap_preprocessing import AbpPcapPreprocessingStage
 from morpheus.cli.commands import FILE_TYPE_NAMES
 from morpheus.cli.utils import str_to_file_type
 from morpheus.config import Config
+from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -109,6 +110,8 @@ def run_pipeline(
 
     # Enable the default logger.
     configure_logging(log_level=logging.INFO)
+
+    CppConfig.set_should_use_cpp(False)
 
     # Its necessary to get the global config object and configure it for FIL mode.
     config = Config()
