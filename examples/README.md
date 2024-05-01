@@ -18,6 +18,7 @@ limitations under the License.
 # Examples
 * [Anomalous Behavior Profiling with Forest Inference Library (FIL) Example](./abp_nvsmi_detection/README.md)
 * [ABP Detection Example Using Morpheus](./abp_pcap_detection/README.md)
+* [Digital Fingerprinting (DFP)](./digital_fingerprinting/README.md)
 * [GNN Fraud Detection Pipeline](./gnn_fraud_detection_pipeline/README.md)
 * [Example cyBERT Morpheus Pipeline for Apache Log Parsing](./log_parsing/README.md)
 * [Sensitive Information Detection with Natural Language Processing (NLP) Example](./nlp_si_detection/README.md)
