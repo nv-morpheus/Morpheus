@@ -756,8 +756,14 @@ class TritonInferenceStage(InferenceStage):
 
     def supports_cpp_node(self) -> bool:
         # Get the value from the worker class
-        # The C++ impl of this stage does not support the use_shared_memory options
-        return (TritonInferenceWorker.supports_cpp_node() and not self._use_shared_memory)
+        if TritonInferenceWorker.supports_cpp_node():
+            if not self._use_shared_memory:
+                return True
+
+            logger.warning("The C++ implementation of TritonInferenceStage does not support the use_shared_memory "
+                           "option. Falling back to Python implementation.")
+
+        return False
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> TritonInferenceWorker:
         """
