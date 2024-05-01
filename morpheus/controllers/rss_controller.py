@@ -102,7 +102,7 @@ class RSSController:
         self._previous_entries = set()  # Stores the IDs of previous entries to prevent the processing of duplicates.
         self._cooldown_interval = cooldown_interval
         self._request_timeout = request_timeout
-        self._strip_makrup = strip_markup
+        self._strip_markup = strip_markup
 
         # Validate feed_input
         for f in self._feed_input:
@@ -340,7 +340,7 @@ class RSSController:
                     entry_id = entry.get('id')
                     current_entries.add(entry_id)
                     if entry_id not in self._previous_entries:
-                        if self._strip_makrup:
+                        if self._strip_markup:
                             self._strip_markup_from_fields(entry)
 
                         entry_accumulator.append(entry)
