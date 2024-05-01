@@ -13,6 +13,7 @@ dependencies:
 - appdirs
 - arxiv=1.4
 - automake
+- beautifulsoup4
 - benchmark=1.8.3
 - boost-cpp=1.84
 - boto3

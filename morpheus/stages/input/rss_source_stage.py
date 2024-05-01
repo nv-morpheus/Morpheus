@@ -52,6 +52,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
          Cooldown interval in seconds if there is a failure in fetching or parsing the feed.
     request_timeout : float, optional, default = 2.0
         Request timeout in secs to fetch the feed.
+    strip_markup : bool, optional, default = False
+        When true, strip HTML & XML markup from the from the content, summary and title fields.
     """
 
     def __init__(self,
@@ -64,7 +66,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                  enable_cache: bool = False,
                  cache_dir: str = "./.cache/http",
                  cooldown_interval: int = 600,
-                 request_timeout: float = 2.0):
+                 request_timeout: float = 2.0,
+                 strip_markup: bool = False):
         super().__init__(c)
         self._stop_requested = False
 
@@ -87,7 +90,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                 "enable_cache": enable_cache,
                 "cache_dir": cache_dir,
                 "cooldown_interval_sec": cooldown_interval,
-                "request_timeout_sec": request_timeout
+                "request_timeout_sec": request_timeout,
+                "strip_markup": strip_markup
             }
         }
 
