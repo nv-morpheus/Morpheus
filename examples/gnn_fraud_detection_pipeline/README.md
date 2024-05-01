@@ -117,6 +117,7 @@ morpheus --log_level INFO \
 	monitor --description "Graph construction rate" \
 	gnn-fraud-sage --model_dir  examples/gnn_fraud_detection_pipeline/model/ \
 	monitor --description "Inference rate" \
+	gnn-fraud-classification --model_xgb_file examples/gnn_fraud_detection_pipeline/model/xgb.pt \
 	monitor --description "Add classification rate" \
 	serialize \
 	to-file --filename "output.csv" --overwrite
