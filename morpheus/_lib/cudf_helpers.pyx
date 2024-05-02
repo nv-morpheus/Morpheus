@@ -55,7 +55,12 @@ cdef public api:
 
         data, index = data_from_unique_ptr(move(table.tbl), column_names=column_names, index_names=index_names)
 
-        return cudf.DataFrame._from_data(data, index)
+        df = cudf.DataFrame._from_data(data, index)
+
+        # Update the struct field names after the DataFrame is created
+        update_struct_field_names(df, table.metadata.schema_info)
+
+        return df
 
     object make_table_from_table_info_data(TableInfoData table_info, object owner):
 
@@ -236,7 +241,7 @@ cdef Column update_column_struct_field_names(
             children[i] = update_column_struct_field_names(
                 child,
                 info.children[i]
-            )        
+            )
             col.set_base_children(tuple(children))
 
     if isinstance(col.dtype, StructDtype):
