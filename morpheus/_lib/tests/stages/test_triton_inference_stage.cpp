@@ -28,6 +28,7 @@
 #include "morpheus/stages/triton_inference.hpp"
 #include "morpheus/types.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/utilities/matx_util.hpp"
 
 #include <cuda_runtime.h>
 #include <cudf/column/column.hpp>
@@ -37,6 +38,7 @@
 #include <cudf/table/table.hpp>
 #include <cudf/types.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
+#include <glog/logging.h>
 #include <gtest/gtest.h>
 #include <http_client.h>
 #include <mrc/coroutines/task.hpp>
@@ -53,6 +55,7 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 class FakeInferResult : public triton::client::InferResult
 {
@@ -342,4 +345,91 @@ TEST_F(TestTritonInferenceStage, SingleRow)
     auto results = results_task.promise().result();
 
     ASSERT_EQ(results.size(), 1);
+}
+
+TEST_F(TestTritonInferenceStage, ForceConvert)
+{
+    using namespace morpheus;
+    const TypeId model_type = TypeId::INT32;
+    const std::size_t count = 10;
+
+    std::vector<TypeId> test_types = {TypeId::INT8,
+                                      TypeId::INT16,
+                                      TypeId::INT32,
+                                      TypeId::INT64,
+                                      TypeId::UINT8,
+                                      TypeId::UINT16,
+                                      TypeId::UINT32,
+                                      TypeId::UINT64};
+
+    for (const auto type_id : test_types)
+    {
+        for (bool force_convert_inputs : {true, false})
+        {
+            const bool expect_throw = (type_id != model_type) && !force_convert_inputs;
+            const auto dtype        = DType(type_id);
+
+            DVLOG(10) << "Testing type: " << dtype.name() << " with force_convert_inputs: " << force_convert_inputs
+                      << " and expect_throw: " << expect_throw;
+
+            // Create a seq_id tensor
+            auto md =
+                std::make_shared<MemoryDescriptor>(rmm::cuda_stream_per_thread, rmm::mr::get_current_device_resource());
+            auto seq_ids_buffer = MatxUtil::create_seq_ids(count, 1, type_id, md);
+
+            auto tensors = TensorMap();
+            tensors["seq_ids"].swap(Tensor::create(seq_ids_buffer, dtype, {count, 3}, {}));
+
+            // create the MultiInferenceMessage using the sequence id tensor.
+            auto memory  = std::make_shared<morpheus::TensorMemory>(count, std::move(tensors));
+            auto table   = create_test_table_with_metadata(count);
+            auto meta    = morpheus::MessageMeta::create_from_cpp(std::move(table), 1);
+            auto message = std::make_shared<morpheus::MultiInferenceMessage>(meta, 0, count, memory);
+
+            // create the fake triton client used for testing.
+            auto triton_client = std::make_unique<FakeTritonClient>();
+            auto triton_inference_client =
+                std::make_unique<morpheus::TritonInferenceClient>(std::move(triton_client), "", force_convert_inputs);
+            auto stage =
+                morpheus::InferenceClientStage<morpheus::MultiInferenceMessage, morpheus::MultiResponseMessage>(
+                    std::move(triton_inference_client), "", false, {}, {});
+
+            // manually invoke the stage and iterate through the inference responses
+            auto on           = std::make_shared<mrc::coroutines::TestScheduler>();
+            auto results_task = [](auto& stage, auto message, auto on)
+                -> mrc::coroutines::Task<std::vector<std::shared_ptr<morpheus::MultiResponseMessage>>> {
+                std::vector<std::shared_ptr<morpheus::MultiResponseMessage>> results;
+
+                auto responses_generator = stage.on_data(std::move(message), on);
+
+                auto iter = co_await responses_generator.begin();
+
+                while (iter != responses_generator.end())
+                {
+                    results.emplace_back(std::move(*iter));
+
+                    co_await ++iter;
+                }
+
+                co_return results;
+            }(stage, message, on);
+
+            results_task.resume();
+
+            while (on->resume_next()) {}
+
+            if (expect_throw)
+            {
+                ASSERT_THROW(results_task.promise().result(), std::runtime_error);
+            }
+            else
+            {
+                ASSERT_NO_THROW(results_task.promise().result());
+
+                auto results = results_task.promise().result();
+
+                ASSERT_EQ(results.size(), 1);
+            }
+        }
+    }
 }
