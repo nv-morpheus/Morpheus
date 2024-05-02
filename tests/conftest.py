@@ -1035,6 +1035,12 @@ def simple_collection_config_fixture():
     yield load_json_file(filename="service/milvus_simple_collection_conf.json")
 
 
+@pytest.fixture(scope="session", name="string_collection_config")
+def string_collection_config_fixture():
+    from _utils import load_json_file
+    yield load_json_file(filename="service/milvus_string_collection_conf.json")
+
+
 @pytest.fixture(name="nemollm", scope='session')
 def nemollm_fixture(fail_missing: bool):
     """

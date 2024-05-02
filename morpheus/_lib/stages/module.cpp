@@ -177,6 +177,7 @@ PYBIND11_MODULE(stages, _module)
              py::arg("server_url"),
              py::arg("model_name"),
              py::arg("needs_logits"),
+             py::arg("force_convert_inputs"),
              py::arg("input_mapping")  = py::dict(),
              py::arg("output_mapping") = py::dict());
 
@@ -190,6 +191,7 @@ PYBIND11_MODULE(stages, _module)
              py::arg("server_url"),
              py::arg("model_name"),
              py::arg("needs_logits"),
+             py::arg("force_convert_inputs"),
              py::arg("input_mapping")  = py::dict(),
              py::arg("output_mapping") = py::dict());
 

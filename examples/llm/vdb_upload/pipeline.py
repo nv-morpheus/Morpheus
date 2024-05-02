@@ -19,7 +19,9 @@ import typing
 from vdb_upload.helper import process_vdb_sources
 
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.pipeline import Pipeline
+from morpheus.pipeline.stage_decorator import stage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -78,6 +80,20 @@ def pipeline(pipeline_config: Config,
     monitor_2 = pipe.add_stage(
         MonitorStage(pipeline_config, description="Inference rate", unit="events", delayed_start=True))
 
+    @stage
+    def embedding_tensor_to_df(message: ControlMessage, *, embedding_tensor_name='probs') -> ControlMessage:
+        """
+        Copies the probs tensor to the 'embedding' field of the dataframe.
+        """
+        msg_meta = message.payload()
+        with msg_meta.mutable_dataframe() as df:
+            embedding_tensor = message.tensors().get_tensor(embedding_tensor_name)
+            df['embedding'] = embedding_tensor.tolist()
+
+        return message
+
+    embedding_tensor_to_df_stage = pipe.add_stage(embedding_tensor_to_df(pipeline_config))
+
     vector_db = pipe.add_stage(WriteToVectorDBStage(pipeline_config, **vdb_config))
 
     monitor_3 = pipe.add_stage(
@@ -96,7 +112,8 @@ def pipeline(pipeline_config: Config,
     pipe.add_edge(nlp_stage, monitor_1)
     pipe.add_edge(monitor_1, embedding_stage)
     pipe.add_edge(embedding_stage, monitor_2)
-    pipe.add_edge(monitor_2, vector_db)
+    pipe.add_edge(monitor_2, embedding_tensor_to_df_stage)
+    pipe.add_edge(embedding_tensor_to_df_stage, vector_db)
     pipe.add_edge(vector_db, monitor_3)
 
     start_time = time.time()
