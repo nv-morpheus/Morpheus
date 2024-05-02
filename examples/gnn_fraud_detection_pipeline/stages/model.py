@@ -165,7 +165,7 @@ class BaseHeteroGraph(nn.Module):
         """
 
         # create sampler and test dataloaders
-        full_sampler = dgl.dataloading.MultiLayerNeighborSampler(fanouts=[4, 3])
+        full_sampler = dgl.dataloading.MultiLayerFullNeighborSampler(num_layers=3)
         test_dataloader = dgl.dataloading.DataLoader(input_graph, {target_node: test_idx},
                                                      full_sampler,
                                                      batch_size=batch_size,
