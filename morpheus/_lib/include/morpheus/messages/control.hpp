@@ -161,7 +161,7 @@ enum class MORPHEUS_EXPORT ControlMessageType
 //     std::shared_ptr<TensorMemory> m_tensors;
 // };
 
-MORPHEUS_EXPORT class TensorMemory;
+class MORPHEUS_EXPORT TensorMemory;
 
 // System-clock for better compatibility with pybind11/chrono
 using time_point_t = std::chrono::time_point<std::chrono::system_clock>;

@@ -44,7 +44,7 @@ namespace morpheus {
  * @file
  */
 
-MORPHEUS_EXPORT class Listener;
+class MORPHEUS_EXPORT Listener;
 
 using on_complete_cb_fn_t = std::function<void(const boost::system::error_code& /* error message */)>;
 

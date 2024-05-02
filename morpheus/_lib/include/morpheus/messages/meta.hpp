@@ -43,7 +43,7 @@ namespace morpheus {
  * @file
  */
 
-MORPHEUS_EXPORT class MutableTableCtxMgr;
+class MORPHEUS_EXPORT MutableTableCtxMgr;
 
 /**
  * @brief Container for class holding a data table, in practice a cudf DataFrame, with the ability to return both
