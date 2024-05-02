@@ -76,6 +76,7 @@ vdb_pipeline:
         request_timeout_sec: 2.0
         run_indefinitely: true
         stop_after_rec: 0
+        strip_markup: true
         web_scraper_config:
           chunk_overlap: 51
           chunk_size: 512
