@@ -41,9 +41,9 @@ For communicating with [RabbitMQ](https://www.rabbitmq.com/) we will be using th
 Our includes:
 
 ```cpp
-#include "morpheus/export.h"                    // for exporting symbols
 #include <SimpleAmqpClient/SimpleAmqpClient.h>  // for AmqpClient::Channel::ptr_t
 #include <cudf/io/types.hpp>                    // for cudf::io::table_with_metadata
+#include <morpheus/export.h>                    // for exporting symbols
 #include <morpheus/messages/meta.hpp>           // for MessageMeta
 #include <mrc/segment/builder.hpp>              // for Segment Builder
 #include <mrc/segment/object.hpp>               // for Segment Object
@@ -112,9 +112,9 @@ Wrapping it all together, our header file should be similar to:
 ```cpp
 #pragma once
 
-#include "morpheus/export.h"                    // for exporting symbols
 #include <SimpleAmqpClient/SimpleAmqpClient.h>  // for AmqpClient::Channel::ptr_t
 #include <cudf/io/types.hpp>                    // for cudf::io::table_with_metadata
+#include <morpheus/export.h>                    // for exporting symbols
 #include <morpheus/messages/meta.hpp>           // for MessageMeta
 #include <mrc/segment/builder.hpp>              // for Segment Builder
 #include <mrc/segment/object.hpp>               // for Segment Object

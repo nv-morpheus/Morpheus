@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/export.h"            // for exporting symbols
+#include <morpheus/export.h>            // for exporting symbols
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
 #include <mrc/segment/builder.hpp>      // for Segment Builder
 #include <mrc/segment/object.hpp>       // for Segment Object

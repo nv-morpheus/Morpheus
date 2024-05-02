@@ -31,7 +31,7 @@ The following example will create a simple C++ module that passes through the in
 
 ```c++
 #pragma once
-#include "morpheus/export.h"
+#include <morpheus/export.h>
 #include <mrc/modules/properties/persistent.hpp>
 #include <mrc/modules/segment_modules.hpp>
 #include <nlohmann/json.hpp>

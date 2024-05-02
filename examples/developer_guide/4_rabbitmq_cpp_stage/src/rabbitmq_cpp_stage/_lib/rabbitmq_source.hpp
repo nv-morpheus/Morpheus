@@ -17,9 +17,9 @@
 
 #pragma once
 
-#include "morpheus/export.h"           // for exporting symbols
 #include <SimpleAmqpClient/Channel.h>
 #include <cudf/io/types.hpp>           // for cudf::io::table_with_metadata
+#include <morpheus/export.h>           // for exporting symbols
 #include <morpheus/messages/meta.hpp>  // for MessageMeta
 #include <mrc/segment/builder.hpp>     // for Segment Builder
 #include <mrc/segment/object.hpp>      // for Segment Object
