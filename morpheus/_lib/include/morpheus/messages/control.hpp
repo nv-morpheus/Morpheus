@@ -21,7 +21,6 @@
 
 #include <nlohmann/json.hpp>   // for json, basic_json
 #include <pybind11/pytypes.h>  // for object, dict, list, none
-#include <pymrc/utilities/json_values.hpp>
 
 #include <chrono>    // for system_clock, time_point
 #include <map>       // for map
@@ -167,6 +166,33 @@ class TensorMemory;
 // System-clock for better compatibility with pybind11/chrono
 using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
 
+class PythonByteContainer : std::vector<uint8_t>
+{
+  public:
+    PythonByteContainer(pybind11::object py_obj) : m_py_obj(std::move(py_obj)) {}
+
+    pybind11::object get_py_obj() const
+    {
+        return m_py_obj;
+    }
+
+  private:
+    pybind11::object m_py_obj;
+};
+
+using json_t = nlohmann::basic_json<std::map,
+                                    std::vector,
+                                    std::string,
+                                    bool,
+                                    std::int64_t,
+                                    std::uint64_t,
+                                    double,
+                                    std::allocator,
+                                    nlohmann::adl_serializer,
+                                    PythonByteContainer,
+                                    void>;
+
+
 /**
  * @brief Class representing a control message for coordinating data processing tasks.
  *
@@ -178,7 +204,7 @@ class ControlMessage
 {
   public:
     ControlMessage();
-    explicit ControlMessage(const mrc::pymrc::JSONValues& config);
+    explicit ControlMessage(const json_t& config);
 
     ControlMessage(const ControlMessage& other);  // Copies config and metadata, but not payload
 
@@ -186,21 +212,20 @@ class ControlMessage
      * @brief Set the configuration object for the control message.
      * @param config A json object containing configuration information.
      */
-    // void config(const nlohmann::json& config);
-    void config(const mrc::pymrc::JSONValues& config);
+    void config(const json_t& config);
 
     /**
      * @brief Get the configuration object for the control message.
      * @return A const reference to the json object containing configuration information.
      */
-    [[nodiscard]] const mrc::pymrc::JSONValues& config() const;
+    [[nodiscard]] const json_t& config() const;
 
     /**
      * @brief Add a task of the given type to the control message.
      * @param task_type A string indicating the type of the task.
      * @param task A json object describing the task.
      */
-    mrc::pymrc::JSONValues add_task(const std::string& task_type, const mrc::pymrc::JSONValues& task);
+    void add_task(const std::string& task_type, const json_t& task);
 
     /**
      * @brief Check if a task of the given type exists in the control message.
@@ -214,19 +239,19 @@ class ControlMessage
      * @param task_type A string indicating the type of the task.
      * @return A json object describing the task.
      */
-    mrc::pymrc::JSONValues remove_task(const std::string& task_type);
+    json_t remove_task(const std::string& task_type);
 
     /**
      * @brief Get the tasks for the control message.
      */
-    [[nodiscard]] const mrc::pymrc::JSONValues& get_tasks() const;
+    [[nodiscard]] const json_t& get_tasks() const;
 
     /**
      * @brief Add a key-value pair to the metadata for the control message.
      * @param key A string key for the metadata value.
      * @param value A json object describing the metadata value.
      */
-    const mrc::pymrc::JSONValues& set_metadata(const std::string& key, const mrc::pymrc::JSONValues& value);
+    void set_metadata(const std::string& key, const json_t& value);
 
     /**
      * @brief Check if a metadata key exists in the control message.
@@ -238,7 +263,7 @@ class ControlMessage
     /**
      * @brief Get the metadata for the control message.
      */
-    [[nodiscard]] mrc::pymrc::JSONValues get_metadata() const;
+    [[nodiscard]] json_t get_metadata() const;
 
     /**
      * @brief Get the metadata value for the given key from the control message.
@@ -249,7 +274,7 @@ class ControlMessage
      *                         If false, returns std::nullopt for non-existing keys.
      * @return An optional json object describing the metadata value if it exists.
      */
-    [[nodiscard]] mrc::pymrc::JSONValues get_metadata(const std::string& key, bool fail_on_nonexist = false) const;
+    [[nodiscard]] json_t get_metadata(const std::string& key, bool fail_on_nonexist = false) const;
 
     /**
      * @brief Lists all metadata keys currently stored in the control message.
@@ -374,8 +399,8 @@ class ControlMessage
     std::shared_ptr<MessageMeta> m_payload{nullptr};
     std::shared_ptr<TensorMemory> m_tensors{nullptr};
 
-    mrc::pymrc::JSONValues m_tasks{};
-    mrc::pymrc::JSONValues m_config{};
+    json_t m_tasks{};
+    json_t m_config{};
 
     std::map<std::string, time_point_t> m_timestamps{};
 };
@@ -404,6 +429,13 @@ struct ControlMessageProxy
     static std::shared_ptr<ControlMessage> copy(ControlMessage& self);
 
     /**
+     * @brief Retrieves the configuration of the ControlMessage as a dictionary.
+     * @param self Reference to the underlying ControlMessage object.
+     * @return A pybind11::dict representing the ControlMessage's configuration.
+     */
+    static pybind11::dict config(ControlMessage& self);
+
+    /**
      * @brief Updates the configuration of the ControlMessage from a dictionary.
      * @param self Reference to the underlying ControlMessage object.
      * @param config A pybind11::dict representing the new configuration.
@@ -425,6 +457,13 @@ struct ControlMessageProxy
      * @return A pybind11::dict representing the removed task.
      */
     static pybind11::dict remove_task(ControlMessage& self, const std::string& type);
+
+    /**
+     * @brief Retrieves all tasks from the ControlMessage.
+     * @param self Reference to the underlying ControlMessage object.
+     * @return A pybind11::dict containing all tasks.
+     */
+    static pybind11::dict get_tasks(ControlMessage& self);
 
     /**
      * @brief Sets a metadata key-value pair.

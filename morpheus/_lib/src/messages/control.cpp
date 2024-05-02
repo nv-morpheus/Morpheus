@@ -23,11 +23,8 @@
 #include <pybind11/chrono.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <pymrc/types.hpp>
-#include <pymrc/utilities/json_values.hpp>
 #include <pymrc/utils.hpp>
 
-#include <cstddef>
 #include <optional>
 #include <ostream>
 #include <regex>
@@ -44,18 +41,12 @@ const std::string ControlMessage::s_config_schema = R"()";
 std::map<std::string, ControlMessageType> ControlMessage::s_task_type_map{{"inference", ControlMessageType::INFERENCE},
                                                                           {"training", ControlMessageType::TRAINING}};
 
-ControlMessage::ControlMessage() :
-  m_config(mrc::pymrc::JSONValues{}),
-  m_tasks(mrc::pymrc::JSONValues{})
-{
-    m_config = m_config.set_value("metadata", mrc::pymrc::JSONValues{});
-}
+ControlMessage::ControlMessage() : m_config({{"metadata", json_t::object()}}), m_tasks({}) {}
 
-ControlMessage::ControlMessage(const mrc::pymrc::JSONValues& _config) :
-  m_config(mrc::pymrc::JSONValues{}),
-  m_tasks(mrc::pymrc::JSONValues{})
+ControlMessage::ControlMessage(const json_t& _config) :
+  m_config({{"metadata", json_t::object()}}),
+  m_tasks({})
 {
-    m_config = m_config.set_value("metadata", mrc::pymrc::JSONValues{});
     config(_config);
 }
 
@@ -65,14 +56,14 @@ ControlMessage::ControlMessage(const ControlMessage& other)
     m_tasks  = other.m_tasks;
 }
 
-const mrc::pymrc::JSONValues& ControlMessage::config() const
+const json_t& ControlMessage::config() const
 {
     return m_config;
 }
 
-mrc::pymrc::JSONValues ControlMessage::add_task(const std::string& task_type, const mrc::pymrc::JSONValues& task)
+void ControlMessage::add_task(const std::string& task_type, const json_t& task)
 {
-    VLOG(20) << "Adding task of type " << task_type << " to control message" << task.view_json().dump(4);
+    VLOG(20) << "Adding task of type " << task_type << " to control message" << task.dump(4);
     auto _task_type = s_task_type_map.contains(task_type) ? s_task_type_map[task_type] : ControlMessageType::NONE;
 
     if (this->task_type() == ControlMessageType::NONE)
@@ -84,24 +75,16 @@ mrc::pymrc::JSONValues ControlMessage::add_task(const std::string& task_type, co
     {
         throw std::runtime_error("Cannot add inference and training tasks to the same control message");
     }
-    if (!m_tasks.view_json().contains(task_type))
-    {
-        m_tasks = m_tasks.set_value(task_type, mrc::pymrc::JSONValues{});
-    }
-    // TODO(Yuchen): how to store the JSONValues tasks into an array(collection)?
-    // auto new_tasks = m_tasks.get_json(task_type, m_unserializable_handler);
-    // new_tasks.push_back(task);
-    // m_tasks = m_tasks.set_value(task_type, new_tasks);
+
+    m_tasks[task_type].push_back(task);
 }
 
 bool ControlMessage::has_task(const std::string& task_type) const
 {
-    // TODO(Yuchen): for JSONValues, needs contains() and size() functions
-    const auto& tasks_json = m_tasks.view_json();
-    return tasks_json.contains(task_type) && tasks_json[task_type].size() > 0;
+    return m_tasks.contains(task_type) && m_tasks.at(task_type).size() > 0;
 }
 
-const mrc::pymrc::JSONValues& ControlMessage::get_tasks() const
+const json_t& ControlMessage::get_tasks() const
 {
     return m_tasks;
 }
@@ -109,9 +92,8 @@ const mrc::pymrc::JSONValues& ControlMessage::get_tasks() const
 std::vector<std::string> ControlMessage::list_metadata() const
 {
     std::vector<std::string> key_list{};
-    // TODO(Yuchen): if JSONValues are stored in an array, need a method to iterate over the array
-    auto metadata = this->get_metadata().view_json();
-    for (auto it = metadata.begin(); it != metadata.end(); ++it)
+
+    for (auto it = m_config["metadata"].begin(); it != m_config["metadata"].end(); ++it)
     {
         key_list.push_back(it.key());
     }
@@ -119,40 +101,36 @@ std::vector<std::string> ControlMessage::list_metadata() const
     return key_list;
 }
 
-const mrc::pymrc::JSONValues& ControlMessage::set_metadata(const std::string& key, const mrc::pymrc::JSONValues& value)
+void ControlMessage::set_metadata(const std::string& key, const json_t& value)
 {
-    const auto& config_json = m_config.view_json();
-    if (config_json["metadata"].contains(key))
+    if (m_config["metadata"].contains(key))
     {
-        VLOG(20) << "Overwriting metadata key " << key << " with value " << value.view_json().dump(4);
+        VLOG(20) << "Overwriting metadata key " << key << " with value " << value;
     }
-    m_config = m_config.set_value("metadata/" + key, value);
-    // TODO(Yuchen): What do we want to return here?
-    return value;
+
+    m_config["metadata"][key] = value;
 }
 
 bool ControlMessage::has_metadata(const std::string& key) const
 {
-    // TODO(Yuchen): for JSONValues, needs contains() function
-    const auto& config_json = m_config.view_json();
-    return config_json["metadata"].contains(key);
+    return m_config["metadata"].contains(key);
 }
 
-mrc::pymrc::JSONValues ControlMessage::get_metadata() const
+json_t ControlMessage::get_metadata() const
 {
-    return m_config["metadata"];
+    auto metadata = m_config["metadata"];
+
+    return metadata;
 }
 
-mrc::pymrc::JSONValues ControlMessage::get_metadata(const std::string& key, bool fail_on_nonexist) const
+json_t ControlMessage::get_metadata(const std::string& key, bool fail_on_nonexist) const
 {
     // Assuming m_metadata is a std::map<std::string, nlohmann::json> storing metadata
-    // TODO(Yuchen): if JSONValues are stored in an array, need a method to iterate over the array
-    auto metadata = this->get_metadata();
-    auto metadata_json = metadata.view_json();
-    auto it       = metadata_json.find(key);
-    if (it != metadata_json.end())
+    auto metadata = m_config["metadata"];
+    auto it       = metadata.find(key);
+    if (it != metadata.end())
     {
-        return metadata[key];
+        return metadata.at(key);
     }
     else if (fail_on_nonexist)
     {
@@ -162,19 +140,18 @@ mrc::pymrc::JSONValues ControlMessage::get_metadata(const std::string& key, bool
     return {};
 }
 
-mrc::pymrc::JSONValues ControlMessage::remove_task(const std::string& task_type)
+json_t ControlMessage::remove_task(const std::string& task_type)
 {
-    // TODO(Yuchen): how to store the JSONValues tasks into an array?
-    // auto task_set  = m_tasks.get_json(task_type, m_unserializable_handler);
-    // auto iter_task = task_set.begin();
+    auto& task_set = m_tasks.at(task_type);
+    auto iter_task = task_set.begin();
 
-    // if (iter_task != task_set.end())
-    // {
-    //     auto task = *iter_task;
-    //     task_set.erase(iter_task);
-    //     m_tasks = m_tasks.set_value(task_type, task_set);
-    //     return task;
-    // }
+    if (iter_task != task_set.end())
+    {
+        auto task = *iter_task;
+        task_set.erase(iter_task);
+
+        return task;
+    }
 
     throw std::runtime_error("No tasks of type " + task_type + " found");
 }
@@ -216,13 +193,11 @@ std::optional<time_point_t> ControlMessage::get_timestamp(const std::string& key
     return std::nullopt;
 }
 
-void ControlMessage::config(const mrc::pymrc::JSONValues& config)
+void ControlMessage::config(const json_t& config)
 {
-    // TODO(Yuchen): For JSONValues, needs contains() method
-    const auto& config_json = config.view_json();
-    if (config_json.contains("type"))
+    if (config.contains("type"))
     {
-        const auto& task_type = config["type"].view_json();
+        auto task_type = config.at("type");
         auto _task_type =
             s_task_type_map.contains(task_type) ? s_task_type_map.at(task_type) : ControlMessageType::NONE;
 
@@ -232,20 +207,18 @@ void ControlMessage::config(const mrc::pymrc::JSONValues& config)
         }
     }
 
-    if (config_json.contains("tasks"))
+    if (config.contains("tasks"))
     {
-        // TODO(Yuchen): for JSONValues, need a way to store collections of JSONValues
-        const auto& tasks = config["tasks"].view_json();
+        auto& tasks = config["tasks"];
         for (const auto& task : tasks)
         {
             add_task(task.at("type"), task.at("properties"));
         }
     }
 
-    if (config_json.contains("metadata"))
+    if (config.contains("metadata"))
     {
-        // TODO(Yuchen): for JSONValues, need a way to store collections of JSONValues
-        const auto& metadata = config["metadata"].view_json();
+        auto& metadata = config["metadata"];
         for (auto it = metadata.begin(); it != metadata.end(); ++it)
         {
             set_metadata(it.key(), it.value());
@@ -285,6 +258,61 @@ void ControlMessage::task_type(ControlMessageType type)
 
 /*** Proxy Implementations ***/
 
+py::object cast_from_json(const json_t& source)
+{
+    if (source.is_null())
+    {
+        return py::none();
+    }
+    if (source.is_array())
+    {
+        py::list list_;
+        for (const auto& element : source)
+        {
+            list_.append(cast_from_json(element));
+        }
+        return std::move(list_);
+    }
+
+    if (source.is_boolean())
+    {
+        return py::bool_(source.get<bool>());
+    }
+    if (source.is_number_float())
+    {
+        return py::float_(source.get<double>());
+    }
+    if (source.is_number_integer())
+    {
+        return py::int_(source.get<json_t::number_integer_t>());
+    }
+    if (source.is_number_unsigned())
+    {
+        return py::int_(source.get<json_t::number_unsigned_t>());
+    }
+    if (source.is_object())
+    {
+        py::dict dict;
+        for (const auto& it : source.items())
+        {
+            dict[py::str(it.key())] = cast_from_json(it.value());
+        }
+
+        return std::move(dict);
+    }
+    if (source.is_string())
+    {
+        return py::str(source.get<std::string>());
+    }
+
+    if (source.is_binary())
+    {
+        return source.get_binary().get_py_obj();
+    }
+
+    return py::none();
+    // throw std::runtime_error("Unsupported conversion type.");
+}
 std::shared_ptr<ControlMessage> ControlMessageProxy::create(py::dict& config)
 {
     return std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config));
@@ -309,7 +337,19 @@ py::dict ControlMessageProxy::remove_task(ControlMessage& self, const std::strin
 {
     auto task = self.remove_task(task_type);
 
-    return mrc::pymrc::cast_from_json(task);
+    return cast_from_json(task);
+}
+
+py::dict ControlMessageProxy::get_tasks(ControlMessage& self)
+{
+    return cast_from_json(self.get_tasks());
+}
+
+py::dict ControlMessageProxy::config(ControlMessage& self)
+{
+    auto dict = cast_from_json(self.config());
+
+    return dict;
 }
 
 py::object ControlMessageProxy::get_metadata(ControlMessage& self,
@@ -328,7 +368,7 @@ py::object ControlMessageProxy::get_metadata(ControlMessage& self,
         return default_value;
     }
 
-    return mrc::pymrc::cast_from_json(value);
+    return cast_from_json(value);
 }
 
 void ControlMessageProxy::set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value)
