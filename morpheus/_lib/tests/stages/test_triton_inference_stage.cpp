@@ -121,6 +121,68 @@ class FakeInferResult : public triton::client::InferResult
 
 class FakeTritonClient : public morpheus::ITritonClient
 {
+  public:
+    triton::client::Error is_server_live(bool* live) override
+    {
+        *live = true;
+        return triton::client::Error::Success;
+    }
+
+    triton::client::Error is_server_ready(bool* ready) override
+    {
+        *ready = true;
+        return triton::client::Error::Success;
+    }
+
+    triton::client::Error is_model_ready(bool* ready, std::string& model_name) override
+    {
+        *ready = true;
+        return triton::client::Error::Success;
+    }
+
+    triton::client::Error model_config(std::string* model_config, std::string& model_name) override
+    {
+        *model_config = R"({
+            "max_batch_size": 100
+        })";
+
+        return triton::client::Error::Success;
+    }
+
+    triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) override
+    {
+        *model_metadata = R"({
+            "inputs":[
+                {
+                    "name":"seq_ids",
+                    "shape": [0, 1],
+                    "datatype":"INT32"
+                }
+            ],
+            "outputs":[
+                {
+                    "name":"seq_ids",
+                    "shape": [0, 1],
+                    "datatype":"INT32"
+                }
+            ]})";
+
+        return triton::client::Error::Success;
+    }
+
+    triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
+                                      const triton::client::InferOptions& options,
+                                      const std::vector<morpheus::TritonInferInput>& inputs,
+                                      const std::vector<morpheus::TritonInferRequestedOutput>& outputs) override
+    {
+        callback(new FakeInferResult({{"seq_ids", std::vector<int32_t>({0, 1, 2, 3, 4, 5, 6, 7, 8, 9})}}));
+
+        return triton::client::Error::Success;
+    }
+};
+
+class ErrorProneTritonClient : public FakeTritonClient
+{
   private:
     bool m_is_server_live_has_errored  = false;
     bool m_is_server_live              = false;
@@ -148,7 +210,7 @@ class FakeTritonClient : public morpheus::ITritonClient
             m_is_server_live = true;
         }
 
-        return triton::client::Error::Success;
+        return FakeTritonClient::is_server_live(live);
     }
 
     triton::client::Error is_server_ready(bool* ready) override
@@ -195,11 +257,7 @@ class FakeTritonClient : public morpheus::ITritonClient
             return triton::client::Error("model_config error");
         }
 
-        *model_config = R"({
-            "max_batch_size": 100
-        })";
-
-        return triton::client::Error::Success;
+        return FakeTritonClient::model_config(model_config, model_name);
     }
 
     triton::client::Error model_metadata(std::string* model_metadata, std::string& model_name) override
@@ -210,23 +268,7 @@ class FakeTritonClient : public morpheus::ITritonClient
             return triton::client::Error("model_metadata error");
         }
 
-        *model_metadata = R"({
-            "inputs":[
-                {
-                    "name":"seq_ids",
-                    "shape": [0, 1],
-                    "datatype":"INT32"
-                }
-            ],
-            "outputs":[
-                {
-                    "name":"seq_ids",
-                    "shape": [0, 1],
-                    "datatype":"INT32"
-                }
-            ]})";
-
-        return triton::client::Error::Success;
+        return FakeTritonClient::model_metadata(model_metadata, model_name);
     }
 
     triton::client::Error async_infer(triton::client::InferenceServerHttpClient::OnCompleteFn callback,
@@ -240,9 +282,7 @@ class FakeTritonClient : public morpheus::ITritonClient
             return triton::client::Error("async_infer error");
         }
 
-        callback(new FakeInferResult({{"seq_ids", std::vector<int32_t>({0, 1, 2, 3, 4, 5, 6, 7, 8, 9})}}));
-
-        return triton::client::Error::Success;
+        return FakeTritonClient::async_infer(callback, options, inputs, outputs);
     }
 };
 
@@ -310,7 +350,7 @@ TEST_F(TestTritonInferenceStage, SingleRow)
     auto message = std::make_shared<morpheus::MultiInferenceMessage>(meta, 0, count, memory);
 
     // create the fake triton client used for testing.
-    auto triton_client = std::make_unique<FakeTritonClient>();
+    auto triton_client = std::make_unique<ErrorProneTritonClient>();
     auto triton_inference_client =
         std::make_unique<morpheus::TritonInferenceClient>(std::move(triton_client), "", true);
     auto stage = morpheus::InferenceClientStage<morpheus::MultiInferenceMessage, morpheus::MultiResponseMessage>(
@@ -420,7 +460,7 @@ TEST_F(TestTritonInferenceStage, ForceConvert)
 
             if (expect_throw)
             {
-                ASSERT_THROW(results_task.promise().result(), std::runtime_error);
+                ASSERT_THROW(results_task.promise().result(), std::invalid_argument);
             }
             else
             {
