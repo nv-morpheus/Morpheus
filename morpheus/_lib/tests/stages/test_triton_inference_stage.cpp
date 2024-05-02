@@ -22,6 +22,7 @@
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/stages/inference_client_stage.hpp"
@@ -46,12 +47,15 @@
 #include <pybind11/gil.h>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>
+#include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
 
 #include <cstdint>
 #include <functional>
+#include <initializer_list>  // for initializer_list
 #include <map>
 #include <memory>
 #include <numeric>
+#include <ostream>  // for operator<<, basic_ostream
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
