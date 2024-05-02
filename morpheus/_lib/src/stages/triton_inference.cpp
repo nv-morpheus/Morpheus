@@ -450,7 +450,7 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&&
                         "Input Name: '"
                         << model_input.name << ", Expected: " << model_input.datatype.name()
                         << ", Actual dtype:" << inference_input_slice.dtype().name());
-                    throw std::runtime_error(err_msg);
+                    throw std::invalid_argument(err_msg);
                 }
             }
 

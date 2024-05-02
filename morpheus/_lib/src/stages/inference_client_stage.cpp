@@ -333,6 +333,10 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<OutputT>> InferenceClientStage<I
 
             co_return;
 
+        } catch (std::invalid_argument ex)
+        {
+            // invalid_argument is terminal, don't attempt to retry
+            throw;
         } catch (std::runtime_error ex)
         {
             auto lock = std::unique_lock(m_session_mutex);
