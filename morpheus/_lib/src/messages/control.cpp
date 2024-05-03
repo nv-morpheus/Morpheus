@@ -23,6 +23,7 @@
 #include <pybind11/chrono.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
+#include <pymrc/utilities/acquire_gil.hpp>
 #include <pymrc/utils.hpp>
 
 #include <optional>
@@ -34,6 +35,138 @@
 namespace py = pybind11;
 using namespace py::literals;
 
+namespace {
+py::object cast_from_json(const morpheus::json_t& source)
+{
+    if (source.is_null())
+    {
+        return py::none();
+    }
+    if (source.is_array())
+    {
+        py::list list_;
+        for (const auto& element : source)
+        {
+            list_.append(cast_from_json(element));
+        }
+        return std::move(list_);
+    }
+
+    if (source.is_boolean())
+    {
+        return py::bool_(source.get<bool>());
+    }
+    if (source.is_number_float())
+    {
+        return py::float_(source.get<double>());
+    }
+    if (source.is_number_integer())
+    {
+        return py::int_(source.get<morpheus::json_t::number_integer_t>());
+    }
+    if (source.is_number_unsigned())
+    {
+        return py::int_(source.get<morpheus::json_t::number_unsigned_t>());
+    }
+    if (source.is_object())
+    {
+        py::dict dict;
+        for (const auto& it : source.items())
+        {
+            dict[py::str(it.key())] = cast_from_json(it.value());
+        }
+
+        return std::move(dict);
+    }
+    if (source.is_string())
+    {
+        return py::str(source.get<std::string>());
+    }
+
+    if (source.is_binary())
+    {
+        return source.get_binary().get_py_obj();
+    }
+
+    return py::none();
+}
+
+morpheus::json_t cast_from_pyobject_impl(const py::object& source,
+                             mrc::pymrc::unserializable_handler_fn_t unserializable_handler_fn,
+                             const std::string& parent_path = "")
+{
+    // Dont return via initializer list with JSON. It performs type deduction and gives different results
+    // NOLINTBEGIN(modernize-return-braced-init-list)
+    if (source.is_none())
+    {
+        return morpheus::json_t();
+    }
+
+    if (py::isinstance<py::dict>(source))
+    {
+        const auto py_dict = source.cast<py::dict>();
+        auto json_obj      = morpheus::json_t::object();
+        for (const auto& p : py_dict)
+        {
+            std::string key{p.first.cast<std::string>()};
+            std::string path{parent_path + "/" + key};
+            json_obj[key] = cast_from_pyobject_impl(p.second.cast<py::object>(), unserializable_handler_fn, path);
+        }
+
+        return json_obj;
+    }
+
+    if (py::isinstance<py::list>(source) || py::isinstance<py::tuple>(source))
+    {
+        const auto py_list = source.cast<py::list>();
+        auto json_arr      = morpheus::json_t::array();
+        for (const auto& p : py_list)
+        {
+            std::string path{parent_path + "/" + std::to_string(json_arr.size())};
+            json_arr.push_back(cast_from_pyobject_impl(p.cast<py::object>(), unserializable_handler_fn, path));
+        }
+
+        return json_arr;
+    }
+
+    if (py::isinstance<py::bool_>(source))
+    {
+        return morpheus::json_t(py::cast<bool>(source));
+    }
+
+    if (py::isinstance<py::int_>(source))
+    {
+        return morpheus::json_t(py::cast<long>(source));
+    }
+
+    if (py::isinstance<py::float_>(source))
+    {
+        return morpheus::json_t(py::cast<double>(source));
+    }
+
+    if (py::isinstance<py::str>(source))
+    {
+        return morpheus::json_t(py::cast<std::string>(source));
+    }
+
+    // else return the source as a binary object in PythonByteContainer
+    {
+        return morpheus::json_t::binary(morpheus::PythonByteContainer(source));
+    }
+    // NOLINTEND(modernize-return-braced-init-list)
+}
+
+morpheus::json_t cast_from_pyobject(const py::object& source, mrc::pymrc::unserializable_handler_fn_t unserializable_handler_fn)
+{
+    return cast_from_pyobject_impl(source, unserializable_handler_fn);
+}
+
+morpheus::json_t cast_from_pyobject(const py::object& source)
+{
+    return cast_from_pyobject_impl(source, nullptr);
+}
+}  // namespace
+
 namespace morpheus {
 
 const std::string ControlMessage::s_config_schema = R"()";
@@ -43,9 +176,7 @@ std::map<std::string, ControlMessageType> ControlMessage::s_task_type_map{{"infe
 
 ControlMessage::ControlMessage() : m_config({{"metadata", json_t::object()}}), m_tasks({}) {}
 
-ControlMessage::ControlMessage(const json_t& _config) :
-  m_config({{"metadata", json_t::object()}}),
-  m_tasks({})
+ControlMessage::ControlMessage(const json_t& _config) : m_config({{"metadata", json_t::object()}}), m_tasks({})
 {
     config(_config);
 }
@@ -136,7 +267,6 @@ json_t ControlMessage::get_metadata(const std::string& key, bool fail_on_nonexis
     {
         throw std::runtime_error("Metadata key does not exist: " + key);
     }
-
     return {};
 }
 
@@ -257,65 +387,9 @@ void ControlMessage::task_type(ControlMessageType type)
 }
 
 /*** Proxy Implementations ***/
-
-py::object cast_from_json(const json_t& source)
-{
-    if (source.is_null())
-    {
-        return py::none();
-    }
-    if (source.is_array())
-    {
-        py::list list_;
-        for (const auto& element : source)
-        {
-            list_.append(cast_from_json(element));
-        }
-        return std::move(list_);
-    }
-
-    if (source.is_boolean())
-    {
-        return py::bool_(source.get<bool>());
-    }
-    if (source.is_number_float())
-    {
-        return py::float_(source.get<double>());
-    }
-    if (source.is_number_integer())
-    {
-        return py::int_(source.get<json_t::number_integer_t>());
-    }
-    if (source.is_number_unsigned())
-    {
-        return py::int_(source.get<json_t::number_unsigned_t>());
-    }
-    if (source.is_object())
-    {
-        py::dict dict;
-        for (const auto& it : source.items())
-        {
-            dict[py::str(it.key())] = cast_from_json(it.value());
-        }
-
-        return std::move(dict);
-    }
-    if (source.is_string())
-    {
-        return py::str(source.get<std::string>());
-    }
-
-    if (source.is_binary())
-    {
-        return source.get_binary().get_py_obj();
-    }
-
-    return py::none();
-    // throw std::runtime_error("Unsupported conversion type.");
-}
 std::shared_ptr<ControlMessage> ControlMessageProxy::create(py::dict& config)
 {
-    return std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config));
+    return std::make_shared<ControlMessage>(cast_from_pyobject(config));
 }
 
 std::shared_ptr<ControlMessage> ControlMessageProxy::create(std::shared_ptr<ControlMessage> other)
@@ -330,7 +404,7 @@ std::shared_ptr<ControlMessage> ControlMessageProxy::copy(ControlMessage& self)
 
 void ControlMessageProxy::add_task(ControlMessage& self, const std::string& task_type, py::dict& task)
 {
-    self.add_task(task_type, mrc::pymrc::cast_from_pyobject(task));
+    self.add_task(task_type, cast_from_pyobject(task));
 }
 
 py::dict ControlMessageProxy::remove_task(ControlMessage& self, const std::string& task_type)
@@ -364,7 +438,7 @@ py::object ControlMessageProxy::get_metadata(ControlMessage& self,
 
     auto value = self.get_metadata(py::cast<std::string>(key), false);
     if (value.empty())
-    {
+    {   
         return default_value;
     }
 
@@ -373,7 +447,7 @@ py::object ControlMessageProxy::get_metadata(ControlMessage& self,
 
 void ControlMessageProxy::set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value)
 {
-    self.set_metadata(key, mrc::pymrc::cast_from_pyobject(value));
+    self.set_metadata(key, cast_from_pyobject(value));
 }
 
 py::list ControlMessageProxy::list_metadata(ControlMessage& self)
@@ -439,7 +513,7 @@ void ControlMessageProxy::set_timestamp(ControlMessage& self, const std::string&
 
 void ControlMessageProxy::config(ControlMessage& self, py::dict& config)
 {
-    self.config(mrc::pymrc::cast_from_pyobject(config));
+    self.config(cast_from_pyobject(config));
 }
 
 void ControlMessageProxy::payload_from_python_meta(ControlMessage& self, const pybind11::object& meta)

@@ -400,3 +400,21 @@ def test_consistency_after_multiple_operations():
                        cp.array([4, 5, 6])), "Mismatch in input_ids after update."
     assert cp.allclose(retrieved_tensors.get_tensor("new_tensor"),
                        new_tensor["new_tensor"]), "New tensor data mismatch."
+
+
+@pytest.mark.usefixtures("config_only_cpp")
+def test_control_message_hold_non_serializable_python_obj():
+
+    class NonSerializablePyObj():
+
+        def __init__(self):
+            pass
+
+        def __getstate__(self):
+            raise TypeError("This object is not serializable")
+
+    message = messages.ControlMessage()
+
+    non_serializable_obj = NonSerializablePyObj()
+    message.set_metadata("non_serializable_py_obj", non_serializable_obj)
+    assert message.get_metadata("non_serializable_py_obj") is non_serializable_obj

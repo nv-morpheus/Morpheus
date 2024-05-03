@@ -166,9 +166,10 @@ class TensorMemory;
 // System-clock for better compatibility with pybind11/chrono
 using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
 
-class PythonByteContainer : std::vector<uint8_t>
+class PythonByteContainer : public std::vector<uint8_t>
 {
   public:
+    PythonByteContainer() = default;
     PythonByteContainer(pybind11::object py_obj) : m_py_obj(std::move(py_obj)) {}
 
     pybind11::object get_py_obj() const

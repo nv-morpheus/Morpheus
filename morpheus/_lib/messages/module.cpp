@@ -392,13 +392,13 @@ PYBIND11_MODULE(messages, _module)
         .def("config",
              pybind11::overload_cast<ControlMessage&, py::dict&>(&ControlMessageProxy::config),
              py::arg("config"))
-        .def("config", &ControlMessageProxy::config)
+        .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
         .def("copy", &ControlMessageProxy::copy)
         .def("get_metadata",
              &ControlMessageProxy::get_metadata,
              py::arg("key")           = py::none(),
              py::arg("default_value") = py::none())
-        .def("get_tasks", &ControlMessage::get_tasks)
+        .def("get_tasks", &ControlMessageProxy::get_tasks)
         .def("filter_timestamp",
              py::overload_cast<ControlMessage&, const std::string&>(&ControlMessageProxy::filter_timestamp),
              "Retrieve timestamps matching a regex filter within a given group.",

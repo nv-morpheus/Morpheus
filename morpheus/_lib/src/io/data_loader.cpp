@@ -80,7 +80,7 @@ std::shared_ptr<ControlMessage> DataLoader::load(std::shared_ptr<ControlMessage>
         if (loader != m_loaders.end())
         {
             VLOG(5) << "Loading data using loader: " << loader_id
-                    << " for message: " << control_message->config().view_json().dump() << std::endl;
+                    << " for message: " << control_message->config().dump() << std::endl;
             try
             {
                 loader->second->load(control_message, task);
