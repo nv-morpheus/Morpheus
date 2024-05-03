@@ -106,36 +106,6 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 
 ## Model Card ++ Bias Subcard
 
-### What is the gender balance of the model validation data?
-* Not Applicable
-
-### What is the racial/ethnicity balance of the model validation data?
-* Not Applicable
-
-### What is the age balance of the model validation data?
-* Not Applicable
-
-### What is the language balance of the model validation data?
-* English (cloudtrail logs): 100%
-
-### What is the geographic origin language balance of the model validation data?
-* Not Applicable
-
-### What is the educational background balance of the model validation data?
-* Not Applicable
-
-### What is the accent balance of the model validation data?
-* Not Applicable
-
-### What is the face/key point balance of the model validation data?
-* Not Applicable
-
-### What is the skin/tone balance of the model validation data?
-* Not Applicable
-
-### What is the religion balance of the model validation data?
-* Not Applicable
-
 ### Individuals from the following adversely impacted (protected classes) groups participate in model design and testing.
 * Not Applicable
 
@@ -147,7 +117,7 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 ### Name example applications and use cases for this model.
 * The model is primarily designed for testing purposes and serves as a small pretrained model specifically used to evaluate and validate the DFP pipeline. Its application is focused on assessing the effectiveness of the pipeline rather than being intended for broader use cases or specific applications beyond testing.
 
-### Fill in the blank for the model technique.
+### Intended Users.
 * This model is designed for developers seeking to test the DFP pipeline with a small pretrained model trained on a synthetic dataset.
 
 ### Name who is intended to benefit from this model.
@@ -157,15 +127,15 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 * The model calculates an anomaly score for each input based on the reconstruction loss obtained from the trained Autoencoder. This score represents the level of anomaly detected in the input data. Higher scores indicate a higher likelihood of anomalous behavior.
 * The model provides the reconstruction loss of each feature to facilitate further testing and debugging of the pipeline.
 
-### List the steps explaining how this model works.
+### Describe how this model works.
 * The model works by training on baseline behaviors and subsequently detecting deviations from the established baseline, triggering alerts accordingly.
 * [Training notebook](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/training-tuning-scripts/dfp-models/hammah-20211017.ipynb)
 
-### Name the adversely impacted groups (protected classes) this has been tested to deliver comparable outcomes regardless of:
-* Not Applicable
-
 ### List the technical limitations of the model.
 * The model expects cloudtrail logs with specific features that match the training dataset. Data lacking the required features or requiring a different feature set may not be compatible with the model.
+
+### Has this been verified to have met prescribed NVIDIA quality standards?
+* Yes
 
 ### What performance metrics were used to affirm the model's performance?
 * The model's performance was evaluated based on its ability to correctly identify anomalous behavior in the synthetic dataset during testing.
@@ -181,10 +151,7 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 ### Link the location of the training dataset's repository (if able to share).
 * https://github.com/nv-morpheus/Morpheus/tree/branch-24.06/models/datasets/training-data/cloudtrail
 
-### Is the model used in an application with physical safety impact?
-* No
-
-### Describe physical safety impact (if present).
+### Describe the life critical impact (if present).
 * None
 
 ### Was model and dataset assessed for vulnerability for potential form of attack?
@@ -195,12 +162,6 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 
 ### Name use case restrictions for the model.
 * The model's use case is restricted to testing the Morpheus pipeline and may not be suitable for other applications.
-
-### Has this been verified to have met prescribed quality standards?
-* No
-
-### Name target quality Key Performance Indicators (KPIs) for which this has been tested.
-* None
 
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
 * No
@@ -236,10 +197,7 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 ### If PII collected for the development of this AI model, was it minimized to only what was required?
 * Not Applicable (no PII collected)
 
-### Is data in dataset traceable?
-* No
-
-### Are we able to identify and trace source of dataset?
+### Is there data provenance?
 * Yes ([fully synthetic dataset](https://github.com/nv-morpheus/Morpheus/tree/branch-24.06/models/datasets/training-data/cloudtrail))
 
 ### Does data labeling (annotation, metadata) comply with privacy laws?
