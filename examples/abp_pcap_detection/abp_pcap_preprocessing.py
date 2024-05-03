@@ -170,7 +170,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         del df, grouped_df
 
         # Convert the dataframe to cupy the same way cuml does
-        # Explicity casting to float32 to match the model's input
+        # Explicity casting to float32 to match the model's input, and setting row-major as required by Triton
         data = cp.asarray(merged_df[fea_cols].to_cupy(), order='C', dtype=cp.float32)
         count = data.shape[0]
 
