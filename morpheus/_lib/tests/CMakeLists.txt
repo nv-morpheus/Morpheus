@@ -115,6 +115,12 @@ add_morpheus_test(
 )
 
 add_morpheus_test(
+  NAME objects
+  FILES
+    objects/test_dtype.cpp
+)
+
+add_morpheus_test(
   NAME deserializers
   FILES
     test_deserializers.cpp

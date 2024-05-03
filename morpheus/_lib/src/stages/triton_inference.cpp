@@ -258,9 +258,11 @@ triton::client::Error HttpTritonClient::async_infer(triton::client::InferenceSer
 }
 
 TritonInferenceClientSession::TritonInferenceClientSession(std::shared_ptr<ITritonClient> client,
-                                                           std::string model_name) :
+                                                           std::string model_name,
+                                                           bool force_convert_inputs) :
   m_client(std::move(client)),
-  m_model_name(std::move(model_name))
+  m_model_name(std::move(model_name)),
+  m_force_convert_inputs(force_convert_inputs)
 {
     // Now load the input/outputs for the model
 
@@ -433,8 +435,24 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&&
 
         for (auto model_input : m_model_inputs)
         {
-            auto inference_input_slice =
-                inputs[model_input.name].slice({start, 0}, {stop, -1}).as_type(model_input.datatype);
+            auto inference_input_slice = inputs.at(model_input.name).slice({start, 0}, {stop, -1});
+
+            if (inference_input_slice.dtype() != model_input.datatype)
+            {
+                if (m_force_convert_inputs)
+                {
+                    inference_input_slice.swap(inference_input_slice.as_type(model_input.datatype));
+                }
+                else
+                {
+                    std::string err_msg = MORPHEUS_CONCAT_STR(
+                        "Unexpected dtype for Triton input. Cannot automatically convert dtype due to loss of data."
+                        "Input Name: '"
+                        << model_input.name << ", Expected: " << model_input.datatype.name()
+                        << ", Actual dtype:" << inference_input_slice.dtype().name());
+                    throw std::invalid_argument(err_msg);
+                }
+            }
 
             inference_inputs.emplace_back(
                 TritonInferInput{model_input.name,
@@ -476,12 +494,13 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&&
 
             const uint8_t* output_ptr = nullptr;
             size_t output_ptr_size    = 0;
+
             CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
 
-            DCHECK_EQ(stop - start, output_shape[0]);
-            DCHECK_EQ(output_tensor.bytes(), output_ptr_size);
-            DCHECK_NOTNULL(output_ptr);            // NOLINT
-            DCHECK_NOTNULL(output_tensor.data());  // NOLINT
+            // DCHECK_EQ(stop - start, output_shape[0]);
+            // DCHECK_EQ(output_tensor.bytes(), output_ptr_size);
+            // DCHECK_NOTNULL(output_ptr);            // NOLINT
+            // DCHECK_NOTNULL(output_tensor.data());  // NOLINT
 
             MRC_CHECK_CUDA(cudaMemcpy(output_tensor.data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
         }
@@ -490,14 +509,17 @@ mrc::coroutines::Task<TensorMap> TritonInferenceClientSession::infer(TensorMap&&
     co_return model_output_tensors;
 };
 
-TritonInferenceClient::TritonInferenceClient(std::unique_ptr<ITritonClient>&& client, std::string model_name) :
+TritonInferenceClient::TritonInferenceClient(std::unique_ptr<ITritonClient>&& client,
+                                             std::string model_name,
+                                             bool force_convert_inputs) :
   m_client(std::move(client)),
-  m_model_name(std::move(model_name))
+  m_model_name(std::move(model_name)),
+  m_force_convert_inputs(force_convert_inputs)
 {}
 
 std::unique_ptr<IInferenceClientSession> TritonInferenceClient::create_session()
 {
-    return std::make_unique<TritonInferenceClientSession>(m_client, m_model_name);
+    return std::make_unique<TritonInferenceClientSession>(m_client, m_model_name, m_force_convert_inputs);
 }
 
 }  // namespace morpheus

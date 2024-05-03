@@ -18,6 +18,8 @@
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/messages/multi_response.hpp"
 #include "morpheus/objects/file_types.hpp"
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
@@ -164,16 +166,32 @@ PYBIND11_MODULE(stages, _module)
              py::arg("filter_source"),
              py::arg("field_name") = "probs");
 
-    py::class_<mrc::segment::Object<InferenceClientStage>,
-               mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<InferenceClientStage>>>(
-        _module, "InferenceClientStage", py::multiple_inheritance())
-        .def(py::init<>(&InferenceClientStageInterfaceProxy::init),
+    py::class_<
+        mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>,
+        mrc::segment::ObjectProperties,
+        std::shared_ptr<mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>>>(
+        _module, "InferenceClientStageMM", py::multiple_inheritance())
+        .def(py::init<>(&InferenceClientStageInterfaceProxy::init_mm),
              py::arg("builder"),
              py::arg("name"),
              py::arg("server_url"),
              py::arg("model_name"),
              py::arg("needs_logits"),
+             py::arg("force_convert_inputs"),
+             py::arg("input_mapping")  = py::dict(),
+             py::arg("output_mapping") = py::dict());
+
+    py::class_<mrc::segment::Object<InferenceClientStage<ControlMessage, ControlMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<InferenceClientStage<ControlMessage, ControlMessage>>>>(
+        _module, "InferenceClientStageCM", py::multiple_inheritance())
+        .def(py::init<>(&InferenceClientStageInterfaceProxy::init_cm),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("server_url"),
+             py::arg("model_name"),
+             py::arg("needs_logits"),
+             py::arg("force_convert_inputs"),
              py::arg("input_mapping")  = py::dict(),
              py::arg("output_mapping") = py::dict());
 
@@ -205,6 +223,15 @@ PYBIND11_MODULE(stages, _module)
              py::arg("stop_after")            = 0,
              py::arg("async_commits")         = true,
              py::arg("oauth_callback")        = py::none());
+
+    py::class_<mrc::segment::Object<PreallocateStage<ControlMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PreallocateStage<ControlMessage>>>>(
+        _module, "PreallocateControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreallocateStageInterfaceProxy<ControlMessage>::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("needed_columns"));
 
     py::class_<mrc::segment::Object<PreallocateStage<MessageMeta>>,
                mrc::segment::ObjectProperties,

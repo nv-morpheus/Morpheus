@@ -32,30 +32,26 @@ RSSSourceLoaderFactory = ModuleLoaderFactory("rss_source", "morpheus", RSSSource
 @register_module("rss_source", "morpheus")
 def _rss_source(builder: mrc.Builder):
     """
-    A module for applying simple DataFrame schema transform policies.
-
-    This module reads the configuration to determine how to set data types for columns, select, or rename them in the
-    dataframe.
+    A module for loading RSS feed items into a DataFrame.
 
     Parameters
     ----------
     builder : mrc.Builder
         The Morpheus pipeline builder object.
 
-    Notes
-    -------------
-    The configuration should be passed to the module through the `module_config` attribute of the builder. It should
-    contain a dictionary where each key is a column name, and the value is another dictionary with keys 'dtype' for
-    data type, 'op_type' for operation type ('select' or 'rename'), and optionally 'from' for the original column
-    name (if the column is to be renamed).
-
     Example Configuration
     ---------------------
     {
-        "summary": {"dtype": "str", "op_type": "select"},
-        "title": {"dtype": "str", "op_type": "select"},
-        "content": {"from": "page_content", "dtype": "str", "op_type": "rename"},
-        "source": {"from": "link", "dtype": "str", "op_type": "rename"}
+        "batch_size": 32,
+        "cache_dir": "./.cache/http",
+        "cooldown_interval_sec": 600,
+        "enable_cache": True,
+        "feed_input": ["https://nvidianews.nvidia.com/releases.xml"],
+        "interval_sec": 600,
+        "request_timeout_sec": 2.0,
+        run_indefinitely: True,
+        "stop_after_rec": 0,
+        "strip_markup": True,
     }
     """
 
@@ -77,7 +73,8 @@ def _rss_source(builder: mrc.Builder):
                                enable_cache=validated_config.enable_cache,
                                cache_dir=validated_config.cache_dir,
                                cooldown_interval=validated_config.cooldown_interval_sec,
-                               request_timeout=validated_config.request_timeout_sec)
+                               request_timeout=validated_config.request_timeout_sec,
+                               strip_markup=validated_config.strip_markup)
 
     stop_requested = False
 
@@ -101,16 +98,16 @@ def _rss_source(builder: mrc.Builder):
 
                     records_emitted += df_size
 
-                    if (0 < validated_config.stop_after_sec <= records_emitted):
+                    if (0 < validated_config.stop_after_rec <= records_emitted):
                         stop_requested = True
                         logger.info("Stop limit reached... preparing to halt the source.")
                         break
 
             except Exception as exc:
                 if not controller.run_indefinitely:
-                    logger.error("Failed either in the process of fetching or processing entries: %d.", exc)
+                    logger.error("Failed either in the process of fetching or processing entries: %s.", exc)
                     raise
-                logger.error("Failed either in the process of fetching or processing entries: %d.", exc)
+                logger.error("Failed either in the process of fetching or processing entries: %s.", exc)
 
             if not controller.run_indefinitely:
                 stop_requested = True

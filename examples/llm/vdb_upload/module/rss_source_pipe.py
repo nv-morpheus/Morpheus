@@ -48,7 +48,8 @@ class RSSSourcePipeSchema(BaseModel):
     output_batch_size: int = 2048
     request_timeout_sec: float = 2.0
     run_indefinitely: bool = True
-    stop_after_sec: int = 0
+    stop_after_rec: int = 0
+    strip_markup: bool = True
     vdb_resource_name: str
     web_scraper_config: Optional[Dict[Any, Any]] = None
 
@@ -98,6 +99,7 @@ def _rss_source_pipe(builder: mrc.Builder):
       - **request_timeout_sec**: Timeout in seconds for RSS feed requests.
       - **run_indefinitely**: Boolean to indicate continuous running.
       - **stop_after**: Number of records to process before stopping (0 for indefinite).
+      - **strip_markup**: When True, strip HTML & XML markup from feed content.
       - **web_scraper_config**: Configuration for the web scraper module.
         - **chunk_overlap**: Overlap size for chunks in web scraping.
         - **chunk_size**: Size of content chunks for processing.
@@ -130,7 +132,8 @@ def _rss_source_pipe(builder: mrc.Builder):
         "cooldown_interval_sec": validated_config.cooldown_interval_sec,
         "request_timeout_sec": validated_config.request_timeout_sec,
         "interval_sec": validated_config.interval_sec,
-        "stop_after_sec": validated_config.stop_after_sec,
+        "stop_after_rec": validated_config.stop_after_rec,
+        "strip_markup": validated_config.strip_markup,
     }
     rss_source_loader = RSSSourceLoaderFactory.get_instance("rss_source", {"rss_source": rss_source_config})
 

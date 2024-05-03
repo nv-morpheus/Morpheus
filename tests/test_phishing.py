@@ -23,6 +23,7 @@ import pytest
 from _utils import TEST_DIRS
 from _utils import calc_error_val
 from _utils import mk_async_infer
+from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -44,7 +45,7 @@ MODEL_MAX_BATCH_SIZE = 32
 @pytest.mark.slow
 @pytest.mark.use_python
 @mock.patch('tritonclient.grpc.InferenceServerClient')
-def test_email_no_cpp(mock_triton_client, config, tmp_path):
+def test_email_no_cpp(mock_triton_client: mock.MagicMock, config: Config, tmp_path: str, morpheus_log_level: int):
     mock_metadata = {
         "inputs": [{
             "name": "input_ids", "datatype": "INT64", "shape": [-1, FEATURE_LENGTH]
@@ -96,7 +97,8 @@ def test_email_no_cpp(mock_triton_client, config, tmp_path):
     pipe.add_stage(
         TritonInferenceStage(config, model_name='phishing-bert-onnx', server_url='test:0000',
                              force_convert_inputs=True))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config, labels=["is_phishing"], threshold=0.7))
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
@@ -111,7 +113,7 @@ def test_email_no_cpp(mock_triton_client, config, tmp_path):
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-def test_email_cpp(config, tmp_path):
+def test_email_cpp(config: Config, tmp_path: str, morpheus_log_level: int):
     config.mode = PipelineModes.NLP
     config.class_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, "labels_phishing.txt"))
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
@@ -139,7 +141,8 @@ def test_email_cpp(config, tmp_path):
                              model_name='phishing-bert-onnx',
                              server_url='localhost:8001',
                              force_convert_inputs=True))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config, labels=["is_phishing"], threshold=0.7))
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))

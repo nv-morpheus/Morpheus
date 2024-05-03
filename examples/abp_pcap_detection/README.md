@@ -27,14 +27,9 @@ docker pull nvcr.io/nvidia/tritonserver:23.06-py3
 ```
 
 ##### Deploy Triton Inference Server
-From the root of the Morpheus repo, navigate to the anomalous behavior profiling example directory:
+From the root of the Morpheus repo, run the following to launch Triton and load the `abp-pcap-xgb` model:
 ```bash
-cd examples/abp_pcap_detection
-```
-
-The following creates the Triton container, mounts the `abp-pcap-xgb` directory to `/models/abp-pcap-xgb` in the Triton container, and starts the Triton server:
-```bash
-docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD/abp-pcap-xgb:/models/abp-pcap-xgb --name tritonserver nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models --exit-on-error=false
+docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD/examples/abp_pcap_detection/abp-pcap-xgb:/models/abp-pcap-xgb --name tritonserver nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models --exit-on-error=false
 ```
 
 ##### Verify Model Deployment
@@ -53,8 +48,7 @@ Use Morpheus to run the Anomalous Behavior Profiling Detection Pipeline with the
 
 From the root of the Morpheus repo, run:
 ```bash
-cd examples/abp_pcap_detection
-python run.py --help
+python examples/abp_pcap_detection/run.py --help
 ```
 
 Output:
@@ -62,44 +56,41 @@ Output:
 Usage: run.py [OPTIONS]
 
 Options:
-  --num_threads INTEGER RANGE     Number of internal pipeline threads to use
+  --num_threads INTEGER RANGE     Number of internal pipeline threads to use.
                                   [x>=1]
   --pipeline_batch_size INTEGER RANGE
                                   Internal batch size for the pipeline. Can be
                                   much larger than the model batch size. Also
-                                  used for Kafka consumers  [x>=1]
+                                  used for Kafka consumers.  [x>=1]
   --model_max_batch_size INTEGER RANGE
-                                  Max batch size to use for the model  [x>=1]
-  --input_file PATH               Input filepath  [required]
+                                  Max batch size to use for the model.  [x>=1]
+  --input_file PATH               Input filepath.  [required]
   --output_file TEXT              The path to the file where the inference
                                   output will be saved.
   --model_fea_length INTEGER RANGE
-                                  Features length to use for the model  [x>=1]
+                                  Features length to use for the model.
+                                  [x>=1]
   --model_name TEXT               The name of the model that is deployed on
-                                  Tritonserver
+                                  Tritonserver.
   --iterative                     Iterative mode will emit dataframes one at a
                                   time. Otherwise a list of dataframes is
                                   emitted. Iterative mode is good for
                                   interleaving source stages.
-  --server_url TEXT               Tritonserver url  [required]
-  --file_type [auto|json|csv]     Indicates what type of file to read.
+  --server_url TEXT               Tritonserver url.  [required]
+  --file_type [auto|csv|json]     Indicates what type of file to read.
                                   Specifying 'auto' will determine the file
                                   type from the extension.
   --help                          Show this message and exit.
 ```
 
-To launch the configured Morpheus pipeline with the sample data that is provided in `examples/data`, from the `examples/abp_pcap_detection` directory run the following:
+To launch the configured Morpheus pipeline with the sample data that is provided in `examples/data`, run the following:
 
 ```bash
-python run.py \
-	--input_file ../data/abp_pcap_dump.jsonlines \
-	--output_file ./pcap_out.jsonlines \
-	--model_name 'abp-pcap-xgb' \
-	--server_url localhost:8001
+python examples/abp_pcap_detection/run.py
 ```
 Note: Both Morpheus and Triton Inference Server containers must have access to the same GPUs in order for this example to work.
 
-The pipeline will process the input `pcap_dump.jsonlines` sample data and write it to `pcap_out.jsonlines`.
+The pipeline will process the input `abp_pcap_dump.jsonlines` sample data and write it to `pcap_out.jsonlines`.
 
 ### CLI Example
 The above example is illustrative of using the Python API to build a custom Morpheus Pipeline.
@@ -123,5 +114,3 @@ morpheus --log_level INFO --plugin "examples/abp_pcap_detection/abp_pcap_preproc
     to-file --filename "pcap_out.jsonlines" --overwrite \
     monitor --description "Write to file rate" --unit "to-file"
 ```
-
-Note: Triton is still needed to be launched from the `examples/abp_pcap_detection` directory.
