@@ -124,8 +124,6 @@ def run_pipeline(
     config.feature_length = model_fea_length
     config.class_labels = ["probs"]
 
-    kwargs = {}
-
     # Create a linear pipeline object.
     pipeline = LinearPipeline(config)
 
@@ -176,7 +174,7 @@ def run_pipeline(
 
     # Add a serialize stage.
     # This stage includes & excludes columns from messages.
-    pipeline.add_stage(SerializeStage(config, **kwargs))
+    pipeline.add_stage(SerializeStage(config))
 
     # Add a monitor stage.
     # This stage logs the metrics (msg/sec) from the above stage.
