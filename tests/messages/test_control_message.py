@@ -418,3 +418,8 @@ def test_control_message_hold_non_serializable_python_obj():
     non_serializable_obj = NonSerializablePyObj()
     message.set_metadata("non_serializable_py_obj", non_serializable_obj)
     assert message.get_metadata("non_serializable_py_obj") is non_serializable_obj
+    
+    message.add_task("non_serializable", {"non_serializable_task": non_serializable_obj})
+    assert message.has_task("non_serializable")
+    assert message.get_tasks()["non_serializable"][0]["non_serializable_task"] is non_serializable_obj
+    assert message.remove_task("non_serializable")["non_serializable_task"] is non_serializable_obj

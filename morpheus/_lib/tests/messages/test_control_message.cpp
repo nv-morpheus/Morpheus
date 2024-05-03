@@ -139,9 +139,6 @@ TEST_F(TestControlMessage, GetAllMetadata)
 TEST_F(TestControlMessage, SetMessageTest)
 {
     auto msg = ControlMessage();
-
-    // ASSERT_THROW(msg.config()["nope"], std::runtime_error);
-
     auto config = nlohmann::json();
     nlohmann::json task_properties;
     task_properties = {
@@ -159,9 +156,6 @@ TEST_F(TestControlMessage, TaskTest)
 {
     auto msg_infer = ControlMessage();
     auto msg_train = ControlMessage();
-
-    // ASSERT_THROW(msg_infer.config()["some_value"], std::runtime_error);
-
     auto config = nlohmann::json();
     nlohmann::json task_properties;
     task_properties = {
