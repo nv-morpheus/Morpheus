@@ -23,7 +23,6 @@
 #include <pybind11/chrono.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <pymrc/utilities/acquire_gil.hpp>
 #include <pymrc/utils.hpp>
 
 #include <optional>
@@ -51,7 +50,6 @@ py::object cast_from_json(const morpheus::json_t& source)
         }
         return std::move(list_);
     }
-
     if (source.is_boolean())
     {
         return py::bool_(source.get<bool>());
@@ -82,7 +80,6 @@ py::object cast_from_json(const morpheus::json_t& source)
     {
         return py::str(source.get<std::string>());
     }
-
     if (source.is_binary())
     {
         return source.get_binary().get_py_obj();
@@ -92,8 +89,8 @@ py::object cast_from_json(const morpheus::json_t& source)
 }
 
 morpheus::json_t cast_from_pyobject_impl(const py::object& source,
-                             mrc::pymrc::unserializable_handler_fn_t unserializable_handler_fn,
-                             const std::string& parent_path = "")
+                                         mrc::pymrc::unserializable_handler_fn_t unserializable_handler_fn,
+                                         const std::string& parent_path = "")
 {
     // Dont return via initializer list with JSON. It performs type deduction and gives different results
     // NOLINTBEGIN(modernize-return-braced-init-list)
@@ -112,7 +109,6 @@ morpheus::json_t cast_from_pyobject_impl(const py::object& source,
             std::string path{parent_path + "/" + key};
             json_obj[key] = cast_from_pyobject_impl(p.second.cast<py::object>(), unserializable_handler_fn, path);
         }
-
         return json_obj;
     }
 
@@ -156,7 +152,8 @@ morpheus::json_t cast_from_pyobject_impl(const py::object& source,
     // NOLINTEND(modernize-return-braced-init-list)
 }
 
-morpheus::json_t cast_from_pyobject(const py::object& source, mrc::pymrc::unserializable_handler_fn_t unserializable_handler_fn)
+morpheus::json_t cast_from_pyobject(const py::object& source,
+                                    mrc::pymrc::unserializable_handler_fn_t unserializable_handler_fn)
 {
     return cast_from_pyobject_impl(source, unserializable_handler_fn);
 }
@@ -438,7 +435,7 @@ py::object ControlMessageProxy::get_metadata(ControlMessage& self,
 
     auto value = self.get_metadata(py::cast<std::string>(key), false);
     if (value.empty())
-    {   
+    {
         return default_value;
     }
 
