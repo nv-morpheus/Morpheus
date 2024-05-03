@@ -71,7 +71,7 @@ int get_index_col_count(const cudf::io::table_with_metadata& data_table);
 int prepare_df_index(cudf::io::table_with_metadata& data_table);
 
 /**
- * @brief Loads a cudf table from either CSV or JSON file returning the DataFrame as a Python object
+ * @brief Loads a cudf table from either CSV, JSON or Parquet file returning the DataFrame as a Python object
  *
  * @param filename : Name of the file that should be loaded into a table
  * @return pybind11::object
