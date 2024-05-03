@@ -26,6 +26,7 @@ from mrc.core import operators as ops
 import cudf
 
 from morpheus.common import TypeId
+from morpheus.common import typeid_is_fully_supported
 from morpheus.common import typeid_to_numpy_str
 from morpheus.config import CppConfig
 from morpheus.messages import ControlMessage
@@ -90,6 +91,13 @@ class PreallocatorMixin(ABC):
         self._preallocate_meta(msg.payload())
         return msg
 
+    def _all_types_supported_in_cpp(self) -> bool:
+        for column_type in self._needed_columns.values():
+            if not typeid_is_fully_supported(column_type):
+                return False
+
+        return True
+
     def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
         out_type = self.output_ports[0].output_type
         pretty_type = pretty_print_type_name(out_type)
@@ -99,7 +107,7 @@ class PreallocatorMixin(ABC):
 
             if issubclass(out_type, (ControlMessage, MessageMeta, MultiMessage)):
                 # Intentionally not using `_build_cpp_node` because `LinearBoundaryIngressStage` lacks a C++ impl
-                if CppConfig.get_should_use_cpp():
+                if CppConfig.get_should_use_cpp() and self._all_types_supported_in_cpp():
                     import morpheus._lib.stages as _stages
                     needed_columns = list(self._needed_columns.items())
                     if issubclass(out_type, ControlMessage):

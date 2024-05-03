@@ -32,6 +32,8 @@ from stages.classification_stage import ClassificationStage
 from stages.graph_construction_stage import FraudGraphConstructionStage
 from stages.graph_sage_stage import GraphSAGEStage
 
+CUR_DIR = os.path.dirname(__file__)
+
 
 @click.command()
 @click.option(
@@ -62,21 +64,21 @@ from stages.graph_sage_stage import GraphSAGEStage
 @click.option(
     "--input_file",
     type=click.Path(exists=True, readable=True, dir_okay=False),
-    default="validation.csv",
+    default=os.path.join(CUR_DIR, "validation.csv"),
     required=True,
     help="Input data filepath.",
 )
 @click.option(
     "--training_file",
     type=click.Path(exists=True, readable=True, dir_okay=False),
-    default="training.csv",
+    default=os.path.join(CUR_DIR, "training.csv"),
     required=True,
     help="Training data filepath.",
 )
 @click.option(
     "--model_dir",
     type=click.Path(exists=True, readable=True, file_okay=False, dir_okay=True),
-    default="model",
+    default=os.path.join(CUR_DIR, "model"),
     required=True,
     help="Path to trained Hinsage & XGB models.",
 )

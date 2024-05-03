@@ -10,6 +10,7 @@ channels:
 - pytorch
 dependencies:
 - appdirs
+- beautifulsoup4
 - click >=8
 - datacompy=0.10
 - dill=0.3.7
