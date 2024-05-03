@@ -99,13 +99,13 @@ Alternately, the Morpheus command line could have been used to accomplish the sa
 From the root of the Morpheus repo, run:
 ```bash
 morpheus --log_level INFO --plugin "examples/abp_pcap_detection/abp_pcap_preprocessing.py" \
-    run --use_cpp False --pipeline_batch_size 100000 --model_max_batch_size 100000 \
+    run --pipeline_batch_size 100000 --model_max_batch_size 100000 \
     pipeline-fil --model_fea_length 13 --label=probs \
-    from-file --filename examples/data/abp_pcap_dump.jsonlines --filter_null False \
+    from-file --filename examples/data/abp_pcap_dump.jsonlines \
     deserialize \
     pcap-preprocess \
     monitor --description "Preprocessing rate" \
-    inf-triton --model_name "abp-pcap-xgb" --server_url "localhost:8001" --force_convert_inputs=True \
+    inf-triton --model_name "abp-pcap-xgb" --server_url "localhost:8000" \
     monitor --description "Inference rate" --unit inf \
     add-class --label=probs \
     monitor --description "Add classification rate" --unit "add-class" \

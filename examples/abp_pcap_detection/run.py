@@ -87,7 +87,7 @@ EX_DATA_DIR = os.path.join(CUR_DIR, "../data")
     help=("Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. "
           "Iterative mode is good for interleaving source stages."),
 )
-@click.option("--server_url", required=True, help="Tritonserver url.", default="localhost:8001")
+@click.option("--server_url", required=True, help="Tritonserver url.", default="localhost:8000")
 @click.option(
     "--file_type",
     type=click.Choice(FILE_TYPE_NAMES, case_sensitive=False),
@@ -111,8 +111,6 @@ def run_pipeline(
     # Enable the default logger.
     configure_logging(log_level=logging.INFO)
 
-    CppConfig.set_should_use_cpp(False)
-
     # Its necessary to get the global config object and configure it for FIL mode.
     config = Config()
     config.mode = PipelineModes.FIL
@@ -135,7 +133,6 @@ def run_pipeline(
             filename=input_file,
             iterative=iterative,
             file_type=str_to_file_type(file_type.lower()),
-            filter_null=False,
         ))
 
     # Add a deserialize stage.
@@ -152,13 +149,7 @@ def run_pipeline(
 
     # Add a inference stage.
     # This stage sends inference requests to the Tritonserver and captures the response.
-    pipeline.add_stage(
-        TritonInferenceStage(
-            config,
-            model_name=model_name,
-            server_url=server_url,
-            force_convert_inputs=True,
-        ))
+    pipeline.add_stage(TritonInferenceStage(config, model_name=model_name, server_url=server_url))
 
     # Add a monitor stage.
     # This stage logs the metrics (inf/sec) from the above stage.
