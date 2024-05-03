@@ -132,6 +132,7 @@ def run_pipeline(
             filename=input_file,
             iterative=iterative,
             file_type=str_to_file_type(file_type.lower()),
+            filter_null=False,
         ))
 
     # Add a deserialize stage.

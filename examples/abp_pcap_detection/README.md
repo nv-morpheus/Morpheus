@@ -101,7 +101,7 @@ From the root of the Morpheus repo, run:
 morpheus --log_level INFO --plugin "examples/abp_pcap_detection/abp_pcap_preprocessing.py" \
     run --pipeline_batch_size 100000 --model_max_batch_size 100000 \
     pipeline-fil --model_fea_length 13 --label=probs \
-    from-file --filename examples/data/abp_pcap_dump.jsonlines \
+    from-file --filename examples/data/abp_pcap_dump.jsonlines --filter_null False \
     deserialize \
     pcap-preprocess \
     monitor --description "Preprocessing rate" \
