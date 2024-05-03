@@ -21,7 +21,6 @@ from abp_pcap_preprocessing import AbpPcapPreprocessingStage
 from morpheus.cli.commands import FILE_TYPE_NAMES
 from morpheus.cli.utils import str_to_file_type
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
