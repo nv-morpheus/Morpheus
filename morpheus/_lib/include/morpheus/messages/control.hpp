@@ -181,6 +181,10 @@ class PythonByteContainer : public std::vector<uint8_t>
     pybind11::object m_py_obj;
 };
 
+/**
+ * @brief Derived class of nlohmann::basic_json with customized BinaryType (PythonByteContainer) to hold Python objects
+ * as bytes.
+ */
 using json_t = nlohmann::basic_json<std::map,
                                     std::vector,
                                     std::string,
@@ -192,7 +196,6 @@ using json_t = nlohmann::basic_json<std::map,
                                     nlohmann::adl_serializer,
                                     PythonByteContainer,
                                     void>;
-
 
 /**
  * @brief Class representing a control message for coordinating data processing tasks.
@@ -211,20 +214,20 @@ class ControlMessage
 
     /**
      * @brief Set the configuration object for the control message.
-     * @param config A json object containing configuration information.
+     * @param config A json_t object containing configuration information.
      */
     void config(const json_t& config);
 
     /**
      * @brief Get the configuration object for the control message.
-     * @return A const reference to the json object containing configuration information.
+     * @return A const reference to the json_t object containing configuration information.
      */
     [[nodiscard]] const json_t& config() const;
 
     /**
      * @brief Add a task of the given type to the control message.
      * @param task_type A string indicating the type of the task.
-     * @param task A json object describing the task.
+     * @param task A json_t object describing the task.
      */
     void add_task(const std::string& task_type, const json_t& task);
 
@@ -238,7 +241,7 @@ class ControlMessage
     /**
      * @brief Remove and return a task of the given type from the control message.
      * @param task_type A string indicating the type of the task.
-     * @return A json object describing the task.
+     * @return A json_t object describing the task.
      */
     json_t remove_task(const std::string& task_type);
 
@@ -250,7 +253,7 @@ class ControlMessage
     /**
      * @brief Add a key-value pair to the metadata for the control message.
      * @param key A string key for the metadata value.
-     * @param value A json object describing the metadata value.
+     * @param value A json_t object describing the metadata value.
      */
     void set_metadata(const std::string& key, const json_t& value);
 
@@ -273,7 +276,7 @@ class ControlMessage
      * @param key A string indicating the metadata key.
      * @param fail_on_nonexist If true, throws an exception when the key does not exist.
      *                         If false, returns std::nullopt for non-existing keys.
-     * @return An optional json object describing the metadata value if it exists.
+     * @return An optional json_t object describing the metadata value if it exists.
      */
     [[nodiscard]] json_t get_metadata(const std::string& key, bool fail_on_nonexist = false) const;
 
@@ -470,7 +473,7 @@ struct ControlMessageProxy
      * @brief Sets a metadata key-value pair.
      * @param self Reference to the underlying ControlMessage object.
      * @param key The key for the metadata entry.
-     * @param value The value for the metadata entry, must be JSON serializable.
+     * @param value The value for the metadata entry.
      */
     static void set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value);
 
