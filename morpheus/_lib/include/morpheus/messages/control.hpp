@@ -21,6 +21,7 @@
 
 #include <nlohmann/json.hpp>   // for json, basic_json
 #include <pybind11/pytypes.h>  // for object, dict, list, none
+#include <pymrc/types.hpp>
 
 #include <chrono>    // for system_clock, time_point
 #include <map>       // for map
@@ -170,15 +171,15 @@ class PythonByteContainer : public std::vector<uint8_t>
 {
   public:
     PythonByteContainer() = default;
-    PythonByteContainer(pybind11::object py_obj) : m_py_obj(std::move(py_obj)) {}
+    PythonByteContainer(mrc::pymrc::PyHolder py_obj) : m_py_obj(std::move(py_obj)) {}
 
-    pybind11::object get_py_obj() const
+    mrc::pymrc::PyHolder get_py_obj() const
     {
         return m_py_obj;
     }
 
   private:
-    pybind11::object m_py_obj;
+     mrc::pymrc::PyHolder m_py_obj;
 };
 
 /**

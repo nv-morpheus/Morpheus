@@ -147,7 +147,7 @@ morpheus::json_t cast_from_pyobject_impl(const py::object& source,
 
     // else return the source as a binary object in PythonByteContainer
     {
-        return morpheus::json_t::binary(morpheus::PythonByteContainer(source));
+        return morpheus::json_t::binary(morpheus::PythonByteContainer(py::cast<mrc::pymrc::PyHolder>(source)));
     }
     // NOLINTEND(modernize-return-braced-init-list)
 }
