@@ -114,6 +114,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
                                            self.unique_name,
                                            self._filename,
                                            self._repeat_count,
+                                           self._filter_null,
                                            self._parser_kwargs)
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())
