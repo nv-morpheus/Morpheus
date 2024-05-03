@@ -35,6 +35,13 @@ namespace py = pybind11;
 using namespace py::literals;
 
 namespace {
+
+template <typename T>
+uint64_t type_to_uint64()
+{
+    return std::hash<std::string>{}(typeid(T).name());
+}
+
 py::object cast_from_json(const morpheus::json_t& source)
 {
     if (source.is_null())
@@ -82,7 +89,11 @@ py::object cast_from_json(const morpheus::json_t& source)
     }
     if (source.is_binary())
     {
-        return source.get_binary().get_py_obj();
+        if (source.get_binary().has_subtype() && source.get_binary().subtype() == type_to_uint64<py::object>())
+        {
+            return source.get_binary().get_py_obj();
+        }
+        throw std::runtime_error("Unsupported binary type");
     }
 
     return py::none();
@@ -147,7 +158,8 @@ morpheus::json_t cast_from_pyobject_impl(const py::object& source,
 
     // else return the source as a binary object in PythonByteContainer
     {
-        return morpheus::json_t::binary(morpheus::PythonByteContainer(py::cast<mrc::pymrc::PyHolder>(source)));
+        return morpheus::json_t::binary(morpheus::PythonByteContainer(py::cast<mrc::pymrc::PyHolder>(source)),
+                                        type_to_uint64<py::object>());
     }
     // NOLINTEND(modernize-return-braced-init-list)
 }
