@@ -182,7 +182,7 @@ class PythonByteContainer : public std::vector<uint8_t>
 };
 
 /**
- * @brief Derived class of nlohmann::basic_json with customized BinaryType (PythonByteContainer) to hold Python objects
+ * @brief A specialization of nlohmann::basic_json with customized BinaryType (PythonByteContainer) to hold Python objects
  * as bytes.
  */
 using json_t = nlohmann::basic_json<std::map,
