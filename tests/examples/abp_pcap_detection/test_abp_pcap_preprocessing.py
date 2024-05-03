@@ -62,6 +62,8 @@ def check_inf_message(msg: MultiInferenceFILMessage,
 
     input__0 = msg.memory.get_tensor('input__0')
     assert input__0.shape == (expected_count, expected_feature_length)
+    assert input__0.dtype == cp.float32
+    assert input__0.strides == (expected_feature_length * 4, 4)
     assert (input__0 == expected_input__0).all()
 
     seq_ids = msg.memory.get_tensor('seq_ids')
@@ -87,10 +89,12 @@ def test_abp_pcap_preprocessing(config: Config, dataset_cudf: DatasetManager,
     input_df = dataset_cudf.get_df(input_file, no_cache=True, filter_nulls=False)
 
     expected_flow_ids = input_df.src_ip + ":" + input_df.src_port + "=" + input_df.dest_ip + ":" + input_df.dest_port
-    expected_input__0 = cp.asarray(
-        np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'examples/abp_pcap_detection/abp_pcap_expected_input_0.csv'),
-                   delimiter=",",
-                   skiprows=0))
+    expected_input__0 = cp.asarray(np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir,
+                                                           'examples/abp_pcap_detection/abp_pcap_expected_input_0.csv'),
+                                              delimiter=",",
+                                              skiprows=0,
+                                              dtype=np.float32),
+                                   order='C')
 
     assert len(input_df) == 20
 
