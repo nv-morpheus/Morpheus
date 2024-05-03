@@ -170,7 +170,8 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         del df, grouped_df
 
         # Convert the dataframe to cupy the same way cuml does
-        data = cp.asarray(merged_df[fea_cols].to_cupy())
+        # Explicity casting to float32 to match the model's input
+        data = merged_df[fea_cols].to_cupy(dtype=cp.float32)
         count = data.shape[0]
 
         for col in req_cols:
