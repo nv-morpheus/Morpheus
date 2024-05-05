@@ -73,14 +73,13 @@
       "extensions": [
         "eamodio.gitlens",
         "llvm-vs-code-extensions.vscode-clangd",
+        "ms-python.flake8",
         "ms-python.python",
         "ms-vscode.cmake-tools",
         "ms-vscode.cpptools",
         "nvidia.nsight-vscode-edition",
         "twxs.cmake",
-        "xaver.clang-format",
-        "ms-python.flake8",
-        "nvidia.nsight-vscode-edition"
+        "xaver.clang-format"
       ],
       "settings": {
         "cmake.cmakePath": "/tmp/.current-conda-env/bin/cmake",

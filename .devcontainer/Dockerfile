@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,8 @@
 ARG BASE
 ARG PYTHON_PACKAGE_MANAGER
 
+FROM node:22 as node
+
 FROM ${BASE} as base
 
 # ===== install common packages ==================================================================
@@ -25,10 +27,6 @@ RUN <<EOF
 set -x
 
 apt-get update;
-
-# apt-get install -y --no-install-recommends  \
-#     libboost-{regex,system,filesystem}-dev  \
-#     ;
 
 rm -rf /tmp/*;
 rm -rf /var/tmp/*;
