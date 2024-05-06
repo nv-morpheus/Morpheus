@@ -22,6 +22,8 @@
 #include <cudf/types.hpp>
 #include <gtest/gtest.h>
 
+#include <cstdint>  // for int32_t
+#include <set>      // for set
 #include <stdexcept>
 
 using namespace morpheus;
@@ -283,4 +285,17 @@ TEST_F(TestDType, FromCudfNotSupported)
     EXPECT_THROW(DType::from_cudf(cudf::type_id::DECIMAL128), std::invalid_argument);
     EXPECT_THROW(DType::from_cudf(cudf::type_id::STRUCT), std::invalid_argument);
     EXPECT_THROW(DType::from_cudf(cudf::type_id::NUM_TYPE_IDS), std::invalid_argument);
+}
+
+TEST_F(TestDType, IsFullySupported)
+{
+    std::set<TypeId> unsupported_types = {TypeId::EMPTY, TypeId::STRING, TypeId::NUM_TYPE_IDS};
+    for (auto type_id = static_cast<int32_t>(TypeId::EMPTY); type_id <= static_cast<int32_t>(TypeId::NUM_TYPE_IDS);
+         ++type_id)
+    {
+        auto enum_type_id = static_cast<TypeId>(type_id);
+        auto dtype        = DType(enum_type_id);
+
+        ASSERT_EQ(dtype.is_fully_supported(), !unsupported_types.contains(enum_type_id));
+    }
 }

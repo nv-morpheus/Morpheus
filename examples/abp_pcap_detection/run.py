@@ -33,6 +33,9 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
 
+CUR_DIR = os.path.dirname(__file__)
+EX_DATA_DIR = os.path.join(CUR_DIR, "../data")
+
 
 @click.command()
 @click.option(
@@ -57,7 +60,7 @@ from morpheus.utils.logger import configure_logging
 @click.option(
     "--input_file",
     type=click.Path(exists=True, readable=True),
-    default="pcap.jsonlines",
+    default=os.path.join(EX_DATA_DIR, "abp_pcap_dump.jsonlines"),
     required=True,
     help="Input filepath.",
 )
@@ -84,7 +87,7 @@ from morpheus.utils.logger import configure_logging
     help=("Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. "
           "Iterative mode is good for interleaving source stages."),
 )
-@click.option("--server_url", required=True, help="Tritonserver url.")
+@click.option("--server_url", required=True, help="Tritonserver url.", default="localhost:8001")
 @click.option(
     "--file_type",
     type=click.Choice(FILE_TYPE_NAMES, case_sensitive=False),
