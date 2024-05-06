@@ -59,8 +59,9 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
     filter_null : bool, default = True
         Whether to filter rows with null `filter_null_columns` columns. Null values in source data  can cause issues
         down the line with processing. Setting this to True is recommended.
-    filter_null_columns : list[str]|str, default = 'data'
-        Column or columns to filter null values from. Ignored when `filter_null` is False.
+    filter_null_columns : list[str], default = None
+        Column or columns to filter null values from. Ignored when `filter_null` is False. If None, and `filter_null`
+        is `True`, this will default to `["data"]`
     parser_kwargs : dict, default = {}
         Extra options to pass to the file parser.
     """
@@ -72,7 +73,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
                  file_type: FileTypes = FileTypes.Auto,
                  repeat: int = 1,
                  filter_null: bool = True,
-                 filter_null_columns: list[str] | str = "data",
+                 filter_null_columns: list[str] = None,
                  parser_kwargs: dict = None):
 
         super().__init__(c)
@@ -83,8 +84,8 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         self._file_type = file_type
         self._filter_null = filter_null
 
-        if isinstance(filter_null_columns, str):
-            filter_null_columns = [filter_null_columns]
+        if filter_null_columns is None:
+            filter_null_columns = ["data"]
 
         self._filter_null_columns = filter_null_columns
 
