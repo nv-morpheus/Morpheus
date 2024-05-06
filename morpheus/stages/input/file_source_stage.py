@@ -84,7 +84,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         self._file_type = file_type
         self._filter_null = filter_null
 
-        if filter_null_columns is None:
+        if filter_null_columns is None or len(filter_null_columns) == 0:
             filter_null_columns = ["data"]
 
         self._filter_null_columns = filter_null_columns
