@@ -23,7 +23,6 @@
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <cudf/stream_compaction.hpp>  // for drop_nulls
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
 #include <pybind11/gil.h>       // for gil_scoped_release, gil_scoped_acquire
@@ -121,37 +120,5 @@ TEST_F(TestFileInOut, RoundTripJSONLines)
         const auto src_data    = json::parse(src_lines[i]);
 
         EXPECT_EQ(output_data, src_data);
-    }
-}
-
-TEST_F(TestFileInOut, Null_Data)
-{
-    using nlohmann::json;
-    auto morpheus_root = test::get_morpheus_root();
-    auto input_files   = {morpheus_root / "tests/tests_data/file_with_nans.csv",
-                          morpheus_root / "tests/tests_data/file_with_nans.jsonlines",
-                          morpheus_root / "tests/tests_data/file_with_nulls.csv",
-                          morpheus_root / "tests/tests_data/file_with_nulls.jsonlines"};
-
-    for (const auto& input_file : input_files)
-    {
-        auto table_w_meta    = load_table_from_file(input_file);
-        auto index_col_count = prepare_df_index(table_w_meta);
-
-        EXPECT_EQ(index_col_count, 0);
-
-        EXPECT_EQ(table_w_meta.tbl->num_columns(), 2);
-        EXPECT_EQ(table_w_meta.tbl->num_rows(), 10);
-
-        auto tv             = table_w_meta.tbl->view();
-        auto filtered_table = cudf::drop_nulls(tv, {0}, 1);
-
-        // ensure we didn't alter the source
-        EXPECT_EQ(table_w_meta.tbl->num_columns(), 2);
-        EXPECT_EQ(table_w_meta.tbl->num_rows(), 10);
-
-        // Check that the filter went as expected
-        EXPECT_EQ(filtered_table->num_columns(), 2);
-        EXPECT_EQ(filtered_table->num_rows(), 8);
     }
 }

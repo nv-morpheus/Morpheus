@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include "morpheus/export.h"  // for MORPHEUS_EXPORT
+
 #include <cudf/io/types.hpp>
 #include <cudf/table/table.hpp>  // IWYU pragma: keep
 
@@ -36,7 +38,7 @@ namespace morpheus {
 /**
  * @brief Structure that encapsulates cuDF table utilities.
  */
-struct CuDFTableUtil
+struct MORPHEUS_EXPORT CuDFTableUtil
 {
     /**
      * @brief Load a table from a file.
@@ -62,8 +64,7 @@ struct CuDFTableUtil
      * @param table The table to filter
      * @param filter_columns The name of the columns to filter on
      */
-    static void filter_null_data(cudf::io::table_with_metadata& table,
-                                 const std::vector<std::string>& filter_columns = {"data"});
+    static void filter_null_data(cudf::io::table_with_metadata& table, const std::vector<std::string>& filter_columns);
 };
 /** @} */  // end of group
 }  // namespace morpheus
