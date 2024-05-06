@@ -24,6 +24,7 @@
 #include "morpheus/objects/file_types.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/utilities/table_util.hpp"  // for filter_null_data
 
 #include <cudf/types.hpp>
 #include <glog/logging.h>
@@ -55,7 +56,13 @@ FileSourceStage::FileSourceStage(std::string filename, int repeat, bool filter_n
 FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
-        auto data_table     = load_table_from_file(m_filename, FileTypes::Auto, m_json_lines);
+        auto data_table = load_table_from_file(m_filename, FileTypes::Auto, m_json_lines);
+        if (m_filter_null)
+        {
+            // TODO: Make columns configurable
+            CuDFTableUtil::filter_null_data(data_table, {"data"});
+        }
+
         int index_col_count = prepare_df_index(data_table);
 
         // Next, create the message metadata. This gets reused for repeats
