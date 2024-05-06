@@ -31,6 +31,7 @@
 #include <optional>
 #include <string>
 #include <thread>
+#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/

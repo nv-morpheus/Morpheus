@@ -20,11 +20,13 @@
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/utilities/table_util.hpp"  // for filter_null_data
 
-#include <cudf/stream_compaction.hpp>  // for drop_nulls
+#include <cudf/io/types.hpp>     // for table_with_metadata
+#include <cudf/table/table.hpp>  // for table
 #include <gtest/gtest.h>
 
 #include <filesystem>
 #include <string>
+#include <utility>  // for pair
 #include <vector>
 // IWYU pragma: no_include <initializer_list>
 

@@ -20,11 +20,14 @@
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
 #include <cudf/stream_compaction.hpp>  // for drop_nulls
+#include <cudf/types.hpp>              // for size_type
 #include <glog/logging.h>
 #include <pybind11/pybind11.h>
 
 #include <algorithm>  // for find, transform
 #include <filesystem>
+#include <iterator>  // for back_insert_iterator, back_inserter
+#include <memory>    // for unique_ptr
 #include <ostream>    // needed for logging
 #include <stdexcept>  // for runtime_error
 
