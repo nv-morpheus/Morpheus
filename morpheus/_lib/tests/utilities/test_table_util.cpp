@@ -32,7 +32,24 @@ using namespace morpheus;
 
 TEST_CLASS(TableUtil);
 
-TEST_F(TestTableUtil, Null_Data)
+TEST_F(TestTableUtil, GetColumnNames)
+{
+    auto morpheus_root = test::get_morpheus_root();
+    auto input_files   = {morpheus_root / "tests/tests_data/file_with_nulls.csv",
+                          morpheus_root / "tests/tests_data/file_with_nulls.jsonlines"};
+
+    for (const auto& input_file : input_files)
+    {
+        auto table_w_meta = load_table_from_file(input_file);
+        auto column_names = CuDFTableUtil::get_column_names(table_w_meta);
+
+        EXPECT_EQ(column_names.size(), 2);
+        EXPECT_EQ(column_names[0], "data");
+        EXPECT_EQ(column_names[1], "other");
+    }
+}
+
+TEST_F(TestTableUtil, FilterNullData)
 {
     auto morpheus_root = test::get_morpheus_root();
     auto input_files   = {morpheus_root / "tests/tests_data/file_with_nans.csv",
@@ -42,10 +59,7 @@ TEST_F(TestTableUtil, Null_Data)
 
     for (const auto& input_file : input_files)
     {
-        auto table_w_meta    = load_table_from_file(input_file);
-        auto index_col_count = prepare_df_index(table_w_meta);
-
-        EXPECT_EQ(index_col_count, 0);
+        auto table_w_meta = load_table_from_file(input_file);
 
         EXPECT_EQ(table_w_meta.tbl->num_columns(), 2);
         EXPECT_EQ(table_w_meta.tbl->num_rows(), 10);
