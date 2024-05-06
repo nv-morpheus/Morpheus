@@ -169,11 +169,9 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
 * Not Applicable
 
-### Are there explicit model and dataset restrictions?
-* No
+### Describe access restrictions
 
-### Are there access restrictions to systems, model, and data?
-* No
+* The Principle of least privilege (PoLP) is applied limiting access for dataset generation and model development. Restrictions enforce dataset access during training, and dataset license constraints adhered to.
 
 ### Is there a digital signature?
 * No
