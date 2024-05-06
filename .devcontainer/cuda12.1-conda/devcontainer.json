@@ -44,11 +44,9 @@
     "ghcr.io/devcontainers/features/dotnet"
   ],
   "initializeCommand": [
-    "${localWorkspaceFolder}/.devcontainer/initialize-command.sh",
-    "&&",
     "/bin/bash",
     "-c",
-    "mkdir -m 0755 -p ${localWorkspaceFolder}/../.{aws,cache,config,conda/pkgs,conda/${localWorkspaceFolderBasename}-cuda12.1-envs}"
+    "${localWorkspaceFolder}/.devcontainer/initialize-command.sh && mkdir -m 0755 -p ${localWorkspaceFolder}/../.{aws,cache,config,conda/pkgs,conda/${localWorkspaceFolderBasename}-cuda12.1-envs}"
   ],
   "postAttachCommand": [
     "/bin/bash",
