@@ -20,6 +20,7 @@
 #include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
+#include "morpheus/utilities/table_util.hpp"  // for get_column_names
 
 #include <cudf/column/column.hpp>
 #include <cudf/io/csv.hpp>
@@ -50,7 +51,9 @@ namespace morpheus {
 
 std::vector<std::string> get_column_names_from_table(const cudf::io::table_with_metadata& table)
 {
-    return foreach_map(table.metadata.schema_info, [](auto schema) { return schema.name; });
+    return foreach_map(table.metadata.schema_info, [](auto schema) {
+        return schema.name;
+    });
 }
 
 cudf::io::table_with_metadata load_table_from_file(const std::string& filename,
@@ -69,7 +72,7 @@ cudf::io::table_with_metadata load_table_from_file(const std::string& filename,
     case FileTypes::JSON: {
         auto options =
             cudf::io::json_reader_options::builder(cudf::io::source_info{filename}).lines(json_lines.value_or(true));
-        table        = cudf::io::read_json(options.build());
+        table = cudf::io::read_json(options.build());
         break;
     }
     case FileTypes::CSV: {
@@ -106,12 +109,9 @@ pybind11::object read_file_to_df(const std::string& filename, FileTypes file_typ
 
 int get_index_col_count(const cudf::io::table_with_metadata& data_table)
 {
-    int index_col_count   = 0;
-    auto const& schema    = data_table.metadata.schema_info;
+    int index_col_count = 0;
 
-    std::vector<std::string> names;
-    names.reserve(schema.size());
-    std::transform(schema.cbegin(), schema.cend(), std::back_inserter(names), [](auto const& c) { return c.name; });
+    std::vector<std::string> names = CuDFTableUtil::get_column_names(data_table);
 
     // Check if we have a first column with INT64 data type
     if (names.size() >= 1 && data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)

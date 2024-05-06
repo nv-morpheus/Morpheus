@@ -19,17 +19,21 @@
 
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
+#include <cudf/stream_compaction.hpp>  // for drop_nulls
 #include <glog/logging.h>
 #include <pybind11/pybind11.h>
 
+#include <algorithm>  // for find, transform
 #include <filesystem>
 #include <ostream>    // needed for logging
 #include <stdexcept>  // for runtime_error
 
+namespace {
 namespace fs = std::filesystem;
 namespace py = pybind11;
-
-cudf::io::table_with_metadata morpheus::CuDFTableUtil::load_table(const std::string& filename)
+}  // namespace
+namespace morpheus {
+cudf::io::table_with_metadata CuDFTableUtil::load_table(const std::string& filename)
 {
     auto file_path = fs::path(filename);
 
@@ -52,3 +56,37 @@ cudf::io::table_with_metadata morpheus::CuDFTableUtil::load_table(const std::str
         throw std::runtime_error("Unknown extension");
     }
 }
+
+std::vector<std::string> CuDFTableUtil::get_column_names(const cudf::io::table_with_metadata& table)
+{
+    auto const& schema = table.metadata.schema_info;
+
+    std::vector<std::string> names;
+    names.reserve(schema.size());
+    std::transform(schema.cbegin(), schema.cend(), std::back_inserter(names), [](auto const& c) {
+        return c.name;
+    });
+
+    return names;
+}
+
+void CuDFTableUtil::filter_null_data(cudf::io::table_with_metadata& table,
+                                     const std::vector<std::string>& filter_columns)
+{
+    std::vector<cudf::size_type> filter_keys;
+    auto column_names = get_column_names(table);
+    for (const auto& column_name : filter_columns)
+    {
+        auto found_col = std::find(column_names.cbegin(), column_names.cend(), column_name);
+        if (found_col != column_names.cend())
+        {
+            filter_keys.push_back((found_col - column_names.cbegin()));
+        }
+    }
+
+    auto tv             = table.tbl->view();
+    auto filtered_table = cudf::drop_nulls(tv, filter_keys, filter_keys.size());
+
+    table.tbl.swap(filtered_table);
+}
+}  // namespace morpheus
