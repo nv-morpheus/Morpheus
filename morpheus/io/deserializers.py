@@ -29,40 +29,11 @@ from morpheus.io.utils import filter_null_data
 from morpheus.utils.type_aliases import DataFrameType
 
 
-def read_file_to_df(file_name: typing.Union[str, io.IOBase],
-                    file_type: FileTypes = FileTypes.Auto,
-                    parser_kwargs: dict = None,
-                    filter_nulls: bool = True,
-                    df_type: typing.Literal["cudf", "pandas"] = "pandas") -> DataFrameType:
-    """
-    Reads a file into a dataframe and performs any of the necessary cleanup.
-
-    Parameters
-    ----------
-    file_name : str
-        File to read.
-    file_type : `morpheus.common.FileTypes`
-        Type of file. Leave as Auto to determine from the extension.
-    parser_kwargs : dict, optional
-        Any argument to pass onto the parse, by default {}. Ignored when C++ execution is enabled and `df_type="cudf"`
-    filter_nulls : bool, optional
-        Whether to filter null rows after loading, by default True.
-    df_type : typing.Literal[, optional
-        What type of parser to use. Options are 'cudf' and 'pandas', by default "pandas".
-
-    Returns
-    -------
-    DataFrameType
-        A parsed DataFrame.
-    """
-
-    # The C++ reader only supports cudf dataframes
-    if (CppConfig.get_should_use_cpp() and df_type == "cudf"):
-        df = read_file_to_df_cpp(file_name, file_type)
-        if (filter_nulls):
-            df = filter_null_data(df)
-        return df
-
+def _read_file_to_df_py(*,
+                        file_name: typing.Union[str, io.IOBase],
+                        file_type: FileTypes,
+                        parser_kwargs: dict,
+                        df_type: typing.Literal["cudf", "pandas"]) -> DataFrameType:
     if (parser_kwargs is None):
         parser_kwargs = {}
 
@@ -111,7 +82,50 @@ def read_file_to_df(file_name: typing.Union[str, io.IOBase],
 
     assert df is not None
 
+    return df
+
+
+def read_file_to_df(file_name: typing.Union[str, io.IOBase],
+                    file_type: FileTypes = FileTypes.Auto,
+                    parser_kwargs: dict = None,
+                    filter_nulls: bool = True,
+                    filter_null_columns: list[str] | str = 'data',
+                    df_type: typing.Literal["cudf", "pandas"] = "pandas") -> DataFrameType:
+    """
+    Reads a file into a dataframe and performs any of the necessary cleanup.
+
+    Parameters
+    ----------
+    file_name : str
+        File to read.
+    file_type : `morpheus.common.FileTypes`
+        Type of file. Leave as Auto to determine from the extension.
+    parser_kwargs : dict, optional
+        Any argument to pass onto the parse, by default {}. Ignored when C++ execution is enabled and `df_type="cudf"`
+    filter_nulls : bool, optional
+        Whether to filter null rows after loading, by default True.
+    filter_null_columns : list[str]|str, default = 'data'
+        Column or columns to filter null values from. Ignored when `filter_null` is False.
+    df_type : typing.Literal[, optional
+        What type of parser to use. Options are 'cudf' and 'pandas', by default "pandas".
+
+    Returns
+    -------
+    DataFrameType
+        A parsed DataFrame.
+    """
+
+    # The C++ reader only supports cudf dataframes
+    if (CppConfig.get_should_use_cpp() and df_type == "cudf"):
+        df = read_file_to_df_cpp(file_name, file_type)
+    else:
+        df = _read_file_to_df_py(file_name=file_name, file_type=file_type, parser_kwargs=parser_kwargs, df_type=df_type)
+
     if (filter_nulls):
-        df = filter_null_data(df)
+        if isinstance(filter_null_columns, str):
+            filter_null_columns = [filter_null_columns]
+
+        for col in filter_null_columns:
+            df = filter_null_data(df, column_name=col)
 
     return df

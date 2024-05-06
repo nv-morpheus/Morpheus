@@ -52,6 +52,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace morpheus {
 namespace py = pybind11;
@@ -138,25 +139,33 @@ PYBIND11_MODULE(stages, _module)
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<FileSourceStage>>>(
         _module, "FileSourceStage", py::multiple_inheritance())
-        .def(py::init(py::overload_cast<mrc::segment::Builder&, const std::string&, std::string, int, bool, py::dict>(
-                 &FileSourceStageInterfaceProxy::init)),
-             py::arg("builder"),
-             py::arg("name"),
-             py::arg("filename"),
-             py::arg("repeat"),
-             py::arg("filter_null"),
-             py::arg("parser_kwargs"))
         .def(py::init(py::overload_cast<mrc::segment::Builder&,
                                         const std::string&,
-                                        std::filesystem::path,
+                                        std::string,
                                         int,
                                         bool,
+                                        std::vector<std::string>,
                                         py::dict>(&FileSourceStageInterfaceProxy::init)),
              py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
              py::arg("repeat"),
              py::arg("filter_null"),
+             py::arg("filter_null_columns"),
+             py::arg("parser_kwargs"))
+        .def(py::init(py::overload_cast<mrc::segment::Builder&,
+                                        const std::string&,
+                                        std::filesystem::path,
+                                        int,
+                                        bool,
+                                        std::vector<std::string>,
+                                        py::dict>(&FileSourceStageInterfaceProxy::init)),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("filename"),
+             py::arg("repeat"),
+             py::arg("filter_null"),
+             py::arg("filter_null_columns"),
              py::arg("parser_kwargs"));
 
     py::class_<mrc::segment::Object<FilterDetectionsStage>,

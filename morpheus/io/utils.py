@@ -26,7 +26,7 @@ from morpheus.utils.type_aliases import SeriesType
 logger = logging.getLogger(__name__)
 
 
-def filter_null_data(x: DataFrameType):
+def filter_null_data(x: DataFrameType, column_name: str = "data") -> DataFrameType:
     """
     Filters out null row in a dataframe's 'data' column if it exists.
 
@@ -34,12 +34,14 @@ def filter_null_data(x: DataFrameType):
     ----------
     x : DataFrameType
         The dataframe to fix.
+    column_name : str, default 'data'
+        The column name to filter on.
     """
 
     if ("data" not in x):
         return x
 
-    return x[~x['data'].isna()]
+    return x[~x[column_name].isna()]
 
 
 def cudf_string_cols_exceed_max_bytes(df: cudf.DataFrame, column_max_bytes: dict[str, int]) -> bool:
