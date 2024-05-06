@@ -39,8 +39,8 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
                              os.path.join(TEST_DIRS.tests_data_dir, 'examples/abp_pcap_detection/abp_pcap.jsonlines')
                          ],
                          ids=["csv", "parquet", "jsonlines"])
-@pytest.mark.parametrize("filter_null", [False, True])
-@pytest.mark.parametrize("use_pathlib", [False, True])
+@pytest.mark.parametrize("filter_null", [False, True], ids=["no_filter", "filter_null"])
+@pytest.mark.parametrize("use_pathlib", [False, True], ids=["no_pathlib", "pathlib"])
 @pytest.mark.parametrize("repeat", [1, 2, 5], ids=["repeat1", "repeat2", "repeat5"])
 def test_file_source_stage_pipe(config: Config, input_file: str, filter_null: bool, use_pathlib: bool, repeat: int):
     parser_kwargs = {}
@@ -53,6 +53,7 @@ def test_file_source_stage_pipe(config: Config, input_file: str, filter_null: bo
                                   df_type="pandas",
                                   parser_kwargs=parser_kwargs)
     expected_df = pd.concat([expected_df for _ in range(repeat)])
+
     expected_df.reset_index(inplace=True)
     expected_df.drop('index', axis=1, inplace=True)
 
@@ -61,7 +62,8 @@ def test_file_source_stage_pipe(config: Config, input_file: str, filter_null: bo
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, repeat=repeat, filter_null=filter_null))
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df, exclude=["index"]))
+    comp_stage = pipe.add_stage(
+        CompareDataFrameStage(config, compare_df=expected_df, exclude=["index"], reset_index=True))
     pipe.run()
 
     assert_results(comp_stage.get_results())
