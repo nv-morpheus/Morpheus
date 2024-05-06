@@ -56,18 +56,22 @@ TEST_F(TestTableUtil, FilterNullData)
                           morpheus_root / "tests/tests_data/file_with_nans.jsonlines",
                           morpheus_root / "tests/tests_data/file_with_nulls.csv",
                           morpheus_root / "tests/tests_data/file_with_nulls.jsonlines"};
+    std::vector<std::pair<std::vector<std::string>, std::size_t>> expected_row_counts{
+        {{"data"}, 8}, {{"data"}, 8}, {{"other"}, 7}, {{"other"}, 7}, {{"data", "other"}, 5}};
 
     for (const auto& input_file : input_files)
     {
-        auto table_w_meta = load_table_from_file(input_file);
+        for (const auto& [filter_columns, expected_row_count] : expected_row_counts)
+        {
+            auto table_w_meta = load_table_from_file(input_file);
 
-        EXPECT_EQ(table_w_meta.tbl->num_columns(), 2);
-        EXPECT_EQ(table_w_meta.tbl->num_rows(), 10);
+            EXPECT_EQ(table_w_meta.tbl->num_columns(), 2);
+            EXPECT_EQ(table_w_meta.tbl->num_rows(), 10);
 
-        std::vector<std::string> filter_columns{"data"};
-        CuDFTableUtil::filter_null_data(table_w_meta, filter_columns);
+            CuDFTableUtil::filter_null_data(table_w_meta, filter_columns);
 
-        EXPECT_EQ(table_w_meta.tbl->num_columns(), 2);
-        EXPECT_EQ(table_w_meta.tbl->num_rows(), 8);
+            EXPECT_EQ(table_w_meta.tbl->num_columns(), 2);
+            EXPECT_EQ(table_w_meta.tbl->num_rows(), expected_row_count);
+        }
     }
 }
