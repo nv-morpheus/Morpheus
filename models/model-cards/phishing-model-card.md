@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,7 @@ limitations under the License.
 # Model Overview
 
 ## Description:
-* Phishing detection is a binary classifier differentiating between phishing/spam and benign emails and SMS messages. <br>
+* Phishing detection is a binary classifier differentiating between phishing/spam and benign emails and SMS messages.  This model is for demonstration purposes and not for production usage. <br>
 
 ## References(s):
 * https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection <br>
@@ -100,7 +100,7 @@ limitations under the License.
 
 **Link:** 
 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/phishing-email-validation-data.jsonlines  <br>
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/validation-data/phishing-email-validation-data.jsonlines  <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 
@@ -114,23 +114,14 @@ limitations under the License.
 
 **Test Hardware:** <br>
 
-* Other  <br>
+* DGX (V100) <br>
+
+## Ethical Considerations:
+NVIDIA believes Trustworthy AI is a shared responsibility and we have established policies and practices to enable development for a wide array of AI applications.  When downloaded or used in accordance with our terms of service, developers should work with their supporting model team to ensure this model meets requirements for the relevant industry and use case and addresses unforeseen product misuse.  For more detailed information on ethical considerations for this model, please see the Model Card++ Explainability, Bias, Safety & Security, and Privacy Subcards below.  Please report security vulnerabilities or NVIDIA AI Concerns [here](https://www.nvidia.com/en-us/support/submit-security-vulnerability/).
 
 # Subcards
 
 ## Model Card ++ Bias Subcard
-
-### What is the gender balance of the model validation data?  
-
-* Not Applicable
-
-### What is the racial/ethnicity balance of the model validation data?
-
-* Not Applicable
-
-### What is the age balance of the model validation data?
-
-* Not Applicable
 
 ### What is the language balance of the model validation data?
 
@@ -139,26 +130,6 @@ limitations under the License.
 ### What is the geographic origin language balance of the model validation data?
 
 * UK
-
-### What is the educational background balance of the model validation data?
-
-* Not Applicable
-
-### What is the accent balance of the model validation data?
-
-* Not Applicable
-
-### What is the face/key point balance of the model validation data? 
-
-* Not Applicable
-
-### What is the skin/tone balance of the model validation data?
-
-* Not Applicable
-
-### What is the religion balance of the model validation data?
-
-* Not Applicable
 
 ### Individuals from the following adversely impacted (protected classes) groups participate in model design and testing.
 
@@ -193,6 +164,10 @@ limitations under the License.
 ### List the technical limitations of the model. 
 * For different email/SMS types and content, different models need to be trained.
 
+### Has this been verified to have met prescribed NVIDIA standards?
+
+* Yes
+
 ### What performance metrics were used to affirm the model's performance?
 * F1
 
@@ -210,7 +185,7 @@ limitations under the License.
 ### Is the model used in an application with physical safety impact?
 * No
 
-### Describe physical safety impact (if present).
+### Describe life-critical impact (if present).
 * None
 
 ### Was model and dataset assessed for vulnerability for potential form of attack?
@@ -222,9 +197,6 @@ limitations under the License.
 
 ### Name use case restrictions for the model.
 * This pretrained model's use case is restricted to testing the Morpheus pipeline and may not be suitable for other applications.
-
-### Has this been verified to have met prescribed quality standards?
-* No
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
 * N/A
@@ -246,12 +218,12 @@ limitations under the License.
 
 
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
-* Neither
-
-### Was consent obtained for any PII used?
-* N/A
+* None
 
 ### Protected classes used to create this model? (The following were used in model the model's training:)
+* N/A
+
+### Was consent obtained for any PII used?
 * N/A
 
 ### How often is dataset reviewed?

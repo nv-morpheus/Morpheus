@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
@@ -51,11 +52,18 @@ void preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
     table.insert_missing_columns(columns);
 }
 
+void preallocate(std::shared_ptr<morpheus::ControlMessage> msg,
+                 const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
+{
+    preallocate(msg->payload(), columns);
+}
+
 void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
                  const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
 {
     preallocate(msg->meta, columns);
 }
+
 }  // namespace
 
 /****** Component public implementations *******************/

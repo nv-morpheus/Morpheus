@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>  // for path
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -83,6 +84,15 @@ static inline std::ostream& operator<<(std::ostream& os, const FileTypes& f)
  * @return FileTypes
  */
 FileTypes determine_file_type(const std::string& filename);
+
+/**
+ * @brief Determines the file type from a filename based on extension. For example, my_file.json would return
+ * `FileTypes::JSON`.
+ *
+ * @param filename path to a file. Does not need to exist
+ * @return FileTypes
+ */
+FileTypes determine_file_type(const std::filesystem::path& filename);
 
 #pragma GCC visibility pop
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 import logging
 import os
 import typing
+import warnings
 
-import nvtabular as nvt
 import pandas as pd
 
 import cudf
@@ -27,17 +27,22 @@ from morpheus.utils.nvt import patches
 from morpheus.utils.nvt.extensions import morpheus_ext
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 
-if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
-    # Apply patches to NVT
-    # TODO(Devin): Can be removed, once numpy mappings are updated in Merlin
-    # ========================================================================
-    patches.patch_numpy_dtype_registry()
-    # ========================================================================
+with warnings.catch_warnings():
+    # Ignore warning regarding tensorflow not being installed
+    warnings.filterwarnings("ignore", message=".*No module named 'tensorflow'", category=UserWarning)
+    import nvtabular as nvt
 
-    # Add morpheus conversion mappings
-    # ========================================================================
-    morpheus_ext.register_morpheus_extensions()
-    # =========================================================================
+    if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
+        # Apply patches to NVT
+        # TODO(Devin): Can be removed, once numpy mappings are updated in Merlin
+        # ========================================================================
+        patches.patch_numpy_dtype_registry()
+        # ========================================================================
+
+        # Add morpheus conversion mappings
+        # ========================================================================
+        morpheus_ext.register_morpheus_extensions()
+        # =========================================================================
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +99,7 @@ def process_dataframe(
     if (isinstance(df_in, pd.DataFrame)):
         convert_to_pd = True
 
-    # If we're given an nvt_schema, we just use it.
+    # If we're given a nvt_schema, we just use it.
     nvt_workflow = input_schema
     if (isinstance(input_schema, DataFrameInputSchema)):
         if (input_schema.nvt_workflow is None):

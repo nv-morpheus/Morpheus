@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,12 +17,11 @@ import pytest
 
 from _utils.dataset_manager import DatasetManager
 from _utils.llm import execute_task_handler
-# pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import MessageMeta as MessageMetaCpp
-# pylint: enable=morpheus-incorrect-lib-from-import
 from morpheus.llm import LLMTaskHandler
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
+from morpheus.utils.type_aliases import DataFrameType
 
 
 def test_constructor():
@@ -39,12 +38,14 @@ def test_get_input_names(output_columns: list[str] | None, expected_input_names:
 
 def test_try_handle(dataset_cudf: DatasetManager):
     reptiles = ['lizards', 'snakes', 'turtles', 'frogs', 'toads']
-    df = dataset_cudf["filter_probs.csv"][0:5]  # Take the first 5 rows since there are only have 5 reptiles
+
+    # Take the first 5 rows since there are only have 5 reptiles
+    df: DataFrameType = dataset_cudf["filter_probs.csv"][0:5]
     expected_df = df.copy(deep=True)
     expected_df['reptiles'] = reptiles.copy()
 
     message = ControlMessage()
-    message.payload(MessageMetaCpp(df))
+    message.payload(MessageMeta(df))
 
     task_handler = SimpleTaskHandler(['reptiles'])
 

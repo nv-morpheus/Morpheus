@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ class LangChainAgentNode(LLMNodeBase):
             # Run multiple again
             results_async = [self._run_single(**x) for x in input_list]
 
-            results = await asyncio.gather(*results_async)
+            results = await asyncio.gather(*results_async, return_exceptions=True)
 
             # # Transform from list[dict[str, Any]] to dict[str, list[Any]]
             # results = {k: [x[k] for x in results] for k in results[0]}
@@ -66,9 +66,13 @@ class LangChainAgentNode(LLMNodeBase):
             return results
 
         # We are not dealing with a list, so run single
-        return await self._agent_executor.arun(**kwargs)
+        try:
+            return await self._agent_executor.arun(**kwargs)
+        except Exception as e:
+            logger.exception("Error running agent: %s", e)
+            return e
 
-    async def execute(self, context: LLMContext) -> LLMContext:
+    async def execute(self, context: LLMContext) -> LLMContext:  # pylint: disable=invalid-overridden-method
 
         input_dict = context.get_inputs()
 

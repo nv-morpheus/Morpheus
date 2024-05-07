@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,12 @@
 apiVersion: 1
 
 datasources:
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+    maxLines: 1000
   - name: csv-datasource
     uid: 1257c93b-f998-438c-a784-7e90fb94fb36
     type: marcusolsson-csv-datasource

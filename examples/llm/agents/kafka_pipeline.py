@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 def _build_agent_executor(model_name: str) -> AgentExecutor:
 
-    llm = OpenAIChat(model=model_name, temperature=0)
+    llm = OpenAIChat(model_name=model_name, model_kwargs={"temperature": 0.0}, client=None)
 
     tools = load_tools(["serpapi", "llm-math"], llm=llm)
 

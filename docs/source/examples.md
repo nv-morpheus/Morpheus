@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,7 @@ limitations under the License.
 * [Example Ransomware Detection Morpheus Pipeline for AppShield Data](../../examples/ransomware_detection/README.md)
 * [Root Cause Analysis Acceleration & Predictive Maintenance Example](../../examples/root_cause_analysis/README.md)
 * [SID Visualization Example](../../examples/sid_visualization/README.md)
-* [Large Language Models (LLMs)](../../examples/llm/README.md)
+* Large Language Models (LLMs)
   * [Agents](../../examples/llm/agents/README.md)
   * [Completion](../../examples/llm/completion/README.md)
   * [VDB Upload](../../examples/llm/vdb_upload/README.md)

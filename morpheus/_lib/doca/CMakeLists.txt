@@ -1,5 +1,5 @@
 # =============================================================================
-# Copyright (c) 2020-2023, NVIDIA CORPORATION.
+# Copyright (c) 2020-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -50,7 +50,7 @@ target_link_libraries(morpheus_doca
 file(GLOB_RECURSE morpheus_doca_public_headers
   LIST_DIRECTORIES FALSE
   CONFIGURE_DEPENDS
-  "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/morpheus/doca/*"
 )
 
 # Add headers to target sources file_set so they can be installed
@@ -59,6 +59,7 @@ target_sources(morpheus_doca
   PUBLIC
     FILE_SET public_headers
     TYPE HEADERS
+    BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include"
     FILES
       ${morpheus_doca_public_headers}
 )
@@ -76,17 +77,23 @@ set_target_properties(morpheus_doca
     CUDA_SEPARABLE_COMPILATION ON
 )
 
+if (MORPHEUS_PYTHON_INPLACE_BUILD)
+  morpheus_utils_inplace_build_copy(morpheus_doca ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
+# ##################################################################################################
+# - install targets --------------------------------------------------------------------------------
+
+# Get the library directory in a cross-platform way
+rapids_cmake_install_lib_dir(lib_dir)
+
 install(
   TARGETS
     morpheus_doca
   EXPORT
-    ${PROJECT_NAME}-exports
+    ${PROJECT_NAME}-core-exports
+  LIBRARY
+    DESTINATION ${lib_dir}
   FILE_SET
     public_headers
-  COMPONENT
-    Wheel
 )
-
-if (MORPHEUS_PYTHON_INPLACE_BUILD)
-  morpheus_utils_inplace_build_copy(morpheus_doca ${CMAKE_CURRENT_SOURCE_DIR})
-endif()

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,11 @@
  */
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
+#include "test_messages.hpp"
 
-#include "morpheus/io/deserializers.hpp"     // for load_table_from_file, prepare_df_index
-#include "morpheus/messages/meta.hpp"        // for MessageMeta and SlicedMessageMeta
-#include "morpheus/objects/table_info.hpp"   // for TableInfo
-#include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
+#include "morpheus/io/deserializers.hpp"    // for load_table_from_file, prepare_df_index
+#include "morpheus/messages/meta.hpp"       // for MessageMeta and SlicedMessageMeta
+#include "morpheus/objects/table_info.hpp"  // for TableInfo
 
 #include <gtest/gtest.h>
 #include <pybind11/gil.h>       // for gil_scoped_release, gil_scoped_acquire
@@ -32,21 +32,7 @@
 
 using namespace morpheus;
 
-class TestSlicedMessageMeta : public morpheus::test::TestWithPythonInterpreter
-{
-  protected:
-    void SetUp() override
-    {
-        morpheus::test::TestWithPythonInterpreter::SetUp();
-        {
-            pybind11::gil_scoped_acquire gil;
-
-            // Initially I ran into an issue bootstrapping cudf, I was able to work-around the issue, details in:
-            // https://github.com/rapidsai/cudf/issues/12862
-            CudfHelper::load();
-        }
-    }
-};
+using TestSlicedMessageMeta = morpheus::test::TestMessages;  // NOLINT(readability-identifier-naming)
 
 TEST_F(TestSlicedMessageMeta, TestCount)
 {

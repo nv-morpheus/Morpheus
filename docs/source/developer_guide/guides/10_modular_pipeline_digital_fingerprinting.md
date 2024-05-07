@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -527,7 +527,7 @@ From the `examples/digital_fingerprinting/production` dir, run:
 ```bash
 docker compose run morpheus_pipeline bash
 ```
-To run the DFP pipelines with the example datasets within the container, run:
+To run the DFP pipelines with the example datasets within the container, run the following from `examples/digital_fingerprinting/production/morpheus`:
 
 * Duo Training Pipeline
     ```bash
@@ -560,7 +560,7 @@ To run the DFP pipelines with the example datasets within the container, run:
         --start_time "2022-08-01" \
         --duration "60d" \
         --train_users generic \
-        --input_file "./control_messages/duo_payload_load_train_inference.json" 
+        --input_file "./control_messages/duo_payload_load_train_inference.json"
     ```
 
 * Azure Training Pipeline
@@ -594,7 +594,7 @@ To run the DFP pipelines with the example datasets within the container, run:
         --start_time "2022-08-01" \
         --duration "60d" \
         --train_users generic \
-        --input_file "./control_messages/azure_payload_load_train_inference.json" 
+        --input_file "./control_messages/azure_payload_load_train_inference.json"
     ```
 
 ### Output Fields

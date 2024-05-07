@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,7 +61,8 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
                     config: Config,
                     kafka_bootstrap_servers: str,
                     kafka_topics: KafkaTopics,
-                    kafka_consumer: "KafkaConsumer"):
+                    kafka_consumer: "KafkaConsumer",
+                    morpheus_log_level: int):
     mock_metadata = {
         "inputs": [{
             'name': 'input__0', 'datatype': 'FP32', "shape": [-1, FEATURE_LENGTH]
@@ -115,7 +116,8 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
     pipe.add_stage(PreprocessFILStage(config))
     pipe.add_stage(
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='test:0000', force_convert_inputs=True))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
@@ -151,7 +153,8 @@ def test_abp_cpp(config: Config,
                  dataset_pandas: DatasetManager,
                  kafka_bootstrap_servers: str,
                  kafka_topics: KafkaTopics,
-                 kafka_consumer: "KafkaConsumer"):
+                 kafka_consumer: "KafkaConsumer",
+                 morpheus_log_level: int):
     config.mode = PipelineModes.FIL
     config.class_labels = ["mining"]
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
@@ -183,7 +186,8 @@ def test_abp_cpp(config: Config,
     pipe.add_stage(
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='localhost:8001',
                              force_convert_inputs=True))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(

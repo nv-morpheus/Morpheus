@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,39 +18,36 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
-update_conda_env
+rapids-dependency-file-generator \
+  --output conda \
+  --file_key build \
+  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee "${WORKSPACE_TMP}/env.yaml"
+
+update_conda_env "${WORKSPACE_TMP}/env.yaml"
 
 log_toolchain
 
 cd ${MORPHEUS_ROOT}
 
+# Fetching the base branch will try methods that might fail, then fallback to one that does, set +e for this section
+set +e
 fetch_base_branch
-
-git submodule update --init --recursive
+set -e
 
 rapids-logger "Configuring cmake for Morpheus"
 CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF"
 export CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_INPLACE_BUILD=ON"
-if [[ "${LOCAL_CI}" == "" ]]; then
-    CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
-fi
 
-cmake -B build -G Ninja ${CMAKE_FLAGS} .
+cmake ${CMAKE_FLAGS} .
 
 rapids-logger "Building Morpheus"
-cmake --build build --parallel ${PARALLEL_LEVEL}
+cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL}
 
-if [[ "${LOCAL_CI}" == "" ]]; then
-    rapids-logger "sccache usage for source build:"
-    sccache --show-stats
-fi
+log_sccache_stats
 
 rapids-logger "Installing Morpheus"
 pip install ./
-
-# Setting this prevents loading of cudf since we don't have a GPU
-export MORPHEUS_IN_SPHINX_BUILD=1
 
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}

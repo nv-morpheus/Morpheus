@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -119,7 +119,7 @@ def infer(validationdata, model, output):
     x_validation.to_csv(output, index=False)
 
 
-def main():
+def main(args):
 
     infer(args.validationdata, args.model, args.output)
 
@@ -129,6 +129,5 @@ if __name__ == "__main__":
     parser.add_argument("--validationdata", required=True, help="Labelled data in JSON format")
     parser.add_argument("--model", required=True, help="trained model")
     parser.add_argument("--output", required=True, help="output filename")
-    args = parser.parse_args()
 
-main()
+    main(parser.parse_args())

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,7 +39,7 @@ def dask_distributed(fail_missing: bool):
 
 
 @pytest.fixture(name="config")
-def config_fixture(config):
+def config_fixture(config, use_cpp: bool):  # pylint: disable=unused-argument
     """
     The ransomware detection pipeline utilizes the FIL pipeline mode.
     """

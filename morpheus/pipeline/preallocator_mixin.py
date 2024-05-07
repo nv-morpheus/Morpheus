@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,8 +26,10 @@ from mrc.core import operators as ops
 import cudf
 
 from morpheus.common import TypeId
+from morpheus.common import typeid_is_fully_supported
 from morpheus.common import typeid_to_numpy_str
 from morpheus.config import CppConfig
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.utils.type_aliases import DataFrameType
@@ -85,6 +87,17 @@ class PreallocatorMixin(ABC):
         self._preallocate_meta(msg.meta)
         return msg
 
+    def _preallocate_control(self, msg: ControlMessage) -> ControlMessage:
+        self._preallocate_meta(msg.payload())
+        return msg
+
+    def _all_types_supported_in_cpp(self) -> bool:
+        for column_type in self._needed_columns.values():
+            if not typeid_is_fully_supported(column_type):
+                return False
+
+        return True
+
     def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
         out_type = self.output_ports[0].output_type
         pretty_type = pretty_print_type_name(out_type)
@@ -92,17 +105,21 @@ class PreallocatorMixin(ABC):
         if len(self._needed_columns) > 0:
             node_name = f"{self.unique_name}-preallocate"
 
-            if issubclass(out_type, (MessageMeta, MultiMessage)):
+            if issubclass(out_type, (ControlMessage, MessageMeta, MultiMessage)):
                 # Intentionally not using `_build_cpp_node` because `LinearBoundaryIngressStage` lacks a C++ impl
-                if CppConfig.get_should_use_cpp():
+                if CppConfig.get_should_use_cpp() and self._all_types_supported_in_cpp():
                     import morpheus._lib.stages as _stages
                     needed_columns = list(self._needed_columns.items())
-                    if issubclass(out_type, MessageMeta):
+                    if issubclass(out_type, ControlMessage):
+                        node = _stages.PreallocateControlMessageStage(builder, node_name, needed_columns)
+                    elif issubclass(out_type, MessageMeta):
                         node = _stages.PreallocateMessageMetaStage(builder, node_name, needed_columns)
                     else:
                         node = _stages.PreallocateMultiMessageStage(builder, node_name, needed_columns)
                 else:
-                    if issubclass(out_type, MessageMeta):
+                    if issubclass(out_type, ControlMessage):
+                        node = builder.make_node(node_name, ops.map(self._preallocate_control))
+                    elif issubclass(out_type, MessageMeta):
                         node = builder.make_node(node_name, ops.map(self._preallocate_meta))
                     else:
                         node = builder.make_node(node_name, ops.map(self._preallocate_multi))

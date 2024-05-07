@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -214,14 +214,14 @@ pipeline option of `rag`:
 
 ```bash
 export NGC_API_KEY=[YOUR_KEY_HERE]
-NGC_API_KEY=${NGC_API_KEY} python examples/llm/main.py rag pipeline
+python examples/llm/main.py rag pipeline
 ```
 
 **Using OpenAI LLM models**
 
 ```bash
 export OPENAI_API_KEY=[YOUR_KEY_HERE]
-OPENAI_API_KEY=${OPENAI_API_KEY} python examples/llm/main.py rag pipeline
+python examples/llm/main.py rag pipeline --llm_service=OpenAI --model_name=gpt-3.5-turbo
 ```
 
 ### Run example (Persistent Pipeline):
@@ -232,14 +232,14 @@ OPENAI_API_KEY=${OPENAI_API_KEY} python examples/llm/main.py rag pipeline
 
 ```bash
 export NGC_API_KEY=[YOUR_KEY_HERE]
-python examples/llm/main.py rag persistent 
+python examples/llm/main.py rag persistent
 ```
 
 **Using OpenAI LLM models**
 
 ```bash
 export OPENAI_API_KEY=[YOUR_KEY_HERE]
-python examples/llm/main.py rag persistent 
+python examples/llm/main.py rag persistent
 ```
 
 ### Options:
@@ -273,4 +273,3 @@ The `rag` command has its own set of options and commands:
 
 - `persistant`
 - `pipeline`
-

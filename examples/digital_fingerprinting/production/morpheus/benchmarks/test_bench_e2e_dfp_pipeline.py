@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -105,7 +105,7 @@ def dfp_training_pipeline_stages(pipe_config: Config,
                                  filenames: typing.List[str],
                                  reuse_cache=False):
 
-    configure_logging(logger.level)
+    configure_logging(log_level=logger.level)
 
     pipeline = LinearPipeline(pipe_config)
     pipeline.set_source(MultiFileSource(pipe_config, filenames=filenames))
@@ -157,7 +157,7 @@ def dfp_inference_pipeline_stages(pipe_config: Config,
                                   output_filepath: str,
                                   reuse_cache=False):
 
-    configure_logging(logger.level)
+    configure_logging(log_level=logger.level)
 
     pipeline = LinearPipeline(pipe_config)
     pipeline.set_source(MultiFileSource(pipe_config, filenames=filenames))

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,8 +42,6 @@ struct CupyUtil
 {
     using tensor_map_t    = std::map<std::string, TensorObject>;
     using py_tensor_map_t = std::map<std::string, pybind11::object>;
-
-    static pybind11::object cp_module;  // handle to cupy module
 
     /**
      * @brief Import and return the cupy module. Requires GIL to have already been aqcuired.

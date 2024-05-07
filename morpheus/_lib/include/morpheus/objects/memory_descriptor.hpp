@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,15 @@
 #include "morpheus/export.h"
 
 #include <rmm/cuda_stream_view.hpp>
-#include <rmm/mr/device/device_memory_resource.hpp>
+
+#include "cuda/memory_resource"
+
+namespace morpheus {
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
 
 /**
  * @brief Struct describing device memory resources.
@@ -35,8 +43,8 @@ struct MORPHEUS_EXPORT MemoryDescriptor
      * @param stream
      * @param memory_resource
      */
-    MemoryDescriptor(rmm::cuda_stream_view stream                  = rmm::cuda_stream_per_thread,
-                     rmm::mr::device_memory_resource* mem_resource = nullptr);
+    MemoryDescriptor(rmm::cuda_stream_view stream,
+                     cuda::mr::async_resource_ref<cuda::mr::device_accessible> mem_resource);
     MemoryDescriptor(MemoryDescriptor& other)  = default;
     MemoryDescriptor(MemoryDescriptor&& other) = default;
 
@@ -44,5 +52,8 @@ struct MORPHEUS_EXPORT MemoryDescriptor
     rmm::cuda_stream_view cuda_stream;
 
     // Memory resource
-    rmm::mr::device_memory_resource* memory_resource;
+    cuda::mr::async_resource_ref<cuda::mr::device_accessible> memory_resource;
 };
+
+/** @} */  // end of group
+}  // namespace morpheus

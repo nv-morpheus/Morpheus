@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,11 +22,13 @@ import numpy as np
 import pandas as pd
 from mrc.core import operators as ops
 
-from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
+import cudf
+
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -73,18 +75,18 @@ class LogParsingPostProcessingStage(SinglePortStage):
         return False
 
     def accepted_types(self) -> typing.Tuple:
-        return (MultiPostprocLogParsingMessage, )
+        return (MultiResponseMessage, )
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def _postprocess(self, x: MultiPostprocLogParsingMessage):
+    def _postprocess(self, x: MultiResponseMessage):
 
-        infer_pdf = pd.DataFrame(x.seq_ids.get()).astype(int)
+        infer_pdf = pd.DataFrame(x.get_tensor('seq_ids').get()).astype(int)
         infer_pdf.columns = ["doc", "start", "stop"]
-        infer_pdf["confidences"] = x.confidences.tolist()
-        infer_pdf["labels"] = x.labels.tolist()
-        infer_pdf["token_ids"] = x.input_ids.tolist()
+        infer_pdf["confidences"] = x.get_tensor('confidences').tolist()
+        infer_pdf["labels"] = x.get_tensor('labels').tolist()
+        infer_pdf["token_ids"] = x.get_tensor('input_ids').tolist()
 
         infer_pdf["confidences"] = infer_pdf.apply(lambda row: row["confidences"][row["start"]:row["stop"]], axis=1)
 
@@ -115,8 +117,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
 
         # decode cleanup
         parsed_df = self.__decode_cleanup(parsed_df)
-
-        return MessageMeta(df=parsed_df)
+        return MessageMeta(df=cudf.DataFrame.from_pandas(parsed_df))
 
     def __get_label_dicts(self, row):
         token_dict = defaultdict(str)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,7 +64,8 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
                    config: Config,
                    kafka_bootstrap_servers: str,
                    kafka_topics: KafkaTopics,
-                   kafka_consumer: "KafkaConsumer"):
+                   kafka_consumer: "KafkaConsumer",
+                   morpheus_log_level: int):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_anomaly_score.csv'), delimiter=',')
     exp_results = pd.read_csv(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_exp_results.csv'))
@@ -116,7 +117,8 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
                         cold_end=False,
                         filter_percent=90.0,
                         zscore_threshold=8.0))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(SerializeStage(config, include=[]))
     pipe.add_stage(
         WriteToKafkaStage(config, bootstrap_servers=kafka_bootstrap_servers, output_topic=kafka_topics.output_topic))
@@ -166,7 +168,8 @@ def test_dfp_user123(mock_ae: mock.MagicMock,
                      config: Config,
                      kafka_bootstrap_servers: str,
                      kafka_topics: KafkaTopics,
-                     kafka_consumer: "KafkaConsumer"):
+                     kafka_consumer: "KafkaConsumer",
+                     morpheus_log_level: int):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_anomaly_score.csv'), delimiter=',')
     exp_results = pd.read_csv(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_exp_results.csv'))
@@ -217,7 +220,8 @@ def test_dfp_user123(mock_ae: mock.MagicMock,
                         cold_end=False,
                         filter_percent=90.0,
                         zscore_threshold=8.0))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(SerializeStage(config, include=[]))
     pipe.add_stage(
         WriteToKafkaStage(config, bootstrap_servers=kafka_bootstrap_servers, output_topic=kafka_topics.output_topic))

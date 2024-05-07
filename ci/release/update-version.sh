@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -66,7 +66,7 @@ function sed_runner() {
 
 # .gitmodules
 git submodule set-branch -b branch-${NEXT_SHORT_TAG} external/morpheus-visualizations
-git submodule set-branch -b branch-${NEXT_SHORT_TAG} morpheus_utils
+git submodule set-branch -b branch-${NEXT_SHORT_TAG} external/utilities
 
 if [[ "$(git diff --name-only | grep .gitmodules)" != "" ]]; then
    # Only update the submodules if setting the branch changed .gitmodules. Otherwise this will undo the current commit
@@ -77,8 +77,8 @@ fi
 # Root CMakeLists.txt
 sed_runner 's/'"VERSION ${CURRENT_FULL_VERSION}.*"'/'"VERSION ${NEXT_FULL_VERSION}"'/g' CMakeLists.txt
 
-# Conda environment file
-sed_runner "s/mrc=${CURRENT_SHORT_TAG}/mrc=${NEXT_SHORT_TAG}/g" docker/conda/environments/cuda11.8_dev.yml
+# Depedencies file
+sed_runner "s/mrc=${CURRENT_SHORT_TAG}/mrc=${NEXT_SHORT_TAG}/g" dependencies.yaml
 
 # examples/digital_fingerprinting
 sed_runner "s/v${CURRENT_FULL_VERSION}-runtime/v${NEXT_FULL_VERSION}-runtime/g" \

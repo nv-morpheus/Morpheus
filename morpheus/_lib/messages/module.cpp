@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,19 +35,11 @@
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
-#include "morpheus/types.hpp"  // for TensorIndex
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
 #include "morpheus/version.hpp"
 
-#include <boost/fiber/future/future.hpp>
-#include <mrc/channel/status.hpp>  // for Status
 #include <mrc/edge/edge_connector.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/types.hpp>
-#include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -57,9 +49,7 @@
 #include <pymrc/utils.hpp>  // for pymrc::import
 #include <rxcpp/rx.hpp>
 
-#include <array>
 #include <filesystem>
-#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -110,6 +100,14 @@ PYBIND11_MODULE(messages, _module)
 
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MessageMeta>, mrc::pymrc::PyObjectHolder>::register_converter();
     mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder, std::shared_ptr<morpheus::MessageMeta>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiMessage>, mrc::pymrc::PyObjectHolder>::register_converter();
+    mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder, std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
+                             mrc::pymrc::PyObjectHolder>::register_converter();
+    mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder,
+                             std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiTensorMessage>,
@@ -231,6 +229,22 @@ PYBIND11_MODULE(messages, _module)
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
         .def_property_readonly("df", &MessageMetaInterfaceProxy::df_property, py::return_value_policy::move)
+        .def("get_data",
+             py::overload_cast<MessageMeta&>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move)
+        .def("get_data",
+             py::overload_cast<MessageMeta&, std::string>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_data",
+             py::overload_cast<MessageMeta&, std::vector<std::string>>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_data",
+             py::overload_cast<MessageMeta&, pybind11::none>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("set_data", &MessageMetaInterfaceProxy::set_data, py::return_value_policy::move)
         .def("get_column_names", &MessageMetaInterfaceProxy::get_column_names)
         .def("copy_dataframe", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
         .def("mutable_dataframe", &MessageMetaInterfaceProxy::mutable_dataframe, py::return_value_policy::move)
@@ -368,7 +382,6 @@ PYBIND11_MODULE(messages, _module)
         .value("NONE", ControlMessageType::INFERENCE)
         .value("TRAINING", ControlMessageType::TRAINING);
 
-    // TODO(Devin): Circle back on return value policy choices
     py::class_<ControlMessage, std::shared_ptr<ControlMessage>>(_module, "ControlMessage")
         .def(py::init<>())
         .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)))
@@ -379,13 +392,37 @@ PYBIND11_MODULE(messages, _module)
              py::arg("config"))
         .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
         .def("copy", &ControlMessageProxy::copy)
-        .def("get_metadata", &ControlMessageProxy::get_metadata, py::arg("key") = py::none())
+        .def("get_metadata",
+             &ControlMessageProxy::get_metadata,
+             py::arg("key")           = py::none(),
+             py::arg("default_value") = py::none())
         .def("get_tasks", &ControlMessageProxy::get_tasks)
+        .def("filter_timestamp",
+             py::overload_cast<ControlMessage&, const std::string&>(&ControlMessageProxy::filter_timestamp),
+             "Retrieve timestamps matching a regex filter within a given group.",
+             py::arg("regex_filter"))
+        .def("get_timestamp",
+             py::overload_cast<ControlMessage&, const std::string&, bool>(&ControlMessageProxy::get_timestamp),
+             "Retrieve the timestamp for a given group and key. Returns None if the timestamp does not exist and "
+             "fail_if_nonexist is False.",
+             py::arg("key"),
+             py::arg("fail_if_nonexist") = false)
+        .def("set_timestamp",
+             &ControlMessageProxy::set_timestamp,
+             "Set a timestamp for a given key and group.",
+             py::arg("key"),
+             py::arg("timestamp"))
         .def("has_metadata", &ControlMessage::has_metadata, py::arg("key"))
         .def("has_task", &ControlMessage::has_task, py::arg("task_type"))
         .def("list_metadata", &ControlMessageProxy::list_metadata)
-        .def("payload", pybind11::overload_cast<>(&ControlMessage::payload), py::return_value_policy::move)
+        .def("payload", pybind11::overload_cast<>(&ControlMessage::payload))
         .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload))
+        .def(
+            "payload",
+            pybind11::overload_cast<ControlMessage&, const py::object&>(&ControlMessageProxy::payload_from_python_meta),
+            py::arg("meta"))
+        .def("tensors", pybind11::overload_cast<>(&ControlMessage::tensors))
+        .def("tensors", pybind11::overload_cast<const std::shared_ptr<TensorMemory>&>(&ControlMessage::tensors))
         .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))

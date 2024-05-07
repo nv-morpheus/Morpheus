@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ class PromptTemplateNode(LLMNodeBase):
     def get_input_names(self):
         return self._input_names
 
-    async def execute(self, context: LLMContext):
+    async def execute(self, context: LLMContext):  # pylint: disable=invalid-overridden-method
 
         # Get the keys from the task
         input_dict = context.get_inputs()

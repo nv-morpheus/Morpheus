@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,8 +20,8 @@ import os
 import pytest_kafka
 from pytest_kafka.install import set_up_kafka
 
-DEFAULT_KAFKA_URL = 'https://downloads.apache.org/kafka/3.4.1/kafka_2.13-3.4.1.tgz'
-DEFAULT_KAFKA_TAR_ROOTDIR = 'kafka_2.13-3.4.1/'
+DEFAULT_KAFKA_URL = 'https://downloads.apache.org/kafka/3.5.2/kafka_2.13-3.5.2.tgz'
+DEFAULT_KAFKA_TAR_ROOTDIR = 'kafka_2.13-3.5.2/'
 
 
 def main():

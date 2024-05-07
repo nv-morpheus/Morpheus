@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,10 +28,9 @@
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 #include <glog/logging.h>
-#include <pybind11/cast.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
-#include <rmm/mr/device/per_device_resource.hpp>
 
 #include <cstddef>  // for size_t
 #include <fstream>
@@ -114,7 +113,7 @@ void table_to_csv(
         options_builder = options_builder.names(column_names);
     }
 
-    cudf::io::write_csv(options_builder.build(), rmm::mr::get_current_device_resource());
+    cudf::io::write_csv(options_builder.build());
 
     if (flush)
     {
@@ -158,9 +157,13 @@ void table_to_json(const TableInfoData& tbl, std::ostream& out_stream, bool incl
 
     OStreamSink sink(out_stream);
     auto destination     = cudf::io::sink_info(&sink);
-    auto options_builder = cudf::io::json_writer_options_builder(destination, tbl_view).metadata(tbl_meta).lines(true);
+    auto options_builder = cudf::io::json_writer_options_builder(destination, tbl_view)
+                               .metadata(tbl_meta)
+                               .lines(true)
+                               .include_nulls(true)
+                               .na_rep("null");
 
-    cudf::io::write_json(options_builder.build(), rmm::mr::get_current_device_resource());
+    cudf::io::write_json(options_builder.build());
 
     if (flush)
     {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,18 @@
 
 import json
 import random
+import string
 
 import numpy as np
 import pymilvus
 import pytest
 from pymilvus import DataType
+from pymilvus import MilvusException
 
 import cudf
 
+from _utils.dataset_manager import DatasetManager
+from morpheus.service.vdb.milvus_vector_db_service import MAX_STRING_LENGTH_BYTES
 from morpheus.service.vdb.milvus_vector_db_service import FieldSchemaEncoder
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 
@@ -69,6 +73,45 @@ def test_has_store_object(milvus_service: MilvusVectorDBService):
 @pytest.fixture(scope="module", name="sample_field")
 def sample_field_fixture():
     return pymilvus.FieldSchema(name="test_field", dtype=pymilvus.DataType.INT64)
+
+
+def _mk_long_string(source_chars: str) -> str:
+    """
+    Yields a string longer than MAX_STRING_LENGTH_BYTES from source chars
+    """
+    source_chars_byte_len = len(source_chars.encode("utf-8"))
+    source_data = list(source_chars)
+
+    byte_len = 0
+    long_str_data = []
+    while byte_len <= MAX_STRING_LENGTH_BYTES:
+        long_str_data.extend(source_data)
+        byte_len += source_chars_byte_len
+
+    return "".join(long_str_data)
+
+
+@pytest.fixture(scope="module", name="long_ascii_string")
+def long_ascii_string_fixture():
+    """
+    Yields a string longer than MAX_STRING_LENGTH_BYTES containing only ascii (single-byte) characters
+    """
+    return _mk_long_string(string.ascii_letters)
+
+
+@pytest.fixture(scope="module", name="long_multibyte_string")
+def long_multibyte_string_fixture():
+    """
+    Yields a string longer than MAX_STRING_LENGTH_BYTES containing a mix of single and multi-byte characters
+    """
+    return _mk_long_string("Moρφέας")
+
+
+def _truncate_string_by_bytes(s: str, max_bytes: int) -> str:
+    """
+    Truncates a string to the given number of bytes
+    """
+    return s.encode("utf-8")[:max_bytes].decode("utf-8", errors="ignore")
 
 
 @pytest.mark.milvus
@@ -467,3 +510,98 @@ def test_fse_from_dict():
     result = FieldSchemaEncoder.from_dict(data)
     assert result.name == "test_field"
     assert result.dtype == pymilvus.DataType.INT64
+
+
+@pytest.mark.milvus
+@pytest.mark.slow
+@pytest.mark.parametrize("use_multi_byte_strings", [True, False], ids=["multi_byte", "ascii"])
+@pytest.mark.parametrize("truncate_long_strings", [True, False], ids=["truncate", "no_truncate"])
+@pytest.mark.parametrize("exceed_max_str_len", [True, False], ids=["exceed_max_len", "within_max_len"])
+def test_insert_dataframe(milvus_server_uri: str,
+                          string_collection_config: dict,
+                          dataset: DatasetManager,
+                          use_multi_byte_strings: bool,
+                          truncate_long_strings: bool,
+                          exceed_max_str_len: bool,
+                          long_ascii_string: str,
+                          long_multibyte_string: str):
+    num_rows = 10
+    collection_name = "test_insert_dataframe"
+
+    milvus_service = MilvusVectorDBService(uri=milvus_server_uri, truncate_long_strings=truncate_long_strings)
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
+    # Create a collection.
+    milvus_service.create(collection_name, **string_collection_config)
+
+    short_str_col_len = -1
+    long_str_col_len = -1
+    for field_conf in string_collection_config["schema_conf"]["schema_fields"]:
+        if field_conf["name"] == "short_str_col":
+            short_str_col_len = field_conf["params"]["max_length"]
+
+        elif field_conf["name"] == "long_str_col":
+            long_str_col_len = field_conf["params"]["max_length"]
+
+    assert short_str_col_len > 0, "short_str_col length is not set"
+    assert long_str_col_len == MAX_STRING_LENGTH_BYTES, "long_str_col length is not set to MAX_STRING_LENGTH_BYTES"
+
+    # Construct the dataframe.
+    ids = []
+    embedding_data = []
+    long_str_col = []
+    short_str_col = []
+
+    if use_multi_byte_strings:
+        long_str = long_multibyte_string
+    else:
+        long_str = long_ascii_string
+
+    short_str = long_str[:7]
+    if not exceed_max_str_len:
+        short_str = _truncate_string_by_bytes(short_str, short_str_col_len)
+        long_str = _truncate_string_by_bytes(long_str, MAX_STRING_LENGTH_BYTES)
+
+    for i in range(num_rows):
+        ids.append(i)
+        embedding_data.append([i / 10.0] * 3)
+
+        long_str_col.append(long_str)
+        short_str_col.append(short_str)
+
+    df = dataset.df_class({
+        "id": ids, "embedding": embedding_data, "long_str_col": long_str_col, "short_str_col": short_str_col
+    })
+
+    expected_long_str = []
+    for long_str in long_str_col:
+        if truncate_long_strings:
+            expected_long_str.append(
+                long_str.encode("utf-8")[:MAX_STRING_LENGTH_BYTES].decode("utf-8", errors="ignore"))
+        else:
+            expected_long_str.append(long_str)
+
+    expected_df = dataset.df_class({
+        "id": ids, "embedding": embedding_data, "long_str_col": expected_long_str, "short_str_col": short_str_col
+    })
+
+    if (exceed_max_str_len and (not truncate_long_strings)):
+        with pytest.raises(MilvusException, match="string exceeds max length"):
+            milvus_service.insert_dataframe(collection_name, df)
+
+        return  # Skip the rest of the test if the string column exceeds the maximum length.
+
+    milvus_service.insert_dataframe(collection_name, df)
+
+    # Retrieve inserted data by primary keys.
+    retrieved_data = milvus_service.retrieve_by_keys(collection_name, ids)
+    assert len(retrieved_data) == num_rows
+
+    # Clean up the collection.
+    milvus_service.drop(collection_name)
+
+    result_df = dataset.df_class(retrieved_data)
+
+    dataset.compare_df(result_df, expected_df)

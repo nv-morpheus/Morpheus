@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,13 @@
 
 import logging
 import time
+import typing
 
 import mrc
 
-import morpheus.pipeline as _pipeline
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
 
 logger = logging.getLogger(__name__)
@@ -57,14 +59,17 @@ class MultiMessageStage(_pipeline.SinglePortStage):
 
             logger.info("Adding timestamp info for stage: '%s'", cached_name)
 
-            def post_timestamps(x: MultiMessage):
+            def post_timestamps(message: typing.Union[MultiMessage, ControlMessage]):
 
                 curr_time = _get_time_ms()
 
-                x.set_meta("_ts_" + cached_name, curr_time)
+                if (isinstance(message, MultiMessage)):
+                    message.set_meta("_ts_" + cached_name, curr_time)
+                else:
+                    message.set_metadata("_ts_" + cached_name, str(curr_time))
 
                 # Must return the original object
-                return x
+                return message
 
             # Only have one port
             post_ts = builder.make_node(self.unique_name + "-ts", post_timestamps)

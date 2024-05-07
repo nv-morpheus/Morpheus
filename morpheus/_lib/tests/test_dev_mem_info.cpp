@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@
 #include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 
+#include <cuda/memory_resource>
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>
@@ -33,7 +34,6 @@
 
 #include <cstddef>  // for size_t
 #include <memory>   // shared_ptr
-#include <vector>   // for vector
 // IWYU pragma: no_include "thrust/iterator/iterator_facade.h"
 // IWYU pragma: no_include <unordered_map>
 
@@ -86,7 +86,8 @@ TEST_F(TestDevMemInfo, RmmBufferConstructor)
     EXPECT_EQ(dm.data(), static_cast<u_int8_t*>(buffer->data()) + Dtype.item_size());
 
     EXPECT_EQ(dm.memory()->cuda_stream, rmm::cuda_stream_legacy);
-    EXPECT_EQ(dm.memory()->memory_resource, mem_resource.get());
+    EXPECT_EQ(dm.memory()->memory_resource,
+              static_cast<cuda::mr::async_resource_ref<cuda::mr::device_accessible>>(mem_resource.get()));
 }
 
 TEST_F(TestDevMemInfo, VoidPtrConstructor)
@@ -122,7 +123,8 @@ TEST_F(TestDevMemInfo, VoidPtrConstructor)
     EXPECT_EQ(dm.data(), static_cast<u_int8_t*>(buffer->data()) + Dtype.item_size());
 
     EXPECT_EQ(dm.memory()->cuda_stream, rmm::cuda_stream_legacy);
-    EXPECT_EQ(dm.memory()->memory_resource, mem_resource.get());
+    EXPECT_EQ(dm.memory()->memory_resource,
+              static_cast<cuda::mr::async_resource_ref<cuda::mr::device_accessible>>(mem_resource.get()));
 }
 
 TEST_F(TestDevMemInfo, MakeNewBuffer)
@@ -137,5 +139,6 @@ TEST_F(TestDevMemInfo, MakeNewBuffer)
     auto new_buff               = dm.make_new_buffer(buff_size);
     EXPECT_EQ(new_buff->size(), buff_size);
     EXPECT_EQ(new_buff->stream(), rmm::cuda_stream_legacy);
-    EXPECT_EQ(new_buff->memory_resource(), mem_resource.get());
+    EXPECT_EQ(new_buff->memory_resource(),
+              static_cast<cuda::mr::async_resource_ref<cuda::mr::device_accessible>>(mem_resource.get()));
 }

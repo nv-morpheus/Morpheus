@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
@@ -114,7 +115,7 @@ class ValidationStage(CompareDataFrameStage):
             Accepted input types.
 
         """
-        return (MultiMessage, )
+        return (MultiMessage, ControlMessage)
 
     def _do_comparison(self):
         results = self.get_results(clear=False)

@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,7 @@ limitations under the License.
 
 ## Description:
 
-* This model is an example of a binary XGBoost classifier to differentiate between anomalous GPU behavior, such as crypto mining / GPU malware, and non-anomalous GPU-based workflows (e.g., ML/DL training). The model is an XGBoost model. <br>
+* This model is an example of a binary XGBoost classifier to differentiate between anomalous GPU behavior, such as crypto mining / GPU malware, and non-anomalous GPU-based workflows (e.g., ML/DL training). This model is for demonstration purposes and not for production usage. <br>
 
 ## References(s):
 
@@ -88,7 +88,7 @@ limitations under the License.
 
 **Link:** 
 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/abp-sample-nvsmi-training-data.json  <br>
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/training-data/abp-sample-nvsmi-training-data.json  <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 
@@ -98,7 +98,7 @@ limitations under the License.
 
 **Link:** 
 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/abp-validation-data.jsonlines  <br>
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/validation-data/abp-validation-data.jsonlines  <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 
@@ -112,51 +112,14 @@ limitations under the License.
 
 **Test Hardware:** <br>
 
-* Other <br>
+* DGX (V100) <br>
+
+## Ethical Considerations:
+NVIDIA believes Trustworthy AI is a shared responsibility and we have established policies and practices to enable development for a wide array of AI applications.  When downloaded or used in accordance with our terms of service, developers should work with their supporting model team to ensure this model meets requirements for the relevant industry and use case and addresses unforeseen product misuse.  For more detailed information on ethical considerations for this model, please see the Model Card++ Explainability, Bias, Safety & Security, and Privacy Subcards below.  Please report security vulnerabilities or NVIDIA AI Concerns [here](https://www.nvidia.com/en-us/support/submit-security-vulnerability/).
 
 # Subcards
 
 ## Model Card ++ Bias Subcard
-
-### What is the gender balance of the model validation data?  
-
-* Not Applicable
-
-### What is the racial/ethnicity balance of the model validation data?
-
-* Not Applicable
-
-### What is the age balance of the model validation data?
-
-* Not Applicable
-
-### What is the language balance of the model validation data?
-
-* Not Applicable
-
-### What is the geographic origin language balance of the model validation data?
-
-* Not Applicable
-
-### What is the educational background balance of the model validation data?
-
-* Not Applicable
-
-### What is the accent balance of the model validation data?
-
-* Not Applicable
-
-### What is the face/key point balance of the model validation data? 
-
-* Not Applicable
-
-### What is the skin/tone balance of the model validation data?
-
-* Not Applicable
-
-### What is the religion balance of the model validation data?
-
-* Not Applicable
 
 ### Individuals from the following adversely impacted (protected classes) groups participate in model design and testing.
 
@@ -196,7 +159,10 @@ limitations under the License.
 
 * For different GPU workloads different models need to be trained.
 
+### Has this been verified to have met prescribed NVIDIA standards?
 
+* Yes
+  
 ### What performance metrics were used to affirm the model's performance?
 
 * Accuracy
@@ -214,13 +180,13 @@ limitations under the License.
 
 ### Link the location of the training dataset's repository.
 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/abp-sample-nvsmi-training-data.json
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/training-data/abp-sample-nvsmi-training-data.json
 
 ### Is the model used in an application with physical safety impact?
 
 * No
 
-### Describe physical safety impact (if present).
+### Describe life-critical impact (if present).
 
 * N/A
 
@@ -235,10 +201,6 @@ limitations under the License.
 ### Name use case restrictions for the model.
 
 * The model's use case is restricted to testing the Morpheus pipeline and may not be suitable for other applications.
-
-### Has this been verified to have met prescribed quality standards?
-
-* No
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested. 
 
@@ -265,7 +227,7 @@ limitations under the License.
 
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
 
-* Neither
+* None
 
 ### Was consent obtained for any PII used?
 

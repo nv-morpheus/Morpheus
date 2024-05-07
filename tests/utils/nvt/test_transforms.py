@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
+
 import pandas as pd
 import pytest
-from nvtabular.ops.operator import ColumnSelector
+
+with warnings.catch_warnings():
+    # Ignore warning regarding tensorflow not being installed
+    warnings.filterwarnings("ignore", message=".*No module named 'tensorflow'", category=UserWarning)
+    from nvtabular.ops.operator import ColumnSelector
 
 from _utils.dataset_manager import DatasetManager
 from morpheus.utils.nvt.transforms import json_flatten

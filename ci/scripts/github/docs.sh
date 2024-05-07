@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,13 +18,18 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
-update_conda_env
+rapids-dependency-file-generator \
+  --output conda \
+  --file_key docs \
+  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee "${WORKSPACE_TMP}/env.yaml"
+
+update_conda_env "${WORKSPACE_TMP}/env.yaml"
 
 download_artifact "wheel.tar.bz"
 
 tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
 
-pip install ${MORPHEUS_ROOT}/build/dist/*.whl
+pip install ${MORPHEUS_ROOT}/${BUILD_DIR}/dist/*.whl
 
 rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
@@ -32,16 +37,15 @@ cd ${MORPHEUS_ROOT}
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs examples
 
-git submodule update --init --recursive
-
 rapids-logger "Configuring for docs"
-cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_BUILD_DOCS=ON .
+cmake ${CMAKE_BUILD_ALL_FEATURES} -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_BUILD_DOCS=ON .
 
 rapids-logger "Building docs"
-cmake --build build --target morpheus_docs
+cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target install
+cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target morpheus_docs
 
 rapids-logger "Archiving the docs"
-tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/docs/html
+tar cfj "${WORKSPACE_TMP}/docs.tar.bz" ${BUILD_DIR}/docs/html
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 set_job_summary_preamble

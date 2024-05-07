@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,7 @@ import pytest
 
 from _utils import TEST_DIRS
 from _utils import calc_error_val
+from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
@@ -50,7 +51,7 @@ from morpheus.stages.preprocess import train_ae_stage
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
-def test_dfp_roleg(mock_ae, config, tmp_path):
+def test_dfp_roleg(mock_ae: mock.MagicMock, config: Config, tmp_path: str, morpheus_log_level: int):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_anomaly_score.csv'), delimiter=',')
     exp_results = pd.read_csv(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_exp_results.csv'))
@@ -107,7 +108,8 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
                         cold_end=False,
                         filter_percent=90.0,
                         zscore_threshold=8.0))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(
         ValidationStage(config,
                         val_file_name=val_file_name,
@@ -135,7 +137,7 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
-def test_dfp_user123(mock_ae, config, tmp_path):
+def test_dfp_user123(mock_ae: mock.MagicMock, config: Config, tmp_path: str, morpheus_log_level: int):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_anomaly_score.csv'), delimiter=',')
     exp_results = pd.read_csv(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_exp_results.csv'))
@@ -190,7 +192,8 @@ def test_dfp_user123(mock_ae, config, tmp_path):
                         cold_end=False,
                         filter_percent=90.0,
                         zscore_threshold=8.0))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(
         ValidationStage(config,
                         val_file_name=val_file_name,
@@ -217,7 +220,7 @@ def test_dfp_user123(mock_ae, config, tmp_path):
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
-def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
+def test_dfp_user123_multi_segment(mock_ae: mock.MagicMock, config: Config, tmp_path: str, morpheus_log_level: int):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_anomaly_score.csv'), delimiter=',')
     exp_results = pd.read_csv(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_exp_results.csv'))
@@ -278,7 +281,8 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
                         filter_percent=90.0,
                         zscore_threshold=8.0))
     pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 6
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(
         ValidationStage(config,
                         val_file_name=val_file_name,

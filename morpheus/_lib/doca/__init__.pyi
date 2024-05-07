@@ -10,5 +10,5 @@ __all__ = [
 
 
 class DocaSourceStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, nic_pci_address: str, gpu_pci_address: str) -> None: ...
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, nic_pci_address: str, gpu_pci_address: str, traffic_type: str) -> None: ...
     pass

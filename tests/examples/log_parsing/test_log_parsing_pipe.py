@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -126,7 +126,6 @@ def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mo
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
 @pytest.mark.import_mod([
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py'),
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py')

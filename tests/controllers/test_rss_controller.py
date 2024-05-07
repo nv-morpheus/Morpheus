@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,14 +17,18 @@ import time
 from os import path
 from unittest.mock import Mock
 from unittest.mock import patch
+from xml.etree import ElementTree
 
 import feedparser
-import pandas as pd
 import pytest
+from bs4 import BeautifulSoup
+
+import cudf
 
 from _utils import TEST_DIRS
 from morpheus.controllers.rss_controller import FeedStats
 from morpheus.controllers.rss_controller import RSSController
+from morpheus.utils.type_aliases import SeriesType
 
 test_urls = ["https://fake.nvidia.com/rss/HomePage.xml"]
 
@@ -65,6 +69,11 @@ def mock_get_response_fixture() -> Mock:
     return mock_response
 
 
+@pytest.fixture(scope="module", name="cisa_rss_feed")
+def cisa_rss_feed_fixture() -> str:
+    return [path.join(TEST_DIRS.tests_data_dir, 'service/cisa_rss_feed.xml')]
+
+
 @pytest.mark.parametrize("feed_input, expected_output", [(url, True) for url in test_urls])
 def test_run_indefinitely_true(feed_input: str, expected_output: bool):
     controller = RSSController(feed_input=feed_input)
@@ -78,10 +87,12 @@ def test_run_indefinitely_false(feed_input: list[str]):
 
 
 @pytest.mark.parametrize("feed_input", test_urls)
-def test_parse_feed_valid_url(feed_input: list[str], mock_feed: feedparser.FeedParserDict):
+def test_parse_feed_valid_url(feed_input: list[str], mock_feed: feedparser.FeedParserDict, mock_get_response: Mock):
     controller = RSSController(feed_input=feed_input)
-    with patch("morpheus.controllers.rss_controller.feedparser.parse") as mock_feedparser_parse:
-        mock_feedparser_parse.return_value = mock_feed
+
+    patch("morpheus.controllers.rss_controller.feedparser.parse", return_value=mock_feed)
+
+    with patch("requests.Session.get", return_value=mock_get_response):
         feed = list(controller.parse_feeds())[0]
         assert feed.entries
 
@@ -92,12 +103,14 @@ def test_parse_feed_invalid_input(feed_input: list[str]):
         RSSController(feed_input=feed_input)
 
 
+@pytest.mark.parametrize("strip_markup", [False, True])
 @pytest.mark.parametrize("feed_input, expected_count", [(test_file_paths[0], 30)])
-def test_skip_duplicates_feed_inputs(feed_input: str, expected_count: int):
-    controller = RSSController(feed_input=[feed_input, feed_input])  # Pass duplicate feed inputs
+def test_skip_duplicates_feed_inputs(feed_input: str, expected_count: int, strip_markup: bool):
+    controller = RSSController(feed_input=[feed_input, feed_input],
+                               strip_markup=strip_markup)  # Pass duplicate feed inputs
     dataframes_generator = controller.fetch_dataframes()
     dataframe = next(dataframes_generator, None)
-    assert isinstance(dataframe, pd.DataFrame)
+    assert isinstance(dataframe, cudf.DataFrame)
     assert len(dataframe) == expected_count
 
 
@@ -112,56 +125,54 @@ def test_is_url_false(feed_input: list[str]):
 
 
 @pytest.mark.parametrize("feed_input", [test_urls, test_urls[0]])
-def test_fetch_dataframes_url(feed_input: str | list[str], mock_feed: feedparser.FeedParserDict):
+def test_fetch_dataframes_url(feed_input: str | list[str],
+                              mock_feed: feedparser.FeedParserDict,
+                              mock_get_response: Mock):
     controller = RSSController(feed_input=feed_input)
 
-    with patch("morpheus.controllers.rss_controller.feedparser.parse") as mock_feedparser_parse:
-        mock_feedparser_parse.return_value = mock_feed
+    patch("morpheus.controllers.rss_controller.feedparser.parse", return_value=mock_feed)
+
+    with patch("requests.Session.get", return_value=mock_get_response):
         dataframes_generator = controller.fetch_dataframes()
         dataframe = next(dataframes_generator, None)
-        assert isinstance(dataframe, pd.DataFrame)
+        assert isinstance(dataframe, cudf.DataFrame)
         assert "link" in dataframe.columns
         assert len(dataframe) > 0
 
 
+@pytest.mark.parametrize("strip_markup", [False, True])
 @pytest.mark.parametrize("feed_input", [test_file_paths, test_file_paths[0]])
-def test_fetch_dataframes_filepath(feed_input: str | list[str]):
-    controller = RSSController(feed_input=feed_input)
+def test_fetch_dataframes_filepath(feed_input: str | list[str], strip_markup: bool):
+    controller = RSSController(feed_input=feed_input, strip_markup=strip_markup)
     dataframes_generator = controller.fetch_dataframes()
     dataframe = next(dataframes_generator, None)
-    assert isinstance(dataframe, pd.DataFrame)
+    assert isinstance(dataframe, cudf.DataFrame)
     assert "link" in dataframe.columns
     assert len(dataframe) > 0
 
 
+@pytest.mark.parametrize("strip_markup", [False, True])
 @pytest.mark.parametrize("feed_input, batch_size", [(test_file_paths, 5)])
-def test_batch_size(feed_input: list[str], batch_size: int):
-    controller = RSSController(feed_input=feed_input, batch_size=batch_size)
+def test_batch_size(feed_input: list[str], batch_size: int, strip_markup: bool):
+    controller = RSSController(feed_input=feed_input, batch_size=batch_size, strip_markup=strip_markup)
     for df in controller.fetch_dataframes():
-        assert isinstance(df, pd.DataFrame)
+        assert isinstance(df, cudf.DataFrame)
         assert len(df) <= batch_size
 
 
-@pytest.mark.parametrize("feed_input, is_url, enable_cache", [(test_file_paths[0], False, False),
-                                                              (test_urls[0], True, True), (test_urls[0], True, False)])
-def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool, enable_cache: bool, mock_get_response: Mock):
-    controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
+@pytest.mark.parametrize("strip_markup", [False, True])
+@pytest.mark.parametrize("feed_input, enable_cache", [(test_file_paths[0], False), (test_urls[0], True),
+                                                      (test_urls[0], False)])
+def test_try_parse_feed_with_beautiful_soup(feed_input: str,
+                                            enable_cache: bool,
+                                            mock_get_response: Mock,
+                                            strip_markup: bool):
+    controller = RSSController(feed_input=feed_input, enable_cache=enable_cache, strip_markup=strip_markup)
 
-    if is_url:
-        if enable_cache:
-            with patch("morpheus.controllers.rss_controller.requests_cache.CachedSession.get") as mock_get:
-                mock_get.return_value = mock_get_response
-                feed_data = controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
-        else:
-            with patch("morpheus.controllers.rss_controller.requests.get") as mock_get:
-                mock_get.return_value = mock_get_response
-                feed_data = controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
-
-    else:
-        feed_data = controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
+    # When enable_cache is set to 'True', the feed content is provided as input.
+    feed_data = controller._try_parse_feed_with_beautiful_soup(mock_get_response.text)
 
     assert isinstance(feed_data, feedparser.FeedParserDict)
-
     assert len(feed_data.entries) > 0
 
     for entry in feed_data.entries:
@@ -178,16 +189,6 @@ def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool, enabl
     assert isinstance(feed_data, dict)
     assert "entries" in feed_data
     assert isinstance(feed_data["entries"], list)
-
-
-@pytest.mark.parametrize("enable_cache", [True, False])
-def test_enable_disable_cache(enable_cache):
-    controller = RSSController(feed_input=test_urls, enable_cache=enable_cache)
-
-    if enable_cache:
-        assert controller.session_exist
-    else:
-        assert not controller.session_exist
 
 
 def test_parse_feeds(mock_feed: feedparser.FeedParserDict):
@@ -239,3 +240,46 @@ def test_parse_feeds(mock_feed: feedparser.FeedParserDict):
 
         with pytest.raises(ValueError):
             controller.get_feed_stats("http://testfeed.com")
+
+
+@pytest.mark.parametrize("strip_markup", [False, True])
+@pytest.mark.parametrize("feed_input", [test_urls[0]])
+def test_redundant_fetch(feed_input: str,
+                         mock_feed: feedparser.FeedParserDict,
+                         mock_get_response: Mock,
+                         strip_markup: bool):
+
+    controller = RSSController(feed_input=feed_input, strip_markup=strip_markup)
+    mock_feedparser_parse = patch("morpheus.controllers.rss_controller.feedparser.parse")
+    with mock_feedparser_parse, patch("requests.Session.get", return_value=mock_get_response) as mocked_session_get:
+        mock_feedparser_parse.return_value = mock_feed
+        dataframes_generator = controller.fetch_dataframes()
+        next(dataframes_generator, None)
+        assert mocked_session_get.call_count == 1
+
+
+@pytest.mark.parametrize("strip_markup", [False, True])
+def test_strip_markup(cisa_rss_feed: list[str], strip_markup: bool):
+    # Construct expected data
+    tree = ElementTree.parse(cisa_rss_feed[0])
+
+    # feedparser will map the description field to the summary field
+    description_tags = tree.findall('./channel/item/description')
+    expected_summary_col = [(tag.text or "").strip() for tag in description_tags]
+
+    if strip_markup:
+        expected_summary_col = [
+            BeautifulSoup(summary, features="html.parser").get_text() for summary in expected_summary_col
+        ]
+
+    controller = RSSController(feed_input=cisa_rss_feed, strip_markup=strip_markup)
+    dataframes = list(controller.fetch_dataframes())
+
+    # The length number of dataframes and rows should be the same regardless if strip_markup is True or False
+    assert len(dataframes) == 1
+    dataframe = dataframes[0]
+    assert isinstance(dataframe, cudf.DataFrame)
+    assert len(dataframe) == 10
+
+    series: SeriesType = dataframe["summary"]
+    assert (series.to_pandas().values == expected_summary_col).all()

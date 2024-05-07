@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,8 @@
 
 import os
 import shutil
+import warnings
+from unittest import mock
 
 import click
 import mlflow
@@ -128,6 +130,15 @@ def mlflow_uri(tmp_path):
         mlflow.end_run()
 
 
+@pytest.fixture(scope="function", autouse=True)
+def config_warning_fixture():
+    # morpheus.cli.utils._apply_to_config method will warn about any keyword arguments that don't match a config option
+    # this isn't triggered in normal production code, but is triggered in the cli tests.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="No config option matches for.*", category=UserWarning)
+        yield
+
+
 @pytest.mark.reload_modules(commands)
 @pytest.mark.usefixtures("chdir_tmpdir", "reload_modules")
 @pytest.mark.use_python
@@ -156,6 +167,24 @@ class TestCLI:
         result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'install', '--shell=bash'],
                                env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
+
+    @pytest.mark.usefixtures("restore_environ")
+    @pytest.mark.parametrize('use_environ', [True, False])
+    @pytest.mark.parametrize('value', [1, 13, 33])
+    @mock.patch('morpheus.utils.seed.manual_seed')
+    def test_manual_seed(self, mock_manual_seed: mock.MagicMock, value: int, use_environ: bool):
+        flags = ['run']
+        if use_environ:
+            os.environ['MORPHEUS_MANUAL_SEED'] = str(value)
+        else:
+            flags.append(f'--manual_seed={value}')
+
+        flags.append('pipeline-other')
+
+        runner = CliRunner()
+        result = runner.invoke(commands.cli, flags)
+        assert result.exit_code == 0, result.output
+        mock_manual_seed.assert_called_once_with(value)
 
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae(self, config, callback_values):
@@ -269,8 +298,8 @@ class TestCLI:
             'preprocess',
             'inf-pytorch',
             'add-scores'
-        ] + INF_TRITON_ARGS + ['timeseries', '--resolution=1m', '--zscore_threshold=8.0', '--hot_start'] +
-                MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
+        ] + ['timeseries', '--resolution=1m', '--zscore_threshold=8.0', '--hot_start'] + MONITOR_ARGS + VALIDATE_ARGS +
+                ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
 
         runner = CliRunner()
         result = runner.invoke(commands.cli, args)
@@ -288,7 +317,6 @@ class TestCLI:
             process_ae,
             auto_enc,
             add_scores,
-            triton_inf,
             time_series,
             monitor,
             validation,
@@ -311,11 +339,6 @@ class TestCLI:
         assert isinstance(process_ae, PreprocessAEStage)
         assert isinstance(auto_enc, AutoEncoderInferenceStage)
         assert isinstance(add_scores, AddScoresStage)
-
-        assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(time_series, TimeSeriesStage)
         assert time_series._resolution == '1m'
@@ -383,9 +406,9 @@ class TestCLI:
         assert isinstance(process_fil, PreprocessFILStage)
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -506,9 +529,9 @@ class TestCLI:
         assert mlflow_drift._tracking_uri == mlflow_uri
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -640,9 +663,9 @@ class TestCLI:
         assert mlflow_drift._tracking_uri == mlflow_uri
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -721,9 +744,9 @@ class TestCLI:
         assert not process_nlp._add_special_tokens
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -854,9 +877,9 @@ class TestCLI:
         assert mlflow_drift._tracking_uri == mlflow_uri
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,14 +22,8 @@
 #include "morpheus/objects/filter_source.hpp"
 
 #include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/sink_properties.hpp>
-#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
-#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
@@ -38,7 +32,6 @@
 #include <memory>
 #include <string>
 #include <thread>
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/

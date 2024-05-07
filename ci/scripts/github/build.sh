@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,39 +18,36 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
-update_conda_env
+rapids-dependency-file-generator \
+  --output conda \
+  --file_key build \
+  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee "${WORKSPACE_TMP}/env.yaml"
+
+update_conda_env "${WORKSPACE_TMP}/env.yaml"
 
 log_toolchain
-
-git submodule update --init --recursive
 
 CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON"
-if [[ "${LOCAL_CI}" == "" ]]; then
-    CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
-fi
 
 rapids-logger "Configuring cmake for Morpheus with ${CMAKE_FLAGS}"
-cmake -B build -G Ninja ${CMAKE_FLAGS} .
+cmake ${CMAKE_FLAGS} .
 
 rapids-logger "Building Morpheus"
-cmake --build build --parallel ${PARALLEL_LEVEL}
+cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL}
 
-if [[ "${LOCAL_CI}" == "" ]]; then
-    rapids-logger "sccache usage for morpheus build:"
-    sccache --show-stats
-fi
+log_sccache_stats
 
 rapids-logger "Archiving results"
-tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/dist
+tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" ${BUILD_DIR}/dist
 
-MORPHEUS_LIBS=($(find ${MORPHEUS_ROOT}/build/morpheus/_lib -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;) \
+MORPHEUS_LIBS=($(find ${MORPHEUS_ROOT}/${BUILD_DIR}/morpheus/_lib -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;) \
                 $(find ${MORPHEUS_ROOT}/examples -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;))
 tar cfj "${WORKSPACE_TMP}/morhpeus_libs.tar.bz" "${MORPHEUS_LIBS[@]}"
 
-CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/morpheus/_lib/tests -name "*.x" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;))
+CPP_TESTS=($(find ${MORPHEUS_ROOT}/${BUILD_DIR}/morpheus/_lib/tests -name "*.x" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;))
 tar cfj "${WORKSPACE_TMP}/cpp_tests.tar.bz" "${CPP_TESTS[@]}"
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"

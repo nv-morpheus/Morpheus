@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
 
 ARG FROM_IMAGE="condaforge/miniforge-pypy3"
 ARG PYTHON_VER=3.11
-ARG TAG=23.1.0-1
+ARG TAG=23.11.0-0
 FROM ${FROM_IMAGE}:${TAG} AS base
 
 WORKDIR /mlflow
@@ -44,7 +44,7 @@ RUN sed -i 's/conda activate base/conda activate mlflow/g' ~/.bashrc
 SHELL ["/opt/conda/bin/conda", "run", "-n", "mlflow", "/bin/bash", "-c"]
 
 ARG TRITON_DIR=/mlflow/triton-inference-server
-ARG TRITON_VER=r23.05
+ARG TRITON_VER=r24.03
 
 RUN mkdir ${TRITON_DIR} && \
     cd ${TRITON_DIR} && \

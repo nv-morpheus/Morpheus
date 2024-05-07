@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,7 +25,6 @@ import cudf
 from _utils.inference_worker import IW
 from morpheus.messages import ResponseMemory
 from morpheus.messages.memory.inference_memory import InferenceMemory
-from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
@@ -119,67 +118,6 @@ def test_split_batches():
 
     assert mock_message.get_slice.call_count == 3
     mock_message.get_slice.assert_has_calls([mock.call(0, 3), mock.call(3, 7), mock.call(7, 10)])
-
-
-@pytest.mark.use_python
-def test_convert_response():
-    # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
-    # pylint: disable=no-member
-
-    message_sizes = [3, 2, 1, 7, 4]
-    total_size = sum(message_sizes)
-
-    full_input = _mk_message(mess_count=total_size, count=total_size)
-
-    input_messages = [
-        full_input.get_slice(sum(message_sizes[:i]), sum(message_sizes[:i]) + size) for i,
-        size in enumerate(message_sizes)
-    ]
-
-    full_output = cp.random.rand(total_size, 3)
-    output_memory = []
-
-    for i, count in enumerate(message_sizes):
-        output_memory.append(
-            ResponseMemory(count=count,
-                           tensors={"probs": full_output[sum(message_sizes[:i]):sum(message_sizes[:i]) + count, :]}))
-
-    resp = InferenceStageT._convert_response((input_messages, output_memory))
-    assert isinstance(resp, MultiResponseMessage)
-    assert resp.meta == full_input.meta
-    assert resp.mess_offset == 0
-    assert resp.mess_count == total_size
-    assert isinstance(resp.memory, TensorMemory)
-    assert resp.offset == 0
-    assert resp.count == total_size
-    assert (resp.memory.get_tensor("probs") == full_output).all()
-
-
-def test_convert_response_errors():
-    # Length of input messages doesn't match length of output messages
-    with pytest.raises(AssertionError):
-        InferenceStageT._convert_response(([1, 2, 3], [1, 2]))
-
-    # Message offst of the second message doesn't line up offset+count of the first
-    msg1 = _mk_message()
-    msg2 = _mk_message(mess_offset=12)
-
-    out_msg1 = ResponseMemory(count=1, tensors={"probs": cp.random.rand(1, 3)})
-    out_msg2 = ResponseMemory(count=1, tensors={"probs": cp.random.rand(1, 3)})
-
-    with pytest.raises(AssertionError):
-        InferenceStageT._convert_response(([msg1, msg2], [out_msg1, out_msg2]))
-
-    # mess_coutn and count don't match for msg2, and msg2.count != out_msg2.count
-    msg = _mk_message(mess_count=2, count=2)
-    msg1 = msg.get_slice(0, 1)
-    msg2 = msg.get_slice(1, 2)
-
-    out_msg1 = ResponseMemory(count=1, tensors={"probs": cp.random.rand(1, 3)})
-    out_msg2 = ResponseMemory(count=2, tensors={"probs": cp.random.rand(2, 3)})
-
-    with pytest.raises(AssertionError):
-        InferenceStageT._convert_response(([msg1, msg2], [out_msg1, out_msg2]))
 
 
 @pytest.mark.use_python

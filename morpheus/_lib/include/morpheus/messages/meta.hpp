@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@
 
 #include "morpheus/objects/data_table.hpp"  // for IDataTable
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex
 
 #include <cudf/io/types.hpp>
@@ -30,6 +31,7 @@
 #include <vector>
 
 namespace morpheus {
+
 #pragma GCC visibility push(default)
 /****** Component public implementations ******************/
 /****** MessageMeta****************************************/
@@ -63,6 +65,38 @@ class MessageMeta
      * @return TableInfo
      */
     virtual TableInfo get_info() const;
+
+    /**
+     * @brief Get the info object for a specific column
+     *
+     * @param col_name The name of the column to slice
+     * @return TableInfo The table info containing only the column specified
+     */
+    virtual TableInfo get_info(const std::string& col_name) const;
+
+    /**
+     * @brief Get the info object for a specific set of columns
+     *
+     * @param column_names The names of the columns to slice
+     * @return TableInfo The table info containing only the columns specified, in the order specified
+     */
+    virtual TableInfo get_info(const std::vector<std::string>& column_names) const;
+
+    /**
+     * @brief Set the data for a single column from a TensorObject
+     *
+     * @param col_name The name of the column to set
+     * @param tensor The tensor to set the column to
+     */
+    virtual void set_data(const std::string& col_name, TensorObject tensor);
+
+    /**
+     * @brief Set the data for multiple columns from a vector of TensorObjects
+     *
+     * @param column_names The names of the columns to set
+     * @param tensors The tensors to set the columns to
+     */
+    virtual void set_data(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors);
 
     /**
      * TODO(Documentation)
@@ -172,12 +206,66 @@ struct MessageMetaInterfaceProxy
     static std::shared_ptr<MessageMeta> init_python(pybind11::object&& data_frame);
 
     /**
+     * @brief Initialize MessageMeta cpp object with a given a MessageMeta python objectand returns shared pointer as
+     * the result
+     *
+     * @param meta : Python MesageMeta object
+     * @return std::shared_ptr<MessageMeta>
+     */
+    static std::shared_ptr<MessageMeta> init_python_meta(const pybind11::object& meta);
+
+    /**
      * @brief Get messages count
      *
      * @param self
      * @return TensorIndex
      */
     static TensorIndex count(MessageMeta& self);
+
+    /**
+     * @brief Gets a DataFrame for all columns
+     *
+     * @param self The MessageMeta instance
+     * @return pybind11::object A python DataFrame containing the info for all columns
+     */
+    static pybind11::object get_data(MessageMeta& self);
+
+    /**
+     * @brief Get a Series for a single column
+     *
+     * @param self The MessageMeta instance
+     * @param col_name The name of the column to get
+     * @return pybind11::object A python Series containing the info for the specified column
+     */
+    static pybind11::object get_data(MessageMeta& self, std::string col_name);
+
+    /**
+     * @brief Get a DataFrame for a set of columns
+     *
+     * @param self The MessageMeta instance
+     * @param columns The names of the columns to get
+     * @return pybind11::object A python DataFrame containing the info for the specified columns, in the order specified
+     */
+    static pybind11::object get_data(MessageMeta& self, std::vector<std::string> columns);
+
+    /**
+     * @brief Gets a DataFrame for all columns. This is only used for overload resolution from python
+     *
+     * @param self The MessageMeta instance
+     * @param none_obj An object of None
+     * @return pybind11::object A python DataFrame containing the info for all columns
+     */
+    static pybind11::object get_data(MessageMeta& self, pybind11::none none_obj);
+
+    /**
+     * @brief Set the values for one or more columns from a python object
+     *
+     * @param self The MessageMeta instance
+     * @param columns The names of the columns to set
+     * @param value The value to set the columns to. This can be a scalar, a list, a numpy array, a Series, or a
+     * DataFrame. The dimension must match the number of columns according to DataFrame broadcasting rules.
+     */
+    static void set_data(MessageMeta& self, pybind11::object columns, pybind11::object value);
 
     static std::vector<std::string> get_column_names(MessageMeta& self);
 
@@ -188,6 +276,7 @@ struct MessageMetaInterfaceProxy
      * @return pybind11::object A `DataFrame` object
      */
     static pybind11::object get_data_frame(MessageMeta& self);
+
     static pybind11::object df_property(MessageMeta& self);
 
     static MutableTableCtxMgr mutable_dataframe(MessageMeta& self);

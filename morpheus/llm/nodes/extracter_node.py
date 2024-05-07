@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ class ExtracterNode(LLMNodeBase):
         # This node does not receive its inputs from upstream nodes, but rather from the task itself
         return []
 
-    async def execute(self, context: LLMContext) -> LLMContext:
+    async def execute(self, context: LLMContext) -> LLMContext:  # pylint: disable=invalid-overridden-method
 
         # Get the keys from the task
         input_keys: list[str] = typing.cast(list[str], context.task()["input_keys"])

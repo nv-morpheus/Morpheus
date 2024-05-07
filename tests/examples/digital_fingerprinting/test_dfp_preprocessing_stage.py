@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,17 +36,16 @@ def test_constructor(config: Config):
 
 
 @pytest.mark.usefixtures("reset_loglevel")
-@pytest.mark.parametrize('morpheus_log_level',
-                         [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
+@pytest.mark.parametrize('log_level', [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
 def test_process_features(
         config: Config,
         dfp_multi_message: "MultiDFPMessage",  # noqa: F821
         dataset_pandas: DatasetManager,
-        morpheus_log_level: int):
+        log_level: int):
     from dfp.messages.multi_dfp_message import MultiDFPMessage
     from dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
 
-    set_log_level(morpheus_log_level)
+    set_log_level(log_level)
 
     expected_df = dfp_multi_message.get_meta_dataframe().copy(deep=True)
     expected_df['v210'] = expected_df['v2'] + 10

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -139,10 +139,10 @@ class TestPreprocessingRWStage:
         }
 
         expected_df = dataset_pandas['examples/ransomware_detection/dask_results.csv'].fillna('')
-        expected_df['pid_process'][1] = 'test_val1'
-        expected_df['pid_process'][3] = 'test_val2'
+        expected_df.loc[1, 'pid_process'] = 'test_val1'
+        expected_df.loc[3, 'pid_process'] = 'test_val2'
 
-        expected_df['snapshot_id'] = snapshot_ids
+        expected_df.loc[:, 'snapshot_id'] = snapshot_ids
         expected_df.index = expected_df.snapshot_id
 
         stage._merge_curr_and_prev_snapshots(df, source_pid_process)

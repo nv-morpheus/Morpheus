@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import logging
+import typing
 
 import pytest
 from static_message_source import StaticMessageSource
@@ -29,7 +30,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
 
 
-def build_and_run_pipeline(config: Config, df: cudf.DataFrame):
+def build_and_run_pipeline(*, config: Config, df: cudf.DataFrame, morpheus_log_level: int):
 
     # Pipeline
     pipeline = LinearPipeline(config)
@@ -39,7 +40,7 @@ def build_and_run_pipeline(config: Config, df: cudf.DataFrame):
     pipeline.add_stage(DeserializeStage(config))
 
     # Stage we want to benchmark
-    pipeline.add_stage(MonitorStage(config))
+    pipeline.add_stage(MonitorStage(config, log_level=morpheus_log_level))
 
     pipeline.build()
     pipeline.run()
@@ -47,11 +48,11 @@ def build_and_run_pipeline(config: Config, df: cudf.DataFrame):
 
 @pytest.mark.benchmark
 @pytest.mark.parametrize("num_messages", [1, 100, 10000, 1000000])
-def test_monitor_stage(benchmark, num_messages):
+def test_monitor_stage(benchmark: typing.Callable, num_messages: int, morpheus_log_level: int):
 
     # Test Data
 
-    df = cudf.DataFrame({"value": [x for x in range(0, num_messages)]})
+    df = cudf.DataFrame({"value": list(range(0, num_messages))})
 
     # Configuration
 
@@ -70,4 +71,4 @@ def test_monitor_stage(benchmark, num_messages):
     config.edge_buffer_size = 4
 
     # would prefer to benchmark just pipeline.run, but it asserts when called multiple times
-    benchmark(build_and_run_pipeline, config, df)
+    benchmark(build_and_run_pipeline, config=config, df=df, morpheus_log_level=morpheus_log_level)
