@@ -156,11 +156,10 @@ morpheus::json_t cast_from_pyobject_impl(const py::object& source,
         return morpheus::json_t(py::cast<std::string>(source));
     }
 
-    // else return the source as a binary object in PythonByteContainer
-    {
-        return morpheus::json_t::binary(morpheus::PythonByteContainer(py::cast<mrc::pymrc::PyHolder>(source)),
-                                        type_to_uint64<py::object>());
-    }
+    // source is not serializable, return as a binary object in PythonByteContainer
+    return morpheus::json_t::binary(morpheus::PythonByteContainer(py::cast<mrc::pymrc::PyHolder>(source)),
+                                    type_to_uint64<py::object>());
+
     // NOLINTEND(modernize-return-braced-init-list)
 }
 
@@ -442,7 +441,7 @@ py::object ControlMessageProxy::get_metadata(ControlMessage& self,
     if (key.is_none())
     {
         auto metadata = self.get_metadata();
-        return mrc::pymrc::cast_from_json(metadata);
+        return cast_from_json(metadata);
     }
 
     auto value = self.get_metadata(py::cast<std::string>(key), false);

@@ -24,6 +24,8 @@ import cudf
 from morpheus import messages
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.messages import TensorMemory
+import io
+import sys
 
 # pylint: disable=unsupported-membership-test
 # pylint: disable=unsubscriptable-object
@@ -402,24 +404,75 @@ def test_consistency_after_multiple_operations():
                        new_tensor["new_tensor"]), "New tensor data mismatch."
 
 
+class NonSerializablePyClass():
+
+    def __init__(self):
+        self.name = "non_serializable_py_class"
+        self.data = 1
+
+    def __getstate__(self):
+        raise TypeError("This object is not serializable")
+
+
+class NonSerializableNestedPyClass():
+
+    def __init__(self):
+        self.name = "non_serializable_nested_py_class"
+        self.data = 2
+        self.non_serializable = NonSerializablePyClass()
+
+
+class NonSerializableNestedPyClassWithFile():
+
+    def __init__(self):
+        self.name = "non_serializable_nested_py_class_with_file"
+        self.data = 3
+        self.file_obj = io.StringIO("string data")
+
+
+@pytest.fixture(name="py_object",
+                scope="function",
+                params=[NonSerializablePyClass, NonSerializableNestedPyClass, NonSerializableNestedPyClassWithFile])
+def fixture_pyobject(request):
+    return request.param()
+
+
 @pytest.mark.usefixtures("config_only_cpp")
-def test_control_message_hold_non_serializable_python_obj():
-
-    class NonSerializablePyObj():
-
-        def __init__(self):
-            pass
-
-        def __getstate__(self):
-            raise TypeError("This object is not serializable")
+def test_metadata_holds_non_serializable_python_obj(py_object):
 
     message = messages.ControlMessage()
 
-    non_serializable_obj = NonSerializablePyObj()
-    message.set_metadata("non_serializable_py_obj", non_serializable_obj)
-    assert message.get_metadata("non_serializable_py_obj") is non_serializable_obj
+    obj = py_object
+    key = obj.name
+
+    message.set_metadata(key, obj)
+    assert key in message.list_metadata()
+    metadata = message.get_metadata(key)
+    assert obj is metadata
+
+    new_data = 10
+    obj.data = new_data
+    assert metadata.data == new_data
+
+
+@pytest.mark.usefixtures("config_only_cpp")
+def test_tasks_hold_non_serializable_python_obj(py_object):
+
+    message = messages.ControlMessage()
+
+    obj = py_object
+    task_key = "non_serializable"
+    task_name = "task"
+
+    message.add_task(task_key, {task_name: obj})
+    assert message.has_task(task_key)
+    task = message.get_tasks()[task_key][0][task_name]
+    assert obj is task
     
-    message.add_task("non_serializable", {"non_serializable_task": non_serializable_obj})
-    assert message.has_task("non_serializable")
-    assert message.get_tasks()["non_serializable"][0]["non_serializable_task"] is non_serializable_obj
-    assert message.remove_task("non_serializable")["non_serializable_task"] is non_serializable_obj
+    new_data = 10
+    obj.data = new_data
+    assert task.data == new_data
+
+    ref_count = sys.getrefcount(obj)
+    assert message.remove_task(task_key)[task_name] is obj
+    assert sys.getrefcount(obj) == ref_count - 1
