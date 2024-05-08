@@ -245,7 +245,7 @@ struct type_caster<morpheus::utilities::json_t_dict>
     }
 
     /**
-     * Conversion part 2 (C++ -> Python): convert an nlohmann::json_dict instance into
+     * Conversion part 2 (C++ -> Python): convert an morpheus::utilities::json_t_dict instance into
      * a Python object. The second and third arguments are used to
      * indicate the return value policy and parent object (for
      * ``return_value_policy::reference_internal``) and are generally

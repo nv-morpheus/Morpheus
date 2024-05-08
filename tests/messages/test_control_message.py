@@ -454,6 +454,16 @@ def test_metadata_holds_non_serializable_python_obj(py_object):
     obj.data = new_data
     assert metadata.data == new_data
 
+    dict_with_obj = {"nested_obj": obj}
+    message.set_metadata("nested", dict_with_obj)
+    metadata_dict_with_obj = message.get_metadata("nested")
+
+    # Check that the dict was serialized and recreated
+    assert dict_with_obj is not metadata_dict_with_obj
+
+    # Check that the nested non-serializable object is the same
+    assert obj is metadata_dict_with_obj["nested_obj"]
+
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_tasks_hold_non_serializable_python_obj(py_object):
@@ -468,11 +478,22 @@ def test_tasks_hold_non_serializable_python_obj(py_object):
     assert message.has_task(task_key)
     task = message.get_tasks()[task_key][0][task_name]
     assert obj is task
-    
+
     new_data = 10
     obj.data = new_data
     assert task.data == new_data
 
     ref_count = sys.getrefcount(obj)
     assert message.remove_task(task_key)[task_name] is obj
+    # Check the removed task decreases the reference count
     assert sys.getrefcount(obj) == ref_count - 1
+
+    dict_with_obj = {"nested_obj": obj}
+    message.set_metadata("nested", dict_with_obj)
+    metadata_dict_with_obj = message.get_metadata("nested")
+
+    # Check that the dict was serialized and recreated
+    assert dict_with_obj is not metadata_dict_with_obj
+
+    # Check that the nested non-serializable object is the same
+    assert obj is metadata_dict_with_obj["nested_obj"]

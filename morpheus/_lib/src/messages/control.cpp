@@ -269,29 +269,6 @@ std::shared_ptr<ControlMessage> ControlMessageProxy::copy(ControlMessage& self)
     return std::make_shared<ControlMessage>(self);
 }
 
-// void ControlMessageProxy::add_task(ControlMessage& self, const std::string& task_type, py::dict& task)
-// {
-//     self.add_task(task_type, morpheus::utilities::cast_from_pyobject(task));
-// }
-
-// py::dict ControlMessageProxy::remove_task(ControlMessage& self, const std::string& task_type)
-// {
-//     auto task = self.remove_task(task_type);
-
-//     return cast_from_json(task);
-// }
-
-// py::dict ControlMessageProxy::get_tasks(ControlMessage& self)
-// {
-//     return cast_from_json(self.get_tasks());
-// }
-
-// py::dict ControlMessageProxy::config(ControlMessage& self)
-// {
-//     auto dict = cast_from_json(self.config());
-
-//     return dict;
-// }
 
 py::object ControlMessageProxy::get_metadata(ControlMessage& self,
                                              const py::object& key,
@@ -312,10 +289,6 @@ py::object ControlMessageProxy::get_metadata(ControlMessage& self,
     return cast_from_json(value);
 }
 
-// void ControlMessageProxy::set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value)
-// {
-//     self.set_metadata(key, morpheus::utilities::cast_from_pyobject(value));
-// }
 
 py::list ControlMessageProxy::list_metadata(ControlMessage& self)
 {
@@ -377,11 +350,6 @@ void ControlMessageProxy::set_timestamp(ControlMessage& self, const std::string&
         throw std::runtime_error("Timestamp cannot be None");
     }
 }
-
-// void ControlMessageProxy::config(ControlMessage& self, py::dict& config)
-// {
-//     self.config(morpheus::utilities::cast_from_pyobject(config));
-// }
 
 void ControlMessageProxy::payload_from_python_meta(ControlMessage& self, const pybind11::object& meta)
 {

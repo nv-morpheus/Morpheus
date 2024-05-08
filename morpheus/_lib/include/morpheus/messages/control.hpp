@@ -404,51 +404,6 @@ struct ControlMessageProxy
     static std::shared_ptr<ControlMessage> copy(ControlMessage& self);
 
     /**
-     * @brief Retrieves the configuration of the ControlMessage as a dictionary.
-     * @param self Reference to the underlying ControlMessage object.
-     * @return A pybind11::dict representing the ControlMessage's configuration.
-     */
-    // static pybind11::dict config(ControlMessage& self);
-
-    /**
-     * @brief Updates the configuration of the ControlMessage from a dictionary.
-     * @param self Reference to the underlying ControlMessage object.
-     * @param config A pybind11::dict representing the new configuration.
-     */
-    // static void config(ControlMessage& self, pybind11::dict& config);
-
-    /**
-     * @brief Adds a task to the ControlMessage.
-     * @param self Reference to the underlying ControlMessage object.
-     * @param type The type of the task to be added.
-     * @param task A pybind11::dict representing the task to be added.
-     */
-    // static void add_task(ControlMessage& self, const std::string& type, pybind11::dict& task);
-
-    /**
-     * @brief Removes and returns a task of the given type from the ControlMessage.
-     * @param self Reference to the underlying ControlMessage object.
-     * @param type The type of the task to be removed.
-     * @return A pybind11::dict representing the removed task.
-     */
-    // static pybind11::dict remove_task(ControlMessage& self, const std::string& type);
-
-    /**
-     * @brief Retrieves all tasks from the ControlMessage.
-     * @param self Reference to the underlying ControlMessage object.
-     * @return A pybind11::dict containing all tasks.
-     */
-    // static pybind11::dict get_tasks(ControlMessage& self);
-
-    /**
-     * @brief Sets a metadata key-value pair.
-     * @param self Reference to the underlying ControlMessage object.
-     * @param key The key for the metadata entry.
-     * @param value The value for the metadata entry.
-     */
-    // static void set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value);
-
-    /**
      * @brief Retrieves a metadata value by key, with an optional default value.
      *
      * @param self Reference to the underlying ControlMessage object.
