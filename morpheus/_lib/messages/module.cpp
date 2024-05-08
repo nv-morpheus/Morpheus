@@ -35,11 +35,13 @@
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
+#include "morpheus/pybind11/json.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
 #include "morpheus/version.hpp"
 
 #include <mrc/edge/edge_connector.hpp>
+#include <pybind11/detail/common.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -251,7 +253,11 @@ PYBIND11_MODULE(messages, _module)
         .def("has_sliceable_index", &MessageMetaInterfaceProxy::has_sliceable_index)
         .def("ensure_sliceable_index", &MessageMetaInterfaceProxy::ensure_sliceable_index)
         .def("copy_ranges", &MessageMetaInterfaceProxy::copy_ranges, py::return_value_policy::move, py::arg("ranges"))
-        .def("get_slice", &MessageMetaInterfaceProxy::get_slice, py::return_value_policy::move, py::arg("start"), py::arg("stop"))
+        .def("get_slice",
+             &MessageMetaInterfaceProxy::get_slice,
+             py::return_value_policy::move,
+             py::arg("start"),
+             py::arg("stop"))
         .def_static("make_from_file", &MessageMetaInterfaceProxy::init_cpp);
 
     py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(_module, "MultiMessage")
@@ -388,17 +394,16 @@ PYBIND11_MODULE(messages, _module)
         .def(py::init<>())
         .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)))
         .def(py::init(py::overload_cast<std::shared_ptr<ControlMessage>>(&ControlMessageProxy::create)))
-        .def("add_task", &ControlMessageProxy::add_task, py::arg("task_type"), py::arg("task"))
-        .def("config",
-             pybind11::overload_cast<ControlMessage&, py::dict&>(&ControlMessageProxy::config),
-             py::arg("config"))
-        .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
+        .def("add_task", &ControlMessage::add_task, py::arg("task_type"), py::arg("task"))
+        .def(
+            "config", py::overload_cast<const morpheus::utilities::json_t&>(&ControlMessage::config), py::arg("config"))
+        .def("config", py::overload_cast<>(&ControlMessage::config, py::const_))
         .def("copy", &ControlMessageProxy::copy)
         .def("get_metadata",
              &ControlMessageProxy::get_metadata,
              py::arg("key")           = py::none(),
              py::arg("default_value") = py::none())
-        .def("get_tasks", &ControlMessageProxy::get_tasks)
+        .def("get_tasks", &ControlMessage::get_tasks)
         .def("filter_timestamp",
              py::overload_cast<ControlMessage&, const std::string&>(&ControlMessageProxy::filter_timestamp),
              "Retrieve timestamps matching a regex filter within a given group.",
@@ -425,8 +430,8 @@ PYBIND11_MODULE(messages, _module)
             py::arg("meta"))
         .def("tensors", pybind11::overload_cast<>(&ControlMessage::tensors))
         .def("tensors", pybind11::overload_cast<const std::shared_ptr<TensorMemory>&>(&ControlMessage::tensors))
-        .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
-        .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
+        .def("remove_task", &ControlMessage::remove_task, py::arg("task_type"))
+        .def("set_metadata", &ControlMessage::set_metadata, py::arg("key"), py::arg("value"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
         .def(
             "task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"));

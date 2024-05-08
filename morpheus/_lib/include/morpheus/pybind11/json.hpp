@@ -166,5 +166,141 @@ struct type_caster<nlohmann::json_list>
     }
 };
 
+template <>
+struct type_caster<morpheus::utilities::json_t>
+{
+  public:
+    /**
+     * This macro establishes a local variable 'value' of type morpheus::utilities::json_t
+     */
+    PYBIND11_TYPE_CASTER(morpheus::utilities::json_t, _("object"));
+
+    /**
+     * Conversion part 1 (Python->C++): convert a PyObject into an morpheus::utilities::json_t
+     * instance or return false upon failure. The second argument
+     * indicates whether implicit conversions should be applied.
+     */
+    bool load(handle src, bool convert)
+    {
+        if (!src)
+        {
+            return false;
+        }
+
+        if (src.is_none())
+        {
+            value = morpheus::utilities::json_t(nullptr);
+        }
+        else
+        {
+            value = morpheus::utilities::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src));
+        }
+
+        return true;
+    }
+
+    /**
+     * Conversion part 2 (C++ -> Python): convert an morpheus::utilities::json_t instance into
+     * a Python object. The second and third arguments are used to
+     * indicate the return value policy and parent object (for
+     * ``return_value_policy::reference_internal``) and are generally
+     * ignored by implicit casters.
+     */
+    static handle cast(morpheus::utilities::json_t src, return_value_policy policy, handle parent)
+    {
+        return morpheus::utilities::cast_from_json(src).release();
+    }
+};
+
+template <>
+struct type_caster<morpheus::utilities::json_t_dict>
+{
+  public:
+    /**
+     * This macro establishes a local variable 'value' of type morpheus::utilities::json_t_dict
+     */
+    PYBIND11_TYPE_CASTER(morpheus::utilities::json_t_dict, _("dict[str, typing.Any]"));
+
+    /**
+     * Conversion part 1 (Python->C++): convert a PyObject into an morpheus::utilities::json_t_dict
+     * instance or return false upon failure. The second argument
+     * indicates whether implicit conversions should be applied.
+     */
+    bool load(handle src, bool convert)
+    {
+        if (!src || src.is_none())
+        {
+            return false;
+        }
+
+        if (!PyDict_Check(src.ptr()))
+        {
+            return false;
+        }
+
+        value = static_cast<const morpheus::utilities::json_t_dict>(
+            morpheus::utilities::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
+
+        return true;
+    }
+
+    /**
+     * Conversion part 2 (C++ -> Python): convert an nlohmann::json_dict instance into
+     * a Python object. The second and third arguments are used to
+     * indicate the return value policy and parent object (for
+     * ``return_value_policy::reference_internal``) and are generally
+     * ignored by implicit casters.
+     */
+    static handle cast(morpheus::utilities::json_t_dict src, return_value_policy policy, handle parent)
+    {
+        return morpheus::utilities::cast_from_json(src).release();
+    }
+};
+
+template <>
+struct type_caster<morpheus::utilities::json_t_list>
+{
+  public:
+    /**
+     * This macro establishes a local variable 'value' of type morpheus::utilities::json_t_list
+     */
+    PYBIND11_TYPE_CASTER(morpheus::utilities::json_t_list, _("list[typing.Any]"));
+
+    /**
+     * Conversion part 1 (Python->C++): convert a PyObject into an morpheus::utilities::json_t_list
+     * instance or return false upon failure. The second argument
+     * indicates whether implicit conversions should be applied.
+     */
+    bool load(handle src, bool convert)
+    {
+        if (!src || src.is_none())
+        {
+            return false;
+        }
+
+        if (!PyList_Check(src.ptr()))
+        {
+            return false;
+        }
+
+        value = static_cast<const morpheus::utilities::json_t_list>(
+            morpheus::utilities::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
+
+        return true;
+    }
+
+    /**
+     * Conversion part 2 (C++ -> Python): convert an morpheus::utilities::json_t_list instance into
+     * a Python object. The second and third arguments are used to
+     * indicate the return value policy and parent object (for
+     * ``return_value_policy::reference_internal``) and are generally
+     * ignored by implicit casters.
+     */
+    static handle cast(morpheus::utilities::json_t_list src, return_value_policy policy, handle parent)
+    {
+        return morpheus::utilities::cast_from_json(src).release();
+    }
+};
+
 }  // namespace detail
 }  // namespace PYBIND11_NAMESPACE
