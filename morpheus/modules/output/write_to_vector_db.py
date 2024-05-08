@@ -148,7 +148,8 @@ def _write_to_vector_db(builder: mrc.Builder):
             try:
                 if accum_stats.data:
                     merged_df = cudf.concat(accum_stats.data)
-                    service.insert_dataframe(name=key, df=merged_df)
+                    collection = service.load_resource(name=key)
+                    collection.insert_dataframe(df=merged_df)
                     final_df_references.append(accum_stats.data)
             except Exception as e:
                 logger.error("Unable to upload dataframe entries to vector database: %s", e)
@@ -213,7 +214,8 @@ def _write_to_vector_db(builder: mrc.Builder):
                             merged_df = cudf.concat(accum_stats.data)
 
                             # pylint: disable=not-a-mapping
-                            service.insert_dataframe(name=key, df=merged_df, **resource_kwargs)
+                            collection = service.load_resource(name=key)
+                            collection.insert_dataframe(df=merged_df, **resource_kwargs)
                             # Reset accumulator stats
                             accum_stats.data.clear()
                             accum_stats.last_insert_time = current_time
