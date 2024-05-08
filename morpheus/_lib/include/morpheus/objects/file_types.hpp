@@ -71,7 +71,7 @@ inline std::string MORPHEUS_EXPORT filetypes_to_str(const FileTypes& f)
  * @param f
  * @return std::ostream&
  */
-static inline MORPHEUS_EXPORT std::ostream& operator<<(std::ostream& os, const FileTypes& f)
+static inline std::ostream& operator<<(std::ostream& os, const FileTypes& f)
 {
     os << filetypes_to_str(f);
     return os;
