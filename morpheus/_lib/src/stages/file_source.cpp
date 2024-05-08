@@ -38,9 +38,8 @@
 #include <memory>
 #include <optional>
 #include <sstream>
+#include <stdexcept>  // for invalid_argument
 #include <utility>
-// IWYU thinks we need __alloc_traits<>::value_type for vector assignments
-// IWYU pragma: no_include <ext/alloc_traits.h>
 
 namespace morpheus {
 // Component public implementations
@@ -57,9 +56,9 @@ FileSourceStage::FileSourceStage(std::string filename,
   m_filter_null_columns(std::move(filter_null_columns)),
   m_json_lines(json_lines)
 {
-    if (m_filter_null)
+    if (m_filter_null && m_filter_null_columns.empty())
     {
-        DCHECK(!m_filter_null_columns.empty()) << "Filter null columns must not be empty if filter_null is true";
+        throw std::invalid_argument("Filter null columns must not be empty if filter_null is true");
     }
 }
 
