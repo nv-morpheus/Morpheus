@@ -32,7 +32,6 @@
 
 namespace morpheus {
 
-
 /****** MultiTensorMessage*******************************/
 
 /**

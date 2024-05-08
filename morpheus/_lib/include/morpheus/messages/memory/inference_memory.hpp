@@ -33,7 +33,6 @@ namespace morpheus {
  * @file
  */
 
-
 /**
  * @brief This is a base container class for data that will be used for inference stages. This class is designed to
     hold generic data as a `TensorObject`s

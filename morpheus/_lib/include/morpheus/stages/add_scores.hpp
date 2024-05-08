@@ -41,7 +41,6 @@ namespace morpheus {
  * @file
  */
 
-
 /**
  * @brief Add probability scores to each message. Score labels based on probabilities calculated in inference stage.
  * Label indexes will be looked up in the idx2label property.

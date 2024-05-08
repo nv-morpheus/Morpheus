@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/export.h"
+
 #include <cudf/types.hpp>
 
 #include <climits>  // for CHAR_BIT
@@ -91,7 +92,8 @@ enum class MORPHEUS_EXPORT TypeId : int32_t
  * @class DType
  * @brief This class represents a data type specified by a TypeId.
  */
-struct MORPHEUS_EXPORT DType {
+struct MORPHEUS_EXPORT DType
+{
     /**
      * @brief Construct a DType for a given type specified by a TypeId.
      *

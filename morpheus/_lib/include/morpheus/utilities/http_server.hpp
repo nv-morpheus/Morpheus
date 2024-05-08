@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include "morpheus/export.h"           // for exporting symbols
+#include "morpheus/export.h"  // for exporting symbols
+
 #include <boost/asio/io_context.hpp>   // for io_context
 #include <boost/asio/ip/tcp.hpp>       // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
 #include <boost/beast/core/error.hpp>  // for error_code

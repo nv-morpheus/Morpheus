@@ -46,13 +46,13 @@ namespace morpheus {
  * @file
  */
 
-
 /**
  * @brief Include & exclude columns from messages. This class filters columns from a `MultiMessage` object emitting a
  * `MessageMeta`.
  */
 template <typename InputT>
-class MORPHEUS_EXPORT SerializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<MessageMeta>>
+class MORPHEUS_EXPORT SerializeStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<MessageMeta>>;

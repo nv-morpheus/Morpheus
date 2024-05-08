@@ -43,12 +43,12 @@ namespace morpheus {
  * @file
  */
 
-
 /**
  * @brief Write all messages to a file. Messages are written to a file by this class.
  * This class does not maintain an open file or buffer messages.
  */
-class MORPHEUS_EXPORT WriteToFileStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
+class MORPHEUS_EXPORT WriteToFileStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>;

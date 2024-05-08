@@ -48,10 +48,10 @@ namespace morpheus {
  * @param flush : When `true` flush `out_stream`.
  */
 void MORPHEUS_EXPORT df_to_csv(const TableInfo& tbl,
-               std::ostream& out_stream,
-               bool include_header,
-               bool include_index_col = true,
-               bool flush             = false);
+                               std::ostream& out_stream,
+                               bool include_header,
+                               bool include_index_col = true,
+                               bool flush             = false);
 
 /**
  * @brief Serialize a dataframe to an output stream in JSON format
@@ -70,7 +70,10 @@ std::string MORPHEUS_EXPORT df_to_csv(const TableInfo& tbl, bool include_header,
  * @param include_index_col : Determines whether or not to include the dataframe index
  * @param flush : When `true` flush `out_stream`.
  */
-void MORPHEUS_EXPORT df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col = true, bool flush = false);
+void MORPHEUS_EXPORT df_to_json(const TableInfo& tbl,
+                                std::ostream& out_stream,
+                                bool include_index_col = true,
+                                bool flush             = false);
 
 /**
  * @brief Serialize a dataframe into a JSON formatted string
@@ -93,10 +96,10 @@ std::string MORPHEUS_EXPORT df_to_json(const TableInfo& tbl, bool include_index_
  * @param flush : When `true` flush `out_stream`.
  */
 void MORPHEUS_EXPORT df_to_parquet(const TableInfo& tbl,
-                   std::ostream& out_stream,
-                   bool include_header,
-                   bool include_index_col = true,
-                   bool flush             = false);
+                                   std::ostream& out_stream,
+                                   bool include_header,
+                                   bool include_index_col = true,
+                                   bool flush             = false);
 
 /**
  * @brief Serialize a dataframe to an output stream in Parquet format
@@ -116,9 +119,9 @@ std::string MORPHEUS_EXPORT df_to_parquet(const TableInfo& tbl, bool include_hea
  */
 template <typename... ArgsT>
 void MORPHEUS_EXPORT write_df_to_file(const TableInfo& tbl,
-                      const std::string& filename,
-                      FileTypes file_type = FileTypes::Auto,
-                      ArgsT&&... args)
+                                      const std::string& filename,
+                                      FileTypes file_type = FileTypes::Auto,
+                                      ArgsT&&... args)
 {
     if (file_type == FileTypes::Auto)
     {
@@ -150,9 +153,9 @@ void MORPHEUS_EXPORT write_df_to_file(const TableInfo& tbl,
 
 template <typename... ArgsT>
 void MORPHEUS_EXPORT write_df_to_file(const MutableTableInfo& tbl,
-                      const std::string& filename,
-                      FileTypes file_type = FileTypes::Auto,
-                      ArgsT&&... args)
+                                      const std::string& filename,
+                                      FileTypes file_type = FileTypes::Auto,
+                                      ArgsT&&... args)
 {
     if (file_type == FileTypes::Auto)
     {

@@ -46,7 +46,8 @@ namespace morpheus {
  *
  */
 
-class MORPHEUS_EXPORT MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsMessage, MultiResponseMessage>
+class MORPHEUS_EXPORT MultiResponseProbsMessage
+  : public DerivedMultiMessage<MultiResponseProbsMessage, MultiResponseMessage>
 {
   public:
     /**

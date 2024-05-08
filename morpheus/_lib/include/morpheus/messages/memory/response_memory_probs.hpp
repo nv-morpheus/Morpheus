@@ -109,6 +109,5 @@ struct MORPHEUS_EXPORT ResponseMemoryProbsInterfaceProxy : public ResponseMemory
     static void set_probs(ResponseMemoryProbs& self, pybind11::object cupy_values);
 };
 
-
 /** @} */  // end of group
 }  // namespace morpheus

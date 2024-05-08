@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/export.h"
+
 #include <boost/fiber/buffered_channel.hpp>
 #include <boost/fiber/channel_op_status.hpp>
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
@@ -84,7 +85,6 @@ class MORPHEUS_EXPORT FiberQueue
   private:
     boost::fibers::buffered_channel<pybind11::object> m_queue;
 };
-
 
 /****** FiberQueueInterfaceProxy *************************/
 /**

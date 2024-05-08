@@ -46,7 +46,8 @@ namespace morpheus {
  *
  */
 
-class MORPHEUS_EXPORT MultiInferenceFILMessage : public DerivedMultiMessage<MultiInferenceFILMessage, MultiInferenceMessage>
+class MORPHEUS_EXPORT MultiInferenceFILMessage
+  : public DerivedMultiMessage<MultiInferenceFILMessage, MultiInferenceMessage>
 {
   public:
     /**

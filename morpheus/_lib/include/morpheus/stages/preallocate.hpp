@@ -74,7 +74,8 @@ void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
  * `PreallocateMultiMessageStage`
  */
 template <typename MessageT>
-class MORPHEUS_EXPORT PreallocateStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
+class MORPHEUS_EXPORT PreallocateStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>;

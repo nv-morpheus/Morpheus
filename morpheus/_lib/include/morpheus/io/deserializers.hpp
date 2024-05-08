@@ -51,8 +51,8 @@ std::vector<std::string> MORPHEUS_EXPORT get_column_names_from_table(const cudf:
  * @return cudf::io::table_with_metadata
  */
 cudf::io::table_with_metadata MORPHEUS_EXPORT load_table_from_file(const std::string& filename,
-                                                   FileTypes file_type            = FileTypes::Auto,
-                                                   std::optional<bool> json_lines = std::nullopt);
+                                                                   FileTypes file_type            = FileTypes::Auto,
+                                                                   std::optional<bool> json_lines = std::nullopt);
 
 /**
  * @brief Returns the number of index columns in `data_table`, in practice this will be a `0` or `1`

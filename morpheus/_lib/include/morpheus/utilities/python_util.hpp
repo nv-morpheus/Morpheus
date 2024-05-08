@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/export.h"
+
 #include <sys/types.h>
 
 #include <string>
@@ -28,7 +29,6 @@ using PyObject = _object;  // NOLINT(readability-identifier-naming)
 
 namespace morpheus::utilities {
 
-
 /**
  * @brief Shows a python warning using the `warnings.warn` module. These warnings can be suppressed and work different
  * than `logger.warn()`
@@ -38,7 +38,7 @@ namespace morpheus::utilities {
  * @param stack_level If the warning should appear earlier up in the stack, set this to >1
  */
 MORPHEUS_EXPORT void show_warning_message(const std::string& deprecation_message,
-                          PyObject* category  = nullptr,
-                          ssize_t stack_level = 1);
+                                          PyObject* category  = nullptr,
+                                          ssize_t stack_level = 1);
 
 }  // namespace morpheus::utilities

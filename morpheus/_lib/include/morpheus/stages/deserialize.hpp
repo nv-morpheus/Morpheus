@@ -66,7 +66,8 @@ void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
 
 /****** DeserializationStage********************************/
 template <typename OutputT>
-class MORPHEUS_EXPORT DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<OutputT>>
+class MORPHEUS_EXPORT DeserializeStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<OutputT>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<OutputT>>;

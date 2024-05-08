@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/export.h"
+
 #include <cstdint>
 #include <filesystem>  // for path
 #include <ostream>
@@ -32,7 +33,7 @@ namespace morpheus {
  * @file
  */
 
-MORPHEUS_EXPORT enum class FileTypes : int32_t
+enum class MORPHEUS_EXPORT FileTypes : int32_t
 {
     Auto,
     JSON,

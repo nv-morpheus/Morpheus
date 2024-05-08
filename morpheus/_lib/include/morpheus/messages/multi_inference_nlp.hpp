@@ -40,13 +40,13 @@ namespace morpheus {
  * @file
  */
 
-
 /**
  * A stronger typed version of `MultiInferenceMessage` that is used for NLP workloads. Helps ensure the
  * proper inputs are set and eases debugging.
  *
  */
-class MORPHEUS_EXPORT MultiInferenceNLPMessage : public DerivedMultiMessage<MultiInferenceNLPMessage, MultiInferenceMessage>
+class MORPHEUS_EXPORT MultiInferenceNLPMessage
+  : public DerivedMultiMessage<MultiInferenceNLPMessage, MultiInferenceMessage>
 {
   public:
     /**

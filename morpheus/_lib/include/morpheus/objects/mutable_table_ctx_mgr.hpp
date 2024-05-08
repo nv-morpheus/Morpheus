@@ -32,7 +32,6 @@ namespace morpheus {
  * @file
  */
 
-
 class MORPHEUS_EXPORT MutableTableCtxMgr
 {
   public:

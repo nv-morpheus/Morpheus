@@ -36,7 +36,8 @@ namespace morpheus_example {
 using namespace morpheus;
 
 // pybind11 sets visibility to hidden by default; we want to export our symbols
-class MORPHEUS_EXPORT PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
+class MORPHEUS_EXPORT PassThruStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;

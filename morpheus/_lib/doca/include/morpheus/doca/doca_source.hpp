@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "morpheus/export.h"
 #include "morpheus/doca/common.hpp"
+#include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 
 #include <mrc/segment/builder.hpp>

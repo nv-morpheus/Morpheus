@@ -33,7 +33,6 @@
 
 namespace morpheus {
 
-
 /****** Component public implementations ******************/
 /****** MessageMeta****************************************/
 

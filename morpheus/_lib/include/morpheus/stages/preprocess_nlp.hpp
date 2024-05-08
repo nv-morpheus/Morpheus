@@ -48,12 +48,12 @@ namespace morpheus {
  * @file
  */
 
-
 /**
  * @brief NLP input data for inference
  */
 template <typename InputT, typename OutputT>
-class MORPHEUS_EXPORT PreprocessNLPStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
+class MORPHEUS_EXPORT PreprocessNLPStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
