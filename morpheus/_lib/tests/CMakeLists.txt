@@ -188,4 +188,10 @@ add_morpheus_test(
     test_type_util.cpp
 )
 
+add_morpheus_test(
+  NAME table_util
+  FILES
+    utilities/test_table_util.cpp
+)
+
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

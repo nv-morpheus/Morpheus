@@ -31,6 +31,7 @@
 #include <optional>
 #include <string>
 #include <thread>
+#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -61,13 +62,19 @@ class FileSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
      * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging
      * @param json_lines: Whether to force json or jsonlines parsing
      */
-    FileSourceStage(std::string filename, int repeat = 1, std::optional<bool> json_lines = std::nullopt);
+    FileSourceStage(std::string filename,
+                    int repeat                                   = 1,
+                    bool filter_null                             = true,
+                    std::vector<std::string> filter_null_columns = {},
+                    std::optional<bool> json_lines               = std::nullopt);
 
   private:
     subscriber_fn_t build();
 
     std::string m_filename;
     int m_repeat{1};
+    bool m_filter_null{true};
+    std::vector<std::string> m_filter_null_columns;
     std::optional<bool> m_json_lines;
 };
 
@@ -87,16 +94,22 @@ struct FileSourceStageInterfaceProxy
      * @param parser_kwargs : Optional arguments to pass to the file parser.
      * @return std::shared_ptr<mrc::segment::Object<FileSourceStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder& builder,
-                                                                       const std::string& name,
-                                                                       std::string filename,
-                                                                       int repeat                   = 1,
-                                                                       pybind11::dict parser_kwargs = pybind11::dict());
-    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder& builder,
-                                                                       const std::string& name,
-                                                                       std::filesystem::path filename,
-                                                                       int repeat                   = 1,
-                                                                       pybind11::dict parser_kwargs = pybind11::dict());
+    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        std::string filename,
+        int repeat                                   = 1,
+        bool filter_null                             = true,
+        std::vector<std::string> filter_null_columns = {},
+        pybind11::dict parser_kwargs                 = pybind11::dict());
+    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        std::filesystem::path filename,
+        int repeat                                   = 1,
+        bool filter_null                             = true,
+        std::vector<std::string> filter_null_columns = {},
+        pybind11::dict parser_kwargs                 = pybind11::dict());
 };
 #pragma GCC visibility pop
 /** @} */  // end of group
