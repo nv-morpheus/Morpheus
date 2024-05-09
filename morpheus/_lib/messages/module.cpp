@@ -35,13 +35,14 @@
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
-#include "morpheus/pybind11/json.hpp"
+#include "morpheus/pybind11/json.hpp"  // IWYU pragma: keep
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/utilities/json_types.hpp"  // for json_t
 #include "morpheus/utilities/string_util.hpp"
 #include "morpheus/version.hpp"
 
 #include <mrc/edge/edge_connector.hpp>
-#include <pybind11/detail/common.h>
+#include <nlohmann/json.hpp>      // for basic_json
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
