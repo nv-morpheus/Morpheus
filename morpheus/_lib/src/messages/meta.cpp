@@ -540,6 +540,4 @@ std::optional<std::string> SlicedMessageMeta::ensure_sliceable_index()
     throw std::runtime_error{"Unable to set a new index on the DataFrame from a partial view of the columns/rows."};
 }
 
-
-
 }  // namespace morpheus

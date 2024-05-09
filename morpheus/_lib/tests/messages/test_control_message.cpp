@@ -48,7 +48,6 @@ namespace py = pybind11;
 using namespace pybind11::literals;
 using namespace std::string_literals;
 
-
 TEST_F(TestControlMessage, InitializationTest)
 {
     auto msg_one = ControlMessage();
@@ -161,7 +160,6 @@ TEST_F(TestControlMessage, TaskTest)
     auto msg_train = ControlMessage();
 
     ASSERT_EQ(msg_infer.config().contains("some_value"), false);
-    
     auto config = nlohmann::json();
     nlohmann::json task_properties;
     task_properties = {
