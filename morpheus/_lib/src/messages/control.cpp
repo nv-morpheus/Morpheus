@@ -21,6 +21,7 @@
 
 #include <glog/logging.h>       // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
 #include <nlohmann/json.hpp>    // for basic_json, json_ref, iter_impl, operator<<
+#include <pybind11/chrono.h>    // IWYU pragma: keep
 #include <pybind11/pybind11.h>  // for cast, object::cast
 #include <pybind11/pytypes.h>   // for object, none, dict, isinstance, list, str, value_error, generic_item
 #include <pymrc/utils.hpp>      // for cast_from_pyobject
