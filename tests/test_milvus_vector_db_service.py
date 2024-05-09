@@ -48,7 +48,7 @@ MILVUS_DATA_TYPE_MAP = {
 }
 
 
-@pytest.fixture(scope="module", name="milvus_service")
+@pytest.fixture(scope="function", name="milvus_service")
 def milvus_service_fixture(milvus_server_uri: str):
     # This fixture is scoped to the function level since the WriteToVectorDBStage will close the connection on'
     # pipeline completion
@@ -62,12 +62,16 @@ def test_list_store_objects(milvus_service: MilvusVectorDBService):
     collections = milvus_service.list_store_objects()
     assert isinstance(collections, list)
 
+    milvus_service.close()
+
 
 @pytest.mark.milvus
 def test_has_store_object(milvus_service: MilvusVectorDBService):
     # Check if a non-existing collection exists in the Milvus server.
     collection_name = "non_existing_collection"
     assert not milvus_service.has_store_object(collection_name)
+
+    milvus_service.close()
 
 
 @pytest.fixture(scope="module", name="sample_field")
@@ -127,7 +131,10 @@ def test_create_and_drop_collection(idx_part_collection_config: dict, milvus_ser
 
     # Drop the collection and check if it no longer exists.
     milvus_service.drop(collection_name)
+
     assert not milvus_service.has_store_object(collection_name)
+
+    milvus_service.close()
 
 
 @pytest.mark.milvus
@@ -154,6 +161,7 @@ def test_insert_and_retrieve_by_keys(milvus_service: MilvusVectorDBService,
 
     # Clean up the collection.
     milvus_service.drop(collection_name)
+    milvus_service.close()
 
 
 @pytest.mark.milvus
@@ -181,6 +189,7 @@ def test_query(milvus_service: MilvusVectorDBService, idx_part_collection_config
 
     # Clean up the collection.
     milvus_service.drop(collection_name)
+    milvus_service.close()
 
 
 @pytest.mark.milvus
@@ -217,6 +226,7 @@ async def test_similarity_search_with_data(milvus_service: MilvusVectorDBService
 
     # Clean up the collection.
     milvus_service.drop(collection_name)
+    milvus_service.close()
 
 
 @pytest.mark.milvus
@@ -232,6 +242,7 @@ def test_count(milvus_service: MilvusVectorDBService, idx_part_collection_config
 
     # Insert data into the collection.
     milvus_collection.insert(milvus_data)
+    milvus_service.flush()
 
     # Get the count of entities in the collection.
     count = milvus_collection.count()
@@ -239,6 +250,7 @@ def test_count(milvus_service: MilvusVectorDBService, idx_part_collection_config
 
     # Clean up the collection.
     milvus_service.drop(collection_name)
+    milvus_service.close()
 
 
 @pytest.mark.milvus
@@ -276,6 +288,7 @@ def test_overwrite_collection_on_create(milvus_service: MilvusVectorDBService,
 
     # Clean up the collection.
     milvus_service.drop(collection_name)
+    milvus_service.close()
 
 
 @pytest.mark.milvus
@@ -329,6 +342,7 @@ def test_insert_into_partition(milvus_service: MilvusVectorDBService,
 
     # Clean up the collection.
     milvus_service.drop(collection_name)
+    milvus_service.close()
 
 
 @pytest.mark.milvus
@@ -366,6 +380,7 @@ def test_update(milvus_service: MilvusVectorDBService, simple_collection_config:
 
     # Clean up the collection.
     milvus_service.drop(collection_name)
+    milvus_service.close()
 
 
 @pytest.mark.milvus
@@ -396,6 +411,7 @@ def test_delete_by_keys(milvus_service: MilvusVectorDBService,
 
     # Clean up the collection.
     milvus_service.drop(collection_name)
+    milvus_service.close()
 
 
 @pytest.mark.milvus
@@ -428,6 +444,7 @@ def test_delete(milvus_service: MilvusVectorDBService, idx_part_collection_confi
 
     # Clean up the collection.
     milvus_service.drop(collection_name)
+    milvus_service.close()
 
 
 @pytest.mark.milvus
@@ -448,6 +465,7 @@ def test_release_collection(milvus_service: MilvusVectorDBService,
 
     # Release resource from the memory.
     milvus_service.release_resource(name=collection_name)
+    milvus_service.close()
 
 
 @pytest.mark.milvus
@@ -471,6 +489,7 @@ def test_create_from_dataframe(milvus_service: MilvusVectorDBService):
 
     # Clean up the collection.
     milvus_service.drop(collection_name)
+    milvus_service.close()
 
 
 def test_fse_default():
@@ -589,18 +608,19 @@ def test_insert_dataframe(milvus_server_uri: str,
     if (exceed_max_str_len and (not truncate_long_strings)):
         with pytest.raises(MilvusException, match="string exceeds max length"):
             milvus_collection.insert_dataframe(df)
+    else:
 
-        return  # Skip the rest of the test if the string column exceeds the maximum length.
+        milvus_collection.insert_dataframe(df)
 
-    milvus_collection.insert_dataframe(df)
+        # Retrieve inserted data by primary keys.
+        retrieved_data = milvus_collection.retrieve_by_keys(ids)
+        assert len(retrieved_data) == num_rows
 
-    # Retrieve inserted data by primary keys.
-    retrieved_data = milvus_collection.retrieve_by_keys(ids)
-    assert len(retrieved_data) == num_rows
+        # Clean up the collection.
+        milvus_service.drop(collection_name)
 
-    # Clean up the collection.
-    milvus_service.drop(collection_name)
+        result_df = dataset.df_class(retrieved_data)
 
-    result_df = dataset.df_class(retrieved_data)
+        dataset.compare_df(result_df, expected_df)
 
-    dataset.compare_df(result_df, expected_df)
+    milvus_service.close()

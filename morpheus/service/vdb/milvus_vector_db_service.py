@@ -15,10 +15,9 @@
 import copy
 import json
 import logging
-import threading
-import time
 import typing
 from functools import wraps
+from typing import Callable
 
 import cudf
 
@@ -27,6 +26,7 @@ from morpheus.io.utils import truncate_string_cols_by_bytes
 from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus.service.vdb.vector_db_service import VectorDBService
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.debounce import DebounceQueue, DebounceRunner
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +205,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         When true, truncate strings values that are longer than the max length of the field
     """
 
-    def __init__(self, name: str, client: "MilvusClient", truncate_long_strings: bool = False) -> None:
+    def __init__(self, name: str, client: "MilvusClient", client_flush: Callable[[str], None], truncate_long_strings: bool = False) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
@@ -213,6 +213,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         self._name = name
         self._client = client
+        self._client_flush = client_flush
 
         self._collection = self._client.get_collection(collection_name=self._name)
         self._fields: list[pymilvus.FieldSchema] = self._collection.schema.fields
@@ -263,7 +264,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
             Returns response content as a dictionary.
         """
         result = self._collection.insert(data, **kwargs)
-        self._collection.flush()
+        self._client_flush(self._name)
 
         return self._insert_result_to_dict(result=result)
 
@@ -317,7 +318,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         # Note: dataframe columns has to be in the order of collection schema fields.s
         result = self._collection.insert(data=collection_df, **kwargs)
-        self._collection.flush()
+        self._client_flush(self._collection.name)
 
         return self._insert_result_to_dict(result=result)
 
@@ -434,7 +435,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         result = self._client.upsert(collection_name=self._name, entities=data, **kwargs)
 
-        self._collection.flush()
+        self._client_flush(self._collection.name)
 
         return self._update_delete_result_to_dict(result=result)
 
@@ -582,10 +583,6 @@ class MilvusVectorDBService(VectorDBService):
         Additional keyword arguments specific to the Milvus connection configuration.
     """
 
-    _collection_locks = {}
-    _cleanup_interval = 600  # 10mins
-    _last_cleanup_time = time.time()
-
     def __init__(self,
                  uri: str,
                  user: str = "",
@@ -597,10 +594,14 @@ class MilvusVectorDBService(VectorDBService):
 
         self._truncate_long_strings = truncate_long_strings
         self._client = MilvusClient(uri=uri, user=user, password=password, db_name=db_name, token=token, **kwargs)
+        self._flush_queue = DebounceQueue(self._flush)
+        self._flush_runner = DebounceRunner(self._flush_queue)
+        self._flush_runner.start()
 
     def load_resource(self, name: str, **kwargs: dict[str, typing.Any]) -> MilvusVectorDBResourceService:
         return MilvusVectorDBResourceService(name=name,
                                              client=self._client,
+                                             client_flush=self._flush_queue.queue,
                                              truncate_long_strings=self._truncate_long_strings,
                                              **kwargs)
 
@@ -845,6 +846,17 @@ class MilvusVectorDBService(VectorDBService):
 
         self._client.release_collection(collection_name=name)
 
+    def flush(self):
+        self._flush_queue.flush()
+
+    def _flush(self, collection_names: typing.List[str]):
+        for collection_name in collection_names:
+            try:
+                self._client.flush(collection_name, timeout=1)
+            except:
+                # no way to handle exceptions for records already added.
+                pass
+
     def close(self) -> None:
         """
         Close the connection to the Milvus vector database.
@@ -852,4 +864,5 @@ class MilvusVectorDBService(VectorDBService):
         This method disconnects from the Milvus vector database by removing the connection.
 
         """
+        self._flush_runner.stop()
         self._client.close()
