@@ -139,6 +139,9 @@ TEST_F(TestControlMessage, GetAllMetadata)
 TEST_F(TestControlMessage, SetMessageTest)
 {
     auto msg = ControlMessage();
+
+    ASSERT_EQ(msg.config().contains("nope"), false);
+
     auto config = nlohmann::json();
     nlohmann::json task_properties;
     task_properties = {
@@ -156,6 +159,9 @@ TEST_F(TestControlMessage, TaskTest)
 {
     auto msg_infer = ControlMessage();
     auto msg_train = ControlMessage();
+
+    ASSERT_EQ(msg_infer.config().contains("some_value"), false);
+    
     auto config = nlohmann::json();
     nlohmann::json task_properties;
     task_properties = {
