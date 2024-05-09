@@ -108,8 +108,10 @@ class DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacket
 
     cudaStream_t m_stream;
     rmm::cuda_stream_view m_stream_cpp;
-    uint32_t* fixed_size_list;
-    uint32_t* fixed_size_list_cpu;
+    uint32_t* fixed_pld_size_list;
+    uint32_t* fixed_pld_size_list_cpu;
+    uint32_t* fixed_hdr_size_list;
+    uint32_t* fixed_hdr_size_list_cpu;
 };
 
 /****** DocaConvertStageInterfaceProxy***********************/

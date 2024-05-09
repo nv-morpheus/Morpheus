@@ -32,6 +32,7 @@
 #include <cuda_runtime.h>
 #include <doca_gpunetio.h>
 #include <doca_types.h>
+#include <glog/logging.h>
 #include <mrc/core/utils.hpp>
 #include <mrc/runnable/context.hpp>
 #include <mrc/segment/builder.hpp>
@@ -43,6 +44,7 @@
 
 #include <functional>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <thread>
 #include <utility>
@@ -183,8 +185,9 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                         continue;
                     // Should never happen
                     if (pkt_ptr->packet_count_out > PACKETS_PER_BLOCK)
-                        LOG(ERROR) << "Received " << pkt_ptr->packet_count_out << " pkts > max pkts " << PACKETS_PER_BLOCK;
-                    
+                        LOG(ERROR) << "Received " << pkt_ptr->packet_count_out << " pkts > max pkts "
+                                   << PACKETS_PER_BLOCK;
+
                     // Create RawPacketMessage with the burst of packets just received
                     auto meta = RawPacketMessage::create_from_cpp(pkt_ptr->packet_count_out,
                                                                   MAX_PKT_SIZE,
@@ -200,11 +203,9 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                     sem_idx[queue_idx] = (sem_idx[queue_idx] + 1) % MAX_SEM_X_QUEUE;
 #if ENABLE_TIMERS == 1
                     const auto end_cpu = now_ns();
-                    LOG(WARNING) << "Queue " << queue_idx
-                                << " packets " << pkt_ptr->packet_count_out
-                                << " kernel time ns " << end_kernel - start_kernel
-                                << " CPU time ns " << end_cpu - start_cpu
-                                << std::endl;
+                    LOG(WARNING) << "Queue " << queue_idx << " packets " << pkt_ptr->packet_count_out
+                                 << " kernel time ns " << end_kernel - start_kernel << " CPU time ns "
+                                 << end_cpu - start_cpu << std::endl;
 #endif
                 }
             }

@@ -21,7 +21,7 @@
 
 #include <doca_ctx.h>
 #include <doca_dev.h>
-#include <doca_flow.h>
+#include <doca_flow_crypto.h>
 #include <doca_log.h>
 #include <stdint.h>
 

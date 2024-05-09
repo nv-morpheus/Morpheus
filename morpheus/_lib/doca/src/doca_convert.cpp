@@ -24,10 +24,7 @@
 #include <boost/fiber/context.hpp>
 #include <cuda_runtime.h>
 #include <cudf/column/column.hpp>
-#include <cudf/column/column_factories.hpp>
-#include <cudf/column/column_view.hpp>
 #include <cudf/io/types.hpp>
-#include <cudf/scalar/scalar.hpp>
 #include <cudf/table/table.hpp>
 #include <generic/rte_byteorder.h>
 #include <glog/logging.h>
@@ -93,18 +90,26 @@ DocaConvertStage::DocaConvertStage() :
   }))
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
-    m_stream_cpp        = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
-    fixed_size_list_cpu = (uint32_t*)calloc(MAX_PKT_RECEIVE * 4, sizeof(uint32_t));
-    cudaMalloc((void**)&fixed_size_list, MAX_PKT_RECEIVE * 4 * sizeof(uint32_t));
-    for (int idx = 0; idx < MAX_PKT_RECEIVE * 4; idx++)
-        fixed_size_list_cpu[idx] = MAX_PKT_SIZE;
-    cudaMemcpy(fixed_size_list, fixed_size_list_cpu, MAX_PKT_RECEIVE * 4 * sizeof(uint32_t), cudaMemcpyDefault);
+    m_stream_cpp            = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
+    fixed_pld_size_list_cpu = (uint32_t*)calloc(MAX_PKT_RECEIVE, sizeof(uint32_t));
+    cudaMalloc((void**)&fixed_pld_size_list, MAX_PKT_RECEIVE * sizeof(uint32_t));
+    for (int idx = 0; idx < MAX_PKT_RECEIVE; idx++)
+        fixed_pld_size_list_cpu[idx] = MAX_PKT_SIZE;
+    cudaMemcpy(fixed_pld_size_list, fixed_pld_size_list_cpu, MAX_PKT_RECEIVE * sizeof(uint32_t), cudaMemcpyDefault);
+
+    fixed_hdr_size_list_cpu = (uint32_t*)calloc(MAX_PKT_RECEIVE, sizeof(uint32_t));
+    cudaMalloc((void**)&fixed_hdr_size_list, MAX_PKT_RECEIVE * sizeof(uint32_t));
+    for (int idx = 0; idx < MAX_PKT_RECEIVE; idx++)
+        fixed_hdr_size_list_cpu[idx] = IP_ADDR_STRING_LEN;
+    cudaMemcpy(fixed_hdr_size_list, fixed_hdr_size_list_cpu, MAX_PKT_RECEIVE * sizeof(uint32_t), cudaMemcpyDefault);
 }
 
 DocaConvertStage::~DocaConvertStage()
 {
-    free(fixed_size_list_cpu);
-    cudaFree(fixed_size_list);
+    free(fixed_pld_size_list_cpu);
+    cudaFree(fixed_pld_size_list);
+    free(fixed_hdr_size_list_cpu);
+    cudaFree(fixed_hdr_size_list);
     cudaStreamDestroy(m_stream);
 }
 
@@ -138,17 +143,20 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     const auto t0 = now_ns();
 #endif
     // gather header data
-    auto header_src_ip_col  = cudf::make_column_from_scalar(cudf::string_scalar("111.111.111.111"), packet_count);
-    auto header_src_ip_addr = header_src_ip_col->mutable_view().data<uint8_t>();
-    doca::gather_header_scalar(
-        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, header_src_ip_addr, m_stream_cpp);
+    auto header_src_ip_col = doca::gather_header(
+        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, fixed_hdr_size_list, m_stream_cpp);
+
+    // auto header_src_ip_col  = cudf::make_column_from_scalar(cudf::string_scalar("111.111.111.111"), packet_count);
+    // auto header_src_ip_addr = header_src_ip_col->mutable_view().data<uint8_t>();
+    // doca::gather_header_scalar(
+    //     packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, header_src_ip_addr, m_stream_cpp);
 
 #if ENABLE_TIMERS == 1
     const auto t1 = now_ns();
 #endif
     // gather payload data
     auto payload_col = doca::gather_payload(
-        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, fixed_size_list, m_stream_cpp);
+        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, fixed_pld_size_list, m_stream_cpp);
 
 #if ENABLE_TIMERS == 1
     const auto t2 = now_ns();
@@ -182,17 +190,10 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
 #if ENABLE_TIMERS == 1
     const auto t6 = now_ns();
 
-    LOG(WARNING) << "Queue " << queue_idx
-                << " packets " << packet_count
-                << " header column " << t1 - t0
-                << " payload column " << t2 - t1
-                << " gather columns " << t3 - t2
-                << " gather metadata " << t4 - t3
-                << " create_from_cpp " << t5 - t4
-                << " stream sync " << t6 - t5
-                << std::endl;
+    LOG(WARNING) << "Queue " << queue_idx << " packets " << packet_count << " header column " << t1 - t0
+                 << " payload column " << t2 - t1 << " gather columns " << t3 - t2 << " gather metadata " << t4 - t3
+                 << " create_from_cpp " << t5 - t4 << " stream sync " << t6 - t5 << std::endl;
 #endif
-
 
     return std::move(meta);
 }

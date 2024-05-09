@@ -22,7 +22,6 @@
 
 #include <doca_ctx.h>
 #include <doca_eth_rxq.h>
-#include <doca_mmap.h>
 
 #include <memory>
 
