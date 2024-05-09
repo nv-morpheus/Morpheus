@@ -56,6 +56,8 @@ __global__ void _packet_gather_payload_kernel(
 
   while (pkt_idx < packet_count) {
     uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx] + header_sizes[pkt_idx]);
+    // if (!pkt_hdr_addr)
+    //   continue;
     for (j = 0; j < payload_sizes[pkt_idx]; j++)
       payload_chars_out[(MAX_PKT_SIZE * pkt_idx) + j] = pkt_hdr_addr[j];
     for (; j < MAX_PKT_SIZE; j++)
@@ -115,6 +117,8 @@ __global__ void _packet_gather_header_kernel(
 
   while (pkt_idx < packet_count) {
     uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx]);
+    // if (!pkt_hdr_addr)
+    //   continue;
     int len = ip_to_string(((struct eth_ip *)pkt_hdr_addr)->l3_hdr.src_addr, header_src_ip_addr + (IP_ADDR_STRING_LEN * pkt_idx));
     while (len < IP_ADDR_STRING_LEN)
       header_src_ip_addr[(IP_ADDR_STRING_LEN * pkt_idx) + len++] = '\0';

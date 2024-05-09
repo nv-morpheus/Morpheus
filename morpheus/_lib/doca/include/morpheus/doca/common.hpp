@@ -34,7 +34,7 @@ uint32_t const MAX_PKT_SIZE    = 2048;
 uint32_t const MAX_PKT_HDR     = 64;
 uint32_t const MAX_PKT_NUM     = 65536;
 uint32_t const MAX_QUEUE       = 2;
-uint32_t const MAX_SEM_X_QUEUE = 512;
+uint32_t const MAX_SEM_X_QUEUE = 4096;
 
 enum doca_traffic_type
 {

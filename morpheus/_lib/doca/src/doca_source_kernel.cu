@@ -67,6 +67,7 @@ __global__ void _packet_receive_kernel(
     doca_gpu_eth_rxq* rxq;
     doca_gpu_semaphore_gpu* sem;
     uint16_t sem_idx;
+    uint32_t pkt_idx = threadIdx.x;
     // unsigned long long rx_start = 0, rx_stop = 0, pkt_proc = 0, reduce_stop =0, reduce_start = 0;
 
     if (blockIdx.x == 0) {
@@ -104,17 +105,8 @@ __global__ void _packet_receive_kernel(
         if (DOCA_GPUNETIO_VOLATILE(packet_count_received) == 0)
             return;
 
-        // if (threadIdx.x == 0)
-        //     printf("Block %d sem id %d received %d\n", blockIdx.x, sem_idx, DOCA_GPUNETIO_VOLATILE(packet_count_received));
-        // if (threadIdx.x == 0) DEVICE_GET_TIME(rx_stop);
-
-        for (auto i = 0; i < PACKETS_PER_THREAD; i++) {
-            auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
-            if (packet_idx >= DOCA_GPUNETIO_VOLATILE(packet_count_received)) {
-                continue;
-            }
-
-            doca_ret = doca_gpu_dev_eth_rxq_get_buf(rxq, DOCA_GPUNETIO_VOLATILE(packet_offset_received) + packet_idx, &buf_ptr);
+        while (pkt_idx < DOCA_GPUNETIO_VOLATILE(packet_count_received)) {
+            doca_ret = doca_gpu_dev_eth_rxq_get_buf(rxq, DOCA_GPUNETIO_VOLATILE(packet_offset_received) + pkt_idx, &buf_ptr);
             if (doca_ret != DOCA_SUCCESS) [[unlikely]] {
                 DOCA_GPUNETIO_VOLATILE(*exit_condition) = 1;
                 return;
@@ -126,29 +118,28 @@ __global__ void _packet_receive_kernel(
                 return;
             }
 
-            pkt_info->pkt_addr[packet_idx] = buf_addr;
+            pkt_info->pkt_addr[pkt_idx] = buf_addr;
             if (is_tcp) {
                 raw_to_tcp(buf_addr, &hdr_tcp, &payload);
-                pkt_info->pkt_hdr_size[packet_idx] = TCP_HDR_SIZE;
-                pkt_info->pkt_pld_size[packet_idx] = get_payload_tcp_size(hdr_tcp->l3_hdr, hdr_tcp->l4_hdr);
+                pkt_info->pkt_hdr_size[pkt_idx] = TCP_HDR_SIZE;
+                pkt_info->pkt_pld_size[pkt_idx] = get_payload_tcp_size(hdr_tcp->l3_hdr, hdr_tcp->l4_hdr);
             } else {
                 raw_to_udp(buf_addr, &hdr_udp, &payload);
-                pkt_info->pkt_hdr_size[packet_idx] = UDP_HDR_SIZE;
-                pkt_info->pkt_pld_size[packet_idx] = get_payload_udp_size(hdr_udp->l3_hdr, hdr_udp->l4_hdr);
+                pkt_info->pkt_hdr_size[pkt_idx] = UDP_HDR_SIZE;
+                pkt_info->pkt_pld_size[pkt_idx] = get_payload_udp_size(hdr_udp->l3_hdr, hdr_udp->l4_hdr);
             }
+
+            pkt_idx += blockDim.x;
         }
+        __syncthreads();
 
         if (threadIdx.x == 0) {
-            // printf("Update semaphore %d with pkts %d\n", sem_idx, packet_count_received);
-            // DEVICE_GET_TIME(pkt_proc);
-            /* Quick fix waiting for doca 2.7 */
             DOCA_GPUNETIO_VOLATILE(pkt_info->packet_count_out) = packet_count_received;
             DOCA_GPUNETIO_VOLATILE(packet_count_received) = 0;
             doca_ret = doca_gpu_dev_semaphore_set_status(sem, sem_idx, DOCA_GPU_SEMAPHORE_STATUS_READY);
             if (doca_ret != DOCA_SUCCESS) {
                 printf("Error %d doca_gpu_dev_semaphore_set_status\n", doca_ret);
                 DOCA_GPUNETIO_VOLATILE(*exit_condition) = 1;
-                // break;
             }
 
             // printf("CUDA rx time %ld proc time %ld pkt conv %ld block reduce %ld\n",

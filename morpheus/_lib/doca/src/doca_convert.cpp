@@ -51,6 +51,7 @@
 #include <vector>
 
 #define BE_IPV4_ADDR(a, b, c, d) (RTE_BE32((a << 24) + (b << 16) + (c << 8) + d)) /* Big endian conversion */
+#define ENABLE_TIMERS 0
 
 std::optional<uint32_t> ip_to_int(std::string const& ip_address)
 {
@@ -133,22 +134,25 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
 
     // LOG(WARNING) << "New RawPacketMessage with " << packet_count << " packets from queue id " << queue_idx;
 
-    // const auto t0 = now_ns();
-
+#if ENABLE_TIMERS == 1
+    const auto t0 = now_ns();
+#endif
     // gather header data
     auto header_src_ip_col  = cudf::make_column_from_scalar(cudf::string_scalar("111.111.111.111"), packet_count);
     auto header_src_ip_addr = header_src_ip_col->mutable_view().data<uint8_t>();
     doca::gather_header_scalar(
         packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, header_src_ip_addr, m_stream_cpp);
 
-    // const auto t1 = now_ns();
-
+#if ENABLE_TIMERS == 1
+    const auto t1 = now_ns();
+#endif
     // gather payload data
     auto payload_col = doca::gather_payload(
         packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, fixed_size_list, m_stream_cpp);
 
-    // const auto t2 = now_ns();
-
+#if ENABLE_TIMERS == 1
+    const auto t2 = now_ns();
+#endif
     std::vector<std::unique_ptr<cudf::column>> gathered_columns;
     gathered_columns.emplace_back(std::move(header_src_ip_col));
     gathered_columns.emplace_back(std::move(payload_col));
@@ -156,8 +160,9 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     // After this point buffers can be reused -> copies actual packets' data
     auto gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
 
-    // const auto t3 = now_ns();
-
+#if ENABLE_TIMERS == 1
+    const auto t3 = now_ns();
+#endif
     auto gathered_metadata = cudf::io::table_metadata();
     gathered_metadata.schema_info.emplace_back("src_ip");
     gathered_metadata.schema_info.emplace_back("data");
@@ -165,13 +170,29 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     auto gathered_table_w_metadata =
         cudf::io::table_with_metadata{std::move(gathered_table), std::move(gathered_metadata)};
 
-    // const auto t4 = now_ns();
-
+#if ENABLE_TIMERS == 1
+    const auto t4 = now_ns();
+#endif
     auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
 
-    // const auto t5 = now_ns();
-
+#if ENABLE_TIMERS == 1
+    const auto t5 = now_ns();
+#endif
     cudaStreamSynchronize(m_stream_cpp);
+#if ENABLE_TIMERS == 1
+    const auto t6 = now_ns();
+
+    LOG(WARNING) << "Queue " << queue_idx
+                << " packets " << packet_count
+                << " header column " << t1 - t0
+                << " payload column " << t2 - t1
+                << " gather columns " << t3 - t2
+                << " gather metadata " << t4 - t3
+                << " create_from_cpp " << t5 - t4
+                << " stream sync " << t6 - t5
+                << std::endl;
+#endif
+
 
     return std::move(meta);
 }
