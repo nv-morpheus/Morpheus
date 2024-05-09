@@ -24,6 +24,9 @@
 
 #include <gtest/gtest.h>      // for Message, TestPartResult, AssertionResult, TestInfo
 #include <nlohmann/json.hpp>  // for basic_json, json_ref, json
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pymrc/utilities/json_values.hpp>
 
 #include <algorithm>  // for find
 #include <chrono>     // for system_clock
@@ -33,9 +36,6 @@
 #include <stdexcept>  // for runtime_error
 #include <string>     // for operator<=>, string, char_traits, basic_string
 #include <vector>     // for vector
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h> // IWYU pragma: keep
-#include <pymrc/utilities/json_values.hpp>
 
 using namespace morpheus;
 using namespace morpheus::test;

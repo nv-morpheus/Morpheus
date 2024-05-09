@@ -43,7 +43,9 @@ std::map<std::string, ControlMessageType> ControlMessage::s_task_type_map{{"infe
 
 ControlMessage::ControlMessage() : m_config({{"metadata", morpheus::utilities::json_t::object()}}), m_tasks({}) {}
 
-ControlMessage::ControlMessage(const morpheus::utilities::json_t& _config) : m_config({{"metadata", morpheus::utilities::json_t::object()}}), m_tasks({})
+ControlMessage::ControlMessage(const morpheus::utilities::json_t& _config) :
+  m_config({{"metadata", morpheus::utilities::json_t::object()}}),
+  m_tasks({})
 {
     config(_config);
 }
@@ -269,7 +271,6 @@ std::shared_ptr<ControlMessage> ControlMessageProxy::copy(ControlMessage& self)
     return std::make_shared<ControlMessage>(self);
 }
 
-
 py::object ControlMessageProxy::get_metadata(ControlMessage& self,
                                              const py::object& key,
                                              pybind11::object default_value)
@@ -288,7 +289,6 @@ py::object ControlMessageProxy::get_metadata(ControlMessage& self,
 
     return cast_from_json(value);
 }
-
 
 py::list ControlMessageProxy::list_metadata(ControlMessage& self)
 {

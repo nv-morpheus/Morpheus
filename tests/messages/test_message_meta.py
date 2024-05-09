@@ -17,9 +17,9 @@
 import operator
 import typing
 
-from nvtabular import Dataset
 import pandas as pd
 import pytest
+from nvtabular import Dataset
 
 import cudf
 

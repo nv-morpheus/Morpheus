@@ -15,6 +15,8 @@
 # limitations under the License.
 
 import datetime
+import io
+import sys
 
 import cupy as cp
 import pytest
@@ -24,8 +26,6 @@ import cudf
 from morpheus import messages
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.messages import TensorMemory
-import io
-import sys
 
 # pylint: disable=unsupported-membership-test
 # pylint: disable=unsubscriptable-object

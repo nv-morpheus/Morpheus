@@ -496,14 +496,17 @@ std::optional<std::string> MessageMetaInterfaceProxy::ensure_sliceable_index(Mes
     return self.ensure_sliceable_index();
 }
 
-std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::copy_ranges(MessageMeta& self, const std::vector<RangeType>& ranges)
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::copy_ranges(MessageMeta& self,
+                                                                    const std::vector<RangeType>& ranges)
 {
     pybind11::gil_scoped_release no_gil;
 
     return self.copy_ranges(ranges);
 }
 
-std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::get_slice(MessageMeta& self, TensorIndex start, TensorIndex stop)
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::get_slice(MessageMeta& self,
+                                                                  TensorIndex start,
+                                                                  TensorIndex stop)
 {
     pybind11::gil_scoped_release no_gil;
 

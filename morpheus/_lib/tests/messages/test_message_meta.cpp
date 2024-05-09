@@ -52,12 +52,13 @@ TEST_F(TestMessageMeta, SetdataWithColumnName)
     auto test_data_dir               = test::get_morpheus_root() / "tests/tests_data";
     std::filesystem::path input_file = test_data_dir / "csv_sample.csv";
 
-    auto meta  = MessageMeta::create_from_cpp(load_table_from_file(input_file));
+    auto meta = MessageMeta::create_from_cpp(load_table_from_file(input_file));
 
     std::vector<int64_t> packed_data_host{9, 8, 7, 6, 5, 4, 3, 2, 1};
-    int mess_count = packed_data_host.size();
-    int cols_size = 1;
-    auto packed_data = std::make_shared<rmm::device_buffer>(packed_data_host.data(), mess_count * cols_size * sizeof(int64_t), rmm::cuda_stream_per_thread);
+    int mess_count   = packed_data_host.size();
+    int cols_size    = 1;
+    auto packed_data = std::make_shared<rmm::device_buffer>(
+        packed_data_host.data(), mess_count * cols_size * sizeof(int64_t), rmm::cuda_stream_per_thread);
 
     auto tensor = Tensor::create(packed_data, DType::create<int64_t>(), {mess_count, cols_size}, {}, 0);
     meta->set_data("int", tensor);
@@ -71,17 +72,17 @@ TEST_F(TestMessageMeta, CopyRangeAndSlicing)
     auto test_data_dir               = test::get_morpheus_root() / "tests/tests_data";
     std::filesystem::path input_file = test_data_dir / "csv_sample.csv";
 
-    auto meta  = MessageMeta::create_from_cpp(load_table_from_file(input_file));
+    auto meta = MessageMeta::create_from_cpp(load_table_from_file(input_file));
 
-    std::vector<RangeType> ranges = {{0, 1}, {3, 6}};
-    auto copy_range_meta = meta->copy_ranges(ranges);
-    std::vector<int64_t> copy_range_expected_int = {1, 4, 5, 6};
+    std::vector<RangeType> ranges                  = {{0, 1}, {3, 6}};
+    auto copy_range_meta                           = meta->copy_ranges(ranges);
+    std::vector<int64_t> copy_range_expected_int   = {1, 4, 5, 6};
     std::vector<double> copy_range_expected_double = {1.1, 4.4, 5.5, 6.6};
     assert_eq_device_to_host(copy_range_meta->get_info().get_column(0), copy_range_expected_int);
     assert_eq_device_to_host(copy_range_meta->get_info().get_column(1), copy_range_expected_double);
 
-    auto sliced_meta = meta->get_slice(2, 4);
-    std::vector<int64_t> sliced_expected_int = {3, 4};
+    auto sliced_meta                           = meta->get_slice(2, 4);
+    std::vector<int64_t> sliced_expected_int   = {3, 4};
     std::vector<double> sliced_expected_double = {3.3, 4.4};
     assert_eq_device_to_host(sliced_meta->get_info().get_column(0), sliced_expected_int);
     assert_eq_device_to_host(sliced_meta->get_info().get_column(1), sliced_expected_double);
