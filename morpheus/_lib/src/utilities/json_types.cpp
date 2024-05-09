@@ -17,6 +17,13 @@
 
 #include "morpheus/utilities/json_types.hpp"
 
+#include <pybind11/pybind11.h>  // for cast, handle::cast, object::cast, pybind11
+
+#include <cstdint>    // for uint64_t
+#include <stdexcept>  // for runtime_error
+#include <typeinfo>   // for type_info
+#include <utility>    // for move
+
 namespace py = pybind11;
 
 namespace {

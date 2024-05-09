@@ -17,13 +17,17 @@
 
 #pragma once
 
-#include "morpheus/export.h"
+#include "morpheus/export.h"  // for MORPHEUS_EXPORT
 
-#include <nlohmann/json.hpp>
-#include <pymrc/types.hpp>
+#include <nlohmann/adl_serializer.hpp>  // for adl_serializer
+#include <nlohmann/json.hpp>            // for basic_json
+#include <pybind11/pytypes.h>           // for object
+#include <pymrc/types.hpp>              // for PyHolder
 
-// namespace py = pybind11;
-// using namespace py::literals;
+#include <cstdint>  // for int64_t, uint64_t, uint8_t
+#include <map>      // for map
+#include <string>   // for allocator, string
+#include <vector>   // for vector
 
 namespace morpheus::utilities {
 /**

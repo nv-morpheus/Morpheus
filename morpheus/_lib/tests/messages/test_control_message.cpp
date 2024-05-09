@@ -21,12 +21,12 @@
 #include "morpheus/messages/control.hpp"               // for ControlMessage
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
 #include "morpheus/messages/meta.hpp"                  // for MessageMeta
+#include "morpheus/utilities/json_types.hpp"           // for PythonByteContainer
 
-#include <gtest/gtest.h>      // for Message, TestPartResult, AssertionResult, TestInfo
-#include <nlohmann/json.hpp>  // for basic_json, json_ref, json
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>  // IWYU pragma: keep
-#include <pymrc/utilities/json_values.hpp>
+#include <gtest/gtest.h>       // for Message, TestPartResult, AssertionResult, TestInfo
+#include <nlohmann/json.hpp>   // for basic_json, json_ref, json
+#include <pybind11/pytypes.h>  // for literals, pybind11
+#include <pybind11/stl.h>      // IWYU pragma: keep
 
 #include <algorithm>  // for find
 #include <chrono>     // for system_clock

@@ -30,7 +30,8 @@
 #include <cudf/concatenate.hpp>
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
-#include <cudf/types.hpp>  // for type_id, data_type, size_type
+#include <cudf/table/table_view.hpp>  // for table_view
+#include <cudf/types.hpp>             // for type_id, data_type, size_type
 #include <glog/logging.h>
 #include <mrc/cuda/common.hpp>  // for __check_cuda_errors, MRC_CHECK_CUDA
 #include <pybind11/gil.h>
@@ -43,9 +44,10 @@
 #include <cstdint>  // for uint8_t
 #include <memory>
 #include <optional>
-#include <ostream>    // for operator<< needed by glog
-#include <stdexcept>  // for runtime_error
-#include <tuple>      // for make_tuple, tuple
+#include <ostream>        // for operator<< needed by glog
+#include <stdexcept>      // for runtime_error
+#include <tuple>          // for make_tuple, tuple
+#include <unordered_map>  // for unordered_map
 #include <utility>
 // We're already including pybind11.h and don't need to include cast.
 // For some reason IWYU also thinks we need array for the `isinsance` call.
