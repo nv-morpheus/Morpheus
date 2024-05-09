@@ -54,8 +54,8 @@ def run_pipeline(out_file, nic_addr, gpu_addr):
     config.mode = PipelineModes.NLP
 
     # Below properties are specified by the command line
-    config.num_threads = 7
-    config.edge_buffer_size = 512
+    config.num_threads = 10
+    config.edge_buffer_size = 1024
 
     pipeline = LinearPipeline(config)
 

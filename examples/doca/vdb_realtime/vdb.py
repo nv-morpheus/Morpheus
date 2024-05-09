@@ -101,7 +101,7 @@ def run_pipeline(out_file, nic_addr, gpu_addr):
     config.pipeline_batch_size = 1024
     config.feature_length = 512
     config.edge_buffer_size = 512
-    config.num_threads = 15
+    config.num_threads = 20
 
     pipeline = LinearPipeline(config)
 

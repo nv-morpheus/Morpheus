@@ -54,7 +54,7 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
                                        "Ensure the DOCA components have been built and installed. Error message: ") +
                                       ex.msg) from ex
 
-        self._max_concurrent = 3
+        self._max_concurrent = 5
 
     @property
     def name(self) -> str:

@@ -88,10 +88,7 @@ static doca_error_t open_doca_device_with_pci(const char* pcie_value, struct doc
 
 doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
 {
-    std::array<char, MAX_PORT_STR_LEN> port_id_str;
-    doca_flow_port_cfg port_cfg = {0};
     doca_flow_port* df_port;
-    doca_flow_cfg rxq_flow_cfg = {0};
     rte_eth_dev_info dev_info  = {nullptr};
     rte_eth_conf eth_conf      = {
              .rxmode =
@@ -137,23 +134,21 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
     RTE_TRY(rte_flow_isolate(port_id, 1, &error));
     RTE_TRY(rte_eth_dev_start(port_id));
 
-    /* Initialize doca flow framework */
-    rxq_flow_cfg.pipe_queues = rxq_num;
-    /*
-     * HWS: Hardware steering
-     * Isolated: don't create RSS rule for DPDK created RX queues
-     */
-    rxq_flow_cfg.mode_args            = "vnf,hws,isolated";
-    rxq_flow_cfg.resource.nb_counters = FLOW_NB_COUNTERS;
+    struct doca_flow_cfg *rxq_flow_cfg;
+	DOCA_TRY(doca_flow_cfg_create(&rxq_flow_cfg));
+	DOCA_TRY(doca_flow_cfg_set_pipe_queues(rxq_flow_cfg, rxq_num));
+	DOCA_TRY(doca_flow_cfg_set_mode_args(rxq_flow_cfg, "vnf,hws,isolated"));
+	DOCA_TRY(doca_flow_cfg_set_nr_counters(rxq_flow_cfg, FLOW_NB_COUNTERS));
+	DOCA_TRY(doca_flow_init(rxq_flow_cfg));
+	doca_flow_cfg_destroy(rxq_flow_cfg);
 
-    DOCA_TRY(doca_flow_init(&rxq_flow_cfg));
-
-    /* Start doca flow port */
-    port_cfg.port_id = port_id;
-    port_cfg.type    = DOCA_FLOW_PORT_DPDK_BY_ID;
-    snprintf(port_id_str.begin(), MAX_PORT_STR_LEN, "%d", port_cfg.port_id);
-    port_cfg.devargs = port_id_str.cbegin();
-    DOCA_TRY(doca_flow_port_start(&port_cfg, &df_port));
+	struct doca_flow_port_cfg *port_cfg;
+    char port_id_str[MAX_PORT_STR_LEN];
+	DOCA_TRY(doca_flow_port_cfg_create(&port_cfg));
+	snprintf(port_id_str, MAX_PORT_STR_LEN, "%d", port_id);
+	DOCA_TRY(doca_flow_port_cfg_set_devargs(port_cfg, port_id_str));
+	DOCA_TRY(doca_flow_port_start(port_cfg, &df_port));
+	doca_flow_port_cfg_destroy(port_cfg);
 
     return df_port;
 }

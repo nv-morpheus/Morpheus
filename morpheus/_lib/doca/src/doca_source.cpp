@@ -49,6 +49,7 @@
 #include <vector>
 
 #define debug_get_timestamp(ts) clock_gettime(CLOCK_REALTIME, (ts))
+#define ENABLE_TIMERS 0
 
 namespace morpheus {
 
@@ -149,9 +150,10 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                 continue;
             }
 
-            // const auto start_kernel = now_ns();
-
-            // Assume MAX_QUEUE == 2
+#if ENABLE_TIMERS == 1
+            const auto start_kernel = now_ns();
+#endif
+            // Assume MAX_QUEUE is 2
             morpheus::doca::packet_receive_kernel(m_rxq[0]->rxq_info_gpu(),
                                                   m_rxq[1]->rxq_info_gpu(),
                                                   m_semaphore[0]->gpu_ptr(),
@@ -163,25 +165,27 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                                                   rstream);
             cudaStreamSynchronize(rstream);
 
-            // const auto end_kernel = now_ns();
-
+#if ENABLE_TIMERS == 1
+            const auto end_kernel = now_ns();
+#endif
             for (int queue_idx = 0; queue_idx < MAX_QUEUE; queue_idx++)
             {
                 if (m_semaphore[queue_idx]->is_ready(sem_idx[queue_idx]))
                 {
-                    // const auto start_sem = now_ns();
-                    // LOG(WARNING) << "CPU READY sem " << sem_idx[queue_idx] << " queue " << thread_idx << std::endl;
-
+#if ENABLE_TIMERS == 1
+                    const auto start_cpu = now_ns();
+#endif
                     pkt_ptr =
                         static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(sem_idx[queue_idx]));
 
                     // Should not be necessary
                     if (pkt_ptr->packet_count_out == 0)
                         continue;
-
-                    // LOG(WARNING) << "pkts " << pkt_ptr->packet_count_out << " MAX_PKT_SIZE " << MAX_PKT_SIZE;
-                    // std::endl;
-
+                    // Should never happen
+                    if (pkt_ptr->packet_count_out > PACKETS_PER_BLOCK)
+                        LOG(ERROR) << "Received " << pkt_ptr->packet_count_out << " pkts > max pkts " << PACKETS_PER_BLOCK;
+                    
+                    // Create RawPacketMessage with the burst of packets just received
                     auto meta = RawPacketMessage::create_from_cpp(pkt_ptr->packet_count_out,
                                                                   MAX_PKT_SIZE,
                                                                   pkt_ptr->pkt_addr,
@@ -190,21 +194,18 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                                                                   true,
                                                                   queue_idx);
 
-                    // const auto create_msg = now_ns();
-
                     output.on_next(std::move(meta));
 
                     m_semaphore[queue_idx]->set_free(sem_idx[queue_idx]);
                     sem_idx[queue_idx] = (sem_idx[queue_idx] + 1) % MAX_SEM_X_QUEUE;
-
-                    // const auto end = now_ns();
-
-                    // LOG(WARNING) << "Queue " << queue_idx
-                    //             << " packets " << pkt_ptr->packet_count_out
-                    //             << " kernel time ns " << end_kernel - start_kernel
-                    //             << " Sem + msg ns " << create_msg - start_sem
-                    //             << " End ns " << end - create_msg
-                    //             << std::endl;
+#if ENABLE_TIMERS == 1
+                    const auto end_cpu = now_ns();
+                    LOG(WARNING) << "Queue " << queue_idx
+                                << " packets " << pkt_ptr->packet_count_out
+                                << " kernel time ns " << end_kernel - start_kernel
+                                << " CPU time ns " << end_cpu - start_cpu
+                                << std::endl;
+#endif
                 }
             }
         }

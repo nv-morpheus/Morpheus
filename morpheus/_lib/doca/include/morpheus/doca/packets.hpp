@@ -236,8 +236,8 @@ __device__ __forceinline__ int num_to_string(uint32_t value, char* sp)
 __device__ __forceinline__ int ip_to_string(uint32_t ip_int, uint8_t* ip_str)
 {
     int i;
-    int pos   = 0;
-    int post  = 0;
+    int idxp   = 0;
+    int idxt  = 0;
     int radix = 10;
     uint8_t tmp[3];
 
@@ -248,64 +248,71 @@ __device__ __forceinline__ int ip_to_string(uint32_t ip_int, uint8_t* ip_str)
     uint8_t ip2 = (uint8_t)((ip_int & 0x00ff0000) >> 16);
     uint8_t ip3 = (uint8_t)((ip_int & 0xff000000) >> 24);
 
-    post = 0;
-    while (ip0)
-    {
+    idxt = 0;
+    while (ip0) {
         i = ip0 % radix;
         ip0 /= radix;
         if (i < 10)
-            tmp[post++] = i + '0';
+            tmp[idxt++] = i + '0';
         else
-            tmp[post++] = i + 'a' - 10;
+            tmp[idxt++] = i + 'a' - 10;
     }
-    --post;
-    while (post >= 0)
-        ip_str[pos++] = tmp[post--];
-    ip_str[pos++] = '.';
+    --idxt;
+    while (idxt >= 0)
+        ip_str[idxp++] = tmp[idxt--];
+    ip_str[idxp++] = '.';
 
-    post = 0;
-    while (ip1)
-    {
+    idxt = 0;
+    while (ip1) {
         i = ip1 % radix;
         ip1 /= radix;
         if (i < 10)
-            tmp[post++] = i + '0';
+            tmp[idxt++] = i + '0';
         else
-            tmp[post++] = i + 'a' - 10;
+            tmp[idxt++] = i + 'a' - 10;
     }
-    --post;
-    while (post >= 0)
-        ip_str[pos++] = tmp[post--];
-    ip_str[pos++] = '.';
+    --idxt;
+    while (idxt >= 0)
+        ip_str[idxp++] = tmp[idxt--];
+    ip_str[idxp++] = '.';
 
-    post = 0;
-    while (ip2)
-    {
+    idxt = 0;
+    while (ip2) {
         i = ip2 % radix;
         ip2 /= radix;
         if (i < 10)
-            tmp[post++] = i + '0';
+            tmp[idxt++] = i + '0';
         else
-            tmp[post++] = i + 'a' - 10;
+            tmp[idxt++] = i + 'a' - 10;
     }
-    --post;
-    while (post >= 0)
-        ip_str[pos++] = tmp[post--];
-    ip_str[pos++] = '.';
+    --idxt;
+    while (idxt >= 0)
+        ip_str[idxp++] = tmp[idxt--];
+    ip_str[idxp++] = '.';
 
-    post = 0;
-    while (ip3)
-    {
+    idxt = 0;
+    while (ip3) {
         i = ip3 % radix;
         ip3 /= radix;
         if (i < 10)
-            tmp[post++] = i + '0';
+            tmp[idxt++] = i + '0';
         else
-            tmp[post++] = i + 'a' - 10;
+            tmp[idxt++] = i + 'a' - 10;
     }
-    --post;
-    while (post >= 0)
-        ip_str[pos++] = tmp[post--];
+    --idxt;
+    while (idxt >= 0) {
+        //Add print here to check boundaries
+        if (idxp > IP_ADDR_STRING_LEN) {
+            printf("idxp %d > IP_ADDR_STRING_LEN %d\n", idxp, IP_ADDR_STRING_LEN);
+            return 0;
+        }
+        if (idxt > 3) {
+            printf("idxt %d > 3\n", idxt);
+            return 0;
+        }
+
+        ip_str[idxp++] = tmp[idxt--];
+    }
 
     // printf("ip_str %c%c%c%c %c%c%c%c %c%c%c%c %c%c%c Final pos %d\n",
     //         ip_str[0],ip_str[1],ip_str[2],ip_str[3],
@@ -314,5 +321,5 @@ __device__ __forceinline__ int ip_to_string(uint32_t ip_int, uint8_t* ip_str)
     //         ip_str[12],ip_str[13],ip_str[14],
     //         pos);
 
-    return pos;
+    return idxp;
 }
