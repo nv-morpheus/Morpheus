@@ -213,13 +213,13 @@ struct type_caster<morpheus::utilities::json_t>
 };
 
 template <>
-struct type_caster<morpheus::utilities::json_t_dict>
+struct type_caster<morpheus::utilities::json_dict_t>
 {
   public:
     /**
      * This macro establishes a local variable 'value' of type morpheus::utilities::json_t_dict
      */
-    PYBIND11_TYPE_CASTER(morpheus::utilities::json_t_dict, _("dict[str, typing.Any]"));
+    PYBIND11_TYPE_CASTER(morpheus::utilities::json_dict_t, _("dict[str, typing.Any]"));
 
     /**
      * Conversion part 1 (Python->C++): convert a PyObject into an morpheus::utilities::json_t_dict
@@ -238,7 +238,7 @@ struct type_caster<morpheus::utilities::json_t_dict>
             return false;
         }
 
-        value = static_cast<const morpheus::utilities::json_t_dict>(
+        value = static_cast<const morpheus::utilities::json_dict_t>(
             morpheus::utilities::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
 
         return true;
@@ -251,20 +251,20 @@ struct type_caster<morpheus::utilities::json_t_dict>
      * ``return_value_policy::reference_internal``) and are generally
      * ignored by implicit casters.
      */
-    static handle cast(morpheus::utilities::json_t_dict src, return_value_policy policy, handle parent)
+    static handle cast(morpheus::utilities::json_dict_t src, return_value_policy policy, handle parent)
     {
         return morpheus::utilities::cast_from_json(src).release();
     }
 };
 
 template <>
-struct type_caster<morpheus::utilities::json_t_list>
+struct type_caster<morpheus::utilities::json_list_t>
 {
   public:
     /**
      * This macro establishes a local variable 'value' of type morpheus::utilities::json_t_list
      */
-    PYBIND11_TYPE_CASTER(morpheus::utilities::json_t_list, _("list[typing.Any]"));
+    PYBIND11_TYPE_CASTER(morpheus::utilities::json_list_t, _("list[typing.Any]"));
 
     /**
      * Conversion part 1 (Python->C++): convert a PyObject into an morpheus::utilities::json_t_list
@@ -283,7 +283,7 @@ struct type_caster<morpheus::utilities::json_t_list>
             return false;
         }
 
-        value = static_cast<const morpheus::utilities::json_t_list>(
+        value = static_cast<const morpheus::utilities::json_list_t>(
             morpheus::utilities::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
 
         return true;
@@ -296,7 +296,7 @@ struct type_caster<morpheus::utilities::json_t_list>
      * ``return_value_policy::reference_internal``) and are generally
      * ignored by implicit casters.
      */
-    static handle cast(morpheus::utilities::json_t_list src, return_value_policy policy, handle parent)
+    static handle cast(morpheus::utilities::json_list_t src, return_value_policy policy, handle parent)
     {
         return morpheus::utilities::cast_from_json(src).release();
     }

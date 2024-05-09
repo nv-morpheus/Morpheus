@@ -18,20 +18,40 @@
 #pragma once
 
 #include "morpheus/export.h"
+
 #include <nlohmann/json.hpp>
 #include <pymrc/types.hpp>
 
-
-namespace py = pybind11;
-using namespace py::literals;
+// namespace py = pybind11;
+// using namespace py::literals;
 
 namespace morpheus::utilities {
+/**
+ * @brief A container class derived from std::vector<uint8_t> to make it compatible with nlohmann::json to hold
+ * arbitrary Python objects as bytes.
+ *
+ */
 class MORPHEUS_EXPORT PythonByteContainer : public std::vector<uint8_t>
 {
   public:
+    /**
+     * @brief Construct a new Python Byte Container object
+     *
+     */
     PythonByteContainer() = default;
+
+    /**
+     * @brief Construct a new Python Byte Container object by initializing it with a `mrc::pymrc::PyHolder`.
+     *
+     * @param py_obj a PyHolder object that holds a Python object to be stored into the container
+     */
     PythonByteContainer(mrc::pymrc::PyHolder py_obj);
 
+    /**
+     * @brief Get the PyHolder object from the container
+     *
+     * @return mrc::pymrc::PyHolder the PyHolder object stored in the container
+     */
     mrc::pymrc::PyHolder get_py_obj() const;
 
   private:
@@ -39,7 +59,7 @@ class MORPHEUS_EXPORT PythonByteContainer : public std::vector<uint8_t>
 };
 
 /**
- * A specialization of nlohmann::basic_json with customized BinaryType (PythonByteContainer) to hold Python objects
+ * A specialization of `nlohmann::basic_json` with customized BinaryType (PythonByteContainer) to hold Python objects
  * as bytes.
  */
 using json_t = nlohmann::basic_json<std::map,
@@ -54,23 +74,38 @@ using json_t = nlohmann::basic_json<std::map,
                                     PythonByteContainer,
                                     void>;
 
-MORPHEUS_EXPORT py::object cast_from_json(const morpheus::utilities::json_t& source);
-MORPHEUS_EXPORT json_t cast_from_pyobject(const py::object& source, mrc::pymrc::unserializable_handler_fn_t unserializable_handler_fn);
-MORPHEUS_EXPORT json_t cast_from_pyobject(const py::object& source);
+/**
+ * @brief Convert a `json_t` object to a pybind11 object. The difference to `mrc::pymrc::cast_from_json()` is that if
+ * the object cannot be serialized, it checks if the object contains a supported binary type. Otherwise,
+ * pybind11::none is returned.
+ *
+ * @param source : `json_t` object
+ * @return pybind11 object
+ */
+MORPHEUS_EXPORT pybind11::object cast_from_json(const morpheus::utilities::json_t& source);
+
+/**
+ * @brief Convert a pybind11 object to a json_t object. The difference to `mrc::pymrc::cast_from_pyobject` is that if
+ * the object cannot be serialized, it wraps the python object in a `PythonByteContainer` and returns it as a binary.
+ *
+ * @param source : pybind11 object
+ * @return json_t object.
+ */
+MORPHEUS_EXPORT json_t cast_from_pyobject(const pybind11::object& source);
 
 // NOLINTBEGIN(readability-identifier-naming)
 /*
     Derived class from json_t to allow for custom type names. Use this if the return type would always be an object
    (i.e. dict[str, Any] in python)
 */
-class MORPHEUS_EXPORT json_t_dict : public morpheus::utilities::json_t
+class MORPHEUS_EXPORT json_dict_t : public morpheus::utilities::json_t
 {};
 
 /*
     Derived class from json_t to allow for custom type names. Use this if the return type would always be an object
    (i.e. dict[str, Any] in python)
 */
-class MORPHEUS_EXPORT json_t_list : public morpheus::utilities::json_t
+class MORPHEUS_EXPORT json_list_t : public morpheus::utilities::json_t
 {};
 // NOLINTEND(readability-identifier-naming)
 }  // namespace morpheus::utilities

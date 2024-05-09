@@ -1,6 +1,8 @@
 
 #include "morpheus/utilities/json_types.hpp"
 
+namespace py = pybind11;
+
 namespace {
 template <typename T>
 uint64_t type_to_uint64()
@@ -114,33 +116,28 @@ json_t cast_from_pyobject_impl(const py::object& source,
 
     if (py::isinstance<py::bool_>(source))
     {
-        return json_t(py::cast<bool>(source));
+        return json_t(py::cast<bool>(std::move(source)));
     }
 
     if (py::isinstance<py::int_>(source))
     {
-        return json_t(py::cast<long>(source));
+        return json_t(py::cast<long>(std::move(source)));
     }
 
     if (py::isinstance<py::float_>(source))
     {
-        return json_t(py::cast<double>(source));
+        return json_t(py::cast<double>(std::move(source)));
     }
 
     if (py::isinstance<py::str>(source))
     {
-        return json_t(py::cast<std::string>(source));
+        return json_t(py::cast<std::string>(std::move(source)));
     }
 
     // source is not serializable, return as a binary object in PythonByteContainer
     return json_t::binary(PythonByteContainer(py::cast<mrc::pymrc::PyHolder>(source)), type_to_uint64<py::object>());
 
     // NOLINTEND(modernize-return-braced-init-list)
-}
-
-json_t cast_from_pyobject(const py::object& source, mrc::pymrc::unserializable_handler_fn_t unserializable_handler_fn)
-{
-    return cast_from_pyobject_impl(source, unserializable_handler_fn);
 }
 
 json_t cast_from_pyobject(const py::object& source)

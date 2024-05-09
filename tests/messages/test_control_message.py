@@ -408,7 +408,6 @@ class NonSerializablePyClass():
 
     def __init__(self):
         self.name = "non_serializable_py_class"
-        self.data = 1
 
     def __getstate__(self):
         raise TypeError("This object is not serializable")
@@ -418,7 +417,6 @@ class NonSerializableNestedPyClass():
 
     def __init__(self):
         self.name = "non_serializable_nested_py_class"
-        self.data = 2
         self.non_serializable = NonSerializablePyClass()
 
 
@@ -426,7 +424,6 @@ class NonSerializableNestedPyClassWithFile():
 
     def __init__(self):
         self.name = "non_serializable_nested_py_class_with_file"
-        self.data = 3
         self.file_obj = io.StringIO("string data")
 
 
@@ -449,10 +446,6 @@ def test_metadata_holds_non_serializable_python_obj(py_object):
     assert key in message.list_metadata()
     metadata = message.get_metadata(key)
     assert obj is metadata
-
-    new_data = 10
-    obj.data = new_data
-    assert metadata.data == new_data
 
     dict_with_obj = {"nested_obj": obj}
     message.set_metadata("nested", dict_with_obj)
@@ -478,10 +471,6 @@ def test_tasks_hold_non_serializable_python_obj(py_object):
     assert message.has_task(task_key)
     task = message.get_tasks()[task_key][0][task_name]
     assert obj is task
-
-    new_data = 10
-    obj.data = new_data
-    assert task.data == new_data
 
     ref_count = sys.getrefcount(obj)
     assert message.remove_task(task_key)[task_name] is obj
