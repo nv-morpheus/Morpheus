@@ -36,6 +36,8 @@ uint32_t const MAX_PKT_NUM     = 65536;
 uint32_t const MAX_QUEUE       = 2;
 uint32_t const MAX_SEM_X_QUEUE = 4096;
 
+uint32_t const IP_ADDR_STRING_LEN = 15;
+
 enum doca_traffic_type
 {
     DOCA_TRAFFIC_TYPE_UDP = 0,

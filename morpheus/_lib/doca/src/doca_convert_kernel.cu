@@ -168,18 +168,19 @@ std::unique_ptr<cudf::column> gather_header(
   uintptr_t*    packets_buffer,
   uint32_t*    header_sizes,
   uint32_t*    payload_sizes,
+  uint32_t*    fixed_size_list,
   rmm::cuda_stream_view stream,
   rmm::mr::device_memory_resource* mr)
 {
   auto [offsets_column, bytes] = cudf::detail::make_offsets_child_column(
-    header_sizes,
-    header_sizes + packet_count,
+    fixed_size_list,
+    fixed_size_list + packet_count,
     stream,
     mr
   );
 
   auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
-  uint8_t *d_chars      = chars_column->mutable_view().data<uint8_t>();
+  auto d_chars      = chars_column->mutable_view().data<uint8_t>();
 
   _packet_gather_header_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     packet_count,

@@ -16,9 +16,9 @@
  */
 
 #pragma once
+#include "morpheus/doca/common.hpp"
 
 #define ETHER_ADDR_LEN 6 /**< Length of Ethernet address. */
-#define IP_ADDR_STRING_LEN 15
 
 #define BYTE_SWAP16(v) ((((uint16_t)(v)&UINT16_C(0x00ff)) << 8) | (((uint16_t)(v)&UINT16_C(0xff00)) >> 8))
 
@@ -236,7 +236,7 @@ __device__ __forceinline__ int num_to_string(uint32_t value, char* sp)
 __device__ __forceinline__ int ip_to_string(uint32_t ip_int, uint8_t* ip_str)
 {
     int i;
-    int idxp   = 0;
+    int idxp  = 0;
     int idxt  = 0;
     int radix = 10;
     uint8_t tmp[3];
@@ -249,7 +249,8 @@ __device__ __forceinline__ int ip_to_string(uint32_t ip_int, uint8_t* ip_str)
     uint8_t ip3 = (uint8_t)((ip_int & 0xff000000) >> 24);
 
     idxt = 0;
-    while (ip0) {
+    while (ip0)
+    {
         i = ip0 % radix;
         ip0 /= radix;
         if (i < 10)
@@ -263,7 +264,8 @@ __device__ __forceinline__ int ip_to_string(uint32_t ip_int, uint8_t* ip_str)
     ip_str[idxp++] = '.';
 
     idxt = 0;
-    while (ip1) {
+    while (ip1)
+    {
         i = ip1 % radix;
         ip1 /= radix;
         if (i < 10)
@@ -277,7 +279,8 @@ __device__ __forceinline__ int ip_to_string(uint32_t ip_int, uint8_t* ip_str)
     ip_str[idxp++] = '.';
 
     idxt = 0;
-    while (ip2) {
+    while (ip2)
+    {
         i = ip2 % radix;
         ip2 /= radix;
         if (i < 10)
@@ -291,7 +294,8 @@ __device__ __forceinline__ int ip_to_string(uint32_t ip_int, uint8_t* ip_str)
     ip_str[idxp++] = '.';
 
     idxt = 0;
-    while (ip3) {
+    while (ip3)
+    {
         i = ip3 % radix;
         ip3 /= radix;
         if (i < 10)
@@ -300,13 +304,16 @@ __device__ __forceinline__ int ip_to_string(uint32_t ip_int, uint8_t* ip_str)
             tmp[idxt++] = i + 'a' - 10;
     }
     --idxt;
-    while (idxt >= 0) {
-        //Add print here to check boundaries
-        if (idxp > IP_ADDR_STRING_LEN) {
+    while (idxt >= 0)
+    {
+        // Add print here to check boundaries
+        if (idxp > IP_ADDR_STRING_LEN)
+        {
             printf("idxp %d > IP_ADDR_STRING_LEN %d\n", idxp, IP_ADDR_STRING_LEN);
             return 0;
         }
-        if (idxt > 3) {
+        if (idxt > 3)
+        {
             printf("idxt %d > 3\n", idxt);
             return 0;
         }
