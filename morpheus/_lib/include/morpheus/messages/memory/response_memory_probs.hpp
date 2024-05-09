@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/response_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for TensorMap
@@ -39,7 +40,7 @@ namespace morpheus {
  * @brief Output memory block containing the inference response probabilities.
  *
  */
-class ResponseMemoryProbs : public ResponseMemory
+class MORPHEUS_EXPORT ResponseMemoryProbs : public ResponseMemory
 {
   public:
     /**
@@ -75,11 +76,11 @@ class ResponseMemoryProbs : public ResponseMemory
 };
 
 /****** ResponseMemoryProbsInterfaceProxy*******************/
-#pragma GCC visibility push(default)
+
 /**
  * @brief Interface proxy, used to insulate python bindings
  */
-struct ResponseMemoryProbsInterfaceProxy : public ResponseMemoryInterfaceProxy
+struct MORPHEUS_EXPORT ResponseMemoryProbsInterfaceProxy : public ResponseMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize a ResponseMemoryProbs object, and return a shared pointer to the result
@@ -107,7 +108,6 @@ struct ResponseMemoryProbsInterfaceProxy : public ResponseMemoryInterfaceProxy
      */
     static void set_probs(ResponseMemoryProbs& self, pybind11::object cupy_values);
 };
-#pragma GCC visibility pop
 
 /** @} */  // end of group
 }  // namespace morpheus

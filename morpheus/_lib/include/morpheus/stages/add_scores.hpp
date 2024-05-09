@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/control.hpp"              // for ControlMessage
 #include "morpheus/messages/multi_response.hpp"       // for MultiResponseMessage
 #include "morpheus/stages/add_scores_stage_base.hpp"  // for AddScoresStageBase
@@ -40,13 +41,12 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
 /**
  * @brief Add probability scores to each message. Score labels based on probabilities calculated in inference stage.
  * Label indexes will be looked up in the idx2label property.
  */
 template <typename InputT, typename OutputT>
-class AddScoresStage : public AddScoresStageBase<InputT, OutputT>
+class MORPHEUS_EXPORT AddScoresStage : public AddScoresStageBase<InputT, OutputT>
 {
   public:
     /**
@@ -66,7 +66,7 @@ using AddScoresStageCM =  // NOLINT(readability-identifier-naming)
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct AddScoresStageInterfaceProxy
+struct MORPHEUS_EXPORT AddScoresStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a AddScoresStage that receives MultiResponseMessage and emits MultiResponseMessage,
@@ -95,6 +95,5 @@ struct AddScoresStageInterfaceProxy
         mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label);
 };
 
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

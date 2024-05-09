@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "morpheus/export.h"
+
 #include <cudf/types.hpp>
 
 #include <climits>  // for CHAR_BIT
@@ -47,12 +49,10 @@ constexpr std::size_t size_in_bits()
     return sizeof(T) * CHAR_BIT;
 }
 
-#pragma GCC visibility push(default)
-
 /**
  * @brief Enum class for representing data types used in Tensors and DataFrame columns.
  */
-enum class TypeId : int32_t
+enum class MORPHEUS_EXPORT TypeId : int32_t
 {
     EMPTY,    ///< Always null with no underlying data
     INT8,     ///< 1 byte signed integer
@@ -92,7 +92,7 @@ enum class TypeId : int32_t
  * @class DType
  * @brief This class represents a data type specified by a TypeId.
  */
-struct DType
+struct MORPHEUS_EXPORT DType
 {
     /**
      * @brief Construct a DType for a given type specified by a TypeId.
@@ -260,7 +260,5 @@ struct DType
 
     TypeId m_type_id;
 };
-
 /** @} */  // end of group
-#pragma GCC visibility pop
 }  // namespace morpheus
