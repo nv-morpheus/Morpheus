@@ -19,7 +19,6 @@ import typing
 
 import pandas as pd
 import pytest
-from nvtabular import Dataset
 
 import cudf
 
