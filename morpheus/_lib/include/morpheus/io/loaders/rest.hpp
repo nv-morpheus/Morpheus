@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/io/data_loader.hpp"
 #include "morpheus/messages/control.hpp"
 
@@ -25,12 +26,12 @@
 #include <memory>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 /**
  * @brief Very simple raw data loader that takes payload data on the control message and returns it
  *
  */
-class RESTDataLoader : public Loader
+class MORPHEUS_EXPORT RESTDataLoader : public Loader
 {
   public:
     ~RESTDataLoader() = default;
@@ -40,5 +41,5 @@ class RESTDataLoader : public Loader
 
     std::shared_ptr<ControlMessage> load(std::shared_ptr<ControlMessage> message, nlohmann::json task) final;
 };
-#pragma GCC visibility pop
+
 }  // namespace morpheus

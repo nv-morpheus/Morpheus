@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "morpheus/export.h"
+
 #include <boost/fiber/buffered_channel.hpp>
 #include <boost/fiber/channel_op_status.hpp>
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
@@ -40,7 +42,7 @@ namespace morpheus {
  * order
  *
  */
-class FiberQueue
+class MORPHEUS_EXPORT FiberQueue
 {
   public:
     FiberQueue(std::size_t max_size);
@@ -84,12 +86,11 @@ class FiberQueue
     boost::fibers::buffered_channel<pybind11::object> m_queue;
 };
 
-#pragma GCC visibility push(default)
 /****** FiberQueueInterfaceProxy *************************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct FiberQueueInterfaceProxy
+struct MORPHEUS_EXPORT FiberQueueInterfaceProxy
 {
     /**
      * @brief Create and initialize a FIberQueue, and return a shared pointer to the result
@@ -123,6 +124,6 @@ struct FiberQueueInterfaceProxy
                      const pybind11::object& value,
                      const pybind11::object& traceback);
 };
-#pragma GCC visibility pop
+
 /** @} */  // end of group
 }  // namespace morpheus
