@@ -53,7 +53,9 @@ DOCKER_EXTRA_ARGS=()
 BUILD_SCRIPT="${BUILD_SCRIPT}
 export CONDA_ARGS=\"${CONDA_ARGS[@]}\"
 ./ci/conda/recipes/run_conda_build.sh "$@"
+EXIT_CODE=\$?
 chown -R ${CUR_UID}:${CUR_GID} .cache .conda-bld
+exit \$EXIT_CODE
 "
 
 echo "Running conda build"
@@ -62,4 +64,4 @@ echo "Running conda build"
 DOCKER_EXTRA_ARGS="${DOCKER_EXTRA_ARGS[@]}" ${SCRIPT_DIR}/run_container_dev.sh bash -c "${BUILD_SCRIPT}"
 
 echo "Conda packages have been built. Use the following to install into an environment:"
-echo "    mamba install -c file://$(realpath ${MORPHEUS_ROOT}/.conda-bld) -c nvidia -c rapidsai -c conda-forge $@"
+echo "    mamba install -c file://$(realpath ${MORPHEUS_ROOT}/.conda-bld) -c conda-forge -c rapidsai -c rapidsai-nightly -c nvidia -c nvidia/label/dev $@"
