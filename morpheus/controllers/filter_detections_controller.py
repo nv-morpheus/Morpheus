@@ -96,7 +96,7 @@ class FilterDetectionsController:
 
         return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
-    def filter_copy(self, x: MultiMessage | ControlMessage) -> MultiMessage:
+    def filter_copy(self, x: MultiMessage | ControlMessage) -> MultiMessage | ControlMessage:
         """
         This function uses a threshold value to filter the messages.
 
@@ -120,10 +120,15 @@ class FilterDetectionsController:
         if (true_pairs.shape[0] == 0):
             return None
         
-        # TODO(Yuchen): Implement copy_ranges() for CM
-        return x.copy_ranges(true_pairs)
+        if isinstance(x, MultiMessage):
+            return x.copy_ranges(true_pairs)
+        if isinstance(x, ControlMessage):
+            meta = x.payload()
+            x.payload(meta.copy_ranges(true_pairs))
+            return x
+        raise TypeError(f"Unsupported message type: {type(x)}")
 
-    def filter_slice(self, x: MultiMessage | ControlMessage) -> typing.List[MultiMessage | ControlMessage]:
+    def filter_slice(self, x: MultiMessage | ControlMessage) -> typing.List[MultiMessage] | typing.List[ControlMessage]:
         """
         This function uses a threshold value to filter the messages.
 
@@ -142,11 +147,19 @@ class FilterDetectionsController:
         output_list = []
         if x is not None:
             true_pairs = self._find_detections(x)
-            for pair in true_pairs:
-                pair = tuple(pair.tolist())
-                if ((pair[1] - pair[0]) > 0):
-                    # TODO(Yuchen): Implement get_slice() for CM
-                    output_list.append(x.get_slice(*pair))
+            if isinstance(x, MultiMessage):
+                for pair in true_pairs:
+                    pair = tuple(pair.tolist())
+                    if ((pair[1] - pair[0]) > 0):
+                        output_list.append(x.get_slice(*pair))
+            elif isinstance(x, ControlMessage):
+                for pair in true_pairs:
+                    pair = tuple(pair.tolist())
+                    if ((pair[1] - pair[0]) > 0):
+                        sliced_meta = x.payload().get_slice(*pair)
+                        cm = ControlMessage(x)
+                        cm.payload(sliced_meta)
+                        output_list.append(cm)
 
         return output_list
 

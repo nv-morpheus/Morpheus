@@ -28,7 +28,7 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiResponseMessage
+from morpheus.messages import MultiResponseMessage, MultiResponseAEMessage
 from morpheus.messages import ControlMessage
 from morpheus.messages.multi_ae_message import MultiMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
@@ -492,13 +492,12 @@ class TimeSeriesStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _call_timeseries_user(self, x: MultiResponseMessage | ControlMessage):
-        if isinstance(x, MultiResponseMessage):
-            # TODO(Yuchen): MultiResponseMessage does not have user_id field. Only MultiResponseAEMessage has. Need to fix this.
+    def _call_timeseries_user(self, x: MultiResponseAEMessage | ControlMessage):
+        if isinstance(x, MultiResponseAEMessage):
             user_id = x.user_id
         elif isinstance(x, ControlMessage):
             user_id = x.get_metadata("user_id")
-        
+
         if (user_id not in self._timeseries_per_user):
             self._timeseries_per_user[user_id] = _UserTimeSeries(user_id=user_id,
                                                                    timestamp_col=self._timestamp_col,

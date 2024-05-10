@@ -94,15 +94,13 @@ class PreprocessAEStage(PreprocessBaseStage):
 
     @staticmethod
     def process_control_message(x: ControlMessage, fea_len: int, feature_columns: typing.List[str]) -> ControlMessage:
-        meta_df = x.payload().get_data()
-        feature_df = x.payload().get_data(meta_df.columns.intersection(feature_columns))
+        meta_df = x.payload().get_data(x.payload().df.columns.intersection(feature_columns))
 
-        ## TODO(Yuchen): attach autoencoder and all these fields to CM. Waiting for updating ControlMessage to use JSONValues
         autoencoder = x.get_metadata("autoencoder")
         scores_mean = x.get_metadata("train_scores_mean")
         scores_std = x.get_metadata("train_scores_std")
         count = len(meta_df.index)
-        mess_count = count
+
         inputs = cp.zeros(meta_df.shape, dtype=cp.float32)
 
         if autoencoder is not None:
@@ -110,13 +108,14 @@ class PreprocessAEStage(PreprocessBaseStage):
             inputs = autoencoder.build_input_tensor(data)
             inputs = cp.asarray(inputs.detach())
             count = inputs.shape[0]
-            mess_count = x.mess_count
 
         seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
         seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
         seg_ids[:, 2] = fea_len - 1
 
-        # TODO(Yuchen): include fields above to ControlMessage
+        x.set_metadata("autoencoder", autoencoder)
+        x.set_metadata("train_scores_mean", scores_mean)
+        x.set_metadata("train_scores_std", scores_std)
         x.tensors(CppTensorMemory(count=count, tensors={"input__0": data, "seq_ids": seg_ids}))
         return x
 

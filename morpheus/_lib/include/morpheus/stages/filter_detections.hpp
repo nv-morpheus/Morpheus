@@ -1,4 +1,3 @@
-
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
@@ -117,7 +116,7 @@ using FilterDetectionsStageCM =  // NOLINT(readability-identifier-naming)
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct FilterDetectionStageInterfaceProxy
+struct MORPHEUS_EXPORT FilterDetectionStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a FilterDetectionStage that receives MultiMessage and emits MultiMessage, and return the result

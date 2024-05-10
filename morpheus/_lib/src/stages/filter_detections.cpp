@@ -21,6 +21,7 @@
 #include "mrc/segment/object.hpp"
 #include "pymrc/node.hpp"
 
+#include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/dtype.hpp"         // for DataType
@@ -195,9 +196,25 @@ FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<Inpu
                 num_selected_rows += (row - slice_start);
             }
             else
-            {   
-                // TODO(Yuchen): Pending implementation of get_slice() for CM
-                return x->get_slice(slice_start, row);
+            {
+                if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
+                {
+                    return x->get_slice(slice_start, row);
+                }
+                else if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<ControlMessage>>)
+                {
+                    auto meta = x->payload();
+                    x->payload(meta->get_slice(slice_start, row));
+                    return x;
+                }
+                // sink_type_t not supported
+                else
+                {
+                    std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
+                                          std::string(typeid(x).name())};
+                    LOG(ERROR) << error_msg;
+                    throw std::runtime_error(error_msg);
+                }
             }
 
             slice_start = num_rows;
@@ -214,8 +231,24 @@ FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<Inpu
         }
         else
         {
-            // TODO(Yuchen): Pending implementation of get_slice() for CM
-            return x->get_slice(slice_start, num_rows);
+            if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
+            {
+                return x->get_slice(slice_start, num_rows);
+            }
+            else if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<ControlMessage>>)
+            {
+                auto meta = x->payload();
+                x->payload(meta->get_slice(slice_start, num_rows));
+                return x;
+            }
+            // sink_type_t not supported
+            else
+            {
+                std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
+                                      std::string(typeid(x).name())};
+                LOG(ERROR) << error_msg;
+                throw std::runtime_error(error_msg);
+            }
         }
     }
 
@@ -224,8 +257,24 @@ FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<Inpu
     if (num_selected_rows > 0)
     {
         DCHECK(m_copy);
-        // TODO(Yuchen): Pending implementation of copy_ranges() for CM
-        return x->copy_ranges(selected_ranges, num_selected_rows);
+        if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
+        {
+            return x->copy_ranges(selected_ranges, num_selected_rows);
+        }
+        else if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<ControlMessage>>)
+        {
+            auto meta = x->payload();
+            x->payload(meta->copy_ranges(selected_ranges));
+            return x;
+        }
+        // sink_type_t not supported
+        else
+        {
+            std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
+                                  std::string(typeid(x).name())};
+            LOG(ERROR) << error_msg;
+            throw std::runtime_error(error_msg);
+        }
     }
 }
 
