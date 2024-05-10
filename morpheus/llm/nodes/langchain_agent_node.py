@@ -78,6 +78,17 @@ class LangChainAgentNode(LLMNodeBase):
 
         results = await self._run_single(**input_dict)
 
+        # Processes the results to replace exceptions with a default message
+        default_message = "I do not have a definitive answer for this checklist item."
+        for i, answer_list in enumerate(results):
+            for j, answer in enumerate(answer_list):
+                if isinstance(answer, (OutputParserException, Exception)):
+                    # If the agent encounters a parsing error or a server error after retries, replace the error
+                    # with a default value to prevent the pipeline from crashing
+                    results[i][j] = default_message
+                    logger.warning(
+                        f"Exception encountered in result[{i}][{j}]: {answer}. Replacing with default message.")
+
         context.set_output(results)
 
         return context

@@ -155,7 +155,7 @@ class NVFoundationLLMService(LLMService):
 
         self._api_key = api_key
         if base_url is None:
-            self._base_url = os.getenv('NVAI_BASE_URL', None)
+            self._base_url = os.getenv('NVAI_BASE_URL', 'https://api.nvcf.nvidia.com/v2/nvcf')
         else:
             self._base_url = base_url
 
