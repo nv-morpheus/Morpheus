@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"  // for MessageMeta
 #include "morpheus/messages/multi.hpp"
@@ -44,8 +45,9 @@ namespace morpheus {
  * proper inputs are set and eases debugging.
  *
  */
-#pragma GCC visibility push(default)
-class MultiInferenceFILMessage : public DerivedMultiMessage<MultiInferenceFILMessage, MultiInferenceMessage>
+
+class MORPHEUS_EXPORT MultiInferenceFILMessage
+  : public DerivedMultiMessage<MultiInferenceFILMessage, MultiInferenceMessage>
 {
   public:
     /**
@@ -105,7 +107,7 @@ class MultiInferenceFILMessage : public DerivedMultiMessage<MultiInferenceFILMes
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiInferenceFILMessageInterfaceProxy : public MultiInferenceMessageInterfaceProxy
+struct MORPHEUS_EXPORT MultiInferenceFILMessageInterfaceProxy : public MultiInferenceMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiInferenceFILMessage, and return a shared pointer to the result
@@ -146,6 +148,5 @@ struct MultiInferenceFILMessageInterfaceProxy : public MultiInferenceMessageInte
      */
     static pybind11::object seq_ids(MultiInferenceFILMessage& self);
 };
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

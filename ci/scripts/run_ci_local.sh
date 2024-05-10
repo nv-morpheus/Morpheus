@@ -45,7 +45,10 @@ MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 # match CI, the default)
 USE_HOST_GIT=${USE_HOST_GIT:-0}
 
-GIT_URL=$(git remote get-url origin)
+# Useful when using a host git repo to avoid conflicting with a potentially existing 'build' directory
+BUILD_DIR=${BUILD_DIR:-build-ci}
+
+GIT_URL=${GIT_URL:-$(git remote get-url origin)}
 GIT_URL=$(git_ssh_to_https ${GIT_URL})
 
 GIT_UPSTREAM_URL=$(git remote get-url upstream)
@@ -62,33 +65,41 @@ DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 BUILD_CONTAINER="nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-${CONTAINER_VER}"
 TEST_CONTAINER="nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-${CONTAINER_VER}"
 
-ENV_LIST="--env LOCAL_CI_TMP=/ci_tmp"
-ENV_LIST="${ENV_LIST} --env GIT_URL=${GIT_URL}"
-ENV_LIST="${ENV_LIST} --env GIT_UPSTREAM_URL=${GIT_UPSTREAM_URL}"
-ENV_LIST="${ENV_LIST} --env GIT_BRANCH=${GIT_BRANCH}"
-ENV_LIST="${ENV_LIST} --env GIT_COMMIT=${GIT_COMMIT}"
-ENV_LIST="${ENV_LIST} --env PARALLEL_LEVEL=$(nproc)"
-ENV_LIST="${ENV_LIST} --env CUDA_VER=${CUDA_VER}"
-ENV_LIST="${ENV_LIST} --env SKIP_CONDA_ENV_UPDATE=${SKIP_CONDA_ENV_UPDATE}"
-ENV_LIST="${ENV_LIST} --env USE_HOST_GIT=${USE_HOST_GIT}"
+ENV_LIST=()
+ENV_LIST+=("--env" "LOCAL_CI_TMP=/ci_tmp")
+ENV_LIST+=("--env" "GIT_URL=${GIT_URL}")
+ENV_LIST+=("--env" "GIT_UPSTREAM_URL=${GIT_UPSTREAM_URL}")
+ENV_LIST+=("--env" "GIT_BRANCH=${GIT_BRANCH}")
+ENV_LIST+=("--env" "GIT_COMMIT=${GIT_COMMIT}")
+ENV_LIST+=("--env" "PARALLEL_LEVEL=$(nproc)")
+ENV_LIST+=("--env" "CUDA_VER=${CUDA_VER}")
+ENV_LIST+=("--env" "SKIP_CONDA_ENV_UPDATE=${SKIP_CONDA_ENV_UPDATE}")
+ENV_LIST+=("--env" "USE_HOST_GIT=${USE_HOST_GIT}")
+ENV_LIST+=("--env" "BUILD_DIR=${BUILD_DIR}")
 
 mkdir -p ${LOCAL_CI_TMP}
 cp ${MORPHEUS_ROOT}/ci/scripts/bootstrap_local_ci.sh ${LOCAL_CI_TMP}
 
 for STAGE in "${STAGES[@]}"; do
-    DOCKER_RUN_ARGS="--rm -ti --net=host -v "${LOCAL_CI_TMP}":/ci_tmp ${ENV_LIST} --env STAGE=${STAGE}"
+    DOCKER_RUN_ARGS=()
+    DOCKER_RUN_ARGS+=("--rm")
+    DOCKER_RUN_ARGS+=("-ti")
+    DOCKER_RUN_ARGS+=("--net=host")
+    DOCKER_RUN_ARGS+=("-v" "${LOCAL_CI_TMP}:/ci_tmp")
+    DOCKER_RUN_ARGS+=("${ENV_LIST[@]}")
+    DOCKER_RUN_ARGS+=("--env STAGE=${STAGE}")
     if [[ "${STAGE}" == "test" || "${USE_GPU}" == "1" ]]; then
         CONTAINER="${TEST_CONTAINER}"
-        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=nvidia"
-        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --gpus all"
-        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --cap-add=sys_nice"
+        DOCKER_RUN_ARGS+=("--runtime=nvidia")
+        DOCKER_RUN_ARGS+=("--gpus all")
+        DOCKER_RUN_ARGS+=("--cap-add=sys_nice")
     else
         CONTAINER="${BUILD_CONTAINER}"
-        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=runc"
+        DOCKER_RUN_ARGS+=("--runtime=runc")
     fi
 
     if [[ "${USE_HOST_GIT}" == "1" ]]; then
-        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} -v ${MORPHEUS_ROOT}:/Morpheus"
+        DOCKER_RUN_ARGS+=("-v" "${MORPHEUS_ROOT}:/Morpheus")
     fi
 
     if [[ "${STAGE}" == "bash" ]]; then
@@ -99,7 +110,7 @@ for STAGE in "${STAGES[@]}"; do
 
     echo "Running ${STAGE} stage in ${CONTAINER}"
     set -x
-    docker run ${DOCKER_RUN_ARGS} ${DOCKER_EXTRA_ARGS} ${CONTAINER} ${DOCKER_RUN_CMD}
+    docker run ${DOCKER_RUN_ARGS[@]} ${DOCKER_EXTRA_ARGS} ${CONTAINER} ${DOCKER_RUN_CMD}
     set +x
 
     STATUS=$?

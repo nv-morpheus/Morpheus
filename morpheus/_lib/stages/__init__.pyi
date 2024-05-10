@@ -24,8 +24,10 @@ __all__ = [
     "FilterDetectionsStage",
     "FilterSource",
     "HttpServerSourceStage",
-    "InferenceClientStage",
+    "InferenceClientStageCM",
+    "InferenceClientStageMM",
     "KafkaSourceStage",
+    "PreallocateControlMessageStage",
     "PreallocateMessageMetaStage",
     "PreallocateMultiMessageStage",
     "PreprocessFILControlMessageStage",
@@ -58,9 +60,9 @@ class DeserializeMultiMessageStage(mrc.core.segment.SegmentObject):
     pass
 class FileSourceStage(mrc.core.segment.SegmentObject):
     @typing.overload
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: os.PathLike, repeat: int, parser_kwargs: dict) -> None: ...
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: os.PathLike, repeat: int, filter_null: bool, filter_null_columns: typing.List[str], parser_kwargs: dict) -> None: ...
     @typing.overload
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: str, repeat: int, parser_kwargs: dict) -> None: ...
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: str, repeat: int, filter_null: bool, filter_null_columns: typing.List[str], parser_kwargs: dict) -> None: ...
     pass
 class FilterDetectionsStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, threshold: float, copy: bool, filter_source: morpheus._lib.common.FilterSource, field_name: str = 'probs') -> None: ...
@@ -68,14 +70,20 @@ class FilterDetectionsStage(mrc.core.segment.SegmentObject):
 class HttpServerSourceStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, bind_address: str = '127.0.0.1', port: int = 8080, endpoint: str = '/message', method: str = 'POST', accept_status: int = 201, sleep_time: float = 0.10000000149011612, queue_timeout: int = 5, max_queue_size: int = 1024, num_server_threads: int = 1, max_payload_size: int = 10485760, request_timeout: int = 30, lines: bool = False, stop_after: int = 0) -> None: ...
     pass
-class InferenceClientStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, server_url: str, model_name: str, needs_logits: bool, input_mapping: typing.Dict[str, str] = {}, output_mapping: typing.Dict[str, str] = {}) -> None: ...
+class InferenceClientStageCM(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, server_url: str, model_name: str, needs_logits: bool, force_convert_inputs: bool, input_mapping: typing.Dict[str, str] = {}, output_mapping: typing.Dict[str, str] = {}) -> None: ...
+    pass
+class InferenceClientStageMM(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, server_url: str, model_name: str, needs_logits: bool, force_convert_inputs: bool, input_mapping: typing.Dict[str, str] = {}, output_mapping: typing.Dict[str, str] = {}) -> None: ...
     pass
 class KafkaSourceStage(mrc.core.segment.SegmentObject):
     @typing.overload
     def __init__(self, builder: mrc.core.segment.Builder, name: str, max_batch_size: int, topic: str, batch_timeout_ms: int, config: typing.Dict[str, str], disable_commits: bool = False, disable_pre_filtering: bool = False, stop_after: int = 0, async_commits: bool = True, oauth_callback: typing.Optional[function] = None) -> None: ...
     @typing.overload
     def __init__(self, builder: mrc.core.segment.Builder, name: str, max_batch_size: int, topics: typing.List[str], batch_timeout_ms: int, config: typing.Dict[str, str], disable_commits: bool = False, disable_pre_filtering: bool = False, stop_after: int = 0, async_commits: bool = True, oauth_callback: typing.Optional[function] = None) -> None: ...
+    pass
+class PreallocateControlMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: typing.List[typing.Tuple[str, morpheus._lib.common.TypeId]]) -> None: ...
     pass
 class PreallocateMessageMetaStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: typing.List[typing.Tuple[str, morpheus._lib.common.TypeId]]) -> None: ...

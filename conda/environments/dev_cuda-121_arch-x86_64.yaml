@@ -11,6 +11,7 @@ channels:
 dependencies:
 - appdirs
 - automake
+- beautifulsoup4
 - benchmark=1.8.3
 - boost-cpp=1.84
 - breathe=4.35.0

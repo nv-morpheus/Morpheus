@@ -37,7 +37,7 @@ function run_pipeline_sid_minibert(){
    VAL_FILE=$4
    VAL_OUTPUT=$5
 
-   morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=32 --use_cpp=${USE_CPP} \
+   morpheus --log_level=DEBUG run --num_threads=$(nproc) --pipeline_batch_size=1024 --model_max_batch_size=32 --use_cpp=${USE_CPP} \
       pipeline-nlp --model_seq_length=256 \
       from-file --filename=${INPUT_FILE} \
       deserialize \
@@ -58,7 +58,7 @@ function run_pipeline_sid_bert(){
    VAL_FILE=$4
    VAL_OUTPUT=$5
 
-   morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=32 --use_cpp=${USE_CPP} \
+   morpheus --log_level=DEBUG run --num_threads=$(nproc) --pipeline_batch_size=1024 --model_max_batch_size=32 --use_cpp=${USE_CPP} \
       pipeline-nlp --model_seq_length=256 \
       from-file --filename=${INPUT_FILE} \
       deserialize \
@@ -79,7 +79,7 @@ function run_pipeline_abp_nvsmi(){
    VAL_FILE=$4
    VAL_OUTPUT=$5
 
-   morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=${USE_CPP} \
+   morpheus --log_level=DEBUG run --num_threads=$(nproc) --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=${USE_CPP} \
       pipeline-fil --columns_file=${MORPHEUS_ROOT}/morpheus/data/columns_fil.txt \
       from-file --filename=${INPUT_FILE} \
       deserialize \
@@ -100,7 +100,7 @@ function run_pipeline_phishing_email(){
    VAL_FILE=$4
    VAL_OUTPUT=$5
 
-   morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=32 --use_cpp=${USE_CPP} \
+   morpheus --log_level=DEBUG run --num_threads=$(nproc) --pipeline_batch_size=1024 --model_max_batch_size=32 --use_cpp=${USE_CPP} \
       pipeline-nlp --model_seq_length=128 --labels_file=${MORPHEUS_ROOT}/morpheus/data/labels_phishing.txt \
       from-file --filename=${INPUT_FILE} \
       deserialize \
@@ -121,7 +121,7 @@ function run_pipeline_hammah_user123(){
    VAL_FILE=$4
    VAL_OUTPUT=$5
 
-   morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=${USE_CPP} \
+   morpheus --log_level=DEBUG run --num_threads=$(nproc) --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=${USE_CPP} \
       pipeline-ae --columns_file="${MORPHEUS_ROOT}/morpheus/data/columns_ae_cloudtrail.txt" --userid_filter="user123" --userid_column_name="userIdentitysessionContextsessionIssueruserName" --timestamp_column_name="event_dt" \
       from-cloudtrail --input_glob="${MORPHEUS_ROOT}/models/datasets/validation-data/dfp-cloudtrail-*-input.csv" \
       train-ae --train_data_glob="${MORPHEUS_ROOT}/models/datasets/training-data/dfp-cloudtrail-*.csv" --source_stage_class=morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage --seed 42 \
@@ -143,7 +143,7 @@ function run_pipeline_hammah_role-g(){
    VAL_FILE=$4
    VAL_OUTPUT=$5
 
-   morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=${USE_CPP} \
+   morpheus --log_level=DEBUG run --num_threads=$(nproc) --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=${USE_CPP} \
       pipeline-ae --columns_file="${MORPHEUS_ROOT}/morpheus/data/columns_ae_cloudtrail.txt" --userid_filter="role-g" --userid_column_name="userIdentitysessionContextsessionIssueruserName" --timestamp_column_name="event_dt" \
       from-cloudtrail --input_glob="${MORPHEUS_ROOT}/models/datasets/validation-data/dfp-cloudtrail-*-input.csv" \
       train-ae --train_data_glob="${MORPHEUS_ROOT}/models/datasets/training-data/dfp-cloudtrail-*.csv" --source_stage_class=morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage  --seed 42 \

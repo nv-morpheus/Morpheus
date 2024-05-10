@@ -23,8 +23,6 @@ cd ${MORPHEUS_ROOT}
 
 fetch_base_branch
 
-git submodule update --init --recursive
-
 # Its important that we are in the base environment for the build
 rapids-logger "Activating Base Conda Environment"
 
