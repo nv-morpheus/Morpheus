@@ -114,7 +114,9 @@ class OpenAIChatClient(LLMClient):
 
         # Create the client objects for both sync and async
         self._client = openai.OpenAI(api_key=parent._api_key, base_url=parent._base_url, max_retries=max_retries)
-        self._client_async = openai.AsyncOpenAI(api_key=parent._api_key, base_url=parent._base_url, max_retries=max_retries)
+        self._client_async = openai.AsyncOpenAI(api_key=parent._api_key,
+                                                base_url=parent._base_url,
+                                                max_retries=max_retries)
 
     def get_input_names(self) -> list[str]:
         input_names = [self._prompt_key]
@@ -326,8 +328,9 @@ class OpenAIChatService(LLMService):
             The API key for the LLM service, by default None. If `None` the API key will be read from the
             `OPENAI_API_KEY` environment variable. If neither are present an error will be raised.
         base_url : str, optional
-            The api host url, by default None. If the `OPENAI_BASE_URL` environment variable is present, it will always
-            take precedence over this parameter. If neither are present the OpenAI default will be used., by default None
+            The api host url, by default None. If the `OPENAI_BASE_URL` environment variable is present,
+            it will always take precedence over this parameter. If neither are present the OpenAI default will
+            be used., by default None
         default_model_kwargs : dict, optional
             Default arguments to use when creating a client via the `get_client` function. Any argument specified here
             will automatically be used when calling `get_client`. Arguments specified in the `get_client` function will
