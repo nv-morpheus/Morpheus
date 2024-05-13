@@ -82,6 +82,7 @@ add_library(morpheus
   src/utilities/cudf_util.cpp
   src/utilities/cupy_util.cpp
   src/utilities/http_server.cpp
+  src/utilities/json_types.cpp
   src/utilities/matx_util.cu
   src/utilities/python_util.cpp
   src/utilities/string_util.cpp
