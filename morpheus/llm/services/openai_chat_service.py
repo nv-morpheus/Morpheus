@@ -326,8 +326,8 @@ class OpenAIChatService(LLMService):
             The API key for the LLM service, by default None. If `None` the API key will be read from the
             `OPENAI_API_KEY` environment variable. If neither are present an error will be raised.
         base_url : str, optional
-            The api host url, by default None. If `None` the url will be read from the `OPENAI_API_BASE` environment
-            variable. If neither are present the OpenAI default will be used., by default None
+            The api host url, by default None. If the `OPENAI_BASE_URL` environment variable is present, it will always
+            take precedence over this parameter. If neither are present the OpenAI default will be used., by default None
         default_model_kwargs : dict, optional
             Default arguments to use when creating a client via the `get_client` function. Any argument specified here
             will automatically be used when calling `get_client`. Arguments specified in the `get_client` function will
@@ -355,6 +355,9 @@ class OpenAIChatService(LLMService):
         self._logger.propagate = False
 
         log_file = os.path.join(appdirs.user_log_dir(appauthor="NVIDIA", appname="morpheus"), "openai.log")
+
+        # Ensure the log directory exists
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
         # Add a file handler
         file_handler = logging.FileHandler(log_file)
@@ -398,6 +401,8 @@ class OpenAIChatService(LLMService):
         """
 
         final_model_kwargs = {**self._default_model_kwargs, **model_kwargs}
+        del final_model_kwargs["base_url"]
+        del final_model_kwargs["api_key"]
 
         return OpenAIChatClient(self,
                                 model_name=model_name,

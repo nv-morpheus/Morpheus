@@ -24,13 +24,30 @@ from morpheus.llm.services.openai_chat_service import OpenAIChatClient
 from morpheus.llm.services.openai_chat_service import OpenAIChatService
 
 
+@pytest.mark.parametrize("api_key", ["12345", None])
+@pytest.mark.parametrize("base_url", ["http://test.openai.com/v1", None])
 @pytest.mark.parametrize("max_retries", [5, 10])
-def test_constructor(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], max_retries: int):
+def test_constructor(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
+                     api_key: str,
+                     base_url: str,
+                     max_retries: int):
+    client = OpenAIChatClient(OpenAIChatService(api_key=api_key, base_url=base_url),
+                              model_name="test_model",
+                              max_retries=max_retries)
+    assert isinstance(client, LLMClient)
+
+    for mock_client in mock_chat_completion:
+        mock_client.assert_called_once_with(api_key=api_key, base_url=base_url, max_retries=max_retries)
+
+
+@pytest.mark.parametrize("max_retries", [5, 10])
+def test_constructor_default_service_constructor(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
+                                                 max_retries: int):
     client = OpenAIChatClient(OpenAIChatService(), model_name="test_model", max_retries=max_retries)
     assert isinstance(client, LLMClient)
 
     for mock_client in mock_chat_completion:
-        mock_client.assert_called_once_with(max_retries=max_retries)
+        mock_client.assert_called_once_with(api_key=None, base_url=None, max_retries=max_retries)
 
 
 @pytest.mark.parametrize("use_async", [True, False])
@@ -56,7 +73,9 @@ def test_generate(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
                   expected_messages: list[dict],
                   temperature: int):
     (mock_client, mock_async_client) = mock_chat_completion
-    client = OpenAIChatClient(OpenAIChatService(),
+    api_key = "12345"
+    base_url = "http://test.openai.com/v1"
+    client = OpenAIChatClient(OpenAIChatService(api_key=api_key, base_url=base_url),
                               model_name="test_model",
                               set_assistant=set_assistant,
                               temperature=temperature)
