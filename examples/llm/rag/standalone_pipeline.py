@@ -14,8 +14,6 @@
 import logging
 import time
 
-import pandas as pd
-
 import cudf
 
 from morpheus.config import Config

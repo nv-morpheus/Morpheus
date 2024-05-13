@@ -16,7 +16,6 @@ import logging
 
 import click
 
-from morpheus._lib.messages import RawPacketMessage
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
@@ -98,9 +97,6 @@ def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, ou
     ]
 
     config.edge_buffer_size = 128
-
-    def count_raw_packets(message: RawPacketMessage):
-        return message.num
 
     pipeline = LinearPipeline(config)
 
