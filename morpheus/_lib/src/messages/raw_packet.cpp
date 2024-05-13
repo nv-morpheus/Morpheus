@@ -20,6 +20,7 @@
 #include <pybind11/pytypes.h>
 
 #include <memory>
+
 // We're already including pybind11.h and don't need to include cast.
 // For some reason IWYU also thinks we need array for the `isinsance` call.
 // IWYU pragma: no_include <pybind11/cast.h>
@@ -101,13 +102,6 @@ std::shared_ptr<RawPacketMessage> RawPacketMessage::create_from_cpp(uint32_t num
         new RawPacketMessage(num, max_size, ptr_addr, ptr_hdr_size, ptr_pld_size, gpu_mem, queue_idx));
 }
 
-// std::shared_ptr<RawPacketMessage> RawPacketMessage::create_from_python(py::object&& data_table)
-// {
-//     auto data = std::make_unique<PyDataTable>(std::move(data_table));
-
-//     return std::shared_ptr<RawPacketMessage>(new RawPacketMessage(std::move(data)));
-// }
-
 RawPacketMessage::RawPacketMessage(uint32_t num_,
                                    uint32_t max_size_,
                                    uintptr_t* ptr_addr_,
@@ -123,23 +117,5 @@ RawPacketMessage::RawPacketMessage(uint32_t num_,
   gpu_mem(gpu_mem_),
   queue_idx(queue_idx_)
 {}
-
-// py::object RawPacketMessage::cpp_to_py(cudf::io::table_with_metadata&& table, int index_col_count)
-// {
-//     py::gil_scoped_acquire gil;
-
-//     // Now convert to a python TableInfo object
-//     auto converted_table = CudfHelper::table_from_table_with_metadata(std::move(table), index_col_count);
-
-//     // VLOG(10) << "Table. Num Col: " << converted_table.attr("_num_columns").str().cast<std::string>()
-//     //          << ", Num Ind: " << converted_table.attr("_num_columns").cast<std::string>()
-//     //          << ", Rows: " << converted_table.attr("_num_rows").cast<std::string>();
-//     // py::print("Table Created. Num Rows: {}, Num Cols: {}, Num Ind: {}",
-//     //           converted_table.attr("_num_rows"),
-//     //           converted_table.attr("_num_columns"),
-//     //           converted_table.attr("_num_indices"));
-
-//     return converted_table;
-// }
 
 }  // namespace morpheus

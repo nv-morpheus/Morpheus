@@ -19,22 +19,16 @@ morpheus_configure_libbsd()
 set(doca_ROOT "/opt/mellanox/doca")
 find_package(doca REQUIRED)
 
-# set(CMAKE_BUILD_TYPE Debug)
-# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -ggdb")
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
-# set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --generate-line-info ")
-# set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -G")
-
 add_library(morpheus_doca
   # Keep these sorted!
   src/doca_context.cpp
+  src/doca_convert_kernel.cu
+  src/doca_convert.cpp
   src/doca_rx_pipe.cpp
   src/doca_rx_queue.cpp
   src/doca_semaphore.cpp
   src/doca_source_kernel.cu
   src/doca_source.cpp
-  src/doca_convert_kernel.cu
-  src/doca_convert.cpp
   src/rte_context.cpp
 )
 

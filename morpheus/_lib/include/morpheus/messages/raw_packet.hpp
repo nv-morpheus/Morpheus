@@ -104,14 +104,6 @@ class RawPacketMessage
      */
     bool is_gpu_mem() const;
 
-    // /**
-    //  * @brief Create RawPacketMessage cpp object from a python object
-    //  *
-    //  * @param data_table
-    //  * @return std::shared_ptr<RawPacketMessage>
-    //  */
-    // static std::shared_ptr<RawPacketMessage> create_from_python(pybind11::object&& data_table);
-
     /**
      * @brief Create RawPacketMessage cpp object from a cpp object, used internally by `create_from_cpp`
      *
@@ -136,16 +128,6 @@ class RawPacketMessage
                      bool gpu_mem,
                      int queue_idx);
 
-    /**
-     * @brief Create RawPacketMessage python object from a cpp object
-     *
-     * @param table
-     * @param index_col_count
-     * @return pybind11::object
-     */
-    // static pybind11::object cpp_to_py(uint32_t num, uint32_t max_size, uintptr_t *ptr_addr, uint32_t *ptr_size, bool
-    // gpu_mem, uint16_t queue_idx = 0xFFFF);
-
     uint32_t num;
     uint32_t max_size;
     uintptr_t* ptr_addr;
@@ -153,13 +135,10 @@ class RawPacketMessage
     uint32_t* ptr_pld_size;
     uint16_t queue_idx;
     bool gpu_mem;
-
-    // std::shared_ptr<uintptr_t> m_data;
 };
 
 struct RawPacketMessageProxy
 {};
 
 #pragma GCC visibility pop
-/** @} */  // end of group
 }  // namespace morpheus
