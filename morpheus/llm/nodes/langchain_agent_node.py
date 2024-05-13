@@ -16,6 +16,8 @@ import asyncio
 import logging
 import typing
 
+from langchain_core.exceptions import OutputParserException
+
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 
