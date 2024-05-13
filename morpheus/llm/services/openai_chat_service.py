@@ -404,8 +404,8 @@ class OpenAIChatService(LLMService):
         """
 
         final_model_kwargs = {**self._default_model_kwargs, **model_kwargs}
-        del final_model_kwargs["base_url"]
-        del final_model_kwargs["api_key"]
+        final_model_kwargs.pop("base_url", None)
+        final_model_kwargs.pop("api_key", None)
 
         return OpenAIChatClient(self,
                                 model_name=model_name,
