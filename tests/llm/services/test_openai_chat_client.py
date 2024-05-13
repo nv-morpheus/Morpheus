@@ -73,9 +73,7 @@ def test_generate(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
                   expected_messages: list[dict],
                   temperature: int):
     (mock_client, mock_async_client) = mock_chat_completion
-    api_key = "12345"
-    base_url = "http://test.openai.com/v1"
-    client = OpenAIChatClient(OpenAIChatService(api_key=api_key, base_url=base_url),
+    client = OpenAIChatClient(OpenAIChatService(),
                               model_name="test_model",
                               set_assistant=set_assistant,
                               temperature=temperature)
