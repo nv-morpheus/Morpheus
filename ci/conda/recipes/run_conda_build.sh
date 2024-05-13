@@ -19,7 +19,7 @@ NUMARGS=$#
 ARGS=$*
 
 function hasArg {
-    (( ${NUMARGS} != 0 )) && (echo " ${ARGS} " | grep -q " $1 ")
+   (( ${NUMARGS} != 0 )) && (echo " ${ARGS} " | grep -q " $1 ")
 }
 
 function get_version() {
@@ -99,6 +99,14 @@ CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvid
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}pytorch")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}defaults")
 
+if [[ ${NUMARGS} == 0 ]]; then
+   echo -e "${r}ERROR: No arguments were provided. Please provide at least one package to build. Available packages:${x}"
+   echo -e "${r}   morpheus${x}"
+   echo -e "${r}   pydebug${x}"
+   echo -e "${r}Exiting...${x}"
+   exit 12
+fi
+
 if hasArg morpheus; then
    # Set GIT_VERSION to set the project version inside of meta.yaml
    export GIT_VERSION="$(get_version)"
@@ -110,10 +118,10 @@ if hasArg morpheus; then
 fi
 
 if hasArg pydebug; then
-  export MORPHEUS_PYTHON_VER=$(python --version | cut -d ' ' -f 2)
+   export MORPHEUS_PYTHON_VER=$(python --version | cut -d ' ' -f 2)
 
-  echo "Running conda-build for python-dbg..."
-  set -x
-  conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ./ci/conda/recipes/python-dbg
-  set +x
+   echo "Running conda-build for python-dbg..."
+   set -x
+   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ./ci/conda/recipes/python-dbg
+   set +x
 fi

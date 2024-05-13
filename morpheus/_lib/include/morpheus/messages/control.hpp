@@ -17,10 +17,11 @@
 
 #pragma once
 
-#include "morpheus/messages/meta.hpp"  // for MessageMeta
+#include "morpheus/export.h"                  // for MORPHEUS_EXPORT
+#include "morpheus/messages/meta.hpp"         // for MessageMeta
+#include "morpheus/utilities/json_types.hpp"  // for json_t
 
-#include <nlohmann/json.hpp>   // for json, basic_json
-#include <pybind11/pytypes.h>  // for object, dict, list, none
+#include <pybind11/pytypes.h>  // for object, dict, list
 
 #include <chrono>    // for system_clock, time_point
 #include <map>       // for map
@@ -31,8 +32,7 @@
 
 namespace morpheus {
 
-#pragma GCC visibility push(default)
-enum class ControlMessageType
+enum class MORPHEUS_EXPORT ControlMessageType
 {
     NONE,
     INFERENCE,
@@ -161,7 +161,7 @@ enum class ControlMessageType
 //     std::shared_ptr<TensorMemory> m_tensors;
 // };
 
-class TensorMemory;
+class MORPHEUS_EXPORT TensorMemory;
 
 // System-clock for better compatibility with pybind11/chrono
 using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
@@ -173,32 +173,32 @@ using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
  * pointer to an associated message payload. It provides methods for accessing and modifying these
  * elements of the control message.
  */
-class ControlMessage
+class MORPHEUS_EXPORT ControlMessage
 {
   public:
     ControlMessage();
-    explicit ControlMessage(const nlohmann::json& config);
+    explicit ControlMessage(const morpheus::utilities::json_t& config);
 
     ControlMessage(const ControlMessage& other);  // Copies config and metadata, but not payload
 
     /**
      * @brief Set the configuration object for the control message.
-     * @param config A json object containing configuration information.
+     * @param config A morpheus::utilities::json_t object containing configuration information.
      */
-    void config(const nlohmann::json& config);
+    void config(const morpheus::utilities::json_t& config);
 
     /**
      * @brief Get the configuration object for the control message.
-     * @return A const reference to the json object containing configuration information.
+     * @return A const reference to the morpheus::utilities::json_t object containing configuration information.
      */
-    [[nodiscard]] const nlohmann::json& config() const;
+    [[nodiscard]] const morpheus::utilities::json_t& config() const;
 
     /**
      * @brief Add a task of the given type to the control message.
      * @param task_type A string indicating the type of the task.
-     * @param task A json object describing the task.
+     * @param task A morpheus::utilities::json_t object describing the task.
      */
-    void add_task(const std::string& task_type, const nlohmann::json& task);
+    void add_task(const std::string& task_type, const morpheus::utilities::json_t& task);
 
     /**
      * @brief Check if a task of the given type exists in the control message.
@@ -210,21 +210,21 @@ class ControlMessage
     /**
      * @brief Remove and return a task of the given type from the control message.
      * @param task_type A string indicating the type of the task.
-     * @return A json object describing the task.
+     * @return A morpheus::utilities::json_t object describing the task.
      */
-    nlohmann::json remove_task(const std::string& task_type);
+    morpheus::utilities::json_t remove_task(const std::string& task_type);
 
     /**
      * @brief Get the tasks for the control message.
      */
-    [[nodiscard]] const nlohmann::json& get_tasks() const;
+    [[nodiscard]] const morpheus::utilities::json_t& get_tasks() const;
 
     /**
      * @brief Add a key-value pair to the metadata for the control message.
      * @param key A string key for the metadata value.
-     * @param value A json object describing the metadata value.
+     * @param value A morpheus::utilities::json_t object describing the metadata value.
      */
-    void set_metadata(const std::string& key, const nlohmann::json& value);
+    void set_metadata(const std::string& key, const morpheus::utilities::json_t& value);
 
     /**
      * @brief Check if a metadata key exists in the control message.
@@ -236,7 +236,7 @@ class ControlMessage
     /**
      * @brief Get the metadata for the control message.
      */
-    [[nodiscard]] nlohmann::json get_metadata() const;
+    [[nodiscard]] morpheus::utilities::json_t get_metadata() const;
 
     /**
      * @brief Get the metadata value for the given key from the control message.
@@ -245,9 +245,9 @@ class ControlMessage
      * @param key A string indicating the metadata key.
      * @param fail_on_nonexist If true, throws an exception when the key does not exist.
      *                         If false, returns std::nullopt for non-existing keys.
-     * @return An optional json object describing the metadata value if it exists.
+     * @return An optional morpheus::utilities::json_t object describing the metadata value if it exists.
      */
-    [[nodiscard]] nlohmann::json get_metadata(const std::string& key, bool fail_on_nonexist = false) const;
+    [[nodiscard]] morpheus::utilities::json_t get_metadata(const std::string& key, bool fail_on_nonexist = false) const;
 
     /**
      * @brief Lists all metadata keys currently stored in the control message.
@@ -372,13 +372,13 @@ class ControlMessage
     std::shared_ptr<MessageMeta> m_payload{nullptr};
     std::shared_ptr<TensorMemory> m_tensors{nullptr};
 
-    nlohmann::json m_tasks{};
-    nlohmann::json m_config{};
+    morpheus::utilities::json_t m_tasks{};
+    morpheus::utilities::json_t m_config{};
 
     std::map<std::string, time_point_t> m_timestamps{};
 };
 
-struct ControlMessageProxy
+struct MORPHEUS_EXPORT ControlMessageProxy
 {
     /**
      * @brief Creates a new ControlMessage instance from a configuration dictionary.
@@ -400,51 +400,6 @@ struct ControlMessageProxy
      * @return A shared_ptr to the copied ControlMessage instance.
      */
     static std::shared_ptr<ControlMessage> copy(ControlMessage& self);
-
-    /**
-     * @brief Retrieves the configuration of the ControlMessage as a dictionary.
-     * @param self Reference to the underlying ControlMessage object.
-     * @return A pybind11::dict representing the ControlMessage's configuration.
-     */
-    static pybind11::dict config(ControlMessage& self);
-
-    /**
-     * @brief Updates the configuration of the ControlMessage from a dictionary.
-     * @param self Reference to the underlying ControlMessage object.
-     * @param config A pybind11::dict representing the new configuration.
-     */
-    static void config(ControlMessage& self, pybind11::dict& config);
-
-    /**
-     * @brief Adds a task to the ControlMessage.
-     * @param self Reference to the underlying ControlMessage object.
-     * @param type The type of the task to be added.
-     * @param task A pybind11::dict representing the task to be added.
-     */
-    static void add_task(ControlMessage& self, const std::string& type, pybind11::dict& task);
-
-    /**
-     * @brief Removes and returns a task of the given type from the ControlMessage.
-     * @param self Reference to the underlying ControlMessage object.
-     * @param type The type of the task to be removed.
-     * @return A pybind11::dict representing the removed task.
-     */
-    static pybind11::dict remove_task(ControlMessage& self, const std::string& type);
-
-    /**
-     * @brief Retrieves all tasks from the ControlMessage.
-     * @param self Reference to the underlying ControlMessage object.
-     * @return A pybind11::dict containing all tasks.
-     */
-    static pybind11::dict get_tasks(ControlMessage& self);
-
-    /**
-     * @brief Sets a metadata key-value pair.
-     * @param self Reference to the underlying ControlMessage object.
-     * @param key The key for the metadata entry.
-     * @param value The value for the metadata entry, must be JSON serializable.
-     */
-    static void set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value);
 
     /**
      * @brief Retrieves a metadata value by key, with an optional default value.
@@ -513,5 +468,4 @@ struct ControlMessageProxy
     static pybind11::dict filter_timestamp(ControlMessage& self, const std::string& regex_filter);
 };
 
-#pragma GCC visibility pop
 }  // namespace morpheus

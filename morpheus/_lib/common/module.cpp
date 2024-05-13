@@ -129,6 +129,10 @@ PYBIND11_MODULE(common, _module)
         return DType(tid).type_str();
     });
 
+    _module.def("typeid_is_fully_supported", [](TypeId tid) {
+        return DType(tid).is_fully_supported();
+    });
+
     _module.def(
         "determine_file_type", py::overload_cast<const std::string&>(&determine_file_type), py::arg("filename"));
     _module.def("determine_file_type",

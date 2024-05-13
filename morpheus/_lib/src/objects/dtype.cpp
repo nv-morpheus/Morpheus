@@ -357,4 +357,21 @@ char DType::type_char() const
     }
 }
 
+bool DType::is_fully_supported() const
+{
+    try
+    {
+        byte_order_char();
+        cudf_type_id();
+        item_size();
+        triton_str();
+        type_char();
+    } catch (...)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 }  // namespace morpheus

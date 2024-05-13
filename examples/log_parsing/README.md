@@ -29,11 +29,6 @@ Example:
 docker pull nvcr.io/nvidia/tritonserver:23.06-py3
 ```
 
-##### Setup Env Variable
-```bash
-export MORPHEUS_ROOT=$(pwd)
-```
-
 ##### Start Triton Inference Server Container
 From the Morpheus repo root directory, run the following to launch Triton and load the `log-parsing-onnx` model:
 
@@ -56,19 +51,15 @@ Once Triton server finishes starting up, it will display the status of all loade
 
 ### Run Log Parsing Pipeline
 
-Run the following from the `examples/log_parsing` directory to start the log parsing pipeline:
+Run the following from the root of the Morpheus repo to start the log parsing pipeline:
 
 ```bash
-python run.py \
-    --num_threads 1 \
-    --input_file ${MORPHEUS_ROOT}/models/datasets/validation-data/log-parsing-validation-data-input.csv \
-    --output_file ./log-parsing-output.jsonlines \
+python examples/log_parsing/run.py \
+    --input_file=./models/datasets/validation-data/log-parsing-validation-data-input.csv \
     --model_vocab_hash_file=data/bert-base-cased-hash.txt \
-    --model_vocab_file=${MORPHEUS_ROOT}/models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
-    --model_seq_length=256 \
+    --model_vocab_file=./models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
     --model_name log-parsing-onnx \
-    --model_config_file=${MORPHEUS_ROOT}/models/log-parsing-models/log-parsing-config-20220418.json \
-    --server_url localhost:8001
+    --model_config_file=./models/log-parsing-models/log-parsing-config-20220418.json
 ```
 
 Use `--help` to display information about the command line options:
@@ -110,7 +101,7 @@ PYTHONPATH="examples/log_parsing" \
 morpheus --log_level INFO \
 	--plugin "inference" \
 	--plugin "postprocessing" \
-	run --num_threads 1 --pipeline_batch_size 1024 --model_max_batch_size 32  \
+	run --pipeline_batch_size 1024 --model_max_batch_size 32  \
 	pipeline-nlp \
 	from-file --filename ./models/datasets/validation-data/log-parsing-validation-data-input.csv  \
 	deserialize \
