@@ -25,6 +25,7 @@ from morpheus.io.utils import cudf_string_cols_exceed_max_bytes
 from morpheus.io.utils import truncate_string_cols_by_bytes
 from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus.service.vdb.vector_db_service import VectorDBService
+from morpheus.service.vdb.vector_db_service import VectorDbServiceProvider
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.debounce import DebounceQueue, DebounceRunner
 
@@ -206,9 +207,6 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
     """
 
     def __init__(self, name: str, client: "MilvusClient", client_flush: Callable[[str], None], truncate_long_strings: bool = False) -> None:
-        if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
-
         super().__init__()
 
         self._name = name
@@ -571,29 +569,15 @@ class MilvusVectorDBService(VectorDBService):
 
     Parameters
     ----------
-    host : str
-        The hostname or IP address of the Milvus server.
-    port : str
-        The port number for connecting to the Milvus server.
-    alias : str, optional
-        Alias for the Milvus connection, by default "default".
+    client : MilvusClient
+        The underlying milvus client for this service instance
     truncate_long_strings : bool, optional
         When true, truncate strings values that are longer than the max length of the field
-    **kwargs : dict
-        Additional keyword arguments specific to the Milvus connection configuration.
     """
 
-    def __init__(self,
-                 uri: str,
-                 user: str = "",
-                 password: str = "",
-                 db_name: str = "",
-                 token: str = "",
-                 truncate_long_strings: bool = False,
-                 **kwargs: dict[str, typing.Any]):
-
+    def __init__(self, client: MilvusClient, truncate_long_strings: bool):
         self._truncate_long_strings = truncate_long_strings
-        self._client = MilvusClient(uri=uri, user=user, password=password, db_name=db_name, token=token, **kwargs)
+        self._client = client
         self._flush_queue = DebounceQueue(self._flush)
         self._flush_runner = DebounceRunner(self._flush_queue)
         self._flush_runner.start()
@@ -866,3 +850,53 @@ class MilvusVectorDBService(VectorDBService):
         """
         self._flush_runner.stop()
         self._client.close()
+
+class MilvusVectorDBServiceProvider(VectorDbServiceProvider):
+
+    """
+    Service class for Milvus Vector Database implementation. This class provides functions for interacting
+    with a Milvus vector database.
+
+    Parameters
+    ----------
+    host : str
+        The hostname or IP address of the Milvus server.
+    port : str
+        The port number for connecting to the Milvus server.
+    alias : str, optional
+        Alias for the Milvus connection, by default "default".
+    truncate_long_strings : bool, optional
+        When true, truncate strings values that are longer than the max length of the field
+    **kwargs : dict
+        Additional keyword arguments specific to the Milvus connection configuration.
+    """
+    def __init__(self,
+                 uri: str,
+                 user: str = "",
+                 password: str = "",
+                 db_name: str = "",
+                 token: str = "",
+                 truncate_long_strings: bool = False,
+                 **kwargs: dict[str, typing.Any]):
+        
+        if IMPORT_EXCEPTION is not None:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+
+        self._uri = uri
+        self._user = user
+        self._password = password
+        self._db_name = db_name
+        self._token = token
+        self._truncate_long_strings = truncate_long_strings
+        self._kwargs = kwargs
+
+    def create(self) -> MilvusVectorDBService:
+        client = self._client = MilvusClient(
+            uri=self._uri,
+            user=self._user,
+            password=self._password,
+            db_name=self._db_name,
+            token=self._token,
+            **self._kwargs)
+
+        return MilvusVectorDBService(client, self._truncate_long_strings)

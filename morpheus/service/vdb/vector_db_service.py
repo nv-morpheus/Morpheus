@@ -327,3 +327,9 @@ class VectorDBService(ABC):
         """
 
         pass
+
+class VectorDbServiceProvider(ABC):
+
+    @abstractmethod
+    def create(self) -> VectorDBService:
+        pass

@@ -30,6 +30,7 @@ from _utils.dataset_manager import DatasetManager
 from morpheus.service.vdb.milvus_vector_db_service import MAX_STRING_LENGTH_BYTES
 from morpheus.service.vdb.milvus_vector_db_service import FieldSchemaEncoder
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
+from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBServiceProvider
 
 # Milvus data type mapping dictionary
 MILVUS_DATA_TYPE_MAP = {
@@ -52,7 +53,8 @@ MILVUS_DATA_TYPE_MAP = {
 def milvus_service_fixture(milvus_server_uri: str):
     # This fixture is scoped to the function level since the WriteToVectorDBStage will close the connection on'
     # pipeline completion
-    service = MilvusVectorDBService(uri=milvus_server_uri)
+    service_provider = MilvusVectorDBServiceProvider(uri=milvus_server_uri)
+    service = service_provider.create()
     yield service
 
 
@@ -545,7 +547,8 @@ def test_insert_dataframe(milvus_server_uri: str,
     num_rows = 10
     collection_name = "test_insert_dataframe"
 
-    milvus_service = MilvusVectorDBService(uri=milvus_server_uri, truncate_long_strings=truncate_long_strings)
+    milvus_provider = MilvusVectorDBServiceProvider(uri=milvus_server_uri, truncate_long_strings=truncate_long_strings)
+    milvus_service = milvus_provider.create()
 
     # Make sure to drop any existing collection from previous runs.
     milvus_service.drop(collection_name)
