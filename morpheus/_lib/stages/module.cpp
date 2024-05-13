@@ -52,6 +52,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace morpheus {
 namespace py = pybind11;
@@ -138,20 +139,33 @@ PYBIND11_MODULE(stages, _module)
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<FileSourceStage>>>(
         _module, "FileSourceStage", py::multiple_inheritance())
-        .def(py::init(py::overload_cast<mrc::segment::Builder&, const std::string&, std::string, int, py::dict>(
-                 &FileSourceStageInterfaceProxy::init)),
+        .def(py::init(py::overload_cast<mrc::segment::Builder&,
+                                        const std::string&,
+                                        std::string,
+                                        int,
+                                        bool,
+                                        std::vector<std::string>,
+                                        py::dict>(&FileSourceStageInterfaceProxy::init)),
              py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
              py::arg("repeat"),
+             py::arg("filter_null"),
+             py::arg("filter_null_columns"),
              py::arg("parser_kwargs"))
-        .def(py::init(
-                 py::overload_cast<mrc::segment::Builder&, const std::string&, std::filesystem::path, int, py::dict>(
-                     &FileSourceStageInterfaceProxy::init)),
+        .def(py::init(py::overload_cast<mrc::segment::Builder&,
+                                        const std::string&,
+                                        std::filesystem::path,
+                                        int,
+                                        bool,
+                                        std::vector<std::string>,
+                                        py::dict>(&FileSourceStageInterfaceProxy::init)),
              py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
              py::arg("repeat"),
+             py::arg("filter_null"),
+             py::arg("filter_null_columns"),
              py::arg("parser_kwargs"));
 
     py::class_<mrc::segment::Object<FilterDetectionsStage>,
@@ -177,6 +191,7 @@ PYBIND11_MODULE(stages, _module)
              py::arg("server_url"),
              py::arg("model_name"),
              py::arg("needs_logits"),
+             py::arg("force_convert_inputs"),
              py::arg("input_mapping")  = py::dict(),
              py::arg("output_mapping") = py::dict());
 
@@ -190,6 +205,7 @@ PYBIND11_MODULE(stages, _module)
              py::arg("server_url"),
              py::arg("model_name"),
              py::arg("needs_logits"),
+             py::arg("force_convert_inputs"),
              py::arg("input_mapping")  = py::dict(),
              py::arg("output_mapping") = py::dict());
 

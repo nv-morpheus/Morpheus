@@ -115,23 +115,19 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 ### Fill in the blank for the model technique.
 * This model is designed for developers seeking to test the GNN fraud detection pipeline with a small pretrained model on a synthetic dataset.
 
-### Name who is intended to benefit from this model. 
+### Intended Users.
 * The intended beneficiaries of this model are developers who aim to test the performance and functionality of the GNN fraud detection pipeline using synthetic datasets. It may not be suitable or provide significant value for real-world transactions. 
 
 ### Describe the model output.
 * This model outputs fraud probability score b/n (0 & 1). 
 
-### List the steps explaining how this model works. (e.g., )  
-* The model uses a bipartite heterogeneous graph representation as input for `GraphSAGE` for feature learning and `XGBoost` as a classifier. Since the input graph is heterogeneous, a heterogeneous implementation of `GraphSAGE` (HinSAGE) is used for feature embedding.<br>
-
-### Name the adversely impacted groups (protected classes) this has been tested to deliver comparable outcomes regardless of:
-* Not Applicable
+### Describe how this model works.  
+* The model uses a bipartite heterogeneous graph representation as input for `GraphSAGE` for feature learning and `XGBoost` as a classifier. Since the input graph is heterogeneous, a heterogeneous implementation of `GraphSAGE` (HinSAGE) is used for feature embedding.
 
 ### List the technical limitations of the model.
 * This model version requires a transactional data schema with entities (user, merchant, transaction) as requirement for the model.
 
 ### Has this been verified to have met prescribed NVIDIA standards?
-
 * Yes
 
 ### What performance metrics were used to affirm the model's performance?
@@ -148,11 +144,8 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 ### Link the location of the training dataset's repository (if able to share).
 * [training dataset](models/datasets/training-data/fraud-detection-training-data.csv)
 
-### Is the model used in an application with physical safety impact?
-* No
-
-### Describe life-critical impact (if present).
-* Not Applicable
+### Describe the life critical impact (if present).
+* None
 
 ### Was model and dataset assessed for vulnerability for potential form of attack?
 * No
@@ -162,9 +155,6 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 
 ### Name use case restrictions for the model.
 * The model's use case is restricted to testing the Morpheus pipeline and may not be suitable for other applications.
-
-### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
-* Not Applicable
 
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
 * Not Applicable
@@ -192,16 +182,13 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 ### How often is dataset reviewed?
 * The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.
 
-### Is a mechanism in place to honor data
+### Is a mechanism in place to honor data subject right of access or deletion of personal data?
 * Yes
 
 ### If PII collected for the development of this AI model, was it minimized to only what was required? 
 * Not applicable
 
-### Is data in dataset traceable?
-* No
-
-### Are we able to identify and trace source of dataset?
+### Is there data provenance?
 * Yes
 
 ### Does data labeling (annotation, metadata) comply with privacy laws?
