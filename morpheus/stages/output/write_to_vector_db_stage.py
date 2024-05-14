@@ -82,8 +82,6 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
 
         if isinstance(service, str):
             service = VectorDBServiceProviderFactory.create_instance(service, **service_kwargs)
-        else:
-            service = str(pickle.dumps(service), encoding="latin1")
 
         module_config = {
             "batch_size": batch_size,

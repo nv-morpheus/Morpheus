@@ -98,6 +98,10 @@ class DebounceRunner():
             self._queue.flush()
 
 
+    def __del__(self):
+        self.stop()
+
+
     def _run(self):
         import time
         while not self._cancelled:
