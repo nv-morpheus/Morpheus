@@ -30,9 +30,9 @@
 #include <rte_flow.h>
 #include <rte_mbuf.h>
 #include <rte_mempool.h>
-#include <stdio.h>
 
 #include <algorithm>
+#include <cstdio>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -89,15 +89,15 @@ static doca_error_t open_doca_device_with_pci(const char* pcie_value, struct doc
 doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
 {
     doca_flow_port* df_port;
-    rte_eth_dev_info dev_info  = {nullptr};
-    rte_eth_conf eth_conf      = {
-             .rxmode =
+    rte_eth_dev_info dev_info = {nullptr};
+    rte_eth_conf eth_conf     = {
+            .rxmode =
             {
-                     .mtu = 1024, /* Not really used, just to initialize DPDK */
+                    .mtu = 1024, /* Not really used, just to initialize DPDK */
             },
-             .txmode =
+            .txmode =
             {
-                     .offloads = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM | RTE_ETH_TX_OFFLOAD_UDP_CKSUM | RTE_ETH_TX_OFFLOAD_TCP_CKSUM,
+                    .offloads = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM | RTE_ETH_TX_OFFLOAD_UDP_CKSUM | RTE_ETH_TX_OFFLOAD_TCP_CKSUM,
             },
     };
     rte_mempool* mp = nullptr;
@@ -171,8 +171,8 @@ DocaContext::DocaContext(std::string nic_addr, std::string gpu_addr) : m_max_que
     m_rte_context = std::make_unique<RTEContext>();
 
     /* Register a logger backend for internal SDK errors and warnings */
-    // DOCA_TRY(doca_log_backend_create_with_file_sdk(stderr, &sdk_log));
-    // DOCA_TRY(doca_log_backend_set_sdk_level(sdk_log, DOCA_LOG_LEVEL_DEBUG));
+    // DOCA_TRY(doca_log_backend_create_with_file_sdk(stderr, &m_sdk_log));
+    // DOCA_TRY(doca_log_backend_set_sdk_level(m_sdk_log, DOCA_LOG_LEVEL_DEBUG));
 
     DOCA_TRY(open_doca_device_with_pci(nic_addr_c, &m_dev));
     DOCA_TRY(doca_dpdk_port_probe(m_dev, "dv_flow_en=2"));

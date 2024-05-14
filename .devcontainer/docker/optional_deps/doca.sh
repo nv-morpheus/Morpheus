@@ -19,7 +19,7 @@ set -e
 MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
 LINUX_DISTRO=${LINUX_DISTRO:-ubuntu}
 LINUX_VER=${LINUX_VER:-22.04}
-DOCA_VERSION=${DOCA_VERSION:-2.6.0}
+DOCA_VERSION=${DOCA_VERSION:-2.7.0}
 
 # Exit early if nothing to do
 if [[ ${MORPHEUS_SUPPORT_DOCA} != @(TRUE|ON) ]]; then
@@ -34,64 +34,21 @@ DEB_DIR=${WORKING_DIR}/deb
 
 mkdir -p ${DEB_DIR}
 
-DOCA_REPO_LINK="https://linux.mellanox.com/public/repo/doca/${DOCA_VERSION}"
-DOCA_REPO="${DOCA_REPO_LINK}/ubuntu22.04"
-DOCA_REPO_ARCH="x86_64"
-DOCA_UPSTREAM_REPO="${DOCA_REPO}/${DOCA_REPO_ARCH}"
+DOCA_OS_VERSION="ubuntu2204"
+DOCA_PKG_LINK="https://www.mellanox.com/downloads/DOCA/DOCA_v${DOCA_VERSION}/host/doca-host_${DOCA_VERSION}-204000-24.04-${DOCA_OS_VERSION}_amd64.deb"
 
 # Upgrade the base packages (diff between image and Canonical upstream repo)
 apt update -y
 apt upgrade -y
 
-# Cleanup apt
-rm -rf /var/lib/apt/lists/*
-apt autoremove -y
+# Install wget
+apt install -y --no-install-recommends wget
 
-# Configure DOCA Repository, and install packages
-apt update -y
-
-# Install wget & Add the DOCA public repository
-apt install -y --no-install-recommends wget software-properties-common gpg-agent
-wget -qO - ${DOCA_UPSTREAM_REPO}/GPG-KEY-Mellanox.pub | apt-key add -
-add-apt-repository "deb [trusted=yes] ${DOCA_UPSTREAM_REPO} ./"
-apt update -y
-
-# Install base-rt content
-apt install -y --no-install-recommends \
-    doca-gpu \
-    doca-gpu-dev \
-    doca-prime-runtime \
-    doca-prime-sdk \
-    doca-sdk \
-    dpcp \
-    flexio \
-    ibacm \
-    ibverbs-utils \
-    librdmacm1 \
-    libibnetdisc5 \
-    libibumad3 \
-    libibmad5 \
-    libopensm \
-    libopenvswitch \
-    libyara8 \
-    mlnx-tools \
-    ofed-scripts \
-    openmpi \
-    openvswitch-common \
-    openvswitch-switch \
-    srptools \
-    mlnx-ethtool \
-    mlnx-iproute2 \
-    python3-pyverbs \
-    rdma-core \
-    ucx \
-    yara
-
-    # Cleanup apt
-rm -rf /usr/lib/python3/dist-packages
-apt remove -y software-properties-common gpg-agent
-rm -rf /var/lib/apt/lists/*
-apt autoremove -y
+wget -qO - ${DOCA_PKG_LINK} -O doca-host.deb
+apt install ./doca-host.deb
+apt update
+apt install -y doca-all
+apt install -y doca-gpu doca-gpu-dev
 
 # Now install the gdrcopy library according to: https://github.com/NVIDIA/gdrcopy
 GDRCOPY_DIR=${WORKING_DIR}/gdrcopy

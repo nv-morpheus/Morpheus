@@ -42,7 +42,7 @@ struct DocaSemaphore;
  *
  * Tested only on ConnectX 6-Dx with a single GPU on the same NUMA node running firmware 24.35.2000
  */
-class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>
+class MORPHEUS_EXPORT DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>;
@@ -52,7 +52,7 @@ class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<RawPacke
     DocaSourceStage(std::string const& nic_pci_address,
                     std::string const& gpu_pci_address,
                     std::string const& traffic_type);
-    virtual ~DocaSourceStage();
+    ~DocaSourceStage() override;
 
   private:
     subscriber_fn_t build();
@@ -85,7 +85,8 @@ struct MORPHEUS_EXPORT DocaSourceStageInterfaceProxy
  *
  * Tested only on ConnectX 6-Dx with a single GPU on the same NUMA node running firmware 24.35.2000
  */
-class DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacketMessage>, std::shared_ptr<MessageMeta>>
+class MORPHEUS_EXPORT DocaConvertStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacketMessage>, std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<RawPacketMessage>, std::shared_ptr<MessageMeta>>;
@@ -96,7 +97,7 @@ class DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacket
     using typename base_t::subscribe_fn_t;
 
     DocaConvertStage();
-    virtual ~DocaConvertStage();
+    ~DocaConvertStage() override;
 
   private:
     /**
@@ -107,17 +108,17 @@ class DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacket
 
     cudaStream_t m_stream;
     rmm::cuda_stream_view m_stream_cpp;
-    uint32_t* fixed_pld_size_list;
-    uint32_t* fixed_pld_size_list_cpu;
-    uint32_t* fixed_hdr_size_list;
-    uint32_t* fixed_hdr_size_list_cpu;
+    uint32_t* m_fixed_pld_size_list;
+    uint32_t* m_fixed_pld_size_list_cpu;
+    uint32_t* m_fixed_hdr_size_list;
+    uint32_t* m_fixed_hdr_size_list_cpu;
 };
 
 /****** DocaConvertStageInterfaceProxy***********************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct DocaConvertStageInterfaceProxy
+struct MORPHEUS_EXPORT DocaConvertStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a DocaConvertStage, and return the result.
@@ -125,7 +126,5 @@ struct DocaConvertStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<DocaConvertStage>> init(mrc::segment::Builder& builder,
                                                                         std::string const& name);
 };
-
-#pragma GCC visibility pop
 
 }  // namespace morpheus

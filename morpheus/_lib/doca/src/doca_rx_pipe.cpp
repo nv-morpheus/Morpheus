@@ -25,6 +25,7 @@
 
 #include <array>
 #include <cstdint>
+#include <utility>
 
 namespace morpheus::doca {
 
@@ -33,7 +34,7 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context,
                        std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue>> rxq,
                        enum doca_traffic_type const type) :
   m_context(context),
-  m_rxq(rxq),
+  m_rxq(std::move(rxq)),
   m_traffic_type(type),
   m_pipe(nullptr)
 {

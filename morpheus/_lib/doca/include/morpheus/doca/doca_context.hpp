@@ -23,8 +23,8 @@
 #include <doca_dev.h>
 #include <doca_flow_crypto.h>
 #include <doca_log.h>
-#include <stdint.h>
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -44,7 +44,7 @@ struct DocaContext
     uint16_t m_nic_port;
     uint32_t m_max_queue_count;
     std::unique_ptr<RTEContext> m_rte_context;
-    doca_log_backend* sdk_log;
+    doca_log_backend* m_sdk_log;
 
   public:
     DocaContext(std::string nic_addr, std::string gpu_addr);

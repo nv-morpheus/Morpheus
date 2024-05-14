@@ -21,13 +21,17 @@
 
 #define ETHER_ADDR_LEN 6 /**< Length of Ethernet address. */
 
-#define BYTE_SWAP16(v) ((((uint16_t)(v) & UINT16_C(0x00ff)) << 8) | (((uint16_t)(v) & UINT16_C(0xff00)) >> 8))
+#define BYTE_SWAP16(v) ((((uint16_t)(v)&UINT16_C(0x00ff)) << 8) | (((uint16_t)(v)&UINT16_C(0xff00)) >> 8))
 
 #define TCP_PROTOCOL_ID 0x6
 #define UDP_PROTOCOL_ID 0x11
 #define TIMEOUT_NS 500000  // 500us
 #define RTE_IPV4_HDR_IHL_MASK (0x0f)
 #define RTE_IPV4_IHL_MULTIPLIER (4)
+
+// Allow naming and c arrays for compatibility with existing code
+// NOLINTBEGIN(readability-identifier-naming)
+// NOLINTBEGIN(modernize-avoid-c-arrays)
 
 enum tcp_flags
 {
@@ -110,6 +114,9 @@ struct eth_ip_udp_hdr
     struct ipv4_hdr l3_hdr;  /* IP header */
     struct udp_hdr l4_hdr;   /* UDP header */
 } __attribute__((__packed__));
+
+// NOLINTEND(modernize-avoid-c-arrays)
+// NOLINTEND(readability-identifier-naming)
 
 #define TCP_HDR_SIZE sizeof(struct eth_ip_tcp_hdr)
 #define UDP_HDR_SIZE sizeof(struct eth_ip_udp_hdr)
