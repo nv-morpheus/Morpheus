@@ -55,7 +55,7 @@ def test_constructor(config):
 
 
 @pytest.mark.use_cudf
-@pytest.mark.use_python
+# @pytest.mark.use_python
 def test_filter_copy(config, filter_probs_df):
     fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
 

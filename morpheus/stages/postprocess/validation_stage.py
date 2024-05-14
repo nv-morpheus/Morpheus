@@ -25,7 +25,6 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
-from morpheus.messages import ControlMessage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
 logger = logging.getLogger(__name__)

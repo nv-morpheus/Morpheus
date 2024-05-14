@@ -146,6 +146,9 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
             except Exception:
                 return y
 
+        if isinstance(df, cudf.DataFrame):
+            df = df.to_pandas()
+
         df["data"] = df["data"].apply(indent_data)
 
         if isinstance(x, MultiResponseMessage):

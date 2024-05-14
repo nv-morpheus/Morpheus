@@ -21,21 +21,31 @@ from networkx import moebius_kantor_graph
 import pytest
 
 import cudf
+import pandas as pd
 
-from morpheus._lib.messages import TensorMemory
+from morpheus._lib.messages import ResponseMemory, TensorMemory
 from morpheus.config import Config, ConfigAutoEncoder
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiResponseMessage
 from morpheus.stages.postprocess.generate_viz_frames_stage import GenerateVizFramesStage
+import morpheus._lib.messages as _messages
 
 
-@pytest.fixture(name='config')
-def fixture_config(config: Config):
-    # config.feature_length = 256
-    # config.ae = ConfigAutoEncoder()
-    # config.ae.feature_columns = ["data"]
-    yield config
+def _make_multi_response_message(df, probs):
+    df_ = df[0:len(probs)]
+    mem = ResponseMemory(count=len(df_), tensors={'probs': probs})
+
+    return MultiResponseMessage(meta=MessageMeta(df_), memory=mem)
+
+
+def _make_control_message(df, probs):
+    df_ = df[0:len(probs)]
+    cm = ControlMessage()
+    cm.payload(MessageMeta(df_))
+    cm.tensors(_messages.TensorMemory(count=len(df_), tensors={'probs': probs}))
+
+    return cm
 
 
 def test_constructor(config: Config):
@@ -58,25 +68,12 @@ def test_process_control_message_and_multi_message(config: Config):
         "dest_port": ["80", "80"],
         "data": ["a", "b"]
     })
-    meta = MessageMeta(df)
 
-    memory = TensorMemory(count=1, tensors=None)
-    input_multi_resp_message = MultiResponseMessage(meta=meta,
-                                                    mess_offset=0,
-                                                    mess_count=1,
-                                                    memory=memory,
-                                     offset=0,
-                                                    count=1,
-                                                    id_tensor_name="seq_ids",
-                                                    probs_tensor_name="probs")
+    probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
+    mock_multi_response_message = _make_multi_response_message(df, probs)
+    mock_control_message = _make_control_message(df, probs)
 
-    output_list = stage._to_vis_df(input_multi_resp_message)
-    print("-----------result-----------")
-    print(output_list)
-
-    # TODO(Yuchen): Check if the output message has identical tensors after supporting ControlMessage
-
-    # Check if each tensor in the control message is equal to the corresponding tensor in the inference message
-    # for tensor_key in output_control_message.tensors().tensor_names:
-    #     assert cp.array_equal(output_control_message.tensors().get_tensor(tensor_key),
-    #                           getattr(output_infer_message, tensor_key))
+    output_multi_response_message_list = stage._to_vis_df(mock_multi_response_message)
+    output_control_message_list = stage._to_vis_df(mock_control_message)
+    for output_multi_response_message, output_control_message in zip(output_multi_response_message_list, output_control_message_list):
+        assert output_multi_response_message[1].equals(output_control_message[1])
