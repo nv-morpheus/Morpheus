@@ -66,9 +66,6 @@ pip install scapy
 sudo python3 examples/doca/vdb_realtime/sender/send.py
 ```
 
-Please modify inside the script all the 
-
-
 On the original machine, wait for the "Upload rate" to match the "DOCA GPUNetIO Source rate" and then press `Ctrl+C` to stop the script. The output should look like the following
 
 ```

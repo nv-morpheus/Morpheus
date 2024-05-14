@@ -107,6 +107,7 @@ def setup_filesystem_source(pipe: Pipeline, config: Config, source_name: str, fs
     return file_pipe
 
 
+# pylint: disable=unused-argument
 def setup_doca_source(pipe: Pipeline, config: Config, source_name: str, stage_config: typing.Dict[str, typing.Any]):
     """
     Set up the DOCA source stage in the pipeline.

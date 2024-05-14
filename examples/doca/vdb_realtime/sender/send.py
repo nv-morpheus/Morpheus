@@ -16,10 +16,9 @@
 
 import glob
 import os
-import sys
 
-from scapy.all import IP
-from scapy.all import UDP
+from scapy.all import IP  # pylint: disable=no-name-in-module
+from scapy.all import UDP  # pylint: disable=no-name-in-module
 from scapy.all import RandShort
 from scapy.all import Raw
 from scapy.all import send
@@ -28,17 +27,15 @@ from scapy.all import send
 def main():
     os.chdir("dataset")
     for file in glob.glob("*.txt"):
-        fp = open(file, 'r')
-        while True:
-            content = fp.read(1024)
-            if not content:
-                break
-            pkt = IP(src="192.168.2.28", dst="192.168.2.27") / UDP(sport=RandShort(),
-                                                                   dport=5001) / Raw(load=content.encode('utf-8'))
-            print(pkt)
-            send(pkt, iface="enp202s0f0np0")
-            #sock.sendto(line.encode('utf-8'), (ip, port))
-        fp.close()
+        with open(file, 'r', encoding='utf-8') as fp:
+            while True:
+                content = fp.read(1024)
+                if not content:
+                    break
+                pkt = IP(src="192.168.2.28", dst="192.168.2.27") / UDP(sport=RandShort(),
+                                                                       dport=5001) / Raw(load=content.encode('utf-8'))
+                print(pkt)
+                send(pkt, iface="enp202s0f0np0")
 
 
 if __name__ == "__main__":
