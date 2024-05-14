@@ -18,6 +18,10 @@ import typing
 from abc import ABC
 from abc import abstractmethod
 
+if typing.TYPE_CHECKING:
+    from morpheus.llm.services.nemo_llm_service import NeMoLLMService
+    from morpheus.llm.services.openai_chat_service import OpenAIChatService
+
 logger = logging.getLogger(__name__)
 
 
@@ -137,14 +141,12 @@ class LLMService(ABC):
 
     @typing.overload
     @staticmethod
-    def create(service_type: typing.Literal["nemo"], *service_args,
-               **service_kwargs) -> "morpheus.llm.services.nemo_llm_service.NeMoLLMService":
+    def create(service_type: typing.Literal["nemo"], *service_args, **service_kwargs) -> "NeMoLLMService":
         pass
 
     @typing.overload
     @staticmethod
-    def create(service_type: typing.Literal["openai"], *service_args,
-               **service_kwargs) -> "morpheus.llm.services.openai_chat_service.OpenAIChatService":
+    def create(service_type: typing.Literal["openai"], *service_args, **service_kwargs) -> "OpenAIChatService":
         pass
 
     @typing.overload
@@ -160,6 +162,8 @@ class LLMService(ABC):
         ----------
         service_type : str
             The type of the service to create
+        service_args : list
+            Additional arguments to pass to the service.
         service_kwargs : dict[str, typing.Any]
             Additional keyword arguments to pass to the service.
         """
@@ -172,14 +176,15 @@ class LLMService(ABC):
         module = importlib.import_module(module_name)
 
         # Get all of the classes in the module to find the correct service class
-        mod_classes = dict([(name, cls) for name, cls in module.__dict__.items() if isinstance(cls, type)])
+        mod_classes = dict({name: cls for name, cls in module.__dict__.items() if isinstance(cls, type)})
 
         class_name_lower = f"{service_type}{llm_or_chat}Service".lower()
 
         # Find case-insensitive match for the class name
         matching_classes = [name for name in mod_classes if name.lower() == class_name_lower]
 
-        assert len(matching_classes) == 1, f"Expected to find exactly one class with name {class_name_lower} in module {module_name}, but found {matching_classes}"
+        assert len(matching_classes) == 1, (f"Expected to find exactly one class with name {class_name_lower} "
+                                            f"in module {module_name}, but found {matching_classes}")
 
         # Create the class
         class_ = getattr(module, matching_classes[0])

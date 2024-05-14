@@ -126,8 +126,8 @@ def _configure_from_log_level(*extra_handlers: logging.Handler, log_level: int):
         # This needs the be the only handler for morpheus logger
         morpheus_queue_handler = logging.handlers.QueueHandler(morpheus_logging_queue)
 
-        # At this point, any morpheus logger will propagate upstream to the morpheus root and then be handled by the queue
-        # handler
+        # At this point, any morpheus logger will propagate upstream to the morpheus root and then be handled by the
+        # queue handler
         morpheus_logger.addHandler(morpheus_queue_handler)
 
         log_file = os.path.join(appdirs.user_log_dir(appauthor="NVIDIA", appname="morpheus"), "morpheus.log")
