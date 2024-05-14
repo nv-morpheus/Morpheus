@@ -23,7 +23,6 @@ from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
-# from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.utils.logger import configure_logging
 
 
@@ -55,7 +54,6 @@ def run_pipeline(nic_addr, gpu_addr):
 
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'udp'))
-    # pipeline.add_stage(TriggerStage(config))
     pipeline.add_stage(DocaConvertStage(config))
     pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
 

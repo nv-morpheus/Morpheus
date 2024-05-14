@@ -39,9 +39,9 @@
 #include <mrc/segment/object.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
-#include <stdint.h>
-#include <time.h>
 
+#include <cstdint>
+#include <ctime>
 #include <functional>
 #include <memory>
 #include <ostream>
@@ -102,7 +102,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         struct packets_info* pkt_ptr;
         int sem_idx[MAX_QUEUE] = {0};
         cudaStream_t rstream   = nullptr;
-        int thread_idx = mrc::runnable::Context::get_runtime_context().rank();
+        int thread_idx         = mrc::runnable::Context::get_runtime_context().rank();
 
         // Add per queue
         auto pkt_addr_unique = std::make_unique<morpheus::doca::DocaMem<uintptr_t>>(

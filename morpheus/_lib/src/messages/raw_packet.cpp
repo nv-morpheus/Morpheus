@@ -36,58 +36,58 @@ using namespace py::literals;
 
 uint32_t RawPacketMessage::count() const
 {
-    return num;
+    return m_num;
 }
 
 uint32_t RawPacketMessage::get_max_size() const
 {
-    return max_size;
+    return m_max_size;
 }
 
 uintptr_t RawPacketMessage::get_pkt_addr_idx(uint32_t pkt_idx) const
 {
-    if (pkt_idx > num || gpu_mem == true)
+    if (pkt_idx > m_num || m_gpu_mem == true)
         return 0;
-    return ptr_addr[pkt_idx];
+    return m_ptr_addr[pkt_idx];
 }
 
 uintptr_t RawPacketMessage::get_pkt_hdr_size_idx(uint32_t pkt_idx) const
 {
-    if (pkt_idx > num || gpu_mem == true)
+    if (pkt_idx > m_num || m_gpu_mem == true)
         return 0;
-    return ptr_hdr_size[pkt_idx];
+    return m_ptr_hdr_size[pkt_idx];
 }
 
 uintptr_t RawPacketMessage::get_pkt_pld_size_idx(uint32_t pkt_idx) const
 {
-    if (pkt_idx > num || gpu_mem == true)
+    if (pkt_idx > m_num || m_gpu_mem == true)
         return 0;
-    return ptr_pld_size[pkt_idx];
+    return m_ptr_pld_size[pkt_idx];
 }
 
 uintptr_t* RawPacketMessage::get_pkt_addr_list() const
 {
-    return ptr_addr;
+    return m_ptr_addr;
 }
 
 uint32_t* RawPacketMessage::get_pkt_hdr_size_list() const
 {
-    return ptr_hdr_size;
+    return m_ptr_hdr_size;
 }
 
 uint32_t* RawPacketMessage::get_pkt_pld_size_list() const
 {
-    return ptr_pld_size;
+    return m_ptr_pld_size;
 }
 
 uint32_t RawPacketMessage::get_queue_idx() const
 {
-    return queue_idx;
+    return m_queue_idx;
 }
 
 bool RawPacketMessage::is_gpu_mem() const
 {
-    return gpu_mem;
+    return m_gpu_mem;
 }
 
 std::shared_ptr<RawPacketMessage> RawPacketMessage::create_from_cpp(uint32_t num,
@@ -109,13 +109,13 @@ RawPacketMessage::RawPacketMessage(uint32_t num_,
                                    uint32_t* ptr_pld_size_,
                                    bool gpu_mem_,
                                    int queue_idx_) :
-  num(num_),
-  max_size(max_size_),
-  ptr_addr(ptr_addr_),
-  ptr_hdr_size(ptr_hdr_size_),
-  ptr_pld_size(ptr_pld_size_),
-  gpu_mem(gpu_mem_),
-  queue_idx(queue_idx_)
+  m_num(num_),
+  m_max_size(max_size_),
+  m_ptr_addr(ptr_addr_),
+  m_ptr_hdr_size(ptr_hdr_size_),
+  m_ptr_pld_size(ptr_pld_size_),
+  m_gpu_mem(gpu_mem_),
+  m_queue_idx(queue_idx_)
 {}
 
 }  // namespace morpheus

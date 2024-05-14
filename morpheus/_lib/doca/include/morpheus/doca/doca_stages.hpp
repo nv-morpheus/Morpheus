@@ -99,7 +99,6 @@ class DocaConvertStage : public mrc::pymrc::PythonNode<std::shared_ptr<RawPacket
     virtual ~DocaConvertStage();
 
   private:
-    // subscribe_fn_t build();
     /**
      * Called every time a message is passed to this stage
      */

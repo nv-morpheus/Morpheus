@@ -32,7 +32,7 @@ wget https://github.com/milvus-io/milvus/releases/download/v2.3.3/milvus-standal
 Start Milvus
 
 ```bash
-sudo docker-compose up -d
+docker compose up -d
 ```
 
 ## Launch Triton Inference Server
@@ -94,9 +94,7 @@ export NGC_API_KEY="<YOUR_NGC_API>"
 
 Then install basic requirements:
 ```bash
-pip install langchain
-pip install sentence-transformers
-conda env update --solver=libmamba -n morpheus --file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune
+conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-121_arch-x86_64.yaml --prune
 ```
 
 Run the RAG example to query the Milvus database:

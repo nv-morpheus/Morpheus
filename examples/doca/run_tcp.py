@@ -108,7 +108,7 @@ def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, ou
     pipeline.add_stage(DeserializeStage(config))
     pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
 
-    hashfile = '/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt'
+    hashfile = 'data/bert-base-uncased-hash.txt'
 
     # add preprocessing stage
     pipeline.add_stage(
@@ -123,13 +123,11 @@ def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, ou
 
     # add inference stage
     pipeline.add_stage(
-        TritonInferenceStage(
-            config,
-            # model_name="sid-minibert-trt",
-            model_name="sid-minibert-onnx",
-            server_url="localhost:8000",
-            force_convert_inputs=True,
-            use_shared_memory=True))
+        TritonInferenceStage(config,
+                             model_name="sid-minibert-onnx",
+                             server_url="localhost:8000",
+                             force_convert_inputs=True,
+                             use_shared_memory=True))
 
     pipeline.add_stage(MonitorStage(config, description="Inference rate", unit='pkts'))
 

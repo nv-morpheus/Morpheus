@@ -25,8 +25,8 @@
 #include <doca_mmap.h>
 #include <doca_types.h>
 #include <glog/logging.h>
-#include <stdint.h>
 
+#include <cstdint>
 #include <ostream>
 
 namespace morpheus::doca {
