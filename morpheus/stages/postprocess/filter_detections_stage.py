@@ -118,7 +118,15 @@ class FilterDetectionsStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node():
-            node = _stages.FilterDetectionsStage(builder,
+            if (self._schema.input_type == ControlMessage):
+                node = _stages.FilterDetectionsControlMessageStage(builder,
+                                                                   self.unique_name,
+                                                                   self._controller.threshold,
+                                                                   self._copy,
+                                                                   self._controller.filter_source,
+                                                                   self._controller.field_name)
+
+            node = _stages.FilterDetectionsMultiMessageStage(builder,
                                                  self.unique_name,
                                                  self._controller.threshold,
                                                  self._copy,

@@ -119,7 +119,7 @@ class FilterDetectionsController:
         # If we didnt have any detections, return None
         if (true_pairs.shape[0] == 0):
             return None
-        
+
         if isinstance(x, MultiMessage):
             return x.copy_ranges(true_pairs)
         if isinstance(x, ControlMessage):

@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#!/usr/bin/env python
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,61 +14,229 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import Mock
-from unittest.mock import patch
-
 import cupy as cp
 import pytest
 
-import cudf
-
-from morpheus.config import Config, ConfigAutoEncoder
-from morpheus.messages import ControlMessage
-from morpheus.messages import MessageMeta
-from morpheus.messages import MultiAEMessage
+from morpheus.common import FilterSource
+import morpheus._lib.messages as _messages
+from morpheus.messages import MultiResponseMessage, ControlMessage
+from morpheus.messages import ResponseMemory
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 
 
-@pytest.fixture(name='config')
-def fixture_config(config: Config):
-    # config.feature_length = 256
-    # config.ae = ConfigAutoEncoder()
-    # config.ae.feature_columns = ["data"]
-    # yield config
+def _make_multi_response_message(df, probs):
+    df_ = df[0:len(probs)]
+    mem = ResponseMemory(count=len(df_), tensors={'probs': probs})
+
+    return MultiResponseMessage(meta=MessageMeta(df_), memory=mem)
 
 
-def test_constructor(config: Config):
-    stage = (config)
-    assert stage.name == "filter"
+def _make_control_message(df, probs):
+    df_ = df[0:len(probs)]
+    cm = ControlMessage()
+    cm.payload(MessageMeta(df_))
+    cm.tensors(_messages.TensorMemory(count=len(df_), tensors={'probs': probs}))
 
-    accepted_types = stage.accepted_types()
+    return cm
+
+
+def test_constructor(config):
+    fds = FilterDetectionsStage(config)
+    assert fds.name == "filter"
+
+    # Just ensure that we get a valid non-empty tuple
+    accepted_types = fds.accepted_types()
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
 
+    fds = FilterDetectionsStage(config, threshold=0.2)
+    assert fds._controller._threshold == 0.2
 
-def test_process_control_message_and_multi_message(config: Config):
-    stage = FilterDetectionsStage(config)
 
-    df = cudf.DataFrame({"data": ["a", "b", "c"]})
-    meta = MessageMeta(df)
+@pytest.mark.use_cudf
+@pytest.mark.use_python
+def test_filter_copy(config, filter_probs_df):
+    fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
 
-    input_multi_ae_message = MultiAEMessage(meta=meta,
-                                            mess_offset=0,
-                                            mess_count=2,
-                                            model=None,
-                                            train_scores_mean=0.0,
-                                            train_scores_std=1.0)
+    probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
+    mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
+    mock_control_message = _make_control_message(filter_probs_df, probs)
 
-    output_multi_inference_ae_message = stage.pre_process_batch(input_multi_ae_message,
-                                                                fea_len=256,
-                                                                feature_columns=["data"])
+    # All values are at or below the threshold so nothing should be returned
+    output_multi_response_message = fds._controller.filter_copy(mock_multi_response_message)
+    assert output_multi_response_message is None
+    output_control_message = fds._controller.filter_copy(mock_control_message)
+    assert output_control_message is None
 
-    expected_seq_ids = cp.array([[0, 0, 255], [1, 0, 255]])
-    assert cp.array_equal(output_multi_inference_ae_message.seq_ids, expected_seq_ids)
+    # Only one row has a value above the threshold
+    probs = cp.array([
+        [0.2, 0.4, 0.3],
+        [0.1, 0.5, 0.8],
+        [0.2, 0.4, 0.3],
+    ])
 
-    # TODO(Yuchen): Check if the output message has identical tensors after supporting ControlMessage
+    mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
+    output_multi_response_message = fds._controller.filter_copy(mock_multi_response_message)
+    assert output_multi_response_message.get_meta().to_cupy().tolist() == filter_probs_df.loc[1:1, :].to_cupy().tolist()
+    mock_control_message = _make_control_message(filter_probs_df, probs)
+    output_control_message = fds._controller.filter_copy(mock_control_message)
+    assert output_control_message.payload().get_data().to_cupy().tolist() == output_multi_response_message.get_meta(
+    ).to_cupy().tolist()
 
-    # Check if each tensor in the control message is equal to the corresponding tensor in the inference message
-    # for tensor_key in output_control_message.tensors().tensor_names:
-    #     assert cp.array_equal(output_control_message.tensors().get_tensor(tensor_key),
-    #                           getattr(output_infer_message, tensor_key))
+    # Two adjacent rows have a value above the threashold
+    probs = cp.array([
+        [0.2, 0.4, 0.3],
+        [0.1, 0.2, 0.3],
+        [0.1, 0.5, 0.8],
+        [0.1, 0.9, 0.2],
+        [0.2, 0.4, 0.3],
+    ])
+
+    mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
+    output_multi_response_message = fds._controller.filter_copy(mock_multi_response_message)
+    assert output_multi_response_message.get_meta().to_cupy().tolist() == filter_probs_df.loc[2:3, :].to_cupy().tolist()
+    mock_control_message = _make_control_message(filter_probs_df, probs)
+    output_control_message = fds._controller.filter_copy(mock_control_message)
+    assert output_control_message.payload().get_data().to_cupy().tolist() == output_multi_response_message.get_meta(
+    ).to_cupy().tolist()
+
+    # Two non-adjacent rows have a value above the threashold
+    probs = cp.array([
+        [0.2, 0.4, 0.3],
+        [0.1, 0.2, 0.3],
+        [0.1, 0.5, 0.8],
+        [0.4, 0.3, 0.2],
+        [0.1, 0.9, 0.2],
+        [0.2, 0.4, 0.3],
+    ])
+
+    mask = cp.zeros(len(filter_probs_df), dtype=cp.bool_)
+    mask[2] = True
+    mask[4] = True
+
+    mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
+    output_multi_response_message = fds._controller.filter_copy(mock_multi_response_message)
+    assert output_multi_response_message.get_meta().to_cupy().tolist() == filter_probs_df.loc[
+        mask, :].to_cupy().tolist()
+    mock_control_message = _make_control_message(filter_probs_df, probs)
+    output_control_message = fds._controller.filter_copy(mock_control_message)
+    assert output_control_message.payload().get_data().to_cupy().tolist() == output_multi_response_message.get_meta(
+    ).to_cupy().tolist()
+
+
+@pytest.mark.use_cudf
+@pytest.mark.use_python
+@pytest.mark.parametrize('do_copy', [True, False])
+@pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])
+@pytest.mark.parametrize('field_name', ['v1', 'v2', 'v3', 'v4'])
+def test_filter_column(config, filter_probs_df, do_copy, threshold, field_name):
+    fds = FilterDetectionsStage(config,
+                                threshold=threshold,
+                                copy=do_copy,
+                                filter_source=FilterSource.DATAFRAME,
+                                field_name=field_name)
+    expected_df = filter_probs_df.to_pandas()
+    expected_df = expected_df[expected_df[field_name] > threshold]
+
+    probs = cp.zeros([len(filter_probs_df), 3], 'float')
+    mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
+    # All values are at or below the threshold
+    output_multi_response_message = fds._controller.filter_copy(mock_multi_response_message)
+    assert output_multi_response_message.get_meta().to_cupy().tolist() == expected_df.to_numpy().tolist()
+    mock_control_message = _make_control_message(filter_probs_df, probs)
+    output_control_message = fds._controller.filter_copy(mock_control_message)
+    assert output_control_message.payload().get_data().to_cupy().tolist() == output_multi_response_message.get_meta(
+    ).to_cupy().tolist()
+
+
+@pytest.mark.use_cudf
+@pytest.mark.use_python
+def test_filter_slice(config, filter_probs_df):
+    fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
+
+    probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
+    mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
+
+    # All values are at or below the threshold
+    output_multi_response_messages = fds._controller.filter_slice(mock_multi_response_message)
+    assert len(output_multi_response_messages) == 0
+    mock_control_message = _make_control_message(filter_probs_df, probs)
+    output_control_message = fds._controller.filter_slice(mock_control_message)
+    assert len(output_control_message) == len(output_multi_response_messages)
+
+    # Only one row has a value above the threshold
+    probs = cp.array([
+        [0.2, 0.4, 0.3],
+        [0.1, 0.5, 0.8],
+        [0.2, 0.4, 0.3],
+    ])
+
+    mock_multi_response_message: MultiResponseMessage = _make_multi_response_message(filter_probs_df, probs)
+
+    output_multi_response_messages = fds._controller.filter_slice(mock_multi_response_message)
+    assert len(output_multi_response_messages) == 1
+    assert output_multi_response_messages[0].get_meta().to_cupy().tolist() == filter_probs_df.loc[
+        1:1, :].to_cupy().tolist()
+
+    mock_control_message = _make_control_message(filter_probs_df, probs)
+    output_control_message = fds._controller.filter_slice(mock_control_message)
+    assert len(output_control_message) == len(output_multi_response_messages)
+    assert output_control_message[0].payload().get_data().to_cupy().tolist(
+    ) == output_multi_response_messages[0].get_meta().to_cupy().tolist()
+
+    # Two adjacent rows have a value above the threashold
+    probs = cp.array([
+        [0.2, 0.4, 0.3],
+        [0.1, 0.2, 0.3],
+        [0.1, 0.5, 0.8],
+        [0.1, 0.9, 0.2],
+        [0.2, 0.4, 0.3],
+    ])
+
+    mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
+
+    output_multi_response_messages = fds._controller.filter_slice(mock_multi_response_message)
+    assert len(output_multi_response_messages) == 1
+    assert output_multi_response_messages[0].offset == 2
+    assert output_multi_response_messages[0].count == 2
+    assert output_multi_response_messages[0].get_meta().to_cupy().tolist() == filter_probs_df.loc[
+        2:3, :].to_cupy().tolist()
+
+    mock_control_message = _make_control_message(filter_probs_df, probs)
+    output_control_message = fds._controller.filter_slice(mock_control_message)
+    assert len(output_control_message) == len(output_multi_response_messages)
+    assert output_control_message[0].payload().get_data().to_cupy().tolist(
+    ) == output_multi_response_messages[0].get_meta().to_cupy().tolist()
+
+    # Two non-adjacent rows have a value above the threashold
+    probs = cp.array([
+        [0.2, 0.4, 0.3],
+        [0.1, 0.2, 0.3],
+        [0.1, 0.5, 0.8],
+        [0.4, 0.3, 0.2],
+        [0.1, 0.9, 0.2],
+        [0.2, 0.4, 0.3],
+    ])
+
+    mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
+
+    output_multi_response_messages = fds._controller.filter_slice(mock_multi_response_message)
+    assert len(output_multi_response_messages) == 2
+    (multi_response_msg1, multi_response_msg2) = output_multi_response_messages  # pylint: disable=unbalanced-tuple-unpacking
+    assert multi_response_msg1.offset == 2
+    assert multi_response_msg1.count == 1
+
+    assert multi_response_msg2.offset == 4
+    assert multi_response_msg2.count == 1
+
+    assert multi_response_msg1.get_meta().to_cupy().tolist() == filter_probs_df.loc[2:2, :].to_cupy().tolist()
+    assert multi_response_msg2.get_meta().to_cupy().tolist() == filter_probs_df.loc[4:4, :].to_cupy().tolist()
+
+    mock_control_message = _make_control_message(filter_probs_df, probs)
+    output_control_message = fds._controller.filter_slice(mock_control_message)
+    assert len(output_control_message) == len(output_multi_response_messages)
+    (control_msg1, control_msg2) = output_control_message  # pylint: disable=unbalanced-tuple-unpacking
+
+    assert control_msg1.payload().get_data().to_cupy().tolist() == multi_response_msg1.get_meta().to_cupy().tolist()
+    assert control_msg2.payload().get_data().to_cupy().tolist() == multi_response_msg2.get_meta().to_cupy().tolist()

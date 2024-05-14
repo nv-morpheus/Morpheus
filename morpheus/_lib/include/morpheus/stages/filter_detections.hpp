@@ -95,7 +95,6 @@ class MORPHEUS_EXPORT FilterDetectionsStage : public mrc::pymrc::PythonNode<std:
     source_type_t on_data(sink_type_t x);
 
   private:
-    // subscribe_fn_t build_operator();
     DevMemInfo get_tensor_filter_source(const sink_type_t& x);
     DevMemInfo get_column_filter_source(const sink_type_t& x);
 
