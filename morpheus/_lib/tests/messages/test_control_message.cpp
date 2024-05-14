@@ -21,9 +21,12 @@
 #include "morpheus/messages/control.hpp"               // for ControlMessage
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
 #include "morpheus/messages/meta.hpp"                  // for MessageMeta
+#include "morpheus/utilities/json_types.hpp"           // for PythonByteContainer
 
-#include <gtest/gtest.h>      // for Message, TestPartResult, AssertionResult, TestInfo
-#include <nlohmann/json.hpp>  // for basic_json, json_ref, json
+#include <gtest/gtest.h>       // for Message, TestPartResult, AssertionResult, TestInfo
+#include <nlohmann/json.hpp>   // for basic_json, json_ref, json
+#include <pybind11/pytypes.h>  // for literals, pybind11
+#include <pybind11/stl.h>      // IWYU pragma: keep
 
 #include <algorithm>  // for find
 #include <chrono>     // for system_clock
@@ -40,6 +43,10 @@ using namespace morpheus::test;
 using clock_type_t = std::chrono::system_clock;
 
 using TestControlMessage = morpheus::test::TestMessages;  // NOLINT(readability-identifier-naming)
+
+namespace py = pybind11;
+using namespace pybind11::literals;
+using namespace std::string_literals;
 
 TEST_F(TestControlMessage, InitializationTest)
 {
@@ -153,7 +160,6 @@ TEST_F(TestControlMessage, TaskTest)
     auto msg_train = ControlMessage();
 
     ASSERT_EQ(msg_infer.config().contains("some_value"), false);
-
     auto config = nlohmann::json();
     nlohmann::json task_properties;
     task_properties = {

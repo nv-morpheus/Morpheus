@@ -17,8 +17,7 @@
 
 #pragma once
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <memory>
 
 namespace morpheus {
@@ -49,49 +48,49 @@ class RawPacketMessage
     uint32_t get_max_size() const;
 
     /**
-     * @brief Return max packet size in the message
+     * @brief Get the address of the packet at the given index
      *
      * @return uintptr_t
      */
     uintptr_t get_pkt_addr_idx(uint32_t pkt_idx) const;
 
     /**
-     * @brief Return max packet size in the message
+     * @brief Get the header size of the packet at the given index
      *
      * @return uintptr_t
      */
     uintptr_t get_pkt_hdr_size_idx(uint32_t pkt_idx) const;
 
     /**
-     * @brief Return max packet size in the message
+     * @brief Get the payload size of the packet at the given index
      *
      * @return uintptr_t
      */
     uintptr_t get_pkt_pld_size_idx(uint32_t pkt_idx) const;
 
     /**
-     * @brief Return max packet size in the message
+     * @brief Get the address of the packet list
      *
      * @return uintptr_t *
      */
     uintptr_t* get_pkt_addr_list() const;
 
     /**
-     * @brief Return max packet size in the message
+     * @brief Get the header size of the packet list
      *
      * @return uintptr_t *
      */
     uint32_t* get_pkt_hdr_size_list() const;
 
     /**
-     * @brief Return max packet size in the message
+     * @brief Get the payload size of the packet list
      *
      * @return uintptr_t *
      */
     uint32_t* get_pkt_pld_size_list() const;
 
     /**
-     * @brief Return max packet size in the message
+     * @brief Get the queue index of the packet list
      *
      * @return uint32_t
      */
@@ -103,14 +102,6 @@ class RawPacketMessage
      * @return bool
      */
     bool is_gpu_mem() const;
-
-    // /**
-    //  * @brief Create RawPacketMessage cpp object from a python object
-    //  *
-    //  * @param data_table
-    //  * @return std::shared_ptr<RawPacketMessage>
-    //  */
-    // static std::shared_ptr<RawPacketMessage> create_from_python(pybind11::object&& data_table);
 
     /**
      * @brief Create RawPacketMessage cpp object from a cpp object, used internally by `create_from_cpp`
@@ -136,30 +127,17 @@ class RawPacketMessage
                      bool gpu_mem,
                      int queue_idx);
 
-    /**
-     * @brief Create RawPacketMessage python object from a cpp object
-     *
-     * @param table
-     * @param index_col_count
-     * @return pybind11::object
-     */
-    // static pybind11::object cpp_to_py(uint32_t num, uint32_t max_size, uintptr_t *ptr_addr, uint32_t *ptr_size, bool
-    // gpu_mem, uint16_t queue_idx = 0xFFFF);
-
-    uint32_t num;
-    uint32_t max_size;
-    uintptr_t* ptr_addr;
-    uint32_t* ptr_hdr_size;
-    uint32_t* ptr_pld_size;
-    uint16_t queue_idx;
-    bool gpu_mem;
-
-    // std::shared_ptr<uintptr_t> m_data;
+    uint32_t m_num;
+    uint32_t m_max_size;
+    uintptr_t* m_ptr_addr;
+    uint32_t* m_ptr_hdr_size;
+    uint32_t* m_ptr_pld_size;
+    uint16_t m_queue_idx;
+    bool m_gpu_mem;
 };
 
 struct RawPacketMessageProxy
 {};
 
 #pragma GCC visibility pop
-/** @} */  // end of group
 }  // namespace morpheus

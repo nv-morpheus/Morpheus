@@ -20,6 +20,7 @@
 #include <pybind11/pytypes.h>
 
 #include <memory>
+
 // We're already including pybind11.h and don't need to include cast.
 // For some reason IWYU also thinks we need array for the `isinsance` call.
 // IWYU pragma: no_include <pybind11/cast.h>
@@ -35,58 +36,58 @@ using namespace py::literals;
 
 uint32_t RawPacketMessage::count() const
 {
-    return num;
+    return m_num;
 }
 
 uint32_t RawPacketMessage::get_max_size() const
 {
-    return max_size;
+    return m_max_size;
 }
 
 uintptr_t RawPacketMessage::get_pkt_addr_idx(uint32_t pkt_idx) const
 {
-    if (pkt_idx > num || gpu_mem == true)
+    if (pkt_idx > m_num || m_gpu_mem == true)
         return 0;
-    return ptr_addr[pkt_idx];
+    return m_ptr_addr[pkt_idx];
 }
 
 uintptr_t RawPacketMessage::get_pkt_hdr_size_idx(uint32_t pkt_idx) const
 {
-    if (pkt_idx > num || gpu_mem == true)
+    if (pkt_idx > m_num || m_gpu_mem == true)
         return 0;
-    return ptr_hdr_size[pkt_idx];
+    return m_ptr_hdr_size[pkt_idx];
 }
 
 uintptr_t RawPacketMessage::get_pkt_pld_size_idx(uint32_t pkt_idx) const
 {
-    if (pkt_idx > num || gpu_mem == true)
+    if (pkt_idx > m_num || m_gpu_mem == true)
         return 0;
-    return ptr_pld_size[pkt_idx];
+    return m_ptr_pld_size[pkt_idx];
 }
 
 uintptr_t* RawPacketMessage::get_pkt_addr_list() const
 {
-    return ptr_addr;
+    return m_ptr_addr;
 }
 
 uint32_t* RawPacketMessage::get_pkt_hdr_size_list() const
 {
-    return ptr_hdr_size;
+    return m_ptr_hdr_size;
 }
 
 uint32_t* RawPacketMessage::get_pkt_pld_size_list() const
 {
-    return ptr_pld_size;
+    return m_ptr_pld_size;
 }
 
 uint32_t RawPacketMessage::get_queue_idx() const
 {
-    return queue_idx;
+    return m_queue_idx;
 }
 
 bool RawPacketMessage::is_gpu_mem() const
 {
-    return gpu_mem;
+    return m_gpu_mem;
 }
 
 std::shared_ptr<RawPacketMessage> RawPacketMessage::create_from_cpp(uint32_t num,
@@ -101,13 +102,6 @@ std::shared_ptr<RawPacketMessage> RawPacketMessage::create_from_cpp(uint32_t num
         new RawPacketMessage(num, max_size, ptr_addr, ptr_hdr_size, ptr_pld_size, gpu_mem, queue_idx));
 }
 
-// std::shared_ptr<RawPacketMessage> RawPacketMessage::create_from_python(py::object&& data_table)
-// {
-//     auto data = std::make_unique<PyDataTable>(std::move(data_table));
-
-//     return std::shared_ptr<RawPacketMessage>(new RawPacketMessage(std::move(data)));
-// }
-
 RawPacketMessage::RawPacketMessage(uint32_t num_,
                                    uint32_t max_size_,
                                    uintptr_t* ptr_addr_,
@@ -115,31 +109,13 @@ RawPacketMessage::RawPacketMessage(uint32_t num_,
                                    uint32_t* ptr_pld_size_,
                                    bool gpu_mem_,
                                    int queue_idx_) :
-  num(num_),
-  max_size(max_size_),
-  ptr_addr(ptr_addr_),
-  ptr_hdr_size(ptr_hdr_size_),
-  ptr_pld_size(ptr_pld_size_),
-  gpu_mem(gpu_mem_),
-  queue_idx(queue_idx_)
+  m_num(num_),
+  m_max_size(max_size_),
+  m_ptr_addr(ptr_addr_),
+  m_ptr_hdr_size(ptr_hdr_size_),
+  m_ptr_pld_size(ptr_pld_size_),
+  m_gpu_mem(gpu_mem_),
+  m_queue_idx(queue_idx_)
 {}
-
-// py::object RawPacketMessage::cpp_to_py(cudf::io::table_with_metadata&& table, int index_col_count)
-// {
-//     py::gil_scoped_acquire gil;
-
-//     // Now convert to a python TableInfo object
-//     auto converted_table = CudfHelper::table_from_table_with_metadata(std::move(table), index_col_count);
-
-//     // VLOG(10) << "Table. Num Col: " << converted_table.attr("_num_columns").str().cast<std::string>()
-//     //          << ", Num Ind: " << converted_table.attr("_num_columns").cast<std::string>()
-//     //          << ", Rows: " << converted_table.attr("_num_rows").cast<std::string>();
-//     // py::print("Table Created. Num Rows: {}, Num Cols: {}, Num Ind: {}",
-//     //           converted_table.attr("_num_rows"),
-//     //           converted_table.attr("_num_columns"),
-//     //           converted_table.attr("_num_indices"));
-
-//     return converted_table;
-// }
 
 }  // namespace morpheus

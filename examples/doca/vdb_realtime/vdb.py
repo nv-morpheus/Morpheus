@@ -17,13 +17,10 @@ import logging
 import click
 import pymilvus
 
-from morpheus._lib.messages import RawPacketMessage
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
-from morpheus.service.vdb.utils import VectorDBServiceFactory
 from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -76,11 +73,6 @@ def build_milvus_service(embedding_size):
 
 @click.command()
 @click.option(
-    "--out_file",
-    default="doca_output.csv",
-    help="File in which to store output",
-)
-@click.option(
     "--nic_addr",
     help="NIC PCI Address",
     required=True,
@@ -90,7 +82,7 @@ def build_milvus_service(embedding_size):
     help="GPU PCI Address",
     required=True,
 )
-def run_pipeline(out_file, nic_addr, gpu_addr):
+def run_pipeline(nic_addr, gpu_addr):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 

@@ -14,8 +14,6 @@
 import logging
 import time
 
-import pandas as pd
-
 import cudf
 
 from morpheus.config import Config
@@ -48,8 +46,21 @@ def _build_engine(model_name: str, vdb_resource_name: str, llm_service: str, emb
 
     prompt = """You are a helpful assistant. Given the following background information:\n
 {% for c in contexts -%}
+{% if c.title %}
+Title: {{ c.title }}
+{% endif %}
+{% if c.summary %}
+Summary: {{ c.summary }}
+{% endif %}
+{% if c.page_content %}
+Text: {{ c.page_content }}
+{% endif %}
+{% if c.header %}
 Header: {{ c.header }}
+{% endif %}
+{% if c.data %}
 Data: {{ c.data }}
+{% endif %}
 {% endfor %}
 
 Please answer the following question: \n{{ query }}"""

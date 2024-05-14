@@ -22,9 +22,9 @@
 #include <doca_eth_rxq.h>
 #include <doca_flow_net.h>
 #include <netinet/in.h>
-#include <stdint.h>
 
 #include <array>
+#include <cstdint>
 
 namespace morpheus::doca {
 

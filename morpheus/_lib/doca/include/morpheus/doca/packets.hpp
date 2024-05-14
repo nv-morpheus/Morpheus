@@ -16,11 +16,12 @@
  */
 
 #pragma once
+
 #include "morpheus/doca/common.hpp"
 
 #define ETHER_ADDR_LEN 6 /**< Length of Ethernet address. */
 
-#define BYTE_SWAP16(v) ((((uint16_t)(v)&UINT16_C(0x00ff)) << 8) | (((uint16_t)(v)&UINT16_C(0xff00)) >> 8))
+#define BYTE_SWAP16(v) ((((uint16_t)(v) & UINT16_C(0x00ff)) << 8) | (((uint16_t)(v) & UINT16_C(0xff00)) >> 8))
 
 #define TCP_PROTOCOL_ID 0x6
 #define UDP_PROTOCOL_ID 0x11

@@ -32,11 +32,11 @@
 #include <mrc/segment/object.hpp>
 #include <rmm/cuda_stream_view.hpp>
 #include <rxcpp/rx.hpp>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 #include <memory>
 #include <optional>
 #include <stdexcept>

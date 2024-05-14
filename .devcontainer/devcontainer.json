@@ -96,11 +96,6 @@
             "source": "${localWorkspaceFolder}/.devcontainer/opt/morpheus",
             "target": "/opt/morpheus"
         }
-        // {
-        //     "type": "volume",
-        //     "source": "/dev/hugepages",
-        //     "target": "/dev/hugepages"
-        // }
     ],
 
     "features": {
