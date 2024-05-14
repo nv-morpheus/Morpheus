@@ -237,6 +237,8 @@ def test_filter_slice(config, filter_probs_df):
     output_control_message = fds._controller.filter_slice(mock_control_message)
     assert len(output_control_message) == len(output_multi_response_messages)
     (control_msg1, control_msg2) = output_control_message  # pylint: disable=unbalanced-tuple-unpacking
+    assert control_msg1.payload().count == multi_response_msg1.count
+    assert control_msg2.payload().count == multi_response_msg2.count
 
     assert control_msg1.payload().get_data().to_cupy().tolist() == multi_response_msg1.get_meta().to_cupy().tolist()
     assert control_msg2.payload().get_data().to_cupy().tolist() == multi_response_msg2.get_meta().to_cupy().tolist()

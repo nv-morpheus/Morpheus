@@ -145,7 +145,7 @@ class MLFlowDriftStage(PassThruTypeMixin, SinglePortStage):
         if isinstance(x, MultiResponseMessage):
             count = x.count
         elif isinstance(x, ControlMessage):
-            count = x.payload().count()
+            count = x.payload().count
 
         for i in list(range(0, count, self._batch_size)):
             start = i
