@@ -45,4 +45,7 @@ docker run \
     -ti \
     ${DOCKER_ARGS} ${DOCKER_EXTRA_ARGS} \
     ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} "${@:-bash}"
-set +x
+
+{ EXIT_CODE=$?; set +x; } 2>/dev/null
+
+exit $EXIT_CODE

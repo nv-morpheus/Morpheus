@@ -105,6 +105,7 @@ add_morpheus_test(
     messages/test_control_message.cpp
     messages/test_dev_doc_ex3.cpp
     messages/test_sliced_message_meta.cpp
+    messages/test_message_meta.cpp
 )
 
 add_morpheus_test(
@@ -186,6 +187,12 @@ add_morpheus_test(
   NAME type_util
   FILES
     test_type_util.cpp
+)
+
+add_morpheus_test(
+  NAME table_util
+  FILES
+    utilities/test_table_util.cpp
 )
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
