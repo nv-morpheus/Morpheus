@@ -24,8 +24,8 @@
 #include <doca_gpunetio.h>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/device/per_device_resource.hpp>
-#include <stdio.h>
 
+#include <cstdio>
 #include <memory>
 
 namespace morpheus::doca {
