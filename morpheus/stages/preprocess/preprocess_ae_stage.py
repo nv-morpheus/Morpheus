@@ -19,15 +19,15 @@ from functools import partial
 import cupy as cp
 import mrc
 
-from morpheus.messages import ControlMessage
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages import InferenceMemoryAE
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
-from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.messages import TensorMemory as CppTensorMemory
+from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.stages.inference.auto_encoder_inference_stage import MultiInferenceAEMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
@@ -154,7 +154,8 @@ class PreprocessAEStage(PreprocessBaseStage):
 
         return infer_message
 
-    def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage | ControlMessage], MultiInferenceMessage | ControlMessage]:
+    def _get_preprocess_fn(
+            self) -> typing.Callable[[MultiMessage | ControlMessage], MultiInferenceMessage | ControlMessage]:
         return partial(PreprocessAEStage.pre_process_batch,
                        fea_len=self._fea_length,
                        feature_columns=self._feature_columns)

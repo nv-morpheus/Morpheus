@@ -13,23 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import Mock
-from unittest.mock import patch
-
 import cupy as cp
-from networkx import moebius_kantor_graph
-import pytest
 
 import cudf
-import pandas as pd
 
-from morpheus._lib.messages import ResponseMemory, TensorMemory
-from morpheus.config import Config, ConfigAutoEncoder
+# pylint: disable=morpheus-incorrect-lib-from-import
+import morpheus._lib.messages as _messages
+from morpheus._lib.messages import ResponseMemory
+from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiResponseMessage
 from morpheus.stages.postprocess.generate_viz_frames_stage import GenerateVizFramesStage
-import morpheus._lib.messages as _messages
 
 
 def _make_multi_response_message(df, probs):
@@ -75,5 +70,6 @@ def test_process_control_message_and_multi_message(config: Config):
 
     output_multi_response_message_list = stage._to_vis_df(mock_multi_response_message)
     output_control_message_list = stage._to_vis_df(mock_control_message)
-    for output_multi_response_message, output_control_message in zip(output_multi_response_message_list, output_control_message_list):
+    for output_multi_response_message, output_control_message in zip(output_multi_response_message_list,
+                                                                     output_control_message_list):
         assert output_multi_response_message[1].equals(output_control_message[1])

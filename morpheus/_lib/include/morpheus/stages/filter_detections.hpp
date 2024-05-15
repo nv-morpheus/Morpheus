@@ -17,23 +17,22 @@
 
 #pragma once
 
-#include "morpheus/export.h"
-#include "morpheus/messages/control.hpp"
-#include "morpheus/messages/multi.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/filter_source.hpp"
+#include "morpheus/export.h"                   // for MORPHEUS_EXPORT
+#include "morpheus/messages/control.hpp"       // for ControlMessage
+#include "morpheus/messages/multi.hpp"         // for MultiMessage
+#include "morpheus/objects/dev_mem_info.hpp"   // for DevMemInfo
+#include "morpheus/objects/filter_source.hpp"  // for FilterSource
 
-#include <boost/fiber/context.hpp>
-#include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>
+#include <cuda_runtime.h>           // for cudaMemcpy
+#include <mrc/segment/builder.hpp>  // for Builder
+#include <mrc/segment/object.hpp>   // for Object
+#include <pymrc/node.hpp>           // for PythonNode
+#include <rxcpp/rx.hpp>             // for observable_member, trace_activity, map, decay_t, from
 
 #include <cstddef>  // for size_t
-#include <map>
-#include <memory>
-#include <string>
-#include <thread>
+#include <map>      // for map
+#include <memory>   // for allocator, shared_ptr
+#include <string>   // for string
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -70,7 +69,8 @@ namespace morpheus {
  * the Python GIL.
  */
 template <typename InputT, typename OutputT>
-class MORPHEUS_EXPORT FilterDetectionsStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
+class MORPHEUS_EXPORT FilterDetectionsStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
@@ -88,7 +88,7 @@ class MORPHEUS_EXPORT FilterDetectionsStage : public mrc::pymrc::PythonNode<std:
      * @param field_name : Name of the tensor or Dataframe column to filter on default="probs"
      */
     FilterDetectionsStage(float threshold, bool copy, FilterSource filter_source, std::string field_name = "probs");
-    
+
     /**
      * Called every time a message is passed to this stage
      */
@@ -118,7 +118,8 @@ using FilterDetectionsStageCM =  // NOLINT(readability-identifier-naming)
 struct MORPHEUS_EXPORT FilterDetectionStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a FilterDetectionStage that receives MultiMessage and emits MultiMessage, and return the result
+     * @brief Create and initialize a FilterDetectionStage that receives MultiMessage and emits MultiMessage, and return
+     * the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
@@ -130,13 +131,14 @@ struct MORPHEUS_EXPORT FilterDetectionStageInterfaceProxy
      * @return std::shared_ptr<mrc::segment::Object<FilterDetectionsStage<MultiMessage, MultiMessage>>>
      */
     static std::shared_ptr<mrc::segment::Object<FilterDetectionsStageMM>> init_mm(mrc::segment::Builder& builder,
-                                                                             const std::string& name,
-                                                                             float threshold,
-                                                                             bool copy,
-                                                                             FilterSource filter_source,
-                                                                             std::string field_name);
-                                                                            /**
-     * @brief Create and initialize a FilterDetectionStage that receives ControlMessage and emits ControlMessage, and return the result
+                                                                                  const std::string& name,
+                                                                                  float threshold,
+                                                                                  bool copy,
+                                                                                  FilterSource filter_source,
+                                                                                  std::string field_name);
+    /**
+     * @brief Create and initialize a FilterDetectionStage that receives ControlMessage and emits ControlMessage, and
+     * return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
@@ -148,11 +150,11 @@ struct MORPHEUS_EXPORT FilterDetectionStageInterfaceProxy
      * @return std::shared_ptr<mrc::segment::Object<FilterDetectionsStage<ControlMessage, ControlMessage>>>
      */
     static std::shared_ptr<mrc::segment::Object<FilterDetectionsStageCM>> init_cm(mrc::segment::Builder& builder,
-                                                                             const std::string& name,
-                                                                             float threshold,
-                                                                             bool copy,
-                                                                             FilterSource filter_source,
-                                                                             std::string field_name);
+                                                                                  const std::string& name,
+                                                                                  float threshold,
+                                                                                  bool copy,
+                                                                                  FilterSource filter_source,
+                                                                                  std::string field_name);
 };
 
 /** @} */  // end of group

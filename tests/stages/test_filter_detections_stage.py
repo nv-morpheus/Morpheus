@@ -17,9 +17,10 @@
 import cupy as cp
 import pytest
 
-from morpheus.common import FilterSource
 import morpheus._lib.messages as _messages
-from morpheus.messages import MultiResponseMessage, ControlMessage
+from morpheus.common import FilterSource
+from morpheus.messages import ControlMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
@@ -223,7 +224,9 @@ def test_filter_slice(config, filter_probs_df):
 
     output_multi_response_messages = fds._controller.filter_slice(mock_multi_response_message)
     assert len(output_multi_response_messages) == 2
-    (multi_response_msg1, multi_response_msg2) = output_multi_response_messages  # pylint: disable=unbalanced-tuple-unpacking
+
+    # pylint: disable=unbalanced-tuple-unpacking
+    (multi_response_msg1, multi_response_msg2) = output_multi_response_messages
     assert multi_response_msg1.offset == 2
     assert multi_response_msg1.count == 1
 

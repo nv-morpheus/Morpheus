@@ -13,15 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import Mock
-from unittest.mock import patch
-
 import cupy as cp
 import pytest
 
 import cudf
 
-from morpheus.config import Config, ConfigAutoEncoder
+from morpheus.config import Config
+from morpheus.config import ConfigAutoEncoder
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiAEMessage
@@ -61,10 +59,10 @@ def test_process_control_message_and_multi_message(config: Config):
     output_multi_inference_ae_message = stage.pre_process_batch(input_multi_ae_message,
                                                                 fea_len=256,
                                                                 feature_columns=["data"])
-    
+
     input_control_message = ControlMessage()
     input_control_message.payload(meta)
-    
+
     output_control_message = stage.pre_process_batch(input_control_message, fea_len=256, feature_columns=["data"])
 
     # Check if each tensor in the control message is equal to the corresponding tensor in the inference message

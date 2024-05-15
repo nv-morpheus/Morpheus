@@ -15,18 +15,18 @@
 # limitations under the License.
 
 import cupy as cp
-import pytest
 import pandas as pd
+import pytest
 
-from morpheus.config import Config, ConfigAutoEncoder
 import morpheus._lib.messages as _messages
-from morpheus.io.serializers import df_to_json
-from morpheus.messages import MultiResponseAEMessage, ControlMessage
+from morpheus.config import Config
+from morpheus.config import ConfigAutoEncoder
+from morpheus.messages import ControlMessage
+from morpheus.messages import MultiResponseAEMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 
-from unittest.mock import patch
 
 @pytest.fixture(name='config')
 def fixture_config(config: Config):
@@ -35,6 +35,7 @@ def fixture_config(config: Config):
     config.ae.feature_columns = ["data"]
     config.ae.timestamp_column_name = "ts"
     yield config
+
 
 def _make_multi_response_ae_message(df, probs):
     df_ = df[0:len(probs)]
@@ -49,7 +50,7 @@ def _make_control_message(df, probs):
     cm.payload(MessageMeta(df_))
     cm.tensors(_messages.TensorMemory(count=len(df_), tensors={'probs': probs}))
     cm.set_metadata("user_id", "test_user_id")
-    
+
     return cm
 
 
@@ -76,4 +77,3 @@ def test_call_timeseries_user(config):
     print("test")
     print(stage._call_timeseries_user(mock_multi_response_ae_message))
     print(stage._call_timeseries_user(mock_control_message))
-    

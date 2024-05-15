@@ -15,44 +15,40 @@
  * limitations under the License.
  */
 
-#include "morpheus/stages/filter_detections.hpp"  // IWYU pragma: accosiated
+#include "morpheus/stages/filter_detections.hpp"
 
-#include "mrc/segment/builder.hpp"
-#include "mrc/segment/object.hpp"
-#include "pymrc/node.hpp"
+#include "mrc/segment/builder.hpp"  // for Builder
+#include "mrc/segment/object.hpp"   // for Object
 
-#include "morpheus/messages/multi.hpp"
-#include "morpheus/messages/multi_tensor.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"         // for DataType
-#include "morpheus/objects/memory_descriptor.hpp"
-#include "morpheus/objects/table_info.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
-#include "morpheus/types.hpp"                  // for RangeType
-#include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
+#include "morpheus/messages/multi.hpp"             // for MultiMessage
+#include "morpheus/messages/multi_tensor.hpp"      // for MultiTensorMessage
+#include "morpheus/objects/dev_mem_info.hpp"       // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"              // for DType
+#include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
+#include "morpheus/objects/table_info.hpp"         // for TableInfo
+#include "morpheus/objects/tensor_object.hpp"      // for TensorObject
+#include "morpheus/types.hpp"                      // for RangeType
+#include "morpheus/utilities/matx_util.hpp"        // for MatxUtil
+#include "morpheus/utilities/tensor_util.hpp"      // for TensorUtils
 
-#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
-#include <cudf/column/column_view.hpp>
-#include <cudf/types.hpp>
-#include <glog/logging.h>       // for CHECK, CHECK_NE
-#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
-#include <rmm/cuda_stream_view.hpp>
-#include <rmm/device_buffer.hpp>  // for device_buffer
-#include <rmm/mr/device/per_device_resource.hpp>
-#include <spdlog/sinks/sink.h>
+#include <cuda_runtime.h>                         // for cudaMemcpy, cudaMemcpyKind
+#include <cudf/column/column_view.hpp>            // for column_view
+#include <cudf/types.hpp>                         // for data_type
+#include <glog/logging.h>                         // for COMPACT_GOOGLE_LOG_ERROR, LOG, LogMessage, COMPACT_GOOGLE_...
+#include <mrc/cuda/common.hpp>                    // for MRC_CHECK_CUDA
+#include <rmm/cuda_stream_view.hpp>               // for cuda_stream_per_thread
+#include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
 
-#include <cstddef>
-#include <cstdint>  // for uint8_t
-#include <exception>
-#include <functional>
-#include <memory>
-#include <ostream>  // needed for glog
-#include <string>
-#include <utility>  // for pair
-#include <vector>
-// IWYU thinks we need ext/new_allocator.h for size_t for some reason
-// IWYU pragma: no_include <ext/new_allocator.h>
+#include <cstddef>     // for size_t
+#include <cstdint>     // for uint8_t
+#include <functional>  // for function
+#include <memory>      // for shared_ptr, make_shared
+#include <ostream>     // for operator<<, basic_ostream
+#include <stdexcept>   // for runtime_error
+#include <string>      // for operator+, string, char_traits, operator<<
+#include <typeinfo>    // for type_info
+#include <utility>     // for move, pair
+#include <vector>      // for vector
 
 namespace morpheus {
 
@@ -119,7 +115,8 @@ DevMemInfo FilterDetectionsStage<InputT, OutputT>::get_column_filter_source(cons
     // sink_type_t not supported
     else
     {
-        std::string error_msg{"FilterDetectionsStage receives unsupported input type: " + std::string(typeid(x).name())};
+        std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
+                              std::string(typeid(x).name())};
         LOG(ERROR) << error_msg;
         throw std::runtime_error(error_msg);
     }
@@ -250,6 +247,7 @@ FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<Inpu
                 throw std::runtime_error(error_msg);
             }
         }
+        return x;
     }
 
     // num_selected_rows will always be 0 when m_copy is false,
@@ -276,6 +274,7 @@ FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<Inpu
             throw std::runtime_error(error_msg);
         }
     }
+    return x;
 }
 
 // ************ FilterDetectionStageInterfaceProxy ************* //

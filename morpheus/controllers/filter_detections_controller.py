@@ -20,9 +20,9 @@ import numpy as np
 import typing_utils
 
 from morpheus.common import FilterSource
+from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
-from morpheus.messages import ControlMessage
 
 logger = logging.getLogger(__name__)
 

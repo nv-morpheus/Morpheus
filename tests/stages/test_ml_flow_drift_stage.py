@@ -14,16 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from unittest.mock import patch
+
 import cupy as cp
 import pytest
 
 import morpheus._lib.messages as _messages
-from morpheus.messages import MultiResponseMessage, ControlMessage
+from morpheus.messages import ControlMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.ml_flow_drift_stage import MLFlowDriftStage
 
-from unittest.mock import patch
 
 def _make_multi_response_message(df, probs):
     df_ = df[0:len(probs)]
@@ -42,7 +44,7 @@ def _make_control_message(df, probs):
 
 
 def test_constructor(config):
-    with patch("morpheus.stages.postprocess.ml_flow_drift_stage.mlflow.start_run") as mock_start_run:
+    with patch("morpheus.stages.postprocess.ml_flow_drift_stage.mlflow.start_run"):
         stage = MLFlowDriftStage(config)
     assert stage.name == "mlflow_drift"
 
@@ -55,7 +57,7 @@ def test_constructor(config):
 @pytest.mark.use_cudf
 @pytest.mark.use_python
 def test_calc_drift(config, filter_probs_df):
-    with patch("morpheus.stages.postprocess.ml_flow_drift_stage.mlflow.start_run") as mock_start_run:
+    with patch("morpheus.stages.postprocess.ml_flow_drift_stage.mlflow.start_run"):
         labels = ["a", "b", "c"]
         stage = MLFlowDriftStage(config, labels=labels, batch_size=1)
 
@@ -63,14 +65,18 @@ def test_calc_drift(config, filter_probs_df):
     mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
     mock_control_message = _make_control_message(filter_probs_df, probs)
 
-    expected_metrics = [{'a': 0.9, 'b': 0.5, 'c': 0.7, 'total': 0.6999999999999998}, {'a': 0.8, 'b': 0.7, 'c': 0.6, 'total': 0.7000000000000001}]
+    expected_metrics = [{
+        'a': 0.9, 'b': 0.5, 'c': 0.7, 'total': 0.6999999999999998
+    }, {
+        'a': 0.8, 'b': 0.7, 'c': 0.6, 'total': 0.7000000000000001
+    }]
     multi_response_message_metrics = []
     with patch("morpheus.stages.postprocess.ml_flow_drift_stage.mlflow.log_metrics") as mock_log_metrics:
         stage._calc_drift(mock_multi_response_message)
         for call_arg in mock_log_metrics.call_args_list:
             multi_response_message_metrics.append(call_arg[0][0])
     assert multi_response_message_metrics == expected_metrics
-    
+
     control_message_metrics = []
     with patch("morpheus.stages.postprocess.ml_flow_drift_stage.mlflow.log_metrics") as mock_log_metrics:
         stage._calc_drift(mock_control_message)

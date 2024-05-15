@@ -23,9 +23,9 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.controllers.filter_detections_controller import FilterDetectionsController
+from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -127,11 +127,11 @@ class FilterDetectionsStage(SinglePortStage):
                                                                    self._controller.field_name)
 
             node = _stages.FilterDetectionsMultiMessageStage(builder,
-                                                 self.unique_name,
-                                                 self._controller.threshold,
-                                                 self._copy,
-                                                 self._controller.filter_source,
-                                                 self._controller.field_name)
+                                                             self.unique_name,
+                                                             self._controller.threshold,
+                                                             self._copy,
+                                                             self._controller.filter_source,
+                                                             self._controller.field_name)
         else:
 
             if self._copy:
