@@ -98,7 +98,7 @@ class DFPInferenceStage(SinglePortStage):
             if (model_cache is None):
                 raise RuntimeError(f"Could not find model for user {user_id}")
 
-            loaded_model = model_cache.load_model(self._client)
+            loaded_model = model_cache.load_model()
 
         except Exception:
             logger.exception("Error trying to get model", exc_info=True)
