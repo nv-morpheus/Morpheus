@@ -121,6 +121,10 @@ class CompareDataFrameStage(InMemorySinkStage):
         if self._reset_index:
             combined_df.reset_index(inplace=True)
 
+        # print("df_a")
+        # print(self._compare_df)
+        print("df_b")
+        print(combined_df)
         results = compare_df_module.compare_df(self._compare_df,
                                                combined_df,
                                                include_columns=self._include_columns,

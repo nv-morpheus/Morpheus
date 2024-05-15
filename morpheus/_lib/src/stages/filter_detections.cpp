@@ -73,44 +73,49 @@ FilterDetectionsStage<InputT, OutputT>::FilterDetectionsStage(float threshold,
 template <typename InputT, typename OutputT>
 DevMemInfo FilterDetectionsStage<InputT, OutputT>::get_tensor_filter_source(const sink_type_t& x)
 {
-    TensorObject filter_source;
-    if constexpr (std::is_same_v<sink_type_t, const std::shared_ptr<MultiMessage>&>)
+    if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
     {
         // The pipeline build will check to ensure that our input is a MultiResponseMessage
-        filter_source = std::static_pointer_cast<MultiTensorMessage>(x)->get_tensor(m_field_name);
+        const auto& filter_source = std::static_pointer_cast<MultiTensorMessage>(x)->get_tensor(m_field_name);
+        CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
+            << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
+               "arrays";
+
+        // Depending on the input the stride is given in bytes or elements, convert to elements
+        auto stride = TensorUtils::get_element_stride(filter_source.get_stride());
+        return {
+            filter_source.data(), filter_source.dtype(), filter_source.get_memory(), filter_source.get_shape(), stride};
     }
-    else if constexpr (std::is_same_v<sink_type_t, const std::shared_ptr<ControlMessage>&>)
+    else if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<ControlMessage>>)
     {
-        filter_source = x->tensors()->get_tensor(m_field_name);
+        const auto& filter_source = x->tensors()->get_tensor(m_field_name);
+        CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
+            << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
+               "arrays";
+
+        // Depending on the input the stride is given in bytes or elements, convert to elements
+        auto stride = TensorUtils::get_element_stride(filter_source.get_stride());
+        return {
+            filter_source.data(), filter_source.dtype(), filter_source.get_memory(), filter_source.get_shape(), stride};
     }
+
     // sink_type_t not supported
-    else
-    {
-        std::string error_msg{"FilterDetectionStage receives unsupported input type: " + std::string(typeid(x).name())};
-        LOG(ERROR) << error_msg;
-        throw std::runtime_error(error_msg);
-    }
-
-    CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
-        << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
-           "arrays";
-
-    // Depending on the input the stride is given in bytes or elements, convert to elements
-    auto stride = TensorUtils::get_element_stride(filter_source.get_stride());
-    return {filter_source.data(), filter_source.dtype(), filter_source.get_memory(), filter_source.get_shape(), stride};
+    std::string error_msg{"FilterDetectionStage receives unsupported input type: " + std::string(typeid(x).name())};
+    LOG(ERROR) << error_msg;
+    throw std::runtime_error(error_msg);
 }
 
 template <typename InputT, typename OutputT>
 DevMemInfo FilterDetectionsStage<InputT, OutputT>::get_column_filter_source(const sink_type_t& x)
 {
     TableInfo table_info;
-    if constexpr (std::is_same_v<sink_type_t, const std::shared_ptr<MultiMessage>&>)
+    if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
     {
         table_info = x->get_meta(m_field_name);
     }
-    else if constexpr (std::is_same_v<sink_type_t, const std::shared_ptr<ControlMessage>&>)
+    else if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<ControlMessage>>)
     {
-        table_info = x->payload()->get_data(m_field_name);
+        table_info = x->payload()->get_info(m_field_name);
     }
     // sink_type_t not supported
     else
@@ -140,6 +145,7 @@ DevMemInfo FilterDetectionsStage<InputT, OutputT>::get_column_filter_source(cons
 template <typename InputT, typename OutputT>
 FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<InputT, OutputT>::on_data(sink_type_t x)
 {
+    std::cout << "flag0" << std::endl;
     std::function<DevMemInfo(const sink_type_t& x)> get_filter_source;
 
     if (m_filter_source == FilterSource::TENSOR)
@@ -159,6 +165,7 @@ FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<Inpu
 
     const auto num_rows    = tmp_buffer.shape(0);
     const auto num_columns = tmp_buffer.shape(1);
+    std::cout << "dimentions: " << num_rows << " " << num_columns << std::endl;
 
     bool by_row = (num_columns > 1);
 
@@ -196,6 +203,7 @@ FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<Inpu
             {
                 if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
                 {
+                    std::cout << "flag1" << std::endl;
                     return x->get_slice(slice_start, row);
                 }
                 else if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<ControlMessage>>)
@@ -205,13 +213,10 @@ FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<Inpu
                     return x;
                 }
                 // sink_type_t not supported
-                else
-                {
-                    std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
-                                          std::string(typeid(x).name())};
-                    LOG(ERROR) << error_msg;
-                    throw std::runtime_error(error_msg);
-                }
+                std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
+                                      std::string(typeid(x).name())};
+                LOG(ERROR) << error_msg;
+                throw std::runtime_error(error_msg);
             }
 
             slice_start = num_rows;
@@ -230,6 +235,7 @@ FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<Inpu
         {
             if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
             {
+                std::cout << "flag2" << std::endl;
                 return x->get_slice(slice_start, num_rows);
             }
             else if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<ControlMessage>>)
@@ -239,24 +245,22 @@ FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<Inpu
                 return x;
             }
             // sink_type_t not supported
-            else
-            {
-                std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
-                                      std::string(typeid(x).name())};
-                LOG(ERROR) << error_msg;
-                throw std::runtime_error(error_msg);
-            }
+            std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
+                                  std::string(typeid(x).name())};
+            LOG(ERROR) << error_msg;
+            throw std::runtime_error(error_msg);
         }
-        return x;
     }
 
     // num_selected_rows will always be 0 when m_copy is false,
     // or when m_copy is true, but none of the rows matched the output
+    std::cout << "num_selected_rows: " << num_selected_rows << std::endl;
     if (num_selected_rows > 0)
     {
         DCHECK(m_copy);
         if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<MultiMessage>>)
         {
+            std::cout << "flag3" << std::endl;
             return x->copy_ranges(selected_ranges, num_selected_rows);
         }
         else if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<ControlMessage>>)
@@ -266,15 +270,11 @@ FilterDetectionsStage<InputT, OutputT>::source_type_t FilterDetectionsStage<Inpu
             return x;
         }
         // sink_type_t not supported
-        else
-        {
-            std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
-                                  std::string(typeid(x).name())};
-            LOG(ERROR) << error_msg;
-            throw std::runtime_error(error_msg);
-        }
+        std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
+                              std::string(typeid(x).name())};
+        LOG(ERROR) << error_msg;
+        throw std::runtime_error(error_msg);
     }
-    return x;
 }
 
 // ************ FilterDetectionStageInterfaceProxy ************* //

@@ -56,7 +56,6 @@ def test_constructor(config):
 
 
 @pytest.mark.use_cudf
-# @pytest.mark.use_python
 def test_filter_copy(config, filter_probs_df):
     fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
 
@@ -127,7 +126,6 @@ def test_filter_copy(config, filter_probs_df):
 
 
 @pytest.mark.use_cudf
-@pytest.mark.use_python
 @pytest.mark.parametrize('do_copy', [True, False])
 @pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])
 @pytest.mark.parametrize('field_name', ['v1', 'v2', 'v3', 'v4'])
@@ -152,7 +150,6 @@ def test_filter_column(config, filter_probs_df, do_copy, threshold, field_name):
 
 
 @pytest.mark.use_cudf
-@pytest.mark.use_python
 def test_filter_slice(config, filter_probs_df):
     fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
 

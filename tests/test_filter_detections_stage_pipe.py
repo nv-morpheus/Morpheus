@@ -56,6 +56,8 @@ def _test_filter_detections_stage_pipe(config: Config,
         input_df = dataset_pandas.repeat(input_df, repeat_count=repeat)
 
     threshold = 0.75
+    print("expected1")
+    print(build_expected(dataset_pandas["filter_probs.csv"], threshold))
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
@@ -72,6 +74,8 @@ def _test_filter_detections_stage_pipe(config: Config,
 
 def _test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pandas: DatasetManager, copy: bool = True):
     threshold = 0.75
+    # print("expected2")
+    # print(build_expected(dataset_pandas["filter_probs.csv"], threshold))
 
     input_df = dataset_pandas["filter_probs.csv"]
     pipe = LinearPipeline(config)
