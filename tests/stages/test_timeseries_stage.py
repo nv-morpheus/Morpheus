@@ -72,8 +72,5 @@ def test_call_timeseries_user(config):
     df = pd.DataFrame({"ts": pd.date_range(start='01-01-2022', periods=5)})
     probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
     mock_multi_response_ae_message = _make_multi_response_ae_message(df, probs)
-    mock_control_message = _make_control_message(df, probs)
 
-    print("test")
-    print(stage._call_timeseries_user(mock_multi_response_ae_message))
-    print(stage._call_timeseries_user(mock_control_message))
+    assert stage._call_timeseries_user(mock_multi_response_ae_message)[0].user_id == "test_user_id"
