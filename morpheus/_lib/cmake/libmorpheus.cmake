@@ -50,6 +50,7 @@ add_library(morpheus
   src/messages/multi_response.cpp
   src/messages/multi_tensor.cpp
   src/messages/multi.cpp
+  src/messages/raw_packet.cpp
   src/modules/data_loader_module.cpp
   src/objects/data_table.cpp
   src/objects/dev_mem_info.cpp

@@ -138,7 +138,7 @@ def _write_to_vector_db(builder: mrc.Builder):
 
     preprocess_vdb_resources(service, recreate, resource_schemas)
 
-    accumulator_dict = {default_resource_name: AccumulationStats(msg_count=0, last_insert_time=-1, data=[])}
+    accumulator_dict = {default_resource_name: AccumulationStats(msg_count=0, last_insert_time=time.time(), data=[])}
 
     def on_completed():
         final_df_references = []
@@ -202,7 +202,7 @@ def _write_to_vector_db(builder: mrc.Builder):
                     accumulator.data.append(df)
                 else:
                     accumulator_dict[msg_resource_target] = AccumulationStats(msg_count=df_size,
-                                                                              last_insert_time=-1,
+                                                                              last_insert_time=time.time(),
                                                                               data=[df])
 
                 for key, accum_stats in accumulator_dict.items():
