@@ -36,7 +36,7 @@ def openai_fixture(openai):
     yield openai
 
 
-@pytest.fixture(name="mock_chat_completion", autouse=False)
+@pytest.fixture(name="mock_chat_completion", autouse=True)
 def mock_chat_completion_fixture(mock_chat_completion):
     yield mock_chat_completion
 
