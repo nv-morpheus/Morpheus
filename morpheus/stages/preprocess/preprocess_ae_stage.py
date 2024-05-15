@@ -110,13 +110,13 @@ class PreprocessAEStage(PreprocessBaseStage):
             count = inputs.shape[0]
 
         seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
         seg_ids[:, 2] = fea_len - 1
 
         x.set_metadata("autoencoder", autoencoder)
         x.set_metadata("train_scores_mean", scores_mean)
         x.set_metadata("train_scores_std", scores_std)
-        x.tensors(CppTensorMemory(count=count, tensors={"input__0": data, "seq_ids": seg_ids}))
+        x.tensors(CppTensorMemory(count=count, tensors={"input": inputs, "seq_ids": seg_ids}))
         return x
 
     @staticmethod

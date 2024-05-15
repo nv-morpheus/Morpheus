@@ -53,7 +53,7 @@ def test_process_control_message_and_multi_message(config: Config):
 
     input_multi_ae_message = MultiAEMessage(meta=meta,
                                             mess_offset=0,
-                                            mess_count=2,
+                                            mess_count=3,
                                             model=None,
                                             train_scores_mean=0.0,
                                             train_scores_std=1.0)
@@ -61,13 +61,13 @@ def test_process_control_message_and_multi_message(config: Config):
     output_multi_inference_ae_message = stage.pre_process_batch(input_multi_ae_message,
                                                                 fea_len=256,
                                                                 feature_columns=["data"])
-
-    expected_seq_ids = cp.array([[0, 0, 255], [1, 0, 255]])
-    assert cp.array_equal(output_multi_inference_ae_message.seq_ids, expected_seq_ids)
-
-    # TODO(Yuchen): Check if the output message has identical tensors after supporting ControlMessage
+    
+    input_control_message = ControlMessage()
+    input_control_message.payload(meta)
+    
+    output_control_message = stage.pre_process_batch(input_control_message, fea_len=256, feature_columns=["data"])
 
     # Check if each tensor in the control message is equal to the corresponding tensor in the inference message
-    # for tensor_key in output_control_message.tensors().tensor_names:
-    #     assert cp.array_equal(output_control_message.tensors().get_tensor(tensor_key),
-    #                           getattr(output_infer_message, tensor_key))
+    for tensor_key in output_control_message.tensors().tensor_names:
+        assert cp.array_equal(output_control_message.tensors().get_tensor(tensor_key),
+                              getattr(output_multi_inference_ae_message, tensor_key))
