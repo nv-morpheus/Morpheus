@@ -18,6 +18,7 @@ __all__ = [
     "TypeId",
     "determine_file_type",
     "read_file_to_df",
+    "typeid_is_fully_supported",
     "typeid_to_numpy_str",
     "write_df_to_file"
 ]
@@ -199,8 +200,10 @@ def determine_file_type(filename: str) -> FileTypes:
     pass
 def read_file_to_df(filename: str, file_type: FileTypes = FileTypes.Auto) -> object:
     pass
+def typeid_is_fully_supported(arg0: TypeId) -> bool:
+    pass
 def typeid_to_numpy_str(arg0: TypeId) -> str:
     pass
 def write_df_to_file(df: object, filename: str, file_type: FileTypes = FileTypes.Auto, **kwargs) -> None:
     pass
-__version__ = '24.3.0'
+__version__ = '24.6.0'

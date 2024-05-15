@@ -104,7 +104,7 @@ The Helm chart (`morpheus-ai-engine`) that offers the auxiliary components requi
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-24.03.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-24.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
@@ -146,7 +146,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 Run the following command to pull the Morpheus SDK Client (referred to as Helm chart `morpheus-sdk-client`) on to your instance:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-24.03.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-24.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
 #### Morpheus SDK Client in Sleep Mode
@@ -184,7 +184,7 @@ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 The Morpheus MLflow Helm chart offers MLflow server with Triton plugin to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort `30500`. Follow the below steps to install the Morpheus MLflow:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-24.03.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-24.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
@@ -402,7 +402,7 @@ To publish messages to a Kafka topic, we need to copy datasets to locations wher
 kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
 ```
 
-Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/docs/source/basics/building_a_pipeline.md) documentation for more information regarding the commands.
+Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/docs/source/basics/building_a_pipeline.md) documentation for more information regarding the commands.
 
 > **Note**: Before running the example pipelines, ensure the criteria below are met:
 -   Ensure models specific to the pipeline are deployed.
@@ -725,7 +725,7 @@ On your AWS EC2 G4 instance, follow the instructions in the linked document to i
 
 ### Prerequisites
 1.  NVIDIA-Certified System
-2.  NVIDIA Pascal GPU or newer (Compute Capability >= 6.0)
+2.  NVIDIA Volta GPU or newer (Compute Capability >= 7.0)
 3.  Ubuntu 20.04 LTS or newer
 
 ## Installing Cloud Native Core Stack on NVIDIA Certified Systems
@@ -782,8 +782,8 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 
 ## Additional Documentation
 For more information on how to use the Morpheus Python API to customize and run your own optimized AI pipelines, Refer to below documentation.
-- [Morpheus Developer Guides](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/docs/source/developer_guide/guides.md)
-- [Morpheus Pipeline Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-24.03/examples)
+- [Morpheus Developer Guides](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/docs/source/developer_guide/guides.md)
+- [Morpheus Pipeline Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-24.06/examples)
 
 
 ## Troubleshooting

@@ -69,7 +69,7 @@ conda remove --force rdma-core
 
 To run the example from the Morpheus root directory and capture all TCP network traffic from the given NIC, use the following command and replace the `nic_addr` and `gpu_addr` arguments with your NIC and GPU PCIe addresses.
 ```
-# python examples/doca/run.py --nic_addr cc:00.1 --gpu_addr cf:00.0
+# python examples/doca/run.py --nic_addr cc:00.1 --gpu_addr cf:00.0 --traffic_type tcp
 ```
 ```
 ====Registering Pipeline====
@@ -118,3 +118,46 @@ Inference rate: 0 pkts [00:09, ? pkts/s]
 AddClass rate: 0 pkts [00:09, ? pkts/s]
 ```
 The output can be found in `doca_output.csv`
+
+## Running the Example for UDP traffic
+
+In case of UDP traffic, the sample will launch a simple pipeline with the DOCA Source Stage followed by a Monitor Stage to report number of received packets.
+Command line is similar to the TCP example.
+
+```
+python3 ./examples/doca/run.py --nic_addr 17:00.1 --gpu_addr ca:00.0 --traffic_type udp
+```
+UDP traffic can be easily sent with nping to the interface where Morpheus is listening:
+```
+nping --udp -c 100000 -p 4100 192.168.2.27 --data-length 1024 --delay 0.1ms
+```
+
+Morpheus output would be:
+```
+====Pipeline Pre-build====
+====Pre-Building Segment: linear_segment_0====
+====Pre-Building Segment Complete!====
+====Pipeline Pre-build Complete!====
+====Registering Pipeline====
+====Building Pipeline====
+EAL: Detected CPU lcores: 64
+EAL: Detected NUMA nodes: 2
+EAL: Detected shared linkage of DPDK
+EAL: Multi-process socket /var/run/dpdk/rte/mp_socket
+EAL: Selected IOVA mode 'PA'
+EAL: VFIO support initialized
+TELEMETRY: No legacy callbacks, legacy socket not created
+EAL: Probe PCI driver: mlx5_pci (15b3:a2dc) device: 0000:ca:00.0 (socket 1)
+EAL: Probe PCI driver: gpu_cuda (10de:2331) device: 0000:17:00.0 (socket 0)
+====Building Pipeline Complete!====
+DOCA GPUNetIO rate: 0 pkts [00:00, ? pkts/s]====Registering Pipeline Complete!====
+====Starting Pipeline====
+====Pipeline Started====
+====Building Segment: linear_segment_0====
+Added source: <from-doca-0; DocaSourceStage(nic_pci_address=ca:00.0, gpu_pci_address=17:00.0, traffic_type=udp)>
+  └─> morpheus.MessageMeta
+Added stage: <monitor-1; MonitorStage(description=DOCA GPUNetIO rate, smoothing=0.05, unit=pkts, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
+  └─ morpheus.MessageMeta -> morpheus.MessageMeta
+====Building Segment Complete!====
+DOCA GPUNetIO rate: 100000 pkts [00:12, 10963.39 pkts/s]
+```

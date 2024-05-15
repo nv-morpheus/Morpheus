@@ -33,7 +33,7 @@ def test_loader_registry_contains():
     loaders = DataLoaderRegistry.list()
     for loader in should_have:
         # Make sure all the loaders in the registry are in the list
-        assert (loader in loaders)
+        assert (loader in loaders)  # pylint: disable=unsupported-membership-test
 
         # Make sure all the loaders in the list are contained in the registry
         assert (DataLoaderRegistry.contains(loader))

@@ -39,7 +39,7 @@ def dask_distributed(fail_missing: bool):
 
 
 @pytest.fixture(name="config")
-def config_fixture(config):
+def config_fixture(config, use_cpp: bool):  # pylint: disable=unused-argument
     """
     The ransomware detection pipeline utilizes the FIL pipeline mode.
     """

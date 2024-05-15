@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,13 +17,18 @@
 
 #pragma once
 
-#include <cstdint>
+namespace morpheus::doca {
 
-uint32_t const PACKETS_PER_THREAD   = 4;
-uint32_t const THREADS_PER_BLOCK    = 512;
-uint32_t const PACKETS_PER_BLOCK    = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
-uint32_t const PACKET_RX_TIMEOUT_NS = 5000;
+/**
+ * @brief Initializes and manages the lifetime of a DPDK session.
+ *
+ * Must be initialized on a process' primary/root/starting thread.
+ */
+struct RTEContext
+{
+  public:
+    RTEContext();
+    ~RTEContext();
+};
 
-uint32_t const MAX_PKT_RECEIVE = PACKETS_PER_BLOCK;
-uint32_t const MAX_PKT_SIZE    = 8192;
-uint32_t const MAX_PKT_NUM     = 65536;
+}  // namespace morpheus::doca

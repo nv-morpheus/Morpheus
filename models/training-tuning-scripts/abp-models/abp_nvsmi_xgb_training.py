@@ -100,10 +100,10 @@ def save_model(model):
 #     print("Validation_score: ", acc)
 
 
-def main():
+def main(trainingdata):
     print('Preprocessing...')
     (x_train, x_test, y_train, y_test) = \
-        train_val_split(preprocess(args.trainingdata))
+        train_val_split(preprocess(trainingdata))
     print('Model Training...')
     model = train(x_train, x_test, y_train, y_test)
     print('Saving Model')
@@ -118,4 +118,4 @@ if __name__ == '__main__':
     parser.add_argument('--trainingdata', required=True, help='Labelled data in JSON format')
     args = parser.parse_args()
 
-    main()
+    main(args.trainingdata)

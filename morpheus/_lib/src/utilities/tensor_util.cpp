@@ -24,7 +24,6 @@
 #include <experimental/iterator>  // for make_ostream_joiner
 #include <ostream>      // for operator<<, ostream, stringstream
 #include <string>       // for char_traits, string
-#include <type_traits>  // for decay_t
 #include <vector>       // for vector
 
 namespace morpheus {

@@ -63,7 +63,7 @@ class RetrieverNode(LLMNodeBase):
 
         return ["query"]
 
-    async def execute(self, context: LLMContext):
+    async def execute(self, context: LLMContext):  # pylint: disable=invalid-overridden-method
         """
         Execute the retrieval process based on the provided context.
 

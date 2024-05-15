@@ -26,7 +26,7 @@
 
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
+#include <pybind11/embed.h>
 #include <unistd.h>
 
 #include <cstdlib>

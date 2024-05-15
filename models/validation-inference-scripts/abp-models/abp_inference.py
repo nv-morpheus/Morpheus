@@ -54,7 +54,7 @@ def infer(validationdata, model, output):
     df2.to_json(output, orient='records', lines=True)
 
 
-def main():
+def main(args):
 
     infer(args.validationdata, args.model, args.output)
 
@@ -64,6 +64,5 @@ if __name__ == "__main__":
     parser.add_argument("--validationdata", required=True, help="Labelled data in JSON format")
     parser.add_argument("--model", required=True, help="trained model")
     parser.add_argument("--output", required=True, help="output filename")
-    args = parser.parse_args()
 
-main()
+    main(parser.parse_args())

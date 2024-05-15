@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "doca_context.hpp"
-#include "error.hpp"
+#include "morpheus/doca/doca_context.hpp"
+#include "morpheus/doca/error.hpp"
 
 #include <doca_gpunetio.h>
 

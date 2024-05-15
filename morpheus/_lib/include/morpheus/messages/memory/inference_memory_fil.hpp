@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex
@@ -34,12 +35,11 @@ namespace morpheus {
  * @{
  * @file
  */
-
 /**
  * This is a container class for data that needs to be submitted to the inference server for FIL category
  * usecases.
  */
-class InferenceMemoryFIL : public InferenceMemory
+class MORPHEUS_EXPORT InferenceMemoryFIL : public InferenceMemory
 {
   public:
     /**
@@ -86,11 +86,10 @@ class InferenceMemoryFIL : public InferenceMemory
 };
 
 /****** InferenceMemoryFILInterfaceProxy *************************/
-#pragma GCC visibility push(default)
 /**
  * @brief Interface proxy, used to insulate python bindings
  */
-struct InferenceMemoryFILInterfaceProxy : public InferenceMemoryInterfaceProxy
+struct MORPHEUS_EXPORT InferenceMemoryFILInterfaceProxy : public InferenceMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize an InferenceMemoryFIL object, and return a shared pointer to the result
@@ -137,7 +136,5 @@ struct InferenceMemoryFILInterfaceProxy : public InferenceMemoryInterfaceProxy
      */
     static void set_seq_ids(InferenceMemoryFIL& self, pybind11::object cupy_values);
 };
-#pragma GCC visibility pop
-
 /** @} */  // end of group
 }  // namespace morpheus

@@ -205,7 +205,7 @@ class DirectoryWatcher():
         while True:
 
             try:
-                files, is_event = file_queue.get(timeout=self._batch_timeout)
+                files, is_event = file_queue.get(timeout=self._batch_timeout)  # pylint: disable=unpacking-non-sequence
 
                 if (is_event):
                     # We may be getting files one at a time from the folder watcher, wait a bit

@@ -20,6 +20,8 @@
 #include "mrc/segment/builder.hpp"
 #include "mrc/segment/object.hpp"
 
+#include "morpheus/messages/control.hpp"
+
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -31,18 +33,32 @@ namespace morpheus {
 
 // Component public implementations
 // ************ AddClassificationStage **************************** //
-AddClassificationsStage::AddClassificationsStage(std::map<std::size_t, std::string> idx2label, float threshold) :
-  AddScoresStageBase(std::move(idx2label), threshold)
+template <typename InputT, typename OutputT>
+AddClassificationsStage<InputT, OutputT>::AddClassificationsStage(std::map<std::size_t, std::string> idx2label,
+                                                                  float threshold) :
+  AddScoresStageBase<InputT, OutputT>(std::move(idx2label), threshold)
 {}
 
+template class AddClassificationsStage<MultiResponseMessage, MultiResponseMessage>;
+template class AddClassificationsStage<ControlMessage, ControlMessage>;
+
 // ************ AddClassificationStageInterfaceProxy ************* //
-std::shared_ptr<mrc::segment::Object<AddClassificationsStage>> AddClassificationStageInterfaceProxy::init(
+std::shared_ptr<mrc::segment::Object<AddClassificationsStageMM>> AddClassificationStageInterfaceProxy::init_multi(
     mrc::segment::Builder& builder,
     const std::string& name,
     std::map<std::size_t, std::string> idx2label,
     float threshold)
 {
-    return builder.construct_object<AddClassificationsStage>(name, idx2label, threshold);
+    return builder.construct_object<AddClassificationsStageMM>(name, idx2label, threshold);
+}
+
+std::shared_ptr<mrc::segment::Object<AddClassificationsStageCM>> AddClassificationStageInterfaceProxy::init_cm(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::map<std::size_t, std::string> idx2label,
+    float threshold)
+{
+    return builder.construct_object<AddClassificationsStageCM>(name, idx2label, threshold);
 }
 
 }  // namespace morpheus

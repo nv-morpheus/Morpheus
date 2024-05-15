@@ -18,13 +18,11 @@
 #include "morpheus/objects/wrapped_tensor.hpp"
 
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
-#include "morpheus/types.hpp"                  // for ShapeType
 #include "morpheus/utilities/cupy_util.hpp"
 
-#include <pybind11/cast.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 
-#include <array>    // needed for make_tuple
 #include <cstdint>  // for uintptr_t
 #include <utility>
 #include <vector>  // get_shape & get_stride return vectors

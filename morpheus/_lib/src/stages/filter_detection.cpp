@@ -17,13 +17,8 @@
 
 #include "morpheus/stages/filter_detection.hpp"  // IWYU pragma: accosiated
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/sink_properties.hpp"
-#include "mrc/node/source_properties.hpp"
 #include "mrc/segment/builder.hpp"
 #include "mrc/segment/object.hpp"
-#include "mrc/types.hpp"
 #include "pymrc/node.hpp"
 
 #include "morpheus/messages/multi_tensor.hpp"
@@ -53,6 +48,7 @@
 #include <ostream>  // needed for glog
 #include <string>
 #include <utility>  // for pair
+#include <vector>
 // IWYU thinks we need ext/new_allocator.h for size_t for some reason
 // IWYU pragma: no_include <ext/new_allocator.h>
 

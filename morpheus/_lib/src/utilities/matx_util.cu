@@ -105,10 +105,12 @@ struct MatxUtil__MatxCreateSegIds
         auto output_tensor = matx::make_tensor<OutputT>(static_cast<OutputT*>(output_data), shape);
 
         auto col0      = output_tensor.template Slice<1>({0, 0}, {matx::matxEnd, matx::matxDropDim});
+        auto col1      = output_tensor.template Slice<1>({0, 1}, {matx::matxEnd, matx::matxDropDim});
         auto col2      = output_tensor.template Slice<1>({0, 2}, {matx::matxEnd, matx::matxDropDim});
         auto range_col = matx::range<0, tensorShape_1d, OutputT>({element_count}, start_idx, 1);
 
         (col0 = range_col).run(stream.value());
+        (col1 = 0).run(stream.value());
         (col2 = fea_len - 1).run(stream.value());
     }
 };

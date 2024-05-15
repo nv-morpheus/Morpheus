@@ -17,12 +17,14 @@
 
 #pragma once
 
-#include <boost/asio/io_context.hpp>    // for io_context
-#include <boost/asio/ip/tcp.hpp>        // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
-#include <boost/beast/core/error.hpp>   // for error_code
-#include <boost/beast/http/verb.hpp>    // for verb
-#include <boost/system/error_code.hpp>  // for error_code
-#include <pybind11/pytypes.h>           // for pybind11::function
+#include "morpheus/export.h"  // for exporting symbols
+
+#include <boost/asio/io_context.hpp>   // for io_context
+#include <boost/asio/ip/tcp.hpp>       // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
+#include <boost/beast/core/error.hpp>  // for error_code
+#include <boost/beast/http/verb.hpp>   // for verb
+#include <boost/system/detail/error_code.hpp>
+#include <pybind11/pytypes.h>  // for pybind11::function
 
 #include <atomic>      // for atomic
 #include <chrono>      // for seconds
@@ -43,9 +45,8 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
+class MORPHEUS_EXPORT Listener;
 
-class Listener;
 using on_complete_cb_fn_t = std::function<void(const boost::system::error_code& /* error message */)>;
 
 /**
@@ -88,7 +89,7 @@ constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
  * @param max_payload_size The maximum size in bytes of the payload that the server will accept in a single request.
  * @param request_timeout The timeout for a request.
  */
-class HttpServer
+class MORPHEUS_EXPORT HttpServer
 {
   public:
     HttpServer(payload_parse_fn_t payload_parse_fn,
@@ -126,7 +127,7 @@ class HttpServer
  *
  * @details Constructed by the HttpServer class and should not be used directly.
  */
-class Listener : public std::enable_shared_from_this<Listener>
+class MORPHEUS_EXPORT Listener : public std::enable_shared_from_this<Listener>
 {
   public:
     Listener(boost::asio::io_context& io_context,
@@ -164,7 +165,7 @@ class Listener : public std::enable_shared_from_this<Listener>
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct HttpServerInterfaceProxy
+struct MORPHEUS_EXPORT HttpServerInterfaceProxy
 {
     static std::shared_ptr<HttpServer> init(pybind11::function py_parse_fn,
                                             std::string bind_address,
@@ -185,5 +186,4 @@ struct HttpServerInterfaceProxy
                      const pybind11::object& value,
                      const pybind11::object& traceback);
 };
-
 }  // namespace morpheus

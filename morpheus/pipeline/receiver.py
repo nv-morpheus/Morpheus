@@ -17,7 +17,7 @@ import typing
 
 import mrc
 
-import morpheus.pipeline as _pipeline
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.utils.type_utils import greatest_ancestor
 
 logger = logging.getLogger(__name__)

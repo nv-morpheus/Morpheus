@@ -72,10 +72,11 @@ jobs:
       pr_info: ${{ steps.get-pr-info.outcome == 'success' && steps.get-pr-info.outputs.pr-info || '' }}
 
   checks:
+    needs: [prepare]
+    # Only run the CI pipeline if the PR does not have the skip-ci label and we are on a PR branch
+    if: ${{ !fromJSON(needs.prepare.outputs.has_skip_ci_label) && fromJSON(needs.prepare.outputs.is_pr )}}
     secrets: inherit
     uses: rapidsai/shared-workflows/.github/workflows/checks.yaml@branch-24.02
-    # Only run the CI pipeline if the PR does not have the skip-ci label
-    if: ${{ ! fromJSON(needs.prepare.outputs.has_skip_ci_label) }}
     with:
       enable_check_generated_files: false
 

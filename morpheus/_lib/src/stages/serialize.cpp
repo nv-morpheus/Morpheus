@@ -17,23 +17,18 @@
 
 #include "morpheus/stages/serialize.hpp"
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/sink_properties.hpp"
-#include "mrc/node/source_properties.hpp"
 #include "mrc/segment/builder.hpp"
 #include "mrc/segment/object.hpp"
-#include "mrc/types.hpp"
-#include "pymrc/node.hpp"
 
 #include "morpheus/messages/meta.hpp"
-#include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/table_info.hpp"  // for TableInfo
 
 #include <exception>
-#include <functional>
 #include <memory>
 #include <string>
-#include <utility>  // for move
+#include <type_traits>  // for is_same_v
+#include <utility>      // for move
+
 // IWYU thinks basic_stringbuf & map are needed for the regex constructor
 // IWYU pragma: no_include <map>
 // IWYU pragma: no_include <sstream>
@@ -43,27 +38,29 @@ namespace morpheus {
 constexpr std::regex_constants::syntax_option_type RegexOptions =
     std::regex_constants::ECMAScript | std::regex_constants::icase;
 
-// Component public implementations
-// ************ WriteToFileStage **************************** //
-SerializeStage::SerializeStage(const std::vector<std::string>& include,
-                               const std::vector<std::string>& exclude,
-                               bool fixed_columns) :
-  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
+template <typename InputT>
+SerializeStage<InputT>::SerializeStage(const std::vector<std::string>& include,
+                                       const std::vector<std::string>& exclude,
+                                       bool fixed_columns) :
+  base_t(base_t::op_factory_from_sub_fn(build_operator())),
   m_fixed_columns{fixed_columns}
 {
     make_regex_objs(include, m_include);
     make_regex_objs(exclude, m_exclude);
 }
 
-void SerializeStage::make_regex_objs(const std::vector<std::string>& regex_strs, std::vector<std::regex>& regex_objs)
+template <typename InputT>
+void SerializeStage<InputT>::make_regex_objs(const std::vector<std::string>& regex_strs,
+                                             std::vector<std::regex>& regex_objs)
 {
     for (const auto& s : regex_strs)
     {
-        regex_objs.emplace_back(std::regex{s, RegexOptions});
+        regex_objs.emplace_back(s, RegexOptions);
     }
 }
 
-bool SerializeStage::match_column(const std::vector<std::regex>& patterns, const std::string& column) const
+template <typename InputT>
+bool SerializeStage<InputT>::match_column(const std::vector<std::regex>& patterns, const std::string& column) const
 {
     for (const auto& re : patterns)
     {
@@ -75,7 +72,8 @@ bool SerializeStage::match_column(const std::vector<std::regex>& patterns, const
     return false;
 }
 
-bool SerializeStage::include_column(const std::string& column) const
+template <typename InputT>
+bool SerializeStage<InputT>::include_column(const std::string& column) const
 {
     if (m_include.empty())
     {
@@ -87,12 +85,14 @@ bool SerializeStage::include_column(const std::string& column) const
     }
 }
 
-bool SerializeStage::exclude_column(const std::string& column) const
+template <typename InputT>
+bool SerializeStage<InputT>::exclude_column(const std::string& column) const
 {
     return match_column(m_exclude, column);
 }
 
-std::shared_ptr<SlicedMessageMeta> SerializeStage::get_meta(sink_type_t& msg)
+template <typename InputT>
+std::shared_ptr<SlicedMessageMeta> SerializeStage<InputT>::get_meta(sink_type_t& msg)
 {
     // If none of the columns match the include regex patterns or are all are excluded this has the effect
     // of including all of the rows since calling msg->get_meta({}) will return a view with all columns.
@@ -100,7 +100,19 @@ std::shared_ptr<SlicedMessageMeta> SerializeStage::get_meta(sink_type_t& msg)
     if (!m_fixed_columns || m_column_names.empty())
     {
         m_column_names.clear();
-        for (const auto& c : msg->get_meta().get_column_names())
+
+        std::vector<std::string> column_names;
+
+        if constexpr (std::is_same_v<InputT, MultiMessage>)
+        {
+            column_names = msg->get_meta().get_column_names();
+        }
+        else
+        {
+            column_names = msg->payload()->get_info().get_column_names();
+        }
+
+        for (const auto& c : column_names)
         {
             if (include_column(c) && !exclude_column(c))
             {
@@ -109,11 +121,19 @@ std::shared_ptr<SlicedMessageMeta> SerializeStage::get_meta(sink_type_t& msg)
         }
     }
 
-    return std::make_shared<SlicedMessageMeta>(
-        msg->meta, msg->mess_offset, msg->mess_offset + msg->mess_count, m_column_names);
+    if constexpr (std::is_same_v<InputT, MultiMessage>)
+    {
+        return std::make_shared<SlicedMessageMeta>(
+            msg->meta, msg->mess_offset, msg->mess_offset + msg->mess_count, m_column_names);
+    }
+    else
+    {
+        return std::make_shared<SlicedMessageMeta>(msg->payload(), 0, msg->payload()->count(), m_column_names);
+    }
 }
 
-SerializeStage::subscribe_fn_t SerializeStage::build_operator()
+template <typename InputT>
+SerializeStage<InputT>::subscribe_fn_t SerializeStage<InputT>::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
@@ -122,21 +142,41 @@ SerializeStage::subscribe_fn_t SerializeStage::build_operator()
 
                 output.on_next(std::move(next_meta));
             },
-            [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-            [&]() { output.on_completed(); }));
+            [&](std::exception_ptr error_ptr) {
+                output.on_error(error_ptr);
+            },
+            [&]() {
+                output.on_completed();
+            }));
     };
 }
 
-// ************ WriteToFileStageInterfaceProxy ************* //
-std::shared_ptr<mrc::segment::Object<SerializeStage>> SerializeStageInterfaceProxy::init(
+template class SerializeStage<MultiMessage>;
+template class SerializeStage<ControlMessage>;
+
+// ************ SerializeStageInterfaceProxy ************* //
+std::shared_ptr<mrc::segment::Object<SerializeStageMM>> SerializeStageInterfaceProxy::init_mm(
     mrc::segment::Builder& builder,
     const std::string& name,
     const std::vector<std::string>& include,
     const std::vector<std::string>& exclude,
     bool fixed_columns)
 {
-    auto stage = builder.construct_object<SerializeStage>(name, include, exclude, fixed_columns);
+    auto stage = builder.construct_object<SerializeStageMM>(name, include, exclude, fixed_columns);
 
     return stage;
 }
+
+std::shared_ptr<mrc::segment::Object<SerializeStageCM>> SerializeStageInterfaceProxy::init_cm(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    const std::vector<std::string>& include,
+    const std::vector<std::string>& exclude,
+    bool fixed_columns)
+{
+    auto stage = builder.construct_object<SerializeStageCM>(name, include, exclude, fixed_columns);
+
+    return stage;
+}
+
 }  // namespace morpheus

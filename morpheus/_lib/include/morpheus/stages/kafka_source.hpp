@@ -17,19 +17,15 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/types.hpp"
 
 #include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
 #include <cudf/io/types.hpp>
 #include <librdkafka/rdkafkacpp.h>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
-#include <mrc/types.hpp>
 #include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
@@ -55,9 +51,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
-
-class KafkaOAuthCallback : public RdKafka::OAuthBearerTokenRefreshCb
+class MORPHEUS_EXPORT KafkaOAuthCallback : public RdKafka::OAuthBearerTokenRefreshCb
 {
   public:
     KafkaOAuthCallback(const std::function<std::map<std::string, std::string>()>& oauth_callback);
@@ -70,7 +64,7 @@ class KafkaOAuthCallback : public RdKafka::OAuthBearerTokenRefreshCb
 /**
  * This class loads messages from the Kafka cluster by serving as a Kafka consumer.
  */
-class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
+class MORPHEUS_EXPORT KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
@@ -200,7 +194,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct KafkaSourceStageInterfaceProxy
+struct MORPHEUS_EXPORT KafkaSourceStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a KafkaSourceStage, and return the result
@@ -274,6 +268,5 @@ struct KafkaSourceStageInterfaceProxy
     static std::unique_ptr<KafkaOAuthCallback> make_kafka_oauth_callback(
         std::optional<pybind11::function>&& oauth_callback);
 };
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

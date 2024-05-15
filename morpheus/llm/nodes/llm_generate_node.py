@@ -43,7 +43,7 @@ class LLMGenerateNode(LLMNodeBase):
     def get_input_names(self) -> list[str]:
         return self._llm_client.get_input_names()
 
-    async def execute(self, context: LLMContext) -> LLMContext:
+    async def execute(self, context: LLMContext) -> LLMContext:  # pylint: disable=invalid-overridden-method
 
         # Get the inputs
         inputs: dict[str, list[str]] = context.get_inputs()

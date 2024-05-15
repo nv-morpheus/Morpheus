@@ -54,7 +54,7 @@ def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame], input_s
 
     """
 
-    from morpheus.utils import schema_transforms
+    from morpheus.utils import schema_transforms  # pylint: disable=cyclic-import
     return schema_transforms.process_dataframe(df_in, input_schema)
 
 

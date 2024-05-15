@@ -135,13 +135,14 @@ def _build_default_rss_source(enable_cache,
             "output_batch_size": 2048,
             "cache_dir": "./.cache/http",
             "cooldown_interval_sec": interval_secs,
-            "stop_after_sec": stop_after,
+            "stop_after_rec": stop_after or 0,
             "enable_cache": enable_cache,
             "enable_monitor": enable_monitors,
             "feed_input": feed_inputs if feed_inputs else build_rss_urls(),
             "interval_sec": interval_secs,
             "request_timeout_sec": rss_request_timeout_sec,
             "run_indefinitely": run_indefinitely,
+            "strip_markup": True,
             "vdb_resource_name": vector_db_resource_name,
             "web_scraper_config": {
                 "chunk_size": content_chunking_size,
@@ -315,14 +316,15 @@ def build_cli_configs(source_type,
     cli_vdb_conf = {
         # Vector db upload has some significant transaction overhead, batch size here should be as large as possible
         'batch_size': 16384,
-        'resource_name': vector_db_resource_name,
         'embedding_size': embedding_size,
         'recreate': True,
+        'resource_name': vector_db_resource_name,
         'resource_schemas': {
             vector_db_resource_name:
                 build_defualt_milvus_config(embedding_size) if (vector_db_service == 'milvus') else None,
         },
         'service': vector_db_service,
+        'truncate_long_strings': True,
         'uri': vector_db_uri,
     }
 
@@ -448,7 +450,7 @@ def build_final_config(vdb_conf_path,
                                       interval_secs=60,
                                       run_indefinitely=True,
                                       stop_after=None,
-                                      vector_db_resource_name="VDBUploadExample",
+                                      vector_db_resource_name="RSS",
                                       content_chunking_size=128,
                                       rss_request_timeout_sec=30,
                                       feed_inputs=build_rss_urls()))

@@ -13,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM rapidsai/devcontainers:23.12-cpp-cuda12.1-mambaforge-ubuntu22.04 AS base
+FROM rapidsai/devcontainers:23.12-cpp-mambaforge-ubuntu22.04 AS base
+
+ENV MORPHEUS_SUPPORT_DOCA=ON
+
+COPY ./docker/optional_deps docker/optional_deps
+RUN ./docker/optional_deps/doca.sh /tmp/doca
 
 ENV PATH="${PATH}:/workspaces/morpheus/.devcontainer/bin"

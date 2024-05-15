@@ -17,26 +17,31 @@
 
 #pragma once
 
-#include <SimpleAmqpClient/SimpleAmqpClient.h>  // for AmqpClient::Channel::ptr_t
-#include <cudf/io/types.hpp>                    // for cudf::io::table_with_metadata
-#include <morpheus/messages/meta.hpp>           // for MessageMeta
-#include <mrc/segment/builder.hpp>              // for Segment Builder
-#include <mrc/segment/object.hpp>               // for Segment Object
-#include <pymrc/node.hpp>                       // for mrc::pymrc::PythonSource
+#include <SimpleAmqpClient/Channel.h>
+#include <cudf/io/types.hpp>           // for cudf::io::table_with_metadata
+#include <morpheus/export.h>           // for exporting symbols
+#include <morpheus/messages/meta.hpp>  // for MessageMeta
+#include <mrc/segment/builder.hpp>     // for Segment Builder
+#include <mrc/segment/object.hpp>      // for Segment Object
+#include <pymrc/node.hpp>              // for mrc::pymrc::PythonSource
+#include <rxcpp/rx.hpp>
 
 #include <chrono>  // for chrono::milliseconds
 #include <memory>  // for shared_ptr
 #include <string>
+#include <string_view>
+#include <thread>
+
+// IWYU pragma: no_include "morpheus/objects/data_table.hpp"
+// IWYU pragma: no_include <boost/fiber/context.hpp>
 
 namespace morpheus_rabbit {
-
-// pybind11 sets visibility to hidden by default; we want to export our symbols
-#pragma GCC visibility push(default)
 
 using namespace std::literals;
 using namespace morpheus;
 
-class RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
+// pybind11 sets visibility to hidden by default; we want to export our symbols
+class MORPHEUS_EXPORT RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
@@ -66,7 +71,7 @@ class RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Mess
 /**
  * @brief Interface proxy, used to insulate Python bindings.
  */
-struct RabbitMQSourceStageInterfaceProxy
+struct MORPHEUS_EXPORT RabbitMQSourceStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a RabbitMQSourceStage, and return the result.
@@ -79,5 +84,5 @@ struct RabbitMQSourceStageInterfaceProxy
                                                                            const std::string& queue_name,
                                                                            std::chrono::milliseconds poll_interval);
 };
-#pragma GCC visibility pop
+
 }  // namespace morpheus_rabbit

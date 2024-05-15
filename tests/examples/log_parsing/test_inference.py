@@ -24,7 +24,6 @@ import pytest
 
 from _utils import TEST_DIRS
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceNLPMessage
@@ -96,7 +95,7 @@ def build_inf_message(df: DataFrameType,
                                     count=count)
 
 
-def _check_worker(inference_mod: types.ModuleType, worker: TritonInferenceWorker, expected_mapping: dict[str, str]):
+def _check_worker(inference_mod: types.ModuleType, worker: TritonInferenceWorker):
     assert isinstance(worker, TritonInferenceWorker)
     assert isinstance(worker, inference_mod.TritonInferenceLogParsing)
     assert worker._model_name == 'test_model'
@@ -104,7 +103,6 @@ def _check_worker(inference_mod: types.ModuleType, worker: TritonInferenceWorker
     assert not worker._force_convert_inputs
     assert not worker._use_shared_memory
     assert worker.needs_logits
-    assert worker._inout_mapping == expected_mapping
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
@@ -117,10 +115,10 @@ def test_log_parsing_triton_inference_log_parsing_constructor(config: Config,
                                                      server_url='test_server',
                                                      force_convert_inputs=False,
                                                      use_shared_memory=False,
-                                                     inout_mapping={'test': 'this'},
+                                                     input_mapping={'test': 'this'},
                                                      needs_logits=True)
 
-    _check_worker(inference_mod, worker, {'test': 'this'})
+    _check_worker(inference_mod, worker)
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
@@ -165,37 +163,6 @@ def test_log_parsing_triton_inference_log_parsing_build_output_message(config: C
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
-def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typing.List[types.ModuleType]):
-    inference_mod = import_mod[0]
-
-    expected_kwargs = {
-        "model_name":
-            'test_model',
-        "server_url":
-            'test_server',
-        "force_convert_inputs":
-            False,
-        "use_shared_memory":
-            False,
-        "needs_logits":
-            True,
-        "inout_mapping":
-            inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP, {}),
-    }
-
-    stage = inference_mod.LogParsingInferenceStage(
-        config,
-        model_name='test_model',
-        server_url='test_server',
-        force_convert_inputs=False,
-        use_shared_memory=False,
-    )
-
-    assert stage._config is config
-    assert stage._kwargs == expected_kwargs
-
-
-@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
 def test_log_parsing_inference_stage_get_inference_worker(config: Config, import_mod: typing.List[types.ModuleType]):
     inference_mod = import_mod[0]
 
@@ -206,12 +173,8 @@ def test_log_parsing_inference_stage_get_inference_worker(config: Config, import
                                                    use_shared_memory=False,
                                                    inout_mapping={'test': 'this'})
 
-    expected_mapping = inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(
-        PipelineModes.NLP, {})
-    expected_mapping.update({'test': 'this'})
-
     worker = stage._get_inference_worker(inf_queue=ProducerConsumerQueue())
-    _check_worker(inference_mod, worker, expected_mapping)
+    _check_worker(inference_mod, worker)
 
 
 @pytest.mark.use_cudf

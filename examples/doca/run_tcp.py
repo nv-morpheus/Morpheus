@@ -20,6 +20,7 @@ from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -32,12 +33,6 @@ from morpheus.utils.logger import configure_logging
 
 
 @click.command()
-@click.option(
-    "--num_threads",
-    default=1,
-    type=click.IntRange(min=1),
-    help="Number of internal pipeline threads to use",
-)
 @click.option(
     "--pipeline_batch_size",
     default=1024,
@@ -72,8 +67,7 @@ from morpheus.utils.logger import configure_logging
     help="GPU PCI Address",
     required=True,
 )
-def run_pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_fea_length, out_file, nic_addr,
-                 gpu_addr):
+def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, out_file, nic_addr, gpu_addr):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 
@@ -83,7 +77,7 @@ def run_pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_f
     config.mode = PipelineModes.NLP
 
     # Below properties are specified by the command line
-    config.num_threads = num_threads
+    config.num_threads = 1
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
     config.feature_length = model_fea_length
@@ -107,34 +101,33 @@ def run_pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_f
     pipeline = LinearPipeline(config)
 
     # add doca source stage
-    pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr))
-    pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
+    pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'tcp'))
+    pipeline.add_stage(DocaConvertStage(config))
 
     # add deserialize stage
     pipeline.add_stage(DeserializeStage(config))
     pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
 
+    hashfile = 'data/bert-base-uncased-hash.txt'
+
     # add preprocessing stage
     pipeline.add_stage(
-        PreprocessNLPStage(
-            config,
-            vocab_hash_file='/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
-            do_lower_case=True,
-            truncation=True,
-            add_special_tokens=False,
-            column='data'))
+        PreprocessNLPStage(config,
+                           vocab_hash_file=hashfile,
+                           do_lower_case=True,
+                           truncation=True,
+                           add_special_tokens=False,
+                           column='data'))
 
     pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
 
     # add inference stage
     pipeline.add_stage(
-        TritonInferenceStage(
-            config,
-            # model_name="sid-minibert-trt",
-            model_name="sid-minibert-onnx",
-            server_url="localhost:8000",
-            force_convert_inputs=True,
-            use_shared_memory=True))
+        TritonInferenceStage(config,
+                             model_name="sid-minibert-onnx",
+                             server_url="localhost:8000",
+                             force_convert_inputs=True,
+                             use_shared_memory=True))
 
     pipeline.add_stage(MonitorStage(config, description="Inference rate", unit='pkts'))
 

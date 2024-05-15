@@ -15,9 +15,25 @@
 All objects related to building and running a pipeline.
 """
 
+# Note: The pipeline module is unique in that we re-export all of the classes and functions from the submodules. To
+# avoid circular imports, we must import the classes in a specific order. And in each submodule, we should never import
+# the from pipeline submodules. Instead, we should import from the parent module as a namespace packag and then use the
+# fully qualified name to access the classes. For example, in morpheus/pipeline/stage.py:
+# Do not do this:
+# ```
+# from morpheus.pipeline.stage_base import StageBase
+# ```
+# Instead, do this:
+# ```
+# import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
+# class Stage(_pipeline.StageBase):
+# ```
+
 # These must be imported in a specific order
 # isort: off
 
+from morpheus.pipeline.boundary_stage_mixin import BoundaryStageMixin
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.stage_schema import PortSchema
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.pipeline.sender import Sender

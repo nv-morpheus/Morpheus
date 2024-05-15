@@ -68,7 +68,7 @@ def test_get_module():
     assert fn_constructor is not None
 
     config = {}
-    fn_constructor("FromControlMessageTest", config)
+    fn_constructor("FromControlMessageTest", config)  # pylint: disable=not-callable
 
 
 @pytest.mark.use_cpp

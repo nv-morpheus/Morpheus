@@ -44,6 +44,7 @@ set_target_properties(test_cuda
 add_library(
   morpheus_test_utilities
     test_utils/common.cpp
+    test_utils/tensor_utils.cpp
 )
 
 target_link_libraries(
@@ -51,6 +52,12 @@ target_link_libraries(
   PUBLIC
     GTest::gtest
     morpheus
+)
+
+# Ensure that the python executable is defined for the tests
+target_compile_definitions(morpheus_test_utilities
+  PRIVATE
+    PYTHON_EXECUTABLE="${PYTHON_EXECUTABLE}"
 )
 
 # Morpheus Tests
@@ -98,12 +105,19 @@ add_morpheus_test(
     messages/test_control_message.cpp
     messages/test_dev_doc_ex3.cpp
     messages/test_sliced_message_meta.cpp
+    messages/test_message_meta.cpp
 )
 
 add_morpheus_test(
   NAME modules
   FILES
     modules/test_data_loader_module.cpp
+)
+
+add_morpheus_test(
+  NAME objects
+  FILES
+    objects/test_dtype.cpp
 )
 
 add_morpheus_test(
@@ -149,15 +163,36 @@ add_morpheus_test(
 )
 
 add_morpheus_test(
+  NAME stages
+  FILES
+    stages/test_preprocess_nlp.cpp
+    stages/test_preprocess_fil.cpp
+    stages/test_add_scores.cpp
+    stages/test_add_classification.cpp
+)
+
+add_morpheus_test(
   NAME tensor
   FILES
     test_tensor.cpp
 )
 
 add_morpheus_test(
+  NAME triton_inference_stage
+  FILES
+    stages/test_triton_inference_stage.cpp
+)
+
+add_morpheus_test(
   NAME type_util
   FILES
     test_type_util.cpp
+)
+
+add_morpheus_test(
+  NAME table_util
+  FILES
+    utilities/test_table_util.cpp
 )
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

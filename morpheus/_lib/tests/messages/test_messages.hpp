@@ -19,7 +19,26 @@
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 
+#include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
+
+#include <pybind11/gil.h>
+
 namespace morpheus::test {
 
-using TestControlMessage = TestWithPythonInterpreter;  // NOLINT
+class TestMessages : public morpheus::test::TestWithPythonInterpreter
+{
+  protected:
+    void SetUp() override
+    {
+        morpheus::test::TestWithPythonInterpreter::SetUp();
+        {
+            pybind11::gil_scoped_acquire gil;
+
+            // Initially I ran into an issue bootstrapping cudf, I was able to work-around the issue, details in:
+            // https://github.com/rapidsai/cudf/issues/12862
+            CudfHelper::load();
+        }
+    }
+};
+
 }  // namespace morpheus::test

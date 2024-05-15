@@ -25,6 +25,7 @@
 #include "morpheus/types.hpp"                      // for ShapeType, TensorIndex
 #include "morpheus/utilities/tensor_util.hpp"      // for TensorUtils
 
+#include <cuda/memory_resource>
 #include <cuda_runtime.h>
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
 #include <mrc/cuda/common.hpp>
@@ -36,6 +37,7 @@
 #include <memory>   // shared_ptr
 #include <string>   // for allocator, operator==, basic_string, string
 #include <vector>   // for vector
+
 // IWYU pragma: no_include "morpheus/utilities/string_util.hpp"
 // IWYU thinks we need ext/new_allocator.h for size_t for some reason
 // IWYU pragma: no_include <ext/new_allocator.h>

@@ -66,7 +66,7 @@ class PromptTemplateNode(LLMNodeBase):
     def get_input_names(self):
         return self._input_names
 
-    async def execute(self, context: LLMContext):
+    async def execute(self, context: LLMContext):  # pylint: disable=invalid-overridden-method
 
         # Get the keys from the task
         input_dict = context.get_inputs()

@@ -32,6 +32,10 @@
         void SetUp() override {}                                                     \
     }
 
+#define TEST_CLASS_WITH_PYTHON(name)                                                                           \
+    class __attribute__((visibility("default"))) Test##name : public morpheus::test::TestWithPythonInterpreter \
+    {}
+
 namespace morpheus {
 class MessageMeta;
 }

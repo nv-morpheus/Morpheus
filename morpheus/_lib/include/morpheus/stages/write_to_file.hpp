@@ -17,28 +17,21 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/file_types.hpp"
 
 #include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/sink_properties.hpp>
-#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
-#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
 #include <fstream>
 #include <functional>  // for function
-#include <map>
 #include <memory>
 #include <string>
 #include <thread>
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -50,12 +43,12 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
 /**
  * @brief Write all messages to a file. Messages are written to a file by this class.
  * This class does not maintain an open file or buffer messages.
  */
-class WriteToFileStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
+class MORPHEUS_EXPORT WriteToFileStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>;
@@ -118,7 +111,7 @@ class WriteToFileStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct WriteToFileStageInterfaceProxy
+struct MORPHEUS_EXPORT WriteToFileStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a WriteToFileStage, and return the result
@@ -140,7 +133,5 @@ struct WriteToFileStageInterfaceProxy
                                                                         bool include_index_col  = true,
                                                                         bool flush              = false);
 };
-
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

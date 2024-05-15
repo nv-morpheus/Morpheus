@@ -21,36 +21,35 @@
 
 #include "pymrc/utilities/function_wrappers.hpp"  // for PyFuncWrapper
 
-#include <boost/asio.hpp>                         // for dispatch, make_address
-#include <boost/asio/basic_socket_acceptor.hpp>   // for basic_socket_acceptor<>::executor_type
-#include <boost/asio/basic_stream_socket.hpp>     // for basic_stream_socket
-#include <boost/asio/execution/any_executor.hpp>  // for any_executor
-#include <boost/asio/ip/tcp.hpp>                  // for acceptor, endpoint, socket,
+#include <boost/asio.hpp>  // for dispatch, make_address
+#include <boost/asio/any_io_executor.hpp>
+#include <boost/asio/basic_socket_acceptor.hpp>  // for basic_socket_acceptor<>::executor_type
+#include <boost/asio/basic_stream_socket.hpp>    // for basic_stream_socket
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/ip/tcp.hpp>       // for acceptor, endpoint, socket,
 #include <boost/asio/socket_base.hpp>  // for socket_base::reuse_address, socket_base, socket_base::max_listen_connections
 #include <boost/asio/strand.hpp>       // for strand, make_strand, operator==
 #include <boost/beast/core.hpp>        // for bind_front_handler, error_code, flat_buffer, tcp_stream
-#include <boost/beast/core/basic_stream.hpp>  // for basic_stream<>::socket_type
 #include <boost/beast/core/bind_handler.hpp>  // for bind_front_handler
 #include <boost/beast/core/error.hpp>         // for error_code
 #include <boost/beast/core/flat_buffer.hpp>   // for flat_buffer
-#include <boost/beast/core/string_type.hpp>   // for string_view
-#include <boost/beast/core/tcp_stream.hpp>    // for tcp_stream
-#include <boost/beast/http.hpp>               // for read_async, request, response, verb, write_async
-#include <boost/beast/http/error.hpp>         // for error, error::end_of_stream
-#include <boost/beast/http/field.hpp>         // for field, field::content_type
-#include <boost/beast/http/message.hpp>       // for message, response, request
-#include <boost/beast/http/parser.hpp>        // for request_parser, parser
-#include <boost/beast/http/status.hpp>        // for status, status::not_found
-#include <boost/beast/http/string_body.hpp>   // for string_body, basic_string_body, basic_string_body<>::value_type
-#include <boost/beast/http/verb.hpp>          // for verb, operator<<, verb::unknown
-#include <boost/utility/string_view.hpp>      // for basic_string_view, operator<<, operator==
-#include <glog/logging.h>                     // for CHECK and LOG
-#include <pybind11/cast.h>                    // for cast
+#include <boost/beast/core/rate_policy.hpp>
+#include <boost/beast/core/tcp_stream.hpp>  // for tcp_stream
+#include <boost/beast/http.hpp>             // for read_async, request, response, verb, write_async
+#include <boost/beast/http/error.hpp>       // for error, error::end_of_stream
+#include <boost/beast/http/field.hpp>       // for field, field::content_type
+#include <boost/beast/http/fields.hpp>
+#include <boost/beast/http/message.hpp>      // for message, response, request
+#include <boost/beast/http/parser.hpp>       // for request_parser, parser
+#include <boost/beast/http/status.hpp>       // for status, status::not_found
+#include <boost/beast/http/string_body.hpp>  // for string_body, basic_string_body, basic_string_body<>::value_type
+#include <boost/beast/http/verb.hpp>         // for verb, operator<<, verb::unknown
+#include <boost/core/detail/string_view.hpp>
+#include <glog/logging.h>  // for CHECK and LOG
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
 #include <pybind11/pytypes.h>
 
-#include <array>        // for array (indirectly used by the wrapped python callback function)
 #include <exception>    // for exception
 #include <ostream>      // needed for glog
 #include <stdexcept>    // for runtime_error, length_error

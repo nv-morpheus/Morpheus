@@ -67,7 +67,7 @@ class LLMContext():
     def get_input(self) -> object: ...
     @typing.overload
     def get_input(self, node_name: str) -> object: ...
-    def get_inputs(self) -> dict: ...
+    def get_inputs(self) -> object: ...
     def message(self) -> morpheus._lib.messages.ControlMessage: ...
     def push(self, name: str, inputs: typing.List[InputMap]) -> LLMContext: ...
     @typing.overload
@@ -210,7 +210,7 @@ class LLMTaskHandler():
     def __init__(self) -> None: ...
     def get_input_names(self) -> typing.List[str]: 
         """
-        Get the input names for the task handler. 
+        Get the input names for the task handler.
 
         Returns
         -------
@@ -231,4 +231,4 @@ class LLMTaskHandler():
         Task[Optional[list[ControlMessage]]]
         """
     pass
-__version__ = '24.3.0'
+__version__ = '24.6.0'

@@ -15,10 +15,8 @@
 import logging
 import typing
 
-import morpheus.pipeline as _pipeline
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
-from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryEgressStage
-from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryIngressStage
 
 SinglePortStageT = typing.TypeVar("SinglePortStageT", bound=_pipeline.SinglePortStage)
 SourceT = typing.TypeVar("SourceT", bound=_pipeline.SourceStage)
@@ -138,6 +136,12 @@ class LinearPipeline(_pipeline.Pipeline):
         >>>
         >>> pipe.run()
         """
+
+        # Local imports to avoid circular dependencies
+        # pylint:disable=cyclic-import
+        from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryEgressStage
+        from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryIngressStage
+
         assert as_shared_pointer is False, "Shared pointers are not currently supported"
 
         if (len(self._linear_stages) == 0):

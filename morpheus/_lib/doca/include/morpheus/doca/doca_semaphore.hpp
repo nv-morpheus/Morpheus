@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,8 +17,11 @@
 
 #pragma once
 
-#include "doca_context.hpp"
+#include "morpheus/doca/doca_context.hpp"
 
+#include <doca_gpunetio.h>
+
+#include <cstdint>
 #include <memory>
 
 namespace morpheus::doca {
@@ -43,6 +46,9 @@ struct DocaSemaphore
 
     doca_gpu_semaphore_gpu* gpu_ptr();
     uint16_t size();
+    void* get_info_cpu(uint32_t idx);
+    bool is_ready(uint32_t idx);
+    void set_free(uint32_t idx);
 };
 
 }  // namespace morpheus::doca

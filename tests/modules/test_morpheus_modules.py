@@ -66,7 +66,7 @@ def test_get_module():
     assert fn_constructor is not None
 
     config = {}
-    # pylint: disable=unused-variable
+    # pylint: disable=unused-variable,not-callable
     module_instance = fn_constructor("ModuleDataLoaderTest", config)  # noqa: F841 -- we don't need to use it
 
 
