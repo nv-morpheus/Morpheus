@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"                          // for exporting symbols
 #include "morpheus/messages/control.hpp"              // for ControlMessage
 #include "morpheus/messages/multi_response.hpp"       // for MultiResponseMessage
 #include "morpheus/stages/add_scores_stage_base.hpp"  // for AddScoresStageBase
@@ -41,13 +42,12 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
 /**
  * @brief Add detected classifications to each message. Classification labels based on probabilities calculated in
  * inference stage. Label indexes will be looked up in the idx2label property.
  */
 template <typename InputT, typename OutputT>
-class AddClassificationsStage : public AddScoresStageBase<InputT, OutputT>
+class MORPHEUS_EXPORT AddClassificationsStage : public AddScoresStageBase<InputT, OutputT>
 {
   public:
     /**
@@ -68,7 +68,7 @@ using AddClassificationsStageCM =  // NOLINT(readability-identifier-naming)
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct AddClassificationStageInterfaceProxy
+struct MORPHEUS_EXPORT AddClassificationStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a AddClassificationStage that receives MultiResponseMessage and emits
@@ -103,7 +103,5 @@ struct AddClassificationStageInterfaceProxy
         std::map<std::size_t, std::string> idx2label,
         float threshold);
 };
-
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

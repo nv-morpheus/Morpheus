@@ -23,6 +23,8 @@
 #include <rte_eal.h>
 
 #include <array>
+#include <ostream>
+#include <vector>
 
 namespace morpheus::doca {
 

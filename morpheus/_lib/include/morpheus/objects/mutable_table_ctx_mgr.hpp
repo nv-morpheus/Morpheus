@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/table_info.hpp"
 
@@ -31,8 +32,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
-class MutableTableCtxMgr
+class MORPHEUS_EXPORT MutableTableCtxMgr
 {
   public:
     MutableTableCtxMgr(MessageMeta& meta_msg);
@@ -47,7 +47,5 @@ class MutableTableCtxMgr
     std::unique_ptr<MutableTableInfo> m_table;
     std::unique_ptr<pybind11::object> m_py_table;
 };
-
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

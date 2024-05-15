@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/filter_source.hpp"
@@ -43,7 +44,6 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
 /**
  * @brief FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor or dataframe column
  * using a specified criteria. Rows in the `meta` dataframe are excluded if their associated value in the datasource
@@ -68,7 +68,7 @@ namespace morpheus {
  * Depending on the downstream stages, this can cause performance issues, especially if those stages need to acquire
  * the Python GIL.
  */
-class FilterDetectionsStage
+class MORPHEUS_EXPORT FilterDetectionsStage
   : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
@@ -105,7 +105,7 @@ class FilterDetectionsStage
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct FilterDetectionStageInterfaceProxy
+struct MORPHEUS_EXPORT FilterDetectionStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a FilterDetectionStage, and return the result
@@ -126,7 +126,5 @@ struct FilterDetectionStageInterfaceProxy
                                                                              FilterSource filter_source,
                                                                              std::string field_name);
 };
-
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

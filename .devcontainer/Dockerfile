@@ -15,4 +15,9 @@
 
 FROM rapidsai/devcontainers:23.12-cpp-mambaforge-ubuntu22.04 AS base
 
+ENV MORPHEUS_SUPPORT_DOCA=ON
+
+COPY ./docker/optional_deps docker/optional_deps
+RUN ./docker/optional_deps/doca.sh /tmp/doca
+
 ENV PATH="${PATH}:/workspaces/morpheus/.devcontainer/bin"
