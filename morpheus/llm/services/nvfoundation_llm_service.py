@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 import logging
 import os
-import typing
 
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.llm_service import LLMService
@@ -31,7 +29,6 @@ IMPORT_ERROR_MESSAGE = (
 try:
     from langchain_core.prompt_values import StringPromptValue
     from langchain_nvidia_ai_endpoints import ChatNVIDIA
-    from langchain_nvidia_ai_endpoints._common import NVEModel
 except ImportError as import_exc:
     IMPORT_EXCEPTION = import_exc
 

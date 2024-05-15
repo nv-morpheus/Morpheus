@@ -114,7 +114,9 @@ class OpenAIChatClient(LLMClient):
 
         # Create the client objects for both sync and async
         self._client = openai.OpenAI(api_key=parent._api_key, base_url=parent._base_url, max_retries=max_retries)
-        self._client_async = openai.AsyncOpenAI(api_key=parent._api_key, base_url=parent._base_url, max_retries=max_retries)
+        self._client_async = openai.AsyncOpenAI(api_key=parent._api_key,
+                                                base_url=parent._base_url,
+                                                max_retries=max_retries)
 
     def get_input_names(self) -> list[str]:
         input_names = [self._prompt_key]
