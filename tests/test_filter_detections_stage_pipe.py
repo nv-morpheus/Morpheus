@@ -74,8 +74,6 @@ def _test_filter_detections_stage_pipe(config: Config,
 
 def _test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pandas: DatasetManager, copy: bool = True):
     threshold = 0.75
-    # print("expected2")
-    # print(build_expected(dataset_pandas["filter_probs.csv"], threshold))
 
     input_df = dataset_pandas["filter_probs.csv"]
     pipe = LinearPipeline(config)
