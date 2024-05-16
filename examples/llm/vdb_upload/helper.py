@@ -107,6 +107,45 @@ def setup_filesystem_source(pipe: Pipeline, config: Config, source_name: str, fs
     return file_pipe
 
 
+# pylint: disable=unused-argument
+def setup_doca_source(pipe: Pipeline, config: Config, source_name: str, stage_config: typing.Dict[str, typing.Any]):
+    """
+    Set up the DOCA source stage in the pipeline.
+
+    Parameters
+    ----------
+    pipe : Pipeline
+        The pipeline to which the DOCA source stage will be added.
+    config : Config
+        Configuration object for the pipeline.
+    source_name : str
+        The name of the DOCA source stage.
+    stage_config : typing.Dict[str, Any]
+        Configuration parameters for the DOCA source stage.
+
+    Returns
+    -------
+    SubPipeline
+        The sub-pipeline stage created for the DOCA source.
+    """
+    from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
+    from morpheus.stages.doca.doca_source_stage import DocaSourceStage
+    from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+
+    source_stage = pipe.add_stage(
+        DocaSourceStage(config,
+                        stage_config.pop('nic_addr'),
+                        stage_config.pop('gpu_addr'),
+                        stage_config.pop('traffic_type')))
+    convert_stage = pipe.add_stage(DocaConvertStage(config))
+    deserialize_stage = pipe.add_stage(DeserializeStage(config))
+
+    pipe.add_edge(source_stage, convert_stage)
+    pipe.add_edge(convert_stage, deserialize_stage)
+
+    return deserialize_stage
+
+
 def setup_custom_source(pipe: Pipeline, config: Config, source_name: str, custom_config: typing.Dict[str, typing.Any]):
     """
     Setup a custom source stage in the pipeline.
@@ -191,6 +230,8 @@ def process_vdb_sources(pipe: Pipeline, config: Config, vdb_source_config: typin
             vdb_sources.append(setup_filesystem_source(pipe, config, source_name, source_config))
         elif (source_type == 'custom'):
             vdb_sources.append(setup_custom_source(pipe, config, source_name, source_config))
+        elif (source_type == 'doca'):
+            vdb_sources.append(setup_doca_source(pipe, config, source_name, source_config))
         else:
             raise ValueError(f"Unsupported source type: {source_type}")
 

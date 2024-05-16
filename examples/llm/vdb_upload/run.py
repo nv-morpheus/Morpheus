@@ -103,8 +103,8 @@ def run():
     help="Timeout in seconds for RSS feed requests.")
 @click.option("--source_type",
               multiple=True,
-              type=click.Choice(['rss', 'filesystem'], case_sensitive=False),
-              default=['rss'],
+              type=click.Choice(['rss', 'filesystem', 'doca'], case_sensitive=False),
+              default=[],
               show_default=True,
               help="The type of source to use. Can specify multiple times for different source types.")
 @click.option(
