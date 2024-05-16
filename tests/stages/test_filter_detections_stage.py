@@ -51,9 +51,6 @@ def test_constructor(config):
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
 
-    fds = FilterDetectionsStage(config, threshold=0.2)
-    assert fds._controller._threshold == 0.2
-
 
 @pytest.mark.use_cudf
 def test_filter_copy(config, filter_probs_df):

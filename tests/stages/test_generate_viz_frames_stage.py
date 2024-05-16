@@ -13,17 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 import cupy as cp
+import typing_utils
 
 import cudf
 
-# pylint: disable=morpheus-incorrect-lib-from-import
 import morpheus._lib.messages as _messages
-from morpheus._lib.messages import ResponseMemory
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiResponseMessage
+from morpheus.messages import ResponseMemory
 from morpheus.stages.postprocess.generate_viz_frames_stage import GenerateVizFramesStage
 
 
@@ -47,9 +49,9 @@ def test_constructor(config: Config):
     stage = GenerateVizFramesStage(config)
     assert stage.name == "gen_viz"
 
-    accepted_types = stage.accepted_types()
-    assert isinstance(accepted_types, tuple)
-    assert len(accepted_types) > 0
+    accepted_union = typing.Union[stage.accepted_types()]
+    assert typing_utils.issubtype(MultiResponseMessage, accepted_union)
+    assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
 def test_process_control_message_and_multi_message(config: Config):

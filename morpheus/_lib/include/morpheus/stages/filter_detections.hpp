@@ -89,11 +89,6 @@ class MORPHEUS_EXPORT FilterDetectionsStage
      */
     FilterDetectionsStage(float threshold, bool copy, FilterSource filter_source, std::string field_name = "probs");
 
-    // /**
-    //  * Called every time a message is passed to this stage
-    //  */
-    // source_type_t on_data(sink_type_t x);
-
   private:
     subscribe_fn_t build_operator();
     DevMemInfo get_tensor_filter_source(const sink_type_t& x);

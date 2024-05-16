@@ -14,7 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 import pandas as pd
+import typing_utils
 
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
@@ -39,9 +42,9 @@ def test_constructor(config):
     assert stage.name == "validation"
 
     # Just ensure that we get a valid non-empty tuple
-    accepted_types = stage.accepted_types()
-    assert isinstance(accepted_types, tuple)
-    assert len(accepted_types) > 0
+    accepted_union = typing.Union[stage.accepted_types()]
+    assert typing_utils.issubtype(MultiMessage, accepted_union)
+    assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
 def test_do_comparison(config):

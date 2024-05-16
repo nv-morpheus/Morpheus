@@ -34,7 +34,7 @@
 #include <cuda_runtime.h>                         // for cudaMemcpy, cudaMemcpyKind
 #include <cudf/column/column_view.hpp>            // for column_view
 #include <cudf/types.hpp>                         // for data_type
-#include <glog/logging.h>                         // for COMPACT_GOOGLE_LOG_ERROR, LOG, LogMessage, COMPACT_GOOGLE_...
+#include <glog/logging.h>                         // for COMPACT_GOOGLE_LOG_FATAL, LogMessageFatal, CHECK, DCHECK
 #include <mrc/cuda/common.hpp>                    // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>               // for cuda_stream_per_thread
 #include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
@@ -43,11 +43,9 @@
 #include <cstdint>     // for uint8_t
 #include <exception>   // for exception_ptr
 #include <functional>  // for function
-#include <memory>      // for make_shared, shared_ptr
+#include <memory>      // for make_shared, shared_ptr, __shared_ptr_access
 #include <ostream>     // for operator<<, basic_ostream
-#include <stdexcept>   // for runtime_error
-#include <string>      // for operator+, string, char_traits, operator<<
-#include <typeinfo>    // for type_info
+#include <string>      // for char_traits, string
 #include <utility>     // for move, pair
 #include <vector>      // for vector
 
@@ -57,9 +55,9 @@ namespace morpheus {
 // ************ FilterDetectionStage **************************** //
 template <typename MessageT>
 FilterDetectionsStage<MessageT>::FilterDetectionsStage(float threshold,
-                                                              bool copy,
-                                                              FilterSource filter_source,
-                                                              std::string field_name) :
+                                                       bool copy,
+                                                       FilterSource filter_source,
+                                                       std::string field_name) :
   base_t(base_t::op_factory_from_sub_fn(build_operator())),
   m_threshold(threshold),
   m_copy(copy),
@@ -97,11 +95,11 @@ DevMemInfo FilterDetectionsStage<MessageT>::get_tensor_filter_source(const sink_
         return {
             filter_source.data(), filter_source.dtype(), filter_source.get_memory(), filter_source.get_shape(), stride};
     }
-
-    // sink_type_t not supported
-    std::string error_msg{"FilterDetectionStage receives unsupported input type: " + std::string(typeid(x).name())};
-    LOG(ERROR) << error_msg;
-    throw std::runtime_error(error_msg);
+    else
+    {
+        // sink_type_t not supported
+        static_assert(!sizeof(sink_type_t), "FilterDetectionsStage receives unsupported input type");
+    }
 }
 
 template <typename MessageT>
@@ -116,13 +114,10 @@ DevMemInfo FilterDetectionsStage<MessageT>::get_column_filter_source(const sink_
     {
         table_info = x->payload()->get_info(m_field_name);
     }
-    // sink_type_t not supported
     else
     {
-        std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
-                              std::string(typeid(x).name())};
-        LOG(ERROR) << error_msg;
-        throw std::runtime_error(error_msg);
+        // sink_type_t not supported
+        static_assert(!sizeof(sink_type_t), "FilterDetectionsStage receives unsupported input type");
     }
 
     // since we only asked for one column, we know its the first
@@ -209,7 +204,7 @@ FilterDetectionsStage<MessageT>::subscribe_fn_t FilterDetectionsStage<MessageT>:
                             }
                             else if constexpr (std::is_same_v<MessageT, ControlMessage>)
                             {
-                                auto meta = x->payload();
+                                auto meta                                 = x->payload();
                                 std::shared_ptr<ControlMessage> sliced_cm = std::make_shared<ControlMessage>(*x);
                                 sliced_cm->payload(meta->get_slice(slice_start, row));
                                 output.on_next(sliced_cm);
@@ -217,10 +212,8 @@ FilterDetectionsStage<MessageT>::subscribe_fn_t FilterDetectionsStage<MessageT>:
                             else
                             {
                                 // sink_type_t not supported
-                                std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
-                                                      std::string(typeid(x).name())};
-                                LOG(ERROR) << error_msg;
-                                throw std::runtime_error(error_msg);
+                                static_assert(!sizeof(sink_type_t),
+                                              "FilterDetectionsStage receives unsupported input type");
                             }
                         }
 
@@ -251,10 +244,8 @@ FilterDetectionsStage<MessageT>::subscribe_fn_t FilterDetectionsStage<MessageT>:
                         else
                         {
                             // sink_type_t not supported
-                            std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
-                                                  std::string(typeid(x).name())};
-                            LOG(ERROR) << error_msg;
-                            throw std::runtime_error(error_msg);
+                            static_assert(!sizeof(sink_type_t),
+                                          "FilterDetectionsStage receives unsupported input type");
                         }
                     }
                 }
@@ -277,10 +268,7 @@ FilterDetectionsStage<MessageT>::subscribe_fn_t FilterDetectionsStage<MessageT>:
                     else
                     {
                         // sink_type_t not supported
-                        std::string error_msg{"FilterDetectionsStage receives unsupported input type: " +
-                                              std::string(typeid(x).name())};
-                        LOG(ERROR) << error_msg;
-                        throw std::runtime_error(error_msg);
+                        static_assert(!sizeof(sink_type_t), "FilterDetectionsStage receives unsupported input type");
                     }
                 }
             },

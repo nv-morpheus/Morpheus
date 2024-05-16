@@ -13,8 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 import cupy as cp
 import pytest
+import typing_utils
 
 import cudf
 
@@ -38,9 +41,9 @@ def test_constructor(config: Config):
     stage = PreprocessAEStage(config)
     assert stage.name == "preprocess-ae"
 
-    accepted_types = stage.accepted_types()
-    assert isinstance(accepted_types, tuple)
-    assert len(accepted_types) > 0
+    accepted_union = typing.Union[stage.accepted_types()]
+    assert typing_utils.issubtype(MultiAEMessage, accepted_union)
+    assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
 def test_process_control_message_and_multi_message(config: Config):

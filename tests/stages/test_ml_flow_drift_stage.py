@@ -14,10 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
 from unittest.mock import patch
 
 import cupy as cp
 import pytest
+import typing_utils
 
 import morpheus._lib.messages as _messages
 from morpheus.messages import ControlMessage
@@ -48,10 +50,9 @@ def test_constructor(config):
         stage = MLFlowDriftStage(config)
     assert stage.name == "mlflow_drift"
 
-    # Just ensure that we get a valid non-empty tuple
-    accepted_types = stage.accepted_types()
-    assert isinstance(accepted_types, tuple)
-    assert len(accepted_types) > 0
+    accepted_union = typing.Union[stage.accepted_types()]
+    assert typing_utils.issubtype(MultiResponseMessage, accepted_union)
+    assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
 @pytest.mark.use_cudf
@@ -70,6 +71,7 @@ def test_calc_drift(config, filter_probs_df):
     }, {
         'a': 0.8, 'b': 0.7, 'c': 0.6, 'total': 0.7000000000000001
     }]
+
     multi_response_message_metrics = []
     with patch("morpheus.stages.postprocess.ml_flow_drift_stage.mlflow.log_metrics") as mock_log_metrics:
         stage._calc_drift(mock_multi_response_message)

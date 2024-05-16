@@ -420,8 +420,7 @@ class _UserTimeSeries:
 @register_stage("timeseries", modes=[PipelineModes.AE])
 class TimeSeriesStage(PassThruTypeMixin, SinglePortStage):
     """
-    rliejtikkllgtlehljheccdtbd
-    cccccbkbnfgvvlnkbbPerform time series anomaly detection and add prediction.
+    Perform time series anomaly detection and add prediction.
 
     Uses default resolution of "hour".
 

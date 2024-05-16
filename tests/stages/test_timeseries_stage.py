@@ -14,15 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 import cupy as cp
 import pandas as pd
 import pytest
+import typing_utils
 
 import morpheus._lib.messages as _messages
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiResponseAEMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
@@ -58,10 +62,9 @@ def test_constructor(config):
     stage = TimeSeriesStage(config)
     assert stage.name == "timeseries"
 
-    # Just ensure that we get a valid non-empty tuple
-    accepted_types = stage.accepted_types()
-    assert isinstance(accepted_types, tuple)
-    assert len(accepted_types) > 0
+    accepted_union = typing.Union[stage.accepted_types()]
+    assert typing_utils.issubtype(MultiResponseMessage, accepted_union)
+    assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
 @pytest.mark.use_cudf
