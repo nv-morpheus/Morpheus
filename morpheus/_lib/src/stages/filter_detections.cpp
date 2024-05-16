@@ -210,8 +210,9 @@ FilterDetectionsStage<InputT, OutputT>::subscribe_fn_t FilterDetectionsStage<Inp
                             else if constexpr (std::is_same_v<InputT, ControlMessage>)
                             {
                                 auto meta = x->payload();
-                                x->payload(meta->get_slice(slice_start, row));
-                                output.on_next(x);
+                                std::shared_ptr<ControlMessage> sliced_cm = std::make_shared<ControlMessage>(*x);
+                                sliced_cm->payload(meta->get_slice(slice_start, row));
+                                output.on_next(sliced_cm);
                             }
                             else
                             {

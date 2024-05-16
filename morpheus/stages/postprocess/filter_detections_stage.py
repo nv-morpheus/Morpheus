@@ -126,12 +126,13 @@ class FilterDetectionsStage(SinglePortStage):
                                                                    self._controller.filter_source,
                                                                    self._controller.field_name)
 
-            node = _stages.FilterDetectionsMultiMessageStage(builder,
-                                                             self.unique_name,
-                                                             self._controller.threshold,
-                                                             self._copy,
-                                                             self._controller.filter_source,
-                                                             self._controller.field_name)
+            else:
+                node = _stages.FilterDetectionsMultiMessageStage(builder,
+                                                                self.unique_name,
+                                                                self._controller.threshold,
+                                                                self._copy,
+                                                                self._controller.filter_source,
+                                                                self._controller.field_name)
         else:
 
             if self._copy:

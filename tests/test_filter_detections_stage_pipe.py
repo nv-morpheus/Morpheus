@@ -24,6 +24,8 @@ import cudf
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from _utils.stages.conv_msg import ConvMsg
+from morpheus.common import FilterSource
+from morpheus.messages import ControlMessage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -92,6 +94,30 @@ def _test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pan
     assert_results(comp_stage.get_results())
 
 
+def _test_filter_detections_control_message_stage_multi_segment_pipe(config: Config,
+                                                                     dataset_pandas: DatasetManager,
+                                                                     copy: bool = True):
+    threshold = 0.75
+
+    input_df = dataset_pandas["filter_probs.csv"]
+    pipe = LinearPipeline(config)
+    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    pipe.add_segment_boundary(MessageMeta)
+    pipe.add_stage(DeserializeStage(config, message_type=ControlMessage))
+    pipe.add_segment_boundary(data_type=ControlMessage)
+    pipe.add_stage(ConvMsg(config, message_type=ControlMessage))
+    pipe.add_segment_boundary(ControlMessage)
+    pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy, filter_source=FilterSource.TENSOR))
+    pipe.add_segment_boundary(ControlMessage)
+    pipe.add_stage(SerializeStage(config))
+    pipe.add_segment_boundary(MessageMeta)
+    comp_stage = pipe.add_stage(
+        CompareDataFrameStage(config, build_expected(dataset_pandas["filter_probs.csv"], threshold)))
+    pipe.run()
+
+    assert_results(comp_stage.get_results())
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize('order', ['F', 'C'])
 @pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
@@ -109,3 +135,11 @@ def test_filter_detections_stage_pipe(config: Config,
 @pytest.mark.parametrize('do_copy', [True, False])
 def test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pandas: DatasetManager, do_copy: bool):
     return _test_filter_detections_stage_multi_segment_pipe(config, dataset_pandas, do_copy)
+
+
+@pytest.mark.parametrize('do_copy', [True, False])
+@pytest.mark.use_cpp
+def test_filter_detections_control_message_stage_multi_segment_pipe(config: Config,
+                                                                    dataset_pandas: DatasetManager,
+                                                                    do_copy: bool):
+    return _test_filter_detections_control_message_stage_multi_segment_pipe(config, dataset_pandas, do_copy)
