@@ -79,6 +79,7 @@ def test_generate_frames(config: Config, dataset_pandas: DatasetManager, lines: 
         payload_to_df_fn = mock.MagicMock(return_value=mock_results)
     else:
         payload_to_df_fn = None
+
     buf = df_to_stream_json(df, StringIO(), lines=lines)
     buf.seek(0)
 
