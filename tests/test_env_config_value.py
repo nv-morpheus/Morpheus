@@ -1,54 +1,116 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
-from morpheus.utils.env_config_value import EnvConfigValue
 from unittest import mock
+
 import pytest
 
+from morpheus.utils.env_config_value import EnvConfigValue
+from morpheus.utils.env_config_value import EnvConfigValueSource
+
+
 class EnvDrivenValue(EnvConfigValue):
-    _ENV_KEY          = "DEFAULT"
+    _ENV_KEY = "DEFAULT"
     _ENV_KEY_OVERRIDE = "OVERRIDE"
+
+
+def test_env_driven_value():
+    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com"}):
+
+        config = EnvDrivenValue()
+        assert str(config) == "default.api.com"
+        assert config.value == "default.api.com"
+        assert config.source == EnvConfigValueSource.ENV_DEFAULT
+        assert config.use_env == True
+
+        with pytest.raises(ValueError):
+            config = EnvDrivenValue(use_env=False)
+
+        config = EnvDrivenValue("api.com")
+        assert str(config) == "api.com"
+        assert config.value == "api.com"
+        assert config.source == EnvConfigValueSource.CONSTRUCTOR
+        assert config.use_env == True
+
+    with mock.patch.dict(os.environ, clear=True, values={"OVERRIDE": "override.api.com"}):
+
+        config = EnvDrivenValue("api.com")
+        assert str(config) == "override.api.com"
+        assert config.value == "override.api.com"
+        assert config.source == EnvConfigValueSource.ENV_OVERRIDE
+        assert config.use_env == True
+
+        config = EnvDrivenValue("api.com", use_env=False)
+        assert str(config) == "api.com"
+        assert config.value == "api.com"
+        assert config.source == EnvConfigValueSource.CONSTRUCTOR
+        assert config.use_env == False
 
 
 class EnvDriverValueNoOverride(EnvConfigValue):
     _ENV_KEY = "DEFAULT"
 
 
+def test_env_driven_value_no_override():
+    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com"}):
+
+        config = EnvDriverValueNoOverride()
+        assert str(config) == "default.api.com"
+        assert config.value == "default.api.com"
+        assert config.source == EnvConfigValueSource.ENV_DEFAULT
+        assert config.use_env == True
+
+        with pytest.raises(ValueError):
+            config = EnvDriverValueNoOverride(use_env=False)
+
+        config = EnvDriverValueNoOverride("api.com")
+        assert str(config) == "api.com"
+        assert config.value == "api.com"
+        assert config.source == EnvConfigValueSource.CONSTRUCTOR
+        assert config.use_env == True
+
+    with mock.patch.dict(os.environ, clear=True, values={"OVERRIDE": "override.api.com"}):
+
+        config = EnvDriverValueNoOverride("api.com")
+        assert str(config) == "api.com"
+        assert config.value == "api.com"
+        assert config.source == EnvConfigValueSource.CONSTRUCTOR
+        assert config.use_env == True
+
+
 class EnvDrivenValueNoDefault(EnvConfigValue):
     _ENV_KEY_OVERRIDE = "OVERRIDE"
 
 
-def test_env_driven_value():
-    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com"}):
-        assert str(EnvDrivenValue(None)) == "default.api.com"
-        assert str(EnvDrivenValue("api.com")) == "api.com"
-
-    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com", "OVERRIDE": "override.api.com"}):
-        assert str(EnvDrivenValue("api.com")) == "override.api.com"
-        assert str(EnvDrivenValue("api.com", use_env=False)) == "api.com"
-
-        with pytest.raises(ValueError):
-            EnvDrivenValue(None, use_env=False)
-
-
-def test_env_driven_value_no_override():
-    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com"}):
-        assert str(EnvDriverValueNoOverride(None)) == "default.api.com"
-        assert str(EnvDriverValueNoOverride("api.com")) == "api.com"
-
-    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com", "OVERRIDE": "override.api.com"}):
-        assert str(EnvDriverValueNoOverride("api.com")) == "api.com"
-        assert str(EnvDriverValueNoOverride("api.com", use_env=False)) == "api.com"
-
-
 def test_env_driven_value_no_default():
     with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com"}):
-        with pytest.raises(ValueError):
-            EnvDrivenValueNoDefault(None)
-
-        assert str(EnvDrivenValueNoDefault("api.com")) == "api.com"
-
-    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com", "OVERRIDE": "override.api.com"}):
-        assert str(EnvDrivenValueNoDefault("api.com")) == "override.api.com"
-        assert str(EnvDrivenValueNoDefault("api.com", use_env=False)) == "api.com"
 
         with pytest.raises(ValueError):
-            EnvDrivenValueNoDefault(None, use_env=False)
+            config = EnvDrivenValueNoDefault()
+
+        config = EnvDrivenValueNoDefault("api.com")
+        assert str(config) == "api.com"
+        assert config.value == "api.com"
+        assert config.source == EnvConfigValueSource.CONSTRUCTOR
+        assert config.use_env == True
+
+    with mock.patch.dict(os.environ, clear=True, values={"OVERRIDE": "override.api.com"}):
+
+        config = EnvDrivenValueNoDefault("api.com")
+        assert str(config) == "override.api.com"
+        assert config.value == "override.api.com"
+        assert config.source == EnvConfigValueSource.ENV_OVERRIDE
+        assert config.use_env == True

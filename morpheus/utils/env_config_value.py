@@ -1,32 +1,72 @@
-from abc import ABC
+# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
+from abc import ABC
+from enum import Enum
+
+
+class EnvConfigValueSource(Enum):
+    ENV_DEFAULT = 1
+    CONSTRUCTOR = 2
+    ENV_OVERRIDE = 3
+
 
 class EnvConfigValue(ABC):
 
     _ENV_KEY: str | None = None
     _ENV_KEY_OVERRIDE: str | None = None
 
-    def __init__(self, value: str, use_env: bool = True):
+    def __init__(self, value: str | None = None, use_env: bool = True):
+
+        self._source = EnvConfigValueSource.CONSTRUCTOR
 
         if use_env:
-
             if value is None and self.__class__._ENV_KEY is not None:
-                    value = os.environ.get(f"{self.__class__._ENV_KEY}", None)
+                value = os.environ.get(self.__class__._ENV_KEY, None)
+                self._source = EnvConfigValueSource.ENV_DEFAULT
 
-            if self.__class__._ENV_KEY_OVERRIDE is not None:
-                value = os.environ.get(f"{self.__class__._ENV_KEY_OVERRIDE}", value)
+            if self.__class__._ENV_KEY_OVERRIDE is not None and self.__class__._ENV_KEY_OVERRIDE in os.environ:
+                value = os.environ[self.__class__._ENV_KEY_OVERRIDE]
+                self._source = EnvConfigValueSource.ENV_OVERRIDE
 
             if value is None:
-                raise ValueError("value must not be None, but provided value was None and no environment-based default or override was found")
+                raise ValueError(
+                    "value must not be None, but provided value was None and no environment-based default or override was found"
+                )
 
         else:
             if value is None:
                 raise ValueError("value must not be none")
 
-        self._value = value
-        
-    def value(self, default: str | None) -> str | None:
-        if self._value is None:
-            return default
+        assert isinstance(value, str)
 
+        self._value = value
+        self._use_env = use_env
+
+    @property
+    def source(self) -> EnvConfigValueSource:
+        return self._source
+
+    @property
+    def use_env(self) -> bool:
+        return self._use_env
+
+    @property
+    def value(self) -> str:
+        return self._value
+
+    def __str__(self):
         return self._value
