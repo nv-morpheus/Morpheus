@@ -138,7 +138,6 @@ def test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pand
 
 
 @pytest.mark.parametrize('do_copy', [True, False])
-@pytest.mark.use_cpp
 def test_filter_detections_control_message_stage_multi_segment_pipe(config: Config,
                                                                     dataset_pandas: DatasetManager,
                                                                     do_copy: bool):

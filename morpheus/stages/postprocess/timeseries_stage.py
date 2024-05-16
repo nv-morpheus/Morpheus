@@ -59,7 +59,6 @@ def calc_bin(obj: pd.Timestamp, time0: pd.Timestamp, resolution_sec: float) -> i
     """
     Calculates the bin spacing between the start and stop timestamp at a specified resolution.
     """
-
     return round((round_seconds(obj) - time0).total_seconds()) // resolution_sec
 
 
@@ -265,7 +264,7 @@ class _UserTimeSeries:
         if (len(self._pending_messages) == 0):
             return None
 
-        # Note: We calculate everything in bins to ensure 1) Full bins, and 2) Even binning
+        # Note: We calculate everything in bins to ensure 1) Full xbins, and 2) Even binning
         timeseries_start = self._timeseries_data["event_bin"].iloc[0]
         timeseries_end = self._timeseries_data["event_bin"].iloc[-1]
 
@@ -277,10 +276,10 @@ class _UserTimeSeries:
             message_start = calc_bin(x.get_meta(self._timestamp_col).iloc[0], self._t0_epoch, self._resolution_sec)
             message_end = calc_bin(x.get_meta(self._timestamp_col).iloc[-1], self._t0_epoch, self._resolution_sec)
         elif isinstance(x, ControlMessage):
-            message_start = calc_bin(x.payload().get_data(self._timestamp_col).iloc[0],
+            message_start = calc_bin(pd.Timestamp(x.payload().get_data(self._timestamp_col).iloc[0]),
                                      self._t0_epoch,
                                      self._resolution_sec)
-            message_end = calc_bin(x.payload().get_data(self._timestamp_col).iloc[-1],
+            message_end = calc_bin(pd.Timestamp(x.payload().get_data(self._timestamp_col).iloc[-1]),
                                    self._t0_epoch,
                                    self._resolution_sec)
 
