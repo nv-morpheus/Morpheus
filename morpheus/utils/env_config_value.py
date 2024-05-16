@@ -25,6 +25,12 @@ class EnvConfigValueSource(Enum):
 
 
 class EnvConfigValue(ABC):
+    """
+    A wrapper for a string used as a configuration value which can be loaded from the system environment or injected via
+    the constructor. This class should be subclassed and the class fields `_ENV_KEY` and `_ENV_KEY_OVERRIDE` can be set
+    to enable environment-loading functionality. Convienience properties are available to check from where the value was
+    loaded.
+    """
 
     _ENV_KEY: str | None = None
     _ENV_KEY_OVERRIDE: str | None = None
@@ -54,9 +60,12 @@ class EnvConfigValue(ABC):
                 self._source = EnvConfigValueSource.ENV_OVERRIDE
 
             if value is None:
-                raise ValueError(
-                    "value must not be None, but provided value was None and no environment-based default or override was found"
-                )
+                message = "value must not be None, but provided value was None and no environment-based default or override was found."
+
+                if _ENV_KEY is None:
+                    raise ValueError(message)
+                
+                raise ValueError(f"{message} Try passing a value to the constructor, or setting the `{_ENV_KEY}` environment variable.")
 
         else:
             if value is None:
