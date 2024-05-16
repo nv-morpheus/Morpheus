@@ -55,8 +55,8 @@ namespace morpheus {
 
 // Component public implementations
 // ************ FilterDetectionStage **************************** //
-template <typename InputT, typename OutputT>
-FilterDetectionsStage<InputT, OutputT>::FilterDetectionsStage(float threshold,
+template <typename MessageT>
+FilterDetectionsStage<MessageT>::FilterDetectionsStage(float threshold,
                                                               bool copy,
                                                               FilterSource filter_source,
                                                               std::string field_name) :
@@ -69,10 +69,10 @@ FilterDetectionsStage<InputT, OutputT>::FilterDetectionsStage(float threshold,
     CHECK(m_filter_source != FilterSource::Auto);  // The python stage should determine this
 }
 
-template <typename InputT, typename OutputT>
-DevMemInfo FilterDetectionsStage<InputT, OutputT>::get_tensor_filter_source(const sink_type_t& x)
+template <typename MessageT>
+DevMemInfo FilterDetectionsStage<MessageT>::get_tensor_filter_source(const sink_type_t& x)
 {
-    if constexpr (std::is_same_v<InputT, MultiMessage>)
+    if constexpr (std::is_same_v<MessageT, MultiMessage>)
     {
         // The pipeline build will check to ensure that our input is a MultiResponseMessage
         const auto& filter_source = std::static_pointer_cast<MultiTensorMessage>(x)->get_tensor(m_field_name);
@@ -85,7 +85,7 @@ DevMemInfo FilterDetectionsStage<InputT, OutputT>::get_tensor_filter_source(cons
         return {
             filter_source.data(), filter_source.dtype(), filter_source.get_memory(), filter_source.get_shape(), stride};
     }
-    else if constexpr (std::is_same_v<InputT, ControlMessage>)
+    else if constexpr (std::is_same_v<MessageT, ControlMessage>)
     {
         const auto& filter_source = x->tensors()->get_tensor(m_field_name);
         CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
@@ -104,15 +104,15 @@ DevMemInfo FilterDetectionsStage<InputT, OutputT>::get_tensor_filter_source(cons
     throw std::runtime_error(error_msg);
 }
 
-template <typename InputT, typename OutputT>
-DevMemInfo FilterDetectionsStage<InputT, OutputT>::get_column_filter_source(const sink_type_t& x)
+template <typename MessageT>
+DevMemInfo FilterDetectionsStage<MessageT>::get_column_filter_source(const sink_type_t& x)
 {
     TableInfo table_info;
-    if constexpr (std::is_same_v<InputT, MultiMessage>)
+    if constexpr (std::is_same_v<MessageT, MultiMessage>)
     {
         table_info = x->get_meta(m_field_name);
     }
-    else if constexpr (std::is_same_v<InputT, ControlMessage>)
+    else if constexpr (std::is_same_v<MessageT, ControlMessage>)
     {
         table_info = x->payload()->get_info(m_field_name);
     }
@@ -141,8 +141,8 @@ DevMemInfo FilterDetectionsStage<InputT, OutputT>::get_column_filter_source(cons
     };
 }
 
-template <typename InputT, typename OutputT>
-FilterDetectionsStage<InputT, OutputT>::subscribe_fn_t FilterDetectionsStage<InputT, OutputT>::build_operator()
+template <typename MessageT>
+FilterDetectionsStage<MessageT>::subscribe_fn_t FilterDetectionsStage<MessageT>::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         std::function<DevMemInfo(const sink_type_t& x)> get_filter_source;
@@ -203,11 +203,11 @@ FilterDetectionsStage<InputT, OutputT>::subscribe_fn_t FilterDetectionsStage<Inp
                         }
                         else
                         {
-                            if constexpr (std::is_same_v<InputT, MultiMessage>)
+                            if constexpr (std::is_same_v<MessageT, MultiMessage>)
                             {
                                 output.on_next(x->get_slice(slice_start, row));
                             }
-                            else if constexpr (std::is_same_v<InputT, ControlMessage>)
+                            else if constexpr (std::is_same_v<MessageT, ControlMessage>)
                             {
                                 auto meta = x->payload();
                                 std::shared_ptr<ControlMessage> sliced_cm = std::make_shared<ControlMessage>(*x);
@@ -238,11 +238,11 @@ FilterDetectionsStage<InputT, OutputT>::subscribe_fn_t FilterDetectionsStage<Inp
                     }
                     else
                     {
-                        if constexpr (std::is_same_v<InputT, MultiMessage>)
+                        if constexpr (std::is_same_v<MessageT, MultiMessage>)
                         {
                             output.on_next(x->get_slice(slice_start, num_rows));
                         }
-                        else if constexpr (std::is_same_v<InputT, ControlMessage>)
+                        else if constexpr (std::is_same_v<MessageT, ControlMessage>)
                         {
                             auto meta = x->payload();
                             x->payload(meta->get_slice(slice_start, num_rows));
@@ -264,11 +264,11 @@ FilterDetectionsStage<InputT, OutputT>::subscribe_fn_t FilterDetectionsStage<Inp
                 if (num_selected_rows > 0)
                 {
                     DCHECK(m_copy);
-                    if constexpr (std::is_same_v<InputT, MultiMessage>)
+                    if constexpr (std::is_same_v<MessageT, MultiMessage>)
                     {
                         output.on_next(x->copy_ranges(selected_ranges, num_selected_rows));
                     }
-                    else if constexpr (std::is_same_v<InputT, ControlMessage>)
+                    else if constexpr (std::is_same_v<MessageT, ControlMessage>)
                     {
                         auto meta = x->payload();
                         x->payload(meta->copy_ranges(selected_ranges));

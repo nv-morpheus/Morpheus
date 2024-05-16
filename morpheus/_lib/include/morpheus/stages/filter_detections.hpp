@@ -68,12 +68,12 @@ namespace morpheus {
  * Depending on the downstream stages, this can cause performance issues, especially if those stages need to acquire
  * the Python GIL.
  */
-template <typename InputT, typename OutputT>
+template <typename MessageT>
 class MORPHEUS_EXPORT FilterDetectionsStage
-  : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
 {
   public:
-    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -108,9 +108,9 @@ class MORPHEUS_EXPORT FilterDetectionsStage
 };
 
 using FilterDetectionsStageMM =  // NOLINT(readability-identifier-naming)
-    FilterDetectionsStage<MultiMessage, MultiMessage>;
+    FilterDetectionsStage<MultiMessage>;
 using FilterDetectionsStageCM =  // NOLINT(readability-identifier-naming)
-    FilterDetectionsStage<ControlMessage, ControlMessage>;
+    FilterDetectionsStage<ControlMessage>;
 
 /****** FilterDetectionStageInterfaceProxy******************/
 /**
