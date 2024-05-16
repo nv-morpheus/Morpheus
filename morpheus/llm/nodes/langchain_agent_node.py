@@ -37,12 +37,18 @@ class LangChainAgentNode(LLMNodeBase):
         The agent executor to use to execute.
     """
 
-    def __init__(self, agent_executor: "AgentExecutor"):
+    def __init__(self, agent_executor: "AgentExecutor", replace_exceptions: bool=False, replace_exceptions_value: typing.Optional[str]=None):
         super().__init__()
 
         self._agent_executor = agent_executor
 
         self._input_names = self._agent_executor.input_keys
+
+        self._replace_exceptions = replace_exceptions
+        self._replace_exceptions_value = replace_exceptions_value
+
+        if self._replace_exceptions:
+            assert self._replace_exceptions_value is not None, "When replace_exceptions is enabled, replace_exceptions_value must be provided."
 
     def get_input_names(self):
         return self._input_names
@@ -80,16 +86,18 @@ class LangChainAgentNode(LLMNodeBase):
 
         results = await self._run_single(**input_dict)
 
-        # Processes the results to replace exceptions with a default message
-        default_message = "I do not have a definitive answer for this checklist item."
-        for i, answer_list in enumerate(results):
-            for j, answer in enumerate(answer_list):
-                if isinstance(answer, (OutputParserException, Exception)):
-                    # If the agent encounters a parsing error or a server error after retries, replace the error
-                    # with a default value to prevent the pipeline from crashing
-                    results[i][j] = default_message
-                    logger.warning(
-                        f"Exception encountered in result[{i}][{j}]: {answer}. Replacing with default message.")
+        if self._replace_exceptions:
+            # Processes the results to replace exceptions with a default message
+            for i, answer_list in enumerate(results):
+                for j, answer in enumerate(answer_list):
+                    if isinstance(answer, (OutputParserException, Exception)):
+                        # If the agent encounters a parsing error or a server error after retries, replace the error
+                        # with a default value to prevent the pipeline from crashing
+                        results[i][j] = self._replace_exceptions_value
+                        logger.warning(
+                            f"Exception encountered in result[{i}][{j}]: {answer}. "
+                            f"Replacing with default message: \"{self._replace_exceptions_value}\"."
+                        )
 
         context.set_output(results)
 

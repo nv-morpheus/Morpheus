@@ -20,6 +20,7 @@ from langchain.agents import AgentType
 from langchain.agents import Tool
 from langchain.agents import initialize_agent
 from langchain.chat_models import ChatOpenAI  # pylint: disable=no-name-in-module
+from langchain_core.exceptions import OutputParserException
 
 from _utils.llm import execute_node
 from _utils.llm import mk_mock_langchain_tool
@@ -143,3 +144,35 @@ def test_execute_error(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
 
     node = LangChainAgentNode(agent_executor=agent)
     assert isinstance(execute_node(node, input="input1"), RuntimeError)
+
+@pytest.mark.parametrize(
+    "arun_return,expected_output",
+    [
+        (
+            [[OutputParserException("Parsing Error"), "A valid result."]],
+            [["Default error message.", "A valid result."]],
+        ),
+        (
+            [["A valid result."], [Exception("General error"), "Another valid result."]],
+            [["A valid result."], ["Default error message.", "Another valid result."]],
+        ),
+    ],
+    ids=["error_handling_off", "parsing_error_handling", "exception_handling"],
+)
+def test_execute_replaces_exceptions(
+    mock_agent_executor: mock.MagicMock,
+    arun_return: list,
+    expected_output: list,
+):
+    placeholder_input_values = {
+        "foo": "bar"
+    }  # a non-empty placeholder input for the context
+    mock_agent_executor.arun.return_value = arun_return
+
+    node = LangChainAgentNode(
+        agent_executor=mock_agent_executor,
+        replace_exceptions=True,
+        replace_exceptions_value="Default error message.",
+    )
+    output = execute_node(node, **placeholder_input_values)
+    assert output == expected_output
