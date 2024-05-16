@@ -24,7 +24,7 @@ from morpheus.messages import MultiMessage
 
 # pylint: disable=no-name-in-module
 
-
+@pytest.mark.usefixtures("manual_seed")
 @pytest.mark.use_python
 class TestGraphSageStage:
 
