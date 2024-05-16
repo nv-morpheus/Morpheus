@@ -53,7 +53,7 @@ class GroupByColumnStage(PassThruTypeMixin, SinglePortStage):
             grouper = df.groupby(self._column_name)
 
         ouptut_messages = []
-        for group_name in grouper.groups.keys():
+        for group_name in sorted(grouper.groups.keys()):
             group_df = grouper.get_group(group_name)
             ouptut_messages.append(MessageMeta(group_df))
 
