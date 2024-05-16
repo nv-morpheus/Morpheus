@@ -87,13 +87,13 @@ class OpenAIChatClient(LLMClient):
     """
 
     class OrgId(EnvConfigValue):
-        _CONFIG_NAME: str = "OPENAI_ORG_ID"
+        _ENV_KEY: str = "OPENAI_ORG_ID"
 
     class APIKey(EnvConfigValue):
-        _CONFIG_NAME: str = "OPENAI_API_KEY"
+        _ENV_KEY: str = "OPENAI_API_KEY"
 
     class BaseURL(EnvConfigValue):
-        _CONFIG_NAME: str = "OPENAI_BASE_URL"
+        _ENV_KEY: str = "OPENAI_BASE_URL"
 
     _prompt_key: str = "prompt"
     _assistant_key: str = "assistant"

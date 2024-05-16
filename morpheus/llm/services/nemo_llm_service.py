@@ -192,13 +192,13 @@ class NeMoLLMService(LLMService):
     """
 
     class APIKey(EnvConfigValue):
-        _CONFIG_NAME: str = "NGC_API_KEY"
+        _ENV_KEY: str = "NGC_API_KEY"
 
     class OrgId(EnvConfigValue):
-        _CONFIG_NAME: str = "NGC_ORG_ID"
+        _ENV_KEY: str = "NGC_ORG_ID"
 
     class BaseURI(EnvConfigValue):
-        _CONFIG_NAME: str = "NGC_API_BASE"
+        _ENV_KEY: str = "NGC_API_BASE"
 
     def __init__(self,
                  *,

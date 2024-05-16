@@ -1,28 +1,54 @@
 import os
 from morpheus.utils.env_config_value import EnvConfigValue
-
-class MyApi:
-
-    class BaseUri(EnvConfigValue):
-        _CONFIG_NAME = "MY_API_BASE_URI"
-
-    def __init__(self, base_uri: BaseUri):
-        self._base_uri = str(base_uri)
-
-
 from unittest import mock
+import pytest
+
+class EnvDrivenValue(EnvConfigValue):
+    _ENV_KEY          = "DEFAULT"
+    _ENV_KEY_OVERRIDE = "OVERRIDE"
 
 
-def test_os_config_value():
+class EnvDriverValueNoOverride(EnvConfigValue):
+    _ENV_KEY = "DEFAULT"
 
-    with mock.patch.dict(os.environ, clear=True, values={"MY_API_BASE_URI_DEFAULT": "default.api.com"}):
-        assert str(MyApi.BaseUri(None)) == "default.api.com"
 
-    with mock.patch.dict(os.environ, clear=True, values={"MY_API_BASE_URI_DEFAULT": "default.api.com"}):
-        assert str(MyApi.BaseUri("api.com")) == "api.com"
+class EnvDrivenValueNoDefault(EnvConfigValue):
+    _ENV_KEY_OVERRIDE = "OVERRIDE"
 
-    with mock.patch.dict(os.environ, clear=True, values={"MY_API_BASE_URI_DEFAULT": "default.api.com", "MY_API_BASE_URI_OVERRIDE": "override.api.com"}):
-        assert str(MyApi.BaseUri("api.com")) == "override.api.com"
 
-    with mock.patch.dict(os.environ, clear=True, values={"MY_API_BASE_URI_DEFAULT": "default.api.com", "MY_API_BASE_URI_OVERRIDE": "override.api.com"}):
-        assert str(MyApi.BaseUri("api.com", use_env=False)) == "api.com"
+def test_env_driven_value():
+    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com"}):
+        assert str(EnvDrivenValue(None)) == "default.api.com"
+        assert str(EnvDrivenValue("api.com")) == "api.com"
+
+    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com", "OVERRIDE": "override.api.com"}):
+        assert str(EnvDrivenValue("api.com")) == "override.api.com"
+        assert str(EnvDrivenValue("api.com", use_env=False)) == "api.com"
+
+        with pytest.raises(ValueError):
+            EnvDrivenValue(None, use_env=False)
+
+
+def test_env_driven_value_no_override():
+    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com"}):
+        assert str(EnvDriverValueNoOverride(None)) == "default.api.com"
+        assert str(EnvDriverValueNoOverride("api.com")) == "api.com"
+
+    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com", "OVERRIDE": "override.api.com"}):
+        assert str(EnvDriverValueNoOverride("api.com")) == "api.com"
+        assert str(EnvDriverValueNoOverride("api.com", use_env=False)) == "api.com"
+
+
+def test_env_driven_value_no_default():
+    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com"}):
+        with pytest.raises(ValueError):
+            EnvDrivenValueNoDefault(None)
+
+        assert str(EnvDrivenValueNoDefault("api.com")) == "api.com"
+
+    with mock.patch.dict(os.environ, clear=True, values={"DEFAULT": "default.api.com", "OVERRIDE": "override.api.com"}):
+        assert str(EnvDrivenValueNoDefault("api.com")) == "override.api.com"
+        assert str(EnvDrivenValueNoDefault("api.com", use_env=False)) == "api.com"
+
+        with pytest.raises(ValueError):
+            EnvDrivenValueNoDefault(None, use_env=False)
