@@ -13,6 +13,7 @@
 # limitations under the License.
 """Write to file stage."""
 
+import os
 import typing
 
 import mrc
@@ -92,6 +93,9 @@ class WriteToFileStage(PassThruTypeMixin, SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         # Sink to file
         if (self._build_cpp_node()):
+
+            os.makedirs(os.path.dirname(self._controller.output_file), exist_ok=True)
+
             to_file_node = _stages.WriteToFileStage(builder,
                                                     self.unique_name,
                                                     self._controller.output_file,
