@@ -32,7 +32,8 @@ Stages are the building blocks of Morpheus pipelines. Below is a list of the mos
 
 ## Doca
 
-- Doca Stage {py:class}`~morpheus.stages.doca.doca_source_stage.DocaSourceStage` A source stage used to receive raw packet data from a ConnectX-6 Dx NIC. This stage is not compiled by default refer to the [Doca Example](../../../examples/doca/README.md) for details on building this stage.
+- Doca Source Stage {py:class}`~morpheus.stages.doca.doca_source_stage.DocaSourceStage` A source stage used to receive raw packet data in GPU memory from a ConnectX NIC using DOCA GPUNetIO function within a CUDA kernel to actually receive and process Ethernet network packets. Receive packets information is passed to next pipeline stage in the form of RawPacketMessage. This stage is not compiled by default refer to the [Doca Example](../../../examples/doca/README.md) for details on building this stage.
+- Doca Convert Stage {py:class}`~morpheus.stages.doca.doca_source_stage.DocaConvertStage` Convert the RawPacketMessage format received by the DOCA Source Stage into a more complex message format MetaMessage. Packets' info never leave the GPU memory. This stage is not compiled by default refer to the [Doca Example](../../../examples/doca/README.md) for details on building this stage.
 
 ## General
 
