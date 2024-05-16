@@ -30,6 +30,17 @@ class EnvConfigValue(ABC):
     _ENV_KEY_OVERRIDE: str | None = None
 
     def __init__(self, value: str | None = None, use_env: bool = True):
+        """
+        Parameters
+        ----------
+        value : str, optional
+            The value to be contained in the EnvConfigValue. If the value is `None`, an attempt will be made to load it
+            from the environment using `_ENV_KEY`. if the `_ENV_KEY_OVERRIDE` field is not `None`, an attempt will be
+            made to load that environment variable in place of the passed-in value.
+        use_env : bool
+            If False, all environment-loading logic will be bypassed and the passed-in value will be used as-is.
+            defaults to True.
+        """
 
         self._source = EnvConfigValueSource.CONSTRUCTOR
 
