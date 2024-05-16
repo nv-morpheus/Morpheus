@@ -24,9 +24,9 @@ class EnvConfigValue(ABC):
                 raise ValueError("value must not be none")
 
         self._value = value
+        
+    def value(self, default: str | None) -> str | None:
+        if self._value is None:
+            return default
 
-    def __str__(self):
         return self._value
-
-
-# PB, DOCA, Asynchronious Programming, Strong C++ Programmer
