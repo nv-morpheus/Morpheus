@@ -108,10 +108,10 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 ## Model Card ++ Bias Subcard
 
 ### Individuals from the following adversely impacted (protected classes) groups participate in model design and testing.
-* None of the Above. 
+* None of the Above.
 
 ### Describe measures taken to mitigate against unwanted bias.
-* None of the Above. 
+* None of the Above.
 
 ## Model Card ++ Explainability Subcard
 
@@ -167,12 +167,7 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 ### Name explicit model and/or dataset restrictions.
 * The Principle of least privilege (PoLP) is applied limiting access for dataset generation and model development.
 
-### Are there access restrictions to systems, model, and data?
-* No
-
-
 ## Model Card ++ Privacy Subcard
-
 
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
 * None
