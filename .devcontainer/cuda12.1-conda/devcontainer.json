@@ -60,6 +60,7 @@
     "source=${localEnv:XDG_RUNTIME_DIR},target=${localEnv:XDG_RUNTIME_DIR},type=bind",
     "source=/run/dbus/system_bus_socket,target=/run/dbus/system_bus_socket,type=bind",
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+    "source=/dev/hugepages,target=/dev/hugepages,type=bind,consistency=consistent",
     "source=${localWorkspaceFolder}/../.aws,target=/home/coder/.aws,type=bind,consistency=consistent",
     "source=${localWorkspaceFolder}/../.cache,target=/home/coder/.cache,type=bind,consistency=consistent",
     "source=${localWorkspaceFolder}/../.config,target=/home/coder/.config,type=bind,consistency=consistent",
@@ -98,7 +99,12 @@
       "settings": {
         "cmake.cmakePath": "/tmp/.current-conda-env/bin/cmake",
         "C_Cpp.intelliSenseEngine": "disabled",
-        "python.terminal.activateEnvironment": false
+        "python.terminal.activateEnvironment": false,
+        "files.watcherExclude": {
+            "**/.git/objects/**": true,
+            "**/.git/subtree-cache/**": true,
+            "**/.cache/**": true
+        }
       }
     }
   }
