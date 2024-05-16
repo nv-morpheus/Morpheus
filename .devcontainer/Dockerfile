@@ -98,3 +98,7 @@ ENV SCCACHE_REGION="us-east-2"
 ENV SCCACHE_BUCKET="rapids-sccache-devs"
 ENV VAULT_HOST="https://vault.ops.k8s.rapids.ai"
 ENV HISTFILE="/home/coder/.cache/._bash_history"
+
+ENV MORPHEUS_SUPPORT_DOCA=ON
+COPY ./docker/optional_deps docker/optional_deps
+RUN ./docker/optional_deps/doca.sh /tmp/doca
