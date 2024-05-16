@@ -145,6 +145,7 @@ def test_execute_error(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
     node = LangChainAgentNode(agent_executor=agent)
     assert isinstance(execute_node(node, input="input1"), RuntimeError)
 
+
 @pytest.mark.parametrize(
     "arun_return,expected_output",
     [
@@ -164,9 +165,7 @@ def test_execute_replaces_exceptions(
     arun_return: list,
     expected_output: list,
 ):
-    placeholder_input_values = {
-        "foo": "bar"
-    }  # a non-empty placeholder input for the context
+    placeholder_input_values = {"foo": "bar"}  # a non-empty placeholder input for the context
     mock_agent_executor.arun.return_value = arun_return
 
     node = LangChainAgentNode(

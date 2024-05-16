@@ -37,7 +37,10 @@ class LangChainAgentNode(LLMNodeBase):
         The agent executor to use to execute.
     """
 
-    def __init__(self, agent_executor: "AgentExecutor", replace_exceptions: bool=False, replace_exceptions_value: typing.Optional[str]=None):
+    def __init__(self,
+                 agent_executor: "AgentExecutor",
+                 replace_exceptions: bool = False,
+                 replace_exceptions_value: typing.Optional[str] = None):
         super().__init__()
 
         self._agent_executor = agent_executor
@@ -94,10 +97,8 @@ class LangChainAgentNode(LLMNodeBase):
                         # If the agent encounters a parsing error or a server error after retries, replace the error
                         # with a default value to prevent the pipeline from crashing
                         results[i][j] = self._replace_exceptions_value
-                        logger.warning(
-                            f"Exception encountered in result[{i}][{j}]: {answer}. "
-                            f"Replacing with default message: \"{self._replace_exceptions_value}\"."
-                        )
+                        logger.warning(f"Exception encountered in result[{i}][{j}]: {answer}. "
+                                       f"Replacing with default message: \"{self._replace_exceptions_value}\".")
 
         context.set_output(results)
 
