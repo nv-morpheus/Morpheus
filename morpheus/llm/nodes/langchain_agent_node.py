@@ -45,7 +45,9 @@ class LangChainAgentNode(LLMNodeBase):
     def get_input_names(self):
         return self._input_names
 
-    async def _run_single(self, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    async def _run_single(self,
+                          metadata: dict[str, typing.Any] = None,
+                          **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
 
         all_lists = all(isinstance(v, list) for v in kwargs.values())
 
@@ -56,7 +58,7 @@ class LangChainAgentNode(LLMNodeBase):
             input_list = [dict(zip(kwargs, t)) for t in zip(*kwargs.values())]
 
             # Run multiple again
-            results_async = [self._run_single(**x) for x in input_list]
+            results_async = [self._run_single(metadata=metadata, **x) for x in input_list]
 
             results = await asyncio.gather(*results_async, return_exceptions=True)
 
@@ -67,7 +69,7 @@ class LangChainAgentNode(LLMNodeBase):
 
         # We are not dealing with a list, so run single
         try:
-            return await self._agent_executor.arun(**kwargs)
+            return await self._agent_executor.arun(metadata=metadata, **kwargs)
         except Exception as e:
             logger.exception("Error running agent: %s", e)
             return e
