@@ -32,6 +32,9 @@ from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
 
+if typing.TYPE_CHECKING:
+    from langchain.agents import AgentExecutor
+
 
 def test_constructor(mock_agent_executor: mock.MagicMock):
     node = LangChainAgentNode(agent_executor=mock_agent_executor)
@@ -174,6 +177,8 @@ class MetaDataAgentNode(LangChainAgentNode):
 
 
 class MetadataSaverTool(BaseTool):
+    # The base class defines *args and **kwargs in the signature for _run and _arun requiring the arguments-differ
+    # pylint: disable=arguments-differ
     name: str = "MetadataSaverTool"
     description: str = "useful for when you need to know the name of a reptile"
 
@@ -184,6 +189,8 @@ class MetadataSaverTool(BaseTool):
         query: str,
         run_manager: typing.Optional[CallbackManagerForToolRun] = None,
     ) -> str:
+        assert query is not None  # avoiding unused-argument
+        assert run_manager is not None
         self.saved_metadata.update(run_manager.metadata)
         return "frog"
 
@@ -192,6 +199,8 @@ class MetadataSaverTool(BaseTool):
         query: str,
         run_manager: typing.Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
+        assert query is not None  # avoiding unused-argument
+        assert run_manager is not None
         self.saved_metadata.update(run_manager.metadata)
         return "frog"
 
