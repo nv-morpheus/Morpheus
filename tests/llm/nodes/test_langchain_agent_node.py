@@ -13,17 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
 from unittest import mock
 
 import pytest
 from langchain.agents import AgentType
 from langchain.agents import Tool
 from langchain.agents import initialize_agent
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.chat_models import ChatOpenAI  # pylint: disable=no-name-in-module
+from langchain_core.tools import BaseTool
 
 from _utils.llm import execute_node
 from _utils.llm import mk_mock_langchain_tool
 from _utils.llm import mk_mock_openai_response
+from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
 
@@ -42,12 +47,16 @@ def test_get_input_names(mock_agent_executor: mock.MagicMock):
     "values,arun_return,expected_output,expected_calls",
     [({
         'prompt': "prompt1"
-    }, list(range(3)), list(range(3)), [mock.call(prompt="prompt1")]),
+    }, list(range(3)), list(range(3)), [mock.call(prompt="prompt1", metadata=None)]),
      ({
          'a': ['b', 'c', 'd'], 'c': ['d', 'e', 'f'], 'e': ['f', 'g', 'h']
      },
       list(range(3)), [list(range(3))] * 3,
-      [mock.call(a='b', c='d', e='f'), mock.call(a='c', c='e', e='g'), mock.call(a='d', c='f', e='h')])],
+      [
+          mock.call(a='b', c='d', e='f', metadata=None),
+          mock.call(a='c', c='e', e='g', metadata=None),
+          mock.call(a='d', c='f', e='h', metadata=None)
+      ])],
     ids=["not-lists", "all-lists"])
 def test_execute(
     mock_agent_executor: mock.MagicMock,
@@ -143,3 +152,75 @@ def test_execute_error(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
 
     node = LangChainAgentNode(agent_executor=agent)
     assert isinstance(execute_node(node, input="input1"), RuntimeError)
+
+
+class MetaDataAgentNode(LangChainAgentNode):
+    """
+    Subclass of LangChainAgentNode that allows for the passing of metadata to the agent.
+    """
+
+    def __init__(self, agent_executor: "AgentExecutor", metadata: dict[str, typing.Any]):
+        super().__init__(agent_executor=agent_executor)
+        self._metadata = metadata
+
+    async def execute(self, context: LLMContext) -> LLMContext:
+
+        input_dict = context.get_inputs()
+        results = await self._run_single(metadata=self._metadata, **input_dict)
+
+        context.set_output(results)
+
+        return context
+
+
+class MetadataSaverTool(BaseTool):
+    name: str = "MetadataSaverTool"
+    description: str = "useful for when you need to know the name of a reptile"
+
+    saved_metadata: dict = {}
+
+    def _run(
+        self,
+        query: str,
+        run_manager: typing.Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        self.saved_metadata.update(run_manager.metadata)
+        return "frog"
+
+    async def _arun(
+        self,
+        query: str,
+        run_manager: typing.Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
+        self.saved_metadata.update(run_manager.metadata)
+        return "frog"
+
+
+def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
+    # Tests the execute method of the LangChainAgentNode with a a mocked tools and chat completion
+    (_, mock_async_client) = mock_chat_completion
+    chat_responses = [
+        'I should check Tool1\nAction: MetadataSaverTool\nAction Input: "name a reptile"',
+        'Observation: Answer: Yes!\nI now know the final answer.\nFinal Answer: Yes!'
+    ]
+    mock_responses = [mk_mock_openai_response([response]) for response in chat_responses]
+    mock_async_client.chat.completions.create.side_effect = mock_responses
+
+    llm_chat = ChatOpenAI(model="fake-model", openai_api_key="fake-key")
+
+    metadata_saver_tool = MetadataSaverTool()
+
+    tools = [metadata_saver_tool]
+
+    agent = initialize_agent(tools,
+                             llm_chat,
+                             agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+                             verbose=True,
+                             handle_parsing_errors=True,
+                             early_stopping_method="generate",
+                             return_intermediate_steps=False)
+
+    node = MetaDataAgentNode(agent_executor=agent, metadata={"morpheus": "unittest"})
+
+    assert execute_node(node, input="input1") == "Yes!"
+    assert metadata_saver_tool.saved_metadata == {"morpheus": "unittest"}
