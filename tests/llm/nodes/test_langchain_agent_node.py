@@ -22,7 +22,7 @@ from langchain.agents import Tool
 from langchain.agents import initialize_agent
 from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.chat_models import ChatOpenAI  # pylint: disable=no-name-in-module
+from langchain_community.chat_models import ChatOpenAI
 from langchain_core.tools import BaseTool
 
 from _utils.llm import execute_node
