@@ -147,22 +147,33 @@ def test_execute_error(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
 
 
 @pytest.mark.parametrize(
-    "arun_return,expected_output",
+    "arun_return,replace_value,expected_output",
     [
         (
             [[OutputParserException("Parsing Error"), "A valid result."]],
+            "Default error message.",
             [["Default error message.", "A valid result."]],
         ),
         (
             [["A valid result."], [Exception("General error"), "Another valid result."]],
-            [["A valid result."], ["Default error message.", "Another valid result."]],
+            "Another default error message.",
+            [["A valid result."], ["Another default error message.", "Another valid result."]],
+        ),
+        (
+            [
+                ["A valid result.", OutputParserException("Parsing Error")],
+                [Exception("General error"), "Another valid result."],
+            ],
+            None,
+            [["A valid result.", None], [None, "Another valid result."]],
         ),
     ],
-    ids=["error_handling_off", "parsing_error_handling", "exception_handling"],
+    ids=["parsing_error_handling", "exception_handling", "none_as_replacement_value"],
 )
 def test_execute_replaces_exceptions(
     mock_agent_executor: mock.MagicMock,
     arun_return: list,
+    replace_value: str,
     expected_output: list,
 ):
     placeholder_input_values = {"foo": "bar"}  # a non-empty placeholder input for the context
@@ -171,7 +182,7 @@ def test_execute_replaces_exceptions(
     node = LangChainAgentNode(
         agent_executor=mock_agent_executor,
         replace_exceptions=True,
-        replace_exceptions_value="Default error message.",
+        replace_exceptions_value=replace_value,
     )
     output = execute_node(node, **placeholder_input_values)
     assert output == expected_output

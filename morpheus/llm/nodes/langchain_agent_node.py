@@ -50,9 +50,6 @@ class LangChainAgentNode(LLMNodeBase):
         self._replace_exceptions = replace_exceptions
         self._replace_exceptions_value = replace_exceptions_value
 
-        if self._replace_exceptions:
-            assert self._replace_exceptions_value is not None, "When replace_exceptions is enabled, replace_exceptions_value must be provided."
-
     def get_input_names(self):
         return self._input_names
 
