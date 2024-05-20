@@ -18,26 +18,24 @@
 #include "morpheus/stages/add_scores_stage_base.hpp"
 
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
-#include "morpheus/messages/meta.hpp"
-#include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
-#include "morpheus/objects/dtype.hpp"            // for DType
-#include "morpheus/objects/tensor.hpp"           // for Tensor
-#include "morpheus/objects/tensor_object.hpp"    // for TensorObject
-#include "morpheus/types.hpp"                    // for TensorIndex
-#include "morpheus/utilities/matx_util.hpp"      // for MatxUtil
-#include "morpheus/utilities/string_util.hpp"    // for StringUtil
-#include "morpheus/utilities/tensor_util.hpp"    // for TensorUtils
+#include "morpheus/messages/meta.hpp"                  // for MessageMeta
+#include "morpheus/messages/multi_response.hpp"        // for MultiResponseMessage
+#include "morpheus/objects/dtype.hpp"                  // for DType
+#include "morpheus/objects/tensor.hpp"                 // for Tensor
+#include "morpheus/objects/tensor_object.hpp"          // for TensorObject
+#include "morpheus/types.hpp"                          // for TensorIndex
+#include "morpheus/utilities/matx_util.hpp"            // for MatxUtil
+#include "morpheus/utilities/string_util.hpp"          // for StringUtil
+#include "morpheus/utilities/tensor_util.hpp"          // for TensorUtils
 
-#include <glog/logging.h>  // for CHECK, COMPACT_GOOGLE_LOG_FATAL, LogMessageFatal, COMP...
+#include <glog/logging.h>  // for CHECK, COMPACT_GOOGLE_LOG_FATAL, LogMessageFatal
 #include <rxcpp/rx.hpp>    // for observable_member, trace_activity, decay_t, operator|
 
 #include <cstddef>      // for size_t
 #include <iterator>     // for reverse_iterator
 #include <memory>       // for shared_ptr, allocator, __shared_ptr_access
 #include <ostream>      // for basic_ostream, operator<<, basic_ostream::operator<<
-#include <stdexcept>    // for runtime_error
 #include <type_traits>  // for is_same_v
-#include <typeinfo>     // for type_info
 #include <utility>      // for move, pair
 #include <vector>       // for vector
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
@@ -72,12 +70,10 @@ AddScoresStageBase<InputT, OutputT>::source_type_t AddScoresStageBase<InputT, Ou
     {
         this->on_control_message(x);
     }
-    // sink_type_t not supported
     else
     {
-        std::string error_msg{"AddScoresStageBase receives unsupported input type: " + std::string(typeid(x).name())};
-        LOG(ERROR) << error_msg;
-        throw std::runtime_error(error_msg);
+        // sink_type_t not supported
+        static_assert(!sizeof(sink_type_t), "AddScoresStageBase receives unsupported input type");
     }
     return x;
 }
