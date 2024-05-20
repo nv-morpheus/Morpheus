@@ -27,6 +27,7 @@
     "launch": {
         "compounds": [],
         "configurations": [
+
             {
                 "args": [
                     "--log_level=DEBUG",
@@ -694,7 +695,7 @@
             "tests"
         ],
         "python.testing.pytestEnabled": true,
-        "python.testing.unittestEnabled": false,
+        "python.testing.unittestEnabled": true,
         "rewrap.wrappingColumn": 120,
         "testMate.cpp.test.advancedExecutables": [
             {
@@ -730,6 +731,7 @@
         },
         "yapf.args": [
             "--style=${workspaceFolder}/setup.cfg"
-        ]
+        ],
+        "python.analysis.inlayHints.pytestParameters": true
     }
 }

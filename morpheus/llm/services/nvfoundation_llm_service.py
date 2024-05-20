@@ -42,7 +42,7 @@ class NVFoundationLLMClient(LLMClient):
     `NeMoLLMService.get_client` method.
     Parameters
     ----------
-    parent : NeMoLLMService
+    parent :  NVFoundationMService
         The parent service for this client.
     model_name : str
         The name of the model to interact with.
@@ -63,7 +63,10 @@ class NVFoundationLLMClient(LLMClient):
         self._model_kwargs = model_kwargs
         self._prompt_key = "prompt"
 
-        self._client = ChatNVIDIA(client=self._parent._nve_client, model=model_name, **model_kwargs)
+        self._client = ChatNVIDIA(api_key=self._parent._api_key,
+                                  base_url=self._parent._base_url,
+                                  model=model_name,
+                                  **model_kwargs)  # type: ignore
 
     def get_input_names(self) -> list[str]:
         schema = self._client.get_input_schema()
@@ -144,24 +147,30 @@ class NVFoundationLLMService(LLMService):
             variable. If neither are present `https://api.nvcf.nvidia.com/v2` will be used., by default None
     """
 
-    def __init__(self, *, api_key: str = None, base_url: str = None) -> None:
+    def __init__(self, *, api_key: str = None, base_url: str = None, **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
         super().__init__()
 
-        self._api_key = api_key
         if base_url is None:
-            self._base_url = os.getenv('NVIDIA_API_BASE', 'https://api.nvcf.nvidia.com/v2')
+            self._base_url = os.getenv('NVIDIA_API_BASE', "https://api.nvcf.nvidia.com/v2/nvcf")
         else:
             self._base_url = base_url
 
-        self._nve_client = NVEModel(
-            nvidia_api_key=self._api_key,
-            fetch_url_format=f"{self._base_url}/nvcf/pexec/status/",
-            call_invoke_base=f"{self._base_url}/nvcf/pexec/functions",
-            func_list_format=f"{self._base_url}/nvcf/functions",
-        )  # type: ignore
+        if "NVIDIA_API_KEY" in os.environ:
+            self._api_key = os.getenv('NVIDIA_API_KEY')
+        else:
+            self._api_key = api_key
+
+        self._default_model_kwargs = model_kwargs
+
+    def _merge_model_kwargs(self, model_kwargs: dict) -> dict:
+        return {**self._default_model_kwargs, **model_kwargs}
+
+    @property
+    def api_key(self):
+        return self._api_key
 
     def get_client(self, *, model_name: str, **model_kwargs) -> NVFoundationLLMClient:
         """
@@ -174,4 +183,6 @@ class NVFoundationLLMService(LLMService):
             Additional keyword arguments to pass to the model when generating text.
         """
 
-        return NVFoundationLLMClient(self, model_name=model_name, **model_kwargs)
+        final_model_kwargs = self._merge_model_kwargs(model_kwargs)
+
+        return NVFoundationLLMClient(self, model_name=model_name, **final_model_kwargs)

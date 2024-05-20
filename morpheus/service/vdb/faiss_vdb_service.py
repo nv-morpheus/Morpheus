@@ -21,7 +21,10 @@ import time
 import typing
 from functools import wraps
 
+import numpy as np
 import pandas as pd
+from langchain.docstore.document import Document
+from langchain_community.vectorstores import FAISS
 
 import cudf
 
@@ -81,7 +84,9 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         dict
             Returns response content as a dictionary.
         """
-        raise NotImplementedError("Insert operation is not supported in FAISS")
+        self._index.add_embeddings(data)
+        return {"status": "success"}
+        #return list_of_ids
 
     def insert_dataframe(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs: dict[str, typing.Any]) -> dict:
         """
@@ -149,7 +154,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
                                 k: int = 4,
                                 **kwargs: dict[str, typing.Any]) -> list[list[dict]]:
         """
-        Perform a similarity search within the collection.
+        Perform a similarity search within the FAISS docstore (asimilarity_search_by_vector returns docs most similar to embedding vector asynchronously).
 
         Parameters
         ----------
@@ -211,7 +216,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
 
     def delete(self, expr: str, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
         """
-        Delete vectors from the collection using expressions.
+        Delete vectors by giving a list of IDs.
 
         Parameters
         ----------
@@ -225,7 +230,8 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         dict[str, typing.Any]
             Returns result of the given keys that are deleted from the collection.
         """
-        raise NotImplementedError("Delete operation is not supported in FAISS")
+        self._index.delete(expr)
+        return {"status": "success"}
 
     def retrieve_by_keys(self, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> list[typing.Any]:
         """
@@ -260,7 +266,9 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         int
             Returns number of entities in the collection.
         """
-        raise NotImplementedError("Count operation is not supported in FAISS")
+        docstore = self._parent._local_dir
+        count = len(docstore)
+        return count
 
     def drop(self, **kwargs: dict[str, typing.Any]) -> None:
         """
@@ -311,19 +319,28 @@ class FaissVectorDBService(VectorDBService):
 
     def has_store_object(self, name: str) -> bool:
         """
-        Check if a collection exists in the Milvus vector database.
+        Check if specific index file name exists by attempting to load FAISS index, docstore, and index_to_docstore_id from disk with the index file name.
 
         Parameters
         ----------
         name : str
-            Name of the collection to check.
+            Name of the FAISS index file to check.
 
         Returns
         -------
         bool
-            True if the collection exists, False otherwise.
+            True if the file exists, False otherwise.
         """
-        return self._client.has_collection(collection_name=name)
+        try:
+            FAISS.load_local(folder_path=self._local_dir,
+                             embeddings=self._embeddings,
+                             index_name=name,
+                             allow_dangerous_deserialization=True)
+            return True
+        except Exception as e:
+            print(f"Failed to load FAISS with the given index file name: {e}")
+        # Return False if given index file name cannot be loaded
+        return False
 
     def list_store_objects(self, **kwargs: dict[str, typing.Any]) -> list[str]:
         """
@@ -362,42 +379,28 @@ class FaissVectorDBService(VectorDBService):
         ValueError
             If the provided schema fields configuration is empty.
         """
-        logger.debug("Creating collection: %s, overwrite=%s, kwargs=%s", name, overwrite, kwargs)
+        # can create with: from_embeddings, from_texts, or from_documents
 
-        # Preserve original configuration.
-        collection_conf = copy.deepcopy(kwargs)
+        resource = self.load_resource(name)
 
-        auto_id = collection_conf.get("auto_id", False)
-        index_conf = collection_conf.get("index_conf", None)
-        partition_conf = collection_conf.get("partition_conf", None)
+        if "documents" in kwargs:
+            documents = kwargs["documents"]
+            return resource._index.from_documents(documents, self._embeddings)
 
-        schema_conf = collection_conf.get("schema_conf")
-        schema_fields_conf = schema_conf.pop("schema_fields")
+        elif "text_embeddings" in kwargs:
+            text_embeddings = kwargs["text_embeddings"]
+            metadatas = kwargs.get("metadatas")
+            ids = kwargs.get("ids")
+            return resource._index.from_embeddings(text_embeddings, self._embeddings, metadatas, ids)
 
-        if not self.has_store_object(name) or overwrite:
-            if overwrite and self.has_store_object(name):
-                self.drop(name)
+        elif "texts" in kwargs:
+            texts = kwargs["texts"]
+            metadatas = kwargs.get("metadatas")
+            ids = kwargs.get("ids")
+            return resource._index.from_texts(texts, self._embeddings, metadatas, ids)
 
-            if len(schema_fields_conf) == 0:
-                raise ValueError("Cannot create collection as provided empty schema_fields configuration")
-
-            schema_fields = [FieldSchemaEncoder.from_dict(field_conf) for field_conf in schema_fields_conf]
-
-            schema = pymilvus.CollectionSchema(fields=schema_fields, **schema_conf)
-
-            self._client.create_collection_with_schema(collection_name=name,
-                                                       schema=schema,
-                                                       index_params=index_conf,
-                                                       auto_id=auto_id,
-                                                       shards_num=collection_conf.get("shards", 2),
-                                                       consistency_level=collection_conf.get(
-                                                           "consistency_level", "Strong"))
-
-            if partition_conf:
-                timeout = partition_conf.get("timeout", 1.0)
-                # Iterate over each partition configuration
-                for part in partition_conf["partitions"]:
-                    self._client.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
+        else:
+            raise ValueError("You must provide documents, texts, or text_embeddings along with embeddings in kwargs.")
 
     def create_from_dataframe(self,
                               name: str,
@@ -468,6 +471,7 @@ class FaissVectorDBService(VectorDBService):
         """
 
         resource = self.load_resource(name)
+
         return resource.insert(data, **kwargs)
 
     def insert_dataframe(self,

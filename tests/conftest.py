@@ -25,10 +25,13 @@ import time
 import types
 import typing
 import warnings
+from pathlib import Path
 from unittest import mock
 
 import pytest
 import requests
+from langchain_community.vectorstores import FAISS  # added
+from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings  # added
 
 from _utils import import_or_skip
 from _utils.kafka import _init_pytest_kafka
@@ -483,7 +486,7 @@ def manual_seed():
 
 
 @pytest.fixture(scope="function")
-def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
+def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path: Path):
     """
     Executes a test in the tmp_path directory
     """
@@ -1008,6 +1011,25 @@ def milvus_server_uri(tmp_path_factory):
             yield uri
 
 
+@pytest.fixture(scope="session")
+def faiss_test_dir():
+    # Get oath for FAISS directory
+    tmp_dir_path = os.environ.get('FAISS_DIR')
+    if tmp_dir_path is None:
+        raise ValueError("set FAISS_DIR to directory with FAISS DB")
+
+    # Can change embedding model
+    embeddings = NVIDIAEmbeddings(model="nvolveqa_40k")
+    tmp_dir = FAISS.load_local(tmp_dir_path, embeddings=embeddings, allow_dangerous_deserialization=True)
+    yield tmp_dir
+
+
+@pytest.fixture(scope="session")
+def test_embeddings():
+    embeddings = NVIDIAEmbeddings(model="nvolveqa_40k")
+    yield embeddings
+
+
 @pytest.fixture(scope="session", name="milvus_data")
 def milvus_data_fixture():
     inital_data = [{"id": i, "embedding": [i / 10.0] * 3, "age": 25 + i} for i in range(10)]
@@ -1035,6 +1057,18 @@ def nemollm_fixture(fail_missing: bool):
                    "`conda env update --solver=libmamba -n morpheus "
                    "--file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
     yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
+
+
+@pytest.fixture(name="nvfoundationllm", scope='session')
+def nvfoundationllm_fixture(fail_missing: bool):
+    """
+    Fixture to ensure nvfoundationllm is installed
+    """
+    skip_reason = (
+        "Tests for NVFoundation require the langchain-nvidia-ai-endpoints package to be installed, to install this run:\n"
+        "`conda env update --solver=libmamba -n morpheus "
+        "--file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
+    yield import_or_skip("langchain_nvidia_ai_endpoints", reason=skip_reason, fail_missing=fail_missing)
 
 
 @pytest.fixture(name="openai", scope='session')
