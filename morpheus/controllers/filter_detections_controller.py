@@ -20,6 +20,7 @@ import numpy as np
 import typing_utils
 
 from morpheus.common import FilterSource
+from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 
@@ -66,12 +67,18 @@ class FilterDetectionsController:
         """
         return self._field_name
 
-    def _find_detections(self, x: MultiMessage) -> typing.Union[cp.ndarray, np.ndarray]:
-        # Determind the filter source
-        if self._filter_source == FilterSource.TENSOR:
-            filter_source = x.get_output(self._field_name)
-        else:
-            filter_source = x.get_meta(self._field_name).values
+    def _find_detections(self, x: MultiMessage | ControlMessage) -> typing.Union[cp.ndarray, np.ndarray]:
+        # Determine the filter source
+        if isinstance(x, MultiMessage):
+            if self._filter_source == FilterSource.TENSOR:
+                filter_source = x.get_output(self._field_name)
+            else:
+                filter_source = x.get_meta(self._field_name).values
+        elif isinstance(x, ControlMessage):
+            if self._filter_source == FilterSource.TENSOR:
+                filter_source = x.tensors().get_tensor(self._field_name)
+            else:
+                filter_source = x.payload().get_data(self._field_name).values
 
         if (isinstance(filter_source, np.ndarray)):
             array_mod = np
@@ -89,7 +96,7 @@ class FilterDetectionsController:
 
         return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
-    def filter_copy(self, x: MultiMessage) -> MultiMessage:
+    def filter_copy(self, x: MultiMessage | ControlMessage) -> MultiMessage | ControlMessage:
         """
         This function uses a threshold value to filter the messages.
 
@@ -113,9 +120,15 @@ class FilterDetectionsController:
         if (true_pairs.shape[0] == 0):
             return None
 
-        return x.copy_ranges(true_pairs)
+        if isinstance(x, MultiMessage):
+            return x.copy_ranges(true_pairs)
+        if isinstance(x, ControlMessage):
+            meta = x.payload()
+            x.payload(meta.copy_ranges(true_pairs))
+            return x
+        raise TypeError(f"Unsupported message type: {type(x)}")
 
-    def filter_slice(self, x: MultiMessage) -> typing.List[MultiMessage]:
+    def filter_slice(self, x: MultiMessage | ControlMessage) -> typing.List[MultiMessage] | typing.List[ControlMessage]:
         """
         This function uses a threshold value to filter the messages.
 
@@ -134,10 +147,19 @@ class FilterDetectionsController:
         output_list = []
         if x is not None:
             true_pairs = self._find_detections(x)
-            for pair in true_pairs:
-                pair = tuple(pair.tolist())
-                if ((pair[1] - pair[0]) > 0):
-                    output_list.append(x.get_slice(*pair))
+            if isinstance(x, MultiMessage):
+                for pair in true_pairs:
+                    pair = tuple(pair.tolist())
+                    if ((pair[1] - pair[0]) > 0):
+                        output_list.append(x.get_slice(*pair))
+            elif isinstance(x, ControlMessage):
+                for pair in true_pairs:
+                    pair = tuple(pair.tolist())
+                    if ((pair[1] - pair[0]) > 0):
+                        sliced_meta = x.payload().get_slice(*pair)
+                        cm = ControlMessage(x)
+                        cm.payload(sliced_meta)
+                        output_list.append(cm)
 
         return output_list
 
