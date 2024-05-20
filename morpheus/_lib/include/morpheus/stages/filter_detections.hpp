@@ -17,21 +17,22 @@
 
 #pragma once
 
-#include "morpheus/messages/multi.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/filter_source.hpp"
+#include "morpheus/export.h"                   // for MORPHEUS_EXPORT
+#include "morpheus/messages/control.hpp"       // for ControlMessage
+#include "morpheus/messages/multi.hpp"         // for MultiMessage
+#include "morpheus/objects/dev_mem_info.hpp"   // for DevMemInfo
+#include "morpheus/objects/filter_source.hpp"  // for FilterSource
 
-#include <boost/fiber/context.hpp>
-#include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>
+#include <cuda_runtime.h>           // for cudaMemcpy
+#include <mrc/segment/builder.hpp>  // for Builder
+#include <mrc/segment/object.hpp>   // for Object
+#include <pymrc/node.hpp>           // for PythonNode
+#include <rxcpp/rx.hpp>             // for observable_member, trace_activity, map, decay_t, from
 
 #include <cstddef>  // for size_t
-#include <map>
-#include <memory>
-#include <string>
-#include <thread>
+#include <map>      // for map
+#include <memory>   // for allocator, shared_ptr
+#include <string>   // for string
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -43,7 +44,6 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
 /**
  * @brief FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor or dataframe column
  * using a specified criteria. Rows in the `meta` dataframe are excluded if their associated value in the datasource
@@ -68,11 +68,12 @@ namespace morpheus {
  * Depending on the downstream stages, this can cause performance issues, especially if those stages need to acquire
  * the Python GIL.
  */
-class FilterDetectionsStage
-  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
+template <typename MessageT>
+class MORPHEUS_EXPORT FilterDetectionsStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
 {
   public:
-    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -90,8 +91,8 @@ class FilterDetectionsStage
 
   private:
     subscribe_fn_t build_operator();
-    DevMemInfo get_tensor_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
-    DevMemInfo get_column_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
+    DevMemInfo get_tensor_filter_source(const sink_type_t& x);
+    DevMemInfo get_column_filter_source(const sink_type_t& x);
 
     float m_threshold;
     bool m_copy;
@@ -101,14 +102,20 @@ class FilterDetectionsStage
     std::map<std::size_t, std::string> m_idx2label;
 };
 
+using FilterDetectionsStageMM =  // NOLINT(readability-identifier-naming)
+    FilterDetectionsStage<MultiMessage>;
+using FilterDetectionsStageCM =  // NOLINT(readability-identifier-naming)
+    FilterDetectionsStage<ControlMessage>;
+
 /****** FilterDetectionStageInterfaceProxy******************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct FilterDetectionStageInterfaceProxy
+struct MORPHEUS_EXPORT FilterDetectionStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a FilterDetectionStage, and return the result
+     * @brief Create and initialize a FilterDetectionStage that receives MultiMessage and emits MultiMessage, and return
+     * the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
@@ -117,16 +124,34 @@ struct FilterDetectionStageInterfaceProxy
      * @param filter_source : Indicate if the values used for filtering exist in either an output tensor
      * (`FilterSource::TENSOR`) or a column in a Dataframe (`FilterSource::DATAFRAME`).
      * @param field_name : Name of the tensor or Dataframe column to filter on default="probs"
-     * @return std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>>
+     * @return std::shared_ptr<mrc::segment::Object<FilterDetectionsStage<MultiMessage, MultiMessage>>>
      */
-    static std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> init(mrc::segment::Builder& builder,
-                                                                             const std::string& name,
-                                                                             float threshold,
-                                                                             bool copy,
-                                                                             FilterSource filter_source,
-                                                                             std::string field_name);
+    static std::shared_ptr<mrc::segment::Object<FilterDetectionsStageMM>> init_mm(mrc::segment::Builder& builder,
+                                                                                  const std::string& name,
+                                                                                  float threshold,
+                                                                                  bool copy,
+                                                                                  FilterSource filter_source,
+                                                                                  std::string field_name);
+    /**
+     * @brief Create and initialize a FilterDetectionStage that receives ControlMessage and emits ControlMessage, and
+     * return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param threshold : Threshold to classify
+     * @param copy : Whether or not to perform a copy default=true
+     * @param filter_source : Indicate if the values used for filtering exist in either an output tensor
+     * (`FilterSource::TENSOR`) or a column in a Dataframe (`FilterSource::DATAFRAME`).
+     * @param field_name : Name of the tensor or Dataframe column to filter on default="probs"
+     * @return std::shared_ptr<mrc::segment::Object<FilterDetectionsStage<ControlMessage, ControlMessage>>>
+     */
+    static std::shared_ptr<mrc::segment::Object<FilterDetectionsStageCM>> init_cm(mrc::segment::Builder& builder,
+                                                                                  const std::string& name,
+                                                                                  float threshold,
+                                                                                  bool copy,
+                                                                                  FilterSource filter_source,
+                                                                                  std::string field_name);
 };
 
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

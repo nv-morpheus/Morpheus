@@ -20,3 +20,4 @@ import pandas as pd
 import cudf
 
 DataFrameType = typing.Union[pd.DataFrame, cudf.DataFrame]
+SeriesType = typing.Union[pd.Series, cudf.Series]

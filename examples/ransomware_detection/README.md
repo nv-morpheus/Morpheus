@@ -35,15 +35,15 @@ export MORPHEUS_ROOT=$(pwd)
 ```
 
 ##### Start Triton Inference Server Container
-Run the following from the `examples/ransomware_detection` directory to launch Triton and load the `ransomw-model-short-rf` model:
-
+From the Morpheus repo root directory, run the following to launch Triton and load the `ransomw-model-short-rf` model:
 ```bash
 # Run Triton in explicit mode
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:23.06-py3 \
-   tritonserver --model-repository=/models/triton-model-repo \
-                --exit-on-error=false \
-                --model-control-mode=explicit \
-                --load-model ransomw-model-short-rf
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
+    -v $PWD/examples/ransomware_detection/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:23.06-py3 \
+    tritonserver --model-repository=/models/triton-model-repo \
+                 --exit-on-error=false \
+                 --model-control-mode=explicit \
+                 --load-model ransomw-model-short-rf
 ```
 
 ##### Verify Model Deployment
@@ -67,14 +67,13 @@ mamba install 'dask>=2023.1.1' 'distributed>=2023.1.1'
 ```
 
 ## Run Ransomware Detection Pipeline
-Run the following from the `examples/ransomware_detection` directory to start the ransomware detection pipeline:
+Run the following from the root of the Morpheus repo to start the ransomware detection pipeline:
 
 ```bash
-python run.py --server_url=localhost:8001 \
+python examples/ransomware_detection/run.py --server_url=localhost:8001 \
               --sliding_window=3 \
               --model_name=ransomw-model-short-rf \
-              --conf_file=./config/ransomware_detection.yaml \
-              --input_glob=${MORPHEUS_ROOT}/examples/data/appshield/*/snapshot-*/*.json \
+              --input_glob=./examples/data/appshield/*/snapshot-*/*.json \
               --output_file=./ransomware_detection_output.jsonlines
 ```
 
