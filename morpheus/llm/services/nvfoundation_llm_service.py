@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 import logging
 import os
-import typing
 
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.llm_service import LLMService
@@ -31,7 +29,6 @@ IMPORT_ERROR_MESSAGE = (
 try:
     from langchain_core.prompt_values import StringPromptValue
     from langchain_nvidia_ai_endpoints import ChatNVIDIA
-    from langchain_nvidia_ai_endpoints._common import NVEModel
 except ImportError as import_exc:
     IMPORT_EXCEPTION = import_exc
 
@@ -63,10 +60,21 @@ class NVFoundationLLMClient(LLMClient):
         self._model_kwargs = model_kwargs
         self._prompt_key = "prompt"
 
-        self._client = ChatNVIDIA(api_key=self._parent._api_key,
-                                  base_url=self._parent._base_url,
-                                  model=model_name,
-                                  **model_kwargs)  # type: ignore
+        chat_kwargs = {
+            "model": model_name,
+            "api_key": self._parent._api_key,
+            "base_url": self._parent._base_url,
+        }
+
+        # Remove None values set by the environment in the kwargs
+        if (chat_kwargs["api_key"] is None):
+            del chat_kwargs["api_key"]
+
+        if (chat_kwargs["base_url"] is None):
+            del chat_kwargs["base_url"]
+
+        # Combine the chat args with the model
+        self._client = ChatNVIDIA(**{**chat_kwargs, **model_kwargs})  # type: ignore
 
     def get_input_names(self) -> list[str]:
         schema = self._client.get_input_schema()
@@ -81,7 +89,12 @@ class NVFoundationLLMClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        return self.generate_batch({self._prompt_key: [input_dict[self._prompt_key]]})[0]
+
+        inputs = {self._prompt_key: [input_dict[self._prompt_key]]}
+
+        input_dict.pop(self._prompt_key)
+
+        return self.generate_batch(inputs=inputs, **input_dict)[0]
 
     async def generate_async(self, **input_dict) -> str:
         """
@@ -108,7 +121,9 @@ class NVFoundationLLMClient(LLMClient):
         """
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
 
-        responses = self._client.generate_prompt(prompts=prompts, **self._model_kwargs)  # type: ignore
+        final_kwargs = {**self._model_kwargs, **kwargs}
+
+        responses = self._client.generate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
 
         return [g[0].text for g in responses.generations]
 
@@ -143,8 +158,8 @@ class NVFoundationLLMService(LLMService):
         `NGC_ORG_ID` environment variable. This value is only required if the account associated with the `api_key` is
         a member of multiple NGC organizations.
     base_url : str, optional
-            The api host url, by default None. If `None` the url will be read from the `NVIDIA_API_BASE` environment
-            variable. If neither are present `https://api.nvcf.nvidia.com/v2` will be used., by default None
+            The api host url, by default None. If `None` the url will be read from the `NVAI_BASE_URL` environment
+            variable. If neither are present `https://api.nvcf.nvidia.com/v2/nvcf` will be used by langchain.
     """
 
     def __init__(self, *, api_key: str = None, base_url: str = None, **model_kwargs) -> None:

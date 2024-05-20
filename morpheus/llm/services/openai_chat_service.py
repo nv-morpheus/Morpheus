@@ -37,6 +37,8 @@ try:
     import openai
     import openai.types.chat
     import openai.types.chat.chat_completion
+    from openai.types.chat.completion_create_params import ResponseFormat
+
 except ImportError as import_exc:
     IMPORT_EXCEPTION = import_exc
 
@@ -75,11 +77,15 @@ class OpenAIChatClient(LLMClient):
     model_name : str
         The name of the model to interact with.
 
-    set_assistant: bool, optional default=False
-        When `True`, a second input field named `assistant` will be used to proide additional context to the model.
+    set_assistant: bool, optional
+        When `True`, a second input field named `assistant` will be used to proide additional context to the model, by
+        default False
 
-    max_retries: int, optional default=10
-        The maximum number of retries to attempt when making a request to the OpenAI API.
+    max_retries: int, optional
+        The maximum number of retries to attempt when making a request to the OpenAI API, by default 10
+
+    json: bool, optional
+        When `True`, the response will be returned as a JSON object, by default False
 
     model_kwargs : dict[str, typing.Any]
         Additional keyword arguments to pass to the model when generating text.
@@ -94,6 +100,7 @@ class OpenAIChatClient(LLMClient):
                  model_name: str,
                  set_assistant: bool = False,
                  max_retries: int = 10,
+                 json=False,
                  **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
@@ -108,13 +115,19 @@ class OpenAIChatClient(LLMClient):
         self._set_assistant = set_assistant
         self._prompt_key = "prompt"
         self._assistant_key = "assistant"
+        self._json = json
 
         # Preserve original configuration.
         self._model_kwargs = copy.deepcopy(model_kwargs)
 
+        if (self._json):
+            self._model_kwargs["response_format"] = ResponseFormat(type="json_object")
+
         # Create the client objects for both sync and async
         self._client = openai.OpenAI(api_key=parent._api_key, base_url=parent._base_url, max_retries=max_retries)
-        self._client_async = openai.AsyncOpenAI(api_key=parent._api_key, base_url=parent._base_url, max_retries=max_retries)
+        self._client_async = openai.AsyncOpenAI(api_key=parent._api_key,
+                                                base_url=parent._base_url,
+                                                max_retries=max_retries)
 
     def get_input_names(self) -> list[str]:
         input_names = [self._prompt_key]
@@ -377,6 +390,7 @@ class OpenAIChatService(LLMService):
                    model_name: str,
                    set_assistant: bool = False,
                    max_retries: int = 10,
+                   json=False,
                    **model_kwargs) -> OpenAIChatClient:
         """
         Returns a client for interacting with a specific model. This method is the preferred way to create a client.
@@ -386,11 +400,15 @@ class OpenAIChatService(LLMService):
         model_name : str
             The name of the model to create a client for.
 
-        set_assistant: bool, optional default=False
-            When `True`, a second input field named `assistant` will be used to proide additional context to the model.
+        set_assistant: bool, optional
+            When `True`, a second input field named `assistant` will be used to proide additional context to the model,
+            by default False
 
-        max_retries: int, optional default=10
-            The maximum number of retries to attempt when making a request to the OpenAI API.
+        max_retries: int, optional
+            The maximum number of retries to attempt when making a request to the OpenAI API, by default 10
+
+        json: bool, optional
+            When `True`, the response will be returned as a JSON object, by default False
 
         model_kwargs : dict[str, typing.Any]
             Additional keyword arguments to pass to the model when generating text. Arguments specified here will
@@ -403,4 +421,5 @@ class OpenAIChatService(LLMService):
                                 model_name=model_name,
                                 set_assistant=set_assistant,
                                 max_retries=max_retries,
+                                json=json,
                                 **final_model_kwargs)
