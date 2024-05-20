@@ -60,12 +60,16 @@ class EnvConfigValue(ABC):
                 self._source = EnvConfigValueSource.ENV_OVERRIDE
 
             if value is None:
-                message = "value must not be None, but provided value was None and no environment-based default or override was found."
+                message = ("value must not be None, but provided value was None and no environment-based default or "
+                           "override was found.")
 
-                if _ENV_KEY is None:
+                if self.__class__._ENV_KEY is None:
                     raise ValueError(message)
-                
-                raise ValueError(f"{message} Try passing a value to the constructor, or setting the `{_ENV_KEY}` environment variable.")
+
+                raise ValueError(
+                    f"{message} Try passing a value to the constructor, or setting the `{self.__class__._ENV_KEY}` "
+                    "environment variable."
+                )
 
         else:
             if value is None:
