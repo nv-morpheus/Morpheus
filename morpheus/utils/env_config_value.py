@@ -34,6 +34,7 @@ class EnvConfigValue(ABC):
 
     _ENV_KEY: str | None = None
     _ENV_KEY_OVERRIDE: str | None = None
+    _ALLOW_NONE: bool = False
 
     def __init__(self, value: str | None = None, use_env: bool = True):
         """
@@ -59,7 +60,8 @@ class EnvConfigValue(ABC):
                 value = os.environ[self.__class__._ENV_KEY_OVERRIDE]
                 self._source = EnvConfigValueSource.ENV_OVERRIDE
 
-            if value is None:
+            if not self.__class__._ALLOW_NONE and value is None:
+
                 message = ("value must not be None, but provided value was None and no environment-based default or "
                            "override was found.")
 
@@ -72,10 +74,10 @@ class EnvConfigValue(ABC):
                 )
 
         else:
-            if value is None:
+            if not self.__class__._ALLOW_NONE and value is None:
                 raise ValueError("value must not be none")
 
-        assert isinstance(value, str)
+        assert isinstance(value, str) or value is None
 
         self._value = value
         self._use_env = use_env
@@ -89,8 +91,5 @@ class EnvConfigValue(ABC):
         return self._use_env
 
     @property
-    def value(self) -> str:
-        return self._value
-
-    def __str__(self):
+    def value(self) -> str | None:
         return self._value

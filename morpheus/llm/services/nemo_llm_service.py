@@ -195,9 +195,11 @@ class NeMoLLMService(LLMService):
 
     class OrgId(EnvConfigValue):
         _ENV_KEY: str = "NGC_ORG_ID"
+        _ALLOW_NONE: bool = True
 
     class BaseURI(EnvConfigValue):
         _ENV_KEY: str = "NGC_API_BASE"
+        _ALLOW_NONE: bool = True
 
     def __init__(self,
                  *,
@@ -243,16 +245,16 @@ class NeMoLLMService(LLMService):
         self._retry_count = retry_count
 
         self._conn = nemollm.NemoLLM(
-            api_host=str(base_uri),
+            api_host=base_uri.value,
             # The client must configure the authentication and authorization parameters
             # in accordance with the API server security policy.
             # Configure Bearer authorization
-            api_key=str(api_key),
+            api_key=api_key.value,
 
             # If you are in more than one LLM-enabled organization, you must
             # specify your org ID in the form of a header. This is optional
             # if you are only in one LLM-enabled org.
-            org_id=str(org_id),
+            org_id=org_id.value,
         )
 
     def get_client(self, *, model_name: str, **model_kwargs) -> NeMoLLMClient:
