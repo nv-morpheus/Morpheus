@@ -14,10 +14,13 @@
 
 import dataclasses
 import logging
+import typing
 
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
-from morpheus.models.dfencoder import AutoEncoder
+
+if (typing.TYPE_CHECKING):
+    from morpheus.models.dfencoder import AutoEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +31,7 @@ class MultiAEMessage(MultiMessage):
     Subclass of `MultiMessage` specific to the AutoEncoder pipeline, which contains the model.
     """
 
-    model: AutoEncoder
+    model: "AutoEncoder"
     train_scores_mean: float
     train_scores_std: float
 
@@ -37,7 +40,7 @@ class MultiAEMessage(MultiMessage):
                  meta: MessageMeta,
                  mess_offset: int = 0,
                  mess_count: int = -1,
-                 model: AutoEncoder,
+                 model: "AutoEncoder",
                  train_scores_mean: float = 0.0,
                  train_scores_std: float = 1.0):
         super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
