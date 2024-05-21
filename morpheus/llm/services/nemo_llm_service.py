@@ -192,6 +192,7 @@ class NeMoLLMService(LLMService):
 
     class APIKey(EnvConfigValue):
         _ENV_KEY: str = "NGC_API_KEY"
+        _ALLOW_NONE: bool = True
 
     class OrgId(EnvConfigValue):
         _ENV_KEY: str = "NGC_ORG_ID"
