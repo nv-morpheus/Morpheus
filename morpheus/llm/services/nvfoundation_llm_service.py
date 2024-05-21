@@ -169,6 +169,8 @@ class NVFoundationLLMService(LLMService):
         super().__init__()
 
         self._api_key = api_key
+
+        # Set the base url from the environment if not provided. Default to None to allow the client to set the url.
         if base_url is None:
             self._base_url = os.getenv('NVAI_BASE_URL', None)
         else:
