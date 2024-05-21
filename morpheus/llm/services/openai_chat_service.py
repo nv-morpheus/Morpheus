@@ -65,16 +65,20 @@ class _ApiLogger:
     def set_output(self, output: typing.Any) -> None:
         self.outputs = output
 
+
 class OpenAIOrgId(EnvConfigValue):
     _ENV_KEY: str = "OPENAI_ORG_ID"
     _ALLOW_NONE: bool = True
 
+
 class OpenAIAPIKey(EnvConfigValue):
     _ENV_KEY: str = "OPENAI_API_KEY"
+
 
 class OpenAIBaseURL(EnvConfigValue):
     _ENV_KEY: str = "OPENAI_BASE_URL"
     _ALLOW_NONE: bool = True
+
 
 class OpenAIChatClient(LLMClient):
     """

@@ -21,6 +21,7 @@ import pytest
 from morpheus.utils.env_config_value import EnvConfigValue
 from morpheus.utils.env_config_value import EnvConfigValueSource
 
+
 class EnvDrivenValue(EnvConfigValue):
     _ENV_KEY = "DEFAULT"
     _ENV_KEY_OVERRIDE = "OVERRIDE"

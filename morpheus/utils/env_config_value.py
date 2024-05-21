@@ -70,8 +70,7 @@ class EnvConfigValue(ABC):
 
                 raise ValueError(
                     f"{message} Try passing a value to the constructor, or setting the `{self.__class__._ENV_KEY}` "
-                    "environment variable."
-                )
+                    "environment variable.")
 
         else:
             if not self.__class__._ALLOW_NONE and value is None:
