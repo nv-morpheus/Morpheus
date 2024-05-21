@@ -111,4 +111,7 @@ class EnvOptionalValue(EnvConfigValue):
 
 
 def test_env_optional_value():
-    EnvOptionalValue()
+    config = EnvOptionalValue()
+    assert config.value is None
+    assert config.source == EnvConfigValueSource.CONSTRUCTOR
+    assert config.use_env
