@@ -30,7 +30,7 @@ def test_constructor(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]
     assert isinstance(client, LLMClient)
 
     for mock_client in mock_chat_completion:
-        mock_client.assert_called_once_with(max_retries=max_retries)
+        mock_client.assert_called_once_with(max_retries=max_retries, organization=None, api_key=None, base_url=None)
 
 
 @pytest.mark.parametrize("use_async", [True, False])
