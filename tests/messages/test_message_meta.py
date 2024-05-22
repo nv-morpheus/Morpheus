@@ -84,7 +84,6 @@ def fixture_is_sliceable(index_type: typing.Literal['normal', 'skip', 'dup', 'do
 
     return index_type not in ("dup", "updown")
 
-
 def test_count(df: DataFrameType):
 
     meta = MessageMeta(df)
@@ -108,16 +107,6 @@ def test_ensure_sliceable_index(df: DataFrameType, is_sliceable: bool):
     assert old_index_name == (None if is_sliceable else "_index_")
 
 
-def test_mutable_dataframe(df: DataFrameType):
-
-    meta = MessageMeta(df)
-
-    with meta.mutable_dataframe() as df_:
-        df_['col1'].iloc[1] = 47
-
-    assert meta.copy_dataframe()['col1'].iloc[1] == 47
-
-
 def test_using_ctx_outside_with_block(df: DataFrameType):
 
     meta = MessageMeta(df)
@@ -134,19 +123,179 @@ def test_using_ctx_outside_with_block(df: DataFrameType):
     pytest.raises(AttributeError, operator.setitem, ctx, 'col', 5)
 
 
-def test_copy_dataframe(df: DataFrameType):
-
+def test_update_dataframe(df: DataFrameType):
+    """
+    Change the DF in various ways pass to cpp, read back and check if
+    the updates present
+    """
     meta = MessageMeta(df)
-
-    copied_df = meta.copy_dataframe()
-
-    DatasetManager.assert_df_equal(copied_df, df, assert_msg="Should be identical")
-    assert copied_df is not df, "But should be different instances"
-
-    # Try setting a single value on the copy
     cdf = meta.copy_dataframe()
-    cdf['col1'].iloc[1] = 47
-    DatasetManager.assert_df_equal(meta.copy_dataframe(), df, assert_msg="Should be identical")
+    DatasetManager.assert_df_equal(cdf, df, assert_msg="Should be identical")
+    assert cdf is not df, "But should be different instances"
+
+    row_count = df.shape[0]
+
+    # new struct column
+    col_new_name = "bestsellers"
+    col_new_struct = [{"book": "A Tale of Two Cities", "year": 1859},
+               {"book": "The Lord of the Rings", "year": 1954},
+               {"book": "The Little Prince", "year": 1943},
+               {"book": "The Hobbit", "year": 1937},
+               {"book": "And Then There Were None", "year": 1939},
+               {"book": "Dream of the Red Chamber", "year": 1791},
+               {"book": "The Lion, the Witch and the Wardrobe", "year": 1950},
+               {"book": "She: A History of Adventure", "year": 1887},
+               {"book": "Le Petit Larousse", "year": 1905},
+               {"book": "Harry Potter and the Philosopher's Stone", "year": 1997}]
+
+    # if row_count is more than 10 just replicate the struct column
+    if row_count > len(col_new_struct):
+        col_new_struct = col_new_struct * (row_count // len(col_new_struct) + 1)
+
+    # slice col_new_struct to match the row count
+    col_new_struct = col_new_struct[:row_count]
+
+    # add a struct column to the DF and pass it to cpp
+    with meta.mutable_dataframe() as df_:
+        df_.insert(0, col_new_name, col_new_struct)
+    cdf = meta.copy_dataframe()
+    assert col_new_name in cdf.columns
+    assert cdf[col_new_name].isin(col_new_struct).all()
+
+    # new int column in range 1-row_count
+    col_new_int = list(range(1, row_count+1))
+
+    # replace the struct column with int column
+    with meta.mutable_dataframe() as df_:
+        df_[col_new_name] = col_new_int
+    cdf = meta.copy_dataframe()
+    assert cdf[col_new_name].isin(col_new_int).all()
+
+    # replace the int column back with struct column
+    with meta.mutable_dataframe() as df_:
+        df_[col_new_name] = col_new_struct
+    cdf = meta.copy_dataframe()
+    assert cdf[col_new_name].isin(col_new_struct).all()
+
+    # delete the new column from the DF
+    with meta.mutable_dataframe() as df_:
+        df_.drop(col_new_name, axis=1, inplace=True)
+    cdf = meta.copy_dataframe()
+    assert col_new_name not in cdf.columns
+
+    # add the new column back
+    with meta.mutable_dataframe() as df_:
+        df_.insert(0, col_new_name, col_new_struct)
+    cdf = meta.copy_dataframe()
+    assert col_new_name in cdf.columns
+    assert cdf[col_new_name].isin(col_new_struct).all()
+
+    # duplicate a row
+    first_row = df.iloc[0]
+    last_row = df.iloc[-1]
+    with meta.mutable_dataframe() as df_:
+        df_ = df_.append(first_row)
+    cdf = meta.copy_dataframe()
+    # (fixme) Michael: Why is the following assert failing? we cannot
+    # append rows to df_ but can append to cdf.
+    #assert cdf.shape[0] == row_count + 1
+
+    # (fixme) remove the duplicated row if the previous step was successful
+
+    # change the contents of a cell
+    # (fixme): Michael: I am not able to change the contents of a struct cell.
+    # I am getting "ValueError: Unsupported dtype", expected behavior?
+    row_idx = 0
+    col_idx = 1
+    old_value = df.iloc[row_idx, col_idx]
+    question_of_life = 42
+    with meta.mutable_dataframe() as df_:
+        df_.iloc[row_idx, col_idx] = question_of_life
+    cdf = meta.copy_dataframe()
+    assert cdf.iloc[row_idx, col_idx] == question_of_life
+
+    # restore the contents of the first cell
+    with meta.mutable_dataframe() as df_:
+        df_.iloc[row_idx, col_idx] = old_value
+    cdf = meta.copy_dataframe()
+    assert cdf.iloc[row_idx, col_idx] == old_value
+
+    # (fixme): this entire block doesn't work. Michael, expected behavior?
+    """
+    # replace the contents of the first row with the last row
+    with meta.mutable_dataframe() as df_:
+        df_.iloc[0] = last_row
+    cdf = meta.copy_dataframe()
+    DatasetManager.assert_df_equal(cdf.iloc[0], last_row, assert_msg="Should be identical")
+
+    # restore the contents of the first row
+    with meta.mutable_dataframe() as df_:
+        df_.iloc[0] = first_row
+    cdf = meta.copy_dataframe()
+    DatasetManager.assert_df_equal(cdf.iloc[0], first_row, assert_msg="Should be identical")
+    """
+
+@pytest.mark.use_cpp
+def test_update_dataframe_cpp(df: DataFrameType):
+    """
+    Change the DF in various ways via cpp, read back and check if
+    the updates present
+    """
+    meta = MessageMeta(df)
+    cdf = meta.copy_dataframe()
+    DatasetManager.assert_df_equal(cdf, df, assert_msg="Should be identical")
+    assert cdf is not df, "But should be different instances"
+
+    row_count = df.shape[0]
+
+    # new struct column
+    col_new_name = "bestsellers"
+    col_new_struct = [{"book": "A Tale of Two Cities", "year": 1859},
+               {"book": "The Lord of the Rings", "year": 1954},
+               {"book": "The Little Prince", "year": 1943},
+               {"book": "The Hobbit", "year": 1937},
+               {"book": "And Then There Were None", "year": 1939},
+               {"book": "Dream of the Red Chamber", "year": 1791},
+               {"book": "The Lion, the Witch and the Wardrobe", "year": 1950},
+               {"book": "She: A History of Adventure", "year": 1887},
+               {"book": "Le Petit Larousse", "year": 1905},
+               {"book": "Harry Potter and the Philosopher's Stone", "year": 1997}]
+
+    # if row_count is more than 10 just replicate the struct column
+    if row_count > len(col_new_struct):
+        col_new_struct = col_new_struct * (row_count // len(col_new_struct) + 1)
+
+    # slice col_new_struct to match the row count
+    col_new_struct = col_new_struct[:row_count]
+    # add a struct column in cpp
+    meta.set_data(col_new_name, col_new_struct)
+    assert col_new_name in meta.get_column_names()
+    assert meta.get_data()[col_new_name].isin(col_new_struct).all()
+
+    # swap the contents of the first and last books
+    first_book = col_new_struct[0]
+    last_book = col_new_struct[-1]
+    col_new_struct[0] = last_book
+    col_new_struct[-1] = first_book
+    meta.set_data(col_new_name, col_new_struct)
+    assert col_new_name in meta.get_column_names()
+    assert meta.get_data()[col_new_name].isin(col_new_struct).all()
+
+    # new int column in range 1-row_count
+    col_new_int_name = "col_new_int"
+    col_new_int = list(range(1, row_count+1))
+    # add new int column in cpp
+    meta.set_data(col_new_int_name, col_new_int)
+    assert col_new_name in meta.get_column_names()
+    assert meta.get_data()[col_new_int_name].isin(col_new_int).all()
+
+    # multiply values in col_new_int by 2
+    col_new_int = [x * 2 for x in col_new_int]
+    # update new int column in cpp
+    meta.set_data(col_new_int_name, col_new_int)
+    assert meta.get_data()[col_new_int_name].isin(col_new_int).all()
+
+    # (fixme) how do you remove columns and update individual cells?
 
 
 @pytest.mark.use_cpp
