@@ -38,7 +38,6 @@
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/types.hpp>               // for type_id, data_type
 #include <cudf/unary.hpp>               // for cast
-#include <glog/logging.h>               // for COMPACT_GOOGLE_LOG_ERROR, LOG, LogMessage
 #include <mrc/cuda/common.hpp>          // for __check_cuda_errors, MRC_CHECK_CUDA
 #include <mrc/segment/builder.hpp>      // for Builder
 #include <pybind11/gil.h>               // for gil_scoped_acquire
@@ -50,9 +49,7 @@
 #include <algorithm>    // for find
 #include <cstddef>      // for size_t
 #include <memory>       // for shared_ptr, __shared_ptr_access, allocator, mak...
-#include <stdexcept>    // for runtime_error
 #include <type_traits>  // for is_same_v
-#include <typeinfo>     // for type_info
 #include <utility>      // for move
 
 namespace morpheus {
@@ -144,12 +141,10 @@ TableInfo PreprocessFILStage<InputT, OutputT>::fix_bad_columns(sink_type_t x)
         // Now re-get the meta
         return x->payload()->get_info(m_fea_cols);
     }
-    // sink_type_t not supported
     else
     {
-        std::string error_msg{"PreProcessFILStage receives unsupported input type: " + std::string(typeid(x).name())};
-        LOG(ERROR) << error_msg;
-        throw std::runtime_error(error_msg);
+        // sink_type_t not supported
+        static_assert(!sizeof(sink_type_t), "PreProcessFILStage receives unsupported input type");
     }
 }
 
@@ -164,12 +159,10 @@ PreprocessFILStage<InputT, OutputT>::source_type_t PreprocessFILStage<InputT, Ou
     {
         return on_control_message(x);
     }
-    // sink_type_t not supported
     else
     {
-        std::string error_msg{"PreProcessFILStage receives unsupported input type: " + std::string(typeid(x).name())};
-        LOG(ERROR) << error_msg;
-        throw std::runtime_error(error_msg);
+        // sink_type_t not supported
+        static_assert(!sizeof(sink_type_t), "PreProcessFILStage receives unsupported input type");
     }
 }
 

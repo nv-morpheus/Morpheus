@@ -14,12 +14,12 @@
 
 import asyncio
 import logging
-import os
 import typing
 import warnings
 
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.llm_service import LLMService
+from morpheus.utils.env_config_value import EnvConfigValue
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +190,24 @@ class NeMoLLMService(LLMService):
     A service for interacting with NeMo LLM models, this class should be used to create a client for a specific model.
     """
 
-    def __init__(self, *, api_key: str = None, org_id: str = None, retry_count=5) -> None:
+    class APIKey(EnvConfigValue):
+        _ENV_KEY: str = "NGC_API_KEY"
+        _ALLOW_NONE: bool = True
+
+    class OrgId(EnvConfigValue):
+        _ENV_KEY: str = "NGC_ORG_ID"
+        _ALLOW_NONE: bool = True
+
+    class BaseURI(EnvConfigValue):
+        _ENV_KEY: str = "NGC_API_BASE"
+        _ALLOW_NONE: bool = True
+
+    def __init__(self,
+                 *,
+                 api_key: APIKey | str = None,
+                 org_id: OrgId | str = None,
+                 base_uri: BaseURI | str = None,
+                 retry_count=5) -> None:
         """
         Creates a service for interacting with NeMo LLM models.
 
@@ -203,6 +220,10 @@ class NeMoLLMService(LLMService):
             The organization ID for the LLM service, by default None. If `None` the organization ID will be read from
             the `NGC_ORG_ID` environment variable. This value is only required if the account associated with the
             `api_key` is a member of multiple NGC organizations., by default None
+        base_uri : str, optional
+            The base URI for the LLM service, by default None. If `None` the base URI will be read from
+            the `NGC_API_BASE` environment variable. This value is only required if the account associated with the
+            `api_key` is a member of multiple NGC organizations., by default None
         retry_count : int, optional
             The number of times to retry a request before raising an exception, by default 5
 
@@ -212,22 +233,29 @@ class NeMoLLMService(LLMService):
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
         super().__init__()
-        api_key = api_key if api_key is not None else os.environ.get("NGC_API_KEY", None)
-        org_id = org_id if org_id is not None else os.environ.get("NGC_ORG_ID", None)
+
+        if not isinstance(api_key, NeMoLLMService.APIKey):
+            api_key = NeMoLLMService.APIKey(api_key)
+
+        if not isinstance(org_id, NeMoLLMService.OrgId):
+            org_id = NeMoLLMService.OrgId(org_id)
+
+        if not isinstance(base_uri, NeMoLLMService.BaseURI):
+            base_uri = NeMoLLMService.BaseURI(base_uri)
 
         self._retry_count = retry_count
 
         self._conn = nemollm.NemoLLM(
-            api_host=os.environ.get("NGC_API_BASE", None),
+            api_host=base_uri.value,
             # The client must configure the authentication and authorization parameters
             # in accordance with the API server security policy.
             # Configure Bearer authorization
-            api_key=api_key,
+            api_key=api_key.value,
 
             # If you are in more than one LLM-enabled organization, you must
             # specify your org ID in the form of a header. This is optional
             # if you are only in one LLM-enabled org.
-            org_id=org_id,
+            org_id=org_id.value,
         )
 
     def get_client(self, *, model_name: str, **model_kwargs) -> NeMoLLMClient:
