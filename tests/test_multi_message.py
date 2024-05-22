@@ -31,7 +31,6 @@ import cudf
 
 from _utils.dataset_manager import DatasetManager
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiMessage
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
@@ -811,7 +810,8 @@ def test_tensor_slicing(dataset: DatasetManager):
 def test_deprecation_message(filter_probs_df: cudf.DataFrame, caplog):
     logger = logging.getLogger()
     meta = MessageMeta(filter_probs_df)
-    multi = MultiMessage(meta=meta)
+    
+    MultiMessage(meta=meta) # This should generate a deprecation warning
 
     with patch("logging.Logger.warning") as mock_warning:
         morpheus_logger.deprecated_message_warning(logger, MultiMessage, ControlMessage)
