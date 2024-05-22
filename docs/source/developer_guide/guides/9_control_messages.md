@@ -77,48 +77,6 @@ retrieved_payload = msg.payload()
 msg_meta == retrieved_payload # True
 ```
 
-<!-- ### Conversion from `MultiMessage` to `ControlMessage`
-From version 24.06, the `MultiMessage` type will be deprecated and all the use cases should be migrated to use `ControlMessage`. For each functionality of `MutliMessage`, there is an equivelence in `ControlMessage`, as shown below.
-
-```python
-import cudf
-from morpheus.messages import MultiMessage, ControlMessage
-
-data = cudf.DataFrame()
-msg_meta = MessageMeta(data)
-
-# Message initialization
-
-# MultiMessage
-multi_msg = MultiMessage(msg_meta)
-
-# ControlMessage
-control_msg = ControlMessage()
-control_msg.payload(msg_meta)
-
-# Get columns from cudf.DataFrame
-multi_msg_df_cols = multi_msg.get_meta(col_name)
-
-control_msg_df_cols = control_msg.payload().get_data(col_name)
-
-# Set columns values to cudf.DataFrame
-multi_msg.set_meta(col_name, value)
-
-control_msg.payload().set_data(col_name, value)
-
-# Copy the cudf.DataFrame for the given ranges of rows
-multi_msg_ranges = multi_msg.copy_ranges(ranges)
-
-control_msg_ranges = ControlMessage(control_msg)
-control_msg_ranges.payload(control_msg.payload().copy_ranges(ranges))
-
-# Get sliced cudf.DataFrame for the given start and stop positions
-multi_msg_sliced = multi_msg.get_slice(start, stop)
-
-control_msg_sliced = ControlMessage(control_msg)
-control_msg_sliced.payload(control_msg.payload().get_slice(start, stop)) 
-
-``` -->
 ### Conversion from `MultiMessage` to `ControlMessage`
 
 Starting with version 24.06, the `MultiMessage` type will be deprecated, and all usage should transition to `ControlMessage`. Each `MultiMessage` functionality has a corresponding equivalent in `ControlMessage`, as illustrated below.
