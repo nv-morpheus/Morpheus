@@ -17,12 +17,10 @@ import os
 from unittest import mock
 
 import pytest
-from langchain_core.messages import BaseMessage
 from langchain_core.messages import ChatMessage
 from langchain_core.outputs import ChatGeneration
 from langchain_core.outputs import LLMResult
 
-from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.nvfoundation_llm_service import NVFoundationLLMClient
 from morpheus.llm.services.nvfoundation_llm_service import NVFoundationLLMService
 
@@ -30,7 +28,7 @@ from morpheus.llm.services.nvfoundation_llm_service import NVFoundationLLMServic
 @pytest.mark.usefixtures("restore_environ")
 @pytest.mark.parametrize("api_key", [None, "test_api_key"])
 @pytest.mark.parametrize("set_env", [True, False])
-def test_constructor(mock_nvfoundationllm: mock.MagicMock, api_key: str, set_env: bool):
+def test_constructor(api_key: str, set_env: bool):
     """
     Test that the constructor prefers explicit arguments over environment variables.
     """
@@ -71,7 +69,7 @@ def test_get_input_names():
 def test_generate():
     with mock.patch("langchain_nvidia_ai_endpoints.ChatNVIDIA.generate_prompt", autospec=True) as mock_nvfoundationllm:
 
-        def mock_generation_side_effect(*args, **kwargs):
+        def mock_generation_side_effect(*_, **kwargs):
             return LLMResult(generations=[[
                 ChatGeneration(message=ChatMessage(content=x.text, role="assistant")) for x in kwargs["prompts"]
             ]])
@@ -86,7 +84,7 @@ def test_generate_batch():
 
     with mock.patch("langchain_nvidia_ai_endpoints.ChatNVIDIA.generate_prompt", autospec=True) as mock_nvfoundationllm:
 
-        def mock_generation_side_effect(*args, **kwargs):
+        def mock_generation_side_effect(*_, **kwargs):
             return LLMResult(generations=[[ChatGeneration(message=ChatMessage(content=x.text, role="assistant"))]
                                           for x in kwargs["prompts"]])
 
@@ -101,7 +99,7 @@ async def test_generate_async():
 
     with mock.patch("langchain_nvidia_ai_endpoints.ChatNVIDIA.agenerate_prompt", autospec=True) as mock_nvfoundationllm:
 
-        def mock_generation_side_effect(*args, **kwargs):
+        def mock_generation_side_effect(*_, **kwargs):
             return LLMResult(generations=[[ChatGeneration(message=ChatMessage(content=x.text, role="assistant"))]
                                           for x in kwargs["prompts"]])
 
@@ -116,7 +114,7 @@ async def test_generate_batch_async():
 
     with mock.patch("langchain_nvidia_ai_endpoints.ChatNVIDIA.agenerate_prompt", autospec=True) as mock_nvfoundationllm:
 
-        def mock_generation_side_effect(*args, **kwargs):
+        def mock_generation_side_effect(*_, **kwargs):
             return LLMResult(generations=[[ChatGeneration(message=ChatMessage(content=x.text, role="assistant"))]
                                           for x in kwargs["prompts"]])
 
@@ -130,7 +128,7 @@ async def test_generate_batch_async():
 async def test_generate_batch_async_error():
     with mock.patch("langchain_nvidia_ai_endpoints.ChatNVIDIA.agenerate_prompt", autospec=True) as mock_nvfoundationllm:
 
-        def mock_generation_side_effect(*args, **kwargs):
+        def mock_generation_side_effect(*_, **kwargs):
             return LLMResult(generations=[[ChatGeneration(message=ChatMessage(content=x.text, role="assistant"))]
                                           for x in kwargs["prompts"]])
 

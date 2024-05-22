@@ -14,62 +14,72 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
-from typing import Union
-
-import numpy as np
 import pytest
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 
-import cudf
-
+from _utils.faiss import FakeEmbedder
 from morpheus.service.vdb.faiss_vdb_service import FaissVectorDBResourceService
 from morpheus.service.vdb.faiss_vdb_service import FaissVectorDBService
 
 # create FAISS docstore for testing
 texts = ["for", "the", "test"]
-embeddings = NVIDIAEmbeddings(model="nvolveqa_40k")
+embeddings = FakeEmbedder()
 ids = ["a", "b", "c"]
 create_store = FAISS.from_texts(texts, embeddings, ids=ids)
-index_name = "index"
-tmp_dir_path = "/workspace/.tmp/faiss_test_index"
-create_store.save_local(tmp_dir_path, index_name)
-faiss_service = FaissVectorDBService(local_dir=tmp_dir_path, embeddings=embeddings)
+INDEX_NAME = "index"
+TMP_DIR_PATH = "/workspace/.tmp/faiss_test_index"
+create_store.save_local(TMP_DIR_PATH, INDEX_NAME)
 
 
-@pytest.fixture(scope="module", name="faiss_service")
-def faiss_service_fixture(faiss_test_dir: str, test_embeddings: list):
+def test_dir_path():
+    import os
+
+    from _utils.faiss import FakeEmbedder
+
+    tmp_dir_path = os.environ.get('FAISS_DIR')
+    if tmp_dir_path is None:
+        raise ValueError("set FAISS_DIR to directory with FAISS DB")
+
+    # Can change embedding model
+    embeddings = FakeEmbedder()
+    tmp_dir = FAISS.load_local(tmp_dir_path, embeddings=embeddings, allow_dangerous_deserialization=True)
+    return tmp_dir
+
+
+# scope = function
+@pytest.fixture(scope="function", name="faiss_service")
+def faiss_service_fixture(faiss_test_dir: str, faiss_test_embeddings: list):
     # Fixture for FAISS service; can edit FAISS docstore instantiated outside fixture if need to change
     #  embedding model, et.
-    service = FaissVectorDBService(local_dir=faiss_test_dir, embeddings=test_embeddings)
+    service = FaissVectorDBService(local_dir=faiss_test_dir, embeddings=faiss_test_embeddings)
     yield service
 
 
 def test_load_resource(faiss_service: FaissVectorDBService):
-    resource = faiss_service.load_resource(name="index")
+    resource = faiss_service.load_resource()
     assert isinstance(resource, FaissVectorDBResourceService)
     assert resource._name == "index"
 
 
 def test_count(faiss_service: FaissVectorDBService):
-    collection = "index"
-    count = faiss_service.count(collection)
+    docstore = "index"
+    count = faiss_service.count(docstore)
     assert count == len(faiss_service._local_dir)
 
 
-def test_insert():
-    # Test for inserting embeddings (not docs, texts) into docsotre
-    vector = NVIDIAEmbeddings(model="nvolveqa_40k").embed_query("hi")
+def test_insert(faiss_service: FaissVectorDBService):
+    # Test for inserting embeddings (not docs, texts) into docstore
+    vector = FakeEmbedder().embed_query(data="hi")
     test_data = list(iter([("hi", vector)]))
     docstore_name = "index"
     response = faiss_service.insert(name=docstore_name, data=test_data)
     assert response == {"status": "success"}
 
 
-def test_delete():
+def test_delete(faiss_service: FaissVectorDBService):
     # specify name of docstore and ID to delete
     docstore_name = "index"
     delete_id = "a"
@@ -87,17 +97,17 @@ async def test_similarity_search():
 
     assert create_store.docstore.__dict__ == in_mem_docstore.__dict__
 
-    query_vec = await embeddings.aembed_query(text="for")
+    query_vec = await embeddings.aembed_query("for")
     output = await create_store.asimilarity_search_by_vector(query_vec, k=1)
 
     assert output == [Document(page_content="for")]
 
 
-def test_has_store_object():
+def test_has_store_object(faiss_service: FaissVectorDBService):
     # create FAISS docstore to test with
     object_store = FAISS.from_texts(texts, embeddings, ids=ids)
     object_name = "store_object_index"
-    object_store.save_local(tmp_dir_path, object_name)
+    object_store.save_local(TMP_DIR_PATH, object_name)
 
     # attempt to load docstore with given index name
     load_attempt = faiss_service.has_store_object(object_name)
@@ -109,7 +119,7 @@ def test_has_store_object():
     assert load_attempt is False
 
 
-def test_create():
+def test_create(faiss_service: FaissVectorDBService):
     # Test creating docstore from embeddings
     vector = NVIDIAEmbeddings(model="nvolveqa_40k").embed_query("hi")
     test_embedding = list(iter([("hi", vector)]))
@@ -118,7 +128,7 @@ def test_create():
 
     # save created docstore
     index_name_embeddings = "embeddings_index"
-    embeddings_docstore.save_local(tmp_dir_path, index_name_embeddings)
+    embeddings_docstore.save_local(TMP_DIR_PATH, index_name_embeddings)
 
     # attempt to load created docstore
     load_attempt = faiss_service.has_store_object(index_name_embeddings)
@@ -131,7 +141,7 @@ def test_create():
 
     # save created docstore
     index_name_texts = "texts_index"
-    texts_docstore.save_local(tmp_dir_path, index_name_texts)
+    texts_docstore.save_local(TMP_DIR_PATH, index_name_texts)
 
     # attempt to load created docstore
     load_attempt = faiss_service.has_store_object(index_name_texts)
@@ -144,7 +154,7 @@ def test_create():
 
     # save created docstore
     index_name_docs = "docs_index"
-    docs_docstore.save_local(tmp_dir_path, index_name_docs)
+    docs_docstore.save_local(TMP_DIR_PATH, index_name_docs)
 
     # attempt to load created docstore
     load_attempt = faiss_service.has_store_object(index_name_docs)

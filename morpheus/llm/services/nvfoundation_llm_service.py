@@ -14,6 +14,7 @@
 
 import logging
 import os
+import typing
 
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.llm_service import LLMService
@@ -22,7 +23,8 @@ logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = (
-    "The `langchain-nvidia-ai-endpoints` package was not found. Install it and other additional dependencies by running the following command:\n"
+    "The `langchain-nvidia-ai-endpoints` package was not found. Install it and other additional dependencies by "
+    "running the following command:"
     "`conda env update --solver=libmamba -n morpheus "
     "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
 
@@ -77,8 +79,6 @@ class NVFoundationLLMClient(LLMClient):
         self._client = ChatNVIDIA(**{**chat_kwargs, **model_kwargs})  # type: ignore
 
     def get_input_names(self) -> list[str]:
-        schema = self._client.get_input_schema()
-
         return [self._prompt_key]
 
     def generate(self, **input_dict) -> str:
@@ -118,6 +118,8 @@ class NVFoundationLLMClient(LLMClient):
         ----------
         inputs : dict
             Inputs containing prompt data.
+        **kwargs : dict
+        Additional keyword arguments for generate batch.
         """
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
 
@@ -127,13 +129,30 @@ class NVFoundationLLMClient(LLMClient):
 
         return [g[0].text for g in responses.generations]
 
-    async def generate_batch_async(self, inputs: dict[str, list], **kwargs) -> list[str]:
+    @typing.overload
+    async def generate_batch_async(self,
+                                   inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[True] = True) -> list[str | BaseException]:
+        ...
+
+    @typing.overload
+    async def generate_batch_async(self,
+                                   inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[False] = False) -> list[str]:
+        ...
+
+    async def generate_batch_async(self,
+                                   inputs: dict[str, list],
+                                   return_exceptions=False) -> list[str] | list[str | BaseException]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
+
         Parameters
         ----------
         inputs : dict
             Inputs containing prompt data.
+        return_exceptions : bool
+            Whether to return exceptions in the output list or raise them immediately.
         """
 
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]

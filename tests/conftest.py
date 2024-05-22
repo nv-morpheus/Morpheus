@@ -1011,22 +1011,22 @@ def milvus_server_uri(tmp_path_factory):
             yield uri
 
 
+from _utils.faiss import FakeEmbedder
+
+
 @pytest.fixture(scope="session")
 def faiss_test_dir():
-    # Get oath for FAISS directory
+    # Get path for FAISS directory
     tmp_dir_path = os.environ.get('FAISS_DIR')
     if tmp_dir_path is None:
         raise ValueError("set FAISS_DIR to directory with FAISS DB")
-
-    # Can change embedding model
-    embeddings = NVIDIAEmbeddings(model="nvolveqa_40k")
-    tmp_dir = FAISS.load_local(tmp_dir_path, embeddings=embeddings, allow_dangerous_deserialization=True)
-    yield tmp_dir
+    yield tmp_dir_path
 
 
 @pytest.fixture(scope="session")
-def test_embeddings():
-    embeddings = NVIDIAEmbeddings(model="nvolveqa_40k")
+def faiss_test_embeddings():
+    #embeddings = NVIDIAEmbeddings(model="nvolveqa_40k")
+    embeddings = FakeEmbedder()
     yield embeddings
 
 
@@ -1065,8 +1065,8 @@ def nvfoundationllm_fixture(fail_missing: bool):
     Fixture to ensure nvfoundationllm is installed
     """
     skip_reason = (
-        "Tests for NVFoundation require the langchain-nvidia-ai-endpoints package to be installed, to install this run:\n"
-        "`conda env update --solver=libmamba -n morpheus "
+        "Tests for NVFoundation require the langchain-nvidia-ai-endpoints package to be installed, to install this "
+        "run:\n `conda env update --solver=libmamba -n morpheus "
         "--file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
     yield import_or_skip("langchain_nvidia_ai_endpoints", reason=skip_reason, fail_missing=fail_missing)
 

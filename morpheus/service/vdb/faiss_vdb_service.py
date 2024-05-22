@@ -13,18 +13,11 @@
 # limitations under the License.
 
 import asyncio
-import copy
-import json
 import logging
-import threading
 import time
 import typing
-from functools import wraps
 
-import numpy as np
 import pandas as pd
-from langchain.docstore.document import Document
-from langchain_community.vectorstores import FAISS
 
 import cudf
 
@@ -34,7 +27,7 @@ from morpheus.service.vdb.vector_db_service import VectorDBService
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
-IMPORT_ERROR_MESSAGE = "MilvusVectorDBResourceService requires the milvus and pymilvus packages to be installed."
+IMPORT_ERROR_MESSAGE = "FaissDBResourceService requires the FAISS."
 
 try:
     from langchain.vectorstores.faiss import FAISS
@@ -86,7 +79,6 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         """
         self._index.add_embeddings(data)
         return {"status": "success"}
-        #return list_of_ids
 
     def insert_dataframe(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs: dict[str, typing.Any]) -> dict:
         """
@@ -154,7 +146,8 @@ class FaissVectorDBResourceService(VectorDBResourceService):
                                 k: int = 4,
                                 **kwargs: dict[str, typing.Any]) -> list[list[dict]]:
         """
-        Perform a similarity search within the FAISS docstore (asimilarity_search_by_vector returns docs most similar to embedding vector asynchronously).
+        Perform a similarity search within the FAISS docstore (asimilarity_search_by_vector
+        returns docs most similar to embedding vector asynchronously).
 
         Parameters
         ----------
@@ -305,7 +298,7 @@ class FaissVectorDBService(VectorDBService):
     _cleanup_interval = 600  # 10mins
     _last_cleanup_time = time.time()
 
-    def __init__(self, local_dir: str, embeddings, **kwargs: dict[str, typing.Any]):
+    def __init__(self, local_dir: str, embeddings):
 
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
@@ -319,7 +312,8 @@ class FaissVectorDBService(VectorDBService):
 
     def has_store_object(self, name: str) -> bool:
         """
-        Check if specific index file name exists by attempting to load FAISS index, docstore, and index_to_docstore_id from disk with the index file name.
+        Check if specific index file name exists by attempting to load FAISS index, docstore,
+        and index_to_docstore_id from disk with the index file name.
 
         Parameters
         ----------
@@ -351,13 +345,7 @@ class FaissVectorDBService(VectorDBService):
         list[str]
             A list of collection names.
         """
-        return self._client.list_collections(**kwargs)
-
-    def _create_schema_field(self, field_conf: dict) -> "pymilvus.FieldSchema":
-
-        field_schema = pymilvus.FieldSchema.construct_from_dict(field_conf)
-
-        return field_schema
+        raise NotImplementedError("Drop operation is not supported in FAISS")
 
     def create(self, name: str, overwrite: bool = False, **kwargs: dict[str, typing.Any]):
         """
@@ -387,20 +375,19 @@ class FaissVectorDBService(VectorDBService):
             documents = kwargs["documents"]
             return resource._index.from_documents(documents, self._embeddings)
 
-        elif "text_embeddings" in kwargs:
+        if "text_embeddings" in kwargs:
             text_embeddings = kwargs["text_embeddings"]
             metadatas = kwargs.get("metadatas")
             ids = kwargs.get("ids")
             return resource._index.from_embeddings(text_embeddings, self._embeddings, metadatas, ids)
 
-        elif "texts" in kwargs:
+        if "texts" in kwargs:
             texts = kwargs["texts"]
             metadatas = kwargs.get("metadatas")
             ids = kwargs.get("ids")
             return resource._index.from_texts(texts, self._embeddings, metadatas, ids)
 
-        else:
-            raise ValueError("You must provide documents, texts, or text_embeddings along with embeddings in kwargs.")
+        raise ValueError("You must provide documents, texts, or text_embeddings along with embeddings in kwargs.")
 
     def create_from_dataframe(self,
                               name: str,
@@ -422,28 +409,7 @@ class FaissVectorDBService(VectorDBService):
             Extra keyword arguments specific to the vector database implementation.
         """
 
-        fields = self._build_schema_conf(df=df)
-
-        create_kwargs = {
-            "schema_conf": {
-                "description": "Auto generated schema from DataFrame in Morpheus",
-                "schema_fields": fields,
-            }
-        }
-
-        if (kwargs.get("index_field", None) is not None):
-            # Check to make sure the column name exists in the fields
-            create_kwargs["index_conf"] = {
-                "field_name": kwargs.get("index_field"),  # Default index type
-                "metric_type": "L2",
-                "index_type": "HNSW",
-                "params": {
-                    "M": 8,
-                    "efConstruction": 64,
-                },
-            }
-
-        self.create(name=name, overwrite=overwrite, **create_kwargs)
+        raise NotImplementedError("Describe operation is not supported in FAISS")
 
     def insert(self, name: str, data: list[list] | list[dict], **kwargs: dict[str,
                                                                               typing.Any]) -> dict[str, typing.Any]:
@@ -703,28 +669,7 @@ class FaissVectorDBService(VectorDBService):
             If mandatory arguments are missing or if the provided 'collection' value is invalid.
         """
 
-        logger.debug("Dropping collection: %s, kwargs=%s", name, kwargs)
-
-        if self.has_store_object(name):
-            resource = kwargs.get("resource", "collection")
-            if resource == "collection":
-                self._client.drop_collection(collection_name=name)
-            elif resource == "partition":
-                if "partition_name" not in kwargs:
-                    raise ValueError("Mandatory argument 'partition_name' is required when resource='partition'")
-                partition_name = kwargs["partition_name"]
-                if self._client.has_partition(collection_name=name, partition_name=partition_name):
-                    # Collection need to be released before dropping the partition.
-                    self._client.release_collection(collection_name=name)
-                    self._client.drop_partition(collection_name=name, partition_name=partition_name)
-            elif resource == "index":
-                if "field_name" in kwargs and "index_name" in kwargs:
-                    self._client.drop_index(collection_name=name,
-                                            field_name=kwargs["field_name"],
-                                            index_name=kwargs["index_name"])
-                else:
-                    raise ValueError(
-                        "Mandatory arguments 'field_name' and 'index_name' are required when resource='index'")
+        raise NotImplementedError("Describe operation is not supported in FAISS")
 
     def describe(self, name: str, **kwargs: dict[str, typing.Any]) -> dict:
         """
@@ -757,7 +702,7 @@ class FaissVectorDBService(VectorDBService):
             Name of the collection to release.
         """
 
-        self._client.release_collection(collection_name=name)
+        raise NotImplementedError("Describe operation is not supported in FAISS")
 
     def close(self) -> None:
         """
@@ -766,4 +711,4 @@ class FaissVectorDBService(VectorDBService):
         This method disconnects from the Milvus vector database by removing the connection.
 
         """
-        self._client.close()
+        raise NotImplementedError("Describe operation is not supported in FAISS")
