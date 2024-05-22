@@ -24,6 +24,7 @@ import appdirs
 
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.llm_service import LLMService
+from morpheus.utils.env_config_value import EnvConfigValue
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,20 @@ class _ApiLogger:
         self.outputs = output
 
 
+class OpenAIOrgId(EnvConfigValue):
+    _ENV_KEY: str = "OPENAI_ORG_ID"
+    _ALLOW_NONE: bool = True
+
+
+class OpenAIAPIKey(EnvConfigValue):
+    _ENV_KEY: str = "OPENAI_API_KEY"
+
+
+class OpenAIBaseURL(EnvConfigValue):
+    _ENV_KEY: str = "OPENAI_BASE_URL"
+    _ALLOW_NONE: bool = True
+
+
 class OpenAIChatClient(LLMClient):
     """
     Client for interacting with a specific OpenAI chat model. This class should be constructed with the
@@ -94,11 +109,23 @@ class OpenAIChatClient(LLMClient):
                  model_name: str,
                  set_assistant: bool = False,
                  max_retries: int = 10,
+                 org_id: str | OpenAIOrgId = None,
+                 api_key: str | OpenAIAPIKey = None,
+                 base_url: str | OpenAIBaseURL = None,
                  **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
         super().__init__()
+
+        if not isinstance(org_id, OpenAIOrgId):
+            org_id = OpenAIOrgId(org_id)
+
+        if not isinstance(api_key, OpenAIOrgId):
+            api_key = OpenAIOrgId(api_key)
+
+        if not isinstance(base_url, OpenAIBaseURL):
+            base_url = OpenAIBaseURL(base_url)
 
         assert parent is not None, "Parent service cannot be None."
 
@@ -113,8 +140,14 @@ class OpenAIChatClient(LLMClient):
         self._model_kwargs = copy.deepcopy(model_kwargs)
 
         # Create the client objects for both sync and async
-        self._client = openai.OpenAI(max_retries=max_retries)
-        self._client_async = openai.AsyncOpenAI(max_retries=max_retries)
+        self._client = openai.OpenAI(max_retries=max_retries,
+                                     organization=org_id.value,
+                                     api_key=api_key.value,
+                                     base_url=base_url.value)
+        self._client_async = openai.AsyncOpenAI(max_retries=max_retries,
+                                                organization=org_id.value,
+                                                api_key=api_key.value,
+                                                base_url=base_url.value)
 
     def get_input_names(self) -> list[str]:
         input_names = [self._prompt_key]
