@@ -82,3 +82,30 @@ def test_http_client_source_stage_pipe(config: Config,
 
     if use_payload_to_df_fn:
         payload_to_df_fn.assert_called_once_with(expected_payload, lines)
+
+
+@pytest.mark.slow
+@pytest.mark.use_cudf
+@pytest.mark.parametrize(
+    "lines",
+    [False, pytest.param(True, marks=pytest.mark.skip(reason="https://github.com/rapidsai/cudf/issues/15820"))],
+    ids=["json", "lines"])
+@pytest.mark.parametrize("use_payload_to_df_fn", [False, True], ids=["no_payload_to_df_fn", "payload_to_df_fn"])
+def test_parse_errors(config: Config, mock_rest_server: str, lines: bool, use_payload_to_df_fn: bool):
+    url = f"{mock_rest_server}/api/v1/invalid"
+
+    if use_payload_to_df_fn:
+        payload_to_df_fn = mock.MagicMock(side_effect=ValueError("Invalid payload"))
+    else:
+        payload_to_df_fn = None
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(
+        HttpClientSourceStage(config=config, url=url, max_retries=1, lines=lines, payload_to_df_fn=payload_to_df_fn))
+
+    # cudf raises a RuntimeError when it should be raising a ValueError also a part of #15820
+    with pytest.raises(Exception):
+        pipe.run()
+
+    if use_payload_to_df_fn:
+        payload_to_df_fn.assert_called_once()
