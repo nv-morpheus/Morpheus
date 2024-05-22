@@ -112,7 +112,7 @@ def test_configure_logging_from_file(console_handler, file_handler):
 
 def test_configure_logging_multiple_times():
 
-    _reset_logging()
+    reset_logging()
 
     configure_logging(log_level=logging.INFO)
 
@@ -134,7 +134,7 @@ def test_configure_logging_from_file_filenotfound():
 
 def test_configure_logging_custom_handlers():
 
-    _reset_logging()
+    reset_logging()
 
     # Create a string stream for the handler
     string_stream_1 = io.StringIO()
@@ -161,7 +161,7 @@ def test_configure_logging_custom_handlers():
 @pytest.mark.parametrize("log_level", LogLevels)
 def test_set_log_level(log_level: type[LogLevels]):
 
-    _reset_logging()
+    reset_logging()
 
     configure_logging(log_level=logging.INFO)
 
