@@ -17,8 +17,10 @@
 # pylint: disable=redefined-outer-name
 
 import dataclasses
+import logging
 import string
 import typing
+from unittest.mock import patch
 
 import cupy as cp
 import numpy as np
@@ -28,6 +30,8 @@ import pytest
 import cudf
 
 from _utils.dataset_manager import DatasetManager
+from morpheus.messages import ControlMessage
+from morpheus.messages import MultiMessage
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
@@ -42,6 +46,7 @@ from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
+from morpheus.utils import logger as morpheus_logger
 
 
 @pytest.mark.use_python
@@ -800,3 +805,18 @@ def test_tensor_slicing(dataset: DatasetManager):
     assert double_slice.count == single_slice.count
     assert cp.all(double_slice.get_tensor("probs") == single_slice.get_tensor("probs"))
     dataset.assert_df_equal(double_slice.get_meta(), single_slice.get_meta())
+
+
+@pytest.mark.usefixtures("use_cpp")
+def test_deprecation_message(filter_probs_df: cudf.DataFrame, caplog):
+    logger = logging.getLogger()
+    meta = MessageMeta(filter_probs_df)
+    multi = MultiMessage(meta=meta)
+
+    with patch("logging.Logger.warning") as mock_warning:
+        morpheus_logger.deprecated_message_warning(logger, MultiMessage, ControlMessage)
+        error_str = mock_warning.call_args.args[0]
+        error_args = mock_warning.call_args.args[1:]
+        warning_msg = error_str % error_args
+
+    assert warning_msg in caplog.text
