@@ -810,8 +810,8 @@ def test_tensor_slicing(dataset: DatasetManager):
 def test_deprecation_message(filter_probs_df: cudf.DataFrame, caplog):
     logger = logging.getLogger()
     meta = MessageMeta(filter_probs_df)
-    
-    MultiMessage(meta=meta) # This should generate a deprecation warning
+
+    MultiMessage(meta=meta)  # This should generate a deprecation warning
 
     with patch("logging.Logger.warning") as mock_warning:
         morpheus_logger.deprecated_message_warning(logger, MultiMessage, ControlMessage)
