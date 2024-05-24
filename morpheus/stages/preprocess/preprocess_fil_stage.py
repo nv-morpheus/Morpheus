@@ -67,7 +67,8 @@ class PreprocessFILStage(PreprocessBaseStage):
         return True
 
     @staticmethod
-    def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
+    def pre_process_batch(x: typing.Union[MultiMessage, ControlMessage], fea_len: int,
+                          fea_cols: typing.List[str]) -> typing.Union[MultiMessage, ControlMessage]:
         """
         For FIL category usecases, this function performs pre-processing.
 
