@@ -18,7 +18,6 @@ import pytest
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
-from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 
 from _utils.faiss import FakeEmbedder
 from morpheus.service.vdb.faiss_vdb_service import FaissVectorDBResourceService
@@ -34,22 +33,6 @@ TMP_DIR_PATH = "/workspace/.tmp/faiss_test_index"
 create_store.save_local(TMP_DIR_PATH, INDEX_NAME)
 
 
-def test_dir_path():
-    import os
-
-    from _utils.faiss import FakeEmbedder
-
-    tmp_dir_path = os.environ.get('FAISS_DIR')
-    if tmp_dir_path is None:
-        raise ValueError("set FAISS_DIR to directory with FAISS DB")
-
-    # Can change embedding model
-    embeddings = FakeEmbedder()
-    tmp_dir = FAISS.load_local(tmp_dir_path, embeddings=embeddings, allow_dangerous_deserialization=True)
-    return tmp_dir
-
-
-# scope = function
 @pytest.fixture(scope="function", name="faiss_service")
 def faiss_service_fixture(faiss_test_dir: str, faiss_test_embeddings: list):
     # Fixture for FAISS service; can edit FAISS docstore instantiated outside fixture if need to change
@@ -121,7 +104,7 @@ def test_has_store_object(faiss_service: FaissVectorDBService):
 
 def test_create(faiss_service: FaissVectorDBService):
     # Test creating docstore from embeddings
-    vector = NVIDIAEmbeddings(model="nvolveqa_40k").embed_query("hi")
+    vector = FakeEmbedder().embed_query(data="hi")
     test_embedding = list(iter([("hi", vector)]))
     docstore_name = "index"
     embeddings_docstore = faiss_service.create(name=docstore_name, text_embeddings=test_embedding)

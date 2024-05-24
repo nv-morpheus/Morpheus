@@ -30,10 +30,9 @@ from unittest import mock
 
 import pytest
 import requests
-from langchain_community.vectorstores import FAISS  # added
-from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings  # added
 
 from _utils import import_or_skip
+from _utils.faiss import FakeEmbedder
 from _utils.kafka import _init_pytest_kafka
 from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
 from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
@@ -1011,9 +1010,6 @@ def milvus_server_uri(tmp_path_factory):
             yield uri
 
 
-from _utils.faiss import FakeEmbedder
-
-
 @pytest.fixture(scope="session")
 def faiss_test_dir():
     # Get path for FAISS directory
@@ -1025,7 +1021,6 @@ def faiss_test_dir():
 
 @pytest.fixture(scope="session")
 def faiss_test_embeddings():
-    #embeddings = NVIDIAEmbeddings(model="nvolveqa_40k")
     embeddings = FakeEmbedder()
     yield embeddings
 

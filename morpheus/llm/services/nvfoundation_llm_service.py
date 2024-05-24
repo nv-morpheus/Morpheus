@@ -81,6 +81,10 @@ class NVFoundationLLMClient(LLMClient):
     def get_input_names(self) -> list[str]:
         return [self._prompt_key]
 
+    @property
+    def model_kwargs(self):
+        return self._model_kwargs
+
     def generate(self, **input_dict) -> str:
         """
         Issue a request to generate a response based on a given prompt.
@@ -111,23 +115,36 @@ class NVFoundationLLMClient(LLMClient):
 
         return (await self.generate_batch_async(inputs=inputs, **input_dict))[0]
 
-    def generate_batch(self, inputs: dict[str, list], **kwargs) -> list[str]:
+    def generate_batch(self,
+                       inputs: dict[str, list],
+                       return_exceptions: typing.Literal[True] = True,
+                       **kwargs) -> list[str] | list[str | BaseException]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
         Parameters
         ----------
         inputs : dict
             Inputs containing prompt data.
+        return_exceptions : bool
+            Whether to return exceptions in the output list or raise them immediately.
         **kwargs : dict
         Additional keyword arguments for generate batch.
         """
-        prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
 
+        prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
         final_kwargs = {**self._model_kwargs, **kwargs}
 
-        responses = self._client.generate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
+        responses = []
+        try:
+            generated_responses = self._client.generate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
+            responses = [g[0].text for g in generated_responses.generations]
+        except Exception as e:
+            if return_exceptions:
+                responses.append(e)
+            else:
+                raise e
 
-        return [g[0].text for g in responses.generations]
+        return responses
 
     @typing.overload
     async def generate_batch_async(self,
@@ -143,7 +160,8 @@ class NVFoundationLLMClient(LLMClient):
 
     async def generate_batch_async(self,
                                    inputs: dict[str, list],
-                                   return_exceptions=False) -> list[str] | list[str | BaseException]:
+                                   return_exceptions=False,
+                                   **kwargs) -> list[str] | list[str | BaseException]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -153,15 +171,28 @@ class NVFoundationLLMClient(LLMClient):
             Inputs containing prompt data.
         return_exceptions : bool
             Whether to return exceptions in the output list or raise them immediately.
+        **kwargs: dict
+        Additional keyword arguments for generate batch async.
         """
 
-        prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
+        # prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
 
+        # final_kwargs = {**self._model_kwargs, **kwargs}
+
+        # responses = await self._client.agenerate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
+
+        # return [g[0].text for g in responses.generations]
+
+        prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
         final_kwargs = {**self._model_kwargs, **kwargs}
 
-        responses = await self._client.agenerate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
-
-        return [g[0].text for g in responses.generations]
+        try:
+            responses = await self._client.agenerate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
+            return [g[0].text for g in responses.generations]
+        except Exception as e:
+            if return_exceptions:
+                return [e]
+            raise e
 
 
 class NVFoundationLLMService(LLMService):

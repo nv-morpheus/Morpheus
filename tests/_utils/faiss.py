@@ -18,11 +18,18 @@ from typing import List
 
 class FakeEmbedder:
 
+    def embed_query(self, data: str) -> List[float]:
+        # setting data to arbitrary float since constant value will always be returned
+        data = 0.0
+        return [float(1.0)] * 1023 + [float(0.0) * data]
+
     def embed_documents(self, data: list) -> List[List[float]]:
         return [[float(3.1)] * 1023 + [float(i)] for i in range(len(data))]
 
-    def embed_query(self, data: str) -> List[float]:
-        return [float(1.0)] * 1023 + [float(0.0)]
-
     async def aembed_query(self, data: str) -> List[float]:
-        return [float(1.0)] * 1023 + [float(0.0)]
+        # setting data to arbitrary float since constant value will always be returned
+        data = 0.0
+        return [float(1.0)] * 1023 + [float(0.0) * data]
+
+    async def aembed_documents(self, data: list) -> List[List[float]]:
+        return [[float(3.1)] * 1023 + [float(i)] for i in range(len(data))]

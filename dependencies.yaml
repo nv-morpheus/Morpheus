@@ -275,6 +275,9 @@ dependencies:
             - databricks-connect
             - milvus==2.3.5 # update to match pymilvus when available
             - pymilvus==2.3.6
+            - langchain-nvidia-ai-endpoints
+            - langchain-community
+            - faiss-gpu
 
   test_python_morpheus:
     common:
