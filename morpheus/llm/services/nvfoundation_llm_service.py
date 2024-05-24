@@ -214,6 +214,8 @@ class NVFoundationLLMService(LLMService):
 
         super().__init__()
 
+
+        # Set the base url from the environment if not provided. Default to None to allow the client to set the url.
         if base_url is None:
             self._base_url = os.getenv('NVIDIA_API_BASE', "https://api.nvcf.nvidia.com/v2/nvcf")
         else:

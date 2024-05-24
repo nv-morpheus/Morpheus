@@ -16,6 +16,8 @@ import asyncio
 import logging
 import typing
 
+from langchain_core.exceptions import OutputParserException
+
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 
@@ -35,12 +37,18 @@ class LangChainAgentNode(LLMNodeBase):
         The agent executor to use to execute.
     """
 
-    def __init__(self, agent_executor: "AgentExecutor"):
+    def __init__(self,
+                 agent_executor: "AgentExecutor",
+                 replace_exceptions: bool = False,
+                 replace_exceptions_value: typing.Optional[str] = None):
         super().__init__()
 
         self._agent_executor = agent_executor
 
         self._input_names = self._agent_executor.input_keys
+
+        self._replace_exceptions = replace_exceptions
+        self._replace_exceptions_value = replace_exceptions_value
 
     def get_input_names(self):
         return self._input_names
@@ -77,6 +85,17 @@ class LangChainAgentNode(LLMNodeBase):
         input_dict = context.get_inputs()
 
         results = await self._run_single(**input_dict)
+
+        if self._replace_exceptions:
+            # Processes the results to replace exceptions with a default message
+            for i, answer_list in enumerate(results):
+                for j, answer in enumerate(answer_list):
+                    if isinstance(answer, (OutputParserException, Exception)):
+                        # If the agent encounters a parsing error or a server error after retries, replace the error
+                        # with a default value to prevent the pipeline from crashing
+                        results[i][j] = self._replace_exceptions_value
+                        logger.warning(f"Exception encountered in result[{i}][{j}]: {answer}. "
+                                       f"Replacing with default message: \"{self._replace_exceptions_value}\".")
 
         context.set_output(results)
 
