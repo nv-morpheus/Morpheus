@@ -1,5 +1,4 @@
-#!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Ensure our ~/.config directory has the correct permissions. If ~/.config did
-# not exist, and you mount ~/.config/gh from the host, then ~/.config will be
-# created with root permissions which can break things
-
-if [[ ! -f ~/.config/.gdbinit ]]; then
-    cp /opt/morpheus/etc/.gdbinit ~/.config/.gdbinit
-fi
+repos:
+- name: morpheus
+  path: morpheus
+  cpp:
+    - name: morpheus
+      sub_dir: ""
+      args: |
+        -DMORPHEUS_PYTHON_INPLACE_BUILD=ON
+  python:
+    - name: morpheus
+      sub_dir: ""
+  git:
+    host: github
+    tag: branch-24.06
+    upstream: nv-morpheus
+    repo: morpheus
