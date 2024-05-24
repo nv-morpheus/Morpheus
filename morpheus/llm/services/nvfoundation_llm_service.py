@@ -160,7 +160,7 @@ class NVFoundationLLMClient(LLMClient):
 
     async def generate_batch_async(self,
                                    inputs: dict[str, list],
-                                   return_exceptions=False,
+                                   return_exceptions: typing.Literal[True] = True,
                                    **kwargs) -> list[str] | list[str | BaseException]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
@@ -175,24 +175,20 @@ class NVFoundationLLMClient(LLMClient):
         Additional keyword arguments for generate batch async.
         """
 
-        # prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
-
-        # final_kwargs = {**self._model_kwargs, **kwargs}
-
-        # responses = await self._client.agenerate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
-
-        # return [g[0].text for g in responses.generations]
-
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
         final_kwargs = {**self._model_kwargs, **kwargs}
 
+        responses = []
         try:
-            responses = await self._client.agenerate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
-            return [g[0].text for g in responses.generations]
+            generated_responses = await self._client.agenerate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
+            responses = [g[0].text for g in generated_responses.generations]
         except Exception as e:
             if return_exceptions:
-                return [e]
-            raise e
+                responses.append(e)
+            else:
+                raise e
+
+        return responses
 
 
 class NVFoundationLLMService(LLMService):
