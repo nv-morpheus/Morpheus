@@ -142,7 +142,7 @@ def test_deprecated_stage_warning_with_reason(caplog):
            "This is the reason." in caplog.text
 
 
-def test_deprecated_message_warning(caplog):
+def test_deprecated_message_warning():
 
     class OldMessage():
         pass
@@ -150,10 +150,9 @@ def test_deprecated_message_warning(caplog):
     class NewMessage():
         pass
 
-    logger = logging.getLogger()
-    caplog.set_level(logging.WARNING)
-    deprecated_message_warning(logger, OldMessage, NewMessage)
-    assert len(caplog.records) == 1
-    assert caplog.records[0].levelname == "WARNING"
-    assert "The 'OldMessage' message has been deprecated and will be removed in a future version. " \
-           "Please use 'NewMessage' instead." in caplog.text
+    with patch("warnings.warn") as mock_warning:
+        deprecated_message_warning(OldMessage, NewMessage)
+        warning_msg = mock_warning.call_args.args[0]
+
+    assert warning_msg == "The 'OldMessage' message has been deprecated and will be removed in a future version.\
+        Please use 'NewMessage' instead."

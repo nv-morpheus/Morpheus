@@ -17,7 +17,6 @@
 # pylint: disable=redefined-outer-name
 
 import dataclasses
-import logging
 import string
 import typing
 from unittest.mock import patch
@@ -807,16 +806,38 @@ def test_tensor_slicing(dataset: DatasetManager):
 
 
 @pytest.mark.usefixtures("use_cpp")
+@pytest.mark.use_python
 def test_deprecation_message(filter_probs_df: cudf.DataFrame, caplog):
-    logger = logging.getLogger()
+
     meta = MessageMeta(filter_probs_df)
 
-    MultiMessage(meta=meta)  # This should generate a deprecation warning
+    multi_tensor_message_tensors = {
+        "input_ids": cp.zeros((20, 2)),
+        "input_mask": cp.zeros((20, 2)),
+        "seq_ids": cp.expand_dims(cp.arange(0, 20, dtype=int), axis=1),
+        "input__0": cp.zeros((20, 2)),
+        "probs": cp.zeros((20, 2)),
+    }
 
-    with patch("logging.Logger.warning") as mock_warning:
-        morpheus_logger.deprecated_message_warning(logger, MultiMessage, ControlMessage)
-        error_str = mock_warning.call_args.args[0]
-        error_args = mock_warning.call_args.args[1:]
-        warning_msg = error_str % error_args
+    def generate_deprecation_warning(deprecated_class, new_class):
 
-    assert warning_msg in caplog.text
+        with patch("warnings.warn") as mock_warning:
+            morpheus_logger.deprecated_message_warning(deprecated_class, new_class)
+            warning_msg = mock_warning.call_args.args[0]
+
+        return warning_msg
+
+    with pytest.warns(DeprecationWarning) as warnings:
+        MultiMessage(meta=meta)
+        MultiAEMessage(meta=meta, model=None)
+        MultiTensorMessage(meta=meta, memory=TensorMemory(count=20, tensors=multi_tensor_message_tensors))
+        MultiResponseMessage(meta=meta, memory=TensorMemory(count=20, tensors=multi_tensor_message_tensors))
+        MultiInferenceMessage(meta=meta, memory=TensorMemory(count=20, tensors=multi_tensor_message_tensors))
+        MultiInferenceAEMessage(meta=meta, memory=TensorMemory(count=20, tensors=multi_tensor_message_tensors))
+
+    assert str(warnings[0].message) == generate_deprecation_warning(MultiMessage, ControlMessage)
+    assert str(warnings[1].message) == generate_deprecation_warning(MultiAEMessage, ControlMessage)
+    assert str(warnings[2].message) == generate_deprecation_warning(MultiTensorMessage, ControlMessage)
+    assert str(warnings[3].message) == generate_deprecation_warning(MultiResponseMessage, ControlMessage)
+    assert str(warnings[4].message) == generate_deprecation_warning(MultiInferenceMessage, ControlMessage)
+    assert str(warnings[5].message) == generate_deprecation_warning(MultiInferenceAEMessage, ControlMessage)

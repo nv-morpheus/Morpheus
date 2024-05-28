@@ -19,6 +19,7 @@ import logging.config
 import logging.handlers
 import multiprocessing
 import os
+import warnings
 from enum import Enum
 
 import appdirs
@@ -223,9 +224,9 @@ def deprecated_stage_warning(logger, cls, name, reason: str = None):
     logger.warning(message)
 
 
-def deprecated_message_warning(logger, cls, new_cls):
+def deprecated_message_warning(cls, new_cls):
     """Log a warning about a deprecated message."""
-    logger.warning(
-        ("The '%s' message has been deprecated and will be removed in a future version. Please use '%s' instead."),
-        cls.__name__,
-        new_cls.__name__)
+    message = f"The '{cls.__name__}' message has been deprecated and will be removed in a future version.\
+        Please use '{new_cls.__name__}' instead."
+
+    warnings.warn(message, DeprecationWarning)
