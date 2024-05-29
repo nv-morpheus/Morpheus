@@ -28,6 +28,12 @@ from morpheus.utils.logger import deprecated_stage_warning
 from morpheus.utils.logger import set_log_level
 
 
+@pytest.fixture(autouse=True)
+def reset_logger():
+    morpheus_logger = logging.getLogger("morpheus")
+    setattr(morpheus_logger, "_configured_by_morpheus", False)
+
+
 @patch('logging.handlers.QueueListener')
 @patch('logging.handlers.QueueHandler.emit')
 def test_configure_logging_from_level_default_handlers(queue_handler, queue_listener):

@@ -200,8 +200,10 @@ def clear_handlers(logger):
 
 @pytest.hookimpl(trylast=True)
 def pytest_runtest_teardown(item, nextitem):
-    clear_handlers(logging.getLogger("morpheus"))
+    morpheus_logger = logging.getLogger("morpheus")
+    clear_handlers(morpheus_logger)
     clear_handlers(logging.getLogger())
+    setattr(morpheus_logger, "_configured_by_morpheus", False)
 
 
 # This fixture will be used by all tests.
