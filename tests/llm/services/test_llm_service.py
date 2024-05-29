@@ -15,6 +15,7 @@
 
 import inspect
 from abc import ABC
+from unittest import mock
 
 import pytest
 
@@ -39,11 +40,15 @@ def test_create(service_name: str, expected_cls: type):
     assert isinstance(service, expected_cls)
 
 
-@pytest.mark.parametrize(
-    "service_name, class_name",
-    [("nemo", "morpheus.llm.services.nemo_llm_service.NeMoLLMService"),
-     ("openai", "morpheus.llm.services.openai_chat_service.OpenAIChatService"),
-     ("nvfoundation", NVFoundationLLMService, marks=pytest.mark.xfail(reason="missing dependency"))])
+@pytest.mark.parametrize("service_name, class_name",
+                         [("nemo", "morpheus.llm.services.nemo_llm_service.NeMoLLMService"),
+                          ("openai", "morpheus.llm.services.openai_chat_service.OpenAIChatService"),
+                          ("nvfoundation", "morpheus.llm.services.nvfoundation_llm_service.NVFoundationLLMService")])
 def test_create_mocked(service_name: str, class_name: str):
-    service = LLMService.create(service_name)
-    assert isinstance(service, expected_cls)
+    with mock.patch(class_name) as mock_cls:
+        mock_instance = mock.MagicMock()
+        mock_cls.return_value = mock_instance
+
+        service = LLMService.create(service_name)
+        mock_cls.assert_called_once()
+        assert service is mock_instance
