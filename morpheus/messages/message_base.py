@@ -49,7 +49,7 @@ class MessageImpl(abc.ABCMeta):
             @functools.wraps(result.__new__)
             def _internal_new(other_cls, *args, **kwargs):
 
-                # Instantiating MultiMessage from Python or C++ will generate a deprecation warning
+                # Instantiating MultiMessage and its subclasses from Python or C++ will generate a deprecation warning
                 if issubtype(other_cls, messages.MultiMessage):
                     morpheus_logger.deprecated_message_warning(other_cls, ControlMessage)
 

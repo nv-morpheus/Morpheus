@@ -16,6 +16,7 @@
 import logging
 import multiprocessing
 import os
+import re
 from unittest.mock import patch
 
 import pytest
@@ -150,9 +151,9 @@ def test_deprecated_message_warning():
     class NewMessage():
         pass
 
-    with patch("warnings.warn") as mock_warning:
+    with pytest.warns(DeprecationWarning) as warnings:
         deprecated_message_warning(OldMessage, NewMessage)
-        warning_msg = mock_warning.call_args.args[0]
 
-    assert warning_msg == "The 'OldMessage' message has been deprecated and will be removed in a future version.\
-        Please use 'NewMessage' instead."
+    pattern = (r"The '(\w+)' message has been deprecated and will be removed "
+               r"after version (\d+\.\d+) release. Please use '(\w+)' instead.")
+    assert re.search(pattern, str(warnings[0].message)) is not None

@@ -821,6 +821,7 @@ def test_deprecation_message(filter_probs_df: cudf.DataFrame, caplog):
 
     def generate_deprecation_warning(deprecated_class, new_class):
 
+        # patching warning.warn here to get the warning message string from deprecated_message_warning() for asserting
         with patch("warnings.warn") as mock_warning:
             morpheus_logger.deprecated_message_warning(deprecated_class, new_class)
             warning_msg = mock_warning.call_args.args[0]
