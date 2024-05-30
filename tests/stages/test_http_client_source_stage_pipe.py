@@ -39,7 +39,7 @@ def test_http_client_source_stage_pipe(config: Config,
     Test the HttpClientSourceStage against a mock REST server which will return JSON data which can be deserialized
     into a DataFrame.
     """
-    expected_df = dataset['filter_probs.csv']
+    source_df = dataset['filter_probs.csv']
 
     if lines:
         endpoint = "data-lines"
@@ -47,10 +47,6 @@ def test_http_client_source_stage_pipe(config: Config,
         endpoint = "data"
 
     if use_payload_to_df_fn:
-        payload_to_df_fn = mock.MagicMock(return_value=expected_df[['v2', 'v3']].copy(deep=True))
-
-        expected_df = expected_df[['v2', 'v3']].copy(deep=True)
-
         if lines:
             payload_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
         else:
@@ -59,9 +55,17 @@ def test_http_client_source_stage_pipe(config: Config,
         with open(payload_file, "rb") as f:
             expected_payload = f.read()
 
+        def payload_to_df_fn(payload, lines_arg):
+            assert payload == expected_payload
+            assert lines_arg == lines
+            return source_df[['v2', 'v3']].copy(deep=True)
+
+        expected_df = source_df[['v2', 'v3']].copy(deep=True)
+
     else:
         payload_to_df_fn = None
         expected_payload = None
+        expected_df = source_df.copy(deep=True)
 
     url = f"{mock_rest_server}/api/v1/{endpoint}"
 
@@ -79,9 +83,6 @@ def test_http_client_source_stage_pipe(config: Config,
     pipe.run()
 
     assert_results(comp_stage.get_results())
-
-    if use_payload_to_df_fn:
-        payload_to_df_fn.assert_called_once_with(expected_payload, lines)
 
 
 @pytest.mark.slow
