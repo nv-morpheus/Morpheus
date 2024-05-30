@@ -111,7 +111,7 @@ class ValidationStage(CompareDataFrameStage):
 
         Returns
         -------
-        typing.Tuple(`morpheus.pipeline.messages.MultiMessage`, )
+        typing.Tuple(`morpheus.pipeline.messages.MultiMessage`, ControlMessage)
             Accepted input types.
 
         """
