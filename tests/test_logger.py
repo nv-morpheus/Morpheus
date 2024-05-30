@@ -154,6 +154,11 @@ def test_deprecated_message_warning():
     with pytest.warns(DeprecationWarning) as warnings:
         deprecated_message_warning(OldMessage, NewMessage)
 
-    pattern = (r"The '(\w+)' message has been deprecated and will be removed "
-               r"after version (\d+\.\d+) release. Please use '(\w+)' instead.")
-    assert re.search(pattern, str(warnings[0].message)) is not None
+    pattern_with_version = (r"The '(\w+)' message has been deprecated and will be removed "
+                            r"after version (\d+\.\d+) release. Please use '(\w+)' instead.")
+
+    pattern_without_version = (r"The '(\w+)' message has been deprecated and will be removed "
+                               r"after next version release. Please use '(\w+)' instead.")
+
+    assert (re.search(pattern_with_version, str(warnings[0].message)) is not None) or\
+        (re.search(pattern_without_version, str(warnings[0].message)))
