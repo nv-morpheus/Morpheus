@@ -22,7 +22,7 @@ from langchain.agents import AgentType
 from langchain.agents import initialize_agent
 from langchain.agents import load_tools
 from langchain.agents.tools import Tool
-from langchain_community.llms import OpenAI
+from langchain_community.llms import OpenAI  # pylint: disable=no-name-in-module
 from langchain_community.utilities import serpapi
 
 import cudf
