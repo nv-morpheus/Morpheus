@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 import typing
+from operator import itemgetter
 from unittest import mock
 
 import pytest
@@ -166,17 +168,17 @@ class MetadataSaverTool(BaseTool):
         query: str,
         run_manager: typing.Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        assert query is not None  # avoiding unused-argument
-        assert run_manager is not None
-        self.saved_metadata.append(run_manager.metadata.copy())
-        return "frog"
+        raise NotImplementedError("This tool only supports async")
 
     async def _arun(
         self,
         query: str,
         run_manager: typing.Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        return self._run(query, run_manager)
+        assert query is not None  # avoiding unused-argument
+        assert run_manager is not None
+        self.saved_metadata.append(run_manager.metadata.copy())
+        return "frog"
 
 
 @pytest.mark.parametrize("metadata",
@@ -191,18 +193,56 @@ class MetadataSaverTool(BaseTool):
 def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], metadata: dict):
     if isinstance(metadata['morpheus'], list):
         num_meta = len(metadata['morpheus'])
+        input = [f"input_{i}" for i in range(num_meta)]
+        expected_result = [f"{input_val}: Yes!" for input_val in input]
+        expected_saved_metadata = [{"morpheus": meta} for meta in metadata['morpheus']]
+        response_per_input_counter = {input_val: 0 for input_val in input}
     else:
         num_meta = 1
+        input = "input_0"
+        expected_result = "input_0: Yes!"
+        expected_saved_metadata = [metadata.copy()]
+        response_per_input_counter = {input: 0}
+
+    check_tool_response = 'I should check Tool1\nAction: MetadataSaverTool\nAction Input: "name a reptile"'
+    final_response = 'Observation: Answer: Yes!\nI now know the final answer.\nFinal Answer: {}: Yes!'
 
     # Tests the execute method of the LangChainAgentNode with a a mocked tools and chat completion
     (_, mock_async_client) = mock_chat_completion
-    chat_responses = [
-        'I should check Tool1\nAction: MetadataSaverTool\nAction Input: "name a reptile"',
-        'Observation: Answer: Yes!\nI now know the final answer.\nFinal Answer: Yes!'
-    ] * num_meta
 
-    mock_responses = [mk_mock_openai_response([response]) for response in chat_responses]
-    mock_async_client.chat.completions.create.side_effect = mock_responses
+    # Regex to find the actual prompt from the input which includes the REACT and tool description boilerplate
+    input_re = re.compile(r'^Question: (input_\d+)$', re.MULTILINE)
+
+    def mock_llm_chat(*_, messages, **__):
+        """
+        This method avoids a race condition when running in aysnc mode over multiple inputs. Ensuring that the final
+        response is only given for an input after the initial check tool response.
+        """
+
+        query = None
+        for msg in messages:
+            if msg['role'] == 'user':
+                query = msg['content']
+
+        assert query is not None
+
+        match = input_re.search(query)
+        assert match is not None
+
+        input_key = match.group(1)
+
+        call_count = response_per_input_counter[input_key]
+
+        if call_count == 0:
+            response = check_tool_response
+        else:
+            response = final_response.format(input_key)
+
+        response_per_input_counter[input_key] += 1
+
+        return mk_mock_openai_response([response])
+
+    mock_async_client.chat.completions.create.side_effect = mock_llm_chat
 
     llm_chat = ChatOpenAI(model="fake-model", openai_api_key="fake-key")
 
@@ -220,12 +260,7 @@ def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], m
 
     node = LangChainAgentNode(agent_executor=agent)
 
-    if isinstance(metadata['morpheus'], list):
-        input = [f"input{i}" for i in range(num_meta)]
-        expected_result = ["Yes!"] * num_meta
-    else:
-        input = "input1"
-        expected_result = "Yes!"
-
     assert execute_node(node, input=input, metadata=metadata) == expected_result
-    assert metadata_saver_tool.saved_metadata == metadata
+
+    # Since we are running in async mode, we will need to sort saved metadata
+    assert sorted(metadata_saver_tool.saved_metadata, key=itemgetter('morpheus')) == expected_saved_metadata
