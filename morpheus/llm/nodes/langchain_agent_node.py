@@ -47,7 +47,7 @@ class LangChainAgentNode(LLMNodeBase):
 
     async def _run_single(self,
                           metadata: dict[str, typing.Any] = None,
-                          **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+                          **kwargs) -> dict[str, typing.Any]:
 
         all_lists = all(isinstance(v, list) for v in kwargs.values())
 
