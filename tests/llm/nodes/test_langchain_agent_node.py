@@ -28,12 +28,8 @@ from langchain_core.tools import BaseTool
 from _utils.llm import execute_node
 from _utils.llm import mk_mock_langchain_tool
 from _utils.llm import mk_mock_openai_response
-from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
-
-if typing.TYPE_CHECKING:
-    from langchain.agents import AgentExecutor
 
 
 def test_constructor(mock_agent_executor: mock.MagicMock):
@@ -157,25 +153,6 @@ def test_execute_error(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
     assert isinstance(execute_node(node, input="input1"), RuntimeError)
 
 
-class MetaDataAgentNode(LangChainAgentNode):
-    """
-    Subclass of LangChainAgentNode that allows for the passing of metadata to the agent.
-    """
-
-    def __init__(self, agent_executor: "AgentExecutor", metadata: dict[str, typing.Any]):
-        super().__init__(agent_executor=agent_executor)
-        self._metadata = metadata
-
-    async def execute(self, context: LLMContext) -> LLMContext:
-
-        input_dict = context.get_inputs()
-        results = await self._run_single(metadata=self._metadata, **input_dict)
-
-        context.set_output(results)
-
-        return context
-
-
 class MetadataSaverTool(BaseTool):
     # The base class defines *args and **kwargs in the signature for _run and _arun requiring the arguments-differ
     # pylint: disable=arguments-differ
@@ -229,7 +206,7 @@ def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
                              early_stopping_method="generate",
                              return_intermediate_steps=False)
 
-    node = MetaDataAgentNode(agent_executor=agent, metadata={"morpheus": "unittest"})
+    node = LangChainAgentNode(agent_executor=agent)
 
-    assert execute_node(node, input="input1") == "Yes!"
+    assert execute_node(node, input="input1", metadata={"morpheus": "unittest"}) == "Yes!"
     assert metadata_saver_tool.saved_metadata == {"morpheus": "unittest"}
