@@ -229,8 +229,12 @@ def deprecated_stage_warning(logger, cls, name, reason: str = None):
 
 def deprecated_message_warning(cls, new_cls):
     """Log a warning about a deprecated message."""
-    version = re.match(r"(\d+\.\d+)", morpheus.__version__).group(1)
+    match = re.match(r"(\d+\.\d+)", morpheus.__version__)
+    if match is None:
+        version = "next version"
+    else:
+        version = "version " + match.group(1)
 
     message = (f"The '{cls.__name__}' message has been deprecated and will be removed "
-               f"after version {version} release. Please use '{new_cls.__name__}' instead.")
+               f"after {version} release. Please use '{new_cls.__name__}' instead.")
     warnings.warn(message, DeprecationWarning)
