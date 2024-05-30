@@ -84,7 +84,7 @@ class ConfigGenerator:
             "stream_aggregation_options": {
                 "aggregation_span": "1d",
                 "cache_to_disk": False,
-                "cache_mode": "streaming",
+                "cache_mode": "batch",
             },
             "preprocessing_options": {
                 "schema": {
@@ -139,7 +139,7 @@ class ConfigGenerator:
             "stream_aggregation_options": {
                 "aggregation_span": "60d",
                 "cache_to_disk": False,
-                "cache_mode": "streaming",
+                "cache_mode": "aggregate",
                 "trigger_on_min_history": 300,
                 "trigger_on_min_increment": 300
             },
