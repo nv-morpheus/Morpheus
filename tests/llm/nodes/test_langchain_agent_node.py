@@ -159,7 +159,7 @@ class MetadataSaverTool(BaseTool):
     name: str = "MetadataSaverTool"
     description: str = "useful for when you need to know the name of a reptile"
 
-    saved_metadata: dict = {}
+    saved_metadata: list[dict] = []
 
     def _run(
         self,
@@ -168,7 +168,7 @@ class MetadataSaverTool(BaseTool):
     ) -> str:
         assert query is not None  # avoiding unused-argument
         assert run_manager is not None
-        self.saved_metadata.update(run_manager.metadata)
+        self.saved_metadata.append(run_manager.metadata.copy())
         return "frog"
 
     async def _arun(
@@ -176,19 +176,31 @@ class MetadataSaverTool(BaseTool):
         query: str,
         run_manager: typing.Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        assert query is not None  # avoiding unused-argument
-        assert run_manager is not None
-        self.saved_metadata.update(run_manager.metadata)
-        return "frog"
+        return self._run(query, run_manager)
 
 
-def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
+@pytest.mark.parametrize("metadata",
+                         [{
+                             "morpheus": "unittest"
+                         }, {
+                             "morpheus": ["unittest"]
+                         }, {
+                             "morpheus": [f"unittest_{i}" for i in range(3)]
+                         }],
+                         ids=["single-metadata", "single-metadata-list", "multiple-metadata-list"])
+def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], metadata: dict):
+    if isinstance(metadata['morpheus'], list):
+        num_meta = len(metadata['morpheus'])
+    else:
+        num_meta = 1
+
     # Tests the execute method of the LangChainAgentNode with a a mocked tools and chat completion
     (_, mock_async_client) = mock_chat_completion
     chat_responses = [
         'I should check Tool1\nAction: MetadataSaverTool\nAction Input: "name a reptile"',
         'Observation: Answer: Yes!\nI now know the final answer.\nFinal Answer: Yes!'
-    ]
+    ] * num_meta
+
     mock_responses = [mk_mock_openai_response([response]) for response in chat_responses]
     mock_async_client.chat.completions.create.side_effect = mock_responses
 
@@ -208,5 +220,12 @@ def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
 
     node = LangChainAgentNode(agent_executor=agent)
 
-    assert execute_node(node, input="input1", metadata={"morpheus": "unittest"}) == "Yes!"
-    assert metadata_saver_tool.saved_metadata == {"morpheus": "unittest"}
+    if isinstance(metadata['morpheus'], list):
+        input = [f"input{i}" for i in range(num_meta)]
+        expected_result = ["Yes!"] * num_meta
+    else:
+        input = "input1"
+        expected_result = "Yes!"
+
+    assert execute_node(node, input=input, metadata=metadata) == expected_result
+    assert metadata_saver_tool.saved_metadata == metadata
