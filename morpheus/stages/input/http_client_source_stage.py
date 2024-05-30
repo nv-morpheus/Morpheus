@@ -68,8 +68,8 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
         Number of seconds to wait for the server to send data before giving up and raising an exception.
     max_errors : int, default 10
         Maximum number of consequtive errors to receive before raising an error.
-    accept_status_codes : typing.List[HTTPStatus], optional,  multiple = True
-        List of status codes to accept. If the response status code is not in this tuple, then the request will be
+    accept_status_codes : typing.Iterable[int], optional,  multiple = True
+        List of status codes to accept. If the response status code is not in this collection, then the request will be
         considered an error
     max_retries : int, default 10
         Maximum number of times to retry the request fails, receives a redirect or returns a status in the
@@ -97,7 +97,7 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  error_sleep_time: float = 0.1,
                  respect_retry_after_header: bool = True,
                  request_timeout_secs: int = 30,
-                 accept_status_codes: list[HTTPStatus] = (HTTPStatus.OK, ),
+                 accept_status_codes: typing.Iterable[int] = (HTTPStatus.OK, ),
                  max_retries: int = 10,
                  lines: bool = False,
                  stop_after: int = 0,
