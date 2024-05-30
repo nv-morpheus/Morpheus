@@ -193,16 +193,16 @@ class MetadataSaverTool(BaseTool):
 def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], metadata: dict):
     if isinstance(metadata['morpheus'], list):
         num_meta = len(metadata['morpheus'])
-        input = [f"input_{i}" for i in range(num_meta)]
-        expected_result = [f"{input_val}: Yes!" for input_val in input]
+        input_data = [f"input_{i}" for i in range(num_meta)]
+        expected_result = [f"{input_val}: Yes!" for input_val in input_data]
         expected_saved_metadata = [{"morpheus": meta} for meta in metadata['morpheus']]
-        response_per_input_counter = {input_val: 0 for input_val in input}
+        response_per_input_counter = {input_val: 0 for input_val in input_data}
     else:
         num_meta = 1
-        input = "input_0"
+        input_data = "input_0"
         expected_result = "input_0: Yes!"
         expected_saved_metadata = [metadata.copy()]
-        response_per_input_counter = {input: 0}
+        response_per_input_counter = {input_data: 0}
 
     check_tool_response = 'I should check Tool1\nAction: MetadataSaverTool\nAction Input: "name a reptile"'
     final_response = 'Observation: Answer: Yes!\nI now know the final answer.\nFinal Answer: {}: Yes!'
@@ -260,7 +260,7 @@ def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], m
 
     node = LangChainAgentNode(agent_executor=agent)
 
-    assert execute_node(node, input=input, metadata=metadata) == expected_result
+    assert execute_node(node, input=input_data, metadata=metadata) == expected_result
 
     # Since we are running in async mode, we will need to sort saved metadata
     assert sorted(metadata_saver_tool.saved_metadata, key=itemgetter('morpheus')) == expected_saved_metadata
