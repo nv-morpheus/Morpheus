@@ -96,7 +96,7 @@ class HttpClientSinkStage(PassThruTypeMixin, SinglePortStage):
         perform an exponential backoff starting at `error_sleep_time`.
     request_timeout_secs : int, optional
         Number of seconds to wait for the server to send data before giving up and raising an exception.
-    accept_status_codes :  typing.List[HTTPStatus], optional,  multiple = True
+    accept_status_codes :  typing.Iterable[int], optional,  multiple = True
         List of acceptable status codes, by default (200, 201, 202).
     max_retries : int, default 10
         Maximum number of times to retry the request fails, receives a redirect or returns a status in the
@@ -140,7 +140,7 @@ class HttpClientSinkStage(PassThruTypeMixin, SinglePortStage):
                  error_sleep_time: float = 0.1,
                  respect_retry_after_header: bool = True,
                  request_timeout_secs: int = 30,
-                 accept_status_codes: typing.List[HTTPStatus] = (
+                 accept_status_codes: typing.Iterable[int] = (
                      HTTPStatus.OK,
                      HTTPStatus.CREATED,
                      HTTPStatus.ACCEPTED,
