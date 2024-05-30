@@ -45,9 +45,7 @@ class LangChainAgentNode(LLMNodeBase):
     def get_input_names(self):
         return self._input_names
 
-    async def _run_single(self,
-                          metadata: dict[str, typing.Any] = None,
-                          **kwargs) -> dict[str, typing.Any]:
+    async def _run_single(self, metadata: dict[str, typing.Any] = None, **kwargs) -> dict[str, typing.Any]:
 
         all_lists = all(isinstance(v, list) for v in kwargs.values())
 
