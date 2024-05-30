@@ -22,15 +22,15 @@
 #include "morpheus/messages/control.hpp"                  // for ControlMessage
 #include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
 #include "morpheus/messages/memory/tensor_memory.hpp"     // for TensorMemory
-#include "morpheus/messages/meta.hpp"
-#include "morpheus/messages/multi.hpp"            // for MultiMessage
-#include "morpheus/messages/multi_inference.hpp"  // for MultiInferenceMessage
-#include "morpheus/objects/dev_mem_info.hpp"      // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"             // for DType
-#include "morpheus/objects/table_info.hpp"        // for TableInfo
-#include "morpheus/objects/tensor.hpp"            // for Tensor
-#include "morpheus/types.hpp"                     // for TensorIndex
-#include "morpheus/utilities/matx_util.hpp"       // for MatxUtil
+#include "morpheus/messages/meta.hpp"                     // for MessageMeta
+#include "morpheus/messages/multi.hpp"                    // for MultiMessage
+#include "morpheus/messages/multi_inference.hpp"          // for MultiInferenceMessage
+#include "morpheus/objects/dev_mem_info.hpp"              // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"                     // for DType
+#include "morpheus/objects/table_info.hpp"                // for TableInfo
+#include "morpheus/objects/tensor.hpp"                    // for Tensor
+#include "morpheus/types.hpp"                             // for TensorIndex
+#include "morpheus/utilities/matx_util.hpp"               // for MatxUtil
 
 #include <cudf/column/column.hpp>                 // for column
 #include <cudf/column/column_factories.hpp>       // for make_column_from_scalar
@@ -42,7 +42,6 @@
 #include <cudf/table/table_view.hpp>              // for table_view
 #include <cudf/types.hpp>                         // for type_id, data_type
 #include <cudf/unary.hpp>                         // for cast
-#include <glog/logging.h>                         // for COMPACT_GOOGLE_LOG_ERROR, LOG, LogMessage
 #include <mrc/segment/builder.hpp>                // for Builder
 #include <nvtext/normalize.hpp>                   // for normalize_spaces
 #include <nvtext/subword_tokenize.hpp>            // for tokenizer_result, load_vocabulary_file, subword_tok...
@@ -52,9 +51,7 @@
 
 #include <cstdint>      // for uint32_t, int32_t
 #include <memory>       // for shared_ptr, unique_ptr, __shared_ptr_access, make_s...
-#include <stdexcept>    // for runtime_error
 #include <type_traits>  // for is_same_v
-#include <typeinfo>     // for type_info
 #include <utility>      // for move
 #include <vector>       // for vector
 
@@ -100,12 +97,10 @@ PreprocessNLPStage<InputT, OutputT>::source_type_t PreprocessNLPStage<InputT, Ou
     {
         return this->on_control_message(x);
     }
-    // sink_type_t not supported
     else
     {
-        std::string error_msg{"PreProcessNLPStage receives unsupported input type: " + std::string(typeid(x).name())};
-        LOG(ERROR) << error_msg;
-        throw std::runtime_error(error_msg);
+        // sink_type_t not supported
+        static_assert(!sizeof(sink_type_t), "PreProcessNLPStage receives unsupported input type");
     }
 }
 
