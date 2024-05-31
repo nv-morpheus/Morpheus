@@ -19,7 +19,9 @@ import click
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.pipeline.stage_decorator import stage
 from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -55,7 +57,17 @@ def run_pipeline(nic_addr, gpu_addr):
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'udp'))
     pipeline.add_stage(DocaConvertStage(config))
-    pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
+
+    # Uncomment the following lines to display the number of rows per MesssageMeta
+    # @stage
+    # def stage_counter(msg: MessageMeta) -> MessageMeta:
+    #     with msg.mutable_dataframe() as df:
+    #         print(f"\nlen(df) = {len(df)}\n")
+
+
+    # pipeline.add_stage(stage_counter(config))
+    
+    pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts', delayed_start=True))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()
