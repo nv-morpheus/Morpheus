@@ -16,6 +16,7 @@
 import logging
 import multiprocessing
 import os
+import re
 from unittest.mock import patch
 
 import pytest
@@ -142,7 +143,7 @@ def test_deprecated_stage_warning_with_reason(caplog):
            "This is the reason." in caplog.text
 
 
-def test_deprecated_message_warning(caplog):
+def test_deprecated_message_warning():
 
     class OldMessage():
         pass
@@ -150,10 +151,14 @@ def test_deprecated_message_warning(caplog):
     class NewMessage():
         pass
 
-    logger = logging.getLogger()
-    caplog.set_level(logging.WARNING)
-    deprecated_message_warning(logger, OldMessage, NewMessage)
-    assert len(caplog.records) == 1
-    assert caplog.records[0].levelname == "WARNING"
-    assert "The 'OldMessage' message has been deprecated and will be removed in a future version. " \
-           "Please use 'NewMessage' instead." in caplog.text
+    with pytest.warns(DeprecationWarning) as warnings:
+        deprecated_message_warning(OldMessage, NewMessage)
+
+    pattern_with_version = (r"The '(\w+)' message has been deprecated and will be removed "
+                            r"after version (\d+\.\d+) release. Please use '(\w+)' instead.")
+
+    pattern_without_version = (r"The '(\w+)' message has been deprecated and will be removed "
+                               r"after next version release. Please use '(\w+)' instead.")
+
+    assert (re.search(pattern_with_version, str(warnings[0].message)) is not None) or\
+        (re.search(pattern_without_version, str(warnings[0].message)))
