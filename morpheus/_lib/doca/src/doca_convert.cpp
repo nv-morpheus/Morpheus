@@ -23,6 +23,7 @@
 
 #include <boost/fiber/context.hpp>
 #include <cuda_runtime.h>
+#include <cudf/concatenate.hpp>
 #include <cudf/column/column.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/table/table.hpp>
@@ -85,9 +86,7 @@ static uint64_t now_ns()
 namespace morpheus {
 
 DocaConvertStage::DocaConvertStage() :
-  base_t(rxcpp::operators::map([this](sink_type_t x) {
-      return this->on_data(std::move(x));
-  }))
+  base_t(base_t::op_factory_from_sub_fn(build()))
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp              = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
@@ -113,22 +112,38 @@ DocaConvertStage::~DocaConvertStage()
     cudaStreamDestroy(m_stream);
 }
 
-DocaConvertStage::source_type_t DocaConvertStage::on_data(sink_type_t x)
+DocaConvertStage::subscribe_fn_t DocaConvertStage::build()
 {
-    if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<RawPacketMessage>>)
-    {
-        return this->on_raw_packet_message(x);
-    }
-    // sink_type_t not supported
-    else
-    {
-        std::string error_msg{"DocaConvertStage receives unsupported input type: " + std::string(typeid(x).name())};
-        LOG(ERROR) << error_msg;
-        throw std::runtime_error(error_msg);
-    }
+    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [this, &output](sink_type_t x) {
+                this->on_raw_packet_message(output, x);
+            },
+            [&](std::exception_ptr error_ptr) {
+                output.on_error(error_ptr);
+            },
+            [&]() {
+                output.on_completed();
+            }));
+    };
 }
 
-DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_type_t raw_msg)
+// DocaConvertStage::source_type_t DocaConvertStage::on_data(sink_type_t x)
+// {
+//     if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<RawPacketMessage>>)
+//     {
+//         return this->on_raw_packet_message(x);
+//     }
+//     // sink_type_t not supported
+//     else
+//     {
+//         std::string error_msg{"DocaConvertStage receives unsupported input type: " + std::string(typeid(x).name())};
+//         LOG(ERROR) << error_msg;
+//         throw std::runtime_error(error_msg);
+//     }
+// }
+
+void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& output, sink_type_t raw_msg)
 {
     auto packet_count      = raw_msg->count();
     auto max_size          = raw_msg->get_max_size();
@@ -161,36 +176,58 @@ DocaConvertStage::source_type_t DocaConvertStage::on_raw_packet_message(sink_typ
     gathered_columns.emplace_back(std::move(payload_col));
 
     // After this point buffers can be reused -> copies actual packets' data
-    auto gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
+    {
+        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
+        m_gathered_tables.emplace_back(std::move(std::make_unique<cudf::table>(std::move(gathered_columns))));
+    }
+    
+
+    cudaStreamSynchronize(m_stream_cpp);
 
 #if ENABLE_TIMERS == 1
     const auto t3 = now_ns();
 #endif
-    auto gathered_metadata = cudf::io::table_metadata();
-    gathered_metadata.schema_info.emplace_back("src_ip");
-    gathered_metadata.schema_info.emplace_back("data");
+    
+    if (m_gathered_tables.size() >= m_tables_per_df) {
+        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
+        auto gathered_metadata = cudf::io::table_metadata();
+        gathered_metadata.schema_info.emplace_back("src_ip");
+        gathered_metadata.schema_info.emplace_back("data");
 
-    auto gathered_table_w_metadata =
-        cudf::io::table_with_metadata{std::move(gathered_table), std::move(gathered_metadata)};
+        std::vector<cudf::table_view> table_views;
+        for (auto& tbl: m_gathered_tables) {
+            table_views.emplace_back(tbl->view());
+        }
 
-#if ENABLE_TIMERS == 1
-    const auto t4 = now_ns();
-#endif
-    auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
+        auto combined_table = cudf::concatenate(table_views, m_stream_cpp);
 
-#if ENABLE_TIMERS == 1
-    const auto t5 = now_ns();
-#endif
-    cudaStreamSynchronize(m_stream_cpp);
-#if ENABLE_TIMERS == 1
-    const auto t6 = now_ns();
 
-    LOG(WARNING) << "Queue " << queue_idx << " packets " << packet_count << " header column " << t1 - t0
-                 << " payload column " << t2 - t1 << " gather columns " << t3 - t2 << " gather metadata " << t4 - t3
-                 << " create_from_cpp " << t5 - t4 << " stream sync " << t6 - t5 << std::endl;
-#endif
+        auto gathered_table_w_metadata =
+            cudf::io::table_with_metadata{std::move(combined_table), std::move(gathered_metadata)};
 
-    return std::move(meta);
+    #if ENABLE_TIMERS == 1
+        const auto t4 = now_ns();
+    #endif
+        auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
+
+    #if ENABLE_TIMERS == 1
+        const auto t5 = now_ns();
+    #endif
+        cudaStreamSynchronize(m_stream_cpp);
+
+    #if ENABLE_TIMERS == 1
+        const auto t6 = now_ns();
+
+        LOG(WARNING) << "Queue " << queue_idx << " packets " << packet_count << " header column " << t1 - t0
+                    << " payload column " << t2 - t1 << " gather columns " << t3 - t2 << " gather metadata " << t4 - t3
+                    << " create_from_cpp " << t5 - t4 << " stream sync " << t6 - t5 << std::endl;
+    #endif
+
+        m_gathered_tables.clear();
+
+        output.on_next(std::move(meta));
+
+    }
 }
 
 std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfaceProxy::init(

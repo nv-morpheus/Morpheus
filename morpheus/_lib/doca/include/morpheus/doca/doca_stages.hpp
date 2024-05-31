@@ -22,10 +22,14 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/raw_packet.hpp"
 
+#include <cudf/table/table.hpp>
 #include <mrc/segment/builder.hpp>
 #include <pymrc/node.hpp>
 
+
 #include <memory>
+#include <mutex>
+#include <vector>
 
 namespace morpheus {
 
@@ -100,11 +104,12 @@ class MORPHEUS_EXPORT DocaConvertStage
     ~DocaConvertStage() override;
 
   private:
+    subscribe_fn_t build();
     /**
      * Called every time a message is passed to this stage
      */
-    source_type_t on_data(sink_type_t x);
-    source_type_t on_raw_packet_message(sink_type_t x);
+    //source_type_t on_data(sink_type_t x);
+    void on_raw_packet_message(rxcpp::subscriber<source_type_t>& output, sink_type_t x);
 
     cudaStream_t m_stream;
     rmm::cuda_stream_view m_stream_cpp;
@@ -112,6 +117,11 @@ class MORPHEUS_EXPORT DocaConvertStage
     uint32_t* m_fixed_pld_size_list_cpu;
     uint32_t* m_fixed_hdr_size_list;
     uint32_t* m_fixed_hdr_size_list_cpu;
+
+
+    std::mutex m_mutex;
+    std::vector<std::unique_ptr<cudf::table>> m_gathered_tables;
+    std::size_t m_tables_per_df = 1024;
 };
 
 /****** DocaConvertStageInterfaceProxy***********************/
