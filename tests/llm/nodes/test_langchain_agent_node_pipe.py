@@ -45,7 +45,7 @@ def test_pipeline(config: Config, dataset_cudf: DatasetManager, mock_agent_execu
 
     mock_agent_executor.arun.return_value = 'frogs'
     expected_df['response'] = 'frogs'
-    expected_calls = [mock.call(prompt=x) for x in expected_df['v3'].values_host]
+    expected_calls = [mock.call(prompt=x, metadata=None) for x in expected_df['v3'].values_host]
 
     task_payload = {"task_type": "llm_engine", "task_dict": {"input_keys": ['v3']}}
 

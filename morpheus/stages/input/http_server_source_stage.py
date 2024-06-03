@@ -77,6 +77,10 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         expect each request to be a JSON object per line.
     stop_after : int, default 0
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
+    payload_to_df_fn : callable, default None
+        A callable that takes the HTTP payload string as the first argument and the `lines` parameter is passed in as
+        the second argument and returns a cudf.DataFrame. When supplied, the C++ implementation of this stage is
+        disabled, and the Python impl is used.
     """
 
     def __init__(self,
@@ -93,7 +97,8 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                  max_payload_size: int = 10,
                  request_timeout_secs: int = 30,
                  lines: bool = False,
-                 stop_after: int = 0):
+                 stop_after: int = 0,
+                 payload_to_df_fn: typing.Callable[[str, bool], cudf.DataFrame] = None):
         super().__init__(config)
         self._bind_address = bind_address
         self._port = port
@@ -108,6 +113,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         self._request_timeout_secs = request_timeout_secs
         self._lines = lines
         self._stop_after = stop_after
+        self._payload_to_df_fn = payload_to_df_fn
 
         # These are only used when C++ mode is disabled
         self._queue = None
@@ -134,8 +140,12 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def _parse_payload(self, payload: str) -> HttpParseResponse:
         try:
-            # engine='cudf' is needed when lines=False to avoid using pandas
-            df = cudf.read_json(payload, lines=self._lines, engine='cudf')
+            if self._payload_to_df_fn is not None:
+                df = self._payload_to_df_fn(payload, self._lines)
+            else:
+                # engine='cudf' is needed when lines=False to avoid using pandas
+                df = cudf.read_json(payload, lines=self._lines, engine='cudf')
+
         except Exception as e:
             err_msg = "Error occurred converting HTTP payload to Dataframe"
             logger.error("%s: %s", err_msg, e)
@@ -206,7 +216,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                         self._processing = False
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        if self._build_cpp_node():
+        if self._build_cpp_node() and self._payload_to_df_fn is None:
             import morpheus._lib.stages as _stages
             node = _stages.HttpServerSourceStage(builder,
                                                  self.unique_name,
