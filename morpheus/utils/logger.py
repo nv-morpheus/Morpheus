@@ -183,7 +183,8 @@ def reset_logging(logger_name: str = "morpheus"):
             handler.release()
         morpheus_logger.removeHandler(handler)
 
-    delattr(morpheus_logger, "_configured_by_morpheus")
+    if hasattr(morpheus_logger, "_configured_by_morpheus"):
+        delattr(morpheus_logger, "_configured_by_morpheus")
 
 
 def configure_logging(*extra_handlers: logging.Handler, log_level: int = None, log_config_file: str = None):
