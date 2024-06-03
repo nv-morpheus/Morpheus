@@ -155,8 +155,11 @@ def _configure_from_log_level(*extra_handlers: logging.Handler, log_level: int):
         queue_listener.start()
         queue_listener._thread.name = "Logging Thread"
 
-        # Register a function to kill the listener thread before shutting down. prevents error on intpreter close
+        # Register a function to kill the listener thread when the queue_handler is removed.
         weakref.finalize(morpheus_queue_handler, queue_listener.stop)
+
+        # Register a handler before shutting down to remove all log handlers, this ensures that the weakref.finalize
+        # handler we just defined is called at exit.
         import atexit
         atexit.register(reset_logging)
     else:
