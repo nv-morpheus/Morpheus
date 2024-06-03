@@ -40,8 +40,7 @@ def _flush_logging_queue(logger: logging.Logger):
 
 
 @pytest.fixture(autouse=True)
-def reset_logging_fixture():
-    reset_logging()
+def reset_logging_fixture(reset_logging):  # pylint: disable=unused-argument
     yield
 
 
