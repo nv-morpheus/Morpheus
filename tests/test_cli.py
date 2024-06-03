@@ -59,6 +59,7 @@ from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 from morpheus.utils.file_utils import load_labels_file
+from morpheus.utils.logger import reset_logging
 
 GENERAL_ARGS = ['run', '--num_threads=12', '--pipeline_batch_size=1024', '--model_max_batch_size=1024', '--use_cpp=0']
 MONITOR_ARGS = ['monitor', '--description', 'Unittest', '--smoothing=0.001', '--unit', 'inf']
@@ -144,28 +145,19 @@ def config_warning_fixture():
 @pytest.mark.use_python
 class TestCLI:
 
-    def test_help(self):
+    @pytest.mark.parametrize('cmd',
+                             [[], ['tools'], ['run'], ['run', 'pipeline-ae'], ['run', 'pipeline-fil'],
+                              ['run', 'pipeline-nlp'], ['run', 'pipeline-other']])
+    def test_help(self, cmd: list[str]):
         runner = CliRunner()
-        result = runner.invoke(commands.cli, ['--help'])
+        result = runner.invoke(commands.cli, cmd + ['--help'])
         assert result.exit_code == 0, result.output
 
-        result = runner.invoke(commands.cli, ['tools', '--help'])
-        assert result.exit_code == 0, result.output
-
-        result = runner.invoke(commands.cli, ['run', '--help'])
-        assert result.exit_code == 0, result.output
-
-        result = runner.invoke(commands.cli, ['run', 'pipeline-ae', '--help'])
-        assert result.exit_code == 0, result.output
-
-    def test_autocomplete(self, tmp_path):
+    @pytest.mark.parametrize('cmd',
+                             [['tools', 'autocomplete', 'show'], ['tools', 'autocomplete', 'install', '--shell=bash']])
+    def test_autocomplete(self, tmp_path, cmd: list[str]):
         runner = CliRunner()
-        result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'show'], env={'HOME': str(tmp_path)})
-        assert result.exit_code == 0, result.output
-
-        # The actual results of this are specific to the implementation of click_completion
-        result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'install', '--shell=bash'],
-                               env={'HOME': str(tmp_path)})
+        result = runner.invoke(commands.cli, cmd, env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
 
     @pytest.mark.usefixtures("restore_environ")
