@@ -28,6 +28,7 @@ from morpheus.utils.logger import LogLevels
 from morpheus.utils.logger import configure_logging
 from morpheus.utils.logger import deprecated_message_warning
 from morpheus.utils.logger import deprecated_stage_warning
+from morpheus.utils.logger import reset_logging
 from morpheus.utils.logger import set_log_level
 
 
@@ -39,7 +40,7 @@ def _flush_logging_queue(logger: logging.Logger):
 
 
 @pytest.fixture(autouse=True)
-def reset_logging_fixture(reset_logging):  # pylint: disable=unused-argument
+def reset_logging_fixture(reset_logging):  # pylint: disable=unused-argument, redefined-outer-name
     yield
 
 
