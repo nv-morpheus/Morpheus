@@ -157,6 +157,8 @@ def _configure_from_log_level(*extra_handlers: logging.Handler, log_level: int):
 
         # Register a function to kill the listener thread before shutting down. prevents error on intpreter close
         weakref.finalize(morpheus_queue_handler, queue_listener.stop)
+        import atexit
+        atexit.register(reset_logging)
     else:
         raise RuntimeError("Logging has already been configured. Use `set_log_level` to change the log level or reset "
                            "the logging system by calling `reset_logging`.")
