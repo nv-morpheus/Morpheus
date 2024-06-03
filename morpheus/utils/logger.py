@@ -19,7 +19,6 @@ import logging.config
 import logging.handlers
 import multiprocessing
 import os
-import queue
 import weakref
 from enum import Enum
 

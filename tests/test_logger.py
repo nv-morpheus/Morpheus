@@ -28,7 +28,6 @@ from morpheus.utils.logger import LogLevels
 from morpheus.utils.logger import configure_logging
 from morpheus.utils.logger import deprecated_message_warning
 from morpheus.utils.logger import deprecated_stage_warning
-from morpheus.utils.logger import reset_logging
 from morpheus.utils.logger import set_log_level
 
 
