@@ -162,14 +162,14 @@ def _configure_from_log_level(*extra_handlers: logging.Handler, log_level: int):
                            "the logging system by calling `reset_logging`.")
 
 
-def reset_logging():
+def reset_logging(logger_name: str = "morpheus"):
     """
     Resets the Morpheus logging system. This will remove all handlers from the Morpheus logger and stop the queue
     listener. This is useful for testing where the logging system needs to be reconfigured multiple times or
     reconfigured with different settings.
     """
 
-    morpheus_logger = logging.getLogger("morpheus")
+    morpheus_logger = logging.getLogger(logger_name)
 
     for handler in morpheus_logger.handlers.copy():
         # Copied from `logging.shutdown`.
