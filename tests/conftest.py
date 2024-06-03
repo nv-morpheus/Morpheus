@@ -192,6 +192,13 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     items[:] = [x for x in items if should_filter_test(x)]
 
 
+@pytest.fixture(scope="function", name="reset_logging")
+def reset_logging_fixture():
+    from morpheus.utils.logger import reset_logging
+    reset_logging()
+    yield
+
+
 @pytest.hookimpl(trylast=True)
 def pytest_runtest_teardown(item, nextitem):
     from morpheus.utils.logger import reset_logging
