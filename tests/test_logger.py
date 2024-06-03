@@ -39,10 +39,14 @@ def _flush_logging_queue(logger: logging.Logger):
                 time.sleep(0.01)
 
 
+@pytest.fixture(autouse=True)
+def reset_logging_fixture():
+    reset_logging()
+    yield
+
+
 @patch('logging.handlers.QueueListener.stop')
 def test_reset_logging(queue_listener_stop_mock):
-
-    reset_logging()
 
     configure_logging(log_level=logging.INFO)
 
@@ -63,9 +67,6 @@ def test_reset_logging(queue_listener_stop_mock):
 @patch('logging.handlers.QueueHandler.emit')
 @pytest.mark.parametrize("log_level", LogLevels)
 def test_configure_logging_from_level_default_handlers(queue_handler, log_level: type[LogLevels]):
-
-    reset_logging()
-
     configure_logging(log_level=log_level.value)
 
     morpheus_logger = logging.getLogger("morpheus")
@@ -111,9 +112,6 @@ def test_configure_logging_from_file(console_handler, file_handler):
 
 
 def test_configure_logging_multiple_times():
-
-    reset_logging()
-
     configure_logging(log_level=logging.INFO)
 
     morpheus_logger = logging.getLogger("morpheus")
@@ -133,9 +131,6 @@ def test_configure_logging_from_file_filenotfound():
 
 
 def test_configure_logging_custom_handlers():
-
-    reset_logging()
-
     # Create a string stream for the handler
     string_stream_1 = io.StringIO()
     string_stream_2 = io.StringIO()
@@ -160,9 +155,6 @@ def test_configure_logging_custom_handlers():
 
 @pytest.mark.parametrize("log_level", LogLevels)
 def test_set_log_level(log_level: type[LogLevels]):
-
-    reset_logging()
-
     configure_logging(log_level=logging.INFO)
 
     morpheus_logger = logging.getLogger("morpheus")
