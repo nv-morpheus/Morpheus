@@ -43,21 +43,35 @@ class GroupByColumnStage(PassThruTypeMixin, SinglePortStage):
         return "group-by-column"
 
     def accepted_types(self) -> tuple:
+        """
+        Returns accepted input types for this stage.
+        """
         return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:
+        """
+        Indicates whether this stage supports C++ node.
+        """
         return False
 
     def on_data(self, message: MessageMeta) -> list[MessageMeta]:
+        """
+        Group the incoming message by a column in the DataFrame.
+
+        Parameters
+        ----------
+        message : MessageMeta
+            Incoming message
+        """
         with message.mutable_dataframe() as df:
             grouper = df.groupby(self._column_name)
 
-        ouptut_messages = []
+        output_messages = []
         for group_name in sorted(grouper.groups.keys()):
             group_df = grouper.get_group(group_name)
-            ouptut_messages.append(MessageMeta(group_df))
+            output_messages.append(MessageMeta(group_df))
 
-        return ouptut_messages
+        return output_messages
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data), ops.flatten())
