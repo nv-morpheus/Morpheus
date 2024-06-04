@@ -54,8 +54,6 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
                                        "Ensure the DOCA components have been built and installed. Error message: ") +
                                       ex.msg) from ex
 
-        self._max_concurrent = 5
-
     @property
     def name(self) -> str:
         return "from-doca-convert"
@@ -78,7 +76,6 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
 
         if self._build_cpp_node():
             node = self.doca_convert_class(builder, self.unique_name)
-            node.launch_options.pe_count = self._max_concurrent
             builder.make_edge(input_node, node)
             return node
 
