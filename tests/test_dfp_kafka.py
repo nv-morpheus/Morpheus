@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import os
 import typing
 from io import StringIO
@@ -44,20 +43,16 @@ from morpheus.stages.preprocess import preprocess_ae_stage
 from morpheus.stages.preprocess import train_ae_stage
 from morpheus.utils.compare_df import compare_df
 from morpheus.utils.file_utils import load_labels_file
-from morpheus.utils.logger import configure_logging
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
-
-configure_logging(log_level=logging.DEBUG)
-# End-to-end test intended to imitate the dfp validation test
 
 
 @pytest.mark.kafka
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.reload_modules([commands, preprocess_ae_stage, train_ae_stage])
-@pytest.mark.usefixtures("reload_modules")
+@pytest.mark.usefixtures("reload_modules", "loglevel_debug")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_roleg(mock_ae: mock.MagicMock,
                    dataset_pandas: DatasetManager,
@@ -159,7 +154,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
-@pytest.mark.usefixtures("reload_modules")
+@pytest.mark.usefixtures("reload_modules", "loglevel_debug")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_user123(mock_ae: mock.MagicMock,
                      dataset_pandas: DatasetManager,

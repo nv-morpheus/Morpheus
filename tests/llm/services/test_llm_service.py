@@ -15,13 +15,40 @@
 
 import inspect
 from abc import ABC
+from unittest import mock
 
 import pytest
 
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.llm_service import LLMService
+from morpheus.llm.services.nemo_llm_service import NeMoLLMService
+from morpheus.llm.services.nvfoundation_llm_service import NVFoundationLLMService
+from morpheus.llm.services.openai_chat_service import OpenAIChatService
 
 
 @pytest.mark.parametrize("cls", [LLMClient, LLMService])
 def test_is_abstract(cls: ABC):
     assert inspect.isabstract(cls)
+
+
+@pytest.mark.parametrize(
+    "service_name, expected_cls",
+    [("nemo", NeMoLLMService), ("openai", OpenAIChatService),
+     pytest.param("nvfoundation", NVFoundationLLMService, marks=pytest.mark.xfail(reason="missing dependency"))])
+def test_create(service_name: str, expected_cls: type):
+    service = LLMService.create(service_name)
+    assert isinstance(service, expected_cls)
+
+
+@pytest.mark.parametrize("service_name, class_name",
+                         [("nemo", "morpheus.llm.services.nemo_llm_service.NeMoLLMService"),
+                          ("openai", "morpheus.llm.services.openai_chat_service.OpenAIChatService"),
+                          ("nvfoundation", "morpheus.llm.services.nvfoundation_llm_service.NVFoundationLLMService")])
+def test_create_mocked(service_name: str, class_name: str):
+    with mock.patch(class_name) as mock_cls:
+        mock_instance = mock.MagicMock()
+        mock_cls.return_value = mock_instance
+
+        service = LLMService.create(service_name)
+        mock_cls.assert_called_once()
+        assert service is mock_instance
