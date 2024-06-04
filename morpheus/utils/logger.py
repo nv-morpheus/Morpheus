@@ -19,8 +19,6 @@ import logging.config
 import logging.handlers
 import multiprocessing
 import os
-import re
-import warnings
 import weakref
 from enum import Enum
 

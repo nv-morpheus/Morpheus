@@ -18,7 +18,6 @@ import io
 import logging
 import logging.handlers
 import os
-import re
 import time
 from unittest.mock import patch
 
