@@ -88,6 +88,7 @@ namespace morpheus {
 DocaConvertStage::DocaConvertStage() :
   base_t(base_t::op_factory_from_sub_fn(build()))
 {
+    std::cerr << "DocaConvertStage() " << m_rows_per_df << std::endl;
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp              = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
     m_fixed_pld_size_list_cpu = (uint32_t*)calloc(MAX_PKT_RECEIVE, sizeof(uint32_t));
@@ -171,25 +172,23 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
 #if ENABLE_TIMERS == 1
     const auto t2 = now_ns();
 #endif
+
+    m_gathered_rows += payload_col->size();
     std::vector<std::unique_ptr<cudf::column>> gathered_columns;
     gathered_columns.emplace_back(std::move(header_src_ip_col));
     gathered_columns.emplace_back(std::move(payload_col));
 
     // After this point buffers can be reused -> copies actual packets' data
-    {
-        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
-        m_gathered_tables.emplace_back(std::move(std::make_unique<cudf::table>(std::move(gathered_columns))));
-    }
     
-
+    m_gathered_tables.emplace_back(std::move(std::make_unique<cudf::table>(std::move(gathered_columns))));
+    
     cudaStreamSynchronize(m_stream_cpp);
 
 #if ENABLE_TIMERS == 1
     const auto t3 = now_ns();
 #endif
     
-    if (m_gathered_tables.size() >= m_tables_per_df) {
-        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
+    if (m_gathered_rows >= m_rows_per_df) {
         auto gathered_metadata = cudf::io::table_metadata();
         gathered_metadata.schema_info.emplace_back("src_ip");
         gathered_metadata.schema_info.emplace_back("data");
@@ -224,6 +223,7 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     #endif
 
         m_gathered_tables.clear();
+        m_gathered_rows = 0;
 
         output.on_next(std::move(meta));
 
