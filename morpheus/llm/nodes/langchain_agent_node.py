@@ -45,18 +45,35 @@ class LangChainAgentNode(LLMNodeBase):
     def get_input_names(self):
         return self._input_names
 
-    async def _run_single(self, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    @staticmethod
+    def _is_all_lists(data: dict[str, typing.Any]) -> bool:
+        return all(isinstance(v, list) for v in data.values())
 
-        all_lists = all(isinstance(v, list) for v in kwargs.values())
+    @staticmethod
+    def _transform_dict_of_lists(data: dict[str, typing.Any]) -> list[dict[str, typing.Any]]:
+        return [dict(zip(data, t)) for t in zip(*data.values())]
+
+    async def _run_single(self, metadata: dict[str, typing.Any] = None, **kwargs) -> dict[str, typing.Any]:
+
+        all_lists = self._is_all_lists(kwargs)
 
         # Check if all values are a list
         if all_lists:
 
             # Transform from dict[str, list[Any]] to list[dict[str, Any]]
-            input_list = [dict(zip(kwargs, t)) for t in zip(*kwargs.values())]
+            input_list = self._transform_dict_of_lists(kwargs)
+
+            # If all metadata values are lists of the same length and the same length as the input list
+            # then transform them the same way as the input list
+            if (metadata is not None and self._is_all_lists(metadata)
+                    and all(len(v) == len(input_list) for v in metadata.values())):
+                metadata_list = self._transform_dict_of_lists(metadata)
+
+            else:
+                metadata_list = [metadata] * len(input_list)
 
             # Run multiple again
-            results_async = [self._run_single(**x) for x in input_list]
+            results_async = [self._run_single(metadata=metadata_list[i], **x) for (i, x) in enumerate(input_list)]
 
             results = await asyncio.gather(*results_async, return_exceptions=True)
 
@@ -67,7 +84,7 @@ class LangChainAgentNode(LLMNodeBase):
 
         # We are not dealing with a list, so run single
         try:
-            return await self._agent_executor.arun(**kwargs)
+            return await self._agent_executor.arun(metadata=metadata, **kwargs)
         except Exception as e:
             logger.exception("Error running agent: %s", e)
             return e
