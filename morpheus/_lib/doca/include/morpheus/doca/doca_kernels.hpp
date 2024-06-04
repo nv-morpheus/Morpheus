@@ -30,7 +30,7 @@
 
 namespace morpheus::doca {
 
-std::unique_ptr<cudf::column> gather_payload(
+std::unique_ptr<rmm::device_buffer> gather_payload(
     int32_t packet_count,
     uintptr_t* packets_buffer,
     uint32_t* header_sizes,
@@ -39,7 +39,7 @@ std::unique_ptr<cudf::column> gather_payload(
     rmm::cuda_stream_view stream,
     rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-std::unique_ptr<cudf::column> gather_header(
+std::unique_ptr<rmm::device_buffer> gather_header(
     int32_t packet_count,
     uintptr_t* packets_buffer,
     uint32_t* header_sizes,

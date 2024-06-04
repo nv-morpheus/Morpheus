@@ -153,6 +153,22 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     auto pkt_pld_size_list = raw_msg->get_pkt_pld_size_list();
     auto queue_idx         = raw_msg->get_queue_idx();
 
+    // std::vector<uint32_t> header_sizes(packet_count);
+    // cudaMemcpy(pkt_hdr_size_list, header_sizes.data(), packet_count*sizeof(uint32_t), cudaMemcpyDeviceToHost);
+    // std::cerr << "header sizes: ";
+    // for (auto hs: header_sizes){
+    //     std::cerr << hs << ", ";
+    // }
+    // std::cerr << "\n";
+
+    // std::vector<uint32_t> payload_sizes(packet_count);
+    // cudaMemcpy(pkt_pld_size_list, payload_sizes.data(), packet_count*sizeof(uint32_t), cudaMemcpyDeviceToHost);
+    // std::cerr << "payload sizes: ";
+    // for (auto ps: payload_sizes){
+    //     std::cerr << ps << ", ";
+    // }
+    // std::cerr << "\n";
+
     // LOG(WARNING) << "New RawPacketMessage with " << packet_count << " packets from queue id " << queue_idx;
 
 #if ENABLE_TIMERS == 1
@@ -173,61 +189,61 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     const auto t2 = now_ns();
 #endif
 
-    m_gathered_rows += payload_col->size();
-    std::vector<std::unique_ptr<cudf::column>> gathered_columns;
-    gathered_columns.emplace_back(std::move(header_src_ip_col));
-    gathered_columns.emplace_back(std::move(payload_col));
+//     m_gathered_rows += payload_col->size();
+//     std::vector<std::unique_ptr<cudf::column>> gathered_columns;
+//     gathered_columns.emplace_back(std::move(header_src_ip_col));
+//     gathered_columns.emplace_back(std::move(payload_col));
 
-    // After this point buffers can be reused -> copies actual packets' data
+//     // After this point buffers can be reused -> copies actual packets' data
     
-    m_gathered_tables.emplace_back(std::move(std::make_unique<cudf::table>(std::move(gathered_columns))));
+//     m_gathered_tables.emplace_back(std::move(std::make_unique<cudf::table>(std::move(gathered_columns))));
     
-    cudaStreamSynchronize(m_stream_cpp);
+//     cudaStreamSynchronize(m_stream_cpp);
 
-#if ENABLE_TIMERS == 1
-    const auto t3 = now_ns();
-#endif
+// #if ENABLE_TIMERS == 1
+//     const auto t3 = now_ns();
+// #endif
     
-    if (m_gathered_rows >= m_rows_per_df) {
-        auto gathered_metadata = cudf::io::table_metadata();
-        gathered_metadata.schema_info.emplace_back("src_ip");
-        gathered_metadata.schema_info.emplace_back("data");
+//     if (m_gathered_rows >= m_rows_per_df) {
+//         auto gathered_metadata = cudf::io::table_metadata();
+//         gathered_metadata.schema_info.emplace_back("src_ip");
+//         gathered_metadata.schema_info.emplace_back("data");
 
-        std::vector<cudf::table_view> table_views;
-        for (auto& tbl: m_gathered_tables) {
-            table_views.emplace_back(tbl->view());
-        }
+//         std::vector<cudf::table_view> table_views;
+//         for (auto& tbl: m_gathered_tables) {
+//             table_views.emplace_back(tbl->view());
+//         }
 
-        auto combined_table = cudf::concatenate(table_views, m_stream_cpp);
+//         auto combined_table = cudf::concatenate(table_views, m_stream_cpp);
 
 
-        auto gathered_table_w_metadata =
-            cudf::io::table_with_metadata{std::move(combined_table), std::move(gathered_metadata)};
+//         auto gathered_table_w_metadata =
+//             cudf::io::table_with_metadata{std::move(combined_table), std::move(gathered_metadata)};
 
-    #if ENABLE_TIMERS == 1
-        const auto t4 = now_ns();
-    #endif
-        auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
+//     #if ENABLE_TIMERS == 1
+//         const auto t4 = now_ns();
+//     #endif
+//         auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
 
-    #if ENABLE_TIMERS == 1
-        const auto t5 = now_ns();
-    #endif
-        cudaStreamSynchronize(m_stream_cpp);
+//     #if ENABLE_TIMERS == 1
+//         const auto t5 = now_ns();
+//     #endif
+//         cudaStreamSynchronize(m_stream_cpp);
 
-    #if ENABLE_TIMERS == 1
-        const auto t6 = now_ns();
+//     #if ENABLE_TIMERS == 1
+//         const auto t6 = now_ns();
 
-        LOG(WARNING) << "Queue " << queue_idx << " packets " << packet_count << " header column " << t1 - t0
-                    << " payload column " << t2 - t1 << " gather columns " << t3 - t2 << " gather metadata " << t4 - t3
-                    << " create_from_cpp " << t5 - t4 << " stream sync " << t6 - t5 << std::endl;
-    #endif
+//         LOG(WARNING) << "Queue " << queue_idx << " packets " << packet_count << " header column " << t1 - t0
+//                     << " payload column " << t2 - t1 << " gather columns " << t3 - t2 << " gather metadata " << t4 - t3
+//                     << " create_from_cpp " << t5 - t4 << " stream sync " << t6 - t5 << std::endl;
+//     #endif
 
-        m_gathered_tables.clear();
-        m_gathered_rows = 0;
+//         m_gathered_tables.clear();
+//         m_gathered_rows = 0;
 
-        output.on_next(std::move(meta));
+//         output.on_next(std::move(meta));
 
-    }
+//     }
 }
 
 std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfaceProxy::init(

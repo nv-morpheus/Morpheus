@@ -25,6 +25,7 @@ from morpheus.pipeline.stage_decorator import stage
 from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.utils.logger import configure_logging
 
 
@@ -68,6 +69,7 @@ def run_pipeline(nic_addr, gpu_addr):
     # pipeline.add_stage(stage_counter(config))
     
     pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts', delayed_start=True))
+    pipeline.add_stage(WriteToFileStage(config, filename=".tmp/out.csv", overwrite=True))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()

@@ -117,7 +117,7 @@ class MORPHEUS_EXPORT DocaConvertStage
     uint32_t* m_fixed_hdr_size_list;
     uint32_t* m_fixed_hdr_size_list_cpu;
 
-    std::size_t m_rows_per_df = 1024 * 100;
+    std::size_t m_rows_per_df = 1024;
     std::size_t m_gathered_rows = 0;
     std::vector<std::unique_ptr<cudf::table>> m_gathered_tables;
 };

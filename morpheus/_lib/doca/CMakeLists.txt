@@ -43,6 +43,7 @@ target_include_directories(morpheus_doca
 target_link_libraries(morpheus_doca
   PRIVATE
     doca::doca
+    matx::matx
   PUBLIC
     ${PROJECT_NAME}::morpheus
 
