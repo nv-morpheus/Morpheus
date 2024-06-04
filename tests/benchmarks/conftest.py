@@ -25,6 +25,11 @@ from pynvml.smi import nvidia_smi
 from test_bench_e2e_pipelines import E2E_TEST_CONFIGS
 
 
+@pytest.fixture(autouse=True)
+def reset_logging_fixture(reset_logging):  # pylint: disable=unused-argument
+    yield
+
+
 # pylint: disable=unused-argument
 def pytest_benchmark_update_json(config, benchmarks, output_json):
 
