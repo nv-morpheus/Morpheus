@@ -192,16 +192,18 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     items[:] = [x for x in items if should_filter_test(x)]
 
 
-def clear_handlers(logger):
-    handlers = logger.handlers.copy()
-    for handler in handlers:
-        logger.removeHandler(handler)
+@pytest.fixture(scope="function", name="reset_logging")
+def reset_logging_fixture():
+    from morpheus.utils.logger import reset_logging
+    reset_logging()
+    yield
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_runtest_teardown(item, nextitem):
-    clear_handlers(logging.getLogger("morpheus"))
-    clear_handlers(logging.getLogger())
+    from morpheus.utils.logger import reset_logging
+    reset_logging(logger_name="morpheus")
+    reset_logging(logger_name=None)  # Reset the root logger as well
 
 
 # This fixture will be used by all tests.
