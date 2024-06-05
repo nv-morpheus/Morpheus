@@ -30,21 +30,28 @@
 
 namespace morpheus::doca {
 
-std::unique_ptr<rmm::device_buffer> gather_payload(
+std::pair<uint32_t, uint32_t> gather_sizes(
     int32_t packet_count,
-    uintptr_t* packets_buffer,
-    uint32_t* header_sizes,
-    uint32_t* payload_sizes,
-    uint32_t* fixed_size_list,
+    uint32_t* fixed_header_size_list,
+    uint32_t* fixed_payload_size_list,
     rmm::cuda_stream_view stream,
     rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-std::unique_ptr<rmm::device_buffer> gather_header(
+void gather_payload(
     int32_t packet_count,
     uintptr_t* packets_buffer,
     uint32_t* header_sizes,
     uint32_t* payload_sizes,
-    uint32_t* fixed_size_list,
+    uint8_t* dst_buff,
+    rmm::cuda_stream_view stream,
+    rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+
+void gather_header(
+    int32_t packet_count,
+    uintptr_t* packets_buffer,
+    uint32_t* header_sizes,
+    uint32_t* payload_sizes,
+    uint8_t* dst_buff,
     rmm::cuda_stream_view stream,
     rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
@@ -56,21 +63,21 @@ std::unique_ptr<rmm::device_buffer> gather_header(
 //     rmm::cuda_stream_view stream,
 //     rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-void gather_header_scalar(int32_t packet_count,
-                          uintptr_t* packets_buffer,
-                          uint32_t* header_sizes,
-                          uint32_t* payload_sizes,
-                          uint8_t* header_col,
-                          rmm::cuda_stream_view stream,
-                          rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+// void gather_header_scalar(int32_t packet_count,
+//                           uintptr_t* packets_buffer,
+//                           uint32_t* header_sizes,
+//                           uint32_t* payload_sizes,
+//                           uint8_t* header_col,
+//                           rmm::cuda_stream_view stream,
+//                           rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-void gather_payload_scalar(int32_t packet_count,
-                           uintptr_t* packets_buffer,
-                           uint32_t* header_sizes,
-                           uint32_t* payload_sizes,
-                           uint8_t* payload_col,
-                           rmm::cuda_stream_view stream,
-                           rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+// void gather_payload_scalar(int32_t packet_count,
+//                            uintptr_t* packets_buffer,
+//                            uint32_t* header_sizes,
+//                            uint32_t* payload_sizes,
+//                            uint8_t* payload_col,
+//                            rmm::cuda_stream_view stream,
+//                            rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
 std::unique_ptr<cudf::column> integers_to_mac(
     cudf::column_view const& integers,

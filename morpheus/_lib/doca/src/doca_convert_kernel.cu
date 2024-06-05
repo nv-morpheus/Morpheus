@@ -130,64 +130,55 @@ __global__ void _packet_gather_header_kernel(
 namespace morpheus {
 namespace doca {
 
-std::unique_ptr<rmm::device_buffer> gather_payload(
+std::pair<uint32_t, uint32_t> gather_sizes(
+    int32_t packet_count,
+    uint32_t* fixed_header_size_list,
+    uint32_t* fixed_payload_size_list,
+    rmm::cuda_stream_view stream,
+    rmm::mr::device_memory_resource* mr
+)
+{
+    auto header_sizes_tensor = matx::make_tensor<uint32_t>(fixed_header_size_list, {packet_count});
+    auto payload_sizes_tensor = matx::make_tensor<uint32_t>(fixed_payload_size_list, {packet_count});
+
+    auto header_bytes_tensor = matx::make_tensor<uint32_t>({1});
+    auto payload_bytes_tensor = matx::make_tensor<uint32_t>({1});
+
+    (header_bytes_tensor = matx::sum(header_sizes_tensor)).run(stream.value());
+    (payload_bytes_tensor = matx::sum(payload_sizes_tensor)).run(stream.value());
+
+    cudaStreamSynchronize(stream);
+    return {header_bytes_tensor(0), payload_bytes_tensor(0)};
+}
+
+void gather_payload(
   int32_t      packet_count,
-  uintptr_t*    packets_buffer,
+  uintptr_t*   packets_buffer,
   uint32_t*    header_sizes,
   uint32_t*    payload_sizes,
-  uint32_t*    fixed_size_list,
+  uint8_t*     dst_buff,
   rmm::cuda_stream_view stream,
   rmm::mr::device_memory_resource* mr)
 {
-  auto payload_sizes_tensor = matx::make_tensor<uint32_t>(fixed_size_list, {packet_count});
-  auto bytes_tensor = matx::make_tensor<uint32_t>({1});
-
-  (bytes_tensor = matx::sum(payload_sizes_tensor)).run(stream.value());
-  
-  // auto [offsets_column, bytes] = cudf::detail::make_offsets_child_column(
-  //   fixed_size_list,
-  //   fixed_size_list + packet_count,
-  //   stream,
-  //   mr
-  // );
-
-  cudaStreamSynchronize(stream);
-  auto bytes = bytes_tensor(0);
-
-  auto payload_buffer = std::make_unique<rmm::device_buffer>(bytes, stream, mr);
-  
-
-
-  //std::cerr << "payload cudf bytes=" << bytes << "\tmatx_bytes=" << matx_bytes << std::endl;
-
-  // auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
-  // auto d_chars      = chars_column->mutable_view().data<uint8_t>();
-
   _packet_gather_payload_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     packet_count,
     packets_buffer,
     header_sizes,
     payload_sizes,
-    static_cast<uint8_t*>(payload_buffer->data())
+    dst_buff
   );
 
-  return payload_buffer;
 }
 
-std::unique_ptr<rmm::device_buffer> gather_header(
+void gather_header(
   int32_t      packet_count,
-  uintptr_t*    packets_buffer,
+  uintptr_t*   packets_buffer,
   uint32_t*    header_sizes,
   uint32_t*    payload_sizes,
-  uint32_t*    fixed_size_list,
+  uint8_t*     dst_buff,
   rmm::cuda_stream_view stream,
   rmm::mr::device_memory_resource* mr)
 {
-  auto header_sizes_tensor = matx::make_tensor<uint32_t>(fixed_size_list, {packet_count});
-  auto bytes_tensor = matx::make_tensor<uint32_t>({1});
-  
-  (bytes_tensor = matx::sum(header_sizes_tensor)).run(stream.value());
-
   // auto [offsets_column, bytes] = cudf::detail::make_offsets_child_column(
   //   fixed_size_list,
   //   fixed_size_list + packet_count,
@@ -195,61 +186,53 @@ std::unique_ptr<rmm::device_buffer> gather_header(
   //   mr
   // );
 
-
-  cudaStreamSynchronize(stream);
-  auto bytes = bytes_tensor(0);
-
   // auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
   // auto d_chars      = chars_column->mutable_view().data<uint8_t>();
-
-  auto headers_buffer = std::make_unique<rmm::device_buffer>(bytes, stream, mr);
 
   _packet_gather_header_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     packet_count,
     packets_buffer,
     header_sizes,
     payload_sizes,
-    static_cast<uint8_t*>(headers_buffer->data())
-  );
-
-  return headers_buffer;
-}
-
-void gather_header_scalar(
-  int32_t      packet_count,
-  uintptr_t*    packets_buffer,
-  uint32_t*    header_sizes,
-  uint32_t*    payload_sizes,
-  uint8_t*      header_src_ip_addr,
-  rmm::cuda_stream_view stream,
-  rmm::mr::device_memory_resource* mr)
-{
-   _packet_gather_header_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
-    packet_count,
-    packets_buffer,
-    header_sizes,
-    payload_sizes,
-    header_src_ip_addr
+    dst_buff
   );
 }
 
-void gather_payload_scalar(
-  int32_t      packet_count,
-  uintptr_t*    packets_buffer,
-  uint32_t*    header_sizes,
-  uint32_t*    payload_sizes,
-  uint8_t*      payload_col,
-  rmm::cuda_stream_view stream,
-  rmm::mr::device_memory_resource* mr)
-{
-  _packet_gather_payload_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
-    packet_count,
-    packets_buffer,
-    header_sizes,
-    payload_sizes,
-    payload_col
-  );
-}
+// void gather_header_scalar(
+//   int32_t      packet_count,
+//   uintptr_t*    packets_buffer,
+//   uint32_t*    header_sizes,
+//   uint32_t*    payload_sizes,
+//   uint8_t*      header_src_ip_addr,
+//   rmm::cuda_stream_view stream,
+//   rmm::mr::device_memory_resource* mr)
+// {
+//    _packet_gather_header_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
+//     packet_count,
+//     packets_buffer,
+//     header_sizes,
+//     payload_sizes,
+//     header_src_ip_addr
+//   );
+// }
+
+// void gather_payload_scalar(
+//   int32_t      packet_count,
+//   uintptr_t*    packets_buffer,
+//   uint32_t*    header_sizes,
+//   uint32_t*    payload_sizes,
+//   uint8_t*      payload_col,
+//   rmm::cuda_stream_view stream,
+//   rmm::mr::device_memory_resource* mr)
+// {
+//   _packet_gather_payload_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
+//     packet_count,
+//     packets_buffer,
+//     header_sizes,
+//     payload_sizes,
+//     payload_col
+//   );
+// }
 
 
 struct integers_to_mac_fn {

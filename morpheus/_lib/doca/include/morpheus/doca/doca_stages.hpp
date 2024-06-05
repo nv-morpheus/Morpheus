@@ -117,9 +117,15 @@ class MORPHEUS_EXPORT DocaConvertStage
     uint32_t* m_fixed_hdr_size_list;
     uint32_t* m_fixed_hdr_size_list_cpu;
 
-    std::size_t m_rows_per_df = 1024;
-    std::size_t m_gathered_rows = 0;
-    std::vector<std::unique_ptr<cudf::table>> m_gathered_tables;
+    // TODO make these constructor arguments
+    std::size_t m_sizes_buffer_size = 1024 * 1024 * 2;
+    std::size_t m_header_buffer_size = 1024 * 1024 * 10;
+    std::size_t m_payload_buffer_size = 1024 * 1024 * 1024;
+
+    std::unique_ptr<packet_data_buffer> m_header_buffer{nullptr};
+    std::unique_ptr<packet_data_buffer> m_header_sizes_buffer{nullptr};
+    std::unique_ptr<packet_data_buffer> m_payload_buffer{nullptr};
+    std::unique_ptr<packet_data_buffer> m_payload_sizes_buffer{nullptr};
 };
 
 /****** DocaConvertStageInterfaceProxy***********************/

@@ -17,12 +17,18 @@
 
 #pragma once
 
+#include "morpheus/types.hpp"  // for TensorSize
+
+#include <glog/logging.h>
+#include <rmm/device_buffer.hpp>
+
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
 
+// TODO: move this to the morpheus::doca namespace
 uint32_t const PACKETS_PER_THREAD   = 16;
 uint32_t const THREADS_PER_BLOCK    = 512;
 uint32_t const PACKETS_PER_BLOCK    = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
@@ -65,4 +71,37 @@ struct packets_info
     int32_t* ether_type_out;
     int32_t* next_proto_id_out;
     uint32_t* timestamp_out;
+};
+
+// TODO: move this to it's own header
+struct packet_data_buffer
+{
+    std::unique_ptr<rmm::device_buffer> buffer;
+    morpheus::TensorSize cur_offset_bytes;
+
+    morpheus::TensorSize capacity() const
+    {
+        return buffer->size();
+    };
+
+    morpheus::TensorSize available_bytes() const
+    {
+        return this->capacity() - this->cur_offset_bytes;
+    };
+
+    void advance_bytes(morpheus::TensorSize num_bytes)
+    {
+        cur_offset_bytes += num_bytes;
+        CHECK(cur_offset_bytes <= this->capacity());
+    }
+
+    uint8_t* data()
+    {
+        return static_cast<uint8_t*>(this->buffer->data());
+    }
+
+    uint8_t* current_location()
+    {
+        return this->data() + this->cur_offset_bytes;
+    }
 };
