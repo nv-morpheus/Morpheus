@@ -20,8 +20,9 @@ from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
+from morpheus.messages import RawPacketMessage
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
+from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -77,11 +78,11 @@ def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, ou
     config.mode = PipelineModes.NLP
 
     # Below properties are specified by the command line
-    config.num_threads = 1
+    config.num_threads = 5
+    config.edge_buffer_size = 1024
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
     config.feature_length = model_fea_length
-    config.mode = PipelineModes.NLP
 
     config.class_labels = [
         'address',
@@ -95,8 +96,6 @@ def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, ou
         'secret_keys',
         'user'
     ]
-
-    config.edge_buffer_size = 128
 
     pipeline = LinearPipeline(config)
 
