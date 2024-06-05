@@ -25,20 +25,20 @@ on:
     types: [submitted]
 
 env:
- ORG: ${{ github.event.repository.owner.login }}
- PR_NUMBER: ${{ github.event.pull_request.number }}
- REPO: ${{ github.event.repository.name }}
- PR_GLOBAL_ID: ${{ github.event.pull_request.node_id}}
+  ORG: ${{ github.event.repository.owner.login }}
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  REPO: ${{ github.event.repository.name }}
+  PR_GLOBAL_ID: ${{ github.event.pull_request.node_id}}
 
- # The environment vars below are hard-coded from external queries to save time + complexity here
- # Note: PVT means Project V2, not "Private"
- # PVT = Project V2, PVTSSF = Project V2 Single Select Field, PVTIF = Project V2 Iteration Field
- PROJECT_ID: "PVT_kwDOBkAsks4ACeio"
- STATUS_FIELD_ID: "PVTSSF_lADOBkAsks4ACeiozgBbno0"
- WORKING_SPRINT_FIELD_ID: "PVTIF_lADOBkAsks4ACeiozgJ_KCY"
- START_SPRINT_FIELD_ID: "PVTIF_lADOBkAsks4ACeiozgI90p0"
- IN_PROGRESS_PROJECT_OPTION_ID: "47fc9ee4"
- IN_REVIEW_PROJECT_OPTION_ID: "eb7a6302"
+  # The environment vars below are hard-coded from external queries to save time + complexity here
+  # Note: PVT means Project V2, not "Private"
+  # PVT = Project V2, PVTSSF = Project V2 Single Select Field, PVTIF = Project V2 Iteration Field
+  PROJECT_ID: "PVT_kwDOBkAsks4ACeio"
+  STATUS_FIELD_ID: "PVTSSF_lADOBkAsks4ACeiozgBbno0"
+  WORKING_SPRINT_FIELD_ID: "PVTIF_lADOBkAsks4ACeiozgJ_KCY"
+  START_SPRINT_FIELD_ID: "PVTIF_lADOBkAsks4ACeiozgI90p0"
+  IN_PROGRESS_PROJECT_OPTION_ID: "47fc9ee4"
+  IN_REVIEW_PROJECT_OPTION_ID: "eb7a6302"
 
 jobs:
   project_automation_in_progress:
@@ -72,13 +72,6 @@ jobs:
           fi
         continue-on-error: true
 
-      - name: Generate Token
-        uses: actions/create-github-app-token@v1
-        id: generate-token
-        with:
-          app-id: ${{ secrets.ACTIONS_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_APP_KEY }}
-
       - name: Wait 1 Second
         id: sleep
         if: github.event_name == 'pull_request_target'
@@ -87,8 +80,6 @@ jobs:
       - name: Select Status Field Value
         id: select_status_field_value
         if: github.event_name == 'pull_request_target'
-        env:
-          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
           # If it's not a draft and it's an opened trigger, the status should be "Ready for Review", otherwise "In Progress"
           if [ ${{ github.event.pull_request.draft }} == false ] && [ ${{ github.event.action }} == "opened" ]; then
@@ -103,8 +94,6 @@ jobs:
       - name: Get PR Project ID
         id: get_pr_id
         if: github.event_name == 'pull_request_target'
-        env:
-          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
             # Query up to 10 projects for the PR
             gh api graphql -f query='
@@ -141,8 +130,6 @@ jobs:
       - name: Set PR Fields
         id: set_pr_fields
         if: github.event_name == 'pull_request_target'
-        env:
-          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
             gh api graphql -f query='
                 mutation {
@@ -271,8 +258,6 @@ jobs:
       - name: Sync Linked Issues
         id: sync_linked_issues
         if: github.event_name == 'pull_request_target'
-        env:
-          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
             # Find the linked issues to the PR
             gh api graphql -f query='
