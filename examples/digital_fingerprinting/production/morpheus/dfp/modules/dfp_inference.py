@@ -97,7 +97,7 @@ def dfp_inference(builder: mrc.Builder):
             if (model_cache is None):
                 raise RuntimeError(f"Could not find model for user {user_id}")
 
-            loaded_model = model_cache.load_model(client)
+            loaded_model = model_cache.load_model()
 
         # TODO(Devin): Recovery strategy should be more robust/configurable in practice
         except Exception as exec_info:

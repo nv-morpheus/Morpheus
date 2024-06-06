@@ -19,27 +19,35 @@ on:
   issues:
     types:
       - opened
-      
-env:
-  GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
 
 jobs:
   Label-Issue:
     runs-on: ubuntu-latest
     # Only run if the issue author is not part of NV-Morpheus
     if: ${{ ! contains(fromJSON('["OWNER", "MEMBER", "CONTRIBUTOR", "COLLABORATOR"]'), github.event.issue.author_association)}}
-    steps: 
+    steps:
+      - name: Generate Token
+        uses: actions/create-github-app-token@v1
+        id: generate-token
+        with:
+          app-id: ${{ secrets.ACTIONS_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_APP_KEY }}
+
       - name: add-triage-label
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
           issue_url=${{ github.event.issue.html_url }}
           gh issue edit ${issue_url} --add-label "Needs Triage,external"
-      
+
       - name: add-comment-to-issue
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
            issue_url=${{ github.event.issue.html_url }}
            author=${{ github.event.issue.user.login }}
            echo ${author}
            gh issue comment ${issue_url} --body "Hi @${author}!
-             
+
              Thanks for submitting this issue - our team has been notified and we'll get back to you as soon as we can!
-             In the mean time, feel free to add any relevant information to this issue."
+             In the meantime, feel free to add any relevant information to this issue."

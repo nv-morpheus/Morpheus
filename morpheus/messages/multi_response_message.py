@@ -126,7 +126,7 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
     required_tensors: typing.ClassVar[typing.List[str]] = ["probs"]
 
     def __new__(cls, *args, **kwargs):
-        morpheus_logger.deprecated_message_warning(logger, cls, MultiResponseMessage)
+        morpheus_logger.deprecated_message_warning(cls, MultiResponseMessage)
         return super(MultiResponseMessage, cls).__new__(cls, *args, **kwargs)
 
     def __init__(self,

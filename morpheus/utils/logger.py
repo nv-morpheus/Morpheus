@@ -19,12 +19,17 @@ import logging.config
 import logging.handlers
 import multiprocessing
 import os
+import re
+import warnings
+import weakref
 from enum import Enum
 
 import appdirs
 import click
 import mrc
 from tqdm import tqdm
+
+import morpheus
 
 LogLevels = Enum('LogLevels', logging._nameToLevel)
 
@@ -153,12 +158,41 @@ def _configure_from_log_level(*extra_handlers: logging.Handler, log_level: int):
         queue_listener.start()
         queue_listener._thread.name = "Logging Thread"
 
-        # Register a function to kill the listener thread before shutting down. prevents error on intpreter close
-        def stop_queue_listener():
-            queue_listener.stop()
+        # Register a function to kill the listener thread when the queue_handler is removed.
+        weakref.finalize(morpheus_queue_handler, queue_listener.stop)
 
+        # Register a handler before shutting down to remove all log handlers, this ensures that the weakref.finalize
+        # handler we just defined is called at exit.
         import atexit
-        atexit.register(stop_queue_listener)
+        atexit.register(reset_logging)
+    else:
+        raise RuntimeError("Logging has already been configured. Use `set_log_level` to change the log level or reset "
+                           "the logging system by calling `reset_logging`.")
+
+
+def reset_logging(logger_name: str = "morpheus"):
+    """
+    Resets the Morpheus logging system. This will remove all handlers from the Morpheus logger and stop the queue
+    listener. This is useful for testing where the logging system needs to be reconfigured multiple times or
+    reconfigured with different settings.
+    """
+
+    morpheus_logger = logging.getLogger(logger_name)
+
+    for handler in morpheus_logger.handlers.copy():
+        # Copied from `logging.shutdown`.
+        try:
+            handler.acquire()
+            handler.flush()
+            handler.close()
+        except (OSError, ValueError):
+            pass
+        finally:
+            handler.release()
+        morpheus_logger.removeHandler(handler)
+
+    if hasattr(morpheus_logger, "_configured_by_morpheus"):
+        delattr(morpheus_logger, "_configured_by_morpheus")
 
 
 def configure_logging(*extra_handlers: logging.Handler, log_level: int = None, log_config_file: str = None):
@@ -227,9 +261,14 @@ def deprecated_stage_warning(logger, cls, name, reason: str = None):
     logger.warning(message)
 
 
-def deprecated_message_warning(logger, cls, new_cls):
+def deprecated_message_warning(cls, new_cls):
     """Log a warning about a deprecated message."""
-    logger.warning(
-        ("The '%s' message has been deprecated and will be removed in a future version. Please use '%s' instead."),
-        cls.__name__,
-        new_cls.__name__)
+    match = re.match(r"(\d+\.\d+)", morpheus.__version__)
+    if match is None:
+        version = "next version"
+    else:
+        version = "version " + match.group(1)
+
+    message = (f"The '{cls.__name__}' message has been deprecated and will be removed "
+               f"after {version} release. Please use '{new_cls.__name__}' instead.")
+    warnings.warn(message, DeprecationWarning)

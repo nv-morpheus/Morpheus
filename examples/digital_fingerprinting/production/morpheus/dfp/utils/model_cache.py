@@ -92,7 +92,7 @@ class ModelCache:
     def last_checked(self):
         return self._last_checked
 
-    def load_model(self, _) -> AutoEncoder:
+    def load_model(self) -> AutoEncoder:
 
         now = datetime.now()
 
