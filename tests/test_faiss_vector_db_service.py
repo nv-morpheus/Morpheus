@@ -16,7 +16,7 @@
 
 import pytest
 from langchain_community.docstore.in_memory import InMemoryDocstore
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores.faiss import FAISS
 from langchain_core.documents import Document
 
 from _utils.faiss import FakeEmbedder
