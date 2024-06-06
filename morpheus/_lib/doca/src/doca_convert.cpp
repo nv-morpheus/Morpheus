@@ -89,7 +89,42 @@ std::unique_ptr<packet_data_buffer> make_packer_data_buffer(
     rmm::mr::device_memory_resource* mr)
 {
     auto buffer = std::make_unique<rmm::device_buffer>(size, stream, mr);
-    return std::make_unique<packet_data_buffer>(std::move(buffer), 0);
+    return std::make_unique<packet_data_buffer>(std::move(buffer), 0, 0);
+}
+
+std::unique_ptr<cudf::column> make_string_col(
+    packet_data_buffer& data,
+    packet_data_buffer& sizes,
+    rmm::cuda_stream_view stream,
+    rmm::mr::device_memory_resource* mr)
+{
+    // TODO replace this with public api methods
+    auto [offsets_column, num_bytes] = cudf::detail::make_offsets_child_column(
+        sizes.data(),
+        sizes.current_location(),
+        stream,
+        mr
+    );
+
+    return cudf::make_strings_column(data.elements,
+                                     std::move(offsets_column),
+                                     std::move(data.buffer),
+                                     0,
+                                     {});
+}
+
+std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, const std::string& buffer_name)
+{
+    if (incoming_size > default_size)
+    {
+        LOG(WARN) << "RawPacketMessage requires a " << buffer_name << " buffer of size " << incoming_size
+                  << " bytes, but the default allocation size is only " << default_size
+                  << " allocating " << incoming_size;
+
+        return incoming_size;
+    }
+
+    return default_size;
 }
 
 namespace morpheus {
@@ -199,11 +234,45 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
         payload_buff_size > m_payload_buffer->available_bytes() ||
         sizes_buff_size > m_payload_sizes_buffer->available_bytes())
     {
-        // Buffers are full, build a MessageMeta emit it, and reset the buffers
+        // Buffers are full, build a MessageMeta emit it, and reset the buffers.
+        // There is a possibility that the buffers are empty, but the allocated buffers are too small for the incoming
+        // RawPacketMessage, when this is the case we should log a warning and allocate a larger buffer
+        if (!m_header_buffer->empty())
+        {
+            auto mr = rmm::mr::get_current_device_resource();
+            auto header_col = make_string_col(*m_header_buffer, *m_header_sizes_buffer, m_stream_cpp, mr);
+            auto payload_col = make_string_col(*m_payload_buffer, *m_payload_sizes_buffer, m_stream_cpp, mr);
 
+            std::vector<std::unique_ptr<cudf::column>> gathered_columns;
+            gathered_columns.emplace_back(std::move(header_col));
+            gathered_columns.emplace_back(std::move(payload_col));
+
+            gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
+
+            auto gathered_metadata = cudf::io::table_metadata();
+            gathered_metadata.schema_info.emplace_back("src_ip");
+            gathered_metadata.schema_info.emplace_back("data");
+
+            auto gathered_table_w_metadata =
+                cudf::io::table_with_metadata{std::move(gathered_table), std::move(gathered_metadata)};
+
+            auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
+            output.on_next(std::move(meta));
+        }
+
+        auto header_size = get_alloc_size(m_header_buffer_size, header_buff_size, "header");
+        m_header_buffer = make_packer_data_buffer(header_size, m_stream_cpp, mr);
+
+        auto payload_size = get_alloc_size(m_payload_buffer_size, payload_buff_size, "payload");
+        m_payload_buffer = make_packer_data_buffer(payload_size, m_stream_cpp, mr);
+
+        auto sizes_size = get_alloc_size(m_sizes_buffer_size, sizes_buff_size, "sizes");
+        m_header_sizes_buffer = make_packer_data_buffer(sizes_size, m_stream_cpp, mr);
+        m_payload_sizes_buffer = make_packer_data_buffer(sizes_size, m_stream_cpp, mr);
 
     }
 
+    // this should never be true
     DCHECK(header_buff_size <= m_header_buffer->available_bytes() &&
            sizes_buff_size <= m_header_sizes_buffer->available_bytes() &&
            payload_buff_size <= m_payload_buffer->available_bytes() &&
@@ -217,16 +286,19 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     doca::gather_header(
         packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_header_buffer->current_location(), m_stream_cpp);
 
-    m_header_buffer->advance_bytes(header_buff_size);
-
-#if ENABLE_TIMERS == 1
-    const auto t1 = now_ns();
-#endif
     // gather payload data
     doca::gather_payload(
         packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_payload_buffer->current_location(), m_stream_cpp);
 
-    m_payload_buffer->advance_bytes(payload_buff_size);
+    cudaStreamSynchronize(m_stream_cpp);
+
+
+#if ENABLE_TIMERS == 1
+    const auto t1 = now_ns();
+#endif
+
+    m_header_buffer->advance(header_buff_size, packet_count);
+    m_payload_buffer->advance(payload_buff_size, packet_count);
 
     MRC_CHECK_CUDA(cudaMemcpy(m_header_sizes_buffer->current_location(), m_fixed_hdr_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice));
     m_header_sizes_buffer->advance_bytes(sizes_buff_size);

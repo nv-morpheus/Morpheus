@@ -78,6 +78,7 @@ struct packet_data_buffer
 {
     std::unique_ptr<rmm::device_buffer> buffer;
     morpheus::TensorSize cur_offset_bytes;
+    morpheus::TensorSize elements;
 
     morpheus::TensorSize capacity() const
     {
@@ -89,9 +90,15 @@ struct packet_data_buffer
         return this->capacity() - this->cur_offset_bytes;
     };
 
-    void advance_bytes(morpheus::TensorSize num_bytes)
+    bool empty() const
+    {
+        return this->cur_offset_bytes == 0;
+    }
+
+    void advance(morpheus::TensorSize num_bytes, morpheus::TensorSize num_elements)
     {
         cur_offset_bytes += num_bytes;
+        elements += num_elements;
         CHECK(cur_offset_bytes <= this->capacity());
     }
 
