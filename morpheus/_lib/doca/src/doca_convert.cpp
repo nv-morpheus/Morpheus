@@ -117,9 +117,9 @@ std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, con
 {
     if (incoming_size > default_size)
     {
-        LOG(WARN) << "RawPacketMessage requires a " << buffer_name << " buffer of size " << incoming_size
-                  << " bytes, but the default allocation size is only " << default_size
-                  << " allocating " << incoming_size;
+        LOG(WARNING) << "RawPacketMessage requires a " << buffer_name << " buffer of size " << incoming_size
+                     << " bytes, but the default allocation size is only " << default_size
+                     << " allocating " << incoming_size;
 
         return incoming_size;
     }
@@ -234,12 +234,13 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
         payload_buff_size > m_payload_buffer->available_bytes() ||
         sizes_buff_size > m_payload_sizes_buffer->available_bytes())
     {
+        auto mr = rmm::mr::get_current_device_resource();
+
         // Buffers are full, build a MessageMeta emit it, and reset the buffers.
         // There is a possibility that the buffers are empty, but the allocated buffers are too small for the incoming
         // RawPacketMessage, when this is the case we should log a warning and allocate a larger buffer
         if (!m_header_buffer->empty())
         {
-            auto mr = rmm::mr::get_current_device_resource();
             auto header_col = make_string_col(*m_header_buffer, *m_header_sizes_buffer, m_stream_cpp, mr);
             auto payload_col = make_string_col(*m_payload_buffer, *m_payload_sizes_buffer, m_stream_cpp, mr);
 
@@ -247,7 +248,7 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
             gathered_columns.emplace_back(std::move(header_col));
             gathered_columns.emplace_back(std::move(payload_col));
 
-            gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
+            auto gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
 
             auto gathered_metadata = cudf::io::table_metadata();
             gathered_metadata.schema_info.emplace_back("src_ip");
@@ -301,10 +302,10 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     m_payload_buffer->advance(payload_buff_size, packet_count);
 
     MRC_CHECK_CUDA(cudaMemcpy(m_header_sizes_buffer->current_location(), m_fixed_hdr_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice));
-    m_header_sizes_buffer->advance_bytes(sizes_buff_size);
+    m_header_sizes_buffer->advance(sizes_buff_size, packet_count);
 
     MRC_CHECK_CUDA(cudaMemcpy(m_payload_sizes_buffer->current_location(), m_fixed_pld_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice));
-    m_payload_sizes_buffer->advance_bytes(sizes_buff_size);
+    m_payload_sizes_buffer->advance(sizes_buff_size, packet_count);
 
 #if ENABLE_TIMERS == 1
     const auto t2 = now_ns();
