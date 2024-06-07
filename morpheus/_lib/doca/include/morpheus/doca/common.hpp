@@ -17,16 +17,10 @@
 
 #pragma once
 
-#include "morpheus/types.hpp"  // for TensorSize
-
-#include <glog/logging.h>
-#include <rmm/device_buffer.hpp>
 
 #include <cstdint>
-#include <memory>
 #include <string>
 #include <type_traits>
-#include <vector>
 
 // TODO: move this to the morpheus::doca namespace
 uint32_t const PACKETS_PER_THREAD   = 16;
@@ -71,55 +65,4 @@ struct packets_info
     int32_t* ether_type_out;
     int32_t* next_proto_id_out;
     uint32_t* timestamp_out;
-};
-
-// TODO: move this to it's own header
-struct packet_data_buffer
-{
-    rmm::device_buffer buffer;
-    morpheus::TensorSize cur_offset_bytes;
-    morpheus::TensorSize elements;
-
-    morpheus::TensorSize capacity() const
-    {
-        return buffer.size();
-    };
-
-    morpheus::TensorSize available_bytes() const
-    {
-        return capacity() - cur_offset_bytes;
-    };
-
-    bool empty() const
-    {
-        return cur_offset_bytes == 0;
-    }
-
-    void advance(morpheus::TensorSize num_bytes, morpheus::TensorSize num_elements)
-    {
-        cur_offset_bytes += num_bytes;
-        elements += num_elements;
-        CHECK(cur_offset_bytes <= capacity());
-    }
-
-    template <typename T = uint8_t>
-    T* data()
-    {
-        return static_cast<T*>(buffer.data());
-    }
-
-    template <typename T = uint8_t>
-    T* current_location()
-    {
-        return data<T>() + cur_offset_bytes;
-    }
-
-    void shrink_to_fit()
-    {
-        if (available_bytes() > 0)
-        {
-            buffer.resize(cur_offset_bytes, buffer.stream());
-            buffer.shrink_to_fit(buffer.stream());
-        }
-    }
 };

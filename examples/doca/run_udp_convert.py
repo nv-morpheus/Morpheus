@@ -44,7 +44,7 @@ from morpheus.utils.logger import configure_logging
 )
 def run_pipeline(nic_addr, gpu_addr):
     # Enable the default logger
-    configure_logging(log_level=logging.DEBUG)
+    configure_logging(log_level=logging.WARNING)
 
     CppConfig.set_should_use_cpp(True)
 

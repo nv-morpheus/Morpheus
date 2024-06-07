@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/doca/common.hpp"
+#include "morpheus/doca/packet_data_buffer.hpp"
 #include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/raw_packet.hpp"
@@ -124,10 +125,10 @@ class MORPHEUS_EXPORT DocaConvertStage
     std::size_t m_payload_buffer_size = 1024 * 1024 * 1024;
 
     std::chrono::time_point<std::chrono::steady_clock> m_last_emit;
-    std::unique_ptr<packet_data_buffer> m_header_buffer{nullptr};
-    std::unique_ptr<packet_data_buffer> m_header_sizes_buffer{nullptr};
-    std::unique_ptr<packet_data_buffer> m_payload_buffer{nullptr};
-    std::unique_ptr<packet_data_buffer> m_payload_sizes_buffer{nullptr};
+    std::unique_ptr<morpheus::doca::packet_data_buffer> m_header_buffer{nullptr};
+    std::unique_ptr<morpheus::doca::packet_data_buffer> m_header_sizes_buffer{nullptr};
+    std::unique_ptr<morpheus::doca::packet_data_buffer> m_payload_buffer{nullptr};
+    std::unique_ptr<morpheus::doca::packet_data_buffer> m_payload_sizes_buffer{nullptr};
 };
 
 /****** DocaConvertStageInterfaceProxy***********************/

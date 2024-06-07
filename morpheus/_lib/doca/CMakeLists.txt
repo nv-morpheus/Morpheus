@@ -20,6 +20,7 @@ set(doca_ROOT "/opt/mellanox/doca")
 find_package(doca REQUIRED)
 
 add_library(morpheus_doca
+
   # Keep these sorted!
   src/doca_context.cpp
   src/doca_convert_kernel.cu
@@ -29,6 +30,7 @@ add_library(morpheus_doca
   src/doca_semaphore.cpp
   src/doca_source_kernel.cu
   src/doca_source.cpp
+  src/packet_data_buffer.cpp
   src/rte_context.cpp
 )
 
@@ -46,7 +48,6 @@ target_link_libraries(morpheus_doca
     matx::matx
   PUBLIC
     ${PROJECT_NAME}::morpheus
-
 )
 
 # Ideally, we dont use glob here. But there is no good way to guarantee you dont miss anything like *.cpp
@@ -64,7 +65,7 @@ target_sources(morpheus_doca
     TYPE HEADERS
     BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include"
     FILES
-      ${morpheus_doca_public_headers}
+  ${morpheus_doca_public_headers}
 )
 
 target_compile_definitions(morpheus_doca
@@ -80,7 +81,7 @@ set_target_properties(morpheus_doca
     CUDA_SEPARABLE_COMPILATION ON
 )
 
-if (MORPHEUS_PYTHON_INPLACE_BUILD)
+if(MORPHEUS_PYTHON_INPLACE_BUILD)
   morpheus_utils_inplace_build_copy(morpheus_doca ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 

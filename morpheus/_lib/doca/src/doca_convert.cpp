@@ -84,15 +84,6 @@ static uint64_t now_ns()
 
 #define DEBUG_GET_TIMESTAMP(ts) clock_gettime(CLOCK_REALTIME, (ts))
 
-std::unique_ptr<packet_data_buffer> make_packer_data_buffer(
-    std::size_t size,
-    rmm::cuda_stream_view stream,
-    rmm::mr::device_memory_resource* mr= rmm::mr::get_current_device_resource())
-{
-    auto buffer = rmm::device_buffer(size, stream, mr);
-    return std::make_unique<packet_data_buffer>(std::move(buffer), 0, 0);
-}
-
 std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, const std::string& buffer_name)
 {
     if (incoming_size > default_size)
@@ -108,8 +99,8 @@ std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, con
 }
 
 std::unique_ptr<cudf::column> make_string_col(
-    packet_data_buffer& data,
-    packet_data_buffer& sizes,
+    morpheus::doca::packet_data_buffer& data,
+    morpheus::doca::packet_data_buffer& sizes,
     rmm::cuda_stream_view stream)
 {
     data.shrink_to_fit();
@@ -152,11 +143,11 @@ DocaConvertStage::DocaConvertStage() :
     MRC_CHECK_CUDA(cudaMemcpy(m_fixed_hdr_size_list, m_fixed_hdr_size_list_cpu, MAX_PKT_RECEIVE * sizeof(uint32_t), cudaMemcpyDefault));
 
     auto mr = rmm::mr::get_current_device_resource();
-    m_header_buffer = make_packer_data_buffer(m_header_buffer_size, m_stream_cpp, mr);
-    m_header_sizes_buffer = make_packer_data_buffer(m_sizes_buffer_size, m_stream_cpp, mr);
+    m_header_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(m_header_buffer_size, m_stream_cpp, mr);
+    m_header_sizes_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(m_sizes_buffer_size, m_stream_cpp, mr);
 
-    m_payload_buffer = make_packer_data_buffer(m_payload_buffer_size, m_stream_cpp, mr);
-    m_payload_sizes_buffer = make_packer_data_buffer(m_sizes_buffer_size, m_stream_cpp, mr);
+    m_payload_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(m_payload_buffer_size, m_stream_cpp, mr);
+    m_payload_sizes_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(m_sizes_buffer_size, m_stream_cpp, mr);
 
 }
 
@@ -185,21 +176,6 @@ DocaConvertStage::subscribe_fn_t DocaConvertStage::build()
             }));
     };
 }
-
-// DocaConvertStage::source_type_t DocaConvertStage::on_data(sink_type_t x)
-// {
-//     if constexpr (std::is_same_v<sink_type_t, std::shared_ptr<RawPacketMessage>>)
-//     {
-//         return this->on_raw_packet_message(x);
-//     }
-//     // sink_type_t not supported
-//     else
-//     {
-//         std::string error_msg{"DocaConvertStage receives unsupported input type: " + std::string(typeid(x).name())};
-//         LOG(ERROR) << error_msg;
-//         throw std::runtime_error(error_msg);
-//     }
-// }
 
 void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& output, sink_type_t raw_msg)
 {
@@ -264,14 +240,14 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
         if (buffer_has_data || buffers_full) 
         {
             auto header_size = get_alloc_size(m_header_buffer_size, header_buff_size, "header");
-            m_header_buffer = make_packer_data_buffer(header_size, m_stream_cpp);
+            m_header_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(header_size, m_stream_cpp);
 
             auto payload_size = get_alloc_size(m_payload_buffer_size, payload_buff_size, "payload");
-            m_payload_buffer = make_packer_data_buffer(payload_size, m_stream_cpp);
+            m_payload_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(payload_size, m_stream_cpp);
 
             auto sizes_size = get_alloc_size(m_sizes_buffer_size, sizes_buff_size, "sizes");
-            m_header_sizes_buffer = make_packer_data_buffer(sizes_size, m_stream_cpp);
-            m_payload_sizes_buffer = make_packer_data_buffer(sizes_size, m_stream_cpp);
+            m_header_sizes_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(sizes_size, m_stream_cpp);
+            m_payload_sizes_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(sizes_size, m_stream_cpp);
         }
     }
 
