@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import os
 
 import click
 
@@ -22,6 +23,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.stage_decorator import stage
+from morpheus.messages import RawPacketMessage
 from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -50,13 +52,25 @@ def run_pipeline(nic_addr, gpu_addr):
     config.mode = PipelineModes.NLP
 
     # Below properties are specified by the command line
-    config.num_threads = 10
-    config.edge_buffer_size = 1024
+    config.num_threads = os.cpu_count()
+    print(f"using threads = {config.num_threads}")
+    config.edge_buffer_size = 1024 * 16
 
     pipeline = LinearPipeline(config)
 
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'udp'))
+
+    def count_raw_packets(message: RawPacketMessage):
+        return message.num
+
+    pipeline.add_stage(
+        MonitorStage(config,
+                     description="DOCA GPUNetIO Raw rate",
+                     unit='pkts',
+                     determine_count_fn=count_raw_packets,
+                     delayed_start=True))
+
     pipeline.add_stage(DocaConvertStage(config))
 
     # Uncomment the following lines to display the number of rows per MesssageMeta
@@ -65,10 +79,9 @@ def run_pipeline(nic_addr, gpu_addr):
     #     with msg.mutable_dataframe() as df:
     #         print(f"\nlen(df) = {len(df)}\n")
 
-
     # pipeline.add_stage(stage_counter(config))
-    
-    pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts', delayed_start=True))
+
+    pipeline.add_stage(MonitorStage(config, description="Convert rate", unit='pkts', delayed_start=True))
     pipeline.add_stage(WriteToFileStage(config, filename=".tmp/out.csv", overwrite=True))
 
     # Build the pipeline here to see types in the vizualization
