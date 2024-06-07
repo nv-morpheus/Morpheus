@@ -54,10 +54,9 @@ void gather_header(
     rmm::cuda_stream_view stream,
     rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-void sizes_to_offsets(
+rmm::device_buffer sizes_to_offsets(
     int32_t packet_count,
     uint32_t* sizes_buff,
-    uint32_t* dst_buff,
     rmm::cuda_stream_view stream);
 
 

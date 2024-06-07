@@ -113,9 +113,16 @@ std::unique_ptr<cudf::column> make_string_col(
     rmm::cuda_stream_view stream)
 {
     data.shrink_to_fit();
-    sizes.shrink_to_fit();
+    CHECK(sizes.elements == data.elements);
 
-    auto offsets_col = std::make_unique<cudf::column>(cudf::data_type(cudf::type_id::INT32), sizes.elements, std::move(sizes.buffer), std::move(rmm::device_buffer(0, stream)), 0);
+    auto offsets_buffer = morpheus::doca::sizes_to_offsets(sizes.elements, sizes.data<uint32_t>(), stream);
+
+    const auto offset_count = sizes.elements+1;
+    const auto offset_buff_size = (offset_count)*sizeof(int32_t);
+
+    auto offsets_col = std::make_unique<cudf::column>(cudf::data_type(cudf::type_id::INT32), offset_count, std::move(offsets_buffer), std::move(rmm::device_buffer(0, stream)), 0);
+
+
 
     return cudf::make_strings_column(data.elements,
                                      std::move(offsets_col),
@@ -136,20 +143,20 @@ DocaConvertStage::DocaConvertStage() :
     cudaMalloc((void**)&m_fixed_pld_size_list, MAX_PKT_RECEIVE * sizeof(uint32_t));
     for (int idx = 0; idx < MAX_PKT_RECEIVE; idx++)
         m_fixed_pld_size_list_cpu[idx] = MAX_PKT_SIZE;
-    cudaMemcpy(m_fixed_pld_size_list, m_fixed_pld_size_list_cpu, MAX_PKT_RECEIVE * sizeof(uint32_t), cudaMemcpyDefault);
+    MRC_CHECK_CUDA(cudaMemcpy(m_fixed_pld_size_list, m_fixed_pld_size_list_cpu, MAX_PKT_RECEIVE * sizeof(uint32_t), cudaMemcpyDefault));
 
     m_fixed_hdr_size_list_cpu = (uint32_t*)calloc(MAX_PKT_RECEIVE, sizeof(uint32_t));
     cudaMalloc((void**)&m_fixed_hdr_size_list, MAX_PKT_RECEIVE * sizeof(uint32_t));
     for (int idx = 0; idx < MAX_PKT_RECEIVE; idx++)
         m_fixed_hdr_size_list_cpu[idx] = IP_ADDR_STRING_LEN;
-    cudaMemcpy(m_fixed_hdr_size_list, m_fixed_hdr_size_list_cpu, MAX_PKT_RECEIVE * sizeof(uint32_t), cudaMemcpyDefault);
+    MRC_CHECK_CUDA(cudaMemcpy(m_fixed_hdr_size_list, m_fixed_hdr_size_list_cpu, MAX_PKT_RECEIVE * sizeof(uint32_t), cudaMemcpyDefault));
 
     auto mr = rmm::mr::get_current_device_resource();
     m_header_buffer = make_packer_data_buffer(m_header_buffer_size, m_stream_cpp, mr);
-    m_header_offsets_buffer = make_packer_data_buffer(m_sizes_buffer_size, m_stream_cpp, mr);
+    m_header_sizes_buffer = make_packer_data_buffer(m_sizes_buffer_size, m_stream_cpp, mr);
 
     m_payload_buffer = make_packer_data_buffer(m_payload_buffer_size, m_stream_cpp, mr);
-    m_payload_offsets_buffer = make_packer_data_buffer(m_sizes_buffer_size, m_stream_cpp, mr);
+    m_payload_sizes_buffer = make_packer_data_buffer(m_sizes_buffer_size, m_stream_cpp, mr);
 
 }
 
@@ -203,21 +210,6 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     auto pkt_pld_size_list = raw_msg->get_pkt_pld_size_list();
     auto queue_idx         = raw_msg->get_queue_idx();
 
-    // std::vector<uint32_t> header_sizes(packet_count);
-    // cudaMemcpy(pkt_hdr_size_list, header_sizes.data(), packet_count*sizeof(uint32_t), cudaMemcpyDeviceToHost);
-    // std::cerr << "header sizes: ";
-    // for (auto hs: header_sizes){
-    //     std::cerr << hs << ", ";
-    // }
-    // std::cerr << "\n";
-
-    // std::vector<uint32_t> payload_sizes(packet_count);
-    // cudaMemcpy(pkt_pld_size_list, payload_sizes.data(), packet_count*sizeof(uint32_t), cudaMemcpyDeviceToHost);
-    // std::cerr << "payload sizes: ";
-    // for (auto ps: payload_sizes){
-    //     std::cerr << ps << ", ";
-    // }
-    // std::cerr << "\n";
 
     // LOG(WARNING) << "New RawPacketMessage with " << packet_count << " packets from queue id " << queue_idx;
 
@@ -225,24 +217,12 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
         packet_count, m_fixed_hdr_size_list, m_fixed_pld_size_list,  m_stream_cpp);
 
     // both m_fixed_hdr_size_list and m_fixed_pld_size_list should be the same size in bytes
-    auto sizes_buff_size = packet_count * sizeof(uint32_t);
-
-    std::vector<uint32_t> host_buff(packet_count);
-    MRC_CHECK_CUDA(cudaMemcpy(host_buff.data(), m_fixed_pld_size_list, sizes_buff_size, cudaMemcpyDeviceToHost));
-    std::cerr << "\n************\nHost Sizes(" << packet_count <<"):\n";
-    for (std::size_t i = 0; i < host_buff.size(); ++i)
-    {
-        std::cerr << "\t" << i << " : " << host_buff[i] << "\n";
-    }
-
-    std::cerr << "***************\n\n" << std::flush;
-    
-
+    auto sizes_buff_size = packet_count * sizeof(uint32_t);  
 
     bool buffers_full = (header_buff_size > m_header_buffer->available_bytes() ||
-                         sizes_buff_size > m_header_offsets_buffer->available_bytes() ||
+                         sizes_buff_size > m_header_sizes_buffer->available_bytes() ||
                          payload_buff_size > m_payload_buffer->available_bytes() ||
-                         sizes_buff_size > m_payload_offsets_buffer->available_bytes());
+                         sizes_buff_size > m_payload_sizes_buffer->available_bytes());
 
     auto cur_time = std::chrono::steady_clock::now();
     auto time_since_last_emit = cur_time - m_last_emit;
@@ -255,10 +235,11 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
         // There is a possibility that the buffers are empty, but either we crossed a time-delta before receiving new
         // messages or the allocated buffers are too small for the incoming
         // RawPacketMessage, when this is the case we should log a warning and allocate a larger buffer
-        if (!m_header_buffer->empty())
+        bool buffer_has_data = !m_header_buffer->empty();
+        if (buffer_has_data)
         {
-            auto header_col = make_string_col(*m_header_buffer, *m_header_offsets_buffer, m_stream_cpp);
-            auto payload_col = make_string_col(*m_payload_buffer, *m_payload_offsets_buffer, m_stream_cpp);
+            auto header_col = make_string_col(*m_header_buffer, *m_header_sizes_buffer, m_stream_cpp);
+            auto payload_col = make_string_col(*m_payload_buffer, *m_payload_sizes_buffer, m_stream_cpp);
 
             std::vector<std::unique_ptr<cudf::column>> gathered_columns;
             gathered_columns.emplace_back(std::move(header_col));
@@ -279,7 +260,8 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
             m_last_emit = std::chrono::steady_clock::now();
         }
 
-        if (buffers_full) 
+        // In the case where existing empty buffers were too small for the data we still need to re-allocate
+        if (buffer_has_data || buffers_full) 
         {
             auto header_size = get_alloc_size(m_header_buffer_size, header_buff_size, "header");
             m_header_buffer = make_packer_data_buffer(header_size, m_stream_cpp);
@@ -288,16 +270,16 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
             m_payload_buffer = make_packer_data_buffer(payload_size, m_stream_cpp);
 
             auto sizes_size = get_alloc_size(m_sizes_buffer_size, sizes_buff_size, "sizes");
-            m_header_offsets_buffer = make_packer_data_buffer(sizes_size, m_stream_cpp);
-            m_payload_offsets_buffer = make_packer_data_buffer(sizes_size, m_stream_cpp);
+            m_header_sizes_buffer = make_packer_data_buffer(sizes_size, m_stream_cpp);
+            m_payload_sizes_buffer = make_packer_data_buffer(sizes_size, m_stream_cpp);
         }
     }
 
     // this should never be true
     DCHECK(header_buff_size <= m_header_buffer->available_bytes() &&
-           sizes_buff_size <= m_header_offsets_buffer->available_bytes() &&
+           sizes_buff_size <= m_header_sizes_buffer->available_bytes() &&
            payload_buff_size <= m_payload_buffer->available_bytes() &&
-           sizes_buff_size <= m_payload_offsets_buffer->available_bytes());
+           sizes_buff_size <= m_payload_sizes_buffer->available_bytes());
 
 
 #if ENABLE_TIMERS == 1
@@ -321,86 +303,17 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     m_header_buffer->advance(header_buff_size, packet_count);
     m_payload_buffer->advance(payload_buff_size, packet_count);
 
-    doca::sizes_to_offsets(packet_count, pkt_hdr_size_list, m_header_offsets_buffer->current_location<uint32_t>(), m_stream_cpp);
-    doca::sizes_to_offsets(packet_count, pkt_pld_size_list, m_payload_offsets_buffer->current_location<uint32_t>(), m_stream_cpp);
-    cudaStreamSynchronize(m_stream_cpp);
-
-    const auto offset_count = packet_count+1;
-    const auto offset_buff_size = (offset_count)*sizeof(uint32_t);
-
-    std::vector<uint32_t> host_off_buff(offset_count);
-    MRC_CHECK_CUDA(cudaMemcpy(host_off_buff.data(), m_payload_offsets_buffer->current_location(), offset_buff_size, cudaMemcpyDeviceToHost));
-    std::cerr << "\n************\nHost Offsets(" << offset_count <<"):\n";
-    for (std::size_t i = 0; i < host_off_buff.size(); ++i)
-    {
-        std::cerr << "\t" << i << " : " << host_off_buff[i] << "\n";
-    }
-
-    std::cerr << "***************\n\n" << std::flush;
-
-    m_header_offsets_buffer->advance(offset_buff_size, offset_count);
-    m_payload_offsets_buffer->advance(offset_buff_size, offset_count);
+    MRC_CHECK_CUDA(cudaMemcpy(m_header_sizes_buffer->current_location(), m_fixed_hdr_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice));
+    m_header_sizes_buffer->advance(sizes_buff_size, packet_count);
+    
+    MRC_CHECK_CUDA(cudaMemcpy(m_payload_sizes_buffer->current_location(), m_fixed_pld_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice));
+    m_payload_sizes_buffer->advance(sizes_buff_size, packet_count);
 
 
 #if ENABLE_TIMERS == 1
     const auto t2 = now_ns();
 #endif
 
-//     m_gathered_rows += payload_col->size();
-//     std::vector<std::unique_ptr<cudf::column>> gathered_columns;
-//     gathered_columns.emplace_back(std::move(header_src_ip_col));
-//     gathered_columns.emplace_back(std::move(payload_col));
-
-//     // After this point buffers can be reused -> copies actual packets' data
-
-//     m_gathered_tables.emplace_back(std::move(std::make_unique<cudf::table>(std::move(gathered_columns))));
-
-//     cudaStreamSynchronize(m_stream_cpp);
-
-// #if ENABLE_TIMERS == 1
-//     const auto t3 = now_ns();
-// #endif
-
-//     if (m_gathered_rows >= m_rows_per_df) {
-//         auto gathered_metadata = cudf::io::table_metadata();
-//         gathered_metadata.schema_info.emplace_back("src_ip");
-//         gathered_metadata.schema_info.emplace_back("data");
-
-//         std::vector<cudf::table_view> table_views;
-//         for (auto& tbl: m_gathered_tables) {
-//             table_views.emplace_back(tbl->view());
-//         }
-
-//         auto combined_table = cudf::concatenate(table_views, m_stream_cpp);
-
-
-//         auto gathered_table_w_metadata =
-//             cudf::io::table_with_metadata{std::move(combined_table), std::move(gathered_metadata)};
-
-//     #if ENABLE_TIMERS == 1
-//         const auto t4 = now_ns();
-//     #endif
-//         auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
-
-//     #if ENABLE_TIMERS == 1
-//         const auto t5 = now_ns();
-//     #endif
-//         cudaStreamSynchronize(m_stream_cpp);
-
-//     #if ENABLE_TIMERS == 1
-//         const auto t6 = now_ns();
-
-//         LOG(WARNING) << "Queue " << queue_idx << " packets " << packet_count << " header column " << t1 - t0
-//                     << " payload column " << t2 - t1 << " gather columns " << t3 - t2 << " gather metadata " << t4 - t3
-//                     << " create_from_cpp " << t5 - t4 << " stream sync " << t6 - t5 << std::endl;
-//     #endif
-
-//         m_gathered_tables.clear();
-//         m_gathered_rows = 0;
-
-//         output.on_next(std::move(meta));
-
-//     }
 }
 
 std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfaceProxy::init(

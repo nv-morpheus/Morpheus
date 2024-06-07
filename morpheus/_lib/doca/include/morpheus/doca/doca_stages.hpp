@@ -118,16 +118,16 @@ class MORPHEUS_EXPORT DocaConvertStage
     uint32_t* m_fixed_hdr_size_list_cpu;
 
     // TODO make these constructor arguments
-    std::chrono::milliseconds m_max_time_delta =  std::chrono::seconds(30);
+    std::chrono::milliseconds m_max_time_delta =  std::chrono::seconds(3);
     std::size_t m_sizes_buffer_size = 1024 * 1024 * 2;
     std::size_t m_header_buffer_size = 1024 * 1024 * 10;
     std::size_t m_payload_buffer_size = 1024 * 1024 * 1024;
 
     std::chrono::time_point<std::chrono::steady_clock> m_last_emit;
     std::unique_ptr<packet_data_buffer> m_header_buffer{nullptr};
-    std::unique_ptr<packet_data_buffer> m_header_offsets_buffer{nullptr};
+    std::unique_ptr<packet_data_buffer> m_header_sizes_buffer{nullptr};
     std::unique_ptr<packet_data_buffer> m_payload_buffer{nullptr};
-    std::unique_ptr<packet_data_buffer> m_payload_offsets_buffer{nullptr};
+    std::unique_ptr<packet_data_buffer> m_payload_sizes_buffer{nullptr};
 };
 
 /****** DocaConvertStageInterfaceProxy***********************/
