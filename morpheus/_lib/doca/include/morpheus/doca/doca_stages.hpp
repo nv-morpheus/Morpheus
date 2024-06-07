@@ -34,7 +34,7 @@
 namespace morpheus {
 
 constexpr std::chrono::milliseconds DEFAULT_MAX_TIME_DELTA =  std::chrono::seconds(3);
-constexpr std::size_t DEFAULT_SIZES_BUFFER_SIZE = 1024 * 1024 * 2;
+constexpr std::size_t DEFAULT_SIZES_BUFFER_SIZE = 1024 * 1024 * 3;
 constexpr std::size_t DEFAULT_HEADER_BUFFER_SIZE = 1024 * 1024 * 10;
 constexpr std::size_t DEFAULT_PAYLOAD_BUFFER_SIZE = 1024 * 1024 * 1024;
 
@@ -149,7 +149,11 @@ struct MORPHEUS_EXPORT DocaConvertStageInterfaceProxy
      * @brief Create and initialize a DocaConvertStage, and return the result.
      */
     static std::shared_ptr<mrc::segment::Object<DocaConvertStage>> init(mrc::segment::Builder& builder,
-                                                                        std::string const& name);
+                                                                        std::string const& name,
+                                                                        std::chrono::milliseconds max_time_delta =  DEFAULT_MAX_TIME_DELTA,
+                                                                        std::size_t sizes_buffer_size = DEFAULT_SIZES_BUFFER_SIZE,
+                                                                        std::size_t header_buffer_size = DEFAULT_HEADER_BUFFER_SIZE,
+                                                                        std::size_t payload_buffer_size = DEFAULT_PAYLOAD_BUFFER_SIZE);
 };
 
 }  // namespace morpheus

@@ -221,11 +221,28 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
         bool buffer_has_data = !m_header_buffer->empty();
         if (buffer_has_data)
         {
-            std::cerr << "Converting buffered packets (" << m_header_buffer->elements << ") to a MessageMeta:\n" 
-                      << "Header buffer : " << m_header_buffer->cur_offset_bytes << "/" << m_header_buffer->capacity() << "\n"
-                      << "Payload buffer: " << m_payload_buffer->cur_offset_bytes << "/" << m_payload_buffer->capacity() << "\n"
-                      << "Sizes buffers : " << m_header_sizes_buffer->cur_offset_bytes << "/" << m_header_sizes_buffer->capacity() << "\n";
-                      
+            // std::cerr << "\nConverting buffered packets (" << m_header_buffer->elements << ") to a MessageMeta:\n";
+            // if (buffer_time_expired)
+            // {
+            //     std::cerr << "Time delta: " << time_since_last_emit.count() << "\n";
+            // }
+
+            // if (header_buff_size > m_header_buffer->available_bytes())
+            // {   
+            //     std::cerr << "Header buffer : " << m_header_buffer->cur_offset_bytes << "/" << m_header_buffer->capacity() << "\n";
+            // }
+
+            // if (payload_buff_size > m_payload_buffer->available_bytes()) 
+            // {
+            //     std::cerr << "Payload buffer: " << m_payload_buffer->cur_offset_bytes << "/" << m_payload_buffer->capacity() << "\n";
+            // }
+
+            // if (sizes_buff_size > m_header_sizes_buffer->available_bytes() || sizes_buff_size > m_payload_sizes_buffer->available_bytes())
+            // {
+            //     std::cerr << "Sizes buffers : " << m_header_sizes_buffer->cur_offset_bytes << "/" << m_header_sizes_buffer->capacity() << "\n";
+            // }
+        
+            const auto num_packets = m_payload_buffer->elements;
             auto header_col = make_string_col(*m_header_buffer, *m_header_sizes_buffer, m_stream_cpp);
             auto payload_col = make_string_col(*m_payload_buffer, *m_payload_sizes_buffer, m_stream_cpp);
 
@@ -245,7 +262,14 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
             auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
             output.on_next(std::move(meta));
 
-            m_last_emit = std::chrono::steady_clock::now();
+            auto now = std::chrono::steady_clock::now();
+            auto delta = now - m_last_emit;
+            std::chrono::duration<float> deltaf = std::chrono::duration_cast<std::chrono::duration<float>>(delta);
+            float count = deltaf.count();
+            auto packet_rate = (num_packets / count);
+            m_last_emit = now;
+
+            // std::cerr << "Convert Packets: " << num_packets << "\nDelta: " << deltaf.count() << "s\nPackets/s : " << packet_rate << "\n";
         }
 
         // In the case where existing empty buffers were too small for the data we still need to re-allocate
@@ -305,9 +329,15 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
 }
 
 std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfaceProxy::init(
-    mrc::segment::Builder& builder, std::string const& name)
+    mrc::segment::Builder& builder, 
+    std::string const& name,
+    std::chrono::milliseconds max_time_delta,
+    std::size_t sizes_buffer_size,
+    std::size_t header_buffer_size,
+    std::size_t payload_buffer_size)
 {
-    return builder.construct_object<DocaConvertStage>(name);
+    return builder.construct_object<DocaConvertStage>(
+        name, max_time_delta, sizes_buffer_size, header_buffer_size, payload_buffer_size);
 }
 
 }  // namespace morpheus

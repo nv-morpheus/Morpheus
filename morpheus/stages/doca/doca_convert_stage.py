@@ -14,6 +14,7 @@
 
 import logging
 import typing
+from datetime import timedelta
 
 import mrc
 
@@ -27,6 +28,10 @@ from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_SIZES_BUFFER_SIZE = 1024 * 1024 * 3
+DEFAULT_HEADER_BUFFER_SIZE = 1024 * 1024 * 10
+DEFAULT_PAYLOAD_BUFFER_SIZE = 1024 * 1024 * 1024
+
 
 @register_stage("from-doca-convert", modes=[PipelineModes.NLP])
 class DocaConvertStage(PreallocatorMixin, SinglePortStage):
@@ -39,9 +44,19 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
         Pipeline configuration instance.
     """
 
-    def __init__(self, c: Config):
+    def __init__(self,
+                 c: Config,
+                 max_time_delta_sec: float = 3.0,
+                 sizes_buffer_size: int = DEFAULT_SIZES_BUFFER_SIZE,
+                 header_buffer_size: int = DEFAULT_HEADER_BUFFER_SIZE,
+                 payload_buffer_size: int = DEFAULT_PAYLOAD_BUFFER_SIZE):
 
         super().__init__(c)
+
+        self._max_time_delta = timedelta(seconds=max_time_delta_sec)
+        self._sizes_buffer_size = sizes_buffer_size
+        self._header_buffer_size = header_buffer_size
+        self._payload_buffer_size = payload_buffer_size
 
         # Attempt to import the C++ stage on creation
         try:
@@ -75,7 +90,13 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            node = self.doca_convert_class(builder, self.unique_name)
+            node = self.doca_convert_class(builder,
+                                           self.unique_name,
+                                           max_time_delta=self._max_time_delta,
+                                           sizes_buffer_size=self._sizes_buffer_size,
+                                           header_buffer_size=self._header_buffer_size,
+                                           payload_buffer_size=self._payload_buffer_size)
+
             builder.make_edge(input_node, node)
             return node
 
