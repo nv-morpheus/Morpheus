@@ -125,8 +125,15 @@ std::unique_ptr<cudf::column> make_string_col(
 
 namespace morpheus {
 
-DocaConvertStage::DocaConvertStage() :
-  base_t(base_t::op_factory_from_sub_fn(build()))
+DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_time_delta,
+                                   std::size_t sizes_buffer_size,
+                                   std::size_t header_buffer_size,
+                                   std::size_t payload_buffer_size) :
+  base_t(base_t::op_factory_from_sub_fn(build())),
+  m_max_time_delta{max_time_delta},
+  m_sizes_buffer_size{sizes_buffer_size},
+  m_header_buffer_size{header_buffer_size},
+  m_payload_buffer_size{payload_buffer_size}
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp              = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
@@ -214,6 +221,11 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
         bool buffer_has_data = !m_header_buffer->empty();
         if (buffer_has_data)
         {
+            std::cerr << "Converting buffered packets (" << m_header_buffer->elements << ") to a MessageMeta:\n" 
+                      << "Header buffer : " << m_header_buffer->cur_offset_bytes << "/" << m_header_buffer->capacity() << "\n"
+                      << "Payload buffer: " << m_payload_buffer->cur_offset_bytes << "/" << m_payload_buffer->capacity() << "\n"
+                      << "Sizes buffers : " << m_header_sizes_buffer->cur_offset_bytes << "/" << m_header_sizes_buffer->capacity() << "\n";
+                      
             auto header_col = make_string_col(*m_header_buffer, *m_header_sizes_buffer, m_stream_cpp);
             auto payload_col = make_string_col(*m_payload_buffer, *m_payload_sizes_buffer, m_stream_cpp);
 

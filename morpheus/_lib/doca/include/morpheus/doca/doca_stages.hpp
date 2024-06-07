@@ -33,12 +33,18 @@
 
 namespace morpheus {
 
+constexpr std::chrono::milliseconds DEFAULT_MAX_TIME_DELTA =  std::chrono::seconds(3);
+constexpr std::size_t DEFAULT_SIZES_BUFFER_SIZE = 1024 * 1024 * 2;
+constexpr std::size_t DEFAULT_HEADER_BUFFER_SIZE = 1024 * 1024 * 10;
+constexpr std::size_t DEFAULT_PAYLOAD_BUFFER_SIZE = 1024 * 1024 * 1024;
+
 namespace doca {
 
 struct DocaContext;
 struct DocaRxQueue;
 struct DocaRxPipe;
 struct DocaSemaphore;
+
 }  // namespace doca
 
 /**
@@ -100,7 +106,10 @@ class MORPHEUS_EXPORT DocaConvertStage
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    DocaConvertStage();
+    DocaConvertStage(std::chrono::milliseconds max_time_delta =  DEFAULT_MAX_TIME_DELTA,
+                     std::size_t sizes_buffer_size = DEFAULT_SIZES_BUFFER_SIZE,
+                     std::size_t header_buffer_size = DEFAULT_HEADER_BUFFER_SIZE,
+                     std::size_t payload_buffer_size = DEFAULT_PAYLOAD_BUFFER_SIZE);
     ~DocaConvertStage() override;
 
   private:
@@ -118,11 +127,10 @@ class MORPHEUS_EXPORT DocaConvertStage
     uint32_t* m_fixed_hdr_size_list;
     uint32_t* m_fixed_hdr_size_list_cpu;
 
-    // TODO make these constructor arguments
-    std::chrono::milliseconds m_max_time_delta =  std::chrono::seconds(3);
-    std::size_t m_sizes_buffer_size = 1024 * 1024 * 2;
-    std::size_t m_header_buffer_size = 1024 * 1024 * 10;
-    std::size_t m_payload_buffer_size = 1024 * 1024 * 1024;
+    std::chrono::milliseconds m_max_time_delta;
+    std::size_t m_sizes_buffer_size;
+    std::size_t m_header_buffer_size;
+    std::size_t m_payload_buffer_size;
 
     std::chrono::time_point<std::chrono::steady_clock> m_last_emit;
     std::unique_ptr<morpheus::doca::packet_data_buffer> m_header_buffer{nullptr};

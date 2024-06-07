@@ -59,12 +59,6 @@ rmm::device_buffer sizes_to_offsets(
     uint32_t* sizes_buff,
     rmm::cuda_stream_view stream);
 
-
-std::unique_ptr<cudf::column> integers_to_mac(
-    cudf::column_view const& integers,
-    rmm::cuda_stream_view stream        = cudf::detail::default_stream_value,
-    rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
-
 int packet_receive_kernel(doca_gpu_eth_rxq* rxq_0,
                           doca_gpu_eth_rxq* rxq_1,
                           doca_gpu_semaphore_gpu* sem_0,

@@ -21,19 +21,13 @@
 
 #include <cub/cub.cuh>
 #include <cuda/std/chrono>
-#include <cudf/column/column.hpp>
-#include <cudf/column/column_device_view.cuh>
-#include <cudf/column/column_factories.hpp>
-#include <cudf/column/column_view.hpp>
-#include <cudf/strings/detail/strings_children.cuh>
-#include <cudf/strings/detail/utilities.cuh>
-#include <cudf/strings/detail/utilities.hpp>
 #include <doca_eth_rxq.h>
 #include <doca_gpunetio.h>
 #include <doca_gpunetio_dev_buf.cuh>
 #include <doca_gpunetio_dev_eth_rxq.cuh>
 #include <doca_gpunetio_dev_sem.cuh>
 #include <matx.h>
+#include <rmm/device_buffer.hpp>
 #include <rmm/exec_policy.hpp>
 #include <rte_ether.h>
 #include <rte_ip.h>
@@ -206,15 +200,6 @@ void gather_header(
   rmm::cuda_stream_view stream,
   rmm::mr::device_memory_resource* mr)
 {
-  // auto [offsets_column, bytes] = cudf::detail::make_offsets_child_column(
-  //   fixed_size_list,
-  //   fixed_size_list + packet_count,
-  //   stream,
-  //   mr
-  // );
-
-  // auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
-  // auto d_chars      = chars_column->mutable_view().data<uint8_t>();
 
   _packet_gather_header_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     packet_count,
@@ -223,101 +208,6 @@ void gather_header(
     payload_sizes,
     dst_buff
   );
-}
-
-// void gather_header_scalar(
-//   int32_t      packet_count,
-//   uintptr_t*    packets_buffer,
-//   uint32_t*    header_sizes,
-//   uint32_t*    payload_sizes,
-//   uint8_t*      header_src_ip_addr,
-//   rmm::cuda_stream_view stream,
-//   rmm::mr::device_memory_resource* mr)
-// {
-//    _packet_gather_header_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
-//     packet_count,
-//     packets_buffer,
-//     header_sizes,
-//     payload_sizes,
-//     header_src_ip_addr
-//   );
-// }
-
-// void gather_payload_scalar(
-//   int32_t      packet_count,
-//   uintptr_t*    packets_buffer,
-//   uint32_t*    header_sizes,
-//   uint32_t*    payload_sizes,
-//   uint8_t*      payload_col,
-//   rmm::cuda_stream_view stream,
-//   rmm::mr::device_memory_resource* mr)
-// {
-//   _packet_gather_payload_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
-//     packet_count,
-//     packets_buffer,
-//     header_sizes,
-//     payload_sizes,
-//     payload_col
-//   );
-// }
-
-
-struct integers_to_mac_fn {
-  cudf::column_device_view const d_column;
-  int32_t const* d_offsets;
-  char* d_chars;
-
-  __device__ void operator()(cudf::size_type idx)
-  {
-    int64_t mac_address = d_column.element<int64_t>(idx);
-    char* out_ptr       = d_chars + d_offsets[idx];
-
-    mac_int64_to_chars(mac_address, out_ptr);
-  }
-};
-
-std::unique_ptr<cudf::column> integers_to_mac(
-  cudf::column_view const& integers,
-  rmm::cuda_stream_view stream,
-  rmm::mr::device_memory_resource* mr
-)
-{
-  CUDF_EXPECTS(integers.type().id() == cudf::type_id::INT64, "Input column must be type_id::INT64 type");
-  CUDF_EXPECTS(integers.null_count() == 0, "integers_to_mac does not support null values.");
-
-  cudf::size_type strings_count = integers.size();
-
-  if (strings_count == 0)
-  {
-    return cudf::make_empty_column(cudf::type_id::STRING);
-  }
-
-  auto const_17_itr = thrust::constant_iterator<cudf::size_type>(17);
-  auto [offsets_column, bytes] = cudf::detail::make_offsets_child_column(
-    const_17_itr,
-    const_17_itr + strings_count,
-    stream,
-    mr
-  );
-
-  auto column       = cudf::column_device_view::create(integers, stream);
-  auto d_column     = *column;
-  auto d_offsets    = offsets_column->view().data<int32_t>();
-  auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
-  auto d_chars      = chars_column->mutable_view().data<char>();
-
-  thrust::for_each_n(
-    rmm::exec_policy(stream),
-    thrust::make_counting_iterator<cudf::size_type>(0),
-    strings_count,
-    integers_to_mac_fn{d_column, d_offsets, d_chars}
-  );
-
-  return cudf::make_strings_column(strings_count,
-    std::move(offsets_column),
-    std::move(chars_column),
-    0,
-    {});
 }
 
 
