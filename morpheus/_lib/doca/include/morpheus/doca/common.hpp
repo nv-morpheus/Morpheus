@@ -76,39 +76,50 @@ struct packets_info
 // TODO: move this to it's own header
 struct packet_data_buffer
 {
-    std::unique_ptr<rmm::device_buffer> buffer;
+    rmm::device_buffer buffer;
     morpheus::TensorSize cur_offset_bytes;
     morpheus::TensorSize elements;
 
     morpheus::TensorSize capacity() const
     {
-        return buffer->size();
+        return buffer.size();
     };
 
     morpheus::TensorSize available_bytes() const
     {
-        return this->capacity() - this->cur_offset_bytes;
+        return capacity() - cur_offset_bytes;
     };
 
     bool empty() const
     {
-        return this->cur_offset_bytes == 0;
+        return cur_offset_bytes == 0;
     }
 
     void advance(morpheus::TensorSize num_bytes, morpheus::TensorSize num_elements)
     {
         cur_offset_bytes += num_bytes;
         elements += num_elements;
-        CHECK(cur_offset_bytes <= this->capacity());
+        CHECK(cur_offset_bytes <= capacity());
     }
 
-    uint8_t* data()
+    template <typename T = uint8_t>
+    T* data()
     {
-        return static_cast<uint8_t*>(this->buffer->data());
+        return static_cast<T*>(buffer.data());
     }
 
-    uint8_t* current_location()
+    template <typename T = uint8_t>
+    T* current_location()
     {
-        return this->data() + this->cur_offset_bytes;
+        return data<T>() + cur_offset_bytes;
+    }
+
+    void shrink_to_fit()
+    {
+        if (available_bytes() > 0)
+        {
+            buffer.resize(cur_offset_bytes, buffer.stream());
+            buffer.shrink_to_fit(buffer.stream());
+        }
     }
 };

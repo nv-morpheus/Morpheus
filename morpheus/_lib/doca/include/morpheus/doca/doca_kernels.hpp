@@ -34,8 +34,7 @@ std::pair<uint32_t, uint32_t> gather_sizes(
     int32_t packet_count,
     uint32_t* fixed_header_size_list,
     uint32_t* fixed_payload_size_list,
-    rmm::cuda_stream_view stream,
-    rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+    rmm::cuda_stream_view stream);
 
 void gather_payload(
     int32_t packet_count,
@@ -54,6 +53,13 @@ void gather_header(
     uint8_t* dst_buff,
     rmm::cuda_stream_view stream,
     rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+
+void sizes_to_offsets(
+    int32_t packet_count,
+    uint32_t* sizes_buff,
+    uint32_t* dst_buff,
+    rmm::cuda_stream_view stream);
+
 
 // std::unique_ptr<cudf::column> gather_header(
 //     int32_t packet_count,

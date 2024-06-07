@@ -134,8 +134,7 @@ std::pair<uint32_t, uint32_t> gather_sizes(
     int32_t packet_count,
     uint32_t* fixed_header_size_list,
     uint32_t* fixed_payload_size_list,
-    rmm::cuda_stream_view stream,
-    rmm::mr::device_memory_resource* mr
+    rmm::cuda_stream_view stream
 )
 {
     auto header_sizes_tensor = matx::make_tensor<uint32_t>(fixed_header_size_list, {packet_count});
@@ -149,6 +148,23 @@ std::pair<uint32_t, uint32_t> gather_sizes(
 
     cudaStreamSynchronize(stream);
     return {header_bytes_tensor(0), payload_bytes_tensor(0)};
+}
+
+void sizes_to_offsets(
+    int32_t packet_count,
+    uint32_t* sizes_buff,
+    uint32_t* dst_buff,
+    rmm::cuda_stream_view stream)
+{
+    auto sizes_tensor = matx::make_tensor<uint32_t>(sizes_buff, {packet_count});
+    auto cum_tensor = matx::make_tensor<uint32_t>({packet_count});
+    auto offsets_tensor = matx::make_tensor<uint32_t>(dst_buff, {packet_count+1});
+
+    auto zero_tensor = matx::make_tensor<uint32_t>({1});
+    zero_tensor.SetVals({0});
+
+    (cum_tensor = matx::cumsum(sizes_tensor)).run(stream.value());
+    (offsets_tensor = matx::concat(0, zero_tensor, cum_tensor)).run(stream.value());
 }
 
 void gather_payload(
