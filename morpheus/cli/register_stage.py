@@ -181,12 +181,7 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
     if (is_union_type(annotation)):
         raise RuntimeError("Union types are not supported for auto registering stages.")
 
-    if (issubtype(annotation, typing.List)):
-        # For variable length array, use multiple=True
-        options_kwargs["multiple"] = True
-        options_kwargs["type"] = get_args(annotation)[0]
-
-    elif (issubtype(annotation, pathlib.Path)):
+    if (issubtype(annotation, pathlib.Path)):
         # For paths, use the Path option and apply any kwargs
         options_kwargs["type"] = partial_pop_kwargs(click.Path, doc_type_kwargs)()
 
@@ -215,6 +210,13 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         options_kwargs["multiple"] = True
         options_kwargs["type"] = click.Tuple([str, str])
         options_kwargs["callback"] = lambda ctx, param, value: dict(value)
+
+    elif (issubtype(annotation, typing.List) or issubtype(annotation, typing.Tuple)
+          or issubtype(annotation, typing.Iterable)) and not (issubtype(annotation, str)):
+
+        # For variable length array, use multiple=True
+        options_kwargs["multiple"] = True
+        options_kwargs["type"] = get_args(annotation)[0]
 
     else:
         options_kwargs["type"] = annotation

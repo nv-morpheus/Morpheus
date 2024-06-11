@@ -19,6 +19,8 @@ import logging.config
 import logging.handlers
 import multiprocessing
 import os
+import re
+import warnings
 import weakref
 from enum import Enum
 
@@ -26,6 +28,8 @@ import appdirs
 import click
 import mrc
 from tqdm import tqdm
+
+import morpheus
 
 LogLevels = Enum('LogLevels', logging._nameToLevel)
 
@@ -257,9 +261,14 @@ def deprecated_stage_warning(logger, cls, name, reason: str = None):
     logger.warning(message)
 
 
-def deprecated_message_warning(logger, cls, new_cls):
+def deprecated_message_warning(cls, new_cls):
     """Log a warning about a deprecated message."""
-    logger.warning(
-        ("The '%s' message has been deprecated and will be removed in a future version. Please use '%s' instead."),
-        cls.__name__,
-        new_cls.__name__)
+    match = re.match(r"(\d+\.\d+)", morpheus.__version__)
+    if match is None:
+        version = "next version"
+    else:
+        version = "version " + match.group(1)
+
+    message = (f"The '{cls.__name__}' message has been deprecated and will be removed "
+               f"after {version} release. Please use '{new_cls.__name__}' instead.")
+    warnings.warn(message, DeprecationWarning)

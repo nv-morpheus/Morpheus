@@ -19,6 +19,11 @@
 
 #include "morpheus/doca/doca_context.hpp"
 
+#include <doca_gpunetio.h>
+
+#include <cstdint>
+#include <memory>
+
 namespace morpheus::doca {
 
 /**

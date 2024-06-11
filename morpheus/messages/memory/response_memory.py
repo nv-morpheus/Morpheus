@@ -31,7 +31,7 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
     """Output memory block holding the results of inference."""
 
     def __new__(cls, *args, **kwargs):
-        morpheus_logger.deprecated_message_warning(logger, cls, TensorMemory)
+        morpheus_logger.deprecated_message_warning(cls, TensorMemory)
         return super().__new__(cls, *args, **kwargs)
 
     def get_output(self, name: str):

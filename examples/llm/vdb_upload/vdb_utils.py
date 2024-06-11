@@ -142,6 +142,7 @@ def _build_default_rss_source(enable_cache,
             "interval_sec": interval_secs,
             "request_timeout_sec": rss_request_timeout_sec,
             "run_indefinitely": run_indefinitely,
+            "strip_markup": True,
             "vdb_resource_name": vector_db_resource_name,
             "web_scraper_config": {
                 "chunk_size": content_chunking_size,
@@ -315,14 +316,15 @@ def build_cli_configs(source_type,
     cli_vdb_conf = {
         # Vector db upload has some significant transaction overhead, batch size here should be as large as possible
         'batch_size': 16384,
-        'resource_name': vector_db_resource_name,
         'embedding_size': embedding_size,
         'recreate': True,
+        'resource_name': vector_db_resource_name,
         'resource_schemas': {
             vector_db_resource_name:
                 build_defualt_milvus_config(embedding_size) if (vector_db_service == 'milvus') else None,
         },
         'service': vector_db_service,
+        'truncate_long_strings': True,
         'uri': vector_db_uri,
     }
 

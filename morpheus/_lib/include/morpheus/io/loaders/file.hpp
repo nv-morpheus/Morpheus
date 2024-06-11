@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/io/data_loader.hpp"
 #include "morpheus/messages/control.hpp"
 
@@ -25,13 +26,13 @@
 #include <memory>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 /**
  * @brief Very simple raw data loader that takes a list of files containing data that can be converted into a cuDF
  * DataFrame. Loads the files into a cuDF DataFrame and returns a ControlMessage containing the DataFrame.
  *
  */
-class FileDataLoader : public Loader
+class MORPHEUS_EXPORT FileDataLoader : public Loader
 {
   public:
     ~FileDataLoader() = default;
@@ -41,5 +42,5 @@ class FileDataLoader : public Loader
 
     std::shared_ptr<ControlMessage> load(std::shared_ptr<ControlMessage> message, nlohmann::json task) final;
 };
-#pragma GCC visibility pop
+
 }  // namespace morpheus

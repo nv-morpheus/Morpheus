@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/io/data_loader.hpp"
 
 #include <glog/logging.h>
@@ -31,9 +32,9 @@
 #include <string>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 template <typename ObjectReturnTypeT>
-class FactoryRegistry
+class MORPHEUS_EXPORT FactoryRegistry
 {
   public:
     static bool contains(const std::string& name)
@@ -111,7 +112,5 @@ std::mutex FactoryRegistry<ObjectReturnTypeT>::m_mutex;
 template <typename ObjectReturnTypeT>
 std::map<std::string, std::function<std::shared_ptr<ObjectReturnTypeT>(nlohmann::json)>>
     FactoryRegistry<ObjectReturnTypeT>::m_object_constructors;
-
-#pragma GCC visibility pop
 
 }  // namespace morpheus

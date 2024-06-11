@@ -35,6 +35,11 @@ class LLMClient(ABC):
     def get_input_names(self) -> list[str]:
         """
         Returns the names of the inputs to the model.
+
+        Returns
+        -------
+        list[str]
+            List of input names.
         """
         pass
 
@@ -47,6 +52,11 @@ class LLMClient(ABC):
         ----------
         input_dict : dict
             Input containing prompt data.
+
+        Returns
+        -------
+        str
+            Generated response for prompt.
         """
         pass
 
@@ -59,6 +69,11 @@ class LLMClient(ABC):
         ----------
         input_dict : dict
             Input containing prompt data.
+
+        Returns
+        -------
+        str
+            Generated async response for prompt.
         """
         pass
 
@@ -85,6 +100,11 @@ class LLMClient(ABC):
             Inputs containing prompt data.
         return_exceptions : bool
             Whether to return exceptions in the output list or raise them immediately.
+
+        Returns
+        -------
+        list[str] | list[str | BaseException]
+            List of responses or list of responses and exceptions.
         """
         pass
 
@@ -115,6 +135,11 @@ class LLMClient(ABC):
             Inputs containing prompt data.
         return_exceptions : bool
             Whether to return exceptions in the output list or raise them immediately.
+
+        Returns
+        -------
+        list[str] | list[str | BaseException]
+            List of responses or list of responses and exceptions.
         """
         pass
 
@@ -136,6 +161,11 @@ class LLMService(ABC):
 
         model_kwargs : dict[str, typing.Any]
             Additional keyword arguments to pass to the model.
+
+        Returns
+        -------
+        LLMClient
+            Client for interacting with LLM models.
         """
         pass
 

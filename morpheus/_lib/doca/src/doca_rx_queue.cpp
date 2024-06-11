@@ -21,7 +21,13 @@
 #include "morpheus/doca/error.hpp"
 #include "morpheus/utilities/error.hpp"
 
+#include <doca_error.h>
+#include <doca_mmap.h>
+#include <doca_types.h>
 #include <glog/logging.h>
+
+#include <cstdint>
+#include <ostream>
 
 namespace morpheus::doca {
 
@@ -43,7 +49,8 @@ DocaRxQueue::DocaRxQueue(std::shared_ptr<DocaContext> context) :
     m_packet_memory = std::make_unique<DocaMem<void>>(m_context, cyclic_buffer_size, DOCA_GPU_MEM_TYPE_GPU);
 
     DOCA_TRY(doca_mmap_set_memrange(m_packet_mmap, m_packet_memory->gpu_ptr(), cyclic_buffer_size));
-    DOCA_TRY(doca_mmap_set_permissions(m_packet_mmap, DOCA_ACCESS_FLAG_LOCAL_READ_WRITE));
+    DOCA_TRY(doca_mmap_set_permissions(m_packet_mmap,
+                                       DOCA_ACCESS_FLAG_LOCAL_READ_WRITE | DOCA_ACCESS_FLAG_PCI_RELAXED_ORDERING));
     DOCA_TRY(doca_mmap_start(m_packet_mmap));
     DOCA_TRY(doca_eth_rxq_set_pkt_buf(m_rxq_info_cpu, m_packet_mmap, 0, cyclic_buffer_size));
 
