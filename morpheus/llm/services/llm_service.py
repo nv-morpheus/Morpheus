@@ -206,7 +206,7 @@ class LLMService(ABC):
         module = importlib.import_module(module_name)
 
         # Get all of the classes in the module to find the correct service class
-        mod_classes = dict({name: cls for name, cls in module.__dict__.items() if isinstance(cls, type)})
+        mod_classes = {name: cls for name, cls in module.__dict__.items() if callable(cls)}
 
         class_name_lower = f"{service_type}{llm_or_chat}Service".lower()
 
@@ -214,7 +214,7 @@ class LLMService(ABC):
         matching_classes = [name for name in mod_classes if name.lower() == class_name_lower]
 
         assert len(matching_classes) == 1, (f"Expected to find exactly one class with name {class_name_lower} "
-                                            f"in module {module_name}, but found {matching_classes}")
+                                            f"in module {module_name}, but found {sorted(mod_classes.keys())}")
 
         # Create the class
         class_ = getattr(module, matching_classes[0])
