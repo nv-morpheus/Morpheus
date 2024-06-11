@@ -689,22 +689,14 @@
         "python.analysis.extraPaths": [
             "./examples/digital_fingerprinting/production/morpheus"
         ],
+        "python.analysis.inlayHints.pytestParameters": true,
         "python.testing.pytestArgs": [
             "-s",
             "tests"
         ],
         "python.testing.pytestEnabled": true,
-        "python.testing.unittestEnabled": false,
+        "python.testing.unittestEnabled": true,
         "rewrap.wrappingColumn": 120,
-        "testMate.cpp.test.advancedExecutables": [
-            {
-                "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}_*.x",
-                "env": {
-                    "UCX_ERROR_SIGNALS": "", // Prevent UCX from capturing errors
-                    "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
-                }
-            }
-        ],
         "testMate.cpp.debug.configTemplate": {
             "args": "${argsArray}",
             "cwd": "${cwd}",
@@ -728,6 +720,15 @@
                 "type": "cppvsdbg"
             }
         },
+        "testMate.cpp.test.advancedExecutables": [
+            {
+                "env": {
+                    "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
+                    "UCX_ERROR_SIGNALS": "" // Prevent UCX from capturing errors
+                },
+                "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}_*.x"
+            }
+        ],
         "yapf.args": [
             "--style=${workspaceFolder}/setup.cfg"
         ]

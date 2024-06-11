@@ -41,7 +41,7 @@ def test_constructor_default_service_constructor(mock_chat_completion: tuple[moc
     OpenAIChatService().get_client(model_name="test_model", max_retries=max_retries)
 
     for mock_client in mock_chat_completion:
-        mock_client.assert_called_once_with(api_key=None, base_url=None, max_retries=max_retries)
+        mock_client.assert_called_once_with(max_retries=max_retries, organization=None, api_key=None, base_url=None)
 
 
 @pytest.mark.parametrize("use_async", [True, False])

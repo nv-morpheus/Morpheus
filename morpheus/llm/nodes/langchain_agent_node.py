@@ -111,8 +111,13 @@ class LangChainAgentNode(LLMNodeBase):
                         # If the agent encounters a parsing error or a server error after retries, replace the error
                         # with a default value to prevent the pipeline from crashing
                         results[i][j] = self._replace_exceptions_value
-                        logger.warning(f"Exception encountered in result[{i}][{j}]: {answer}. "
-                                       f"Replacing with default message: \"{self._replace_exceptions_value}\".")
+                        logger.warning(
+                            "Exception encountered in result[%d][%d]: %s. "
+                            "Replacing with default message: '%s'.",
+                            i,
+                            j,
+                            answer,
+                            self._replace_exceptions_value)
 
         context.set_output(results)
 

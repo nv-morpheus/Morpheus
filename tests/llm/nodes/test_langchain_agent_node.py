@@ -24,7 +24,8 @@ from langchain.agents import Tool
 from langchain.agents import initialize_agent
 from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain_community.chat_models import ChatOpenAI
+from langchain_community.chat_models.openai import ChatOpenAI
+from langchain_core.exceptions import OutputParserException
 from langchain_core.tools import BaseTool
 
 from _utils.llm import execute_node
@@ -264,6 +265,8 @@ def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], m
 
     # Since we are running in async mode, we will need to sort saved metadata
     assert sorted(metadata_saver_tool.saved_metadata, key=itemgetter('morpheus')) == expected_saved_metadata
+
+
 @pytest.mark.parametrize(
     "arun_return,replace_value,expected_output",
     [
