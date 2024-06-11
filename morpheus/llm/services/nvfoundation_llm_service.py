@@ -41,7 +41,7 @@ class NVFoundationLLMClient(LLMClient):
     `NeMoLLMService.get_client` method.
     Parameters
     ----------
-    parent :  NVFoundationMService
+    parent : NVFoundationMService
         The parent service for this client.
     model_name : str
         The name of the model to interact with.
@@ -127,8 +127,8 @@ class NVFoundationLLMClient(LLMClient):
             Inputs containing prompt data.
         return_exceptions : bool
             Whether to return exceptions in the output list or raise them immediately.
-        **kwargs : dict
-        Additional keyword arguments for generate batch.
+        **kwargs
+            Additional keyword arguments for generate batch.
         """
 
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
@@ -171,8 +171,8 @@ class NVFoundationLLMClient(LLMClient):
             Inputs containing prompt data.
         return_exceptions : bool
             Whether to return exceptions in the output list or raise them immediately.
-        **kwargs: dict
-        Additional keyword arguments for generate batch async.
+        **kwargs
+            Additional keyword arguments for generate batch async.
         """
 
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
@@ -202,7 +202,7 @@ class NVFoundationLLMService(LLMService):
         environment variable. If neither are present an error will be raised, by default None
     base_url : str, optional
         The api host url, by default None. If `None` the url will be read from the `NVIDIA_API_BASE` environment
-        variable. If neither are present the NeMo default will be used, by default None
+        variable. If neither are present the NVIDIA default will be used, by default None
     """
 
     class APIKey(EnvConfigValue):

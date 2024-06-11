@@ -32,7 +32,6 @@ import pytest
 import requests
 
 from _utils import import_or_skip
-from _utils.faiss import FakeEmbedder
 from _utils.kafka import _init_pytest_kafka
 from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
 from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
@@ -1019,21 +1018,6 @@ def milvus_server_uri(tmp_path_factory):
             logger.info("Started Milvus at: %s", uri)
 
             yield uri
-
-
-@pytest.fixture(scope="session")
-def faiss_test_dir():
-    # Get path for FAISS directory
-    tmp_dir_path = os.environ.get('FAISS_DIR')
-    if tmp_dir_path is None:
-        raise ValueError("set FAISS_DIR to directory with FAISS DB")
-    yield tmp_dir_path
-
-
-@pytest.fixture(scope="session")
-def faiss_test_embeddings():
-    embeddings = FakeEmbedder()
-    yield embeddings
 
 
 @pytest.fixture(scope="session", name="milvus_data")

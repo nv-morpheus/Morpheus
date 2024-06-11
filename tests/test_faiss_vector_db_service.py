@@ -14,132 +14,126 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-from langchain_community.docstore.in_memory import InMemoryDocstore
-from langchain_community.vectorstores.faiss import FAISS
-from langchain_core.documents import Document
+import os
+import typing
+from pathlib import Path
 
-from _utils.faiss import FakeEmbedder
+import pytest
+
 from morpheus.service.vdb.faiss_vdb_service import FaissVectorDBResourceService
 from morpheus.service.vdb.faiss_vdb_service import FaissVectorDBService
 
-# create FAISS docstore for testing
-texts = ["for", "the", "test"]
-embeddings = FakeEmbedder()
-ids = ["a", "b", "c"]
-create_store = FAISS.from_texts(texts, embeddings, ids=ids)
-INDEX_NAME = "index"
-TMP_DIR_PATH = "/workspace/.tmp/faiss_test_index"
-create_store.save_local(TMP_DIR_PATH, INDEX_NAME)
+if (typing.TYPE_CHECKING):
+    from langchain_core.embeddings import Embeddings
+else:
+    lc_core_embeddings = pytest.importorskip("langchain_core.embeddings", reason="langchain_core not installed")
+    Embeddings = lc_core_embeddings.Embeddings
+
+
+class FakeEmbedder(Embeddings):
+
+    def embed_query(self, text: str) -> list[float]:
+        # One-hot encoding using length of text
+        vec = [float(0.0)] * 1024
+
+        vec[len(text) % 1024] = 1.0
+
+        return vec
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return [self.embed_query(text) for text in texts]
+
+    async def aembed_query(self, text: str) -> list[float]:
+        return self.embed_query(text)
+
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.embed_documents(texts)
+
+
+@pytest.fixture(scope="function", name="faiss_simple_store_dir")
+def faiss_simple_store_dir_fixture(tmpdir_path: Path):
+
+    from langchain_community.vectorstores.faiss import FAISS
+
+    embeddings = FakeEmbedder()
+
+    # create FAISS docstore for testing
+    index_store = FAISS.from_texts([str(x) * x for x in range(3)], embeddings, ids=[chr(x + 97) for x in range(3)])
+
+    index_store.save_local(str(tmpdir_path), index_name="index")
+
+    # create a second index for testing
+    other_store = FAISS.from_texts([str(x) * x for x in range(3, 8)],
+                                   embeddings,
+                                   ids=[chr(x + 97) for x in range(3, 8)])
+    other_store.save_local(str(tmpdir_path), index_name="other_index")
+
+    return str(tmpdir_path)
 
 
 @pytest.fixture(scope="function", name="faiss_service")
-def faiss_service_fixture(faiss_test_dir: str, faiss_test_embeddings: list):
+def faiss_service_fixture(faiss_simple_store_dir: str):
     # Fixture for FAISS service; can edit FAISS docstore instantiated outside fixture if need to change
     #  embedding model, et.
-    service = FaissVectorDBService(local_dir=faiss_test_dir, embeddings=faiss_test_embeddings)
+    service = FaissVectorDBService(local_dir=faiss_simple_store_dir, embeddings=FakeEmbedder())
     yield service
 
 
 def test_load_resource(faiss_service: FaissVectorDBService):
+
+    # Check the default implementation
     resource = faiss_service.load_resource()
     assert isinstance(resource, FaissVectorDBResourceService)
-    assert resource._name == "index"
+
+    # Check specifying a name
+    resource = faiss_service.load_resource("index")
+    assert resource.describe()["index_name"] == "index"
+
+    # Check another name
+    resource = faiss_service.load_resource("other_index")
+    assert resource.describe()["index_name"] == "other_index"
+
+
+def test_describe(faiss_service: FaissVectorDBService):
+    desc_dict = faiss_service.load_resource().describe()
+
+    assert desc_dict["index_name"] == "index"
+    assert os.path.exists(desc_dict["folder_path"])
+    # Room for other properties
 
 
 def test_count(faiss_service: FaissVectorDBService):
-    docstore = "index"
-    count = faiss_service.count(docstore)
-    assert count == len(faiss_service._local_dir)
+
+    count = faiss_service.load_resource().count()
+    assert count == 3
 
 
-def test_insert(faiss_service: FaissVectorDBService):
-    # Test for inserting embeddings (not docs, texts) into docstore
-    vector = FakeEmbedder().embed_query(data="hi")
-    test_data = list(iter([("hi", vector)]))
-    docstore_name = "index"
-    response = faiss_service.insert(name=docstore_name, data=test_data)
-    assert response == {"status": "success"}
+async def test_similarity_search(faiss_service: FaissVectorDBService):
 
+    vdb = faiss_service.load_resource()
 
-def test_delete(faiss_service: FaissVectorDBService):
-    # specify name of docstore and ID to delete
-    docstore_name = "index"
-    delete_id = "a"
-    response_delete = faiss_service.delete(name=docstore_name, expr=delete_id)
-    assert response_delete == {"status": "success"}
+    query_vec = await faiss_service.embeddings.aembed_query("22")
 
+    k_1 = await vdb.similarity_search(embeddings=[query_vec], k=1)
 
-async def test_similarity_search():
-    index_to_id = create_store.index_to_docstore_id
-    in_mem_docstore = InMemoryDocstore({
-        index_to_id[0]: Document(page_content="for"),
-        index_to_id[1]: Document(page_content="the"),
-        index_to_id[2]: Document(page_content="test"),
-    })
+    assert len(k_1[0]) == 1
+    assert k_1[0][0]["page_content"] == "22"
 
-    assert create_store.docstore.__dict__ == in_mem_docstore.__dict__
+    k_3 = await vdb.similarity_search(embeddings=[query_vec], k=3)
 
-    query_vec = await embeddings.aembed_query("for")
-    output = await create_store.asimilarity_search_by_vector(query_vec, k=1)
+    assert len(k_3[0]) == 3
+    assert k_3[0][0]["page_content"] == "22"
 
-    assert output == [Document(page_content="for")]
+    # Exceed the number of documents in the docstore
+    k_5 = await vdb.similarity_search(embeddings=[query_vec], k=vdb.count() + 2)
+
+    assert len(k_5[0]) == vdb.count()
+    assert k_5[0][0]["page_content"] == "22"
 
 
 def test_has_store_object(faiss_service: FaissVectorDBService):
-    # create FAISS docstore to test with
-    object_store = FAISS.from_texts(texts, embeddings, ids=ids)
-    object_name = "store_object_index"
-    object_store.save_local(TMP_DIR_PATH, object_name)
+    assert faiss_service.has_store_object("index")
 
-    # attempt to load docstore with given index name
-    load_attempt = faiss_service.has_store_object(object_name)
-    assert load_attempt is True
+    assert faiss_service.has_store_object("other_index")
 
-    # attempt to load docstore with wrong index name
-    object_name = "wrong_index_name"
-    load_attempt = faiss_service.has_store_object(object_name)
-    assert load_attempt is False
-
-
-def test_create(faiss_service: FaissVectorDBService):
-    # Test creating docstore from embeddings
-    vector = FakeEmbedder().embed_query(data="hi")
-    test_embedding = list(iter([("hi", vector)]))
-    docstore_name = "index"
-    embeddings_docstore = faiss_service.create(name=docstore_name, text_embeddings=test_embedding)
-
-    # save created docstore
-    index_name_embeddings = "embeddings_index"
-    embeddings_docstore.save_local(TMP_DIR_PATH, index_name_embeddings)
-
-    # attempt to load created docstore
-    load_attempt = faiss_service.has_store_object(index_name_embeddings)
-
-    assert load_attempt is True
-
-    # Test creating docstore from texts
-    test_texts = ["for", "the", "test"]
-    texts_docstore = faiss_service.create(name=docstore_name, texts=test_texts)
-
-    # save created docstore
-    index_name_texts = "texts_index"
-    texts_docstore.save_local(TMP_DIR_PATH, index_name_texts)
-
-    # attempt to load created docstore
-    load_attempt = faiss_service.has_store_object(index_name_texts)
-
-    assert load_attempt is True
-
-    # Test creating docstore from documents
-    test_documents = [Document(page_content="This is for the test.")]
-    docs_docstore = faiss_service.create(name=docstore_name, documents=test_documents)
-
-    # save created docstore
-    index_name_docs = "docs_index"
-    docs_docstore.save_local(TMP_DIR_PATH, index_name_docs)
-
-    # attempt to load created docstore
-    load_attempt = faiss_service.has_store_object(index_name_docs)
-
-    assert load_attempt is True
+    assert not faiss_service.has_store_object("not_an_index")
