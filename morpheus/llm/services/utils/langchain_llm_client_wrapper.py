@@ -14,20 +14,11 @@
 
 import typing
 
+from langchain_core.callbacks import AsyncCallbackManagerForLLMRun
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models.llms import LLM
+
 from morpheus.llm.services.llm_service import LLMClient
-
-IMPORT_EXCEPTION = None
-IMPORT_ERROR_MESSAGE = ("LangchainLLMClientWrapper require the langchain package to be installed. "
-                        "Install it by running the following command:\n"
-                        "`conda env update --solver=libmamba -n morpheus "
-                        "--file morpheus/conda/environments/examples_cuda-121_arch-x86_64.yaml --prune`")
-
-try:
-    from langchain_core.callbacks import AsyncCallbackManagerForLLMRun
-    from langchain_core.callbacks import CallbackManagerForLLMRun
-    from langchain_core.language_models.llms import LLM
-except ImportError as import_exc:
-    IMPORT_EXCEPTION = import_exc
 
 
 class LangchainLLMClientWrapper(LLM):
