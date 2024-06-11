@@ -324,12 +324,12 @@ dependencies:
           - sentence-transformers=2.7
           - pip
           - pip:
-            - faiss-gpu==1.7
-            - google-search-results==2.4
+            - faiss-gpu==1.7.*
+            - google-search-results==2.4.*
             - langchain-nvidia-ai-endpoints==0.0.11
             - langchain==0.1.16
             - nemollm==0.3.5
-            - PyMuPDF==1.23.21
+            - PyMuPDF==1.23.*
 
   model-training-tuning:
     common:

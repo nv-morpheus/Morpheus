@@ -61,13 +61,13 @@ dependencies:
 - pip:
   - --find-links https://data.dgl.ai/wheels-test/repo.html
   - --find-links https://data.dgl.ai/wheels/cu121/repo.html
-  - PyMuPDF==1.23.21
+  - PyMuPDF==1.23.*
   - databricks-cli < 0.100
   - databricks-connect
   - dgl==2.0.0
   - dglgo
-  - faiss-gpu==1.7
-  - google-search-results==2.4
+  - faiss-gpu==1.7.*
+  - google-search-results==2.4.*
   - langchain-nvidia-ai-endpoints==0.0.11
   - langchain==0.1.16
   - milvus==2.3.5
