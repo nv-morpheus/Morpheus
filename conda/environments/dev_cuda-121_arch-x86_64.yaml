@@ -98,6 +98,9 @@ dependencies:
   - PyMuPDF==1.23.21
   - databricks-cli < 0.100
   - databricks-connect
+  - faiss-gpu==1.7
+  - langchain-community
+  - langchain-nvidia-ai-endpoints==0.0.11
   - milvus==2.3.5
   - pymilvus==2.3.6
   - pytest-kafka==0.6.0
