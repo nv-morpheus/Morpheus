@@ -207,7 +207,6 @@ class NVFoundationLLMService(LLMService):
 
     class APIKey(EnvConfigValue):
         _ENV_KEY: str = "NVIDIA_API_KEY"
-        _ALLOW_NONE: bool = True
 
     class BaseURL(EnvConfigValue):
         _ENV_KEY: str = "NVIDIA_API_BASE"
@@ -235,6 +234,10 @@ class NVFoundationLLMService(LLMService):
     @property
     def api_key(self):
         return self._api_key.value
+
+    @property
+    def base_url(self):
+        return self._base_url.value
 
     def get_client(self, *, model_name: str, **model_kwargs) -> NVFoundationLLMClient:
         """

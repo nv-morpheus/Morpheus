@@ -25,23 +25,24 @@ from morpheus.llm.services.nvfoundation_llm_service import NVFoundationLLMClient
 from morpheus.llm.services.nvfoundation_llm_service import NVFoundationLLMService
 
 
-@pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize("api_key", [None, "test_api_key"])
-@pytest.mark.parametrize("set_env", [True, False])
-def test_constructor(api_key: str, set_env: bool):
-    """
-    Test that the constructor prefers explicit arguments over environment variables.
-    """
-    env_api_key = "test_env_api_key"
+@pytest.fixture(name="set_default_nvidia_api_key", autouse=True, scope="function")
+def set_default_nvidia_api_key_fixture():
+    # Must have an API key set to create the openai client
+    with mock.patch.dict(os.environ, clear=True, values={"NVIDIA_API_KEY": "nvapi-testing_api_key"}):
+        yield
 
-    if set_env:
-        os.environ["NVIDIA_API_KEY"] = env_api_key
 
-    service = NVFoundationLLMService(api_key=api_key)
+@pytest.mark.parametrize("api_key", ["nvapi-12345", None])
+@pytest.mark.parametrize("base_url", ["http://test.nvidia.com/v1", None])
+def test_constructor(api_key: str, base_url: bool):
 
-    expected_api_key = api_key if "NVIDIA_API_KEY" not in os.environ else env_api_key
+    service = NVFoundationLLMService(api_key=api_key, base_url=base_url)
 
-    assert service.api_key == expected_api_key
+    if (api_key is None):
+        api_key = os.environ["NVIDIA_API_KEY"]
+
+    assert service.api_key == api_key
+    assert service.base_url == base_url
 
 
 def test_get_client():
@@ -61,7 +62,7 @@ def test_model_kwargs():
 
 
 def test_get_input_names():
-    client = NVFoundationLLMService(api_key="nvapi-...").get_client(model_name="test_model", additional_arg="test_arg")
+    client = NVFoundationLLMService().get_client(model_name="test_model", additional_arg="test_arg")
 
     assert client.get_input_names() == ["prompt"]
 
@@ -76,7 +77,7 @@ def test_generate():
 
         mock_nvfoundationllm.side_effect = mock_generation_side_effect
 
-        client = NVFoundationLLMService(api_key="nvapi-...").get_client(model_name="test_model")
+        client = NVFoundationLLMService().get_client(model_name="test_model")
         assert client.generate(prompt="test_prompt") == "test_prompt"
 
 
@@ -90,7 +91,7 @@ def test_generate_batch():
 
         mock_nvfoundationllm.side_effect = mock_generation_side_effect
 
-        client = NVFoundationLLMService(api_key="nvapi-...").get_client(model_name="test_model")
+        client = NVFoundationLLMService().get_client(model_name="test_model")
 
         assert client.generate_batch({'prompt': ["prompt1", "prompt2"]}) == ["prompt1", "prompt2"]
 
@@ -105,7 +106,7 @@ async def test_generate_async():
 
         mock_nvfoundationllm.side_effect = mock_generation_side_effect
 
-        client = NVFoundationLLMService(api_key="nvapi-...").get_client(model_name="test_model")
+        client = NVFoundationLLMService().get_client(model_name="test_model")
 
         assert await client.generate_async(prompt="test_prompt") == "test_prompt"
 
@@ -120,7 +121,7 @@ async def test_generate_batch_async():
 
         mock_nvfoundationllm.side_effect = mock_generation_side_effect
 
-        client = NVFoundationLLMService(api_key="nvapi-...").get_client(model_name="test_model")
+        client = NVFoundationLLMService().get_client(model_name="test_model")
 
         assert await client.generate_batch_async({'prompt': ["prompt1", "prompt2"]})
 
@@ -129,12 +130,11 @@ async def test_generate_batch_async_error():
     with mock.patch("langchain_nvidia_ai_endpoints.ChatNVIDIA.agenerate_prompt", autospec=True) as mock_nvfoundationllm:
 
         def mock_generation_side_effect(*_, **kwargs):
-            return LLMResult(generations=[[ChatGeneration(message=ChatMessage(content=x.text, role="assistant"))]
-                                          for x in kwargs["prompts"]])
+            raise RuntimeError("unittest")
 
         mock_nvfoundationllm.side_effect = mock_generation_side_effect
 
-        client = NVFoundationLLMService(api_key="nvapi-...").get_client(model_name="test_model")
+        client = NVFoundationLLMService().get_client(model_name="test_model")
 
         with pytest.raises(RuntimeError, match="unittest"):
-            await client.generate_batch_async({'prompt': ["prompt1", "prompt2"]})
+            await client.generate_batch_async({'prompt': ["prompt1", "prompt2"]}, return_exceptions=False)
