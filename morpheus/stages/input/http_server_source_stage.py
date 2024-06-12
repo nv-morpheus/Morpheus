@@ -127,11 +127,12 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
 
         # These are only used when C++ mode is disabled
         self._queue = None
+        self._queue_size = 0
         self._processing = False
         self._records_emitted = 0
 
-        for url, method in [(endpoint, method), (live_endpoint, live_method), (ready_endpoint, ready_method)]:
-            check_supported_method(url, method, SUPPORTED_METHODS if url == endpoint else HEALTH_SUPPORTED_METHODS)
+        for url, http_method in [(endpoint, method), (live_endpoint, live_method), (ready_endpoint, ready_method)]:
+            check_supported_method(url, http_method, SUPPORTED_METHODS if url == endpoint else HEALTH_SUPPORTED_METHODS)
 
         if accept_status.value < 200 or accept_status.value > 299:
             raise ValueError(f"Invalid accept_status: {accept_status}")
@@ -165,6 +166,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
 
         try:
             self._queue.put(df, block=True, timeout=self._queue_timeout)
+            self._queue_size += 1
             return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
 
         except (queue.Full, Closed) as e:
@@ -185,40 +187,32 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                                      content_type=MimeTypes.TEXT.value,
                                      body=err_msg)
 
-    def _liveliness_check(self, payload: str) -> HttpParseResponse:
+    def _liveliness_check(self, _: str) -> HttpParseResponse:
         if not self._http_server.is_running():
             err_msg = "Source server is not running"
+            logger.error(err_msg)
             return HttpParseResponse(status_code=HTTPStatus.SERVICE_UNAVAILABLE.value,
                                      content_type=MimeTypes.TEXT.value,
                                      body=err_msg)
 
         return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
 
-    def _readiness_check(self, payload: str) -> HttpParseResponse:
-        try:
-            # Insert a dummy value for testing if queue can take new values
-            dummy_df = cudf.DataFrame()
-            self._queue.put(dummy_df, block=True, timeout=self._queue_timeout)
-            self._queue.get(timeout=self._queue_timeout)
-            return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
-
-        except (queue.Full, Closed) as e:
-            err_msg = "HTTP payload queue is "
-            if isinstance(e, queue.Full):
-                err_msg += "full"
-            else:
-                err_msg += "closed"
+    def _readiness_check(self, _: str) -> HttpParseResponse:
+        if not self._http_server.is_running():
+            err_msg = "Source server is not running"
             logger.error(err_msg)
-            return HttpParseResponse(status_code=HTTPStatus.SERVICE_UNAVAILABLE.value,
-                                     content_type=MimeTypes.TEXT.value,
-                                     body=err_msg)
-
-        except Exception as e:
-            err_msg = "Error occurred while pushing payload to queue"
-            logger.error("%s: %s", err_msg, e)
             return HttpParseResponse(status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
                                      content_type=MimeTypes.TEXT.value,
                                      body=err_msg)
+
+        if self._queue_size < self._max_queue_size:
+            return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
+
+        err_msg = "HTTP payload queue is full or unavailable to accept new values"
+        logger.error(err_msg)
+        return HttpParseResponse(status_code=HTTPStatus.SERVICE_UNAVAILABLE.value,
+                                 content_type=MimeTypes.TEXT.value,
+                                 body=err_msg)
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         from morpheus.common import FiberQueue
@@ -245,6 +239,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                 df = None
                 try:
                     df = self._queue.get()
+                    self._queue_size -= 1
                 except queue.Empty:
                     if (not self._http_server.is_running()):
                         self._processing = False

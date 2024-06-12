@@ -85,10 +85,12 @@ class MORPHEUS_EXPORT HttpServerSourceStage : public mrc::pymrc::PythonSource<st
     subscriber_fn_t build();
     void source_generator(rxcpp::subscriber<source_type_t> subscriber);
 
-    std::chrono::duration<float, std::milli> m_sleep_time;
+    std::atomic<int> m_queue_cnt = 0;
+    std::chrono::steady_clock::duration m_sleep_time;
     std::chrono::duration<long> m_queue_timeout;
     std::unique_ptr<HttpServer> m_server;
     request_queue_t m_queue;
+    std::size_t m_max_queue_size;
     std::size_t m_stop_after;
     std::size_t m_records_emitted;
 };

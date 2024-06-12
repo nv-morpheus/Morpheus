@@ -56,7 +56,8 @@ HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
                                              bool lines,
                                              std::size_t stop_after) :
   PythonSource(build()),
-  m_sleep_time{sleep_time},
+  m_max_queue_size{max_queue_size},
+  m_sleep_time{std::chrono::milliseconds(static_cast<long int>(sleep_time))},
   m_queue_timeout{queue_timeout},
   m_queue{max_queue_size},
   m_stop_after{stop_after},
@@ -87,6 +88,7 @@ HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
 
             if (queue_status == boost::fibers::channel_op_status::success)
             {
+                m_queue_cnt++;
                 return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
             }
 
@@ -133,43 +135,13 @@ HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
             return std::make_tuple(500u, "text/plain", error_msg, nullptr);
         }
 
-        table_t table{nullptr}; // Dummy value for testing if queue is live and can take new values
-        try
+        if (m_queue_cnt < m_max_queue_size)
         {
-            auto queue_status = m_queue.push_wait_for(std::move(table), m_queue_timeout);
-
-            if (queue_status == boost::fibers::channel_op_status::success)
-            {
-                m_queue.pop(table); // If dummy value successfully pushed, immediately pop to prevent queue pollution
-                return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
-            }
-
-            std::string error_msg = "HTTP payload queue is ";
-            switch (queue_status)
-            {
-            case boost::fibers::channel_op_status::full:
-            case boost::fibers::channel_op_status::timeout: {
-                error_msg += "full";
-                break;
-            }
-
-            case boost::fibers::channel_op_status::closed: {
-                error_msg += "closed";
-                break;
-            }
-            default: {
-                error_msg += "in an unknown state";
-                break;
-            }
-            }
-
-            return std::make_tuple(503u, "text/plain", std::move(error_msg), nullptr);
-        } catch (const std::exception& e)
-        {
-            std::string error_msg = "Error occurred while checking liveliness of queue";
-            LOG(ERROR) << error_msg << ": " << e.what();
-            return std::make_tuple(500u, "text/plain", error_msg, nullptr);
+            return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
         }
+
+        std::string error_msg = "HTTP payload queue is full or unavailable to accept new values";
+        return std::make_tuple(503u, "text/plain", std::move(error_msg), nullptr);
     };
 
     std::vector<HttpEndpoint> endpoints;
@@ -219,6 +191,7 @@ void HttpServerSourceStage::source_generator(rxcpp::subscriber<HttpServerSourceS
         if (queue_status == boost::fibers::channel_op_status::success)
         {
             // NOLINTNEXTLINE(clang-diagnostic-unused-value)
+            m_queue_cnt--;
             DCHECK_NOTNULL(table_ptr);
             try
             {
@@ -244,7 +217,7 @@ void HttpServerSourceStage::source_generator(rxcpp::subscriber<HttpServerSourceS
             if (server_running)
             {
                 // Sleep when there are no messages
-                std::this_thread::sleep_for(m_sleep_time);
+                boost::this_fiber::sleep_for(m_sleep_time);
             }
         }
         else if (queue_status == boost::fibers::channel_op_status::closed)
