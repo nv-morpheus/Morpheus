@@ -47,6 +47,8 @@ namespace morpheus {
 
 class MORPHEUS_EXPORT Listener;
 
+struct MORPHEUS_EXPORT HttpEndpoint;
+
 using on_complete_cb_fn_t = std::function<void(const boost::system::error_code& /* error message */)>;
 
 /**
@@ -92,11 +94,9 @@ constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
 class MORPHEUS_EXPORT HttpServer
 {
   public:
-    HttpServer(payload_parse_fn_t payload_parse_fn,
+    HttpServer(std::vector<HttpEndpoint> endpoints,
                std::string bind_address             = "127.0.0.1",
                unsigned short port                  = 8080,
-               std::string endpoint                 = "/message",
-               std::string method                   = "POST",
                unsigned short num_threads           = 1,
                std::size_t max_payload_size         = DefaultMaxPayloadSize,
                std::chrono::seconds request_timeout = std::chrono::seconds(30));
@@ -110,16 +110,30 @@ class MORPHEUS_EXPORT HttpServer
 
     std::string m_bind_address;
     unsigned short m_port;
-    std::string m_endpoint;
-    boost::beast::http::verb m_method;
+    std::vector<HttpEndpoint> m_endpoints;
     unsigned short m_num_threads;
     std::chrono::seconds m_request_timeout;
     std::size_t m_max_payload_size;
     std::vector<std::thread> m_listener_threads;
     boost::asio::io_context m_io_context;
     std::shared_ptr<Listener> m_listener;
-    std::shared_ptr<payload_parse_fn_t> m_payload_parse_fn;
     std::atomic<bool> m_is_running;
+};
+
+/**
+ * @brief A struct that encapsulates the http endpoint attributes
+ *
+ * @details Constructed to be used in the HttpServer class as http endpoint configurations
+ */
+struct MORPHEUS_EXPORT HttpEndpoint
+{
+    HttpEndpoint(payload_parse_fn_t payload_parse_fn,
+                 std::string url,
+                 std::string method);
+
+    std::shared_ptr<payload_parse_fn_t> m_parser;
+    std::string m_url;
+    boost::beast::http::verb m_method;
 };
 
 /**
@@ -131,11 +145,9 @@ class MORPHEUS_EXPORT Listener : public std::enable_shared_from_this<Listener>
 {
   public:
     Listener(boost::asio::io_context& io_context,
-             std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
              const std::string& bind_address,
              unsigned short port,
-             const std::string& endpoint,
-             boost::beast::http::verb method,
+             std::vector<HttpEndpoint> endpoints,
              std::size_t max_payload_size,
              std::chrono::seconds request_timeout);
 
@@ -153,12 +165,21 @@ class MORPHEUS_EXPORT Listener : public std::enable_shared_from_this<Listener>
     boost::asio::ip::tcp::endpoint m_tcp_endpoint;
     std::unique_ptr<boost::asio::ip::tcp::acceptor> m_acceptor;
 
-    std::shared_ptr<morpheus::payload_parse_fn_t> m_payload_parse_fn;
-    const std::string& m_url_endpoint;
-    boost::beast::http::verb m_method;
+    std::vector<HttpEndpoint> m_endpoints;
     std::size_t m_max_payload_size;
     std::chrono::seconds m_request_timeout;
     std::atomic<bool> m_is_running;
+};
+
+/****** HttpEndpointInterfaceProxy ************************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct MORPHEUS_EXPORT HttpEndpointInterfaceProxy
+{
+    static std::shared_ptr<HttpEndpoint> init(pybind11::function py_parse_fn,
+                                              std::string m_url,
+                                              std::string m_method);
 };
 
 /****** HttpServerInterfaceProxy *************************/
@@ -167,11 +188,9 @@ class MORPHEUS_EXPORT Listener : public std::enable_shared_from_this<Listener>
  */
 struct MORPHEUS_EXPORT HttpServerInterfaceProxy
 {
-    static std::shared_ptr<HttpServer> init(pybind11::function py_parse_fn,
+    static std::shared_ptr<HttpServer> init(std::vector<HttpEndpoint> endpoints,
                                             std::string bind_address,
                                             unsigned short port,
-                                            std::string endpoint,
-                                            std::string method,
                                             unsigned short num_threads,
                                             std::size_t max_payload_size,
                                             int64_t request_timeout);

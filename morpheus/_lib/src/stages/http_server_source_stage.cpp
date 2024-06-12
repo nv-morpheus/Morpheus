@@ -41,7 +41,11 @@ class SourceStageStopAfter : public std::exception
 HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
                                              unsigned short port,
                                              std::string endpoint,
+                                             std::string live_endpoint,
+                                             std::string ready_endpoint,
                                              std::string method,
+                                             std::string live_method,
+                                             std::string ready_method,
                                              unsigned accept_status,
                                              float sleep_time,
                                              long queue_timeout,
@@ -113,11 +117,69 @@ HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
             return std::make_tuple(500u, "text/plain", error_msg, nullptr);
         }
     };
-    m_server = std::make_unique<HttpServer>(std::move(parser),
+
+    payload_parse_fn_t live_parser = [this, accept_status, lines](const std::string& payload) {
+        if (!m_server->is_running()) {
+            std::string error_msg = "Source server is not running";
+            return std::make_tuple(500u, "text/plain", error_msg, nullptr);
+        }
+
+        return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
+    };
+
+    payload_parse_fn_t ready_parser = [this, accept_status, lines](const std::string& payload) {
+        if (!m_server->is_running()) {
+            std::string error_msg = "Source server is not running";
+            return std::make_tuple(500u, "text/plain", error_msg, nullptr);
+        }
+
+        table_t table{nullptr}; // Dummy value for testing if queue is live and can take new values
+        try
+        {
+            auto queue_status = m_queue.push_wait_for(std::move(table), m_queue_timeout);
+
+            if (queue_status == boost::fibers::channel_op_status::success)
+            {
+                m_queue.pop(table); // If dummy value successfully pushed, immediately pop to prevent queue pollution
+                return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
+            }
+
+            std::string error_msg = "HTTP payload queue is ";
+            switch (queue_status)
+            {
+            case boost::fibers::channel_op_status::full:
+            case boost::fibers::channel_op_status::timeout: {
+                error_msg += "full";
+                break;
+            }
+
+            case boost::fibers::channel_op_status::closed: {
+                error_msg += "closed";
+                break;
+            }
+            default: {
+                error_msg += "in an unknown state";
+                break;
+            }
+            }
+
+            return std::make_tuple(503u, "text/plain", std::move(error_msg), nullptr);
+        } catch (const std::exception& e)
+        {
+            std::string error_msg = "Error occurred while checking liveliness of queue";
+            LOG(ERROR) << error_msg << ": " << e.what();
+            return std::make_tuple(500u, "text/plain", error_msg, nullptr);
+        }
+    };
+
+    std::vector<HttpEndpoint> endpoints;
+    endpoints.emplace_back(parser, endpoint, method);
+    endpoints.emplace_back(live_parser, live_endpoint, live_method);
+    endpoints.emplace_back(ready_parser, ready_endpoint, ready_method);
+
+    m_server = std::make_unique<HttpServer>(std::move(endpoints),
                                             std::move(bind_address),
                                             port,
-                                            std::move(endpoint),
-                                            std::move(method),
                                             num_server_threads,
                                             max_payload_size,
                                             request_timeout);
@@ -220,7 +282,11 @@ std::shared_ptr<mrc::segment::Object<HttpServerSourceStage>> HttpServerSourceSta
     std::string bind_address,
     unsigned short port,
     std::string endpoint,
+    std::string live_endpoint,
+    std::string ready_endpoint,
     std::string method,
+    std::string live_method,
+    std::string ready_method,
     unsigned accept_status,
     float sleep_time,
     long queue_timeout,
@@ -237,7 +303,11 @@ std::shared_ptr<mrc::segment::Object<HttpServerSourceStage>> HttpServerSourceSta
         std::move(bind_address),
         port,
         std::move(endpoint),
+        std::move(live_endpoint),
+        std::move(ready_endpoint),
         std::move(method),
+        std::move(live_method),
+        std::move(ready_method),
         accept_status,
         sleep_time,
         queue_timeout,
