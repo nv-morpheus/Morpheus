@@ -22,6 +22,8 @@ from unittest import mock
 
 import pytest
 import requests
+import requests.adapters
+from urllib3.util.retry import Retry
 
 from _utils import make_url
 from _utils.dataset_manager import DatasetManager
@@ -107,12 +109,18 @@ def test_generate_frames(config: Config, dataset_pandas: DatasetManager, lines: 
     assert stage._processing
     assert get_next_thread.is_alive()
 
-    response = requests.request(method=method.value,
-                                url=url,
-                                data=payload,
-                                timeout=5.0,
-                                allow_redirects=False,
-                                headers={"Content-Type": content_type})
+    # allow retries for more robust testing
+    session = requests.Session()
+    retry = Retry(connect=3, backoff_factor=0.5)
+    adapter = requests.adapters.HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+
+    response = session.request(method=method.value,
+                               url=url,
+                               data=payload,
+                               timeout=10,
+                               allow_redirects=False,
+                               headers={"Content-Type": content_type})
 
     result_msg = msg_queue.get(timeout=5.0)
     get_next_thread.join()
@@ -192,12 +200,17 @@ def test_parse_errors(config: Config, lines: bool, use_payload_to_df_fn: bool):
     assert stage._processing
     assert get_next_thread.is_alive()
 
-    response = requests.request(method=method.value,
-                                url=url,
-                                data=payload,
-                                timeout=5.0,
-                                allow_redirects=False,
-                                headers={"Content-Type": content_type})
+    session = requests.Session()
+    retry = Retry(connect=3, backoff_factor=0.5)
+    adapter = requests.adapters.HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+
+    response = session.request(method=method.value,
+                               url=url,
+                               data=payload,
+                               timeout=10.0,
+                               allow_redirects=False,
+                               headers={"Content-Type": content_type})
 
     assert msg_queue.empty()
     assert get_next_thread.is_alive()

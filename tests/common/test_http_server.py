@@ -22,6 +22,7 @@ import pytest
 import requests
 
 from _utils import make_url
+from morpheus.common import HttpEndpoint
 from morpheus.common import HttpServer
 from morpheus.utils.http_utils import MimeTypes
 
@@ -97,14 +98,14 @@ def test_simple_request(port: int,
 
             callback_fn.assert_called_once_with(False, "")
 
+    http_endpoint = HttpEndpoint(py_parse_fn=parse_fn, url=endpoint, method=method)
     if use_context_mgr:
-        with HttpServer(parse_fn=parse_fn, port=port, endpoint=endpoint, method=method,
-                        num_threads=num_threads) as server:
+        with HttpServer(endpoints=[http_endpoint], port=port, num_threads=num_threads) as server:
             assert server.is_running()
             check_server()
 
     else:
-        server = HttpServer(parse_fn=parse_fn, port=port, endpoint=endpoint, method=method, num_threads=num_threads)
+        server = HttpServer(endpoints=[http_endpoint], port=port, num_threads=num_threads)
         assert not server.is_running()
         server.start()
 
@@ -115,9 +116,15 @@ def test_simple_request(port: int,
     assert not server.is_running()
 
 
-def test_constructor_errors():
-    with pytest.raises(RuntimeError):
-        HttpServer(parse_fn=make_parse_fn(), method="UNSUPPORTED")
+def test_simple_multi_endpoint():
+    pass
 
+
+@pytest.mark.parametrize("endpoint", ["/test"])
+def test_constructor_errors(endpoint: str):
     with pytest.raises(RuntimeError):
-        HttpServer(parse_fn=make_parse_fn(), num_threads=0)
+        HttpEndpoint(py_parse_fn=make_parse_fn(), url=endpoint, method="UNSUPPORTED")
+
+    http_endpoint = HttpEndpoint(py_parse_fn=make_parse_fn(), url=endpoint, method="GET")
+    with pytest.raises(RuntimeError):
+        HttpServer(endpoints=[http_endpoint], num_threads=0)
