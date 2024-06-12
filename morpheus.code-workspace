@@ -695,7 +695,7 @@
             "tests"
         ],
         "python.testing.pytestEnabled": true,
-        "python.testing.unittestEnabled": true,
+        "python.testing.unittestEnabled": false,
         "rewrap.wrappingColumn": 120,
         "testMate.cpp.debug.configTemplate": {
             "args": "${argsArray}",
