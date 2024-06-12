@@ -25,6 +25,7 @@ import time
 import types
 import typing
 import warnings
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -485,7 +486,7 @@ def manual_seed():
 
 
 @pytest.fixture(scope="function")
-def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
+def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path: Path):
     """
     Executes a test in the tmp_path directory
     """
@@ -1052,6 +1053,18 @@ def nemollm_fixture(fail_missing: bool):
                    "`conda env update --solver=libmamba -n morpheus "
                    "--file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
     yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
+
+
+@pytest.fixture(name="nvfoundationllm", scope='session')
+def nvfoundationllm_fixture(fail_missing: bool):
+    """
+    Fixture to ensure nvfoundationllm is installed
+    """
+    skip_reason = (
+        "Tests for NVFoundation require the langchain-nvidia-ai-endpoints package to be installed, to install this "
+        "run:\n `conda env update --solver=libmamba -n morpheus "
+        "--file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
+    yield import_or_skip("langchain_nvidia_ai_endpoints", reason=skip_reason, fail_missing=fail_missing)
 
 
 @pytest.fixture(name="openai", scope='session')

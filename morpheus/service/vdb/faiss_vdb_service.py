@@ -13,13 +13,9 @@
 # limitations under the License.
 
 import asyncio
-import copy
-import json
 import logging
-import threading
 import time
 import typing
-from functools import wraps
 
 import pandas as pd
 
@@ -31,9 +27,10 @@ from morpheus.service.vdb.vector_db_service import VectorDBService
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
-IMPORT_ERROR_MESSAGE = "MilvusVectorDBResourceService requires the milvus and pymilvus packages to be installed."
+IMPORT_ERROR_MESSAGE = "FaissDBResourceService requires the FAISS library to be installed."
 
 try:
+    from langchain.embeddings.base import Embeddings
     from langchain.vectorstores.faiss import FAISS
 except ImportError as import_exc:
     IMPORT_EXCEPTION = import_exc
@@ -41,14 +38,14 @@ except ImportError as import_exc:
 
 class FaissVectorDBResourceService(VectorDBResourceService):
     """
-    Represents a service for managing resources in a Milvus Vector Database.
+    Represents a service for managing resources in a FAISS Vector Database.
 
     Parameters
     ----------
+    parent : FaissVectorDBService
+        The parent service for this resource.
     name : str
-        Name of the resource.
-    client : MilvusClient
-        An instance of the MilvusClient for interaction with the Milvus Vector Database.
+        The name of the resource.
     """
 
     def __init__(self, parent: "FaissVectorDBService", *, name: str) -> None:
@@ -58,14 +55,15 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         super().__init__()
 
         self._parent = parent
-        self._name = name
+        self._folder_path = self._parent._local_dir
+        self._index_name = name
 
         self._index = FAISS.load_local(folder_path=self._parent._local_dir,
                                        embeddings=self._parent._embeddings,
-                                       index_name=self._name,
+                                       index_name=self._index_name,
                                        allow_dangerous_deserialization=True)
 
-    def insert(self, data: list[list] | list[dict], **kwargs: dict[str, typing.Any]) -> dict:
+    def insert(self, data: list[list] | list[dict], **kwargs) -> dict:
         """
         Insert data into the vector database.
 
@@ -73,7 +71,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         ----------
         data : list[list] | list[dict]
             Data to be inserted into the collection.
-        **kwargs : dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to the vector database implementation.
 
         Returns
@@ -83,7 +81,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         """
         raise NotImplementedError("Insert operation is not supported in FAISS")
 
-    def insert_dataframe(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs: dict[str, typing.Any]) -> dict:
+    def insert_dataframe(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs) -> dict:
         """
         Insert a dataframe entires into the vector database.
 
@@ -91,7 +89,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         ----------
         df : typing.Union[cudf.DataFrame, pd.DataFrame]
             Dataframe to be inserted into the collection.
-        **kwargs : dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to the vector database implementation.
 
         Returns
@@ -101,13 +99,13 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         """
         raise NotImplementedError("Insert operation is not supported in FAISS")
 
-    def describe(self, **kwargs: dict[str, typing.Any]) -> dict:
+    def describe(self, **kwargs) -> dict:
         """
         Provides a description of the collection.
 
         Parameters
         ----------
-        **kwargs : dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to the vector database implementation.
 
         Returns
@@ -115,41 +113,32 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         dict
             Returns response content as a dictionary.
         """
-        raise NotImplementedError("Describe operation is not supported in FAISS")
+        return {
+            "index_name": self._index_name,
+            "folder_path": self._folder_path,
+        }
 
-    def query(self, query: str, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def query(self, query: str, **kwargs) -> typing.Any:
         """
-        Query data in a collection in the Milvus vector database.
-
-        This method performs a search operation in the specified collection/partition in the Milvus vector database.
+        Query data in a collection in the vector database.
 
         Parameters
         ----------
         query : str, optional
             The search query, which can be a filter expression, by default None.
-        **kwargs : dict
+        **kwargs
             Additional keyword arguments for the search operation.
 
         Returns
         -------
         typing.Any
             The search result, which can vary depending on the query and options.
-
-        Raises
-        ------
-        RuntimeError
-            If an error occurs during the search operation.
-            If query argument is `None` and `data` keyword argument doesn't exist.
-            If `data` keyword arguement is `None`.
         """
         raise NotImplementedError("Query operation is not supported in FAISS")
 
-    async def similarity_search(self,
-                                embeddings: list[list[float]],
-                                k: int = 4,
-                                **kwargs: dict[str, typing.Any]) -> list[list[dict]]:
+    async def similarity_search(self, embeddings: list[list[float]], k: int = 4, **kwargs) -> list[list[dict]]:
         """
-        Perform a similarity search within the collection.
+        Perform a similarity search within the FAISS docstore.
 
         Parameters
         ----------
@@ -157,7 +146,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
             Embeddings for which to perform the similarity search.
         k : int, optional
             The number of nearest neighbors to return, by default 4.
-        **kwargs : dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to the vector database implementation.
 
         Returns
@@ -173,7 +162,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
 
         return list(await asyncio.gather(*[single_search(embedding) for embedding in embeddings]))
 
-    def update(self, data: list[typing.Any], **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    def update(self, data: list[typing.Any], **kwargs) -> dict[str, typing.Any]:
         """
         Update data in the collection.
 
@@ -181,7 +170,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         ----------
         data : list[typing.Any]
             Data to be updated in the collection.
-        **kwargs : dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to upsert operation.
 
         Returns
@@ -191,7 +180,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         """
         raise NotImplementedError("Update operation is not supported in FAISS")
 
-    def delete_by_keys(self, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def delete_by_keys(self, keys: int | str | list, **kwargs) -> typing.Any:
         """
         Delete vectors by keys from the collection.
 
@@ -199,7 +188,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         ----------
         keys : int | str | list
             Primary keys to delete vectors.
-        **kwargs :  dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to the vector database implementation.
 
         Returns
@@ -209,15 +198,15 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         """
         raise NotImplementedError("Delete by keys operation is not supported in FAISS")
 
-    def delete(self, expr: str, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    def delete(self, expr: str, **kwargs) -> dict[str, typing.Any]:
         """
-        Delete vectors from the collection using expressions.
+        Delete vectors by giving a list of IDs.
 
         Parameters
         ----------
         expr : str
             Delete expression.
-        **kwargs :  dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to the vector database implementation.
 
         Returns
@@ -225,9 +214,9 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         dict[str, typing.Any]
             Returns result of the given keys that are deleted from the collection.
         """
-        raise NotImplementedError("Delete operation is not supported in FAISS")
+        raise NotImplementedError("delete operation is not supported in FAISS")
 
-    def retrieve_by_keys(self, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> list[typing.Any]:
+    def retrieve_by_keys(self, keys: int | str | list, **kwargs) -> list[typing.Any]:
         """
         Retrieve the inserted vectors using their primary keys.
 
@@ -236,7 +225,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         keys : int | str | list
             Primary keys to get vectors for. Depending on pk_field type it can be int or str
             or a list of either.
-        **kwargs :  dict[str, typing.Any]
+        **kwargs
             Additional keyword arguments for the retrieval operation.
 
         Returns
@@ -246,13 +235,13 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         """
         raise NotImplementedError("Retrieve by keys operation is not supported in FAISS")
 
-    def count(self, **kwargs: dict[str, typing.Any]) -> int:
+    def count(self, **kwargs) -> int:
         """
         Returns number of rows/entities.
 
         Parameters
         ----------
-        **kwargs :  dict[str, typing.Any]
+        **kwargs
             Additional keyword arguments for the count operation.
 
         Returns
@@ -260,17 +249,17 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         int
             Returns number of entities in the collection.
         """
-        raise NotImplementedError("Count operation is not supported in FAISS")
+        return self._index.index.ntotal
 
-    def drop(self, **kwargs: dict[str, typing.Any]) -> None:
+    def drop(self, **kwargs) -> None:
         """
-        Drop a collection, index, or partition in the Milvus vector database.
+        Drops the resource from the vector database service.
 
         This function allows you to drop a collection.
 
         Parameters
         ----------
-        **kwargs : dict
+        **kwargs
             Additional keyword arguments for specifying the type and partition name (if applicable).
         """
         raise NotImplementedError("Drop operation is not supported in FAISS")
@@ -278,26 +267,22 @@ class FaissVectorDBResourceService(VectorDBResourceService):
 
 class FaissVectorDBService(VectorDBService):
     """
-    Service class for Milvus Vector Database implementation. This class provides functions for interacting
-    with a Milvus vector database.
+    Service class for FAISS Vector Database implementation. This class provides functions for interacting
+    with a FAISS vector database.
 
     Parameters
     ----------
-    host : str
-        The hostname or IP address of the Milvus server.
-    port : str
-        The port number for connecting to the Milvus server.
-    alias : str, optional
-        Alias for the Milvus connection, by default "default".
-    **kwargs : dict
-        Additional keyword arguments specific to the Milvus connection configuration.
+    local_dir : str
+        The local directory where the FAISS index files are stored.
+    embeddings : Embeddings
+        The embeddings object to use for embedding text.
     """
 
     _collection_locks = {}
     _cleanup_interval = 600  # 10mins
     _last_cleanup_time = time.time()
 
-    def __init__(self, local_dir: str, embeddings, **kwargs: dict[str, typing.Any]):
+    def __init__(self, local_dir: str, embeddings: "Embeddings"):
 
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
@@ -305,48 +290,67 @@ class FaissVectorDBService(VectorDBService):
         self._local_dir = local_dir
         self._embeddings = embeddings
 
-    def load_resource(self, name: str = "index", **kwargs: dict[str, typing.Any]) -> FaissVectorDBResourceService:
+    @property
+    def embeddings(self):
+        return self._embeddings
+
+    def load_resource(self, name: str = "index", **kwargs) -> FaissVectorDBResourceService:
+        """
+        Loads a VDB resource into memory for use.
+
+        Parameters
+        ----------
+        name : str, optional
+            The VDB resource to load. For FAISS, this corresponds to the index name, by default "index"
+        **kwargs
+            Additional keyword arguments specific to the resource service.
+
+        Returns
+        -------
+        FaissVectorDBResourceService
+            The loaded resource service.
+        """
 
         return FaissVectorDBResourceService(self, name=name, **kwargs)
 
     def has_store_object(self, name: str) -> bool:
         """
-        Check if a collection exists in the Milvus vector database.
+        Check if specific index file name exists by attempting to load FAISS index, docstore,
+        and index_to_docstore_id from disk with the index file name.
 
         Parameters
         ----------
         name : str
-            Name of the collection to check.
+            Name of the FAISS index file to check.
 
         Returns
         -------
         bool
-            True if the collection exists, False otherwise.
+            True if the file exists, False otherwise.
         """
-        return self._client.has_collection(collection_name=name)
+        try:
+            FAISS.load_local(folder_path=self._local_dir,
+                             embeddings=self._embeddings,
+                             index_name=name,
+                             allow_dangerous_deserialization=True)
+            return True
+        except Exception:
+            return False
 
-    def list_store_objects(self, **kwargs: dict[str, typing.Any]) -> list[str]:
+    def list_store_objects(self, **kwargs) -> list[str]:
         """
-        List the names of all collections in the Milvus vector database.
+        List the names of all resources in the vector database.
 
         Returns
         -------
         list[str]
             A list of collection names.
         """
-        return self._client.list_collections(**kwargs)
+        raise NotImplementedError("list_store_objects operation is not supported in FAISS")
 
-    def _create_schema_field(self, field_conf: dict) -> "pymilvus.FieldSchema":
-
-        field_schema = pymilvus.FieldSchema.construct_from_dict(field_conf)
-
-        return field_schema
-
-    def create(self, name: str, overwrite: bool = False, **kwargs: dict[str, typing.Any]):
+    def create(self, name: str, overwrite: bool = False, **kwargs):
         """
-        Create a collection in the Milvus vector database with the specified name and configuration. This method
-        creates a new collection in the Milvus vector database with the provided name and configuration options.
-        If the collection already exists, it can be overwritten if the `overwrite` parameter is set to True.
+        Create a collection.
 
         Parameters
         ----------
@@ -354,7 +358,7 @@ class FaissVectorDBService(VectorDBService):
             Name of the collection to be created.
         overwrite : bool, optional
             If True, the collection will be overwritten if it already exists, by default False.
-        **kwargs : dict
+        **kwargs
             Additional keyword arguments containing collection configuration.
 
         Raises
@@ -362,48 +366,13 @@ class FaissVectorDBService(VectorDBService):
         ValueError
             If the provided schema fields configuration is empty.
         """
-        logger.debug("Creating collection: %s, overwrite=%s, kwargs=%s", name, overwrite, kwargs)
-
-        # Preserve original configuration.
-        collection_conf = copy.deepcopy(kwargs)
-
-        auto_id = collection_conf.get("auto_id", False)
-        index_conf = collection_conf.get("index_conf", None)
-        partition_conf = collection_conf.get("partition_conf", None)
-
-        schema_conf = collection_conf.get("schema_conf")
-        schema_fields_conf = schema_conf.pop("schema_fields")
-
-        if not self.has_store_object(name) or overwrite:
-            if overwrite and self.has_store_object(name):
-                self.drop(name)
-
-            if len(schema_fields_conf) == 0:
-                raise ValueError("Cannot create collection as provided empty schema_fields configuration")
-
-            schema_fields = [FieldSchemaEncoder.from_dict(field_conf) for field_conf in schema_fields_conf]
-
-            schema = pymilvus.CollectionSchema(fields=schema_fields, **schema_conf)
-
-            self._client.create_collection_with_schema(collection_name=name,
-                                                       schema=schema,
-                                                       index_params=index_conf,
-                                                       auto_id=auto_id,
-                                                       shards_num=collection_conf.get("shards", 2),
-                                                       consistency_level=collection_conf.get(
-                                                           "consistency_level", "Strong"))
-
-            if partition_conf:
-                timeout = partition_conf.get("timeout", 1.0)
-                # Iterate over each partition configuration
-                for part in partition_conf["partitions"]:
-                    self._client.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
+        raise NotImplementedError("create operation is not supported in FAISS")
 
     def create_from_dataframe(self,
                               name: str,
                               df: typing.Union[cudf.DataFrame, pd.DataFrame],
                               overwrite: bool = False,
-                              **kwargs: dict[str, typing.Any]) -> None:
+                              **kwargs) -> None:
         """
         Create collections in the vector database.
 
@@ -415,37 +384,15 @@ class FaissVectorDBService(VectorDBService):
             The dataframe to create the collection from.
         overwrite : bool, optional
             Whether to overwrite the collection if it already exists. Default is False.
-        **kwargs : dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to the vector database implementation.
         """
 
-        fields = self._build_schema_conf(df=df)
+        raise NotImplementedError("create_from_dataframe operation is not supported in FAISS")
 
-        create_kwargs = {
-            "schema_conf": {
-                "description": "Auto generated schema from DataFrame in Morpheus",
-                "schema_fields": fields,
-            }
-        }
-
-        if (kwargs.get("index_field", None) is not None):
-            # Check to make sure the column name exists in the fields
-            create_kwargs["index_conf"] = {
-                "field_name": kwargs.get("index_field"),  # Default index type
-                "metric_type": "L2",
-                "index_type": "HNSW",
-                "params": {
-                    "M": 8,
-                    "efConstruction": 64,
-                },
-            }
-
-        self.create(name=name, overwrite=overwrite, **create_kwargs)
-
-    def insert(self, name: str, data: list[list] | list[dict], **kwargs: dict[str,
-                                                                              typing.Any]) -> dict[str, typing.Any]:
+    def insert(self, name: str, data: list[list] | list[dict], **kwargs) -> dict[str, typing.Any]:
         """
-        Insert a collection specific data in the Milvus vector database.
+        Insert a collection specific data in the vector database.
 
         Parameters
         ----------
@@ -453,7 +400,7 @@ class FaissVectorDBService(VectorDBService):
             Name of the collection to be inserted.
         data : list[list] | list[dict]
             Data to be inserted in the collection.
-        **kwargs : dict[str, typing.Any]
+        **kwargs
             Additional keyword arguments containing collection configuration.
 
         Returns
@@ -467,15 +414,12 @@ class FaissVectorDBService(VectorDBService):
             If the collection not exists exists.
         """
 
-        resource = self.load_resource(name)
-        return resource.insert(data, **kwargs)
+        raise NotImplementedError("create_from_dataframe operation is not supported in FAISS")
 
-    def insert_dataframe(self,
-                         name: str,
-                         df: typing.Union[cudf.DataFrame, pd.DataFrame],
-                         **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    def insert_dataframe(self, name: str, df: typing.Union[cudf.DataFrame, pd.DataFrame],
+                         **kwargs) -> dict[str, typing.Any]:
         """
-        Converts dataframe to rows and insert to a collection in the Milvus vector database.
+        Converts dataframe to rows and insert to the vector database.
 
         Parameters
         ----------
@@ -483,7 +427,7 @@ class FaissVectorDBService(VectorDBService):
             Name of the collection to be inserted.
         df : typing.Union[cudf.DataFrame, pd.DataFrame]
             Dataframe to be inserted in the collection.
-        **kwargs : dict[str, typing.Any]
+        **kwargs
             Additional keyword arguments containing collection configuration.
 
         Returns
@@ -496,15 +440,11 @@ class FaissVectorDBService(VectorDBService):
         RuntimeError
             If the collection not exists exists.
         """
-        resource = self.load_resource(name)
+        raise NotImplementedError("insert_dataframe operation is not supported in FAISS")
 
-        return resource.insert_dataframe(df=df, **kwargs)
-
-    def query(self, name: str, query: str = None, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def query(self, name: str, query: str = None, **kwargs) -> typing.Any:
         """
-        Query data in a collection in the Milvus vector database.
-
-        This method performs a search operation in the specified collection/partition in the Milvus vector database.
+        Query data in a vector database.
 
         Parameters
         ----------
@@ -512,7 +452,7 @@ class FaissVectorDBService(VectorDBService):
             Name of the collection to search within.
         query : str
             The search query, which can be a filter expression.
-        **kwargs : dict
+        **kwargs
             Additional keyword arguments for the search operation.
 
         Returns
@@ -521,11 +461,9 @@ class FaissVectorDBService(VectorDBService):
             The search result, which can vary depending on the query and options.
         """
 
-        resource = self.load_resource(name)
+        raise NotImplementedError("query operation is not supported in FAISS")
 
-        return resource.query(query, **kwargs)
-
-    async def similarity_search(self, name: str, **kwargs: dict[str, typing.Any]) -> list[dict]:
+    async def similarity_search(self, name: str, **kwargs) -> list[dict]:
         """
         Perform a similarity search within the collection.
 
@@ -533,7 +471,7 @@ class FaissVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection.
-        **kwargs : dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to the vector database implementation.
 
         Returns
@@ -542,11 +480,9 @@ class FaissVectorDBService(VectorDBService):
             Returns a list of dictionaries representing the results of the similarity search.
         """
 
-        resource = self.load_resource(name)
+        raise NotImplementedError("similarity_search operation is not supported in FAISS")
 
-        return resource.similarity_search(**kwargs)
-
-    def update(self, name: str, data: list[typing.Any], **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    def update(self, name: str, data: list[typing.Any], **kwargs) -> dict[str, typing.Any]:
         """
         Update data in the vector database.
 
@@ -556,7 +492,7 @@ class FaissVectorDBService(VectorDBService):
             Name of the collection.
         data : list[typing.Any]
             Data to be updated in the collection.
-        **kwargs : dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to upsert operation.
 
         Returns
@@ -565,14 +501,9 @@ class FaissVectorDBService(VectorDBService):
             Returns result of the updated operation stats.
         """
 
-        if not isinstance(data, list):
-            raise RuntimeError("Data is not of type list.")
+        raise NotImplementedError("update operation is not supported in FAISS")
 
-        resource = self.load_resource(name)
-
-        return resource.update(data=data, **kwargs)
-
-    def delete_by_keys(self, name: str, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def delete_by_keys(self, name: str, keys: int | str | list, **kwargs) -> typing.Any:
         """
         Delete vectors by keys from the collection.
 
@@ -582,7 +513,7 @@ class FaissVectorDBService(VectorDBService):
             Name of the collection.
         keys : int | str | list
             Primary keys to delete vectors.
-        **kwargs :  dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to the vector database implementation.
 
         Returns
@@ -591,11 +522,9 @@ class FaissVectorDBService(VectorDBService):
             Returns result of the given keys that are delete from the collection.
         """
 
-        resource = self.load_resource(name)
+        raise NotImplementedError("delete_by_keys operation is not supported in FAISS")
 
-        return resource.delete_by_keys(keys=keys, **kwargs)
-
-    def delete(self, name: str, expr: str, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    def delete(self, name: str, expr: str, **kwargs) -> dict[str, typing.Any]:
         """
         Delete vectors from the collection using expressions.
 
@@ -605,7 +534,7 @@ class FaissVectorDBService(VectorDBService):
             Name of the collection.
         expr : str
             Delete expression.
-        **kwargs :  dict[str, typing.Any]
+        **kwargs
             Extra keyword arguments specific to the vector database implementation.
 
         Returns
@@ -614,12 +543,9 @@ class FaissVectorDBService(VectorDBService):
             Returns result of the given keys that are delete from the collection.
         """
 
-        resource = self.load_resource(name)
-        result = resource.delete(expr=expr, **kwargs)
+        raise NotImplementedError("delete operation is not supported in FAISS")
 
-        return result
-
-    def retrieve_by_keys(self, name: str, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> list[typing.Any]:
+    def retrieve_by_keys(self, name: str, keys: int | str | list, **kwargs) -> list[typing.Any]:
         """
         Retrieve the inserted vectors using their primary keys from the Collection.
 
@@ -630,7 +556,7 @@ class FaissVectorDBService(VectorDBService):
         keys : int | str | list
             Primary keys to get vectors for. Depending on pk_field type it can be int or str
             or a list of either.
-        **kwargs :  dict[str, typing.Any]
+        **kwargs
             Additional keyword arguments for the retrieval operation.
 
         Returns
@@ -639,13 +565,9 @@ class FaissVectorDBService(VectorDBService):
             Returns result rows of the given keys from the collection.
         """
 
-        resource = self.load_resource(name)
+        raise NotImplementedError("retrieve_by_keys operation is not supported in FAISS")
 
-        result = resource.retrieve_by_keys(keys=keys, **kwargs)
-
-        return result
-
-    def count(self, name: str, **kwargs: dict[str, typing.Any]) -> int:
+    def count(self, name: str, **kwargs) -> int:
         """
         Returns number of rows/entities in the given collection.
 
@@ -653,7 +575,7 @@ class FaissVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection.
-        **kwargs :  dict[str, typing.Any]
+        **kwargs
             Additional keyword arguments for the count operation.
 
         Returns
@@ -661,37 +583,19 @@ class FaissVectorDBService(VectorDBService):
         int
             Returns number of entities in the collection.
         """
-        resource = self.load_resource(name)
 
-        return resource.count(**kwargs)
+        raise NotImplementedError("count operation is not supported in FAISS")
 
-    def drop(self, name: str, **kwargs: dict[str, typing.Any]) -> None:
+    def drop(self, name: str, **kwargs) -> None:
         """
-        Drop a collection, index, or partition in the Milvus vector database.
-
-        This method allows you to drop a collection, an index within a collection,
-        or a specific partition within a collection in the Milvus vector database.
+        Drop a collection.
 
         Parameters
         ----------
         name : str
             Name of the collection, index, or partition to be dropped.
-        **kwargs : dict
+        **kwargs
             Additional keyword arguments for specifying the type and partition name (if applicable).
-
-        Notes on Expected Keyword Arguments:
-        ------------------------------------
-        - 'collection' (str, optional):
-        Specifies the type of collection to drop. Possible values: 'collection' (default), 'index', 'partition'.
-
-        - 'partition_name' (str, optional):
-        Required when dropping a specific partition within a collection. Specifies the partition name to be dropped.
-
-        - 'field_name' (str, optional):
-        Required when dropping an index within a collection. Specifies the field name for which the index is created.
-
-        - 'index_name' (str, optional):
-        Required when dropping an index within a collection. Specifies the name of the index to be dropped.
 
         Raises
         ------
@@ -699,30 +603,9 @@ class FaissVectorDBService(VectorDBService):
             If mandatory arguments are missing or if the provided 'collection' value is invalid.
         """
 
-        logger.debug("Dropping collection: %s, kwargs=%s", name, kwargs)
+        raise NotImplementedError("drop operation is not supported in FAISS")
 
-        if self.has_store_object(name):
-            resource = kwargs.get("resource", "collection")
-            if resource == "collection":
-                self._client.drop_collection(collection_name=name)
-            elif resource == "partition":
-                if "partition_name" not in kwargs:
-                    raise ValueError("Mandatory argument 'partition_name' is required when resource='partition'")
-                partition_name = kwargs["partition_name"]
-                if self._client.has_partition(collection_name=name, partition_name=partition_name):
-                    # Collection need to be released before dropping the partition.
-                    self._client.release_collection(collection_name=name)
-                    self._client.drop_partition(collection_name=name, partition_name=partition_name)
-            elif resource == "index":
-                if "field_name" in kwargs and "index_name" in kwargs:
-                    self._client.drop_index(collection_name=name,
-                                            field_name=kwargs["field_name"],
-                                            index_name=kwargs["index_name"])
-                else:
-                    raise ValueError(
-                        "Mandatory arguments 'field_name' and 'index_name' are required when resource='index'")
-
-    def describe(self, name: str, **kwargs: dict[str, typing.Any]) -> dict:
+    def describe(self, name: str, **kwargs) -> dict:
         """
         Describe the collection in the vector database.
 
@@ -730,8 +613,8 @@ class FaissVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection.
-        **kwargs : dict[str, typing.Any]
-            Additional keyword arguments specific to the Milvus vector database.
+        **kwargs
+            Additional keyword arguments specific to the vector database.
 
         Returns
         -------
@@ -739,9 +622,7 @@ class FaissVectorDBService(VectorDBService):
             Returns collection information.
         """
 
-        resource = self.load_resource(name)
-
-        return resource.describe(**kwargs)
+        raise NotImplementedError("describe operation is not supported in FAISS")
 
     def release_resource(self, name: str) -> None:
         """
@@ -753,13 +634,10 @@ class FaissVectorDBService(VectorDBService):
             Name of the collection to release.
         """
 
-        self._client.release_collection(collection_name=name)
+        raise NotImplementedError("release_resource operation is not supported in FAISS")
 
     def close(self) -> None:
         """
-        Close the connection to the Milvus vector database.
-
-        This method disconnects from the Milvus vector database by removing the connection.
-
+        Close the vector database service and release all resources.
         """
-        self._client.close()
+        raise NotImplementedError("close operation is not supported in FAISS")

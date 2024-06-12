@@ -137,6 +137,31 @@ class OpenAIChatClient(LLMClient):
                                                 api_key=self._parent._api_key.value,
                                                 base_url=self._parent._base_url.value)
 
+    @property
+    def model_name(self):
+        """
+        Get the name of the model associated with this client.
+
+        Returns
+        -------
+        str
+            The name of the model.
+        """
+        return self._model_name
+
+    @property
+    def model_kwargs(self):
+        """
+        Get the keyword args that will be passed to the model when calling generation functions.
+
+        Returns
+        -------
+        dict
+            The keyword arguments dictionary.
+        """
+        # Return a copy to avoid modification of the original
+        return self._model_kwargs.copy()
+
     def get_input_names(self) -> list[str]:
         input_names = [self._prompt_key]
         if self._set_assistant:

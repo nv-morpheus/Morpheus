@@ -13,16 +13,18 @@
 # limitations under the License.
 
 import logging
-import os
+import typing
 
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.llm_service import LLMService
+from morpheus.utils.env_config_value import EnvConfigValue
 
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = (
-    "The `langchain-nvidia-ai-endpoints` package was not found. Install it and other additional dependencies by running the following command:\n"
+    "The `langchain-nvidia-ai-endpoints` package was not found. Install it and other additional dependencies by "
+    "running the following command:"
     "`conda env update --solver=libmamba -n morpheus "
     "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
 
@@ -39,7 +41,7 @@ class NVFoundationLLMClient(LLMClient):
     `NeMoLLMService.get_client` method.
     Parameters
     ----------
-    parent : NeMoLLMService
+    parent : NVFoundationMService
         The parent service for this client.
     model_name : str
         The name of the model to interact with.
@@ -62,8 +64,8 @@ class NVFoundationLLMClient(LLMClient):
 
         chat_kwargs = {
             "model": model_name,
-            "api_key": self._parent._api_key,
-            "base_url": self._parent._base_url,
+            "api_key": self._parent._api_key.value,
+            "base_url": self._parent._base_url.value,
         }
 
         # Remove None values set by the environment in the kwargs
@@ -77,9 +79,11 @@ class NVFoundationLLMClient(LLMClient):
         self._client = ChatNVIDIA(**{**chat_kwargs, **model_kwargs})  # type: ignore
 
     def get_input_names(self) -> list[str]:
-        schema = self._client.get_input_schema()
-
         return [self._prompt_key]
+
+    @property
+    def model_kwargs(self):
+        return self._model_kwargs
 
     def generate(self, **input_dict) -> str:
         """
@@ -111,70 +115,129 @@ class NVFoundationLLMClient(LLMClient):
 
         return (await self.generate_batch_async(inputs=inputs, **input_dict))[0]
 
-    def generate_batch(self, inputs: dict[str, list], **kwargs) -> list[str]:
+    def generate_batch(self,
+                       inputs: dict[str, list],
+                       return_exceptions: typing.Literal[True] = True,
+                       **kwargs) -> list[str] | list[str | BaseException]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
         Parameters
         ----------
         inputs : dict
             Inputs containing prompt data.
+        return_exceptions : bool
+            Whether to return exceptions in the output list or raise them immediately.
+        **kwargs
+            Additional keyword arguments for generate batch.
         """
-        prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
 
+        prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
         final_kwargs = {**self._model_kwargs, **kwargs}
 
-        responses = self._client.generate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
+        responses = []
+        try:
+            generated_responses = self._client.generate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
+            responses = [g[0].text for g in generated_responses.generations]
+        except Exception as e:
+            if return_exceptions:
+                responses.append(e)
+            else:
+                raise e
 
-        return [g[0].text for g in responses.generations]
+        return responses
 
-    async def generate_batch_async(self, inputs: dict[str, list], **kwargs) -> list[str]:
+    @typing.overload
+    async def generate_batch_async(self,
+                                   inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[True] = True) -> list[str | BaseException]:
+        ...
+
+    @typing.overload
+    async def generate_batch_async(self,
+                                   inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[False] = False) -> list[str]:
+        ...
+
+    async def generate_batch_async(self,
+                                   inputs: dict[str, list],
+                                   return_exceptions=True,
+                                   **kwargs) -> list[str] | list[str | BaseException]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
+
         Parameters
         ----------
         inputs : dict
             Inputs containing prompt data.
+        return_exceptions : bool
+            Whether to return exceptions in the output list or raise them immediately.
+        **kwargs
+            Additional keyword arguments for generate batch async.
         """
 
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
-
         final_kwargs = {**self._model_kwargs, **kwargs}
 
-        responses = await self._client.agenerate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
+        responses = []
+        try:
+            generated_responses = await self._client.agenerate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
+            responses = [g[0].text for g in generated_responses.generations]
+        except Exception as e:
+            if return_exceptions:
+                responses.append(e)
+            else:
+                raise e
 
-        return [g[0].text for g in responses.generations]
+        return responses
 
 
 class NVFoundationLLMService(LLMService):
     """
     A service for interacting with NeMo LLM models, this class should be used to create a client for a specific model.
+
     Parameters
     ----------
     api_key : str, optional
-        The API key for the LLM service, by default None. If `None` the API key will be read from the `NGC_API_KEY`
-        environment variable. If neither are present an error will be raised.
-    org_id : str, optional
-        The organization ID for the LLM service, by default None. If `None` the organization ID will be read from the
-        `NGC_ORG_ID` environment variable. This value is only required if the account associated with the `api_key` is
-        a member of multiple NGC organizations.
+        The API key for the LLM service, by default None. If `None` the API key will be read from the `NVIDIA_API_KEY`
+        environment variable. If neither are present an error will be raised, by default None
     base_url : str, optional
-            The api host url, by default None. If `None` the url will be read from the `NVAI_BASE_URL` environment
-            variable. If neither are present `https://api.nvcf.nvidia.com/v2/nvcf` will be used by langchain.
+        The api host url, by default None. If `None` the url will be read from the `NVIDIA_API_BASE` environment
+        variable. If neither are present the NVIDIA default will be used, by default None
     """
 
-    def __init__(self, *, api_key: str = None, base_url: str = None) -> None:
+    class APIKey(EnvConfigValue):
+        _ENV_KEY: str = "NVIDIA_API_KEY"
+
+    class BaseURL(EnvConfigValue):
+        _ENV_KEY: str = "NVIDIA_API_BASE"
+        _ALLOW_NONE: bool = True
+
+    def __init__(self, *, api_key: APIKey | str = None, base_url: BaseURL | str = None, **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
         super().__init__()
 
-        self._api_key = api_key
+        if not isinstance(api_key, NVFoundationLLMService.APIKey):
+            api_key = NVFoundationLLMService.APIKey(api_key)
 
-        # Set the base url from the environment if not provided. Default to None to allow the client to set the url.
-        if base_url is None:
-            self._base_url = os.getenv('NVAI_BASE_URL', None)
-        else:
-            self._base_url = base_url
+        if not isinstance(base_url, NVFoundationLLMService.BaseURL):
+            base_url = NVFoundationLLMService.BaseURL(base_url)
+
+        self._api_key = api_key
+        self._base_url = base_url
+        self._default_model_kwargs = model_kwargs
+
+    def _merge_model_kwargs(self, model_kwargs: dict) -> dict:
+        return {**self._default_model_kwargs, **model_kwargs}
+
+    @property
+    def api_key(self):
+        return self._api_key.value
+
+    @property
+    def base_url(self):
+        return self._base_url.value
 
     def get_client(self, *, model_name: str, **model_kwargs) -> NVFoundationLLMClient:
         """
@@ -187,4 +250,6 @@ class NVFoundationLLMService(LLMService):
             Additional keyword arguments to pass to the model when generating text.
         """
 
-        return NVFoundationLLMClient(self, model_name=model_name, **model_kwargs)
+        final_model_kwargs = self._merge_model_kwargs(model_kwargs)
+
+        return NVFoundationLLMClient(self, model_name=model_name, **final_model_kwargs)
