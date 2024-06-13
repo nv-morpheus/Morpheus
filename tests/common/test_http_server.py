@@ -37,7 +37,7 @@ def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("endpoint", ["/test", "test/", "/a/b/c/d"])
+@pytest.mark.parametrize("endpoints", [("/t1", "/t2", "/t3"), ("test/", "123/", "a1d/"), ("/a", "/a/b", "/a/b/c/d")])
 @pytest.mark.parametrize("port", [8088, 9090])
 @pytest.mark.parametrize("method", ["GET", "POST", "PUT"])
 @pytest.mark.parametrize("use_callback", [True, False])
@@ -49,7 +49,7 @@ def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,
                           (HTTPStatus.NOT_FOUND, MimeTypes.TEXT.value, "NOT FOUND"),
                           (HTTPStatus.INTERNAL_SERVER_ERROR, MimeTypes.TEXT.value, "Unexpected error")])
 def test_simple_request(port: int,
-                        endpoint: str,
+                        endpoints: typing.Tuple[str, str, str],
                         method: str,
                         status: HTTPStatus,
                         content_type: str,
@@ -64,7 +64,6 @@ def test_simple_request(port: int,
 
     parse_fn = make_parse_fn(status=status, content_type=content_type, content=content, on_complete_cb=callback_fn)
 
-    url = make_url(port, endpoint)
     if method == "GET":
         payload = ''
     else:
@@ -75,7 +74,7 @@ def test_simple_request(port: int,
 
     server = None
 
-    def check_server():
+    def check_server(url) -> None:
         assert server.is_running()
 
         response = requests.request(method=method, url=url, data=payload, timeout=5.0)
@@ -85,6 +84,7 @@ def test_simple_request(port: int,
         assert response.text == content
 
         parse_fn.assert_called_once_with(payload)
+        parse_fn.reset_mock()
 
         if use_callback:
             # Since the callback is executed asynchronously, we don't know when it will be called.
@@ -97,19 +97,28 @@ def test_simple_request(port: int,
                 time.sleep(0.1)
 
             callback_fn.assert_called_once_with(False, "")
+            callback_fn.reset_mock()
 
-    http_endpoint = HttpEndpoint(py_parse_fn=parse_fn, url=endpoint, method=method)
+    urls = []
+    http_endpoints = []
+
+    for endpoint in endpoints:
+        urls.append(make_url(port, endpoint))
+        http_endpoints.append(HttpEndpoint(py_parse_fn=parse_fn, url=endpoint, method=method))
+
     if use_context_mgr:
-        with HttpServer(endpoints=[http_endpoint], port=port, num_threads=num_threads) as server:
+        with HttpServer(endpoints=http_endpoints, port=port, num_threads=num_threads) as server:
             assert server.is_running()
-            check_server()
+            for url in urls:
+                check_server(url)
 
     else:
-        server = HttpServer(endpoints=[http_endpoint], port=port, num_threads=num_threads)
+        server = HttpServer(endpoints=http_endpoints, port=port, num_threads=num_threads)
         assert not server.is_running()
         server.start()
 
-        check_server()
+        for url in urls:
+            check_server(url)
 
         server.stop()
 
