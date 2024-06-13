@@ -29,11 +29,11 @@
 #include <pymrc/node.hpp>                    // for PythonSource
 #include <rxcpp/rx.hpp>                      // for subscriber
 
+#include <atomic>  // for atomic
 #include <chrono>   // for duration
 #include <cstddef>  // for size_t
 #include <cstdint>  // for int64_t
 #include <memory>   // for shared_ptr & unique_ptr
-#include <ratio>    // for std::milli
 #include <string>   // for string & to_string
 // IWYU thinks we're using thread::operator<<
 // IWYU pragma: no_include <thread>

@@ -38,8 +38,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>  // for return_value_policy::reference
 // for pathlib.Path -> std::filesystem::path conversions
+#include <pybind11/stl.h>             // IWYU pragma: keep
 #include <pybind11/stl/filesystem.h>  // IWYU pragma: keep
-#include <pybind11/stl.h>
 
 #include <filesystem>  // for std::filesystem::path
 #include <memory>
@@ -153,10 +153,7 @@ PYBIND11_MODULE(common, _module)
         .value("DATAFRAME", FilterSource::DATAFRAME);
 
     py::class_<HttpEndpoint, std::shared_ptr<HttpEndpoint>>(_module, "HttpEndpoint")
-        .def(py::init<>(&HttpEndpointInterfaceProxy::init),
-             py::arg("py_parse_fn"),
-             py::arg("url"),
-             py::arg("method"));
+        .def(py::init<>(&HttpEndpointInterfaceProxy::init), py::arg("py_parse_fn"), py::arg("url"), py::arg("method"));
 
     py::class_<HttpServer, std::shared_ptr<HttpServer>>(_module, "HttpServer")
         .def(py::init<>(&HttpServerInterfaceProxy::init),

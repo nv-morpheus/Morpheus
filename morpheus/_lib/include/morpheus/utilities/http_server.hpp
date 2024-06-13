@@ -127,9 +127,7 @@ class MORPHEUS_EXPORT HttpServer
  */
 struct MORPHEUS_EXPORT HttpEndpoint
 {
-    HttpEndpoint(payload_parse_fn_t payload_parse_fn,
-                 std::string url,
-                 std::string method);
+    HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url, std::string method);
 
     std::shared_ptr<payload_parse_fn_t> m_parser;
     std::string m_url;
@@ -177,9 +175,7 @@ class MORPHEUS_EXPORT Listener : public std::enable_shared_from_this<Listener>
  */
 struct MORPHEUS_EXPORT HttpEndpointInterfaceProxy
 {
-    static std::shared_ptr<HttpEndpoint> init(pybind11::function py_parse_fn,
-                                              std::string m_url,
-                                              std::string m_method);
+    static std::shared_ptr<HttpEndpoint> init(pybind11::function py_parse_fn, std::string m_url, std::string m_method);
 };
 
 /****** HttpServerInterfaceProxy *************************/

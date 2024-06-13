@@ -248,12 +248,8 @@ void HttpServer::start_listener(std::binary_semaphore& listener_semaphore, std::
         << "start_listener must be called from the first thread in "
            "m_listener_threads";
 
-    m_listener = std::make_shared<Listener>(m_io_context,
-                                            m_bind_address,
-                                            m_port,
-                                            m_endpoints,
-                                            m_max_payload_size,
-                                            m_request_timeout);
+    m_listener = std::make_shared<Listener>(
+        m_io_context, m_bind_address, m_port, m_endpoints, m_max_payload_size, m_request_timeout);
     m_listener->run();
 
     for (auto i = 1; i < m_num_threads; ++i)
@@ -378,7 +374,6 @@ std::shared_ptr<HttpEndpoint> HttpEndpointInterfaceProxy::init(pybind11::functio
     return std::make_shared<HttpEndpoint>(std::move(payload_parse_fn), url, method);
 }
 
-
 /****** HttpServerInterfaceProxy *************************/
 
 std::shared_ptr<HttpServer> HttpServerInterfaceProxy::init(std::vector<HttpEndpoint> endpoints,
@@ -429,9 +424,7 @@ void HttpServerInterfaceProxy::exit(HttpServer& self,
     self.stop();
 }
 
-HttpEndpoint::HttpEndpoint(payload_parse_fn_t payload_parse_fn,
-                 std::string url,
-                 std::string method) :
+HttpEndpoint::HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url, std::string method) :
   m_parser{std::make_shared<payload_parse_fn_t>(std::move(payload_parse_fn))},
   m_url{std::move(url)},
   m_method{http::string_to_verb(method)}
@@ -504,9 +497,7 @@ void Listener::on_accept(beast::error_code ec, tcp::socket socket)
     }
     else
     {
-        std::make_shared<Session>(
-            std::move(socket), m_endpoints, m_max_payload_size, m_request_timeout)
-            ->run();
+        std::make_shared<Session>(std::move(socket), m_endpoints, m_max_payload_size, m_request_timeout)->run();
     }
 
     do_accept();

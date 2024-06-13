@@ -19,6 +19,7 @@
 
 #include <boost/beast/http/status.hpp>        // for int_to_status, status
 #include <boost/fiber/channel_op_status.hpp>  // for channel_op_status
+#include <boost/fiber/operations.hpp>         // for sleep_for
 #include <cudf/io/json.hpp>                   // for json_reader_options & read_json
 #include <glog/logging.h>                     // for CHECK & LOG
 
@@ -28,6 +29,7 @@
 #include <thread>     // for std::this_thread::sleep_for
 #include <tuple>      // for make_tuple
 #include <utility>    // for std::move
+#include <vector>     // for vector
 // IWYU thinks we need more boost headers than we need as int_to_status is defined in status.hpp
 // IWYU pragma: no_include <boost/beast/http.hpp>
 
@@ -121,7 +123,8 @@ HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
     };
 
     payload_parse_fn_t live_parser = [this, accept_status, lines](const std::string& payload) {
-        if (!m_server->is_running()) {
+        if (!m_server->is_running())
+        {
             std::string error_msg = "Source server is not running";
             return std::make_tuple(500u, "text/plain", error_msg, nullptr);
         }
@@ -130,7 +133,8 @@ HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
     };
 
     payload_parse_fn_t ready_parser = [this, accept_status, lines](const std::string& payload) {
-        if (!m_server->is_running()) {
+        if (!m_server->is_running())
+        {
             std::string error_msg = "Source server is not running";
             return std::make_tuple(500u, "text/plain", error_msg, nullptr);
         }
@@ -149,12 +153,8 @@ HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
     endpoints.emplace_back(live_parser, live_endpoint, live_method);
     endpoints.emplace_back(ready_parser, ready_endpoint, ready_method);
 
-    m_server = std::make_unique<HttpServer>(std::move(endpoints),
-                                            std::move(bind_address),
-                                            port,
-                                            num_server_threads,
-                                            max_payload_size,
-                                            request_timeout);
+    m_server = std::make_unique<HttpServer>(
+        std::move(endpoints), std::move(bind_address), port, num_server_threads, max_payload_size, request_timeout);
 }
 
 HttpServerSourceStage::subscriber_fn_t HttpServerSourceStage::build()
