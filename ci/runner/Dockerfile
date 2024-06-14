@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.3
-
 # SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -19,7 +17,7 @@
 ARG FROM_IMAGE="rapidsai/ci-conda"
 ARG CUDA_PKG_VER=12-0
 ARG CUDA_SHORT_VER=12.1
-ARG CUDA_VER=12.1.1
+ARG CUDA_VER=12.2.2
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=22.04
 ARG PROJ_NAME=morpheus
