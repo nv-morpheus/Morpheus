@@ -107,21 +107,18 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 
 ## Model Card ++ Bias Subcard
 
-### What is the language balance of the model validation data?
-* English (cloudtrail logs): 100%
-
 ### Individuals from the following adversely impacted (protected classes) groups participate in model design and testing.
-* None of the Above. 
+* None of the Above.
 
 ### Describe measures taken to mitigate against unwanted bias.
-* None of the Above. 
+* None of the Above.
 
 ## Model Card ++ Explainability Subcard
 
 ### Name example applications and use cases for this model.
 * The model is primarily designed for testing purposes and serves as a small pretrained model specifically used to evaluate and validate the DFP pipeline. Its application is focused on assessing the effectiveness of the pipeline rather than being intended for broader use cases or specific applications beyond testing.
 
-### Fill in the blank for the model technique.
+### Intended Users.
 * This model is designed for developers seeking to test the DFP pipeline with a small pretrained model trained on a synthetic dataset.
 
 ### Name who is intended to benefit from this model.
@@ -131,14 +128,14 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 * The model calculates an anomaly score for each input based on the reconstruction loss obtained from the trained Autoencoder. This score represents the level of anomaly detected in the input data. Higher scores indicate a higher likelihood of anomalous behavior.
 * The model provides the reconstruction loss of each feature to facilitate further testing and debugging of the pipeline.
 
-### List the steps explaining how this model works.
+### Describe how this model works.
 * The model works by training on baseline behaviors and subsequently detecting deviations from the established baseline, triggering alerts accordingly.
 * [Training notebook](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/training-tuning-scripts/dfp-models/hammah-20211017.ipynb)
 
 ### List the technical limitations of the model.
 * The model expects cloudtrail logs with specific features that match the training dataset. Data lacking the required features or requiring a different feature set may not be compatible with the model.
 
-### Has this been verified to have met prescribed quality standards?
+### Has this been verified to have met prescribed NVIDIA quality standards?
 * Yes
 
 ### What performance metrics were used to affirm the model's performance?
@@ -170,12 +167,7 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 ### Name explicit model and/or dataset restrictions.
 * The Principle of least privilege (PoLP) is applied limiting access for dataset generation and model development.
 
-### Are there access restrictions to systems, model, and data?
-* No
-
-
 ## Model Card ++ Privacy Subcard
-
 
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
 * None

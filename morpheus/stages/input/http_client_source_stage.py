@@ -68,8 +68,8 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
         Number of seconds to wait for the server to send data before giving up and raising an exception.
     max_errors : int, default 10
         Maximum number of consequtive errors to receive before raising an error.
-    accept_status_codes : typing.List[HTTPStatus], optional,  multiple = True
-        List of status codes to accept. If the response status code is not in this tuple, then the request will be
+    accept_status_codes : typing.Iterable[int], optional,  multiple = True
+        List of status codes to accept. If the response status code is not in this collection, then the request will be
         considered an error
     max_retries : int, default 10
         Maximum number of times to retry the request fails, receives a redirect or returns a status in the
@@ -80,6 +80,9 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
         to contain a JSON objects separated by end-of-line characters.
     stop_after : int, default 0
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
+    payload_to_df_fn : callable, default None
+        A callable that takes the HTTP payload bytes as the first argument and the `lines` parameter is passed in as
+        the second argument and returns a cudf.DataFrame. If unset cudf.read_json is used.
     **request_kwargs : dict
         Additional arguments to pass to the `requests.request` function.
     """
@@ -94,10 +97,11 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  error_sleep_time: float = 0.1,
                  respect_retry_after_header: bool = True,
                  request_timeout_secs: int = 30,
-                 accept_status_codes: typing.List[HTTPStatus] = (HTTPStatus.OK, ),
+                 accept_status_codes: typing.Iterable[int] = (HTTPStatus.OK, ),
                  max_retries: int = 10,
                  lines: bool = False,
                  stop_after: int = 0,
+                 payload_to_df_fn: typing.Callable[[bytes, bool], cudf.DataFrame] = None,
                  **request_kwargs):
         super().__init__(config)
         self._url = http_utils.prepare_url(url)
@@ -135,6 +139,7 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._stop_after = stop_after
         self._lines = lines
+        self._payload_to_df_fn = payload_to_df_fn
         self._requst_kwargs = request_kwargs
 
     @property
@@ -154,10 +159,11 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
         Returns a DataFrame parsed from the response payload. If the response payload is empty, then `None` is returned.
         """
         payload = response.content
-        if len(payload) > 2:  # work-around for https://github.com/rapidsai/cudf/issues/5712
-            return cudf.read_json(payload, lines=self._lines, engine='cudf')
 
-        return None
+        if self._payload_to_df_fn is not None:
+            return self._payload_to_df_fn(payload, self._lines)
+
+        return cudf.read_json(payload, lines=self._lines, engine='cudf')
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         # Running counter of the number of messages emitted by this source
