@@ -17,7 +17,7 @@
 ARG FROM_IMAGE="rapidsai/ci-conda"
 ARG CUDA_PKG_VER=12-0
 ARG CUDA_SHORT_VER=12.1
-ARG CUDA_VER=12.2.2
+ARG CUDA_VER=12.1.1
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=22.04
 ARG PROJ_NAME=morpheus
@@ -42,6 +42,12 @@ FROM base as build
 ARG CUDA_SHORT_VER
 ARG PROJ_NAME
 ARG PYTHON_VER
+
+RUN <<EOF
+rapids-mamba-retry install -y \
+  "rapids-dependency-file-generator>=1.13.*"
+conda clean -aipty
+EOF
 
 RUN rapids-dependency-file-generator \
       --config /tmp/conda/dependencies.yaml \
