@@ -49,6 +49,7 @@
 # pybind11
 { "include": [ "<pybind11/detail/common.h>", "private", "<pybind11/pytypes.h>", "public" ] },
 { "include": [ "<pybind11/cast.h>", "private", "<pybind11/pybind11.h>", "public" ] },
+{ "include": [ "<pybind11/attr.h>", "private", "<pybind11/pybind11.h>", "public" ] },
 
 # rxcpp
 # Hide includes that are exported by <rxcpp/rx.hpp>

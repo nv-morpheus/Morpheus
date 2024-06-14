@@ -203,7 +203,10 @@ PYBIND11_MODULE(llm, _module)
              py::overload_cast<const std::string&, mrc::pymrc::JSONValues&&>(&LLMContext::set_output),
              py::arg("output_name"),
              py::arg("output"))
-        .def("push", &LLMContext::push, py::arg("name"), py::arg("inputs"));
+        .def("push", &LLMContext::push, py::arg("name"), py::arg("inputs"))
+        .def("set_row_mask", &LLMContext::set_row_mask, py::arg("row_mask"))
+        .def("has_row_mask", &LLMContext::has_row_mask)
+        .def("get_row_mask", &LLMContext::get_row_mask);
 
     py::class_<LLMNodeBase, PyLLMNodeBase<>, std::shared_ptr<LLMNodeBase>>(_module, "LLMNodeBase")
         .def(py::init_alias<>())

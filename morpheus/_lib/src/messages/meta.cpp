@@ -72,6 +72,11 @@ TableInfo MessageMeta::get_info() const
     return this->m_data->get_info();
 }
 
+py::object MessageMeta::get_py_object() const
+{
+    return this->m_data->get_py_object();
+}
+
 TableInfo MessageMeta::get_info(const std::string& col_name) const
 {
     auto full_info = this->m_data->get_info();

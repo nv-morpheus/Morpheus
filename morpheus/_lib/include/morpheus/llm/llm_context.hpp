@@ -29,12 +29,20 @@
 #include <string>
 #include <vector>
 
+// IWYU mistakenly believes that we could use the forward declares of LLMTask and ControlMessage in fwd.hpp, however an
+// an incomplete type decl cannot be used in a shared_ptr, and in the case of LLMTask in a struct that is used in a
+// shared_ptr.
+// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
+
 namespace morpheus::llm {
 
 struct LLMContextState
 {
     LLMTask task;
     std::shared_ptr<ControlMessage> message;
+
+    // Optional row mask to be applied to the Dataframe by the extractor and task handler to filter rows
+    std::vector<bool> row_mask;
 };
 
 /**
@@ -64,6 +72,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      * @param parent parent context
      * @param name new context name
      * @param inputs input mappings for new context
+     * @param row_mask row mask for new context
      */
     LLMContext(std::shared_ptr<LLMContext> parent, std::string name, input_mappings_t inputs);
 
@@ -189,6 +198,30 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      * @return const mrc::pymrc::JSONValues&
      */
     const mrc::pymrc::JSONValues& view_outputs() const;
+
+    /**
+     * @brief Set the row mask indicating which rows of the dataframe are being used to populate the inputs.
+     * This should only be called by the first node in an LLM Engine, typically the Extractor node.
+     *
+     * @param row_mask vector of bools
+     */
+    void set_row_mask(std::vector<bool>&& row_mask);
+
+    /**
+     * @brief Check if the row mask has been set.
+     *
+     * @return true if row mask has been set
+     * @return false if row mask has not been set
+     */
+    bool has_row_mask() const;
+
+    /**
+     * @brief Get the row mask indicating which rows of the dataframe the outputs should be written to.
+     * This should only be called by the task handler.
+     *
+     * @return vector of bools
+     */
+    const std::vector<bool>& get_row_mask() const;
 
   private:
     input_mappings_t::const_iterator find_input(const std::string& node_name, bool throw_if_not_found = true) const;

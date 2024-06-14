@@ -1,9 +1,11 @@
 from __future__ import annotations
 import morpheus._lib.cudf_helpers
 import typing
+from cudf.core.dtypes import StructDtype
 import cudf
 
 __all__ = [
+    "StructDtype",
     "cudf"
 ]
 

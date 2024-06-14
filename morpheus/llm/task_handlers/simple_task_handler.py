@@ -14,6 +14,9 @@
 
 import logging
 
+from cudf.core.column.column import ColumnBase
+from cudf.core.column.column import as_column
+
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMTaskHandler
 from morpheus.messages import ControlMessage
@@ -48,9 +51,22 @@ class SimpleTaskHandler(LLMTaskHandler):
 
         input_dict = context.get_inputs()
 
+        # If the input rows were filtered with a row mask, we must re-apply the mask so the output is written to the
+        # correct rows in the dataframe
+        if context.has_row_mask():
+            row_selector = as_column(context.get_row_mask())
+        else:
+            row_selector = None
+
         with context.message().payload().mutable_dataframe() as df:
             # Write the values to the dataframe
+
             for key, value in input_dict.items():
-                df[key] = value
+                if row_selector is None:
+                    df[key] = value
+                else:
+                    # Work-around for array types refer cudf issues #15233 & #11944
+                    values = as_column(value)
+                    ColumnBase.__setitem__(df[key]._column, row_selector, values)
 
         return [context.message()]

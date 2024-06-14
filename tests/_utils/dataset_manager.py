@@ -215,6 +215,9 @@ class DatasetManager:
         else:
             val_to_check = cls._value_as_pandas(val_to_check, assert_is_pandas=False)
 
+        if (isinstance(val_to_check, (pd.DataFrame, pd.Series))):
+            return df_to_check.equals(val_to_check)
+
         bool_df = df_to_check == val_to_check
 
         return bool(bool_df.all(axis=None))
