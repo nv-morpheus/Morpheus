@@ -84,6 +84,7 @@ def fixture_is_sliceable(index_type: typing.Literal['normal', 'skip', 'dup', 'do
 
     return index_type not in ("dup", "updown")
 
+
 def test_count(df: DataFrameType):
 
     meta = MessageMeta(df)
@@ -137,16 +138,27 @@ def test_update_dataframe(df: DataFrameType):
 
     # new struct column
     col_new_name = "bestsellers"
-    col_new_struct = [{"book": "A Tale of Two Cities", "year": 1859},
-               {"book": "The Lord of the Rings", "year": 1954},
-               {"book": "The Little Prince", "year": 1943},
-               {"book": "The Hobbit", "year": 1937},
-               {"book": "And Then There Were None", "year": 1939},
-               {"book": "Dream of the Red Chamber", "year": 1791},
-               {"book": "The Lion, the Witch and the Wardrobe", "year": 1950},
-               {"book": "She: A History of Adventure", "year": 1887},
-               {"book": "Le Petit Larousse", "year": 1905},
-               {"book": "Harry Potter and the Philosopher's Stone", "year": 1997}]
+    col_new_struct = [{
+        "book": "A Tale of Two Cities", "year": 1859
+    }, {
+        "book": "The Lord of the Rings", "year": 1954
+    }, {
+        "book": "The Little Prince", "year": 1943
+    }, {
+        "book": "The Hobbit", "year": 1937
+    }, {
+        "book": "And Then There Were None", "year": 1939
+    }, {
+        "book": "Dream of the Red Chamber", "year": 1791
+    }, {
+        "book": "The Lion, the Witch and the Wardrobe", "year": 1950
+    }, {
+        "book": "She: A History of Adventure", "year": 1887
+    }, {
+        "book": "Le Petit Larousse", "year": 1905
+    }, {
+        "book": "Harry Potter and the Philosopher's Stone", "year": 1997
+    }]
 
     # if row_count is more than 10 just replicate the struct column
     if row_count > len(col_new_struct):
@@ -163,7 +175,7 @@ def test_update_dataframe(df: DataFrameType):
     assert cdf[col_new_name].isin(col_new_struct).all()
 
     # new int column in range 1-row_count
-    col_new_int = list(range(1, row_count+1))
+    col_new_int = list(range(1, row_count + 1))
 
     # replace the struct column with int column
     with meta.mutable_dataframe() as df_:
@@ -198,7 +210,7 @@ def test_update_dataframe(df: DataFrameType):
     cdf = meta.copy_dataframe()
     # (fixme) Michael: Why is the following assert failing? we cannot
     # append rows to df_ but can append to cdf.
-    #assert cdf.shape[0] == row_count + 1
+    assert cdf.shape[0] == row_count + 1
 
     # (fixme) remove the duplicated row if the previous step was successful
 
@@ -221,7 +233,7 @@ def test_update_dataframe(df: DataFrameType):
     assert cdf.iloc[row_idx, col_idx] == old_value
 
     # (fixme): this entire block doesn't work. Michael, expected behavior?
-    """
+
     # replace the contents of the first row with the last row
     with meta.mutable_dataframe() as df_:
         df_.iloc[0] = last_row
@@ -233,7 +245,7 @@ def test_update_dataframe(df: DataFrameType):
         df_.iloc[0] = first_row
     cdf = meta.copy_dataframe()
     DatasetManager.assert_df_equal(cdf.iloc[0], first_row, assert_msg="Should be identical")
-    """
+
 
 @pytest.mark.use_cpp
 def test_update_dataframe_cpp(df: DataFrameType):
@@ -250,16 +262,27 @@ def test_update_dataframe_cpp(df: DataFrameType):
 
     # new struct column
     col_new_name = "bestsellers"
-    col_new_struct = [{"book": "A Tale of Two Cities", "year": 1859},
-               {"book": "The Lord of the Rings", "year": 1954},
-               {"book": "The Little Prince", "year": 1943},
-               {"book": "The Hobbit", "year": 1937},
-               {"book": "And Then There Were None", "year": 1939},
-               {"book": "Dream of the Red Chamber", "year": 1791},
-               {"book": "The Lion, the Witch and the Wardrobe", "year": 1950},
-               {"book": "She: A History of Adventure", "year": 1887},
-               {"book": "Le Petit Larousse", "year": 1905},
-               {"book": "Harry Potter and the Philosopher's Stone", "year": 1997}]
+    col_new_struct = [{
+        "book": "A Tale of Two Cities", "year": 1859
+    }, {
+        "book": "The Lord of the Rings", "year": 1954
+    }, {
+        "book": "The Little Prince", "year": 1943
+    }, {
+        "book": "The Hobbit", "year": 1937
+    }, {
+        "book": "And Then There Were None", "year": 1939
+    }, {
+        "book": "Dream of the Red Chamber", "year": 1791
+    }, {
+        "book": "The Lion, the Witch and the Wardrobe", "year": 1950
+    }, {
+        "book": "She: A History of Adventure", "year": 1887
+    }, {
+        "book": "Le Petit Larousse", "year": 1905
+    }, {
+        "book": "Harry Potter and the Philosopher's Stone", "year": 1997
+    }]
 
     # if row_count is more than 10 just replicate the struct column
     if row_count > len(col_new_struct):
@@ -270,7 +293,7 @@ def test_update_dataframe_cpp(df: DataFrameType):
     # add a struct column in cpp
     meta.set_data(col_new_name, col_new_struct)
     assert col_new_name in meta.get_column_names()
-    assert meta.get_data()[col_new_name].isin(col_new_struct).all()
+    assert meta.get_data()[col_new_name].isin(col_new_struct).all()  # pylint: disable=unsubscriptable-object
 
     # swap the contents of the first and last books
     first_book = col_new_struct[0]
@@ -279,21 +302,21 @@ def test_update_dataframe_cpp(df: DataFrameType):
     col_new_struct[-1] = first_book
     meta.set_data(col_new_name, col_new_struct)
     assert col_new_name in meta.get_column_names()
-    assert meta.get_data()[col_new_name].isin(col_new_struct).all()
+    assert meta.get_data()[col_new_name].isin(col_new_struct).all()  # pylint: disable=unsubscriptable-object
 
     # new int column in range 1-row_count
     col_new_int_name = "col_new_int"
-    col_new_int = list(range(1, row_count+1))
+    col_new_int = list(range(1, row_count + 1))
     # add new int column in cpp
     meta.set_data(col_new_int_name, col_new_int)
     assert col_new_name in meta.get_column_names()
-    assert meta.get_data()[col_new_int_name].isin(col_new_int).all()
+    assert meta.get_data()[col_new_int_name].isin(col_new_int).all()  # pylint: disable=unsubscriptable-object
 
     # multiply values in col_new_int by 2
     col_new_int = [x * 2 for x in col_new_int]
     # update new int column in cpp
     meta.set_data(col_new_int_name, col_new_int)
-    assert meta.get_data()[col_new_int_name].isin(col_new_int).all()
+    assert meta.get_data()[col_new_int_name].isin(col_new_int).all()  # pylint: disable=unsubscriptable-object
 
     # (fixme) how do you remove columns and update individual cells?
 

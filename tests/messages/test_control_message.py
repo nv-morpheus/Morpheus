@@ -23,7 +23,6 @@ import pytest
 
 from _utils.dataset_manager import DatasetManager
 from morpheus import messages
-# pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.messages import TensorMemory
 
 # pylint: disable=unsupported-membership-test
