@@ -22,10 +22,12 @@ find_package(doca REQUIRED)
 add_library(morpheus_doca
   # Keep these sorted!
   src/doca_context.cpp
+  src/doca_convert_kernel.cu
+  src/doca_convert.cpp
   src/doca_rx_pipe.cpp
   src/doca_rx_queue.cpp
   src/doca_semaphore.cpp
-  src/doca_source_kernels.cu
+  src/doca_source_kernel.cu
   src/doca_source.cpp
   src/rte_context.cpp
 )

@@ -14,8 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 import cupy as cp
 import pytest
+import typing_utils
 
 import cudf
 
@@ -31,7 +34,7 @@ from morpheus.stages.postprocess.add_classifications_stage import AddClassificat
 
 
 @pytest.fixture(name="config")
-def config_fixture(config: Config):
+def config_fixture(config: Config, use_cpp: bool):  # pylint: disable=unused-argument
     config.class_labels = ['frogs', 'lizards', 'toads']
     yield config
 
@@ -43,10 +46,9 @@ def test_constructor(config: Config):
     assert stage._idx2label == {0: 'frogs', 1: 'lizards', 2: 'toads'}
     assert stage.name == "add-class"
 
-    # Just ensure that we get a valid non-empty tuple
-    accepted_types = stage.accepted_types()
-    assert isinstance(accepted_types, tuple)
-    assert len(accepted_types) > 0
+    accepted_union = typing.Union[stage.accepted_types()]
+    assert typing_utils.issubtype(MultiResponseMessage, accepted_union)
+    assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
 def test_constructor_explicit_labels(config: Config):

@@ -82,6 +82,10 @@ fi
 export CMAKE_BUILD_ALL_FEATURES="${_FLAGS[@]}"
 unset _FLAGS
 
+if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
+    export CMAKE_BUILD_ALL_FEATURES="${CMAKE_BUILD_ALL_FEATURES} -DMORPHEUS_SUPPORT_DOCA=ON"
+fi
+
 export FETCH_STATUS=0
 
 print_env_vars

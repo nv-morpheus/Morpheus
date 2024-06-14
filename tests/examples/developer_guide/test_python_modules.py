@@ -38,7 +38,7 @@ EXAMPLES_DIR = os.path.join(TEST_DIRS.examples_dir, "developer_guide", "7_python
     os.path.join(EXAMPLES_DIR, "my_compound_module_consumer_stage.py"),
     os.path.join(EXAMPLES_DIR, "my_test_module_consumer_stage.py")
 ])
-def test_pipeline(config: Config, import_mod: list[types.ModuleType]):
+def test_pipeline(config: Config, import_mod: list[types.ModuleType], morpheus_log_level: int):
     my_compound_module_consumer_stage = import_mod[-2]
     my_test_module_consumer_stage = import_mod[-1]
 
@@ -72,7 +72,7 @@ def test_pipeline(config: Config, import_mod: list[types.ModuleType]):
 
     pipeline.add_stage(my_test_module_consumer_stage.MyPassthroughModuleWrapper(config))
     pipeline.add_stage(my_compound_module_consumer_stage.MyCompoundOpModuleWrapper(config))
-    pipeline.add_stage(MonitorStage(config))
+    pipeline.add_stage(MonitorStage(config, log_level=morpheus_log_level))
     comp_stage = pipeline.add_stage(CompareDataFrameStage(config, expected_df))
 
     pipeline.run()

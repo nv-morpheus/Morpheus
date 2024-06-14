@@ -159,9 +159,12 @@ class MORPHEUS_EXPORT TritonInferenceClientSession : public IInferenceClientSess
     std::vector<TritonInOut> m_model_inputs;
     std::vector<TritonInOut> m_model_outputs;
     std::shared_ptr<ITritonClient> m_client;
+    bool m_force_convert_inputs;
 
   public:
-    TritonInferenceClientSession(std::shared_ptr<ITritonClient> client, std::string model_name);
+    TritonInferenceClientSession(std::shared_ptr<ITritonClient> client,
+                                 std::string model_name,
+                                 bool force_convert_inputs);
 
     /**
       @brief Gets the inference input mappings for Triton
@@ -184,9 +187,10 @@ class MORPHEUS_EXPORT TritonInferenceClient : public IInferenceClient
   private:
     std::shared_ptr<ITritonClient> m_client;
     std::string m_model_name;
+    bool m_force_convert_inputs;
 
   public:
-    TritonInferenceClient(std::unique_ptr<ITritonClient>&& client, std::string model_name);
+    TritonInferenceClient(std::unique_ptr<ITritonClient>&& client, std::string model_name, bool force_convert_inputs);
 
     /**
       @brief Creates a TritonInferenceClientSession

@@ -20,17 +20,23 @@ import time
 import typing
 from functools import wraps
 
-import pandas as pd
-
 import cudf
 
+from morpheus.io.utils import cudf_string_cols_exceed_max_bytes
+from morpheus.io.utils import truncate_string_cols_by_bytes
 from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus.service.vdb.vector_db_service import VectorDBService
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = "MilvusVectorDBResourceService requires the milvus and pymilvus packages to be installed."
+
+# Milvus has a max string length in bytes of 65,535. Multi-byte characters like "ñ" will have a string length of 1, the
+# byte length encoded as UTF-8 will be 2
+# https://milvus.io/docs/limitations.md#Length-of-a-string
+MAX_STRING_LENGTH_BYTES = 65_535
 
 try:
     import pymilvus
@@ -222,9 +228,11 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         Name of the resource.
     client : MilvusClient
         An instance of the MilvusClient for interaction with the Milvus Vector Database.
+    truncate_long_strings : bool, optional
+        When true, truncate strings values that are longer than the max length of the field
     """
 
-    def __init__(self, name: str, client: "MilvusClient") -> None:
+    def __init__(self, name: str, client: "MilvusClient", truncate_long_strings: bool = False) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
@@ -239,12 +247,23 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         self._vector_field = None
         self._fillna_fields_dict = {}
 
+        # Mapping of field name to max length for string fields
+        self._fields_max_length: dict[str, int] = {}
+
         for field in self._fields:
             if field.dtype == pymilvus.DataType.FLOAT_VECTOR:
                 self._vector_field = field.name
             else:
+                # Intentionally excluding pymilvus.DataType.STRING, in our current version it isn't supported, and in
+                # some database systems string types don't have a max length.
+                if field.dtype == pymilvus.DataType.VARCHAR:
+                    max_length = field.params.get('max_length')
+                    if max_length is not None:
+                        self._fields_max_length[field.name] = max_length
                 if not field.auto_id:
                     self._fillna_fields_dict[field.name] = field.dtype
+
+        self._truncate_long_strings = truncate_long_strings
 
         self._collection.load()
 
@@ -275,13 +294,13 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         return self._insert_result_to_dict(result=result)
 
-    def insert_dataframe(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs: dict[str, typing.Any]) -> dict:
+    def insert_dataframe(self, df: DataFrameType, **kwargs: dict[str, typing.Any]) -> dict:
         """
         Insert a dataframe entires into the vector database.
 
         Parameters
         ----------
-        df : typing.Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             Dataframe to be inserted into the collection.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
@@ -291,10 +310,6 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         dict
             Returns response content as a dictionary.
         """
-
-        if isinstance(df, cudf.DataFrame):
-            df = df.to_pandas()
-
         # Ensure that there are no None values in the DataFrame entries.
         for field_name, dtype in self._fillna_fields_dict.items():
             if dtype in (pymilvus.DataType.VARCHAR, pymilvus.DataType.STRING):
@@ -311,11 +326,24 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
             else:
                 logger.info("Skipped checking 'None' in the field: %s, with datatype: %s", field_name, dtype)
 
+        needs_truncate = self._truncate_long_strings
+        if needs_truncate and isinstance(df, cudf.DataFrame):
+            # Cudf specific optimization, we can avoid a costly call to truncate_string_cols_by_bytes if all of the
+            # string columns are already below the max length
+            needs_truncate = cudf_string_cols_exceed_max_bytes(df, self._fields_max_length)
+
         # From the schema, this is the list of columns we need, excluding any auto_id columns
         column_names = [field.name for field in self._fields if not field.auto_id]
 
+        collection_df = df[column_names]
+        if isinstance(collection_df, cudf.DataFrame):
+            collection_df = collection_df.to_pandas()
+
+        if needs_truncate:
+            truncate_string_cols_by_bytes(collection_df, self._fields_max_length, warn_on_truncate=True)
+
         # Note: dataframe columns has to be in the order of collection schema fields.s
-        result = self._collection.insert(data=df[column_names], **kwargs)
+        result = self._collection.insert(data=collection_df, **kwargs)
         self._collection.flush()
 
         return self._insert_result_to_dict(result=result)
@@ -575,6 +603,8 @@ class MilvusVectorDBService(VectorDBService):
         The port number for connecting to the Milvus server.
     alias : str, optional
         Alias for the Milvus connection, by default "default".
+    truncate_long_strings : bool, optional
+        When true, truncate strings values that are longer than the max length of the field
     **kwargs : dict
         Additional keyword arguments specific to the Milvus connection configuration.
     """
@@ -589,13 +619,17 @@ class MilvusVectorDBService(VectorDBService):
                  password: str = "",
                  db_name: str = "",
                  token: str = "",
+                 truncate_long_strings: bool = False,
                  **kwargs: dict[str, typing.Any]):
 
+        self._truncate_long_strings = truncate_long_strings
         self._client = MilvusClient(uri=uri, user=user, password=password, db_name=db_name, token=token, **kwargs)
 
     def load_resource(self, name: str, **kwargs: dict[str, typing.Any]) -> MilvusVectorDBResourceService:
-
-        return MilvusVectorDBResourceService(name=name, client=self._client, **kwargs)
+        return MilvusVectorDBResourceService(name=name,
+                                             client=self._client,
+                                             truncate_long_strings=self._truncate_long_strings,
+                                             **kwargs)
 
     def has_store_object(self, name: str) -> bool:
         """
@@ -688,7 +722,7 @@ class MilvusVectorDBService(VectorDBService):
                 for part in partition_conf["partitions"]:
                     self._client.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
 
-    def _build_schema_conf(self, df: typing.Union[cudf.DataFrame, pd.DataFrame]) -> list[dict]:
+    def _build_schema_conf(self, df: DataFrameType) -> list[dict]:
         fields = []
 
         # Always add a primary key
@@ -708,7 +742,7 @@ class MilvusVectorDBService(VectorDBService):
             }
 
             if (field_dict["dtype"] == pymilvus.DataType.VARCHAR):
-                field_dict["max_length"] = 65_535
+                field_dict["max_length"] = MAX_STRING_LENGTH_BYTES
 
             if (field_dict["dtype"] == pymilvus.DataType.FLOAT_VECTOR
                     or field_dict["dtype"] == pymilvus.DataType.BINARY_VECTOR):
@@ -726,7 +760,7 @@ class MilvusVectorDBService(VectorDBService):
 
     def create_from_dataframe(self,
                               name: str,
-                              df: typing.Union[cudf.DataFrame, pd.DataFrame],
+                              df: DataFrameType,
                               overwrite: bool = False,
                               **kwargs: dict[str, typing.Any]) -> None:
         """
@@ -736,7 +770,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection.
-        df : Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             The dataframe to create the collection from.
         overwrite : bool, optional
             Whether to overwrite the collection if it already exists. Default is False.
@@ -797,10 +831,7 @@ class MilvusVectorDBService(VectorDBService):
         return resource.insert(data, **kwargs)
 
     @with_collection_lock
-    def insert_dataframe(self,
-                         name: str,
-                         df: typing.Union[cudf.DataFrame, pd.DataFrame],
-                         **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    def insert_dataframe(self, name: str, df: DataFrameType, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
         """
         Converts dataframe to rows and insert to a collection in the Milvus vector database.
 
@@ -808,7 +839,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection to be inserted.
-        df : typing.Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             Dataframe to be inserted in the collection.
         **kwargs : dict[str, typing.Any]
             Additional keyword arguments containing collection configuration.

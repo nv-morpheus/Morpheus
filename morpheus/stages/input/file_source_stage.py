@@ -57,8 +57,11 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
     repeat : int, default = 1, min = 1
         Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
     filter_null : bool, default = True
-        Whether to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
-        the line with processing. Setting this to True is recommended.
+        Whether to filter rows with null `filter_null_columns` columns. Null values in source data  can cause issues
+        down the line with processing. Setting this to True is recommended.
+    filter_null_columns : list[str], default = None
+        Column or columns to filter null values from. Ignored when `filter_null` is False. If None, and `filter_null`
+        is `True`, this will default to `["data"]`
     parser_kwargs : dict, default = {}
         Extra options to pass to the file parser.
     """
@@ -70,6 +73,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
                  file_type: FileTypes = FileTypes.Auto,
                  repeat: int = 1,
                  filter_null: bool = True,
+                 filter_null_columns: list[str] = None,
                  parser_kwargs: dict = None):
 
         super().__init__(c)
@@ -79,6 +83,12 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         self._filename = filename
         self._file_type = file_type
         self._filter_null = filter_null
+
+        if filter_null_columns is None or len(filter_null_columns) == 0:
+            filter_null_columns = ["data"]
+
+        self._filter_null_columns = filter_null_columns
+
         self._parser_kwargs = parser_kwargs or {}
 
         self._input_count = None
@@ -114,6 +124,8 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
                                            self.unique_name,
                                            self._filename,
                                            self._repeat_count,
+                                           self._filter_null,
+                                           self._filter_null_columns,
                                            self._parser_kwargs)
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())
@@ -126,6 +138,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
             self._filename,
             self._file_type,
             filter_nulls=self._filter_null,
+            filter_null_columns=self._filter_null_columns,
             parser_kwargs=self._parser_kwargs,
             df_type="cudf",
         )

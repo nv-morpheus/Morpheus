@@ -103,7 +103,7 @@ def run():
     help="Timeout in seconds for RSS feed requests.")
 @click.option("--source_type",
               multiple=True,
-              type=click.Choice(['rss', 'filesystem'], case_sensitive=False),
+              type=click.Choice(['rss', 'filesystem', 'doca'], case_sensitive=False),
               default=[],
               show_default=True,
               help="The type of source to use. Can specify multiple times for different source types.")
@@ -128,7 +128,7 @@ def run():
 @click.option(
     "--vector_db_resource_name",
     type=str,
-    default="VDBUploadExample",
+    default="RSS",
     help="The identifier of the resource on which operations are to be performed in the vector database.",
 )
 @click.option(
