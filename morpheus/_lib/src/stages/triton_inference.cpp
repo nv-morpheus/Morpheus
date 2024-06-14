@@ -198,14 +198,6 @@ triton::client::Error HttpTritonClient::async_infer(triton::client::InferenceSer
         inference_outputs.emplace_back(inference_output_ptr);
     }
 
-    // triton::client::InferResult* result;
-
-    // auto status = this->get_client().Infer(&result, options, inference_input_ptrs, inference_output_ptrs);
-
-    // callback(result);
-
-    // return status;
-
     // TODO(cwharris): either fix tests or make this ENV-flagged, as AsyncInfer gives different results.
 
     return this->get_client().AsyncInfer(
