@@ -35,6 +35,12 @@ SHELL ["/bin/bash",  "-c"]
 # Create conda environment
 COPY ./dependencies.yaml /tmp/conda/
 
+RUN <<EOF
+rapids-mamba-retry install -y \
+  "rapids-dependency-file-generator>=1.13.*"
+conda clean -aipty
+EOF
+
 # ============ build ==================
 FROM base as build
 
@@ -42,12 +48,6 @@ FROM base as build
 ARG CUDA_SHORT_VER
 ARG PROJ_NAME
 ARG PYTHON_VER
-
-RUN <<EOF
-rapids-mamba-retry install -y \
-  "rapids-dependency-file-generator>=1.13.*"
-conda clean -aipty
-EOF
 
 RUN rapids-dependency-file-generator \
       --config /tmp/conda/dependencies.yaml \
