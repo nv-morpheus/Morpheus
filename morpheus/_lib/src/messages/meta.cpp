@@ -140,11 +140,6 @@ void MessageMeta::set_data(const std::vector<std::string>& column_names, const s
     }
 }
 
-py::object MessageMeta::get_py_object() const
-{
-    return this->m_data->get_py_object();
-}
-
 MutableTableInfo MessageMeta::get_mutable_info() const
 {
     return this->m_data->get_mutable_info();

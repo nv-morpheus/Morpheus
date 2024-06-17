@@ -264,33 +264,50 @@ std::vector<std::string> MultiMessageInterfaceProxy::get_meta_column_names(const
 
 pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self)
 {
-    return MultiMessageInterfaceProxy::get_meta(self, std::vector<std::string>{});
+    // Need to release the GIL before calling `get_meta()`
+    pybind11::gil_scoped_release no_gil;
+
+    // Get the column and convert to cudf
+    auto info = self.get_meta();
+
+    // Convert to a python datatable. Automatically gets the GIL
+    return CudfHelper::table_from_table_info(info);
 }
 
 pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, std::string col_name)
 {
-    return MultiMessageInterfaceProxy::get_meta(self)[col_name.c_str()];
+    TableInfo info;
+
+    {
+        // Need to release the GIL before calling `get_meta()`
+        pybind11::gil_scoped_release no_gil;
+
+        // Get the column and convert to cudf
+        info = self.get_meta();
+    }
+
+    auto py_table = CudfHelper::table_from_table_info(info);
+
+    // Now convert it to a series by selecting only the column
+    return py_table[col_name.c_str()];
 }
 
 pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, std::vector<std::string> columns)
 {
-    pybind11::object df = self.meta->get_py_object();
+    // Need to release the GIL before calling `get_meta()`
+    pybind11::gil_scoped_release no_gil;
 
-    auto row_indexer = pybind11::slice(
-        pybind11::int_(self.mess_offset), pybind11::int_(self.mess_offset + self.mess_count), pybind11::none());
+    // Get the column and convert to cudf
+    auto info = self.get_meta(columns);
 
-    if (columns.empty())
-    {
-        return df.attr("iloc")[row_indexer];
-    }
-
-    return df.attr("iloc")[row_indexer][py::cast(columns)];
+    // Convert to a python datatable. Automatically gets the GIL
+    return CudfHelper::table_from_table_info(info);
 }
 
 pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, pybind11::none none_obj)
 {
     // Just offload to the overload without columns. This overload is needed to match the python interface
-    return MultiMessageInterfaceProxy::get_meta(self, std::vector<std::string>{});
+    return MultiMessageInterfaceProxy::get_meta(self);
 }
 
 pybind11::object MultiMessageInterfaceProxy::get_meta_list(MultiMessage& self, pybind11::object col_name)

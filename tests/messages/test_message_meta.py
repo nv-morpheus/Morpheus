@@ -124,7 +124,8 @@ def test_using_ctx_outside_with_block(df: DataFrameType):
     pytest.raises(AttributeError, operator.setitem, ctx, 'col', 5)
 
 
-def test_update_dataframe(df: DataFrameType):
+@pytest.mark.use_cudf
+def test_update_dataframe_via_mutable_dataframe(df: DataFrameType):
     """
     Change the DF in various ways pass to cpp, read back and check if
     the updates present
@@ -174,6 +175,9 @@ def test_update_dataframe(df: DataFrameType):
     assert col_new_name in cdf.columns
     assert cdf[col_new_name].isin(col_new_struct).all()
 
+    # Ensure that the data matches the original data
+    DatasetManager.assert_df_equal(cdf[col_new_name], col_new_struct, assert_msg="Should be identical")
+
     # new int column in range 1-row_count
     col_new_int = list(range(1, row_count + 1))
 
@@ -189,66 +193,39 @@ def test_update_dataframe(df: DataFrameType):
     cdf = meta.copy_dataframe()
     assert cdf[col_new_name].isin(col_new_struct).all()
 
+    # Update the struct column with a new value
+    new_struct = {"book": "The Great Gatsby", "year": 1925}
+
+    # save the contents of the struct cell
+    old_struct = cdf[col_new_name].iloc[0]
+
+    # change the contents of a struct cell
+    with meta.mutable_dataframe() as df_:
+        df_[col_new_name].iloc[0] = new_struct
+    cdf = meta.copy_dataframe()
+    assert cdf[col_new_name].iloc[0] == new_struct
+
+    # Update just the year of the struct column
+    new_year = 2022
+    with meta.mutable_dataframe() as df_:
+        df_[col_new_name].struct.field("year").iloc[0] = new_year
+    cdf = meta.copy_dataframe()
+    assert cdf[col_new_name].iloc[0] == {**new_struct, **{"year": new_year}}
+
+    # restore the contents of the struct cell
+    with meta.mutable_dataframe() as df_:
+        df_[col_new_name].iloc[0] = old_struct
+    cdf = meta.copy_dataframe()
+    assert cdf[col_new_name].iloc[0] == old_struct
+
     # delete the new column from the DF
     with meta.mutable_dataframe() as df_:
         df_.drop(col_new_name, axis=1, inplace=True)
     cdf = meta.copy_dataframe()
     assert col_new_name not in cdf.columns
 
-    # add the new column back
-    with meta.mutable_dataframe() as df_:
-        df_.insert(0, col_new_name, col_new_struct)
-    cdf = meta.copy_dataframe()
-    assert col_new_name in cdf.columns
-    assert cdf[col_new_name].isin(col_new_struct).all()
 
-    # duplicate a row
-    first_row = df.iloc[0]
-    last_row = df.iloc[-1]
-    with meta.mutable_dataframe() as df_:
-        df_ = df_.append(first_row)
-    cdf = meta.copy_dataframe()
-    # (fixme) Michael: Why is the following assert failing? we cannot
-    # append rows to df_ but can append to cdf.
-    assert cdf.shape[0] == row_count + 1
-
-    # (fixme) remove the duplicated row if the previous step was successful
-
-    # change the contents of a cell
-    # (fixme): Michael: I am not able to change the contents of a struct cell.
-    # I am getting "ValueError: Unsupported dtype", expected behavior?
-    row_idx = 0
-    col_idx = 1
-    old_value = df.iloc[row_idx, col_idx]
-    question_of_life = 42
-    with meta.mutable_dataframe() as df_:
-        df_.iloc[row_idx, col_idx] = question_of_life
-    cdf = meta.copy_dataframe()
-    assert cdf.iloc[row_idx, col_idx] == question_of_life
-
-    # restore the contents of the first cell
-    with meta.mutable_dataframe() as df_:
-        df_.iloc[row_idx, col_idx] = old_value
-    cdf = meta.copy_dataframe()
-    assert cdf.iloc[row_idx, col_idx] == old_value
-
-    # (fixme): this entire block doesn't work. Michael, expected behavior?
-
-    # replace the contents of the first row with the last row
-    with meta.mutable_dataframe() as df_:
-        df_.iloc[0] = last_row
-    cdf = meta.copy_dataframe()
-    DatasetManager.assert_df_equal(cdf.iloc[0], last_row, assert_msg="Should be identical")
-
-    # restore the contents of the first row
-    with meta.mutable_dataframe() as df_:
-        df_.iloc[0] = first_row
-    cdf = meta.copy_dataframe()
-    DatasetManager.assert_df_equal(cdf.iloc[0], first_row, assert_msg="Should be identical")
-
-
-@pytest.mark.use_cpp
-def test_update_dataframe_cpp(df: DataFrameType):
+def test_update_dataframe(df: DataFrameType):
     """
     Change the DF in various ways via cpp, read back and check if
     the updates present
@@ -317,8 +294,6 @@ def test_update_dataframe_cpp(df: DataFrameType):
     # update new int column in cpp
     meta.set_data(col_new_int_name, col_new_int)
     assert meta.get_data()[col_new_int_name].isin(col_new_int).all()  # pylint: disable=unsubscriptable-object
-
-    # (fixme) how do you remove columns and update individual cells?
 
 
 @pytest.mark.use_cpp
