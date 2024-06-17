@@ -154,7 +154,6 @@ ENV MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}
 
 # Copy all of the optional dependency scripts
 COPY ${MORPHEUS_ROOT_HOST}/docker/optional_deps docker/optional_deps
-COPY ${MORPHEUS_ROOT_HOST}/.devcontainer/docker/optional_deps/doca.sh docker/optional_deps/doca.sh
 
 # Install DOCA (If requested)
 RUN --mount=type=cache,id=doca,target=/tmp/doca,sharing=locked \
