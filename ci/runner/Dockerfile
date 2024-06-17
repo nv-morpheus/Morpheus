@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.3
-
 # SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -36,6 +34,12 @@ SHELL ["/bin/bash",  "-c"]
 
 # Create conda environment
 COPY ./dependencies.yaml /tmp/conda/
+
+RUN <<EOF
+rapids-mamba-retry install -y \
+  "rapids-dependency-file-generator>=1.13.*"
+conda clean -aipty
+EOF
 
 # ============ build ==================
 FROM base as build
