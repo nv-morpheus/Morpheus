@@ -70,5 +70,6 @@ dependencies:
   - langchain==0.1.9
   - milvus==2.3.5
   - nemollm
+  - numexpr
   - pymilvus==2.3.6
 name: examples_cuda-121_arch-x86_64

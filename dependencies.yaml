@@ -183,6 +183,7 @@ dependencies:
           - mrc=24.06
           - ninja=1.11
           - nlohmann_json=3.11
+          - openai=1.13
           - pkg-config=0.29 # for mrc cmake
           - protobuf=4.24
           - pybind11-stubgen=0.10.5
@@ -274,7 +275,10 @@ dependencies:
           - pip:
             - databricks-cli < 0.100
             - databricks-connect
+            - google-search-results==2.4
+            - langchain==0.1.9
             - milvus==2.3.5 # update to match pymilvus when available
+            - numexpr
             - pymilvus==2.3.6
 
   test_python_morpheus:
