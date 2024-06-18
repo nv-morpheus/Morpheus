@@ -38,14 +38,13 @@
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/types.hpp>               // for type_id, data_type
 #include <cudf/unary.hpp>               // for cast
-#include <glog/logging.h>
-#include <mrc/cuda/common.hpp>       // for __check_cuda_errors, MRC_CHECK_CUDA
-#include <mrc/segment/builder.hpp>   // for Builder
-#include <pybind11/gil.h>            // for gil_scoped_acquire
-#include <pybind11/pybind11.h>       // for object_api::operator(), operator""_a, arg
-#include <pybind11/pytypes.h>        // for object, str, object_api, generic_item, literals
-#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
-#include <rmm/device_buffer.hpp>     // for device_buffer
+#include <mrc/cuda/common.hpp>          // for __check_cuda_errors, MRC_CHECK_CUDA
+#include <mrc/segment/builder.hpp>      // for Builder
+#include <pybind11/gil.h>               // for gil_scoped_acquire
+#include <pybind11/pybind11.h>          // for object_api::operator(), operator""_a, arg
+#include <pybind11/pytypes.h>           // for object, str, object_api, generic_item, literals
+#include <rmm/cuda_stream_view.hpp>     // for cuda_stream_per_thread
+#include <rmm/device_buffer.hpp>        // for device_buffer
 
 #include <algorithm>    // for find
 #include <cstddef>      // for size_t
