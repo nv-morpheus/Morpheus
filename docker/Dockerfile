@@ -188,6 +188,8 @@ ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 
+ENV GIT_CLONE_PROTECTION_ACTIVE=false
+
 RUN --mount=type=cache,id=apt,target=/var/cache/apt \
     apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
