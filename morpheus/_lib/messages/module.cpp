@@ -94,7 +94,7 @@ void do_register_tuple_index()
     if constexpr (!std::is_same_v<left_t, right_t> && std::is_base_of_v<right_t, left_t>)
     {
         // Print the registration
-        std::cout << "[Type Registration]: Registering: " << typeid(left_t).name() << " -> " << typeid(right_t).name();
+        VLOG(20) << "[Type Registration]: Registering: " << typeid(left_t).name() << " -> " << typeid(right_t).name();
         reg_converter<left_t, right_t>();
     }
     else
