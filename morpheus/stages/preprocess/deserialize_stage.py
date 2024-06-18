@@ -113,7 +113,7 @@ class DeserializeStage(MultiMessageStage):
 
     def supports_cpp_node(self):
         # Enable support by default
-        return True
+        return False
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(self._message_type)
