@@ -18,7 +18,6 @@ import typing
 
 import mrc
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -63,8 +62,7 @@ class DeserializeStage(MultiMessageStage):
                  c: Config,
                  *,
                  ensure_sliceable_index: bool = True,
-                 message_type: typing.Union[typing.Literal[MultiMessage],
-                                            typing.Literal[ControlMessage]] = MultiMessage,
+                 message_type: typing.Union[MultiMessage, ControlMessage] = MultiMessage,
                  task_type: str = None,
                  task_payload: dict = None):
         super().__init__(c)
@@ -113,13 +111,14 @@ class DeserializeStage(MultiMessageStage):
 
     def supports_cpp_node(self):
         # Enable support by default
-        return False
+        return True
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(self._message_type)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if (self.supports_cpp_node()):
+            import morpheus._lib.stages as _stages
             out_node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
             builder.make_edge(input_node, out_node)
         else:
