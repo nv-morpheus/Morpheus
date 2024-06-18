@@ -54,6 +54,7 @@ dependencies:
 - ninja=1.11
 - nlohmann_json=3.11
 - nodejs=18.*
+- numexpr
 - numpydoc=1.5
 - nvtabular=23.08.00
 - openai=1.13
@@ -102,7 +103,6 @@ dependencies:
   - google-search-results==2.4
   - langchain==0.1.9
   - milvus==2.3.5
-  - numexpr
   - pymilvus==2.3.6
   - pytest-kafka==0.6.0
 name: dev_cuda-121_arch-x86_64

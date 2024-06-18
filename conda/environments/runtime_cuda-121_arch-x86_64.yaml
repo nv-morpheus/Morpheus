@@ -19,6 +19,7 @@ dependencies:
 - grpcio=1.59
 - mlflow>=2.10.0,<3
 - networkx=2.8.8
+- numexpr
 - numpydoc=1.5
 - nvtabular=23.08.00
 - pip
@@ -43,6 +44,5 @@ dependencies:
   - google-search-results==2.4
   - langchain==0.1.9
   - milvus==2.3.5
-  - numexpr
   - pymilvus==2.3.6
 name: runtime_cuda-121_arch-x86_64
