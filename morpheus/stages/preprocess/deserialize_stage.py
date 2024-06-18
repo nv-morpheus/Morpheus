@@ -79,10 +79,10 @@ class DeserializeStage(MultiMessageStage):
         self._task_type = task_type
         self._task_payload = task_payload
 
-        if (self._message_type == ControlMessage):
+        if (self._message_type is ControlMessage):
             if ((self._task_type is None) != (self._task_payload is None)):
                 raise ValueError("Both `task_type` and `task_payload` must be specified if either is specified.")
-        elif (self._message_type == MultiMessage):
+        elif (self._message_type is MultiMessage):
             if (self._task_type is not None or self._task_payload is not None):
                 raise ValueError("Cannot specify `task_type` or `task_payload` for non-control messages.")
         else:
@@ -117,9 +117,21 @@ class DeserializeStage(MultiMessageStage):
         schema.output_schema.set_type(self._message_type)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        if (self.supports_cpp_node()):
+        if (self._build_cpp_node()):
             import morpheus._lib.stages as _stages
-            out_node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
+            if (self._message_type is ControlMessage):
+                out_node = _stages.DeserializeControlMessageStage(builder,
+                                                                  self.unique_name,
+                                                                  batch_size=self._batch_size,
+                                                                  ensure_sliceable_index=self._ensure_sliceable_index,
+                                                                  task_type=self._task_type,
+                                                                  task_payload=self._task_payload)
+            else:
+                out_node = _stages.DeserializeMultiMessageStage(builder,
+                                                                self.unique_name,
+                                                                batch_size=self._batch_size,
+                                                                ensure_sliceable_index=self._ensure_sliceable_index)
+
             builder.make_edge(input_node, out_node)
         else:
             module_loader = DeserializeLoaderFactory.get_instance(module_name=f"deserialize_{self.unique_name}",
