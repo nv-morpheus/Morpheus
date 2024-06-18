@@ -62,7 +62,7 @@ class DeserializeStage(MultiMessageStage):
                  c: Config,
                  *,
                  ensure_sliceable_index: bool = True,
-                 message_type: typing.Union[MultiMessage, ControlMessage] = MultiMessage,
+                 message_type: type[MultiMessage] | type[ControlMessage] = MultiMessage,
                  task_type: str = None,
                  task_payload: dict = None):
         super().__init__(c)
@@ -90,7 +90,7 @@ class DeserializeStage(MultiMessageStage):
 
         self._module_config = {
             "ensure_sliceable_index": self._ensure_sliceable_index,
-            "message_type": "MultiMessage" if self._message_type == MultiMessage else "ControlMessage",
+            "message_type": "MultiMessage" if self._message_type is MultiMessage else "ControlMessage",
             "task_type": self._task_type,
             "task_payload": self._task_payload,
             "batch_size": self._batch_size,
