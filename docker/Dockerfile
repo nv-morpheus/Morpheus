@@ -18,7 +18,7 @@
 # ============== LEGEND =================================================== #
 #                         [conda_bld_morpheus]
 #                               /
-# [base] -> [conda_env] -> [base_extended] -> [runtime]
+# [base] -> [conda_env] -> [base_extended] -> [runtime_conda_create] -> [runtime]
 #                               \
 #                         [conda_env_dev] -> [development] -> [development_pydbg]
 #
@@ -218,23 +218,14 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     cd ${MORPHEUS_ROOT_HOST} &&\
     MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld ./ci/conda/recipes/run_conda_build.sh morpheus
 
-# ============ Stage: runtime ============
-# Setup container for runtime environment
-FROM base_extended as runtime
-
+# ============ Stage: runtime_conda_create ============
+# Setup conda for the runtime environment
+FROM base_extended as runtime_conda_create
 ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 
-# Only copy specific files/folders over that are necessary for runtime
-COPY "${MORPHEUS_ROOT_HOST}/conda/environments/*.yaml" "./conda/environments/"
-COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
-COPY "${MORPHEUS_ROOT_HOST}/docs" "./docs"
-COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
-COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
-COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
-COPY "${MORPHEUS_ROOT_HOST}/*.md" "./"
-COPY "${MORPHEUS_ROOT_HOST}/LICENSE" "./"
+COPY "${MORPHEUS_ROOT_HOST}/conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml" "./conda/environments/"
 
 # Mount Morpheus conda package build in `conda_bld_morpheus`
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
@@ -254,12 +245,30 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
         -c nvidia/label/dev \
         -c pytorch \
         -c defaults \
-        morpheus &&\
+        morpheus && \
+    /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file \
+        conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml
 
-    /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml && \
-    conda clean -afy && \
+# ============ Stage: runtime ============
+# Setup container for runtime environment
+FROM runtime_conda_create as runtime
+
+ARG MORPHEUS_ROOT_HOST
+
+# Only copy specific files/folders over that are necessary for runtime
+COPY "${MORPHEUS_ROOT_HOST}/conda/environments/*.yaml" "./conda/environments/"
+COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
+COPY "${MORPHEUS_ROOT_HOST}/docs" "./docs"
+COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
+COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
+COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
+COPY "${MORPHEUS_ROOT_HOST}/*.md" "./"
+COPY "${MORPHEUS_ROOT_HOST}/LICENSE" "./"
+
+# Ensure the conda-bld directory is indexed even if empty
+RUN /opt/conda/bin/conda clean -afy && \
     # Ensure the conda-bld directory is indexed even if empty
-    conda index  /opt/conda/conda-bld
+    /opt/conda/bin/conda index /opt/conda/conda-bld
 
 # Use morpheus by default
 CMD [ "morpheus" ]
@@ -291,7 +300,7 @@ RUN source activate morpheus && \
     npm cache clean --force && \
     conda clean -afy  && \
     # Ensure the conda-bld directory is indexed even if empty
-    conda index  /opt/conda/conda-bld
+    conda index /opt/conda/conda-bld
 
 # Setup git to allow other users to access /workspace. Requires git 2.35.3 or
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for
