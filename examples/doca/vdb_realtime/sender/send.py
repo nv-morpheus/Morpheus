@@ -25,6 +25,8 @@ from scapy.all import send
 
 
 def main():
+    data = []
+
     os.chdir("dataset")
     for file in glob.glob("*.txt"):
         with open(file, 'r', encoding='utf-8') as fp:
@@ -32,10 +34,20 @@ def main():
                 content = fp.read(1024)
                 if not content:
                     break
-                pkt = IP(src="192.168.2.28", dst="192.168.2.27") / UDP(sport=RandShort(),
-                                                                       dport=5001) / Raw(load=content.encode('utf-8'))
-                print(pkt)
-                send(pkt, iface="enp202s0f0np0")
+
+                data.append(content)
+    
+    iter_num = 0
+    while True:
+        if iter_num % 100 == 0:
+            print(f"Starting iteration {iter_num}")
+        
+        packets = [IP(src="192.168.2.28", dst="192.168.2.27") / UDP(sport=RandShort(),
+                                                                    dport=5001) / Raw(load=content.encode('utf-8')) for content in data]
+
+        send(packets, iface="enp202s0f0np0")
+        
+        iter_num += 1
 
 
 if __name__ == "__main__":

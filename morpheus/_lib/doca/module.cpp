@@ -21,6 +21,7 @@
 #include <mrc/segment/object.hpp>
 #include <pybind11/attr.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
+#include <pybind11/chrono.h> // IWYU pragma: keep
 #include <pymrc/utils.hpp>
 
 #include <memory>
@@ -48,7 +49,13 @@ PYBIND11_MODULE(doca, m)
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<DocaConvertStage>>>(
         m, "DocaConvertStage", py::multiple_inheritance())
-        .def(py::init<>(&DocaConvertStageInterfaceProxy::init), py::arg("builder"), py::arg("name"));
+        .def(py::init<>(&DocaConvertStageInterfaceProxy::init), 
+             py::arg("builder"), 
+             py::arg("name"),
+             py::arg("max_time_delta") = DEFAULT_MAX_TIME_DELTA,
+             py::arg("sizes_buffer_size") = DEFAULT_SIZES_BUFFER_SIZE,
+             py::arg("header_buffer_size") = DEFAULT_HEADER_BUFFER_SIZE,
+             py::arg("payload_buffer_size") = DEFAULT_PAYLOAD_BUFFER_SIZE);
 }
 
 }  // namespace morpheus

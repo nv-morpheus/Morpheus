@@ -17,12 +17,12 @@
 
 #pragma once
 
+
 #include <cstdint>
-#include <memory>
 #include <string>
 #include <type_traits>
-#include <vector>
 
+// TODO: move this to the morpheus::doca namespace
 uint32_t const PACKETS_PER_THREAD   = 16;
 uint32_t const THREADS_PER_BLOCK    = 512;
 uint32_t const PACKETS_PER_BLOCK    = PACKETS_PER_THREAD * THREADS_PER_BLOCK;

@@ -18,16 +18,25 @@
 #pragma once
 
 #include "morpheus/doca/common.hpp"
+#include "morpheus/doca/packet_data_buffer.hpp"
 #include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/raw_packet.hpp"
 
+#include <cudf/table/table.hpp>
 #include <mrc/segment/builder.hpp>
 #include <pymrc/node.hpp>
 
+#include <chrono>
 #include <memory>
+#include <vector>
 
 namespace morpheus {
+
+constexpr std::chrono::milliseconds DEFAULT_MAX_TIME_DELTA =  std::chrono::seconds(3);
+constexpr std::size_t DEFAULT_SIZES_BUFFER_SIZE = 1024 * 1024 * 3;
+constexpr std::size_t DEFAULT_HEADER_BUFFER_SIZE = 1024 * 1024 * 10;
+constexpr std::size_t DEFAULT_PAYLOAD_BUFFER_SIZE = 1024 * 1024 * 1024;
 
 namespace doca {
 
@@ -35,6 +44,7 @@ struct DocaContext;
 struct DocaRxQueue;
 struct DocaRxPipe;
 struct DocaSemaphore;
+
 }  // namespace doca
 
 /**
@@ -96,15 +106,19 @@ class MORPHEUS_EXPORT DocaConvertStage
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    DocaConvertStage();
+    DocaConvertStage(std::chrono::milliseconds max_time_delta =  DEFAULT_MAX_TIME_DELTA,
+                     std::size_t sizes_buffer_size = DEFAULT_SIZES_BUFFER_SIZE,
+                     std::size_t header_buffer_size = DEFAULT_HEADER_BUFFER_SIZE,
+                     std::size_t payload_buffer_size = DEFAULT_PAYLOAD_BUFFER_SIZE);
     ~DocaConvertStage() override;
 
   private:
+    subscribe_fn_t build();
     /**
      * Called every time a message is passed to this stage
      */
-    source_type_t on_data(sink_type_t x);
-    source_type_t on_raw_packet_message(sink_type_t x);
+    //source_type_t on_data(sink_type_t x);
+    void on_raw_packet_message(rxcpp::subscriber<source_type_t>& output, sink_type_t x);
 
     cudaStream_t m_stream;
     rmm::cuda_stream_view m_stream_cpp;
@@ -112,6 +126,17 @@ class MORPHEUS_EXPORT DocaConvertStage
     uint32_t* m_fixed_pld_size_list_cpu;
     uint32_t* m_fixed_hdr_size_list;
     uint32_t* m_fixed_hdr_size_list_cpu;
+
+    std::chrono::milliseconds m_max_time_delta;
+    std::size_t m_sizes_buffer_size;
+    std::size_t m_header_buffer_size;
+    std::size_t m_payload_buffer_size;
+
+    std::chrono::time_point<std::chrono::steady_clock> m_last_emit;
+    std::unique_ptr<morpheus::doca::packet_data_buffer> m_header_buffer{nullptr};
+    std::unique_ptr<morpheus::doca::packet_data_buffer> m_header_sizes_buffer{nullptr};
+    std::unique_ptr<morpheus::doca::packet_data_buffer> m_payload_buffer{nullptr};
+    std::unique_ptr<morpheus::doca::packet_data_buffer> m_payload_sizes_buffer{nullptr};
 };
 
 /****** DocaConvertStageInterfaceProxy***********************/
@@ -124,7 +149,11 @@ struct MORPHEUS_EXPORT DocaConvertStageInterfaceProxy
      * @brief Create and initialize a DocaConvertStage, and return the result.
      */
     static std::shared_ptr<mrc::segment::Object<DocaConvertStage>> init(mrc::segment::Builder& builder,
-                                                                        std::string const& name);
+                                                                        std::string const& name,
+                                                                        std::chrono::milliseconds max_time_delta =  DEFAULT_MAX_TIME_DELTA,
+                                                                        std::size_t sizes_buffer_size = DEFAULT_SIZES_BUFFER_SIZE,
+                                                                        std::size_t header_buffer_size = DEFAULT_HEADER_BUFFER_SIZE,
+                                                                        std::size_t payload_buffer_size = DEFAULT_PAYLOAD_BUFFER_SIZE);
 };
 
 }  // namespace morpheus
