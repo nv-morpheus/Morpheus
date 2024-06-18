@@ -298,9 +298,7 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
 RUN source activate morpheus && \
     npm install -g camouflage-server@0.15 && \
     npm cache clean --force && \
-    conda clean -afy  && \
-    # Ensure the conda-bld directory is indexed even if empty
-    conda index /opt/conda/conda-bld
+    conda clean -afy
 
 # Setup git to allow other users to access /workspace. Requires git 2.35.3 or
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for
