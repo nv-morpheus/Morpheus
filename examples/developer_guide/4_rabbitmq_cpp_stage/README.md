@@ -55,7 +55,7 @@ In a second terminal from the root of the Morpheus repo execute:
 python examples/developer_guide/4_rabbitmq_cpp_stage/src/read_simple.py
 ```
 
-This will read from a RabbitMQ exchange named 'logs', and write the results to `./.tmp/results.json`.
+This will read from a RabbitMQ exchange named 'logs', and write the results to `results.json`.
 
 If no exchange named 'logs' exists in RabbitMQ it will be created.
 
