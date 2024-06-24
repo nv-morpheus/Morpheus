@@ -26,7 +26,7 @@ def run_cli():
 
     from llm.cli import cli
 
-    cli(obj={}, auto_envvar_prefix='MORPHEUS_LLM', show_default=True, prog_name="morpheus_llm")
+    cli(obj={}, auto_envvar_prefix='MORPHEUS_LLM', show_default=True)
 
 
 if __name__ == '__main__':

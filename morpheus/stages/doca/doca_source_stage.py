@@ -20,7 +20,6 @@ from morpheus.cli import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import RawPacketMessage
-from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -28,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("from-doca-source", modes=[PipelineModes.NLP])
-class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
+class DocaSourceStage(SingleOutputSource):
     """
     A source stage used to receive raw packet data from a ConnectX-6 Dx NIC.
 
