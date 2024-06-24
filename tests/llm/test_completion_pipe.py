@@ -133,7 +133,7 @@ def test_completion_pipe_integration_nemo(config: Config, countries: list[str], 
 @pytest.mark.usefixtures("openai")
 @pytest.mark.usefixtures("openai_api_key")
 def test_completion_pipe_integration_openai(config: Config, countries: list[str], capital_responses: list[str]):
-    llm_client = NeMoLLMService().get_client(model_name="gpt-3.5-turbo")
+    llm_client = OpenAIChatService().get_client(model_name="gpt-3.5-turbo")
 
     results = _run_pipeline(config, llm_client, countries=countries, capital_responses=capital_responses)
     assert results['diff_cols'] == 0
