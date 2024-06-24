@@ -29,14 +29,17 @@ def _array_to_list(array):
     """
     if isinstance(array, np.ndarray):
         return _array_to_list(array.tolist())
-    elif isinstance(array, list):
+
+    if isinstance(array, list):
         return [_array_to_list(item) for item in array]
-    elif isinstance(array, dict):
+
+    if isinstance(array, dict):
         return {key: _array_to_list(value) for key, value in array.items()}
-    elif isinstance(array, tuple):
+
+    if isinstance(array, tuple):
         return tuple(_array_to_list(item) for item in array)
-    else:
-        return array
+
+    return array
 
 
 class ExtracterNode(LLMNodeBase):
