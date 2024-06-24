@@ -26,7 +26,7 @@ IMPORT_ERROR_MESSAGE = (
     "The `langchain-nvidia-ai-endpoints` package was not found. Install it and other additional dependencies by "
     "running the following command:"
     "`conda env update --solver=libmamba -n morpheus "
-    "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
+    "--file conda/environments/examples_cuda-121_arch-x86_64.yaml`")
 
 try:
     from langchain_core.prompt_values import StringPromptValue
