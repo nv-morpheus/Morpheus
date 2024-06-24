@@ -265,7 +265,6 @@ COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
 COPY "${MORPHEUS_ROOT_HOST}/*.md" "./"
 COPY "${MORPHEUS_ROOT_HOST}/LICENSE" "./"
 
-# Ensure the conda-bld directory is indexed even if empty
 RUN /opt/conda/bin/conda clean -afy && \
     # Ensure the conda-bld directory is indexed even if empty
     /opt/conda/bin/conda index /opt/conda/conda-bld
