@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import inspect
+import os
 from abc import ABC
 from unittest import mock
 
@@ -31,11 +32,16 @@ def test_is_abstract(cls: ABC):
     assert inspect.isabstract(cls)
 
 
-@pytest.mark.parametrize(
-    "service_name, expected_cls",
-    [("nemo", NeMoLLMService), ("openai", OpenAIChatService),
-     pytest.param("nvfoundation", NVFoundationLLMService, marks=pytest.mark.xfail(reason="missing dependency"))])
-def test_create(service_name: str, expected_cls: type):
+@pytest.mark.usefixtures("restore_environ")
+@pytest.mark.parametrize("service_name, expected_cls, env_values",
+                         [("nemo", NeMoLLMService, {}), ("openai", OpenAIChatService, {
+                             'OPENAI_API_KEY': 'test_api'
+                         }),
+                          pytest.param("nvfoundation", NVFoundationLLMService, {'NVIDIA_API_KEY': 'test_api'})])
+def test_create(service_name: str, expected_cls: type, env_values: dict[str, str]):
+    if env_values:
+        os.environ.update(env_values)
+
     service = LLMService.create(service_name)
     assert isinstance(service, expected_cls)
 
