@@ -36,6 +36,7 @@
 #include <algorithm>  // for min
 #include <coroutine>
 #include <cstddef>
+#include <functional>  // for function
 #include <map>
 #include <memory>
 #include <mutex>
