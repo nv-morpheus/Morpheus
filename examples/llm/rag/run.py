@@ -80,6 +80,7 @@ def run():
     "--question",
     type=str,
     multiple=True,
+    default=["What are some new attacks discovered in the cyber security industry?"] * 5,
     help="The question to answer with the RAG pipeline. Specify multiple times to answer multiple questions at once.",
 )
 def pipeline(**kwargs):
