@@ -35,6 +35,12 @@ class LangChainAgentNode(LLMNodeBase):
     ----------
     agent_executor : AgentExecutor
         The agent executor to use to execute.
+
+    replace_exceptions : bool, optional
+        When `True`, replaces exceptions with `replace_exceptions_value` from the output.
+
+    replace_exceptions_value : str, optional
+        The value to replace exceptions with when `replace_exceptions` is `True`, ignored otherwise.
     """
 
     def __init__(self,

@@ -22,6 +22,15 @@ from morpheus.llm.services.llm_service import LLMClient
 
 
 class LangchainLLMClientWrapper(LLM):
+    """
+    Wrapper for the LLMClient to be used in the LLMEngine.
+
+    Parameters
+    ----------
+    client : LLMClient
+        The client to use to run the LLM.
+    """
+
     # Disable the unused-argument warning, we want to keep the same function signature as the parent, however in CI
     # langchain is not installed which triggers a false positive warning.
     # pylint: disable=unused-argument
