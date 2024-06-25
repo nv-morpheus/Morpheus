@@ -179,8 +179,6 @@ def _run_minibert(*,
 @pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
 def test_minibert_no_trunc(config: Config, tmp_path: str, message_type: type, morpheus_log_level: int):
 
-    config.num_threads = os.cpu_count() or 1
-
     results = _run_minibert(config=config,
                             tmp_path=tmp_path,
                             message_type=message_type,
