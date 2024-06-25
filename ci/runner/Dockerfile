@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.3
-
 # SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -37,6 +35,12 @@ SHELL ["/bin/bash",  "-c"]
 # Create conda environment
 COPY ./dependencies.yaml /tmp/conda/
 
+RUN <<EOF
+rapids-mamba-retry install -y \
+  "rapids-dependency-file-generator>=1.13.*"
+conda clean -aipty
+EOF
+
 # ============ build ==================
 FROM base as build
 
@@ -48,7 +52,7 @@ ARG PYTHON_VER
 RUN rapids-dependency-file-generator \
       --config /tmp/conda/dependencies.yaml \
       --output conda \
-      --file_key build \
+      --file-key build \
       --matrix "cuda=${CUDA_SHORT_VER};arch=${ARCH};py=${PYTHON_VER}" > /tmp/conda/env.yaml && \
     CONDA_ALWAYS_YES=true /opt/conda/bin/conda env create -n ${PROJ_NAME} -q --file /tmp/conda/env.yaml && \
     sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
@@ -89,7 +93,7 @@ RUN apt update && \
 RUN rapids-dependency-file-generator \
       --config /tmp/conda/dependencies.yaml \
       --output conda \
-      --file_key test \
+      --file-key test \
       --matrix "cuda=${CUDA_SHORT_VER};arch=${ARCH};py=${PYTHON_VER}" > /tmp/conda/env.yaml && \
     CONDA_ALWAYS_YES=true /opt/conda/bin/conda env create -n ${PROJ_NAME} -q --file /tmp/conda/env.yaml && \
     sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
