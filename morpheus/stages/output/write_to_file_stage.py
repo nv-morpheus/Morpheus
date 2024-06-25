@@ -13,7 +13,6 @@
 # limitations under the License.
 """Write to file stage."""
 
-import os
 import typing
 
 import mrc
