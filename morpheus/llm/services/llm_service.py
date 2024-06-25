@@ -188,6 +188,7 @@ class LLMService(ABC):
     def create(service_type: str | typing.Literal["nemo"] | typing.Literal["openai"], *service_args, **service_kwargs):
         """
         Returns a service for interacting with LLM models.
+
         Parameters
         ----------
         service_type : str

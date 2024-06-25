@@ -39,6 +39,7 @@ class NVFoundationLLMClient(LLMClient):
     """
     Client for interacting with a specific model in Nemo. This class should be constructed with the
     `NeMoLLMService.get_client` method.
+
     Parameters
     ----------
     parent : NVFoundationMService
@@ -88,6 +89,7 @@ class NVFoundationLLMClient(LLMClient):
     def generate(self, **input_dict) -> str:
         """
         Issue a request to generate a response based on a given prompt.
+
         Parameters
         ----------
         input_dict : dict
@@ -103,6 +105,7 @@ class NVFoundationLLMClient(LLMClient):
     async def generate_async(self, **input_dict) -> str:
         """
         Issue an asynchronous request to generate a response based on a given prompt.
+
         Parameters
         ----------
         input_dict : dict
@@ -121,6 +124,7 @@ class NVFoundationLLMClient(LLMClient):
                        **kwargs) -> list[str] | list[str | BaseException]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
+
         Parameters
         ----------
         inputs : dict
@@ -242,6 +246,7 @@ class NVFoundationLLMService(LLMService):
     def get_client(self, *, model_name: str, **model_kwargs) -> NVFoundationLLMClient:
         """
         Returns a client for interacting with a specific model. This method is the preferred way to create a client.
+
         Parameters
         ----------
         model_name : str
