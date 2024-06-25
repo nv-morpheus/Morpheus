@@ -16,7 +16,7 @@ limitations under the License.
 -->
 
 # Examples
-Ensure the environment is set up by following [Getting Started with Morpheus](../../docs/source/getting_started.md) before running the examples below.
+Ensure the environment is set up by following [Getting Started with Morpheus](./getting_started.md) before running the examples below.
 * [Anomalous Behavior Profiling with Forest Inference Library (FIL) Example](../../examples/abp_nvsmi_detection/README.md)
 * [ABP Detection Example Using Morpheus](../../examples/abp_pcap_detection/README.md)
 * [GNN Fraud Detection Pipeline](../../examples/gnn_fraud_detection_pipeline/README.md)
