@@ -155,7 +155,7 @@ def test_rag_standalone_pipe_nemo(config: Config,
     assert_results(results)
 
 
-@pytest.mark.usefixtures("openai")
+@pytest.mark.usefixtures("openai", "restore_environ")
 @pytest.mark.milvus
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("repeat_count", [5])
@@ -166,6 +166,8 @@ def test_rag_standalone_pipe_openai(config: Config,
                                     milvus_server_uri: str,
                                     repeat_count: int,
                                     import_mod: types.ModuleType):
+    os.environ['OPENAI_API_KEY'] = "test"
+
     (mock_client, mock_async_client) = mock_chat_completion
     mock_async_client.chat.completions.create.side_effect = [
         mk_mock_openai_response([EXPECTED_RESPONSE]) for _ in range(repeat_count)
