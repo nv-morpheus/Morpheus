@@ -107,6 +107,8 @@ class LangChainAgentNode(LLMNodeBase):
             # Processes the results to replace exceptions with a default message
             for i, answer_list in enumerate(results):
                 for j, answer in enumerate(answer_list):
+
+                    # OutputParserException is not a subclass of Exception, so we need to check for it separately
                     if isinstance(answer, (OutputParserException, Exception)):
                         # If the agent encounters a parsing error or a server error after retries, replace the error
                         # with a default value to prevent the pipeline from crashing
