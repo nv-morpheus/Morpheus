@@ -160,7 +160,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
 
             return [d.dict() for d in docs]
 
-        return list(await asyncio.gather(*[single_search(embedding) for embedding in embeddings]))
+        return await asyncio.gather(*(single_search(embedding) for embedding in embeddings))
 
     def update(self, data: list[typing.Any], **kwargs) -> dict[str, typing.Any]:
         """
