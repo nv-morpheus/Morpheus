@@ -38,7 +38,7 @@ In a second terminal from the root of the Morpheus repo execute:
 python examples/developer_guide/2_2_rabbitmq/read_simple.py
 ```
 
-This will read from a RabbitMQ exchange named 'logs', and write the results to `/tmp/results.json`.
+This will read from a RabbitMQ exchange named 'logs', and write the results to `results.json`.
 
 If no exchange named 'logs' exists in RabbitMQ it will be created. By default the `read_simple.py` script will utilize the class-based `RabbitMQSourceStage`, alternately using the `--use_source_function` flag will utilize the function-based `rabbitmq_source` stage.
 
@@ -64,7 +64,7 @@ morpheus --log_level=INFO --plugin examples/developer_guide/2_2_rabbitmq/rabbitm
   run pipeline-other \
   from-rabbitmq --host=localhost --exchange=logs \
   monitor \
-  to-file --filename=/tmp/results.json --overwrite
+  to-file --filename=results.json --overwrite
 ```
 
 ### Write Pipeline

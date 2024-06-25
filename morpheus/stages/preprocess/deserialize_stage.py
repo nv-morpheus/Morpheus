@@ -18,7 +18,6 @@ import typing
 
 import mrc
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -63,8 +62,7 @@ class DeserializeStage(MultiMessageStage):
                  c: Config,
                  *,
                  ensure_sliceable_index: bool = True,
-                 message_type: typing.Union[typing.Literal[MultiMessage],
-                                            typing.Literal[ControlMessage]] = MultiMessage,
+                 message_type: type[MultiMessage] | type[ControlMessage] = MultiMessage,
                  task_type: str = None,
                  task_payload: dict = None):
         super().__init__(c)
@@ -81,10 +79,10 @@ class DeserializeStage(MultiMessageStage):
         self._task_type = task_type
         self._task_payload = task_payload
 
-        if (self._message_type == ControlMessage):
+        if (self._message_type is ControlMessage):
             if ((self._task_type is None) != (self._task_payload is None)):
                 raise ValueError("Both `task_type` and `task_payload` must be specified if either is specified.")
-        elif (self._message_type == MultiMessage):
+        elif (self._message_type is MultiMessage):
             if (self._task_type is not None or self._task_payload is not None):
                 raise ValueError("Cannot specify `task_type` or `task_payload` for non-control messages.")
         else:
@@ -92,7 +90,7 @@ class DeserializeStage(MultiMessageStage):
 
         self._module_config = {
             "ensure_sliceable_index": self._ensure_sliceable_index,
-            "message_type": "MultiMessage" if self._message_type == MultiMessage else "ControlMessage",
+            "message_type": "MultiMessage" if self._message_type is MultiMessage else "ControlMessage",
             "task_type": self._task_type,
             "task_payload": self._task_payload,
             "batch_size": self._batch_size,
@@ -113,17 +111,26 @@ class DeserializeStage(MultiMessageStage):
 
     def supports_cpp_node(self):
         # Enable support by default
-        return False
+        return True
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(self._message_type)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        if (self.supports_cpp_node()):
-            if (self._message_type == MultiMessage):
-                out_node = _stages.DeserializeMultiMessageStage(builder, self.unique_name, self._batch_size)
-            elif (self._message_type == ControlMessage):
-                out_node = _stages.DeserializeControlMessageStage(builder, self.unique_name, self._batch_size)
+        if (self._build_cpp_node()):
+            import morpheus._lib.stages as _stages
+            if (self._message_type is ControlMessage):
+                out_node = _stages.DeserializeControlMessageStage(builder,
+                                                                  self.unique_name,
+                                                                  batch_size=self._batch_size,
+                                                                  ensure_sliceable_index=self._ensure_sliceable_index,
+                                                                  task_type=self._task_type,
+                                                                  task_payload=self._task_payload)
+            else:
+                out_node = _stages.DeserializeMultiMessageStage(builder,
+                                                                self.unique_name,
+                                                                batch_size=self._batch_size,
+                                                                ensure_sliceable_index=self._ensure_sliceable_index)
 
             builder.make_edge(input_node, out_node)
         else:

@@ -229,16 +229,18 @@ std::shared_ptr<MultiInferenceMessage> PreprocessFILStage<MultiMessage, MultiInf
 template <>
 std::shared_ptr<ControlMessage> PreprocessFILStage<ControlMessage, ControlMessage>::on_control_message(
     std::shared_ptr<ControlMessage> x)
+
 {
-    auto num_rows = x->payload()->get_info().num_rows();
+    auto df_meta        = this->fix_bad_columns(x);
+    const auto num_rows = df_meta.num_rows();
+
     auto packed_data =
         std::make_shared<rmm::device_buffer>(m_fea_cols.size() * num_rows * sizeof(float), rmm::cuda_stream_per_thread);
-    auto df_meta = this->fix_bad_columns(x);
+
     for (size_t i = 0; i < df_meta.num_columns(); ++i)
     {
         auto curr_col = df_meta.get_column(i);
-
-        auto curr_ptr = static_cast<float*>(packed_data->data()) + i * df_meta.num_rows();
+        auto curr_ptr = static_cast<float*>(packed_data->data()) + i * num_rows;
 
         // Check if we are something other than float
         if (curr_col.type().id() != cudf::type_id::FLOAT32)
@@ -246,15 +248,13 @@ std::shared_ptr<ControlMessage> PreprocessFILStage<ControlMessage, ControlMessag
             auto float_data = cudf::cast(curr_col, cudf::data_type(cudf::type_id::FLOAT32))->release();
 
             // Do the copy here before it goes out of scope
-            MRC_CHECK_CUDA(cudaMemcpy(
-                curr_ptr, float_data.data->data(), df_meta.num_rows() * sizeof(float), cudaMemcpyDeviceToDevice));
+            MRC_CHECK_CUDA(
+                cudaMemcpy(curr_ptr, float_data.data->data(), num_rows * sizeof(float), cudaMemcpyDeviceToDevice));
         }
         else
         {
-            MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
-                                      curr_col.template data<float>(),
-                                      df_meta.num_rows() * sizeof(float),
-                                      cudaMemcpyDeviceToDevice));
+            MRC_CHECK_CUDA(cudaMemcpy(
+                curr_ptr, curr_col.template data<float>(), num_rows * sizeof(float), cudaMemcpyDeviceToDevice));
         }
     }
 
@@ -279,10 +279,9 @@ std::shared_ptr<ControlMessage> PreprocessFILStage<ControlMessage, ControlMessag
     auto memory = std::make_shared<TensorMemory>(num_rows);
     memory->set_tensor("input__0", std::move(input__0));
     memory->set_tensor("seq_ids", std::move(seq_ids));
-    auto next = x;
-    next->tensors(memory);
+    x->tensors(memory);
 
-    return next;
+    return x;
 }
 
 template class PreprocessFILStage<MultiMessage, MultiInferenceMessage>;

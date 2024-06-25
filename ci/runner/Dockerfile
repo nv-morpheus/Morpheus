@@ -57,7 +57,7 @@ RUN rapids-dependency-file-generator \
 
 ENV MORPHEUS_SUPPORT_DOCA=ON
 
-COPY ./docker/optional_deps/doca.sh /tmp/doca/
+COPY ./.devcontainer/docker/optional_deps/doca.sh /tmp/doca/
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
