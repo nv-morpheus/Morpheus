@@ -42,6 +42,7 @@
 #include "morpheus/utilities/string_util.hpp"
 #include "morpheus/version.hpp"
 
+#include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
 #include <mrc/edge/edge_connector.hpp>
 #include <nlohmann/json.hpp>      // for basic_json
 #include <pybind11/functional.h>  // IWYU pragma: keep
@@ -53,11 +54,19 @@
 #include <pymrc/utils.hpp>  // for pymrc::import
 #include <rxcpp/rx.hpp>
 
+#include <cstddef>  // for size_t
 #include <filesystem>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <tuple>     // IWYU pragma: keep
+#include <typeinfo>  // for type_info
+#include <utility>   // for index_sequence, make_index_sequence
 #include <vector>
+// For some reason IWYU thinks the variant header is needed for tuple, and that the array header is needed for
+// tuple_element
+// IWYU pragma: no_include <array>
+// IWYU pragma: no_include <variant>
 
 namespace morpheus {
 
