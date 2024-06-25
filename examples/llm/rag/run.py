@@ -70,10 +70,19 @@ def run():
     type=click.IntRange(min=1),
     help="Number of times to repeat the input query. Useful for testing performance.",
 )
-@click.option("--llm_service",
-              default="NemoLLM",
-              type=click.Choice(['NemoLLM', 'OpenAI'], case_sensitive=False),
-              help="LLM service to issue requests to, should be used in conjunction with --model_name.")
+@click.option(
+    "--llm_service",
+    default="NemoLLM",
+    type=click.Choice(['NemoLLM', 'OpenAI'], case_sensitive=False),
+    help="LLM service to issue requests to, should be used in conjunction with --model_name.",
+)
+@click.option(
+    "--question",
+    type=str,
+    multiple=True,
+    default=["What are some new attacks discovered in the cyber security industry?"] * 5,
+    help="The question to answer with the RAG pipeline. Specify multiple times to answer multiple questions at once.",
+)
 def pipeline(**kwargs):
 
     from .standalone_pipeline import standalone

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/objects/data_table.hpp"  // for IDataTable
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/tensor_object.hpp"
@@ -32,7 +33,6 @@
 
 namespace morpheus {
 
-#pragma GCC visibility push(default)
 /****** Component public implementations ******************/
 /****** MessageMeta****************************************/
 
@@ -42,14 +42,14 @@ namespace morpheus {
  * @file
  */
 
-class MutableTableCtxMgr;
+class MORPHEUS_EXPORT MutableTableCtxMgr;
 
 /**
  * @brief Container for class holding a data table, in practice a cudf DataFrame, with the ability to return both
  * Python and C++ representations of the table
  *
  */
-class MessageMeta
+class MORPHEUS_EXPORT MessageMeta
 {
   public:
     /**
@@ -123,6 +123,23 @@ class MessageMeta
     virtual std::optional<std::string> ensure_sliceable_index();
 
     /**
+     * @brief Creates a deep copy of DataFrame with the specified ranges.
+     *
+     * @param ranges the tensor index ranges to copy
+     * @return std::shared_ptr<MessageMeta> the deep copy of the specified ranges
+     */
+    virtual std::shared_ptr<MessageMeta> copy_ranges(const std::vector<RangeType>& ranges) const;
+
+    /**
+     * @brief Get a slice of the underlying DataFrame by creating a deep copy
+     *
+     * @param start the tensor index of the start of the copy
+     * @param stop the tensor index of the end of the copy
+     * @return std::shared_ptr<MessageMeta> the deep copy of the speicifed slice
+     */
+    virtual std::shared_ptr<MessageMeta> get_slice(TensorIndex start, TensorIndex stop) const;
+
+    /**
      * @brief Create MessageMeta cpp object from a python object
      *
      * @param data_table
@@ -160,7 +177,7 @@ class MessageMeta
  * to filter columns without copying the entire DataFrame
  *
  */
-class SlicedMessageMeta : public MessageMeta
+class MORPHEUS_EXPORT SlicedMessageMeta : public MessageMeta
 {
   public:
     SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
@@ -171,6 +188,10 @@ class SlicedMessageMeta : public MessageMeta
     TensorIndex count() const override;
 
     TableInfo get_info() const override;
+
+    TableInfo get_info(const std::string& col_name) const override;
+
+    TableInfo get_info(const std::vector<std::string>& column_names) const override;
 
     MutableTableInfo get_mutable_info() const override;
 
@@ -187,7 +208,7 @@ class SlicedMessageMeta : public MessageMeta
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MessageMetaInterfaceProxy
+struct MORPHEUS_EXPORT MessageMetaInterfaceProxy
 {
     /**
      * @brief Initialize MessageMeta cpp object with the given filename
@@ -297,8 +318,23 @@ struct MessageMetaInterfaceProxy
      * @return std::string The name of the column with the old index or nullopt if no changes were made.
      */
     static std::optional<std::string> ensure_sliceable_index(MessageMeta& self);
-};
 
-#pragma GCC visibility pop
+    /**
+     * @brief Creates a deep copy of DataFrame with the specified ranges.
+     *
+     * @param ranges the tensor index ranges to copy
+     * @return std::shared_ptr<MessageMeta> the deep copy of the specified ranges
+     */
+    static std::shared_ptr<MessageMeta> copy_ranges(MessageMeta& self, const std::vector<RangeType>& ranges);
+
+    /**
+     * @brief Get a slice of the underlying DataFrame by creating a deep copy
+     *
+     * @param start the tensor index of the start of the copy
+     * @param stop the tensor index of the end of the copy
+     * @return std::shared_ptr<MessageMeta> the deep copy of the speicifed slice
+     */
+    static std::shared_ptr<MessageMeta> get_slice(MessageMeta& self, TensorIndex start, TensorIndex stop);
+};
 /** @} */  // end of group
 }  // namespace morpheus

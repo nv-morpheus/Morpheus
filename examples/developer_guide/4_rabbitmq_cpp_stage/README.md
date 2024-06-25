@@ -27,9 +27,9 @@ pip install -r examples/developer_guide/4_rabbitmq_cpp_stage/requirements.txt
 ```
 
 ## Building the Example
-There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` and `-DMORPHEUS_PYTHON_PERFORM_INSTALL=ON` flags to cmake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to cmake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
 ```bash
-CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_PYTHON_PERFORM_INSTALL=ON" ./scripts/compile.sh
+CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
 ```
 
 The second is to build the example as a standalone project. From the root of the Morpheus repo execute:
@@ -55,7 +55,7 @@ In a second terminal from the root of the Morpheus repo execute:
 python examples/developer_guide/4_rabbitmq_cpp_stage/src/read_simple.py
 ```
 
-This will read from a RabbitMQ exchange named 'logs', and write the results to `/tmp/results.json`.
+This will read from a RabbitMQ exchange named 'logs', and write the results to `results.json`.
 
 If no exchange named 'logs' exists in RabbitMQ it will be created.
 

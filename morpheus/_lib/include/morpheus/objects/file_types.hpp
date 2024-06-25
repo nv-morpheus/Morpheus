@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "morpheus/export.h"
+
 #include <cstdint>
 #include <filesystem>  // for path
 #include <ostream>
@@ -31,8 +33,7 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
-enum class FileTypes : int32_t
+enum class MORPHEUS_EXPORT FileTypes : int32_t
 {
     Auto,
     JSON,
@@ -46,7 +47,7 @@ enum class FileTypes : int32_t
  * @param f
  * @return std::string
  */
-inline std::string filetypes_to_str(const FileTypes& f)
+inline std::string MORPHEUS_EXPORT filetypes_to_str(const FileTypes& f)
 {
     switch (f)
     {
@@ -83,7 +84,7 @@ static inline std::ostream& operator<<(std::ostream& os, const FileTypes& f)
  * @param filename String to a file. Does not need to exist
  * @return FileTypes
  */
-FileTypes determine_file_type(const std::string& filename);
+FileTypes MORPHEUS_EXPORT determine_file_type(const std::string& filename);
 
 /**
  * @brief Determines the file type from a filename based on extension. For example, my_file.json would return
@@ -92,9 +93,6 @@ FileTypes determine_file_type(const std::string& filename);
  * @param filename path to a file. Does not need to exist
  * @return FileTypes
  */
-FileTypes determine_file_type(const std::filesystem::path& filename);
-
-#pragma GCC visibility pop
-
+FileTypes MORPHEUS_EXPORT determine_file_type(const std::filesystem::path& filename);
 /** @} */  // end of group
 }  // namespace morpheus

@@ -21,7 +21,8 @@ __all__ = [
     "DeserializeControlMessageStage",
     "DeserializeMultiMessageStage",
     "FileSourceStage",
-    "FilterDetectionsStage",
+    "FilterDetectionsControlMessageStage",
+    "FilterDetectionsMultiMessageStage",
     "FilterSource",
     "HttpServerSourceStage",
     "InferenceClientStageCM",
@@ -60,11 +61,14 @@ class DeserializeMultiMessageStage(mrc.core.segment.SegmentObject):
     pass
 class FileSourceStage(mrc.core.segment.SegmentObject):
     @typing.overload
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: os.PathLike, repeat: int, parser_kwargs: dict) -> None: ...
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: os.PathLike, repeat: int, filter_null: bool, filter_null_columns: typing.List[str], parser_kwargs: dict) -> None: ...
     @typing.overload
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: str, repeat: int, parser_kwargs: dict) -> None: ...
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: str, repeat: int, filter_null: bool, filter_null_columns: typing.List[str], parser_kwargs: dict) -> None: ...
     pass
-class FilterDetectionsStage(mrc.core.segment.SegmentObject):
+class FilterDetectionsControlMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, threshold: float, copy: bool, filter_source: morpheus._lib.common.FilterSource, field_name: str = 'probs') -> None: ...
+    pass
+class FilterDetectionsMultiMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, threshold: float, copy: bool, filter_source: morpheus._lib.common.FilterSource, field_name: str = 'probs') -> None: ...
     pass
 class HttpServerSourceStage(mrc.core.segment.SegmentObject):

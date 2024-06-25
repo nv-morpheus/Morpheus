@@ -25,7 +25,7 @@
 #include "morpheus/stages/add_scores.hpp"
 #include "morpheus/stages/deserialize.hpp"
 #include "morpheus/stages/file_source.hpp"
-#include "morpheus/stages/filter_detection.hpp"
+#include "morpheus/stages/filter_detections.hpp"
 #include "morpheus/stages/http_server_source_stage.hpp"
 #include "morpheus/stages/inference_client_stage.hpp"
 #include "morpheus/stages/kafka_source.hpp"
@@ -52,6 +52,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace morpheus {
 namespace py = pybind11;
@@ -138,27 +139,52 @@ PYBIND11_MODULE(stages, _module)
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<FileSourceStage>>>(
         _module, "FileSourceStage", py::multiple_inheritance())
-        .def(py::init(py::overload_cast<mrc::segment::Builder&, const std::string&, std::string, int, py::dict>(
-                 &FileSourceStageInterfaceProxy::init)),
+        .def(py::init(py::overload_cast<mrc::segment::Builder&,
+                                        const std::string&,
+                                        std::string,
+                                        int,
+                                        bool,
+                                        std::vector<std::string>,
+                                        py::dict>(&FileSourceStageInterfaceProxy::init)),
              py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
              py::arg("repeat"),
+             py::arg("filter_null"),
+             py::arg("filter_null_columns"),
              py::arg("parser_kwargs"))
-        .def(py::init(
-                 py::overload_cast<mrc::segment::Builder&, const std::string&, std::filesystem::path, int, py::dict>(
-                     &FileSourceStageInterfaceProxy::init)),
+        .def(py::init(py::overload_cast<mrc::segment::Builder&,
+                                        const std::string&,
+                                        std::filesystem::path,
+                                        int,
+                                        bool,
+                                        std::vector<std::string>,
+                                        py::dict>(&FileSourceStageInterfaceProxy::init)),
              py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
              py::arg("repeat"),
+             py::arg("filter_null"),
+             py::arg("filter_null_columns"),
              py::arg("parser_kwargs"));
 
-    py::class_<mrc::segment::Object<FilterDetectionsStage>,
+    py::class_<mrc::segment::Object<FilterDetectionsStageMM>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>>>(
-        _module, "FilterDetectionsStage", py::multiple_inheritance())
-        .def(py::init<>(&FilterDetectionStageInterfaceProxy::init),
+               std::shared_ptr<mrc::segment::Object<FilterDetectionsStageMM>>>(
+        _module, "FilterDetectionsMultiMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&FilterDetectionStageInterfaceProxy::init_mm),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("threshold"),
+             py::arg("copy"),
+             py::arg("filter_source"),
+             py::arg("field_name") = "probs");
+
+    py::class_<mrc::segment::Object<FilterDetectionsStageCM>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<FilterDetectionsStageCM>>>(
+        _module, "FilterDetectionsControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&FilterDetectionStageInterfaceProxy::init_cm),
              py::arg("builder"),
              py::arg("name"),
              py::arg("threshold"),

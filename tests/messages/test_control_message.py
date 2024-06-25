@@ -15,14 +15,14 @@
 # limitations under the License.
 
 import datetime
+import io
+import sys
 
 import cupy as cp
 import pytest
 
-import cudf
-
+from _utils.dataset_manager import DatasetManager
 from morpheus import messages
-# pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.messages import TensorMemory
 
 # pylint: disable=unsupported-membership-test
@@ -204,13 +204,8 @@ def test_control_message_set():
     assert (control_message.has_task("load"))
 
 
-def test_control_message_set_and_get_payload():
-    df = cudf.DataFrame({
-        'col1': [1, 2, 3, 4, 5],
-        'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
-        'col3': ['a', 'b', 'c', 'd', 'e'],
-        'col4': [True, False, True, False, True]
-    })
+def test_control_message_set_and_get_payload(dataset: DatasetManager):
+    df = dataset["test_dataframe.jsonlines"]
 
     msg = messages.ControlMessage()
     payload = messages.MessageMeta(df)
@@ -218,7 +213,8 @@ def test_control_message_set_and_get_payload():
 
     payload2 = msg.payload()
     assert payload2 is not None
-    assert payload.df == payload2.df
+
+    DatasetManager.assert_df_equal(payload.df, payload2.df)
 
 
 @pytest.mark.usefixtures("config_only_cpp")
@@ -400,3 +396,87 @@ def test_consistency_after_multiple_operations():
                        cp.array([4, 5, 6])), "Mismatch in input_ids after update."
     assert cp.allclose(retrieved_tensors.get_tensor("new_tensor"),
                        new_tensor["new_tensor"]), "New tensor data mismatch."
+
+
+class NonSerializablePyClass():
+
+    def __init__(self):
+        self.name = "non_serializable_py_class"
+
+    def __getstate__(self):
+        raise TypeError("This object is not serializable")
+
+
+class NonSerializableNestedPyClass():
+
+    def __init__(self):
+        self.name = "non_serializable_nested_py_class"
+        self.non_serializable = NonSerializablePyClass()
+
+
+class NonSerializableNestedPyClassWithFile():
+
+    def __init__(self):
+        self.name = "non_serializable_nested_py_class_with_file"
+        self.file_obj = io.StringIO("string data")
+
+
+@pytest.fixture(name="py_object",
+                scope="function",
+                params=[NonSerializablePyClass, NonSerializableNestedPyClass, NonSerializableNestedPyClassWithFile])
+def fixture_pyobject(request):
+    return request.param()
+
+
+@pytest.mark.usefixtures("config_only_cpp")
+def test_metadata_holds_non_serializable_python_obj(py_object):
+
+    message = messages.ControlMessage()
+
+    obj = py_object
+    key = obj.name
+
+    message.set_metadata(key, obj)
+    assert key in message.list_metadata()
+    metadata = message.get_metadata(key)
+    assert obj is metadata
+
+    dict_with_obj = {"nested_obj": obj}
+    message.set_metadata("nested", dict_with_obj)
+    metadata_dict_with_obj = message.get_metadata("nested")
+
+    # Check that the dict was serialized and recreated
+    assert dict_with_obj is not metadata_dict_with_obj
+
+    # Check that the nested non-serializable object is the same
+    assert obj is metadata_dict_with_obj["nested_obj"]
+
+
+@pytest.mark.usefixtures("config_only_cpp")
+def test_tasks_hold_non_serializable_python_obj(py_object):
+
+    message = messages.ControlMessage()
+
+    obj = py_object
+    task_key = "non_serializable"
+    task_name = "task"
+
+    message.add_task(task_key, {task_name: obj})
+    assert message.has_task(task_key)
+    task = message.get_tasks()[task_key][0][task_name]
+    assert obj is task
+
+    ref_count = sys.getrefcount(obj)
+    assert message.remove_task(task_key)[task_name] is obj
+    # Check the removed task decreases the reference count
+    assert sys.getrefcount(obj) == ref_count - 1
+
+    dict_with_obj = {"nested_obj": obj}
+    message.set_metadata("nested", dict_with_obj)
+    metadata_dict_with_obj = message.get_metadata("nested")
+
+    # Check that the dict was serialized and recreated
+    assert dict_with_obj is not metadata_dict_with_obj
+
+    # Check that the nested non-serializable object is the same
+    assert obj is metadata_dict_with_obj["nested_obj"]

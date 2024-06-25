@@ -13,11 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
 from unittest.mock import Mock
 from unittest.mock import patch
 
 import cupy as cp
 import pytest
+import typing_utils
 
 import cudf
 
@@ -61,9 +63,9 @@ def test_constructor(config: Config):
     assert stage._do_lower_case is False
     assert stage._add_special_tokens is False
 
-    accepted_types = stage.accepted_types()
-    assert isinstance(accepted_types, tuple)
-    assert len(accepted_types) > 0
+    accepted_union = typing.Union[stage.accepted_types()]
+    assert typing_utils.issubtype(MultiMessage, accepted_union)
+    assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
 @patch("morpheus.stages.preprocess.preprocess_nlp_stage.tokenize_text_series")

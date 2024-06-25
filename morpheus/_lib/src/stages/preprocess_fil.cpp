@@ -38,7 +38,6 @@
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/types.hpp>               // for type_id, data_type
 #include <cudf/unary.hpp>               // for cast
-#include <glog/logging.h>               // for COMPACT_GOOGLE_LOG_ERROR, LOG, LogMessage
 #include <mrc/cuda/common.hpp>          // for __check_cuda_errors, MRC_CHECK_CUDA
 #include <mrc/segment/builder.hpp>      // for Builder
 #include <pybind11/gil.h>               // for gil_scoped_acquire
@@ -50,9 +49,7 @@
 #include <algorithm>    // for find
 #include <cstddef>      // for size_t
 #include <memory>       // for shared_ptr, __shared_ptr_access, allocator, mak...
-#include <stdexcept>    // for runtime_error
 #include <type_traits>  // for is_same_v
-#include <typeinfo>     // for type_info
 #include <utility>      // for move
 
 namespace morpheus {
@@ -144,12 +141,10 @@ TableInfo PreprocessFILStage<InputT, OutputT>::fix_bad_columns(sink_type_t x)
         // Now re-get the meta
         return x->payload()->get_info(m_fea_cols);
     }
-    // sink_type_t not supported
     else
     {
-        std::string error_msg{"PreProcessFILStage receives unsupported input type: " + std::string(typeid(x).name())};
-        LOG(ERROR) << error_msg;
-        throw std::runtime_error(error_msg);
+        // sink_type_t not supported
+        static_assert(!sizeof(sink_type_t), "PreProcessFILStage receives unsupported input type");
     }
 }
 
@@ -164,12 +159,10 @@ PreprocessFILStage<InputT, OutputT>::source_type_t PreprocessFILStage<InputT, Ou
     {
         return on_control_message(x);
     }
-    // sink_type_t not supported
     else
     {
-        std::string error_msg{"PreProcessFILStage receives unsupported input type: " + std::string(typeid(x).name())};
-        LOG(ERROR) << error_msg;
-        throw std::runtime_error(error_msg);
+        // sink_type_t not supported
+        static_assert(!sizeof(sink_type_t), "PreProcessFILStage receives unsupported input type");
     }
 }
 
@@ -236,16 +229,18 @@ std::shared_ptr<MultiInferenceMessage> PreprocessFILStage<MultiMessage, MultiInf
 template <>
 std::shared_ptr<ControlMessage> PreprocessFILStage<ControlMessage, ControlMessage>::on_control_message(
     std::shared_ptr<ControlMessage> x)
+
 {
-    auto num_rows = x->payload()->get_info().num_rows();
+    auto df_meta        = this->fix_bad_columns(x);
+    const auto num_rows = df_meta.num_rows();
+
     auto packed_data =
         std::make_shared<rmm::device_buffer>(m_fea_cols.size() * num_rows * sizeof(float), rmm::cuda_stream_per_thread);
-    auto df_meta = this->fix_bad_columns(x);
+
     for (size_t i = 0; i < df_meta.num_columns(); ++i)
     {
         auto curr_col = df_meta.get_column(i);
-
-        auto curr_ptr = static_cast<float*>(packed_data->data()) + i * df_meta.num_rows();
+        auto curr_ptr = static_cast<float*>(packed_data->data()) + i * num_rows;
 
         // Check if we are something other than float
         if (curr_col.type().id() != cudf::type_id::FLOAT32)
@@ -253,15 +248,13 @@ std::shared_ptr<ControlMessage> PreprocessFILStage<ControlMessage, ControlMessag
             auto float_data = cudf::cast(curr_col, cudf::data_type(cudf::type_id::FLOAT32))->release();
 
             // Do the copy here before it goes out of scope
-            MRC_CHECK_CUDA(cudaMemcpy(
-                curr_ptr, float_data.data->data(), df_meta.num_rows() * sizeof(float), cudaMemcpyDeviceToDevice));
+            MRC_CHECK_CUDA(
+                cudaMemcpy(curr_ptr, float_data.data->data(), num_rows * sizeof(float), cudaMemcpyDeviceToDevice));
         }
         else
         {
-            MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
-                                      curr_col.template data<float>(),
-                                      df_meta.num_rows() * sizeof(float),
-                                      cudaMemcpyDeviceToDevice));
+            MRC_CHECK_CUDA(cudaMemcpy(
+                curr_ptr, curr_col.template data<float>(), num_rows * sizeof(float), cudaMemcpyDeviceToDevice));
         }
     }
 
@@ -286,10 +279,9 @@ std::shared_ptr<ControlMessage> PreprocessFILStage<ControlMessage, ControlMessag
     auto memory = std::make_shared<TensorMemory>(num_rows);
     memory->set_tensor("input__0", std::move(input__0));
     memory->set_tensor("seq_ids", std::move(seq_ids));
-    auto next = x;
-    next->tensors(memory);
+    x->tensors(memory);
 
-    return next;
+    return x;
 }
 
 template class PreprocessFILStage<MultiMessage, MultiInferenceMessage>;

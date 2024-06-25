@@ -1,0 +1,239 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+vdb_pipeline:
+  embeddings:
+    isolate_embeddings: false
+    model_kwargs:
+      force_convert_inputs: true
+      model_name: "all-MiniLM-L6-v2"
+      server_url: "http://localhost:8001"
+      use_shared_memory: true
+
+  pipeline:
+    edge_buffer_size: 128
+    feature_length: 512
+    max_batch_size: 256
+    num_threads: 5
+    pipeline_batch_size: 128
+
+  sources:
+    - type: doca
+      name: "doca_stage"
+      config:
+        nic_addr: "ca:00.0"
+        gpu_addr: "17:00.0"
+        traffic_type: "udp"
+        vdb_resource_name: "vdb_doca"
+
+  tokenizer:
+    model_kwargs:
+      add_special_tokens: false
+      column: "data"
+      do_lower_case: true
+      truncation: true
+      vocab_hash_file: "data/bert-base-uncased-hash.txt"
+    model_name: "bert-base-uncased-hash"
+
+  vdb:
+    batch_size: 16896
+    resource_name: "vdb_doca"  # Identifier for the resource in the vector database
+    embedding_size: 384
+    recreate: True  # Whether to recreate the resource if it already exists
+    service: "milvus"  # Specify the type of vector database
+    uri: "http://localhost:19530"  # URI for connecting to the Vector Database server
+    resource_schemas:
+      VDBGENERAL:
+        index_conf:
+          field_name: "embedding"
+          metric_type: "L2"
+          index_type: "HNSW"
+          params:
+            M: 8
+            efConstruction: 64
+
+        schema_conf:
+          enable_dynamic_field: true
+          schema_fields:
+            - name: id
+              dtype: INT64
+              description: Primary key for the collection
+              is_primary: true
+              auto_id: true
+            - name: title
+              dtype: VARCHAR
+              description: Title or heading of the data entry
+              max_length: 65_535
+            - name: source
+              dtype: VARCHAR
+              description: Source or origin of the data entry
+              max_length: 65_535
+            - name: summary
+              dtype: VARCHAR
+              description: Brief summary or abstract of the data content
+              max_length: 65_535
+            - name: content
+              dtype: VARCHAR
+              description: Main content or body of the data entry
+              max_length: 65_535
+            - name: embedding
+              dtype: FLOAT_VECTOR
+              description: Embedding vectors representing the data entry
+              dim: 384 # Size of the embeddings to store in the vector database
+          description: Collection schema for diverse data sources
+      vdb_pdf:
+        index_conf:
+          field_name: embedding
+          metric_type: L2
+          index_type: HNSW
+          params:
+            M: 8
+            efConstruction: 64
+
+        schema_conf:
+          enable_dynamic_field: true
+          schema_fields:
+            - name: id
+              dtype: INT64
+              description: Primary key for the collection
+              is_primary: true
+              auto_id: true
+            - name: title
+              dtype: VARCHAR
+              description: Title or heading of the data entry
+              max_length: 65_535
+            - name: source
+              dtype: VARCHAR
+              description: Source or origin of the data entry
+              max_length: 65_535
+            - name: summary
+              dtype: VARCHAR
+              description: Brief summary or abstract of the data content
+              max_length: 65_535
+            - name: content
+              dtype: VARCHAR
+              description: Main content or body of the data entry
+              max_length: 65_535
+            - name: embedding
+              dtype: FLOAT_VECTOR
+              description: Embedding vectors representing the data entry
+              dim: 384 # Size of the embeddings to store in the vector database
+          description: Collection schema for diverse data sources
+      vdb_csv:
+        index_conf:
+          field_name: embedding
+          metric_type: L2
+          index_type: HNSW
+          params:
+            M: 8
+            efConstruction: 64
+
+        schema_conf:
+          enable_dynamic_field: true
+          schema_fields:
+            - name: id
+              dtype: INT64
+              description: Primary key for the collection
+              is_primary: true
+              auto_id: true
+            - name: title
+              dtype: VARCHAR
+              description: Title or heading of the data entry
+              max_length: 65_535
+            - name: source
+              dtype: VARCHAR
+              description: Source or origin of the data entry
+              max_length: 65_535
+            - name: summary
+              dtype: VARCHAR
+              description: Brief summary or abstract of the data content
+              max_length: 65_535
+            - name: content
+              dtype: VARCHAR
+              description: Main content or body of the data entry
+              max_length: 65_535
+            - name: embedding
+              dtype: FLOAT_VECTOR
+              description: Embedding vectors representing the data entry
+              dim: 384 # Size of the embeddings to store in the vector database
+          description: Collection schema for diverse data sources
+      vdb_rss:
+        index_conf:
+          field_name: embedding
+          metric_type: L2
+          index_type: HNSW
+          params:
+            M: 8
+            efConstruction: 64
+
+        schema_conf:
+          enable_dynamic_field: true
+          schema_fields:
+            - name: id
+              dtype: INT64
+              description: Primary key for the collection
+              is_primary: true
+              auto_id: true
+            - name: title
+              dtype: VARCHAR
+              description: Title or heading of the data entry
+              max_length: 65_535
+            - name: source
+              dtype: VARCHAR
+              description: Source or origin of the data entry
+              max_length: 65_535
+            - name: summary
+              dtype: VARCHAR
+              description: Brief summary or abstract of the data content
+              max_length: 65_535
+            - name: content
+              dtype: VARCHAR
+              description: Main content or body of the data entry
+              max_length: 65_535
+            - name: embedding
+              dtype: FLOAT_VECTOR
+              description: Embedding vectors representing the data entry
+              dim: 384 # Size of the embeddings to store in the vector database
+          description: Collection schema for diverse data sources
+      vdb_doca:
+        index_conf:
+          field_name: embedding
+          metric_type: L2
+          index_type: HNSW
+          params:
+            M: 8
+            efConstruction: 64
+
+        schema_conf:
+          enable_dynamic_field: true
+          schema_fields:
+            - name: id
+              dtype: INT64
+              description: Primary key for the collection
+              is_primary: true
+              auto_id: true
+            - name: header
+              dtype: VARCHAR
+              description: Header of the packet
+              max_length: 65_535
+            - name: data
+              dtype: VARCHAR
+              description: Data of the packet
+              max_length: 65_535
+            - name: embedding
+              dtype: FLOAT_VECTOR
+              description: Embedding vectors representing the data entry
+              dim: 384 # Size of the embeddings to store in the vector database
+          description: Collection schema for diverse data sources

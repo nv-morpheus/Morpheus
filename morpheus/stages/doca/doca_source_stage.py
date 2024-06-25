@@ -19,16 +19,15 @@ import mrc
 from morpheus.cli import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MessageMeta
-from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
+from morpheus.messages import RawPacketMessage
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-doca", modes=[PipelineModes.NLP])
-class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
+@register_stage("from-doca-source", modes=[PipelineModes.NLP])
+class DocaSourceStage(SingleOutputSource):
     """
     A source stage used to receive raw packet data from a ConnectX-6 Dx NIC.
 
@@ -65,7 +64,6 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._batch_size = c.pipeline_batch_size
         self._input_count = None
-        self._max_concurrent = c.num_threads
         self._nic_pci_address = nic_pci_address
         self._gpu_pci_address = gpu_pci_address
         self._traffic_type = traffic_type.lower()
@@ -75,7 +73,7 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
 
     @property
     def name(self) -> str:
-        return "from-doca"
+        return "from-doca-source"
 
     @property
     def input_count(self) -> int:
@@ -83,7 +81,7 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
         return None
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MessageMeta)
+        schema.output_schema.set_type(RawPacketMessage)
 
     def supports_cpp_node(self):
         return True
@@ -96,7 +94,8 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
                                            self._nic_pci_address,
                                            self._gpu_pci_address,
                                            self._traffic_type)
-            node.launch_options.pe_count = self._max_concurrent
+            # Only 1 thread is enough for 2 queues
+            node.launch_options.pe_count = 1
             return node
 
         raise NotImplementedError("Does not support Python nodes")

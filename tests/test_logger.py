@@ -13,55 +13,116 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import gc
+import io
 import logging
-import multiprocessing
+import logging.handlers
 import os
+import re
+import time
 from unittest.mock import patch
 
 import pytest
 
 from _utils import TEST_DIRS
-from morpheus.utils.logger import TqdmLoggingHandler
+from morpheus.utils.logger import LogLevels
 from morpheus.utils.logger import configure_logging
 from morpheus.utils.logger import deprecated_message_warning
 from morpheus.utils.logger import deprecated_stage_warning
+from morpheus.utils.logger import reset_logging
 from morpheus.utils.logger import set_log_level
 
 
-@patch('logging.handlers.QueueListener')
-@patch('logging.handlers.QueueHandler.emit')
-def test_configure_logging_from_level_default_handlers(queue_handler, queue_listener):
-    configure_logging(log_level=logging.DEBUG)
+def _flush_logging_queue(logger: logging.Logger):
+    for handler in logger.handlers:
+        if isinstance(handler, logging.handlers.QueueHandler):
+            while (handler.queue.qsize() != 0):
+                time.sleep(0.01)
+
+
+@pytest.fixture(autouse=True)
+def reset_logging_fixture(reset_logging):  # pylint: disable=unused-argument, redefined-outer-name
+    yield
+
+
+@patch('logging.handlers.QueueListener.stop')
+def test_reset_logging(queue_listener_stop_mock):
+
+    configure_logging(log_level=logging.INFO)
+
     morpheus_logger = logging.getLogger("morpheus")
-    assert morpheus_logger.level == logging.DEBUG
+
+    assert len(morpheus_logger.handlers) > 0
+
+    reset_logging()
+
+    assert len(morpheus_logger.handlers) == 0
+
+    # Force garbage collection to ensure the QueueListener is stopped by the reset_logging function
+    gc.collect()
+
+    queue_listener_stop_mock.assert_called()
+
+
+@patch('logging.handlers.QueueHandler.emit')
+@pytest.mark.parametrize("log_level", LogLevels)
+def test_configure_logging_from_level_default_handlers(queue_handler, log_level: type[LogLevels]):
+    configure_logging(log_level=log_level.value)
+
+    morpheus_logger = logging.getLogger("morpheus")
+
+    assert morpheus_logger.level == log_level.value
     assert morpheus_logger.propagate is False
-    pos_args = queue_listener.call_args[0]
-    assert len(pos_args) == 3
-    assert isinstance(pos_args[0], multiprocessing.queues.Queue)
-    assert isinstance(pos_args[1], TqdmLoggingHandler)
-    assert isinstance(pos_args[2], logging.handlers.RotatingFileHandler)
-    assert pos_args[2].baseFilename.endswith("morpheus.log")
-    morpheus_logger.debug("test")
-    queue_handler.assert_called()
+
+    morpheus_logger.info("test")
+
+    if (log_level.value <= logging.INFO and log_level.value != logging.NOTSET):
+        queue_handler.assert_called()
+    else:
+        queue_handler.assert_not_called()
 
 
-def test_configure_logging__no_args():
-    with pytest.raises(Exception) as excinfo:
+def test_configure_logging_no_args():
+    with pytest.raises(Exception, match="log_level must be specified"):
         configure_logging()
-    assert "log_level must be specified" in str(excinfo.value)
 
 
 @patch('logging.handlers.RotatingFileHandler.emit')
 @patch('morpheus.utils.logger.TqdmLoggingHandler.emit')
 def test_configure_logging_from_file(console_handler, file_handler):
+
     log_config_file = os.path.join(TEST_DIRS.tests_data_dir, "logging.json")
+
     configure_logging(log_config_file=log_config_file)
+
     morpheus_logger = logging.getLogger("morpheus")
-    assert morpheus_logger.level == logging.DEBUG
+
+    assert morpheus_logger.level == logging.WARNING
     assert morpheus_logger.propagate is False
+
     morpheus_logger.debug("test")
+
+    console_handler.assert_not_called()
+    file_handler.assert_not_called()
+
+    morpheus_logger.warning("test")
+
     console_handler.assert_called_once()
     file_handler.assert_called_once()
+
+
+def test_configure_logging_multiple_times():
+    configure_logging(log_level=logging.INFO)
+
+    morpheus_logger = logging.getLogger("morpheus")
+
+    assert morpheus_logger.level == logging.INFO
+
+    # Call configure_logging again without resetting
+    with pytest.raises(Exception, match="Logging has already been configured"):
+        configure_logging(log_level=logging.DEBUG)
+
+    assert morpheus_logger.level == logging.INFO
 
 
 def test_configure_logging_from_file_filenotfound():
@@ -69,53 +130,43 @@ def test_configure_logging_from_file_filenotfound():
         configure_logging(log_config_file="does_not_exist.json")
 
 
-@patch('logging.handlers.QueueListener')
-@patch('logging.handlers.QueueHandler.emit')
-def test_configure_logging_add_one_handler(queue_handler, queue_listener):
-    new_handler = logging.StreamHandler()
-    configure_logging(new_handler, log_level=logging.DEBUG)
-    morpheus_logger = logging.getLogger("morpheus")
-    assert morpheus_logger.level == logging.DEBUG
-    assert morpheus_logger.propagate is False
-    pos_args = queue_listener.call_args[0]
-    assert len(pos_args) == 4
-    assert isinstance(pos_args[0], multiprocessing.queues.Queue)
-    assert isinstance(pos_args[1], TqdmLoggingHandler)
-    assert isinstance(pos_args[2], logging.handlers.RotatingFileHandler)
-    assert isinstance(pos_args[3], logging.StreamHandler)
-    morpheus_logger.debug("test")
-    queue_handler.assert_called()
+def test_configure_logging_custom_handlers():
+    # Create a string stream for the handler
+    string_stream_1 = io.StringIO()
+    string_stream_2 = io.StringIO()
 
+    new_handler_1 = logging.StreamHandler(string_stream_1)
+    new_handler_2 = logging.StreamHandler(string_stream_2)
 
-@patch('logging.handlers.QueueListener')
-@patch('logging.handlers.QueueHandler.emit')
-def test_configure_logging_add_two_handlers(queue_handler, queue_listener):
-    new_handler_1 = logging.StreamHandler()
-    new_handler_2 = logging.StreamHandler()
     configure_logging(new_handler_1, new_handler_2, log_level=logging.DEBUG)
+
     morpheus_logger = logging.getLogger("morpheus")
-    assert morpheus_logger.level == logging.DEBUG
-    assert morpheus_logger.propagate is False
-    pos_args = queue_listener.call_args[0]
-    assert len(pos_args) == 5
-    assert isinstance(pos_args[0], multiprocessing.queues.Queue)
-    assert isinstance(pos_args[1], TqdmLoggingHandler)
-    assert isinstance(pos_args[2], logging.handlers.RotatingFileHandler)
-    assert isinstance(pos_args[3], logging.StreamHandler)
-    assert isinstance(pos_args[4], logging.StreamHandler)
+
     morpheus_logger.debug("test")
-    queue_handler.assert_called()
+
+    _flush_logging_queue(morpheus_logger)
+
+    string_stream_1.seek(0)
+    string_stream_2.seek(0)
+
+    assert string_stream_1.getvalue() == "test\n"
+    assert string_stream_2.getvalue() == "test\n"
 
 
-def test_set_log_level():
+@pytest.mark.parametrize("log_level", LogLevels)
+def test_set_log_level(log_level: type[LogLevels]):
     configure_logging(log_level=logging.INFO)
+
     morpheus_logger = logging.getLogger("morpheus")
+
     assert morpheus_logger.level == logging.INFO
-    set_log_level(logging.DEBUG)
-    assert morpheus_logger.level == logging.DEBUG
+
+    set_log_level(log_level.value)
+
+    assert morpheus_logger.level == log_level.value
 
 
-def test_deprecated_stage_warning(caplog):
+def test_deprecated_stage_warning(caplog: pytest.LogCaptureFixture):
 
     class DummyStage():
         pass
@@ -128,7 +179,7 @@ def test_deprecated_stage_warning(caplog):
     assert "The 'DummyStage' stage ('dummy_stage') has been deprecated" in caplog.text
 
 
-def test_deprecated_stage_warning_with_reason(caplog):
+def test_deprecated_stage_warning_with_reason(caplog: pytest.LogCaptureFixture):
 
     class DummyStage():
         pass
@@ -142,7 +193,7 @@ def test_deprecated_stage_warning_with_reason(caplog):
            "This is the reason." in caplog.text
 
 
-def test_deprecated_message_warning(caplog):
+def test_deprecated_message_warning():
 
     class OldMessage():
         pass
@@ -150,10 +201,14 @@ def test_deprecated_message_warning(caplog):
     class NewMessage():
         pass
 
-    logger = logging.getLogger()
-    caplog.set_level(logging.WARNING)
-    deprecated_message_warning(logger, OldMessage, NewMessage)
-    assert len(caplog.records) == 1
-    assert caplog.records[0].levelname == "WARNING"
-    assert "The 'OldMessage' message has been deprecated and will be removed in a future version. " \
-           "Please use 'NewMessage' instead." in caplog.text
+    with pytest.warns(DeprecationWarning) as warnings:
+        deprecated_message_warning(OldMessage, NewMessage)
+
+    pattern_with_version = (r"The '(\w+)' message has been deprecated and will be removed "
+                            r"after version (\d+\.\d+) release. Please use '(\w+)' instead.")
+
+    pattern_without_version = (r"The '(\w+)' message has been deprecated and will be removed "
+                               r"after next version release. Please use '(\w+)' instead.")
+
+    assert (re.search(pattern_with_version, str(warnings[0].message)) is not None) or\
+        (re.search(pattern_without_version, str(warnings[0].message)))

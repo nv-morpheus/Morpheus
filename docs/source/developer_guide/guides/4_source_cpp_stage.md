@@ -17,9 +17,9 @@ limitations under the License.
 
 # Creating a C++ Source Stage
 ## Building the Example
-The code for this guide can be found in the `examples/developer_guide/4_rabbitmq_cpp_stage` directory of the Morpheus repository. There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` and `-DMORPHEUS_PYTHON_PERFORM_INSTALL=ON` flags to cmake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+The code for this guide can be found in the `examples/developer_guide/4_rabbitmq_cpp_stage` directory of the Morpheus repository. There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to cmake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
 ```bash
-CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_PYTHON_PERFORM_INSTALL=ON" ./scripts/compile.sh
+CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
 ```
 
 The second method is to build the example as a standalone project. From the root of the Morpheus repo execute:
@@ -43,6 +43,7 @@ Our includes:
 ```cpp
 #include <SimpleAmqpClient/SimpleAmqpClient.h>  // for AmqpClient::Channel::ptr_t
 #include <cudf/io/types.hpp>                    // for cudf::io::table_with_metadata
+#include <morpheus/export.h>                    // for exporting symbols
 #include <morpheus/messages/meta.hpp>           // for MessageMeta
 #include <mrc/segment/builder.hpp>              // for Segment Builder
 #include <mrc/segment/object.hpp>               // for Segment Object
@@ -60,13 +61,11 @@ Our namespace and class definition is:
 ```cpp
 namespace morpheus_rabbit {
 
-// pybind11 sets visibility to hidden by default; we want to export our symbols
-#pragma GCC visibility push(default)
-
 using namespace std::literals;
 using namespace morpheus;
 
-class RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
+//pybind11 sets visibility to hidden by default; we want to export our symbols
+class MORPHEUS_EXPORT RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
@@ -115,6 +114,7 @@ Wrapping it all together, our header file should be similar to:
 
 #include <SimpleAmqpClient/SimpleAmqpClient.h>  // for AmqpClient::Channel::ptr_t
 #include <cudf/io/types.hpp>                    // for cudf::io::table_with_metadata
+#include <morpheus/export.h>                    // for exporting symbols
 #include <morpheus/messages/meta.hpp>           // for MessageMeta
 #include <mrc/segment/builder.hpp>              // for Segment Builder
 #include <mrc/segment/object.hpp>               // for Segment Object
@@ -126,13 +126,11 @@ Wrapping it all together, our header file should be similar to:
 
 namespace morpheus_rabbit {
 
-// pybind11 sets visibility to hidden by default; we want to export our symbols
-#pragma GCC visibility push(default)
-
 using namespace std::literals;
 using namespace morpheus;
 
-class RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
+// pybind11 sets visibility to hidden by default; we want to export our symbols
+class MORPHEUS_EXPORT RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
@@ -162,7 +160,7 @@ class RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Mess
 /**
  * @brief Interface proxy, used to insulate Python bindings.
  */
-struct RabbitMQSourceStageInterfaceProxy
+struct MORPHEUS_EXPORT RabbitMQSourceStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a RabbitMQSourceStage, and return the result.
@@ -175,7 +173,7 @@ struct RabbitMQSourceStageInterfaceProxy
                                                                            const std::string& queue_name,
                                                                            std::chrono::milliseconds poll_interval);
 };
-#pragma GCC visibility pop
+
 }  // namespace morpheus_rabbit
 ```
 
