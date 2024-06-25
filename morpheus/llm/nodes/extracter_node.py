@@ -84,6 +84,9 @@ class ManualExtracterNode(LLMNodeBase):
     def __init__(self, input_names: list[str]) -> None:
         super().__init__()
 
+        assert len(input_names) > 0, "At least one input name must be provided"
+        assert len(set(input_names)) == len(input_names), "Input names must be unique"
+
         self._input_names = input_names
 
     def get_input_names(self) -> list[str]:
