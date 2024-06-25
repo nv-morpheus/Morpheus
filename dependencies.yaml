@@ -275,7 +275,7 @@ dependencies:
           - python-docx==1.1.0
           - pip
           - pip:
-              - PyMuPDF==1.23.21
+              - &PyMuPDF PyMuPDF==1.23.*
               - pytest-kafka==0.6.0
 
   example-dfp-prod:
@@ -329,7 +329,7 @@ dependencies:
             - langchain-nvidia-ai-endpoints==0.0.11
             - langchain==0.1.16
             - nemollm==0.3.5
-            - PyMuPDF==1.23.*
+            - *PyMuPDF
 
   model-training-tuning:
     common:
