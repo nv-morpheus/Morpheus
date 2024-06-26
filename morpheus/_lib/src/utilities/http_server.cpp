@@ -137,6 +137,7 @@ class Session : public std::enable_shared_from_this<Session>
                 m_response->set(http::field::content_type, std::get<1>(parse_status));
                 m_response->body() = std::get<2>(parse_status);
                 m_on_complete_cb   = std::get<3>(parse_status);
+                break;
             }
         }
 

@@ -125,10 +125,6 @@ def test_simple_request(port: int,
     assert not server.is_running()
 
 
-def test_simple_multi_endpoint():
-    pass
-
-
 @pytest.mark.parametrize("endpoint", ["/test"])
 def test_constructor_errors(endpoint: str):
     with pytest.raises(RuntimeError):
