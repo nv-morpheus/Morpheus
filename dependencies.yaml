@@ -34,10 +34,7 @@ files:
       - docs
       - example-dfp-prod
       - example-gnn
-      - example-llm-agents
-      - example-llm-completion
-      - example-llm-rag
-      - example-llm-vdb-upload
+      - example-llms
       - python
       - runtime
       - test_python_morpheus
@@ -100,10 +97,7 @@ files:
       - development
       - example-dfp-prod
       - example-gnn
-      - example-llm-agents
-      - example-llm-completion
-      - example-llm-rag
-      - example-llm-vdb-upload
+      - example-llms
       - python
       - runtime
       - test_python_morpheus
@@ -124,10 +118,7 @@ files:
       - docs
       - example-dfp-prod
       - example-gnn
-      - example-llm-agents
-      - example-llm-completion
-      - example-llm-rag
-      - example-llm-vdb-upload
+      - example-llms
       - python
       - runtime
 
@@ -158,10 +149,7 @@ files:
       - cve-mitigation
       - example-dfp-prod
       - example-gnn
-      - example-llm-agents
-      - example-llm-completion
-      - example-llm-rag
-      - example-llm-vdb-upload
+      - example-llms
       - python
       - runtime
 
@@ -382,7 +370,7 @@ dependencies:
           - python-docx==1.1.0
           - pip
           - pip:
-              - PyMuPDF==1.23.21
+              - &PyMuPDF PyMuPDF==1.23.*
               - pytest-kafka==0.6.0
 
   example-dfp-prod:
@@ -407,52 +395,28 @@ dependencies:
             - dgl==2.0.0
             - dglgo
 
-  example-llm-agents:
-    common:
-      - output_types: [conda]
-        packages:
-          - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
-          - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
-          - numexpr
-          - requests-toolbelt # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
-          - sentence-transformers
-          - pip
-          - pip:
-            - &langchain langchain==0.1.9
-            - nemollm
-
-  example-llm-completion:
+  example-llms:
     common:
       - output_types: [conda]
         packages:
           - &arxiv arxiv=1.4
           - &newspaper3k newspaper3k=0.2
           - &pypdf pypdf=3.17.4
-
-  example-llm-rag:
-    common:
-      - output_types: [conda]
-        packages:
+          - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
           - anyio>=3.7
+          - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
           - jsonpatch>=1.33
-          - openai=1.13
-          - pip
-          - pip:
-            - *langchain
-            - google-search-results==2.4
-
-  example-llm-vdb-upload:
-    common:
-      - output_types: [conda]
-        packages:
-          - *arxiv
-          - *newspaper3k
-          - *pypdf
+          - numexpr
           - onnx
+          - openai=1.13
+          - requests-toolbelt # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
+          - sentence-transformers
           - pip
           - pip:
-              - PyMuPDF==1.23.21
-              - *langchain
+            - &langchain langchain==0.1.9
+            - google-search-results==2.4
+            - nemollm
+            - *PyMuPDF
 
   model-training-tuning:
     common:
