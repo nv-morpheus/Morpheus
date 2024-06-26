@@ -113,6 +113,7 @@ files:
     includes:
       - benchmark_cpp
       - build_cpp_build
+      - build_cpp_host
       - cudatoolkit
       - cve-mitigation
       - data_retrieval
