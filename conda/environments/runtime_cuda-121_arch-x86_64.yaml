@@ -33,7 +33,6 @@ dependencies:
 - nvtabular=23.08.00
 - pip
 - pluggy=1.3
-- pyarrow=*=*_cuda
 - pydantic
 - python-confluent-kafka>=1.9.2,<1.10.0a0
 - python-graphviz
