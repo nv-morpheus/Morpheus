@@ -189,6 +189,10 @@ class MORPHEUS_EXPORT SlicedMessageMeta : public MessageMeta
 
     TableInfo get_info() const override;
 
+    TableInfo get_info(const std::string& col_name) const override;
+
+    TableInfo get_info(const std::vector<std::string>& column_names) const override;
+
     MutableTableInfo get_mutable_info() const override;
 
     std::optional<std::string> ensure_sliceable_index() override;

@@ -16,6 +16,8 @@ import asyncio
 import logging
 import typing
 
+from langchain_core.exceptions import OutputParserException
+
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 
@@ -33,14 +35,26 @@ class LangChainAgentNode(LLMNodeBase):
     ----------
     agent_executor : AgentExecutor
         The agent executor to use to execute.
+
+    replace_exceptions : bool, optional
+        When `True`, replaces exceptions with `replace_exceptions_value` from the output.
+
+    replace_exceptions_value : str, optional
+        The value to replace exceptions with when `replace_exceptions` is `True`, ignored otherwise.
     """
 
-    def __init__(self, agent_executor: "AgentExecutor"):
+    def __init__(self,
+                 agent_executor: "AgentExecutor",
+                 replace_exceptions: bool = False,
+                 replace_exceptions_value: typing.Optional[str] = None):
         super().__init__()
 
         self._agent_executor = agent_executor
 
         self._input_names = self._agent_executor.input_keys
+
+        self._replace_exceptions = replace_exceptions
+        self._replace_exceptions_value = replace_exceptions_value
 
     def get_input_names(self):
         return self._input_names
@@ -94,6 +108,24 @@ class LangChainAgentNode(LLMNodeBase):
         input_dict = context.get_inputs()
 
         results = await self._run_single(**input_dict)
+
+        if self._replace_exceptions:
+            # Processes the results to replace exceptions with a default message
+            for i, answer_list in enumerate(results):
+                for j, answer in enumerate(answer_list):
+
+                    # OutputParserException is not a subclass of Exception, so we need to check for it separately
+                    if isinstance(answer, (OutputParserException, Exception)):
+                        # If the agent encounters a parsing error or a server error after retries, replace the error
+                        # with a default value to prevent the pipeline from crashing
+                        results[i][j] = self._replace_exceptions_value
+                        logger.warning(
+                            "Exception encountered in result[%d][%d]: %s. "
+                            "Replacing with default message: '%s'.",
+                            i,
+                            j,
+                            answer,
+                            self._replace_exceptions_value)
 
         context.set_output(results)
 
