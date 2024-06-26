@@ -103,8 +103,8 @@ files:
       - test_python_morpheus
 
   # Dependencies that are needed to generate the Morpheus documentation.
-  # Includes: runtime, examples
-  # Excludes: build, test
+  # Includes: build, runtime, examples
+  # Excludes: test
   docs:
     output: none
     matrix:
@@ -112,6 +112,7 @@ files:
       arch: [x86_64]
     includes:
       - benchmark_cpp
+      - build_cpp_build
       - cudatoolkit
       - cve-mitigation
       - data_retrieval
