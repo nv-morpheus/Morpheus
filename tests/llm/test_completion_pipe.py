@@ -28,7 +28,7 @@ from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
 from morpheus.llm.nodes.prompt_template_node import PromptTemplateNode
-from morpheus.llm.services.llm_service import LLMService
+from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.llm.services.openai_chat_service import OpenAIChatService
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
@@ -42,9 +42,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 logger = logging.getLogger(__name__)
 
 
-def _build_engine(llm_service_cls: type[LLMService], model_name: str = "test_model"):
-    llm_service = llm_service_cls()
-    llm_client = llm_service.get_client(model_name=model_name)
+def _build_engine(llm_client: LLMClient):
 
     engine = LLMEngine()
     engine.add_node("extracter", node=ExtracterNode())
@@ -57,11 +55,7 @@ def _build_engine(llm_service_cls: type[LLMService], model_name: str = "test_mod
     return engine
 
 
-def _run_pipeline(config: Config,
-                  llm_service_cls: type[LLMService],
-                  countries: list[str],
-                  capital_responses: list[str],
-                  model_name: str = "test_model") -> dict:
+def _run_pipeline(config: Config, llm_client: LLMClient, countries: list[str], capital_responses: list[str]) -> dict:
     """
     Loosely patterned after `examples/llm/completion`
     """
@@ -81,7 +75,7 @@ def _run_pipeline(config: Config,
                          task_type="llm_engine",
                          task_payload=completion_task))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(llm_service_cls, model_name=model_name)))
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(llm_client)))
 
     sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
 
@@ -99,8 +93,10 @@ def test_completion_pipe_nemo(config: Config,
     # Set a dummy key to bypass the API key check
     with set_env(NGC_API_KEY="test"):
 
+        llm_client = NeMoLLMService().get_client(model_name="test_model")
+
         mock_nemollm.post_process_generate_response.side_effect = [{"text": response} for response in capital_responses]
-        results = _run_pipeline(config, NeMoLLMService, countries=countries, capital_responses=capital_responses)
+        results = _run_pipeline(config, llm_client, countries=countries, capital_responses=capital_responses)
         assert_results(results)
 
 
@@ -114,20 +110,21 @@ def test_completion_pipe_openai(config: Config,
         mk_mock_openai_response([response]) for response in capital_responses
     ]
 
-    results = _run_pipeline(config, OpenAIChatService, countries=countries, capital_responses=capital_responses)
-    assert_results(results)
-    mock_client.chat.completions.create.assert_not_called()
-    mock_async_client.chat.completions.create.assert_called()
+    with set_env(OPENAI_API_KEY="test"):
+        llm_client = OpenAIChatService().get_client(model_name="test_model")
+
+        results = _run_pipeline(config, llm_client, countries=countries, capital_responses=capital_responses)
+        assert_results(results)
+        mock_client.chat.completions.create.assert_not_called()
+        mock_async_client.chat.completions.create.assert_called()
 
 
 @pytest.mark.usefixtures("nemollm")
 @pytest.mark.usefixtures("ngc_api_key")
 def test_completion_pipe_integration_nemo(config: Config, countries: list[str], capital_responses: list[str]):
-    results = _run_pipeline(config,
-                            NeMoLLMService,
-                            countries=countries,
-                            capital_responses=capital_responses,
-                            model_name="gpt-43b-002")
+    llm_client = NeMoLLMService().get_client(model_name="gpt-43b-002")
+
+    results = _run_pipeline(config, llm_client, countries=countries, capital_responses=capital_responses)
     assert results['diff_cols'] == 0
     assert results['total_rows'] == len(countries)
     assert results['matching_rows'] + results['diff_rows'] == len(countries)
@@ -136,11 +133,9 @@ def test_completion_pipe_integration_nemo(config: Config, countries: list[str], 
 @pytest.mark.usefixtures("openai")
 @pytest.mark.usefixtures("openai_api_key")
 def test_completion_pipe_integration_openai(config: Config, countries: list[str], capital_responses: list[str]):
-    results = _run_pipeline(config,
-                            OpenAIChatService,
-                            countries=countries,
-                            capital_responses=capital_responses,
-                            model_name="gpt-3.5-turbo")
+    llm_client = OpenAIChatService().get_client(model_name="gpt-3.5-turbo")
+
+    results = _run_pipeline(config, llm_client, countries=countries, capital_responses=capital_responses)
     assert results['diff_cols'] == 0
     assert results['total_rows'] == len(countries)
     assert results['matching_rows'] + results['diff_rows'] == len(countries)
