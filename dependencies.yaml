@@ -315,7 +315,7 @@ dependencies:
           # Include: python
           # Include: cve-mitigation
           - appdirs
-          - beautifulsoup4
+          - beautifulsoup4=4.12
           - click>=8
           # - cuda-version=12.1 ##
           - cudf=24.02
@@ -407,15 +407,17 @@ dependencies:
           - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
           - jsonpatch>=1.33
           - numexpr
-          - onnx
+          - onnx=1.15
           - openai=1.13
-          - requests-toolbelt # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
-          - sentence-transformers
+          - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
+          - sentence-transformers=2.7
           - pip
           - pip:
-            - &langchain langchain==0.1.9
+            - langchain==0.1.16
+            - langchain-nvidia-ai-endpoints==0.0.11
+            - faiss-gpu==1.7.*
             - google-search-results==2.4
-            - nemollm
+            - nemollm==0.3.5
             - *PyMuPDF
 
   model-training-tuning:

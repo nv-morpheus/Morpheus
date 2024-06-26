@@ -10,7 +10,7 @@ channels:
 - pytorch
 dependencies:
 - appdirs
-- beautifulsoup4
+- beautifulsoup4=4.12
 - click>=8
 - cuda-cudart=12.1
 - cuda-nvrtc=12.1
