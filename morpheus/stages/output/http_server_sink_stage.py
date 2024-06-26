@@ -144,12 +144,12 @@ class HttpServerSinkStage(PassThruTypeMixin, SinglePortStage):
 
     async def start_async(self):
         """Starts the HTTP server."""
+        from morpheus.common import HttpEndpoint
         from morpheus.common import HttpServer
-        self._server = HttpServer(parse_fn=self._request_handler,
+        http_endpoint = HttpEndpoint(py_parse_fn=self._request_handler, url=self._endpoint, method=self._method.name)
+        self._server = HttpServer(endpoints=[http_endpoint],
                                   bind_address=self._bind_address,
                                   port=self._port,
-                                  endpoint=self._endpoint,
-                                  method=self._method.value,
                                   num_threads=self._num_server_threads,
                                   request_timeout=self._request_timeout_secs)
         self._server.start()

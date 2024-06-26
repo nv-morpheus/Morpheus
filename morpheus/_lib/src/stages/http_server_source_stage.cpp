@@ -19,6 +19,7 @@
 
 #include <boost/beast/http/status.hpp>        // for int_to_status, status
 #include <boost/fiber/channel_op_status.hpp>  // for channel_op_status
+#include <boost/fiber/operations.hpp>         // for sleep_for
 #include <cudf/io/json.hpp>                   // for json_reader_options & read_json
 #include <glog/logging.h>                     // for CHECK & LOG
 
@@ -28,6 +29,7 @@
 #include <thread>     // for std::this_thread::sleep_for
 #include <tuple>      // for make_tuple
 #include <utility>    // for std::move
+#include <vector>     // for vector
 // IWYU thinks we need more boost headers than we need as int_to_status is defined in status.hpp
 // IWYU pragma: no_include <boost/beast/http.hpp>
 
@@ -41,7 +43,11 @@ class SourceStageStopAfter : public std::exception
 HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
                                              unsigned short port,
                                              std::string endpoint,
+                                             std::string live_endpoint,
+                                             std::string ready_endpoint,
                                              std::string method,
+                                             std::string live_method,
+                                             std::string ready_method,
                                              unsigned accept_status,
                                              float sleep_time,
                                              long queue_timeout,
@@ -52,7 +58,8 @@ HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
                                              bool lines,
                                              std::size_t stop_after) :
   PythonSource(build()),
-  m_sleep_time{sleep_time},
+  m_max_queue_size{max_queue_size},
+  m_sleep_time{std::chrono::milliseconds(static_cast<long int>(sleep_time))},
   m_queue_timeout{queue_timeout},
   m_queue{max_queue_size},
   m_stop_after{stop_after},
@@ -83,6 +90,7 @@ HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
 
             if (queue_status == boost::fibers::channel_op_status::success)
             {
+                m_queue_cnt++;
                 return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
             }
 
@@ -113,14 +121,40 @@ HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
             return std::make_tuple(500u, "text/plain", error_msg, nullptr);
         }
     };
-    m_server = std::make_unique<HttpServer>(std::move(parser),
-                                            std::move(bind_address),
-                                            port,
-                                            std::move(endpoint),
-                                            std::move(method),
-                                            num_server_threads,
-                                            max_payload_size,
-                                            request_timeout);
+
+    payload_parse_fn_t live_parser = [this, accept_status, lines](const std::string& payload) {
+        if (!m_server->is_running())
+        {
+            std::string error_msg = "Source server is not running";
+            return std::make_tuple(500u, "text/plain", error_msg, nullptr);
+        }
+
+        return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
+    };
+
+    payload_parse_fn_t ready_parser = [this, accept_status, lines](const std::string& payload) {
+        if (!m_server->is_running())
+        {
+            std::string error_msg = "Source server is not running";
+            return std::make_tuple(500u, "text/plain", error_msg, nullptr);
+        }
+
+        if (m_queue_cnt < m_max_queue_size)
+        {
+            return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
+        }
+
+        std::string error_msg = "HTTP payload queue is full or unavailable to accept new values";
+        return std::make_tuple(503u, "text/plain", std::move(error_msg), nullptr);
+    };
+
+    std::vector<HttpEndpoint> endpoints;
+    endpoints.emplace_back(parser, endpoint, method);
+    endpoints.emplace_back(live_parser, live_endpoint, live_method);
+    endpoints.emplace_back(ready_parser, ready_endpoint, ready_method);
+
+    m_server = std::make_unique<HttpServer>(
+        std::move(endpoints), std::move(bind_address), port, num_server_threads, max_payload_size, request_timeout);
 }
 
 HttpServerSourceStage::subscriber_fn_t HttpServerSourceStage::build()
@@ -157,6 +191,7 @@ void HttpServerSourceStage::source_generator(rxcpp::subscriber<HttpServerSourceS
         if (queue_status == boost::fibers::channel_op_status::success)
         {
             // NOLINTNEXTLINE(clang-diagnostic-unused-value)
+            m_queue_cnt--;
             DCHECK_NOTNULL(table_ptr);
             try
             {
@@ -182,7 +217,7 @@ void HttpServerSourceStage::source_generator(rxcpp::subscriber<HttpServerSourceS
             if (server_running)
             {
                 // Sleep when there are no messages
-                std::this_thread::sleep_for(m_sleep_time);
+                boost::this_fiber::sleep_for(m_sleep_time);
             }
         }
         else if (queue_status == boost::fibers::channel_op_status::closed)
@@ -220,7 +255,11 @@ std::shared_ptr<mrc::segment::Object<HttpServerSourceStage>> HttpServerSourceSta
     std::string bind_address,
     unsigned short port,
     std::string endpoint,
+    std::string live_endpoint,
+    std::string ready_endpoint,
     std::string method,
+    std::string live_method,
+    std::string ready_method,
     unsigned accept_status,
     float sleep_time,
     long queue_timeout,
@@ -237,7 +276,11 @@ std::shared_ptr<mrc::segment::Object<HttpServerSourceStage>> HttpServerSourceSta
         std::move(bind_address),
         port,
         std::move(endpoint),
+        std::move(live_endpoint),
+        std::move(ready_endpoint),
         std::move(method),
+        std::move(live_method),
+        std::move(ready_method),
         accept_status,
         sleep_time,
         queue_timeout,

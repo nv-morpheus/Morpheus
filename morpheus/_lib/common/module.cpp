@@ -38,6 +38,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>  // for return_value_policy::reference
 // for pathlib.Path -> std::filesystem::path conversions
+#include <pybind11/stl.h>             // IWYU pragma: keep
 #include <pybind11/stl/filesystem.h>  // IWYU pragma: keep
 
 #include <filesystem>  // for std::filesystem::path
@@ -151,13 +152,14 @@ PYBIND11_MODULE(common, _module)
         .value("TENSOR", FilterSource::TENSOR)
         .value("DATAFRAME", FilterSource::DATAFRAME);
 
+    py::class_<HttpEndpoint, std::shared_ptr<HttpEndpoint>>(_module, "HttpEndpoint")
+        .def(py::init<>(&HttpEndpointInterfaceProxy::init), py::arg("py_parse_fn"), py::arg("url"), py::arg("method"));
+
     py::class_<HttpServer, std::shared_ptr<HttpServer>>(_module, "HttpServer")
         .def(py::init<>(&HttpServerInterfaceProxy::init),
-             py::arg("parse_fn"),
+             py::arg("endpoints"),
              py::arg("bind_address")     = "127.0.0.1",
              py::arg("port")             = 8080,
-             py::arg("endpoint")         = "/message",
-             py::arg("method")           = "POST",
              py::arg("num_threads")      = 1,
              py::arg("max_payload_size") = DefaultMaxPayloadSize,
              py::arg("request_timeout")  = 30)
