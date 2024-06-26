@@ -78,7 +78,6 @@ def _run_minibert_pipeline(
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
     config.edge_buffer_size = 128
-    config.num_threads = 1
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'sid-validation-data.csv')
     vocab_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-uncased-hash.txt')
