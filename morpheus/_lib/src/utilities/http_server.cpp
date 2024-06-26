@@ -73,15 +73,11 @@ class Session : public std::enable_shared_from_this<Session>
 {
   public:
     Session(tcp::socket&& socket,
-            std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
-            const std::string& url_endpoint,
-            http::verb method,
+            std::vector<morpheus::HttpEndpoint>& endpoints,
             std::size_t max_payload_size,
             std::chrono::seconds timeout) :
       m_stream{std::move(socket)},
-      m_payload_parse_fn{std::move(payload_parse_fn)},
-      m_url_endpoint{url_endpoint},
-      m_method{method},
+      m_endpoints{endpoints},
       m_max_payload_size{max_payload_size},
       m_timeout{timeout},
       m_on_complete_cb{nullptr}
@@ -127,18 +123,25 @@ class Session : public std::enable_shared_from_this<Session>
     {
         DLOG(INFO) << "Received request: " << request.method() << " : " << request.target();
         m_response = std::make_unique<http::response<http::string_body>>();
+        bool valid_request = false;
 
-        if (request.target() == m_url_endpoint && (request.method() == m_method))
+        for (const auto& endpoint : m_endpoints)
         {
-            std::string body{request.body()};
-            auto parse_status = (*m_payload_parse_fn)(body);
+            if (request.target() == endpoint.m_url && request.method() == endpoint.m_method)
+            {
+                valid_request = true;
+                std::string body{request.body()};
+                auto parse_status = (*endpoint.m_parser)(body);
 
-            m_response->result(std::get<0>(parse_status));
-            m_response->set(http::field::content_type, std::get<1>(parse_status));
-            m_response->body() = std::get<2>(parse_status);
-            m_on_complete_cb   = std::get<3>(parse_status);
+                m_response->result(std::get<0>(parse_status));
+                m_response->set(http::field::content_type, std::get<1>(parse_status));
+                m_response->body() = std::get<2>(parse_status);
+                m_on_complete_cb   = std::get<3>(parse_status);
+                break;
+            }
         }
-        else
+
+        if (!valid_request)
         {
             m_response->result(http::status::not_found);
             m_response->set(http::field::content_type, "text/plain");
@@ -203,9 +206,7 @@ class Session : public std::enable_shared_from_this<Session>
 
     beast::tcp_stream m_stream;
     beast::flat_buffer m_buffer;
-    std::shared_ptr<morpheus::payload_parse_fn_t> m_payload_parse_fn;
-    const std::string& m_url_endpoint;
-    http::verb m_method;
+    std::vector<morpheus::HttpEndpoint> m_endpoints;
     std::size_t m_max_payload_size;
     std::chrono::seconds m_timeout;
 
@@ -219,39 +220,24 @@ class Session : public std::enable_shared_from_this<Session>
 
 namespace morpheus {
 
-HttpServer::HttpServer(payload_parse_fn_t payload_parse_fn,
+HttpServer::HttpServer(std::vector<HttpEndpoint> endpoints,
                        std::string bind_address,
                        unsigned short port,
-                       std::string endpoint,
-                       std::string method,
                        unsigned short num_threads,
                        std::size_t max_payload_size,
                        std::chrono::seconds request_timeout) :
-  m_payload_parse_fn(std::make_shared<payload_parse_fn_t>(std::move(payload_parse_fn))),
+  m_endpoints(std::move(endpoints)),
   m_bind_address(std::move(bind_address)),
   m_port(port),
-  m_endpoint(std::move(endpoint)),
-  m_method(http::string_to_verb(method)),
   m_num_threads(num_threads),
   m_request_timeout(request_timeout),
   m_max_payload_size(max_payload_size),
   m_io_context{m_num_threads},
-  m_listener{nullptr},
   m_is_running{false}
 {
-    if (m_method == http::verb::unknown)
-    {
-        throw std::runtime_error("Invalid method: " + method);
-    }
-
     if (m_num_threads == 0)
     {
         throw std::runtime_error("num_threads must be greater than 0");
-    }
-
-    if (m_endpoint.front() != '/')
-    {
-        m_endpoint.insert(0, 1, '/');
     }
 }
 
@@ -259,20 +245,12 @@ void HttpServer::start_listener(std::binary_semaphore& listener_semaphore, std::
 {
     listener_semaphore.acquire();
 
-    // This function will block until the io context is shutdown, and should be
-    // called from the first worker thread
     DCHECK(m_listener_threads.size() == 1 && m_listener_threads[0].get_id() == std::this_thread::get_id())
         << "start_listener must be called from the first thread in "
            "m_listener_threads";
 
-    m_listener = std::make_shared<Listener>(m_io_context,
-                                            m_payload_parse_fn,
-                                            m_bind_address,
-                                            m_port,
-                                            m_endpoint,
-                                            m_method,
-                                            m_max_payload_size,
-                                            m_request_timeout);
+    m_listener = std::make_shared<Listener>(
+        m_io_context, m_bind_address, m_port, m_endpoints, m_max_payload_size, m_request_timeout);
     m_listener->run();
 
     for (auto i = 1; i < m_num_threads; ++i)
@@ -355,18 +333,13 @@ HttpServer::~HttpServer()
     }
 }
 
-/****** HttpServerInterfaceProxy *************************/
+/****** HttpEndpointInterfaceProxy *************************/
 using mrc::pymrc::PyFuncWrapper;
 namespace py = pybind11;
 
-std::shared_ptr<HttpServer> HttpServerInterfaceProxy::init(py::function py_parse_fn,
-                                                           std::string bind_address,
-                                                           unsigned short port,
-                                                           std::string endpoint,
-                                                           std::string method,
-                                                           unsigned short num_threads,
-                                                           std::size_t max_payload_size,
-                                                           int64_t request_timeout)
+std::shared_ptr<HttpEndpoint> HttpEndpointInterfaceProxy::init(pybind11::function py_parse_fn,
+                                                               std::string url,
+                                                               std::string method)
 {
     auto wrapped_parse_fn               = PyFuncWrapper(std::move(py_parse_fn));
     payload_parse_fn_t payload_parse_fn = [wrapped_parse_fn = std::move(wrapped_parse_fn)](const std::string& payload) {
@@ -399,11 +372,21 @@ std::shared_ptr<HttpServer> HttpServerInterfaceProxy::init(py::function py_parse
                                std::move(cb_fn));
     };
 
-    return std::make_shared<HttpServer>(std::move(payload_parse_fn),
+    return std::make_shared<HttpEndpoint>(std::move(payload_parse_fn), url, method);
+}
+
+/****** HttpServerInterfaceProxy *************************/
+
+std::shared_ptr<HttpServer> HttpServerInterfaceProxy::init(std::vector<HttpEndpoint> endpoints,
+                                                           std::string bind_address,
+                                                           unsigned short port,
+                                                           unsigned short num_threads,
+                                                           std::size_t max_payload_size,
+                                                           int64_t request_timeout)
+{
+    return std::make_shared<HttpServer>(std::move(endpoints),
                                         std::move(bind_address),
                                         port,
-                                        std::move(endpoint),
-                                        std::move(method),
                                         num_threads,
                                         max_payload_size,
                                         std::chrono::seconds(request_timeout));
@@ -442,20 +425,32 @@ void HttpServerInterfaceProxy::exit(HttpServer& self,
     self.stop();
 }
 
+HttpEndpoint::HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url, std::string method) :
+  m_parser{std::make_shared<payload_parse_fn_t>(std::move(payload_parse_fn))},
+  m_url{std::move(url)},
+  m_method{http::string_to_verb(method)}
+{
+    if (m_method == http::verb::unknown)
+    {
+        throw std::runtime_error("Invalid method: " + method);
+    }
+
+    if (m_url.front() != '/')
+    {
+        m_url.insert(m_url.begin(), '/');
+    }
+}
+
 Listener::Listener(net::io_context& io_context,
-                   std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
                    const std::string& bind_address,
                    unsigned short port,
-                   const std::string& endpoint,
-                   http::verb method,
+                   std::vector<HttpEndpoint> endpoints,
                    std::size_t max_payload_size,
                    std::chrono::seconds request_timeout) :
   m_io_context{io_context},
   m_tcp_endpoint{net::ip::make_address(bind_address), port},
   m_acceptor{std::make_unique<tcp::acceptor>(net::make_strand(m_io_context))},
-  m_payload_parse_fn{std::move(payload_parse_fn)},
-  m_url_endpoint{endpoint},
-  m_method{method},
+  m_endpoints{std::move(endpoints)},
   m_max_payload_size{max_payload_size},
   m_request_timeout{request_timeout},
   m_is_running{false}
@@ -471,7 +466,10 @@ void Listener::stop()
     m_acceptor->close();
     m_is_running = false;
     m_acceptor.reset();
-    m_payload_parse_fn.reset();
+    for (auto& endpoint : m_endpoints)
+    {
+        endpoint.m_parser.reset();
+    }
 }
 
 void Listener::run()
@@ -500,9 +498,7 @@ void Listener::on_accept(beast::error_code ec, tcp::socket socket)
     }
     else
     {
-        std::make_shared<Session>(
-            std::move(socket), m_payload_parse_fn, m_url_endpoint, m_method, m_max_payload_size, m_request_timeout)
-            ->run();
+        std::make_shared<Session>(std::move(socket), m_endpoints, m_max_payload_size, m_request_timeout)->run();
     }
 
     do_accept();

@@ -37,7 +37,7 @@ class PromptTemplateNode(LLMNodeBase):
 
     def __init__(self, template: str, template_format: typing.Literal["f-string", "jinja"] = "f-string") -> None:
         super().__init__()
-        self._template = template
+        self._template_str = template
         self._template_format = template_format
 
         if (self._template_format == "f-string"):
@@ -46,7 +46,7 @@ class PromptTemplateNode(LLMNodeBase):
             # (literal_text, field_name, format_spec, conversion)
             # https://docs.python.org/3.10/library/string.html#string.Formatter.parse
             self._input_names = []
-            for (_, field_name, _, _) in formatter.parse(self._template):
+            for (_, field_name, _, _) in formatter.parse(self._template_str):
                 if field_name == '':
                     raise ValueError("Unnamed fields in templates are not supported")
 
@@ -57,9 +57,10 @@ class PromptTemplateNode(LLMNodeBase):
             from jinja2 import Template
             from jinja2 import meta
 
-            jinja_template = Template(self._template)
+            self._template_jinja = Template(self._template_str, enable_async=True, trim_blocks=True, lstrip_blocks=True)
 
-            self._input_names = list(meta.find_undeclared_variables(jinja_template.environment.parse(self._template)))
+            self._input_names = list(
+                meta.find_undeclared_variables(self._template_jinja.environment.parse(self._template_str)))
         else:
             raise ValueError(f"Invalid template format: {self._template_format}, must be one of: f-string, jinja")
 
@@ -75,14 +76,9 @@ class PromptTemplateNode(LLMNodeBase):
         input_list = [dict(zip(input_dict, t)) for t in zip(*input_dict.values())]
 
         if (self._template_format == "f-string"):
-            output_list = [self._template.format(**x) for x in input_list]
+            output_list = [self._template_str.format(**x) for x in input_list]
         elif (self._template_format == "jinja"):
-
-            from jinja2 import Template
-
-            template = Template(self._template, enable_async=True)
-
-            render_coros = [template.render_async(**inputs) for inputs in input_list]
+            render_coros = [self._template_jinja.render_async(**inputs) for inputs in input_list]
 
             output_list = await asyncio.gather(*render_coros)
 

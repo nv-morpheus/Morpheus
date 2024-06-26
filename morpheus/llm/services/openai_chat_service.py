@@ -38,6 +38,8 @@ try:
     import openai
     import openai.types.chat
     import openai.types.chat.chat_completion
+    from openai.types.chat.completion_create_params import ResponseFormat
+
 except ImportError as import_exc:
     IMPORT_EXCEPTION = import_exc
 
@@ -66,20 +68,6 @@ class _ApiLogger:
         self.outputs = output
 
 
-class OpenAIOrgId(EnvConfigValue):
-    _ENV_KEY: str = "OPENAI_ORG_ID"
-    _ALLOW_NONE: bool = True
-
-
-class OpenAIAPIKey(EnvConfigValue):
-    _ENV_KEY: str = "OPENAI_API_KEY"
-
-
-class OpenAIBaseURL(EnvConfigValue):
-    _ENV_KEY: str = "OPENAI_BASE_URL"
-    _ALLOW_NONE: bool = True
-
-
 class OpenAIChatClient(LLMClient):
     """
     Client for interacting with a specific OpenAI chat model. This class should be constructed with the
@@ -87,14 +75,21 @@ class OpenAIChatClient(LLMClient):
 
     Parameters
     ----------
+    parent : OpenAIChatService
+        The parent service for this client.
+
     model_name : str
         The name of the model to interact with.
 
-    set_assistant: bool, optional default=False
-        When `True`, a second input field named `assistant` will be used to proide additional context to the model.
+    set_assistant: bool, optional
+        When `True`, a second input field named `assistant` will be used to proide additional context to the model, by
+        default False
 
-    max_retries: int, optional default=10
-        The maximum number of retries to attempt when making a request to the OpenAI API.
+    max_retries: int, optional
+        The maximum number of retries to attempt when making a request to the OpenAI API, by default 10
+
+    json: bool, optional
+        When `True`, the response will be returned as a JSON object, by default False
 
     model_kwargs : dict[str, typing.Any]
         Additional keyword arguments to pass to the model when generating text.
@@ -109,23 +104,12 @@ class OpenAIChatClient(LLMClient):
                  model_name: str,
                  set_assistant: bool = False,
                  max_retries: int = 10,
-                 org_id: str | OpenAIOrgId = None,
-                 api_key: str | OpenAIAPIKey = None,
-                 base_url: str | OpenAIBaseURL = None,
+                 json=False,
                  **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
         super().__init__()
-
-        if not isinstance(org_id, OpenAIOrgId):
-            org_id = OpenAIOrgId(org_id)
-
-        if not isinstance(api_key, OpenAIOrgId):
-            api_key = OpenAIOrgId(api_key)
-
-        if not isinstance(base_url, OpenAIBaseURL):
-            base_url = OpenAIBaseURL(base_url)
 
         assert parent is not None, "Parent service cannot be None."
 
@@ -135,19 +119,48 @@ class OpenAIChatClient(LLMClient):
         self._set_assistant = set_assistant
         self._prompt_key = "prompt"
         self._assistant_key = "assistant"
+        self._json = json
 
         # Preserve original configuration.
         self._model_kwargs = copy.deepcopy(model_kwargs)
 
+        if (self._json):
+            self._model_kwargs["response_format"] = ResponseFormat(type="json_object")
+
         # Create the client objects for both sync and async
         self._client = openai.OpenAI(max_retries=max_retries,
-                                     organization=org_id.value,
-                                     api_key=api_key.value,
-                                     base_url=base_url.value)
+                                     organization=self._parent._org_id.value,
+                                     api_key=self._parent._api_key.value,
+                                     base_url=self._parent._base_url.value)
         self._client_async = openai.AsyncOpenAI(max_retries=max_retries,
-                                                organization=org_id.value,
-                                                api_key=api_key.value,
-                                                base_url=base_url.value)
+                                                organization=self._parent._org_id.value,
+                                                api_key=self._parent._api_key.value,
+                                                base_url=self._parent._base_url.value)
+
+    @property
+    def model_name(self):
+        """
+        Get the name of the model associated with this client.
+
+        Returns
+        -------
+        str
+            The name of the model.
+        """
+        return self._model_name
+
+    @property
+    def model_kwargs(self):
+        """
+        Get the keyword args that will be passed to the model when calling generation functions.
+
+        Returns
+        -------
+        dict
+            The keyword arguments dictionary.
+        """
+        # Return a copy to avoid modification of the original
+        return self._model_kwargs.copy()
 
     def get_input_names(self) -> list[str]:
         input_names = [self._prompt_key]
@@ -347,30 +360,62 @@ class OpenAIChatClient(LLMClient):
 class OpenAIChatService(LLMService):
     """
     A service for interacting with OpenAI Chat models, this class should be used to create clients.
+
+    Parameters
+    ----------
+    api_key : str, optional
+        The API key for the LLM service, by default None. If `None` the API key will be read from the
+        `OPENAI_API_KEY` environment variable. If neither are present an error will be raised.
+    org_id : str, optional
+        The organization ID for the LLM service, by default None. If `None` the organization ID will be read from
+        the `OPENAI_ORG_ID` environment variable. This value is only required if the account associated with the
+        `api_key` is a member of multiple organizations, by default None
+    base_url : str, optional
+        The api host url, by default None. If `None` the url will be read from the `OPENAI_BASE_URL` environment
+        variable. If neither are present the OpenAI default will be used, by default None
+    default_model_kwargs : dict, optional
+        Default arguments to use when creating a client via the `get_client` function. Any argument specified here
+        will automatically be used when calling `get_client`. Arguments specified in the `get_client` function will
+        overwrite default values specified here. This is useful to set model arguments before creating multiple
+        clients. By default None
+
     """
 
-    def __init__(self, *, default_model_kwargs: dict = None) -> None:
-        """
-        Creates a service for interacting with OpenAI Chat models, this class should be used to create clients.
+    class APIKey(EnvConfigValue):
+        _ENV_KEY: str = "OPENAI_API_KEY"
 
-        Parameters
-        ----------
-        default_model_kwargs : dict, optional
-            Default arguments to use when creating a client via the `get_client` function. Any argument specified here
-            will automatically be used when calling `get_client`. Arguments specified in the `get_client` function will
-            overwrite default values specified here. This is useful to set model arguments before creating multiple
-            clients. By default None
+    class OrgId(EnvConfigValue):
+        _ENV_KEY: str = "OPENAI_ORG_ID"
+        _ALLOW_NONE: bool = True
 
-        Raises
-        ------
-        ImportError
-            If the `openai` library is not found in the python environment.
-        """
+    class BaseURL(EnvConfigValue):
+        _ENV_KEY: str = "OPENAI_BASE_URL"
+        _ALLOW_NONE: bool = True
+
+    def __init__(self,
+                 *,
+                 api_key: APIKey | str = None,
+                 org_id: OrgId | str = None,
+                 base_url: BaseURL | str = None,
+                 default_model_kwargs: dict = None) -> None:
+
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
         super().__init__()
 
+        if not isinstance(api_key, OpenAIChatService.APIKey):
+            api_key = OpenAIChatService.APIKey(api_key)
+
+        if not isinstance(org_id, OpenAIChatService.OrgId):
+            org_id = OpenAIChatService.OrgId(org_id)
+
+        if not isinstance(base_url, OpenAIChatService.BaseURL):
+            base_url = OpenAIChatService.BaseURL(base_url)
+
+        self._api_key = api_key
+        self._org_id = org_id
+        self._base_url = base_url
         self._default_model_kwargs = default_model_kwargs or {}
 
         self._logger = logging.getLogger(f"{__package__}.{OpenAIChatService.__name__}")
@@ -379,6 +424,9 @@ class OpenAIChatService(LLMService):
         self._logger.propagate = False
 
         log_file = os.path.join(appdirs.user_log_dir(appauthor="NVIDIA", appname="morpheus"), "openai.log")
+
+        # Ensure the log directory exists
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
         # Add a file handler
         file_handler = logging.FileHandler(log_file)
@@ -401,6 +449,7 @@ class OpenAIChatService(LLMService):
                    model_name: str,
                    set_assistant: bool = False,
                    max_retries: int = 10,
+                   json=False,
                    **model_kwargs) -> OpenAIChatClient:
         """
         Returns a client for interacting with a specific model. This method is the preferred way to create a client.
@@ -410,11 +459,15 @@ class OpenAIChatService(LLMService):
         model_name : str
             The name of the model to create a client for.
 
-        set_assistant: bool, optional default=False
-            When `True`, a second input field named `assistant` will be used to proide additional context to the model.
+        set_assistant: bool, optional
+            When `True`, a second input field named `assistant` will be used to proide additional context to the model,
+            by default False
 
-        max_retries: int, optional default=10
-            The maximum number of retries to attempt when making a request to the OpenAI API.
+        max_retries: int, optional
+            The maximum number of retries to attempt when making a request to the OpenAI API, by default 10
+
+        json: bool, optional
+            When `True`, the response will be returned as a JSON object, by default False
 
         model_kwargs : dict[str, typing.Any]
             Additional keyword arguments to pass to the model when generating text. Arguments specified here will
@@ -427,4 +480,5 @@ class OpenAIChatService(LLMService):
                                 model_name=model_name,
                                 set_assistant=set_assistant,
                                 max_retries=max_retries,
+                                json=json,
                                 **final_model_kwargs)

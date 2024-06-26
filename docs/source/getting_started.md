@@ -48,6 +48,8 @@ The large model and data files in this repo are stored using [Git Large File Sto
 
 The `scripts/fetch_data.py` script can be used to fetch the Morpheus pre-trained models, and other files required for running the training/validation scripts and example pipelines.
 
+If any data-related issues occur when running the pipeline, the script should be rerun outside the container.
+
 Usage of the script is as follows:
 ```bash
 scripts/fetch_data.py fetch <dataset> [<dataset>...]

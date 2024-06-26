@@ -120,7 +120,7 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
 
 @click.command()
 @click.option("--debug/--no-debug", default=False)
-@click.option('--use_cpp', default=False)
+@click.option('--use_cpp', default=True)
 @click.option(
     "--num_threads",
     default=os.cpu_count(),
