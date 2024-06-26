@@ -17,14 +17,10 @@ limitations under the License.
 
 # Getting Started with Morpheus
 
-There are three ways to get started with Morpheus:
-- [Using pre-built Docker containers](#using-pre-built-docker-containers)
+There are two ways to get started with Morpheus:
 - [Building the Morpheus Docker container](#building-the-morpheus-container)
 - [Building Morpheus from source](./developer_guide/contributing.md#building-from-source)
 
-The [pre-built Docker containers](#using-pre-built-docker-containers) are the easiest way to get started with the latest release of Morpheus. Released versions of Morpheus containers can be found on [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_).
-
-More advanced users, or those who are interested in using the latest pre-release features, will need to [build the Morpheus container](#building-the-morpheus-container) or [build from source](./developer_guide/contributing.md#building-from-source).
 
 ## Requirements
 - Volta architecture GPU or better
@@ -36,43 +32,6 @@ More advanced users, or those who are interested in using the latest pre-release
 > **Note about Docker:**
 >
 > The Morpheus documentation and examples assume that the [Manage Docker as a non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user) post install step has been performed allowing Docker commands to be executed by a non-root user. This is not strictly necessary so long as the current user has `sudo` privileges to execute Docker commands.
-
-## Using pre-built Docker containers
-### Pull the Morpheus Image
-1. Go to [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags)
-1. Choose a version
-1. Download the selected version, for example for `24.06`:
-```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus:24.06-runtime
-```
-
-> **Note about Morpheus versions:**
->
-> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v24.06.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v24.06.01-runtime`, `v24.06.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference that point release.
->
-> Users who want to ensure they are running with the latest bug fixes should use a release image tag (`YY.MM-runtime`). Users who need to deploy a specific version into production should use a point release image tag (`vYY.MM.00-runtime`).
-
-### Starting the Morpheus Container
-1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) is installed.
-1. Start the container downloaded from the previous section:
-```bash
-docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:24.06-runtime bash
-```
-
-Note about some of the flags above:
-| Flag | Description |
-| ---- | ----------- |
-| `--runtime=nvidia` | Choose the NVIDIA docker runtime, this enables access to the GPU inside the container. This flag isn't needed if the `nvidia` runtime is already set as the default runtime for Docker. |
-| `--gpus=all` | Specify which GPUs the container has access to.  Alternately, a specific GPU could be chosen with `--gpus=<gpu-id>` |
-| `--net=host` | Most of the Morpheus pipelines utilize [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver), which will be running in another container. For simplicity we will give the container access to the host system's network, production deployments may opt for an explicit network configuration. |
-| `-v /var/run/docker.sock:/var/run/docker.sock` | Enables access to the Docker socket file from within the running container, this allows launching other Docker containers from within the Morpheus container. This flag is required for launching Triton with access to the included Morpheus models, users with their own models can omit this. |
-
-Once launched, users wishing to launch Triton using the included Morpheus models will need to install the Docker tools in the Morpheus container by running:
-```bash
-./external/utilities/docker/install_docker.sh
-```
-
-Skip ahead to the [Launching Triton Server](#launching-triton-server) section.
 
 ## Building the Morpheus Container
 ### Clone the Repository
