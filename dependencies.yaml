@@ -399,16 +399,16 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - &arxiv arxiv=1.4
-          - &newspaper3k newspaper3k=0.2
-          - &pypdf pypdf=3.17.4
           - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
           - anyio>=3.7
+          - arxiv=1.4
           - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
           - jsonpatch>=1.33
+          - newspaper3k=0.2
           - numexpr
           - onnx=1.15
           - openai=1.13
+          - pypdf=3.17.4
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
           - sentence-transformers=2.7
           - pip
