@@ -55,7 +55,7 @@ def run_pipeline(use_cpp, num_threads):
     pipeline.add_stage(MonitorStage(config))
 
     # Write the to the output file
-    pipeline.add_stage(WriteToFileStage(config, filename='/tmp/results.json', file_type=FileTypes.JSON, overwrite=True))
+    pipeline.add_stage(WriteToFileStage(config, filename='results.json', file_type=FileTypes.JSON, overwrite=True))
 
     # Run the pipeline
     pipeline.run()

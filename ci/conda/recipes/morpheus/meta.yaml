@@ -58,53 +58,60 @@ outputs:
         - pkg-config =0.29 # for mrc cmake
         - sysroot_linux-64 =2.17
       host:
+        # CUDA dependencies
         - cuda-cudart-dev {{ cuda_compiler_version }}.*
         - cuda-libraries-dev {{ cuda_compiler_version }}.* # required by matx for libcublas-dev
         - cuda-nvml-dev {{ cuda_compiler_version }}.*
         - cuda-nvrtc-dev {{ cuda_compiler_version }}.*
         - cuda-nvtx-dev {{ cuda_compiler_version }}.*
         - cuda-version {{ cuda_compiler_version }}.*
+        # Non-CUDA dependencies
         - cudf {{ rapids_version }}
-        - cython =3.0
+        - cython 3.0.*
+        - glog 0.6.*
         - libcudf {{ rapids_version }}
         - librdkafka >=1.9.2,<1.10.0a0
         - mrc {{ minor_version }}
+        - nlohmann_json 3.11.*
         - pip
-        - pybind11-stubgen =0.10.5
+        - pybind11-stubgen 0.10.5
         - python {{ python }}
-        - rapidjson =1.1.0
+        - rapidjson 1.1.0
         - rdma-core >=48 # Needed for DOCA.
-        - scikit-build =0.17.6
+        - scikit-build 0.17.6
         - versioneer-518
-        - zlib # required to build triton client
+        - zlib 1.2.13 # required to build triton client
       run:
         # Runtime only requirements. This + setup.py is the definitive runtime requirement list
+        # This should be synced with `runtime` in dependencies.yaml
+        - appdirs
+        - beautifulsoup4
         - click >=8
-        - configargparse =1.5.*
         - cuda-version {{ cuda_compiler_version }}.*
         - cudf
         - cupy # Version determined from cudf
         - datacompy =0.10.*
-        - dill
-        - distributed
+        - dill =0.3.7
         - docker-py =5.0.*
-        - grpcio # Version determined from cudf
-        - libmrc
+        - elasticsearch ==8.9.0
+        - feedparser =6.0.*
+        - grpcio =1.59.*
         - libwebp>=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863
         - mlflow>=2.10.0,<3
         - mrc
-        - networkx>=2.8
+        - networkx=2.8.8
         - numpydoc =1.5.*
         - nvtabular =23.08.00
-        - pandas
+        - pydantic
         - pluggy =1.3.*
-        - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
         - python
         - python-confluent-kafka >=1.9.2,<1.10.0a0
-        - pytorch
+        - python-graphviz
         - pytorch-cuda
+        - pytorch * *cuda*
+        - rapids-dask-dependency {{ rapids_version }} # provides dask and distributed
         - requests
-        - requests-cache =1.1
+        - requests-cache =1.1.*
         - scikit-learn =1.3.2.*
         - sqlalchemy <2.0 # 2.0 is incompatible with pandas=1.3
         - tqdm =4.*

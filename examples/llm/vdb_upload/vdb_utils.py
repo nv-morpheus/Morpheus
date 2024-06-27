@@ -284,7 +284,7 @@ def build_cli_configs(source_type,
             "force_convert_inputs": True,
             "model_name": embedding_model_name,
             "server_url": triton_server_url,
-            "use_shared_memory": True,
+            "use_shared_memory": False,
         },
         "num_threads": num_threads,
     }

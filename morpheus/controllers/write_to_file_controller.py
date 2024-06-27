@@ -52,6 +52,9 @@ class WriteToFileController:
             else:
                 raise FileExistsError(
                     f"Cannot output classifications to '{self._output_file}'. File exists and overwrite = False")
+        else:
+            # Ensure our directory exists
+            os.makedirs(os.path.realpath(os.path.dirname(self._output_file)), exist_ok=True)
 
         self._file_type = file_type
 
@@ -115,9 +118,6 @@ class WriteToFileController:
         return output_strs
 
     def node_fn(self, obs: mrc.Observable, sub: mrc.Subscriber):
-
-        # Ensure our directory exists
-        os.makedirs(os.path.realpath(os.path.dirname(self._output_file)), exist_ok=True)
 
         # Open up the file handle
         with open(self._output_file, "a", encoding='UTF-8') as out_file:

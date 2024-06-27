@@ -15,6 +15,7 @@
 
 # Dependency list for https://github.com/rapidsai/dependency-file-generator
 files:
+  # Includes all dependencies together in a single file
   all:
     output: conda
     matrix:
@@ -22,24 +23,25 @@ files:
       arch: [x86_64]
     includes:
       - benchmark_cpp
-      - build_cpp
+      - build_cpp_build
+      - build_cpp_host
       - checks
       - cudatoolkit
+      - cudatoolkit-dev
       - cve-mitigation
       - data_retrieval
       - development
-      - doca
       - docs
       - example-dfp-prod
       - example-gnn
-      - example-llm-agents
-      - example-llm-completion
-      - example-llm-rag
-      - example-llm-vdb-upload
+      - example-llms
       - python
       - runtime
       - test_python_morpheus
 
+  # Common dependencies for developing with Morpheus.
+  # Includes: runtime, build, docs, test
+  # Excludes: examples
   dev:
     output: conda
     matrix:
@@ -47,17 +49,21 @@ files:
       arch: [x86_64]
     includes:
       - benchmark_cpp
-      - build_cpp
+      - build_cpp_build
+      - build_cpp_host
       - checks
-      - cudatoolkit
+      - cudatoolkit-dev
+      - cve-mitigation
       - data_retrieval
       - development
-      - doca
       - docs
       - python
       - runtime
       - test_python_morpheus
 
+  # Dependencies that are needed to build Morpheus.
+  # Includes: runtime
+  # Excludes: test, examples
   build:
     output: none
     matrix:
@@ -65,14 +71,19 @@ files:
       arch: [x86_64]
     includes:
       - benchmark_cpp
-      - build_cpp
-      - cudatoolkit
+      - build_cpp_build
+      - build_cpp_host
+      - cudatoolkit-dev
+      - cve-mitigation
       - data_retrieval
       - development
       - python
       - runtime
       - test_python_morpheus
 
+  # Dependencies that are needed to run Morpheus tests.
+  # Includes: runtime, examples
+  # Excludes: build, dev
   test:
     output: none
     matrix:
@@ -80,20 +91,20 @@ files:
       arch: [x86_64]
     includes:
       - benchmark_cpp
-      - build_cpp
       - cudatoolkit
+      - cve-mitigation
       - data_retrieval
       - development
       - example-dfp-prod
       - example-gnn
-      - example-llm-agents
-      - example-llm-completion
-      - example-llm-rag
-      - example-llm-vdb-upload
+      - example-llms
       - python
       - runtime
       - test_python_morpheus
 
+  # Dependencies that are needed to generate the Morpheus documentation.
+  # Includes: build, runtime, examples
+  # Excludes: test
   docs:
     output: none
     matrix:
@@ -101,28 +112,36 @@ files:
       arch: [x86_64]
     includes:
       - benchmark_cpp
-      - build_cpp
-      - cudatoolkit
+      - build_cpp_build
+      - build_cpp_host
+      - cudatoolkit-dev
+      - cve-mitigation
       - data_retrieval
       - docs
       - example-dfp-prod
       - example-gnn
-      - example-llm-agents
-      - example-llm-completion
-      - example-llm-rag
-      - example-llm-vdb-upload
+      - example-llms
       - python
       - runtime
 
+  # Only the dependencies that are needed to run core Morpheus. This is the smallest set of dependencies needed to run
+  # a Morpheus pipeline.
+  # Includes: none
+  # Excludes: build, dev, test, examples, docs
   runtime:
     output: conda
     matrix:
       cuda: ["12.1"]
       arch: [x86_64]
     includes:
-      - runtime
+      - cudatoolkit
+      - cve-mitigation
       - python
+      - runtime
 
+  # Dependencies that are needed to run all Morpheus examples.
+  # Includes: runtime
+  # Excludes: build, dev, test
   examples:
     output: conda
     matrix:
@@ -132,13 +151,13 @@ files:
       - cve-mitigation
       - example-dfp-prod
       - example-gnn
-      - example-llm-agents
-      - example-llm-completion
-      - example-llm-rag
-      - example-llm-vdb-upload
+      - example-llms
       - python
       - runtime
 
+  # Dependencies which are needed to run the model generation scripts in the `models` directory.
+  # Includes: none
+  # Excludes: runtime, build, dev, test, examples, docs
   model-utils:
     output: conda
     matrix:
@@ -148,6 +167,7 @@ files:
       - model-training-tuning
       - python
 
+  # Dependencies which are used during the CI "checks" stage. Does not output any files.
   checks:
     output: none
     includes:
@@ -165,32 +185,82 @@ channels:
 
 dependencies:
 
-  build_cpp: # should be split into `build_python` if/when converting to use scikit-build
+  python:
     common:
       - output_types: [conda]
         packages:
-          - boost-cpp=1.84
+          - python=3.10
+
+  cudatoolkit:
+    specific:
+      - output_types: [conda]
+        matrices:
+          - matrix:
+              cuda: "12.1"
+            packages:
+              - cuda-cudart=12.1
+              - cuda-nvrtc=12.1
+              - cuda-nvtx=12.1
+              - cuda-version=12.1
+
+  cudatoolkit-dev:
+    specific:
+      - output_types: [conda]
+        matrices:
+          - matrix:
+              cuda: "12.1"
+            packages:
+              - cuda-cudart-dev=12.1
+              - cuda-nvml-dev=12.1
+              - cuda-nvrtc-dev=12.1
+              - cuda-nvtx-dev=12.1
+              - cuda-tools=12.1
+              - cuda-version=12.1
+
+
+
+  # Build dependencies for Morpheus on the target arch. Mirrors the `build` section in
+  # ci/conda/recipes/morpheus/meta.yaml
+  build_cpp_build:
+    common:
+      - output_types: [conda]
+        packages:
+          # Compilers
+          - cuda-nvcc=12.1
+          - cxx-compiler
+          - gcc_linux-64=11.2
+          - gxx_linux-64=11.2
+
+          # Non-Compiler Dependencies
+          - automake=1.16.5 # Needed for DOCA build
           - ccache
           - cmake=3.27
-          - cuda-nvcc
+          - cuda-cudart-dev=12.1
+          - cuda-version=12.1
+          - libtool # Needed for DOCA build
+          - ninja=1.11
+          - pkg-config=0.29 # for mrc cmake
+          - sysroot_linux-64=2.17
+
+  # Build dependencies for Morpheus on the host arch. Mirrors the `host` section in
+  # ci/conda/recipes/morpheus/meta.yaml
+  build_cpp_host:
+    common:
+      - output_types: [conda]
+        packages:
+          # Include: cudatoolkit-dev
           - cudf=24.02
-          - cxx-compiler
           - cython=3.0
-          - gcc_linux-64=11.2
           - glog=0.6
-          - gxx_linux-64=11.2
+          - libcudf=24.02
           - librdkafka>=1.9.2,<1.10.0a0
           - mrc=24.06
-          - ninja=1.11
           - nlohmann_json=3.11
-          - pkg-config=0.29 # for mrc cmake
-          - protobuf=4.24
           - pybind11-stubgen=0.10.5
           - rapidjson=1.1.0
+          - rdma-core>=48 # Needed for DOCA.
           - scikit-build=0.17.6
-          - sysroot_linux-64=2.17
-          - tritonclient=2.34
-          - ucx=1.15
+          - versioneer-518
           - zlib=1.2.13
 
   checks:
@@ -221,16 +291,12 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - &click click >=8
-          - &numpydoc numpydoc=1.5
           - breathe=4.35.0
           - doxygen=1.9.2
           - exhale=0.3.6
           - ipython
           - myst-parser=0.18.1
           - nbsphinx
-          - pluggy=1.3
-          - python-graphviz
           - sphinx
           - sphinx_rtd_theme
 
@@ -240,33 +306,49 @@ dependencies:
         packages:
           - benchmark=1.8.3
 
+  # Runtime dependencies for Morpheus. Included in nearly all output files so dependencies should
+  # be added only if it is needed to run the core Morpheus library.
+  # This should be synced with `run` in ci/conda/recipes/morpheus/meta.yaml
   runtime:
     common:
       - output_types: [conda]
         packages:
-          - *click
-          - *numpydoc
-          - &dill dill=0.3.7
-          - &scikit-learn scikit-learn=1.3.2
+          # Include: cudatoolkit
+          # Include: python
+          # Include: cve-mitigation
           - appdirs
-          - beautifulsoup4
+          - beautifulsoup4=4.12
+          - click>=8
+          # - cuda-version=12.1 ##
+          - cudf=24.02
+          - cupy # Version determined from cudf
           - datacompy=0.10
+          - dill=0.3.7
+          - docker-py=5.0
           - elasticsearch==8.9.0
-          - feedparser=6.0.10
+          - feedparser=6.0
           - grpcio=1.59
+          - grpcio-status=1.59
+          # - libwebp=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863 ##
           - mlflow>=2.10.0,<3
+          - mrc=24.06
           - networkx=2.8.8
+          - numpydoc=1.5
           - nvtabular=23.08.00
           - pydantic
+          # - python ##
           - python-confluent-kafka>=1.9.2,<1.10.0a0
           - python-graphviz
           - pytorch-cuda
           - pytorch=*=*cuda*
+          - pluggy=1.3
+          - rapids-dask-dependency=24.02 # provides dask and distributed
           - requests
           - requests-cache=1.1
-          - requests-toolbelt # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
-          - sqlalchemy
+          - scikit-learn=1.3.2
+          - sqlalchemy<2.0 # 2.0 is incompatible with pandas=1.3
           - tqdm=4
+          - tritonclient=2.34
           - typing_utils=0.1
           - watchdog=3.0
           - websockets
@@ -289,20 +371,16 @@ dependencies:
           - python-docx==1.1.0
           - pip
           - pip:
-              - PyMuPDF==1.23.21
+              - &PyMuPDF PyMuPDF==1.23.*
               - pytest-kafka==0.6.0
 
   example-dfp-prod:
     common:
       - output_types: [conda]
         packages:
-          - *dill
           - *nodejs
           - boto3
-          - dask=2023.12.1
-          - distributed=2023.12.1
           - kfp
-          - mlflow>=2.10.0,<3
           - papermill=2.4.0
           - s3fs=2023.12.2
 
@@ -318,63 +396,38 @@ dependencies:
             - dgl==2.0.0
             - dglgo
 
-  example-llm-agents:
+  example-llms:
     common:
       - output_types: [conda]
         packages:
-          - &grpcio-status grpcio-status==1.59
           - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
-          - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
-          - numexpr
-          - sentence-transformers
-          - pip
-          - pip:
-            - &langchain langchain==0.1.9
-            - nemollm
-
-  example-llm-completion:
-    common:
-      - output_types: [conda]
-        packages:
-          - *grpcio-status
-          - &arxiv arxiv=1.4
-          - &newspaper3k newspaper3k=0.2
-          - &pypdf pypdf=3.17.4
-
-  example-llm-rag:
-    common:
-      - output_types: [conda]
-        packages:
-          - *grpcio-status
           - anyio>=3.7
+          - arxiv=1.4
+          - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
           - jsonpatch>=1.33
+          - newspaper3k=0.2
+          - numexpr
+          - onnx=1.15
           - openai=1.13
+          - pypdf=3.17.4
+          - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
+          - sentence-transformers=2.7
           - pip
           - pip:
-            - *langchain
+            - langchain==0.1.16
+            - langchain-nvidia-ai-endpoints==0.0.11
+            - faiss-gpu==1.7.*
             - google-search-results==2.4
-
-  example-llm-vdb-upload:
-    common:
-      - output_types: [conda]
-        packages:
-          - *arxiv
-          - *grpcio-status
-          - *newspaper3k
-          - *pypdf
-          - onnx
-          - pip
-          - pip:
-              - PyMuPDF==1.23.21
-              - *langchain
+            - nemollm==0.3.5
+            - *PyMuPDF
 
   model-training-tuning:
     common:
       - output_types: [conda]
         packages:
           - *cuml
-          - *scikit-learn
           - *transformers
+          - scikit-learn=1.3.2
           - jupyterlab
           - matplotlib
           - onnx
@@ -388,32 +441,3 @@ dependencies:
       - output_types: [conda]
         packages:
           - libwebp=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863
-
-
-  doca:
-    common:
-      - output_types: [conda]
-        packages:
-          - automake
-          - libtool
-          - rdma-core>=48
-
-  python:
-    common:
-      - output_types: [conda]
-        packages:
-          - python=3.10
-
-  cudatoolkit:
-    specific:
-      - output_types: [conda]
-        matrices:
-          - matrix:
-              cuda: "12.1"
-            packages:
-              - cuda-cudart-dev=12.1
-              - cuda-nvml-dev=12.1
-              - cuda-nvrtc-dev=12.1
-              - cuda-nvtx-dev=12.1
-              - cuda-tools=12.1
-              - cuda-version=12.1
