@@ -30,3 +30,5 @@ conda env update --solver=libmamba -n morpheus --file conda/environments/dev_cud
 CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_DOCS=ON" ./scripts/compile.sh --target morpheus_docs
 ```
 Outputs to `build/docs/html`
+  
+If the documentation build is unsuccessful, refer to the **Out of Date Build Cache** section in [Troubleshooting](./source/extra_info/troubleshooting.md) to troubleshoot.
