@@ -269,6 +269,7 @@ COPY "${MORPHEUS_ROOT_HOST}/LICENSE" "./"
 
 RUN /opt/conda/bin/conda clean -afy && \
     # Ensure the conda-bld directory is indexed even if empty
+    mkdir -p /opt/conda/conda-bld && \
     /opt/conda/bin/conda index /opt/conda/conda-bld
 
 # Use morpheus by default
