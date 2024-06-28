@@ -19,19 +19,19 @@ limitations under the License.
 
 ## Table of Contents
 
-1. [Background Information](#Background-Information)
-    - [Purpose](#Purpose)
-    - [Source Documents](#Source-Documents)
-    - [Embedding Model](#Embedding-Model)
-    - [Vector Database Service](#Vector-Database-Service)
-2. [Implementation and Design Decisions](#Implementation-and-Design-Decisions)
-3. [Getting Started](#Getting-Started)
-    - [Prerequisites](#Prerequisites)
-        - [Milvus Service](#Milvus-Service)
-        - [Triton Service](#Triton-Service)
-    - [Running the Morpheus Pipeline](#Running-the-Morpheus-Pipeline)
-    - [Options for vdb_upload Command](#Options-for-vdb_upload-Command)
-    - [Exporting and Deploying a Different Model from Huggingface](#Exporting-and-Deploying-a-Different-Model-from-Huggingface)
+1. [Background Information](#background-information)
+    - [Purpose](#purpose)
+    - [Source Documents](#source-documents)
+    - [Embedding Model](#embedding-model)
+    - [Vector Database Service](#vector-database-service)
+2. [Implementation and Design Decisions](#implementation-and-design-decisions)
+3. [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+        - [Milvus Service](#milvus-service)
+        - [Triton Service](#triton-service)
+    - [Running the Morpheus Pipeline](#running-the-morpheus-pipeline)
+    - [Options for vdb_upload Command](#options-for-vdb_upload-command)
+    - [Exporting and Deploying a Different Model from Huggingface](#exporting-and-deploying-a-different-model-from-huggingface)
 
 ## Background Information
 
