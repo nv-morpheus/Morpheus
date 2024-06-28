@@ -144,26 +144,19 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
       Then once the container is started you will need to install some extra packages to enable launching Docker containers:
       ```bash
       ./external/utilities/docker/install_docker.sh
-
-      # Install utils for checking output
-      apt install -y jq bc
       ```
 
 3. Compile Morpheus
    ```bash
    ./scripts/compile.sh
    ```
-   This script will run both CMake Configure with default options and CMake build.
-4. Install Morpheus
-   ```bash
-   pip install -e /workspace
-   ```
-   Once Morpheus has been built, it can be installed into the current virtual environment.
-5. [Run Morpheus](../getting_started.md#running-morpheus)
+   This script will run CMake Configure with default options, the CMake build and install Morpheus into the environment.
+
+4. [Run Morpheus](../getting_started.md#running-morpheus)
    ```bash
    morpheus run pipeline-nlp ...
    ```
-   At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`. Installing Morpheus is only required once per virtual environment.
+   At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`.
 
 ### Build in a Conda Environment
 
