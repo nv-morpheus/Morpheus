@@ -25,7 +25,7 @@ mark_as_advanced(MORPHEUS_CACHE_DIR)
 list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
 
 project(3_simple_cpp_stage
-  VERSION 24.03.00
+  VERSION 24.06.00
   LANGUAGES C CXX
 )
 
@@ -48,6 +48,7 @@ rapids_cpm_init()
 morpheus_utils_python_configure()
 
 rapids_find_package(CUDAToolkit REQUIRED)
+rapids_find_package(cudf REQUIRED)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
