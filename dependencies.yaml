@@ -368,7 +368,7 @@ dependencies:
           - pytest-benchmark=4.0
           - pytest-cov
           - pytest=7.4.4
-          - python-docx==1.1.0
+          - &python-docx python-docx==1.1.0
           - pip
           - pip:
               - &PyMuPDF PyMuPDF==1.23.*
@@ -410,6 +410,7 @@ dependencies:
           - onnx=1.15
           - openai=1.13
           - pypdf=3.17.4
+          - *python-docx
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
           - sentence-transformers=2.7
           - pip
