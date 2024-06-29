@@ -19,19 +19,19 @@ limitations under the License.
 
 ## Table of Contents
 
-1. [Background Information](#Background-Information)
-    - [Purpose](#Purpose)
-    - [Source Documents](#Source-Documents)
-    - [Embedding Model](#Embedding-Model)
-    - [Vector Database Service](#Vector-Database-Service)
-2. [Implementation and Design Decisions](#Implementation-and-Design-Decisions)
-3. [Getting Started](#Getting-Started)
-    - [Prerequisites](#Prerequisites)
-        - [Milvus Service](#Milvus-Service)
-        - [Triton Service](#Triton-Service)
-    - [Running the Morpheus Pipeline](#Running-the-Morpheus-Pipeline)
-    - [Options for vdb_upload Command](#Options-for-vdb_upload-Command)
-    - [Exporting and Deploying a Different Model from Huggingface](#Exporting-and-Deploying-a-Different-Model-from-Huggingface)
+1. [Background Information](#background-information)
+    - [Purpose](#purpose)
+    - [Source Documents](#source-documents)
+    - [Embedding Model](#embedding-model)
+    - [Vector Database Service](#vector-database-service)
+2. [Implementation and Design Decisions](#implementation-and-design-decisions)
+3. [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+        - [Milvus Service](#milvus-service)
+        - [Triton Service](#triton-service)
+    - [Running the Morpheus Pipeline](#running-the-morpheus-pipeline)
+    - [Options for vdb_upload Command](#options-for-vdb_upload-command)
+    - [Exporting and Deploying a Different Model from Huggingface](#exporting-and-deploying-a-different-model-from-huggingface)
 
 ## Background Information
 
@@ -220,156 +220,6 @@ python examples/llm/main.py vdb_upload pipeline \
   --enable_monitors \
   --embedding_model_name all-MiniLM-L6-v2
 ```
-
-*Example: Defining sources via a config file*
-Note: see `vdb_config.yaml` for a full configuration example.
-
-`vdb_config.yaml`
-
-```yaml
-vdb_pipeline:
-  sources:
-    - type: filesystem
-      name: "demo_filesystem_source"
-      config:
-        batch_size: 1024
-        enable_monitor: False
-        extractor_config:
-          chunk_size: 512
-          chunk_overlap: 50
-          num_threads: 10 # Number of threads to use for file reads
-        filenames:
-          - "/path/to/data/*"
-        watch: false
-```
-
-*Example: Defining a custom source via a config file*
-Note: See `vdb_config.yaml` for a full configuration example.
-Note: This example uses the same module and config as the filesystem source example above, but explicitly specifies the
-module to load
-
-`vdb_config.yaml`
-
-```yaml
-vdb_pipeline:
-  sources:
-    - type: custom
-      name: "demo_custom_filesystem_source"
-      module_id: "file_source_pipe"  # Required for custom source, defines the source module to load
-      module_output_id: "output"  # Required for custom source, defines the output of the module to use
-      namespace: "morpheus_examples_llm"  # Required for custom source, defines the namespace of the module to load
-      config:
-        batch_size: 1024
-        extractor_config:
-          chunk_size: 512
-          num_threads: 10  # Number of threads to use for file reads
-        config_name_mapping: "file_source_config"
-        filenames:
-          - "/path/to/data/*"
-        watch: false
-```
-
-```bash
-python examples/llm/main.py vdb_upload pipeline \
-  --vdb_config_path "./vdb_config.yaml"
-```
-
-## Morpheus Pipeline Configuration Schema
-
-The Morpheus Pipeline configuration allows for detailed specification of various pipeline stages, including source
-definitions (like RSS feeds and filesystem paths), embedding configurations, and vector database settings.
-
-### Sources Configuration
-
-The `sources` section allows you to define multiple data sources of different types: RSS, filesystem, and custom.
-
-### Embeddings Configuration
-
-- **isolate_embeddings**: Boolean to isolate embeddings.
-- **model_kwargs**:
-    - **force_convert_inputs**: Boolean to force the conversion of inputs.
-    - **model_name**: Name of the model, e.g., `"all-MiniLM-L6-v2"`.
-    - **server_url**: URL of the server, e.g., `"http://localhost:8001"`.
-    - **use_shared_memory**: Boolean to use shared memory.
-
-### Pipeline Configuration
-
-- **edge_buffer_size**: Size of the edge buffer, e.g., `128`.
-- **feature_length**: Length of the features, e.g., `512`.
-- **max_batch_size**: Maximum size of the batch, e.g., `256`.
-- **num_threads**: Number of threads, e.g., `10`.
-- **pipeline_batch_size**: Size of the batch for the pipeline, e.g., `1024`.
-
-#### RSS Source Configuration
-
-- **type**: `'rss'`
-- **name**: Name of the RSS source.
-- **config**:
-    - **batch_size**: Number of RSS feeds to process at a time.
-    - **cache_dir**: Directory for caching.
-    - **cooldown_interval_sec**: Cooldown interval in seconds.
-    - **enable_cache**: Boolean to enable caching.
-    - **enable_monitor**: Boolean to enable monitoring.
-    - **feed_input**: List of RSS feed URLs.
-    - **interval_sec**: Interval in seconds for fetching new feed items.
-    - **request_timeout_sec**: Timeout in seconds for RSS feed requests.
-    - **run_indefinitely**: Boolean to indicate continuous running.
-    - **stop_after**: Stop after emitting a specific number of records.
-    - **web_scraper_config**:
-        - **chunk_overlap**: Overlap size for chunks.
-        - **chunk_size**: Size of content chunks for processing.
-        - **enable_cache**: Boolean to enable caching.
-
-#### Filesystem Source Configuration
-
-- **type**: `'filesystem'`
-- **name**: Name of the filesystem source.
-- **config**:
-    - **batch_size**: Number of files to process at a time.
-    - **chunk_overlap**: Overlap size for chunks.
-    - **chunk_size**: Size of chunks for processing.
-    - **converters_meta**: Metadata for converters.
-        - **csv**:
-            - **chunk_size**: Chunk size for CSV processing.
-            - **text_column_names**: Column names to be used as text.
-              - **column_name_0** Column name 0.
-              - **column_name_1** Column name 1.
-    - **enable_monitor**: Boolean to enable monitoring.
-    - **extractor_config**:
-        - **chunk_size**: Size of chunks for the extractor.
-        - **num_threads**: Number of threads for file reads.
-    - **filenames**: List of file paths to be processed.
-    - **watch**: Boolean to watch for file changes.
-
-#### Custom Source Configuration
-
-- **type**: `'custom'`
-- **name**: Name of the custom source.
-- **config**:
-    - **config_name_mapping**: Mapping name for file source config.
-    - **module_id**: Identifier of the module to use.
-    - **module_output_id**: Output identifier of the module.
-    - **namespace**: Namespace of the module.
-    - **other_config_parameter_1**: Other config parameter 1.
-    - **other_config_parameter_2**: Other config parameter 2.
-
-### Tokenizer Configuration
-
-- **model_kwargs**:
-    - **add_special_tokens**: Boolean to add special tokens.
-    - **column**: Column name, e.g., `"content"`.
-    - **do_lower_case**: Boolean to convert to lowercase.
-    - **truncation**: Boolean to truncate.
-    - **vocab_hash_file**: Path to the vocabulary hash file.
-- **model_name**: Name of the tokenizer model.
-
-### Vector Database (VDB) Configuration
-
-- **embedding_size**: Size of the embeddings to store in the vector database.
-- **recreate**: Boolean to recreate the resource if it exists.
-- **resource_name**: Identifier for the resource in the vector database.
-- **service**: Type of vector database service (e.g., `"milvus"`).
-- **uri**: URI for connecting to the Vector Database server.
 
 ## Options for `vdb_upload` Command
 

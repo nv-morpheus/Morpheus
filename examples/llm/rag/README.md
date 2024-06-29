@@ -162,7 +162,7 @@ To retrieve models from LFS run the following:
 
 #### NGC
 
-- Follow the instructions [here](TODO)
+- Follow the instructions [here](https://docs.nvidia.com/ngc/gpu-cloud/ngc-user-guide/index.html#generating-personal-api-key)
 - We'll refer to your NGC API key as `${NGC_API_KEY}` for the rest of this document.
 
 #### OpenAI
