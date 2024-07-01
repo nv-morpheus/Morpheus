@@ -14,7 +14,7 @@
 # limitations under the License.
 -->
 
-> **Warning**: This example is currently broken and fails with a Segmentation fault ([#1641](https://github.com/nv-morpheus/Morpheus/pull/1641))
+> **Warning**: This example is currently broken and fails with a Segmentation fault [#1641](https://github.com/nv-morpheus/Morpheus/issues/1641)
 
 # "Starter" Digital Fingerprinting Pipeline
 
