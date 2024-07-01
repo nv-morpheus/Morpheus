@@ -32,7 +32,7 @@ limitations under the License.
   * [Retrieval Augmented Generation (RAG)](./llm/rag/README.md)
 
 ## Environments
-Morpheus supports multiple environments, each environment is intended to support a given use-case and not all examples are fully supported. With the exception of the Morpheus Release Container, the examples require fetching the model and example datasets via the `fetch_data.sh` script:
+Morpheus supports multiple environments, each environment is intended to support a given use-case. Each example documents which environments it is able to run in. With the exception of the Morpheus Release Container, the examples require fetching the model and example datasets via the `fetch_data.sh` script:
 ```bash
 ./scripts/fetch_data.py fetch examples models
 ```
