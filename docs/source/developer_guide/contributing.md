@@ -63,21 +63,13 @@ Review the unassigned issues, and find an issue to which you are comfortable con
 
 The following instructions are for developers who are getting started with the Morpheus repository. The Morpheus development environment is flexible (Docker, Conda and bare metal workflows) but has a high number of dependencies that can be difficult to set up. These instructions outline the steps for setting up a development environment inside a Docker container or on a host machine with Conda.
 
-All of the following instructions assume several variables have been set:
+All of the following instructions assume that the given variable has been defined:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
- - `PYTHON_VER`: The desired Python version. Minimum required is `3.10`
- - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. If in doubt use `23.06`
- - `TRITONCLIENT_VERSION`: The desired Triton client. If in doubt use `22.10`
- - `CUDA_VER`: The desired CUDA version to use. If in doubt use `12.1`
 
 
 ### Clone the repository and pull large file data from Git LFS
 
 ```bash
-export PYTHON_VER=3.10
-export RAPIDS_VER=23.06
-export TRITONCLIENT_VERSION=22.10
-export CUDA_VER=12.1
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
@@ -181,9 +173,6 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 1. Set up env variables and clone the repo:
    ```bash
-   export PYTHON_VER=3.10
-   export RAPIDS_VER=23.06
-   export CUDA_VER=12.1
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT
