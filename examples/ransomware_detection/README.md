@@ -19,6 +19,14 @@ limitations under the License.
 
 Example of a Morpheus Pipeline using Triton Inference server.
 
+## Supported Environments
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Triton on the host |
+| Morpheus Release Container | ✔ | Requires launching Triton on the host |
+| Dev Container | ✘ | Ransomware model not mounted in Dev Container (#1780)[https://github.com/nv-morpheus/Morpheus/issues/1780] |
+
 ## Setup Triton Inference Server
 
 ##### Pull Triton Inference Server Docker Image

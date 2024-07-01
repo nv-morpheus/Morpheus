@@ -19,6 +19,15 @@ limitations under the License.
 
 This example illustrates how to use Morpheus to automatically detect abnormal behavior in NVIDIA SMI logs by utilizing a Forest Inference Library (FIL) model and Triton Inference Server. The particular behavior we will be searching for is cryptocurrency mining.
 
+## Supported Environments
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Triton on the host |
+| Morpheus Release Container | ✔ | Requires launching Triton on the host |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script and replacing `--server_url=localhost:8000` with `--server_url=triton:8000` |
+
+
 ## Background
 
 The goal of this example is to identify whether or not a monitored NVIDIA GPU is actively mining for cryptocurrencies and take corrective action if detected. Cryptocurrency mining can be a large resource drain on GPU clusters and detecting mining can be difficult since mining workloads appear similar to other valid workloads.
