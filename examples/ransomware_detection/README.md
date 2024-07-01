@@ -25,7 +25,7 @@ Example of a Morpheus Pipeline using Triton Inference server.
 | Conda | ✔ | |
 | Morpheus Docker Container | ✔ | Requires launching Triton on the host |
 | Morpheus Release Container | ✔ | Requires launching Triton on the host |
-| Dev Container | ✘ | Ransomware model not mounted in Dev Container (#1780)[https://github.com/nv-morpheus/Morpheus/issues/1780] |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script. If using the `run.py` script this requires adding the `--server_url=triton:8000` flag. If using the CLI example this requires replacing `--server_url=localhost:8000` with `--server_url=triton:8000` |
 
 ## Setup Triton Inference Server
 
