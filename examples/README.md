@@ -30,3 +30,13 @@ limitations under the License.
   * [Completion](./llm/completion/README.md)
   * [VDB Upload](./llm/vdb_upload/README.md)
   * [Retreival Augmented Generation (RAG)](./llm/rag/README.md)
+
+## Envionments
+Morpheus supports multiple environments, each environment is intended to support a given use-case and not all examples are fully supported. The following are the supported environments:
+
+| Environment | Description |
+|-------------|-------------|
+| Conda | Morpheus is built from source by the end user, and dependencies are installed via the Conda package manager. |
+| Morpheus Docker Container | A Docker container that is built from source by the end user, Morpheus is then built from source from within the container. |
+| Release Container | Pre-built Docker container that is built from source by the Morpheus team, and is available for download from the [NGC container registry](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags). |
+| Dev Container | A [Dev Container](https://containers.dev/) that is built from source by the end user, Morpheus is then built from source from within the container. |
