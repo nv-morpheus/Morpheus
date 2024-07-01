@@ -18,6 +18,15 @@ limitations under the License.
 # Example RabbitMQ stages
 This example includes two stages `RabbitMQSourceStage` and `WriteToRabbitMQStage`
 
+## Supported Environments
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching the RabbitMQ container on the host |
+| Morpheus Release Container | ✔ | Requires launching the RabbitMQ container on the host |
+| Dev Container | ✘ |  |
+
+
 ## Testing with a RabbitMQ container
 Testing can be performed locally with the RabbitMQ supplied docker image from the [RabbitMQ container registry](https://registry.hub.docker.com/_/rabbitmq/):
 ```bash
