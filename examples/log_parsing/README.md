@@ -18,6 +18,14 @@
 
 Example Morpheus pipeline using Triton Inference server and Morpheus.
 
+## Supported Environments
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Triton on the host |
+| Morpheus Release Container | ✔ | Requires launching Triton on the host |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script. If using the `run.py` script this requires adding the `--server_url=triton:8000` flag. If using the CLI example this requires replacing `--server_url=localhost:8000` with `--server_url=triton:8000` |
+
 ### Set up Triton Inference Server
 
 ##### Pull Triton Inference Server Docker Image
