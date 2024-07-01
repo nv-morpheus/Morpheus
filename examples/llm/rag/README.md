@@ -17,6 +17,15 @@ limitations under the License.
 
 # Retrieval Augmented Generation (RAG) Pipeline
 
+## Supported Environments
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-121_arch-x86_64.yaml` or `conda/environments/examples_cuda-121_arch-x86_64.yaml` environment files. This example also requires the [VDB upload](../vdb_upload/README.md) pipeline to have been run previously.
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Milvus on the host |
+| Morpheus Release Container | ✔ | Requires launching Milvus on the host |
+| Dev Container | ✘ |  |
+
 ## Table of Contents
 
 ## Background Information
@@ -35,12 +44,6 @@ additional background contextual and factual information which the LLM can pull 
   that can be retrieved.
 - An example of populating a database is illustrated in [VDB upload](../vdb_upload/README.md)
 - This example assumes that pipeline has already been run to completion.
-
-### Embedding Model
-
-- This pipeline can support any type of embedding model that can convert text into a vector of floats.
-- For the example, we will use `all-MiniLM-L6-v2`. It is small, accurate, and included in the Morpheus repo via LFS;
-  it is also the default model used in the [VDB upload](../vdb_upload/README.md) pipeline.
 
 ### Vector Database Service
 
@@ -67,8 +70,6 @@ were incorporated:
 
 ### Rationale Behind Design Decisions
 
-- **Choice of Embedding Model:** all-MiniLM-L6-v2 was chosen due to its compactness and accuracy. This makes it ideal
-  for real-time operations and ensures that the embeddings are of high quality.
 - **Using Milvus as VDB:** Milvus offers scalable and efficient vector search capabilities, making it a natural choice
   for embedding retrieval in real-time.
 - **Flexible LLM integration:** The LLM is integrated into the pipeline as a standalone component, which allows for
@@ -93,6 +94,8 @@ The standalone Morpheus pipeline is built using the following components:
 > **Note:** For this to function correctly, the VDB upload pipeline must have been run previously.
 
 ### Persistent Morpheus Pipeline
+
+> **Warning**: This example is currently broken [#1416](https://github.com/nv-morpheus/Morpheus/issues/1416)
 
 #### Technical Overview
 
