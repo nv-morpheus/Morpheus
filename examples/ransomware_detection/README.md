@@ -59,12 +59,6 @@ Once Triton server finishes starting up, it will display the status of all loade
 
 > **Note**: If this is not present in the output, check the Triton log for any error messages related to loading the model.
 
-## Requirements
-> **Note**: Make sure `dask` and `distributed` are installed in your Conda environment before running the ransomware detection pipeline. Run the installation command specified below if not.
-
-```bash
-mamba install 'dask>=2023.1.1' 'distributed>=2023.1.1'
-```
 
 ## Run Ransomware Detection Pipeline
 Run the following from the root of the Morpheus repo to start the ransomware detection pipeline:
