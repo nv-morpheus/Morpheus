@@ -65,3 +65,23 @@ def _build_engine(model_name: str) -> LLMEngine:
     engine.add_task_handler(inputs=["/agent"], handler=SimpleTaskHandler())
 
     return engine
+
+
+def build_common_pipeline(config: Config, pipe: LinearPipeline, task_payload: dict,
+                          model_name: str) -> InMemorySinkStage:
+    """
+    Construct the elements of the pipeline common to the simple and kafka agent pipelines.
+    This method should be called after the source stage has been set.
+    """
+    pipe.add_stage(
+        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=task_payload))
+
+    pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
+
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
+
+    sink = pipe.add_stage(InMemorySinkStage(config))
+
+    pipe.add_stage(MonitorStage(config, description="Agent rate", unit="events", delayed_start=True))
+
+    return sink
