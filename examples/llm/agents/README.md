@@ -157,6 +157,8 @@ python examples/llm/main.py agents simple [OPTIONS]
 
 ### Run example (Kafka Pipeline):
 
+> **Warning**: The Kafka Agents pipeline is currently broken [#1791](https://github.com/nv-morpheus/Morpheus/issues/1791)
+
 The Kafka Example in the Morpheus LLM Agents demonstrates an streaming implementation, utilizing Kafka messages to
 facilitate the near real-time processing of LLM queries. This example is similar to the Simple example but makes use of
 a KafkaSourceStage to stream and retrieve messages from the Kafka topic
