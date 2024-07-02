@@ -104,7 +104,7 @@ def pipeline(
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 
-    pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
+    pipe.add_stage(MonitorStage(config, description="Agent rate", unit="events", delayed_start=True))
 
     start_time = time.time()
 
