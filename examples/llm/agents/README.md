@@ -43,7 +43,7 @@ All environments require additional Conda packages which can be installed with e
 | Morpheus Release Container | ✔ |  |
 | Dev Container | ✔ |  |
 
-# Background Information
+## Background Information
 
 ### Purpose
 The Morpheus LLM Agents pipeline is designed to seamlessly integrate Large Language Model (LLM) agents into the Morpheus framework. This implementation focuses on efficiently executing multiple LLM queries using the ReAct agent type, which is tailored for versatile task handling. The use of the Langchain library streamlines the process, minimizing the need for additional system migration.

@@ -28,7 +28,7 @@ The container must be run in privileged mode and mount in hugepages as configure
 docker run -v /dev/hugepages:/dev/hugepages --privileged --rm -ti --runtime=nvidia --net=host --gpus=all --cap-add=sys_nice ${MORPHEUS_DOCA_IMAGE} bash
 ```
 
-# Preparing the environment
+## Preparing the environment
 
 Prior to running the example, the `rdma-core` conda package needs to be _removed by force_ from the conda environment, otherwise the environment is incompatible with the DOCA-provided packages.
 ```
@@ -170,9 +170,8 @@ Added stage: <monitor-9; MonitorStage(description=AddClass rate, smoothing=0.05,
 Stopping pipeline. Please wait... Press Ctrl+C again to kill.
 DOCA GPUNetIO rate: 0 pkts [00:09, ? pkts/s]
 Deserialize rate: 0 pkts [00:09, ? pkts/s]
-Tokenize rate: 0 pkts [00:09, ? pkts/s] 
+Tokenize rate: 0 pkts [00:09, ? pkts/s]
 Inference rate: 0 pkts [00:09, ? pkts/s]
 AddClass rate: 0 pkts [00:09, ? pkts/s]
 ```
 The output can be found in `doca_output.csv`
-
