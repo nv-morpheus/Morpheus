@@ -15,55 +15,22 @@
 import logging
 import time
 
-from langchain.agents import AgentType
-from langchain.agents import initialize_agent
-from langchain.agents import load_tools
-from langchain.agents.agent import AgentExecutor
-from langchain.llms.openai import OpenAIChat
-
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.llm import LLMEngine
-from morpheus.llm.nodes.extracter_node import ExtracterNode
-from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
-from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
-from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
-from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+
+from .common import build_common_pipeline
 
 logger = logging.getLogger(__name__)
 
 
-def _build_agent_executor(model_name: str) -> AgentExecutor:
-
-    llm = OpenAIChat(model_name=model_name, model_kwargs={"temperature": 0.0}, client=None)
-
-    tools = load_tools(["serpapi", "llm-math"], llm=llm)
-
-    agent_executor = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
-
-    return agent_executor
-
-
-def _build_engine(model_name: str) -> LLMEngine:
-
-    engine = LLMEngine()
-
-    engine.add_node("extracter", node=ExtracterNode())
-
-    engine.add_node("agent",
-                    inputs=[("/extracter")],
-                    node=LangChainAgentNode(agent_executor=_build_agent_executor(model_name=model_name)))
-
-    engine.add_task_handler(inputs=["/extracter"], handler=SimpleTaskHandler())
-
-    return engine
-
-
-def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: int, model_name: str) -> float:
+def pipeline(num_threads: int,
+             pipeline_batch_size: int,
+             model_max_batch_size: int,
+             model_name: str,
+             bootstrap_servers: str,
+             topic: str) -> float:
     config = Config()
     config.mode = PipelineModes.OTHER
 
@@ -78,18 +45,9 @@ def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: i
 
     pipe = LinearPipeline(config)
 
-    pipe.set_source(KafkaSourceStage(config, bootstrap_servers="auto", input_topic=["input"]))
+    pipe.set_source(KafkaSourceStage(config, bootstrap_servers=bootstrap_servers, input_topic=[topic]))
 
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
-
-    # pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
-
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
-
-    sink = pipe.add_stage(InMemorySinkStage(config))
-
-    # pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
+    sink = build_common_pipeline(config=config, pipe=pipe, task_payload=completion_task, model_name=model_name)
 
     start_time = time.time()
 
