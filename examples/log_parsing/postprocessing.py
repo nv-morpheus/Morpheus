@@ -18,7 +18,6 @@ import typing
 from collections import defaultdict
 
 import mrc
-import numpy as np
 import pandas as pd
 from mrc.core import operators as ops
 
