@@ -117,6 +117,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
 
         # decode cleanup
         parsed_df = self.__decode_cleanup(parsed_df)
+        parsed_df["doc"] = parsed_dfs.index
         return MessageMeta(df=cudf.DataFrame.from_pandas(parsed_df))
 
     def __get_label_dicts(self, row):
