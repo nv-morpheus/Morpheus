@@ -15,6 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# Completion Pipeline
+
 ## Table of Contents
 
 1. [Background Information](#background-information)
