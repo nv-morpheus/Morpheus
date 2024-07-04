@@ -23,6 +23,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.controllers.filter_detections_controller import FilterDetectionsController
+from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -103,9 +104,9 @@ class FilterDetectionsStage(SinglePortStage):
 
         """
         if self._controller.filter_source == FilterSource.TENSOR:
-            return (MultiResponseMessage, )
+            return (MultiResponseMessage, ControlMessage)
 
-        return (MultiMessage, )
+        return (MultiMessage, ControlMessage)
 
     def compute_schema(self, schema: StageSchema):
         self._controller.update_filter_source(message_type=schema.input_type)
@@ -117,12 +118,21 @@ class FilterDetectionsStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node():
-            node = _stages.FilterDetectionsStage(builder,
-                                                 self.unique_name,
-                                                 self._controller.threshold,
-                                                 self._copy,
-                                                 self._controller.filter_source,
-                                                 self._controller.field_name)
+            if (self._schema.input_type == ControlMessage):
+                node = _stages.FilterDetectionsControlMessageStage(builder,
+                                                                   self.unique_name,
+                                                                   self._controller.threshold,
+                                                                   self._copy,
+                                                                   self._controller.filter_source,
+                                                                   self._controller.field_name)
+
+            else:
+                node = _stages.FilterDetectionsMultiMessageStage(builder,
+                                                                 self.unique_name,
+                                                                 self._controller.threshold,
+                                                                 self._copy,
+                                                                 self._controller.filter_source,
+                                                                 self._controller.field_name)
         else:
 
             if self._copy:

@@ -19,6 +19,14 @@ limitations under the License.
 
 This example illustrates how to use Morpheus to detect Sensitive Information (SI) in network packets automatically by utilizing a Natural Language Processing (NLP) neural network and Triton Inference Server.
 
+## Supported Environments
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Triton on the host |
+| Morpheus Release Container | ✔ | Requires launching Triton on the host |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script and replacing `--server_url=localhost:8000` with `--server_url=triton:8000` |
+
 ## Background
 
 The goal of this example is to identify potentially sensitive information in network packet data as quickly as possible to limit exposure and take corrective action. Sensitive information is a broad term but can be generalized to any data that should be guarded from unauthorized access. Credit card numbers, passwords, authorization keys, and emails are all examples of sensitive information.
@@ -103,11 +111,10 @@ The following command line is the entire command to build and launch the pipelin
 
 From the Morpheus repo root directory, run:
 ```bash
-export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
 morpheus --log_level=DEBUG \
-   `# Run a pipeline with 8 threads and a model batch size of 32 (Must match Triton config)` \
-   run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+   `# Run a pipeline with a model batch size of 32 (Must match Triton config)` \
+   run --pipeline_batch_size=1024 --model_max_batch_size=32 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-nlp --model_seq_length=256 \
    `# 1st Stage: Read from file` \

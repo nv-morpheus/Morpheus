@@ -14,7 +14,7 @@
 # limitations under the License.
 
 ARG MORPHEUS_CONTAINER=nvcr.io/nvidia/morpheus/morpheus
-ARG MORPHEUS_CONTAINER_VERSION=v24.03.00-runtime
+ARG MORPHEUS_CONTAINER_VERSION=v24.06.00-runtime
 
 FROM ${MORPHEUS_CONTAINER}:${MORPHEUS_CONTAINER_VERSION} as base
 
@@ -28,7 +28,7 @@ WORKDIR /workspace/examples/digital_fingerprinting/
 
 # Install DFP dependencies
 RUN source activate morpheus \
-    && mamba env update -n morpheus --file /workspace/conda/environments/examples_cuda-121_arch-x86_64.yaml
+    && /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/examples_cuda-121_arch-x86_64.yaml
 
 # Set the tracking URI for mlflow
 ENV MLFLOW_TRACKING_URI="http://mlflow:5000"
@@ -53,7 +53,7 @@ FROM base as jupyter
 
 # Install the jupyter specific requirements
 RUN source activate morpheus &&\
-    mamba install -y -c conda-forge \
+    /opt/conda/bin/conda install --solver=libmamba -y -c conda-forge \
         ipywidgets \
         jupyter_contrib_nbextensions \
         # notebook v7 is incompatible with jupyter_contrib_nbextensions

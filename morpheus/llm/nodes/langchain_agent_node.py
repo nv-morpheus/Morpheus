@@ -16,6 +16,8 @@ import asyncio
 import logging
 import typing
 
+from langchain_core.exceptions import OutputParserException
+
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 
@@ -33,32 +35,61 @@ class LangChainAgentNode(LLMNodeBase):
     ----------
     agent_executor : AgentExecutor
         The agent executor to use to execute.
+
+    replace_exceptions : bool, optional
+        When `True`, replaces exceptions with `replace_exceptions_value` from the output.
+
+    replace_exceptions_value : str, optional
+        The value to replace exceptions with when `replace_exceptions` is `True`, ignored otherwise.
     """
 
-    def __init__(self, agent_executor: "AgentExecutor"):
+    def __init__(self,
+                 agent_executor: "AgentExecutor",
+                 replace_exceptions: bool = False,
+                 replace_exceptions_value: typing.Optional[str] = None):
         super().__init__()
 
         self._agent_executor = agent_executor
 
         self._input_names = self._agent_executor.input_keys
 
+        self._replace_exceptions = replace_exceptions
+        self._replace_exceptions_value = replace_exceptions_value
+
     def get_input_names(self):
         return self._input_names
 
-    async def _run_single(self, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    @staticmethod
+    def _is_all_lists(data: dict[str, typing.Any]) -> bool:
+        return all(isinstance(v, list) for v in data.values())
 
-        all_lists = all(isinstance(v, list) for v in kwargs.values())
+    @staticmethod
+    def _transform_dict_of_lists(data: dict[str, typing.Any]) -> list[dict[str, typing.Any]]:
+        return [dict(zip(data, t)) for t in zip(*data.values())]
+
+    async def _run_single(self, metadata: dict[str, typing.Any] = None, **kwargs) -> dict[str, typing.Any]:
+
+        all_lists = self._is_all_lists(kwargs)
 
         # Check if all values are a list
         if all_lists:
 
             # Transform from dict[str, list[Any]] to list[dict[str, Any]]
-            input_list = [dict(zip(kwargs, t)) for t in zip(*kwargs.values())]
+            input_list = self._transform_dict_of_lists(kwargs)
+
+            # If all metadata values are lists of the same length and the same length as the input list
+            # then transform them the same way as the input list
+            if (metadata is not None and self._is_all_lists(metadata)
+                    and all(len(v) == len(input_list) for v in metadata.values())):
+                metadata_list = self._transform_dict_of_lists(metadata)
+
+            else:
+                metadata_list = [metadata] * len(input_list)
 
             # Run multiple again
-            results_async = [self._run_single(**x) for x in input_list]
+            results_async = [self._run_single(metadata=metadata_list[i], **x) for (i, x) in enumerate(input_list)]
 
-            results = await asyncio.gather(*results_async)
+            results = await asyncio.gather(*results_async, return_exceptions=True)
 
             # # Transform from list[dict[str, Any]] to dict[str, list[Any]]
             # results = {k: [x[k] for x in results] for k in results[0]}
@@ -67,17 +98,34 @@ class LangChainAgentNode(LLMNodeBase):
 
         # We are not dealing with a list, so run single
         try:
-            return await self._agent_executor.arun(**kwargs)
+            return await self._agent_executor.arun(metadata=metadata, **kwargs)
         except Exception as e:
-            error_msg = f"Error running agent: {e}"
-            logger.exception(error_msg)
-            return error_msg
+            logger.exception("Error running agent: %s", e)
+            return e
 
     async def execute(self, context: LLMContext) -> LLMContext:  # pylint: disable=invalid-overridden-method
 
         input_dict = context.get_inputs()
 
         results = await self._run_single(**input_dict)
+
+        if self._replace_exceptions:
+            # Processes the results to replace exceptions with a default message
+            for i, answer_list in enumerate(results):
+                for j, answer in enumerate(answer_list):
+
+                    # OutputParserException is not a subclass of Exception, so we need to check for it separately
+                    if isinstance(answer, (OutputParserException, Exception)):
+                        # If the agent encounters a parsing error or a server error after retries, replace the error
+                        # with a default value to prevent the pipeline from crashing
+                        results[i][j] = self._replace_exceptions_value
+                        logger.warning(
+                            "Exception encountered in result[%d][%d]: %s. "
+                            "Replacing with default message: '%s'.",
+                            i,
+                            j,
+                            answer,
+                            self._replace_exceptions_value)
 
         context.set_output(results)
 

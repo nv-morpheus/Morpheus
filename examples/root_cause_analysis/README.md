@@ -19,6 +19,14 @@ limitations under the License.
 
 These examples illustrate how to use Morpheus to build a binary sequence classification pipelines to perform root cause analysis on DGX kernel logs.
 
+## Supported Environments
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Triton on the host |
+| Morpheus Release Container | ✔ | Requires launching Triton on the host |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script and replacing `--server_url=localhost:8000` with `--server_url=triton:8000` |
+
 ## Background
 
 Like any other Linux based machine, DGX's generate a vast amount of logs. Analysts spend hours trying to identify the root causes of each failure. There could be infinitely many types of root causes of the failures. Some patterns might help to narrow it down; however, regular expressions can only help to identify previously known patterns. Moreover, this creates another manual task of maintaining a search script.
@@ -98,9 +106,6 @@ From the Morpheus repo root directory, run:
 
 ```bash
 export MORPHEUS_ROOT=$(pwd)
-```
-
-```bash
 morpheus --log_level=DEBUG \
 `# Run a pipeline with 5 threads and a model batch size of 32 (Must match Triton config)` \
 run --num_threads=8 --edge_buffer_size=4 --use_cpp=True --pipeline_batch_size=1024 --model_max_batch_size=32 \
@@ -113,7 +118,7 @@ deserialize \
 `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
 preprocess --column=log --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
 `# 4th Stage: Send messages to Triton for inference. Specify the binary model loaded in Setup` \
-inf-triton --force_convert_inputs=True --model_name=root-cause-binary-onnx --server_url=localhost:8001 \
+inf-triton --model_name=root-cause-binary-onnx --server_url=localhost:8000 --force_convert_inputs=True \
 `# 5th Stage: Monitor stage prints throughput information to the console` \
 monitor --description='Inference rate' --smoothing=0.001 --unit inf \
 `# 6th Stage: Add scores from inference to the messages` \

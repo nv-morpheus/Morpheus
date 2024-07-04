@@ -144,28 +144,19 @@ def config_warning_fixture():
 @pytest.mark.use_python
 class TestCLI:
 
-    def test_help(self):
+    @pytest.mark.parametrize('cmd',
+                             [[], ['tools'], ['run'], ['run', 'pipeline-ae'], ['run', 'pipeline-fil'],
+                              ['run', 'pipeline-nlp'], ['run', 'pipeline-other']])
+    def test_help(self, cmd: list[str]):
         runner = CliRunner()
-        result = runner.invoke(commands.cli, ['--help'])
+        result = runner.invoke(commands.cli, cmd + ['--help'])
         assert result.exit_code == 0, result.output
 
-        result = runner.invoke(commands.cli, ['tools', '--help'])
-        assert result.exit_code == 0, result.output
-
-        result = runner.invoke(commands.cli, ['run', '--help'])
-        assert result.exit_code == 0, result.output
-
-        result = runner.invoke(commands.cli, ['run', 'pipeline-ae', '--help'])
-        assert result.exit_code == 0, result.output
-
-    def test_autocomplete(self, tmp_path):
+    @pytest.mark.parametrize('cmd',
+                             [['tools', 'autocomplete', 'show'], ['tools', 'autocomplete', 'install', '--shell=bash']])
+    def test_autocomplete(self, tmp_path, cmd: list[str]):
         runner = CliRunner()
-        result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'show'], env={'HOME': str(tmp_path)})
-        assert result.exit_code == 0, result.output
-
-        # The actual results of this are specific to the implementation of click_completion
-        result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'install', '--shell=bash'],
-                               env={'HOME': str(tmp_path)})
+        result = runner.invoke(commands.cli, cmd, env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
 
     @pytest.mark.usefixtures("restore_environ")

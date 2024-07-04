@@ -21,6 +21,7 @@ from morpheus.llm import LLMTaskHandler
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.utils.type_aliases import DataFrameType
 
 
 def test_constructor():
@@ -37,7 +38,9 @@ def test_get_input_names(output_columns: list[str] | None, expected_input_names:
 
 def test_try_handle(dataset_cudf: DatasetManager):
     reptiles = ['lizards', 'snakes', 'turtles', 'frogs', 'toads']
-    df = dataset_cudf["filter_probs.csv"][0:5]  # Take the first 5 rows since there are only have 5 reptiles
+
+    # Take the first 5 rows since there are only have 5 reptiles
+    df: DataFrameType = dataset_cudf["filter_probs.csv"][0:5]
     expected_df = df.copy(deep=True)
     expected_df['reptiles'] = reptiles.copy()
 

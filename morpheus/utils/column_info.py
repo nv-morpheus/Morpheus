@@ -21,14 +21,15 @@ import warnings
 from datetime import datetime
 from functools import partial
 
-with warnings.catch_warnings():
-    # Ignore warning regarding tensorflow not being installed
-    warnings.filterwarnings("ignore", message=".*No module named 'tensorflow'", category=UserWarning)
-    import nvtabular as nvt
-
 import pandas as pd
 
 import cudf
+
+if (typing.TYPE_CHECKING):
+    with warnings.catch_warnings():
+        # Ignore warning regarding tensorflow not being installed
+        warnings.filterwarnings("ignore", message=".*No module named 'tensorflow'", category=UserWarning)
+        import nvtabular as nvt
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -748,7 +749,7 @@ class DataFrameInputSchema:
     input_columns: typing.Dict[str, str] = dataclasses.field(init=False, repr=False)
     output_columns: typing.List[tuple[str, str]] = dataclasses.field(init=False, repr=False)
 
-    nvt_workflow: nvt.Workflow = dataclasses.field(init=False, repr=False)
+    nvt_workflow: "nvt.Workflow" = dataclasses.field(init=False, repr=False)
     prep_dataframe: typing.Callable[[pd.DataFrame], typing.List[str]] = dataclasses.field(init=False, repr=False)
 
     def __post_init__(self):

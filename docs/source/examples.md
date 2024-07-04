@@ -16,6 +16,7 @@ limitations under the License.
 -->
 
 # Examples
+Ensure the environment is set up by following [Getting Started with Morpheus](./getting_started.md) before running the examples below.
 * [Anomalous Behavior Profiling with Forest Inference Library (FIL) Example](../../examples/abp_nvsmi_detection/README.md)
 * [ABP Detection Example Using Morpheus](../../examples/abp_pcap_detection/README.md)
 * [GNN Fraud Detection Pipeline](../../examples/gnn_fraud_detection_pipeline/README.md)
@@ -24,8 +25,23 @@ limitations under the License.
 * [Example Ransomware Detection Morpheus Pipeline for AppShield Data](../../examples/ransomware_detection/README.md)
 * [Root Cause Analysis Acceleration & Predictive Maintenance Example](../../examples/root_cause_analysis/README.md)
 * [SID Visualization Example](../../examples/sid_visualization/README.md)
-* [Large Language Models (LLMs)](../../examples/llm/README.md)
+* Large Language Models (LLMs)
   * [Agents](../../examples/llm/agents/README.md)
   * [Completion](../../examples/llm/completion/README.md)
   * [VDB Upload](../../examples/llm/vdb_upload/README.md)
   * [Retreival Augmented Generation (RAG)](../../examples/llm/rag/README.md)
+
+
+## Environments
+Morpheus supports multiple environments, each environment is intended to support a given use-case. Each example documents which environments it is able to run in. With the exception of the Morpheus Release Container, the examples require fetching the model and example datasets via the `fetch_data.sh` script:
+```bash
+./scripts/fetch_data.py fetch examples models
+```
+
+The following are the supported environments:
+| Environment | Description |
+|-------------|-------------|
+| [Conda](./developer_guide/contributing.md#build-in-a-conda-environment) | Morpheus is built from source by the end user, and dependencies are installed via the Conda package manager. |
+| [Morpheus Docker Container](./developer_guide/contributing.md#build-in-docker-container) | A Docker container that is built from source by the end user, Morpheus is then built from source from within the container. |
+| [Morpheus Release Container](./getting_started.md#building-the-morpheus-container) | Pre-built Docker container that is built from source by the Morpheus team, and is available for download from the [NGC container registry](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags), or can be built locally from source. |
+| [Dev Container](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/.devcontainer/README.md) | A [Dev Container](https://containers.dev/) that is built from source by the end user, Morpheus is then built from source from within the container. |

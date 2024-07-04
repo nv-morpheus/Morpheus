@@ -50,6 +50,7 @@ add_library(morpheus
   src/messages/multi_response.cpp
   src/messages/multi_tensor.cpp
   src/messages/multi.cpp
+  src/messages/raw_packet.cpp
   src/modules/data_loader_module.cpp
   src/objects/data_table.cpp
   src/objects/dev_mem_info.cpp
@@ -69,7 +70,7 @@ add_library(morpheus
   src/stages/add_scores.cpp
   src/stages/deserialize.cpp
   src/stages/file_source.cpp
-  src/stages/filter_detection.cpp
+  src/stages/filter_detections.cpp
   src/stages/http_server_source_stage.cpp
   src/stages/inference_client_stage.cpp
   src/stages/kafka_source.cpp
@@ -81,6 +82,7 @@ add_library(morpheus
   src/utilities/cudf_util.cpp
   src/utilities/cupy_util.cpp
   src/utilities/http_server.cpp
+  src/utilities/json_types.cpp
   src/utilities/matx_util.cu
   src/utilities/python_util.cpp
   src/utilities/string_util.cpp

@@ -19,7 +19,7 @@
 
 #include "py_llm_node.hpp"
 
-#include "morpheus/llm/fwd.hpp"
+#include "morpheus/llm/fwd.hpp"  // for LLMTaskHandler, ControlMessage, LLMContext, LLMEngine, LLMTask
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_engine.hpp"
 

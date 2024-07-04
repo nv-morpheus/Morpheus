@@ -14,13 +14,15 @@
 # limitations under the License.
 -->
 
+> **Warning**: This example is currently broken and fails with a Segmentation fault [#1641](https://github.com/nv-morpheus/Morpheus/issues/1641)
+
 # "Starter" Digital Fingerprinting Pipeline
 
 We show here how to set up and run the DFP pipeline for three log types: CloudTrail, Duo, and Azure. Each of these log types uses a built-in source stage that handles that specific data format. New source stages can be added to allow the DFP pipeline to process different log types. All stages after the source stages are identical across all log types but can be configured differently via pipeline or stage configuration options.
 
 ## Environment Setup
 
-Follow the instructions [here](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/docs/source/developer_guide/contributing.md) to set up your development environment in either a Docker container or conda environment.
+Follow the instructions [here](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/docs/source/developer_guide/contributing.md) to set up your development environment in either a Docker container or conda environment.
 
 ## Morpheus CLI
 

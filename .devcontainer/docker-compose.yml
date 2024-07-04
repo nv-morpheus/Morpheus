@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version: "3"
-
 services:
 
   triton:
@@ -29,6 +27,7 @@ services:
     volumes:
       - ${HOST_MORPHEUS_ROOT}/models:/models
       - ${HOST_MORPHEUS_ROOT}/examples/abp_pcap_detection/abp-pcap-xgb:/models/triton-model-repo/abp-pcap-xgb
+      - ${HOST_MORPHEUS_ROOT}/examples/ransomware_detection/models/ransomw-model-short-rf:/models/triton-model-repo/ransomw-model-short-rf
 
   zookeeper:
     image: bitnami/zookeeper:latest
@@ -54,5 +53,5 @@ services:
 
 networks:
   default:
-    external:
-      name: morpheus
+    name: morpheus
+    external: true

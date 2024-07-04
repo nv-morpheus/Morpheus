@@ -585,6 +585,34 @@
                 "type": "cppdbg"
             },
             {
+                "MIMode": "gdb",
+                "args": [
+                    // Uncomment to run a specific test
+                    // "--gtest_filter='TestLLMContext.PopSelectMultipleOutputs'"
+                ],
+                "cwd": "${workspaceFolder}",
+                "environment": [
+                    {
+                        "name": "GLOG_v",
+                        "value": "10"
+                    }
+                ],
+                "externalConsole": false,
+                "miDebuggerPath": "gdb",
+                "name": "Debug LLM C++ Tests",
+                "program": "${workspaceFolder}/build/morpheus/_lib/tests/test_llm.x",
+                "request": "launch",
+                "setupCommands": [
+                    {
+                        "description": "Enable pretty-printing for gdb",
+                        "ignoreFailures": true,
+                        "text": "-enable-pretty-printing"
+                    }
+                ],
+                "stopAtEntry": false,
+                "type": "cppdbg"
+            },
+            {
                 "args": [
                     "--input_file=validation.csv",
                     "--training_file=training.csv",
@@ -661,6 +689,7 @@
         "python.analysis.extraPaths": [
             "./examples/digital_fingerprinting/production/morpheus"
         ],
+        "python.analysis.inlayHints.pytestParameters": true,
         "python.testing.pytestArgs": [
             "-s",
             "tests"
@@ -668,15 +697,6 @@
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
         "rewrap.wrappingColumn": 120,
-        "testMate.cpp.test.advancedExecutables": [
-            {
-                "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}_*.x",
-                "env": {
-                    "UCX_ERROR_SIGNALS": "", // Prevent UCX from capturing errors
-                    "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
-                }
-            }
-        ],
         "testMate.cpp.debug.configTemplate": {
             "args": "${argsArray}",
             "cwd": "${cwd}",
@@ -700,6 +720,15 @@
                 "type": "cppvsdbg"
             }
         },
+        "testMate.cpp.test.advancedExecutables": [
+            {
+                "env": {
+                    "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
+                    "UCX_ERROR_SIGNALS": "" // Prevent UCX from capturing errors
+                },
+                "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}_*.x"
+            }
+        ],
         "yapf.args": [
             "--style=${workspaceFolder}/setup.cfg"
         ]

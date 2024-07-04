@@ -92,7 +92,7 @@ morpheus_utils_initialize_cuda_arch(morpheus)
 # Note intentionally excluding CUDA from the LANGUAGES list allowing us to set some clang specific settings later when
 # we call morpheus_utils_enable_cuda()
 project(morpheus
-  VERSION 24.03.00
+  VERSION 24.06.00
   LANGUAGES C CXX
 )
 

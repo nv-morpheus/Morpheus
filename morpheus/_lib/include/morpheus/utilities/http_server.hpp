@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "morpheus/export.h"  // for exporting symbols
+
 #include <boost/asio/io_context.hpp>   // for io_context
 #include <boost/asio/ip/tcp.hpp>       // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
 #include <boost/beast/core/error.hpp>  // for error_code
@@ -42,10 +44,6 @@ namespace morpheus {
  * @{
  * @file
  */
-
-#pragma GCC visibility push(default)
-
-class Listener;
 
 using on_complete_cb_fn_t = std::function<void(const boost::system::error_code& /* error message */)>;
 
@@ -74,52 +72,17 @@ using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* po
 constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
 
 /**
- * @brief A simple HTTP server that listens for POST or PUT requests on a given endpoint.
+ * @brief A struct that encapsulates the http endpoint attributes
  *
- * @details The server is started on a separate thread(s) and will call the provided payload_parse_fn_t
- *          function when an incoming request is received. The payload_parse_fn_t function is expected to
- *          return a tuple conforming to `parse_status_t` (ex: `std::make_tuple(200, "text/plain"s, "OK"s, nullptr)`).
- *
- * @param payload_parse_fn The function that will be called when a POST request is received.
- * @param bind_address The address to bind the server to.
- * @param port The port to bind the server to.
- * @param endpoint The endpoint to listen for POST requests on.
- * @param method The HTTP method to listen for.
- * @param num_threads The number of threads to use for the server.
- * @param max_payload_size The maximum size in bytes of the payload that the server will accept in a single request.
- * @param request_timeout The timeout for a request.
+ * @details Constructed to be used in the HttpServer class as http endpoint configurations
  */
-class HttpServer
+struct MORPHEUS_EXPORT HttpEndpoint
 {
-  public:
-    HttpServer(payload_parse_fn_t payload_parse_fn,
-               std::string bind_address             = "127.0.0.1",
-               unsigned short port                  = 8080,
-               std::string endpoint                 = "/message",
-               std::string method                   = "POST",
-               unsigned short num_threads           = 1,
-               std::size_t max_payload_size         = DefaultMaxPayloadSize,
-               std::chrono::seconds request_timeout = std::chrono::seconds(30));
-    ~HttpServer();
-    void start();
-    void stop();
-    bool is_running() const;
+    HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url, std::string method);
 
-  private:
-    void start_listener(std::binary_semaphore& listener_semaphore, std::binary_semaphore& started_semaphore);
-
-    std::string m_bind_address;
-    unsigned short m_port;
-    std::string m_endpoint;
+    std::shared_ptr<payload_parse_fn_t> m_parser;
+    std::string m_url;
     boost::beast::http::verb m_method;
-    unsigned short m_num_threads;
-    std::chrono::seconds m_request_timeout;
-    std::size_t m_max_payload_size;
-    std::vector<std::thread> m_listener_threads;
-    boost::asio::io_context m_io_context;
-    std::shared_ptr<Listener> m_listener;
-    std::shared_ptr<payload_parse_fn_t> m_payload_parse_fn;
-    std::atomic<bool> m_is_running;
 };
 
 /**
@@ -127,15 +90,13 @@ class HttpServer
  *
  * @details Constructed by the HttpServer class and should not be used directly.
  */
-class Listener : public std::enable_shared_from_this<Listener>
+class MORPHEUS_EXPORT Listener : public std::enable_shared_from_this<Listener>
 {
   public:
     Listener(boost::asio::io_context& io_context,
-             std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
              const std::string& bind_address,
              unsigned short port,
-             const std::string& endpoint,
-             boost::beast::http::verb method,
+             std::vector<HttpEndpoint> endpoints,
              std::size_t max_payload_size,
              std::chrono::seconds request_timeout);
 
@@ -153,25 +114,75 @@ class Listener : public std::enable_shared_from_this<Listener>
     boost::asio::ip::tcp::endpoint m_tcp_endpoint;
     std::unique_ptr<boost::asio::ip::tcp::acceptor> m_acceptor;
 
-    std::shared_ptr<morpheus::payload_parse_fn_t> m_payload_parse_fn;
-    const std::string& m_url_endpoint;
-    boost::beast::http::verb m_method;
+    std::vector<HttpEndpoint> m_endpoints;
     std::size_t m_max_payload_size;
     std::chrono::seconds m_request_timeout;
     std::atomic<bool> m_is_running;
+};
+
+/**
+ * @brief A simple HTTP server that listens for POST or PUT requests on a given endpoint.
+ *
+ * @details The server is started on a separate thread(s) and will call the provided payload_parse_fn_t
+ *          function when an incoming request is received. The payload_parse_fn_t function is expected to
+ *          return a tuple conforming to `parse_status_t` (ex: `std::make_tuple(200, "text/plain"s, "OK"s, nullptr)`).
+ *
+ * @param payload_parse_fn The function that will be called when a POST request is received.
+ * @param bind_address The address to bind the server to.
+ * @param port The port to bind the server to.
+ * @param endpoint The endpoint to listen for POST requests on.
+ * @param method The HTTP method to listen for.
+ * @param num_threads The number of threads to use for the server.
+ * @param max_payload_size The maximum size in bytes of the payload that the server will accept in a single request.
+ * @param request_timeout The timeout for a request.
+ */
+class MORPHEUS_EXPORT HttpServer
+{
+  public:
+    HttpServer(std::vector<HttpEndpoint> endpoints,
+               std::string bind_address             = "127.0.0.1",
+               unsigned short port                  = 8080,
+               unsigned short num_threads           = 1,
+               std::size_t max_payload_size         = DefaultMaxPayloadSize,
+               std::chrono::seconds request_timeout = std::chrono::seconds(30));
+    ~HttpServer();
+    void start();
+    void stop();
+    bool is_running() const;
+
+  private:
+    void start_listener(std::binary_semaphore& listener_semaphore, std::binary_semaphore& started_semaphore);
+
+    std::string m_bind_address;
+    unsigned short m_port;
+    std::vector<HttpEndpoint> m_endpoints;
+    unsigned short m_num_threads;
+    std::chrono::seconds m_request_timeout;
+    std::size_t m_max_payload_size;
+    std::vector<std::thread> m_listener_threads;
+    boost::asio::io_context m_io_context;
+    std::shared_ptr<Listener> m_listener;
+    std::atomic<bool> m_is_running;
+};
+
+/****** HttpEndpointInterfaceProxy ************************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct MORPHEUS_EXPORT HttpEndpointInterfaceProxy
+{
+    static std::shared_ptr<HttpEndpoint> init(pybind11::function py_parse_fn, std::string m_url, std::string m_method);
 };
 
 /****** HttpServerInterfaceProxy *************************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct HttpServerInterfaceProxy
+struct MORPHEUS_EXPORT HttpServerInterfaceProxy
 {
-    static std::shared_ptr<HttpServer> init(pybind11::function py_parse_fn,
+    static std::shared_ptr<HttpServer> init(std::vector<HttpEndpoint> endpoints,
                                             std::string bind_address,
                                             unsigned short port,
-                                            std::string endpoint,
-                                            std::string method,
                                             unsigned short num_threads,
                                             std::size_t max_payload_size,
                                             int64_t request_timeout);
@@ -186,5 +197,4 @@ struct HttpServerInterfaceProxy
                      const pybind11::object& value,
                      const pybind11::object& traceback);
 };
-
 }  // namespace morpheus

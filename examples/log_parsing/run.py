@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 
 import click
@@ -28,6 +29,7 @@ from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
+from morpheus.utils.logger import configure_logging
 
 
 @click.command()
@@ -79,7 +81,7 @@ from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
     help="The name of the model that is deployed on Tritonserver.",
 )
 @click.option("--model_config_file", required=True, help="Model config file.")
-@click.option("--server_url", required=True, help="Tritonserver url.")
+@click.option("--server_url", required=True, help="Tritonserver url.", default="localhost:8001")
 def run_pipeline(
     num_threads,
     pipeline_batch_size,
@@ -93,6 +95,10 @@ def run_pipeline(
     model_config_file,
     server_url,
 ):
+
+    # Enable the default logger.
+    configure_logging(log_level=logging.INFO)
+
     config = Config()
     config.mode = PipelineModes.NLP
     config.num_threads = num_threads

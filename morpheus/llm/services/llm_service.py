@@ -12,10 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib
 import logging
 import typing
 from abc import ABC
 from abc import abstractmethod
+
+if typing.TYPE_CHECKING:
+    from morpheus.llm.services.nemo_llm_service import NeMoLLMService
+    from morpheus.llm.services.openai_chat_service import OpenAIChatService
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +35,11 @@ class LLMClient(ABC):
     def get_input_names(self) -> list[str]:
         """
         Returns the names of the inputs to the model.
+
+        Returns
+        -------
+        list[str]
+            List of input names.
         """
         pass
 
@@ -42,6 +52,11 @@ class LLMClient(ABC):
         ----------
         input_dict : dict
             Input containing prompt data.
+
+        Returns
+        -------
+        str
+            Generated response for prompt.
         """
         pass
 
@@ -54,6 +69,11 @@ class LLMClient(ABC):
         ----------
         input_dict : dict
             Input containing prompt data.
+
+        Returns
+        -------
+        str
+            Generated async response for prompt.
         """
         pass
 
@@ -80,6 +100,11 @@ class LLMClient(ABC):
             Inputs containing prompt data.
         return_exceptions : bool
             Whether to return exceptions in the output list or raise them immediately.
+
+        Returns
+        -------
+        list[str] | list[str | BaseException]
+            List of responses or list of responses and exceptions.
         """
         pass
 
@@ -110,6 +135,11 @@ class LLMClient(ABC):
             Inputs containing prompt data.
         return_exceptions : bool
             Whether to return exceptions in the output list or raise them immediately.
+
+        Returns
+        -------
+        list[str] | list[str | BaseException]
+            List of responses or list of responses and exceptions.
         """
         pass
 
@@ -131,5 +161,65 @@ class LLMService(ABC):
 
         model_kwargs : dict[str, typing.Any]
             Additional keyword arguments to pass to the model.
+
+        Returns
+        -------
+        LLMClient
+            Client for interacting with LLM models.
         """
         pass
+
+    @typing.overload
+    @staticmethod
+    def create(service_type: typing.Literal["nemo"], *service_args, **service_kwargs) -> "NeMoLLMService":
+        pass
+
+    @typing.overload
+    @staticmethod
+    def create(service_type: typing.Literal["openai"], *service_args, **service_kwargs) -> "OpenAIChatService":
+        pass
+
+    @typing.overload
+    @staticmethod
+    def create(service_type: str, *service_args, **service_kwargs) -> "LLMService":
+        pass
+
+    @staticmethod
+    def create(service_type: str | typing.Literal["nemo"] | typing.Literal["openai"], *service_args, **service_kwargs):
+        """
+        Returns a service for interacting with LLM models.
+
+        Parameters
+        ----------
+        service_type : str
+            The type of the service to create
+        service_args : list
+            Additional arguments to pass to the service.
+        service_kwargs : dict[str, typing.Any]
+            Additional keyword arguments to pass to the service.
+        """
+        if service_type.lower() == 'openai':
+            llm_or_chat = "chat"
+        else:
+            llm_or_chat = "llm"
+
+        module_name = f"morpheus.llm.services.{service_type.lower()}_{llm_or_chat}_service"
+        module = importlib.import_module(module_name)
+
+        # Get all of the classes in the module to find the correct service class
+        mod_classes = {name: cls for name, cls in module.__dict__.items() if callable(cls)}
+
+        class_name_lower = f"{service_type}{llm_or_chat}Service".lower()
+
+        # Find case-insensitive match for the class name
+        matching_classes = [name for name in mod_classes if name.lower() == class_name_lower]
+
+        assert len(matching_classes) == 1, (f"Expected to find exactly one class with name {class_name_lower} "
+                                            f"in module {module_name}, but found {sorted(mod_classes.keys())}")
+
+        # Create the class
+        class_ = getattr(module, matching_classes[0])
+
+        instance = class_(*service_args, **service_kwargs)
+
+        return instance

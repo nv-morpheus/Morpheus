@@ -27,8 +27,11 @@
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyKind
 #include <cudf/column/column_view.hpp>  // for column_view
+#include <cudf/concatenate.hpp>
+#include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
-#include <cudf/types.hpp>  // for type_id, data_type, size_type
+#include <cudf/table/table_view.hpp>  // for table_view
+#include <cudf/types.hpp>             // for type_id, data_type, size_type
 #include <glog/logging.h>
 #include <mrc/cuda/common.hpp>  // for __check_cuda_errors, MRC_CHECK_CUDA
 #include <pybind11/gil.h>
@@ -41,9 +44,10 @@
 #include <cstdint>  // for uint8_t
 #include <memory>
 #include <optional>
-#include <ostream>    // for operator<< needed by glog
-#include <stdexcept>  // for runtime_error
-#include <tuple>      // for make_tuple, tuple
+#include <ostream>        // for operator<< needed by glog
+#include <stdexcept>      // for runtime_error
+#include <tuple>          // for make_tuple, tuple
+#include <unordered_map>  // for unordered_map
 #include <utility>
 // We're already including pybind11.h and don't need to include cast.
 // For some reason IWYU also thinks we need array for the `isinsance` call.
@@ -84,7 +88,7 @@ TableInfo MessageMeta::get_info(const std::vector<std::string>& column_names) co
 
 void MessageMeta::set_data(const std::string& col_name, TensorObject tensor)
 {
-    this->set_data({col_name}, {tensor});
+    this->set_data({col_name}, std::vector<TensorObject>{tensor});
 }
 
 void MessageMeta::set_data(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors)
@@ -111,16 +115,13 @@ void MessageMeta::set_data(const std::vector<std::string>& column_names, const s
         const auto tensor_type    = DType(tensors[i].dtype());
         const auto tensor_type_id = tensor_type.cudf_type_id();
         const auto row_stride     = tensors[i].stride(0);
-
         CHECK(tensors[i].count() == cv.size() &&
               (table_type_id == tensor_type_id ||
                (table_type_id == cudf::type_id::BOOL8 && tensor_type_id == cudf::type_id::UINT8)));
-
         const auto item_size = tensors[i].dtype().item_size();
 
         // Dont use cv.data<>() here since that does not account for the size of each element
         auto data_start = const_cast<uint8_t*>(cv.head<uint8_t>()) + cv.offset() * item_size;
-
         if (row_stride == 1)
         {
             // column major just use cudaMemcpy
@@ -191,6 +192,41 @@ bool MessageMeta::has_sliceable_index() const
 {
     const auto table = get_info();
     return table.has_sliceable_index();
+}
+
+std::shared_ptr<MessageMeta> MessageMeta::copy_ranges(const std::vector<RangeType>& ranges) const
+{
+    // copy ranges into a sequntial list of values
+    // https://github.com/rapidsai/cudf/issues/11223
+    std::vector<TensorIndex> cudf_ranges;
+    for (const auto& p : ranges)
+    {
+        // Append the message offset to the range here
+        cudf_ranges.push_back(p.first);
+        cudf_ranges.push_back(p.second);
+    }
+    auto table_info   = this->get_info();
+    auto column_names = table_info.get_column_names();
+    auto metadata     = cudf::io::table_metadata{};
+
+    metadata.schema_info.reserve(column_names.size() + 1);
+    metadata.schema_info.emplace_back("");
+
+    for (auto column_name : column_names)
+    {
+        metadata.schema_info.emplace_back(column_name);
+    }
+
+    auto table_view                     = table_info.get_view();
+    auto sliced_views                   = cudf::slice(table_view, cudf_ranges);
+    cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views), std::move(metadata)};
+
+    return MessageMeta::create_from_cpp(std::move(table), 1);
+}
+
+std::shared_ptr<MessageMeta> MessageMeta::get_slice(TensorIndex start, TensorIndex stop) const
+{
+    return this->copy_ranges({{start, stop}});
 }
 
 std::optional<std::string> MessageMeta::ensure_sliceable_index()
@@ -462,6 +498,23 @@ std::optional<std::string> MessageMetaInterfaceProxy::ensure_sliceable_index(Mes
     return self.ensure_sliceable_index();
 }
 
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::copy_ranges(MessageMeta& self,
+                                                                    const std::vector<RangeType>& ranges)
+{
+    pybind11::gil_scoped_release no_gil;
+
+    return self.copy_ranges(ranges);
+}
+
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::get_slice(MessageMeta& self,
+                                                                  TensorIndex start,
+                                                                  TensorIndex stop)
+{
+    pybind11::gil_scoped_release no_gil;
+
+    return self.get_slice(start, stop);
+}
+
 SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
                                      TensorIndex start,
                                      TensorIndex stop,
@@ -480,6 +533,20 @@ TensorIndex SlicedMessageMeta::count() const
 TableInfo SlicedMessageMeta::get_info() const
 {
     return this->m_data->get_info().get_slice(m_start, m_stop, m_column_names);
+}
+
+TableInfo SlicedMessageMeta::get_info(const std::string& col_name) const
+{
+    auto full_info = this->m_data->get_info();
+
+    return full_info.get_slice(m_start, m_stop, {col_name});
+}
+
+TableInfo SlicedMessageMeta::get_info(const std::vector<std::string>& column_names) const
+{
+    auto full_info = this->m_data->get_info();
+
+    return full_info.get_slice(m_start, m_stop, column_names);
 }
 
 MutableTableInfo SlicedMessageMeta::get_mutable_info() const

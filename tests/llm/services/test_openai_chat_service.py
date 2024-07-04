@@ -13,43 +13,230 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
+import os
 from unittest import mock
 
 import pytest
 
-from morpheus.llm.services.llm_service import LLMService
-from morpheus.llm.services.openai_chat_service import OpenAIChatClient
+from _utils.llm import mk_mock_openai_response
 from morpheus.llm.services.openai_chat_service import OpenAIChatService
 
 
-def test_constructor():
-    service = OpenAIChatService()
-    assert isinstance(service, LLMService)
+@pytest.fixture(name="set_default_openai_api_key", autouse=True, scope="function")
+def set_default_openai_api_key_fixture():
+    # Must have an API key set to create the openai client
+    with mock.patch.dict(os.environ, clear=True, values={"OPENAI_API_KEY": "testing_api_key"}):
+        yield
+
+
+def assert_called_once_with_relaxed(mock_obj, *args, **kwargs):
+
+    if (len(mock_obj.call_args_list) == 1):
+
+        recent_call = mock_obj.call_args_list[-1]
+
+        # Ensure that the number of arguments matches by adding ANY to the back of the args
+        if (len(args) < len(recent_call.args)):
+            args = tuple(list(args) + [mock.ANY] * (len(recent_call.args) - len(args)))
+
+        addl_kwargs = {key: mock.ANY for key in recent_call.kwargs.keys() if key not in kwargs}
+
+        kwargs.update(addl_kwargs)
+
+    mock_obj.assert_called_once_with(*args, **kwargs)
+
+
+@pytest.mark.parametrize("api_key", ["12345", None])
+@pytest.mark.parametrize("base_url", ["http://test.openai.com/v1", None])
+@pytest.mark.parametrize("org_id", ["my-org-124", None])
+def test_constructor(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
+                     api_key: str,
+                     base_url: str,
+                     org_id: str):
+
+    OpenAIChatService(api_key=api_key, base_url=base_url, org_id=org_id).get_client(model_name="test_model")
+
+    if (api_key is None):
+        api_key = os.environ["OPENAI_API_KEY"]
+
+    for mock_client in mock_chat_completion:
+        assert_called_once_with_relaxed(mock_client, organization=org_id, api_key=api_key, base_url=base_url)
+
+
+@pytest.mark.parametrize("max_retries", [5, 10, -1, None])
+def test_max_retries(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], max_retries: int):
+    OpenAIChatService().get_client(model_name="test_model", max_retries=max_retries)
+
+    for mock_client in mock_chat_completion:
+        assert_called_once_with_relaxed(mock_client, max_retries=max_retries)
+
+
+@pytest.mark.parametrize("use_json", [True, False])
+def test_client_json(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], use_json: bool):
+    client = OpenAIChatService().get_client(model_name="test_model", json=use_json)
+
+    # Perform a dummy generate call
+    client.generate(prompt="test_prompt")
+
+    if (use_json):
+        assert_called_once_with_relaxed(mock_chat_completion[0].chat.completions.create,
+                                        response_format={"type": "json_object"})
+    else:
+        assert mock_chat_completion[0].chat.completions.create.call_args_list[-1].kwargs.get("response_format") is None
+
+
+@pytest.mark.parametrize("set_assistant", [True, False])
+def test_client_set_assistant(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], set_assistant: bool):
+    client = OpenAIChatService().get_client(model_name="test_model", set_assistant=set_assistant)
+
+    # Perform a dummy generate call
+    client.generate(prompt="test_prompt", assistant="assistant_message")
+
+    messages = mock_chat_completion[0].chat.completions.create.call_args_list[-1].kwargs["messages"]
+
+    found_assistant = False
+
+    for message in messages:
+        if (message.get("role") == "assistant"):
+            found_assistant = True
+            break
+
+    assert found_assistant == set_assistant
+
+
+@pytest.mark.parametrize("use_async", [True, False])
+@pytest.mark.parametrize(
+    "input_dict, set_assistant, expected_messages",
+    [({
+        "prompt": "test_prompt", "assistant": "assistant_response"
+    },
+      True, [{
+          "role": "user", "content": "test_prompt"
+      }, {
+          "role": "assistant", "content": "assistant_response"
+      }]), ({
+          "prompt": "test_prompt"
+      }, False, [{
+          "role": "user", "content": "test_prompt"
+      }])])
+@pytest.mark.parametrize("temperature", [0, 1, 2])
+def test_generate(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
+                  use_async: bool,
+                  input_dict: dict[str, str],
+                  set_assistant: bool,
+                  expected_messages: list[dict],
+                  temperature: int):
+    (mock_client, mock_async_client) = mock_chat_completion
+    client = OpenAIChatService().get_client(model_name="test_model",
+                                            set_assistant=set_assistant,
+                                            temperature=temperature)
+
+    if use_async:
+        results = asyncio.run(client.generate_async(**input_dict))
+        mock_async_client.chat.completions.create.assert_called_once_with(model="test_model",
+                                                                          messages=expected_messages,
+                                                                          temperature=temperature)
+        mock_client.chat.completions.create.assert_not_called()
+
+    else:
+        results = client.generate(**input_dict)
+        mock_client.chat.completions.create.assert_called_once_with(model="test_model",
+                                                                    messages=expected_messages,
+                                                                    temperature=temperature)
+        mock_async_client.chat.completions.create.assert_not_called()
+
+    assert results == "test_output"
+
+
+@pytest.mark.parametrize("use_async", [True, False])
+@pytest.mark.parametrize("inputs, set_assistant, expected_messages",
+                         [({
+                             "prompt": ["prompt1", "prompt2"], "assistant": ["assistant1", "assistant2"]
+                         },
+                           True,
+                           [[{
+                               "role": "user", "content": "prompt1"
+                           }, {
+                               "role": "assistant", "content": "assistant1"
+                           }], [{
+                               "role": "user", "content": "prompt2"
+                           }, {
+                               "role": "assistant", "content": "assistant2"
+                           }]]),
+                          ({
+                              "prompt": ["prompt1", "prompt2"]
+                          },
+                           False, [[{
+                               "role": "user", "content": "prompt1"
+                           }], [{
+                               "role": "user", "content": "prompt2"
+                           }]])])
+@pytest.mark.parametrize("temperature", [0, 1, 2])
+def test_generate_batch(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
+                        use_async: bool,
+                        inputs: dict[str, list[str]],
+                        set_assistant: bool,
+                        expected_messages: list[list[dict]],
+                        temperature: int):
+    (mock_client, mock_async_client) = mock_chat_completion
+    client = OpenAIChatService().get_client(model_name="test_model",
+                                            set_assistant=set_assistant,
+                                            temperature=temperature)
+
+    expected_results = ["test_output" for _ in range(len(inputs["prompt"]))]
+    expected_calls = [
+        mock.call(model="test_model", messages=messages, temperature=temperature) for messages in expected_messages
+    ]
+
+    if use_async:
+        results = asyncio.run(client.generate_batch_async(inputs))
+        mock_async_client.chat.completions.create.assert_has_calls(expected_calls, any_order=False)
+        mock_client.chat.completions.create.assert_not_called()
+
+    else:
+        results = client.generate_batch(inputs)
+        mock_client.chat.completions.create.assert_has_calls(expected_calls, any_order=False)
+        mock_async_client.chat.completions.create.assert_not_called()
+
+    assert results == expected_results
+
+
+@pytest.mark.parametrize("completion", [[], [None]], ids=["no_choices", "no_content"])
+@pytest.mark.usefixtures("mock_chat_completion")
+def test_extract_completion_errors(completion: list):
+    client = OpenAIChatService().get_client(model_name="test_model")
+    mock_completion = mk_mock_openai_response(completion)
+
+    with pytest.raises(ValueError):
+        client._extract_completion(mock_completion)
 
 
 def test_get_client():
     service = OpenAIChatService()
     client = service.get_client(model_name="test_model")
 
-    assert isinstance(client, OpenAIChatClient)
+    assert client.model_name == "test_model"
+
+    client = service.get_client(model_name="test_model2", extra_arg="test_arg")
+
+    assert client.model_name == "test_model2"
+    assert client.model_kwargs == {"extra_arg": "test_arg"}
 
 
-@pytest.mark.parametrize("set_assistant", [True, False])
 @pytest.mark.parametrize("temperature", [0, 1, 2])
 @pytest.mark.parametrize("max_retries", [5, 10])
-@mock.patch("morpheus.llm.services.openai_chat_service.OpenAIChatClient")
-def test_get_client_passed_args(mock_client: mock.MagicMock, set_assistant: bool, temperature: int, max_retries: int):
+def test_get_client_passed_args(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
+                                temperature: int,
+                                max_retries: int):
     service = OpenAIChatService()
-    service.get_client(model_name="test_model",
-                       set_assistant=set_assistant,
-                       temperature=temperature,
-                       test='this',
-                       max_retries=max_retries)
+    client = service.get_client(model_name="test_model", temperature=temperature, test='this', max_retries=max_retries)
+
+    # Perform a dummy generate call
+    client.generate(prompt="test_prompt")
 
     # Ensure the get_client method passed on the set_assistant and model kwargs
-    mock_client.assert_called_once_with(service,
-                                        model_name="test_model",
-                                        set_assistant=set_assistant,
-                                        temperature=temperature,
-                                        test='this',
-                                        max_retries=max_retries)
+    assert_called_once_with_relaxed(mock_chat_completion[0].chat.completions.create,
+                                    model="test_model",
+                                    temperature=temperature,
+                                    test='this')

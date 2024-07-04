@@ -36,6 +36,14 @@ def openai_fixture(openai):
     yield openai
 
 
+@pytest.fixture(name="nvfoundationllm", autouse=True, scope='session')
+def nvfoundationllm_fixture(nvfoundationllm):
+    """
+    All of the tests in this subdir require nvfoundationllm
+    """
+    yield nvfoundationllm
+
+
 @pytest.fixture(name="mock_chat_completion", autouse=True)
 def mock_chat_completion_fixture(mock_chat_completion):
     yield mock_chat_completion

@@ -25,6 +25,7 @@ import time
 import types
 import typing
 import warnings
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -192,16 +193,18 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     items[:] = [x for x in items if should_filter_test(x)]
 
 
-def clear_handlers(logger):
-    handlers = logger.handlers.copy()
-    for handler in handlers:
-        logger.removeHandler(handler)
+@pytest.fixture(scope="function", name="reset_logging")
+def reset_logging_fixture():
+    from morpheus.utils.logger import reset_logging
+    reset_logging()
+    yield
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_runtest_teardown(item, nextitem):
-    clear_handlers(logging.getLogger("morpheus"))
-    clear_handlers(logging.getLogger())
+    from morpheus.utils.logger import reset_logging
+    reset_logging(logger_name="morpheus")
+    reset_logging(logger_name=None)  # Reset the root logger as well
 
 
 # This fixture will be used by all tests.
@@ -483,7 +486,7 @@ def manual_seed():
 
 
 @pytest.fixture(scope="function")
-def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
+def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path: Path):
     """
     Executes a test in the tmp_path directory
     """
@@ -861,6 +864,15 @@ def loglevel_fatal():
     _wrap_set_log_level(logging.FATAL)
 
 
+@pytest.fixture(scope="function")
+def morpheus_log_level():
+    """
+    Returns the log level of the morpheus logger
+    """
+    logger = logging.getLogger("morpheus")
+    yield logger.getEffectiveLevel()
+
+
 # ==== DataFrame Fixtures ====
 @pytest.fixture(scope="function")
 def dataset(df_type: typing.Literal['cudf', 'pandas']):
@@ -1026,6 +1038,12 @@ def simple_collection_config_fixture():
     yield load_json_file(filename="service/milvus_simple_collection_conf.json")
 
 
+@pytest.fixture(scope="session", name="string_collection_config")
+def string_collection_config_fixture():
+    from _utils import load_json_file
+    yield load_json_file(filename="service/milvus_string_collection_conf.json")
+
+
 @pytest.fixture(name="nemollm", scope='session')
 def nemollm_fixture(fail_missing: bool):
     """
@@ -1033,8 +1051,20 @@ def nemollm_fixture(fail_missing: bool):
     """
     skip_reason = ("Tests for the NeMoLLMService require the nemollm package to be installed, to install this run:\n"
                    "`conda env update --solver=libmamba -n morpheus "
-                   "--file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
+                   "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
     yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
+
+
+@pytest.fixture(name="nvfoundationllm", scope='session')
+def nvfoundationllm_fixture(fail_missing: bool):
+    """
+    Fixture to ensure nvfoundationllm is installed
+    """
+    skip_reason = (
+        "Tests for NVFoundation require the langchain-nvidia-ai-endpoints package to be installed, to install this "
+        "run:\n `conda env update --solver=libmamba -n morpheus "
+        "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
+    yield import_or_skip("langchain_nvidia_ai_endpoints", reason=skip_reason, fail_missing=fail_missing)
 
 
 @pytest.fixture(name="openai", scope='session')
@@ -1044,7 +1074,7 @@ def openai_fixture(fail_missing: bool):
     """
     skip_reason = ("Tests for the OpenAIChatService require the openai package to be installed, to install this run:\n"
                    "`conda env update --solver=libmamba -n morpheus "
-                   "--file conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
+                   "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
     yield import_or_skip("openai", reason=skip_reason, fail_missing=fail_missing)
 
 

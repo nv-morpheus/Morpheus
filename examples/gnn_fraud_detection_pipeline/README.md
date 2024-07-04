@@ -16,29 +16,30 @@ limitations under the License.
 -->
 # GNN Fraud Detection Pipeline
 
+## Supported Environments
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-121_arch-x86_64.yaml` or `conda/environments/examples_cuda-121_arch-x86_64.yaml` environment files. Refer to the [Requirements](#requirements) section for more information.
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ |  |
+| Morpheus Release Container | ✔ |  |
+| Dev Container | ✔ |  |
+
 ## Requirements
 
 Prior to running the GNN fraud detection pipeline, additional requirements must be installed in to your Conda environment. A supplemental requirements file has been provided in this example directory.
 
 ```bash
-export CUDA_VER=12.1
 mamba env update \
   -n ${CONDA_DEFAULT_ENV} \
   --file ./conda/environments/examples_cuda-121_arch-x86_64.yaml
 ```
 
 ## Running
-
-##### Setup Env Variable
-```bash
-export MORPHEUS_ROOT=$(pwd)
-```
-
 Use Morpheus to run the GNN fraud detection Pipeline with the transaction data. A pipeline has been configured in `run.py` with several command line options:
 
 ```bash
-cd ${MORPHEUS_ROOT}/examples/gnn_fraud_detection_pipeline
-python run.py --help
+python examples/gnn_fraud_detection_pipeline/run.py --help
 ```
 ```
 Usage: run.py [OPTIONS]
@@ -63,11 +64,10 @@ Options:
   --help                          Show this message and exit.
 ```
 
-To launch the configured Morpheus pipeline with the sample data that is provided at `$MORPHEUS_ROOT/models/dataset`, run the following:
+To launch the configured Morpheus pipeline, run the following:
 
 ```bash
-cd ${MORPHEUS_ROOT}/examples/gnn_fraud_detection_pipeline
-python run.py
+python examples/gnn_fraud_detection_pipeline/run.py
 ```
 ```
 ====Registering Pipeline====
@@ -125,6 +125,7 @@ morpheus --log_level INFO \
 	monitor --description "Graph construction rate" \
 	gnn-fraud-sage --model_dir  examples/gnn_fraud_detection_pipeline/model/ \
 	monitor --description "Inference rate" \
+	gnn-fraud-classification --model_xgb_file examples/gnn_fraud_detection_pipeline/model/xgb.pt \
 	monitor --description "Add classification rate" \
 	serialize \
 	to-file --filename "output.csv" --overwrite

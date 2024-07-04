@@ -23,6 +23,8 @@ morpheus_add_pybind11_module(rabbitmq_cpp_stage
     ${SimpleAmqpClient_SOURCE_DIR}/src
   LINK_TARGETS
     morpheus
+    CUDA::nvtx3
+    cudf::cudf
     rabbitmq
     SimpleAmqpClient
 )
