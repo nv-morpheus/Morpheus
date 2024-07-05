@@ -26,6 +26,6 @@ repos:
       sub_dir: ""
   git:
     host: github
-    tag: branch-24.06
+    tag: branch-24.10
     upstream: nv-morpheus
     repo: morpheus
