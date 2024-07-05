@@ -74,7 +74,7 @@ limitations under the License.
 ## Training Dataset:
 
 **Link:** 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/training-data/root-cause-training-data.csv <br>
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/models/datasets/training-data/root-cause-training-data.csv <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 * kern.log files from DGX machines <br>
@@ -82,7 +82,7 @@ limitations under the License.
 ## Evaluation Dataset:
 
 **Link:** 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/validation-data/root-cause-validation-data-input.jsonlines  <br>
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/models/datasets/validation-data/root-cause-validation-data-input.jsonlines  <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 * kern.log files from DGX machines <br>
@@ -141,7 +141,7 @@ limitations under the License.
 ## Model Card ++ Saftey & Security Subcard
 
 ### Link the location of the training dataset's repository.
-* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/training-data/root-cause-training-data.csv
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/models/datasets/training-data/root-cause-training-data.csv
 
 ### Describe the life critical impact (if present).
 * None
