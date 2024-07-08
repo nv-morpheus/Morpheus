@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@
 
 namespace morpheus {
 /****** Component public implementations *******************/
-/****** AddClassificationStage********************************/
+/**************AddScoresStageBase***************************/
 
 /**
  * @addtogroup stages
@@ -47,43 +47,37 @@ namespace morpheus {
 /**
  * @brief Base class for both `AddScoresStage` and `AddClassificationStage`
  */
-template <typename InputT, typename OutputT>
 class MORPHEUS_EXPORT AddScoresStageBase
-  : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
-{
-  public:
-    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
-    using typename base_t::sink_type_t;
-    using typename base_t::source_type_t;
-    using typename base_t::subscribe_fn_t;
+    : public mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>,
+                                    std::shared_ptr<ControlMessage>> {
+public:
+  using base_t =
+      mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>;
+  using typename base_t::sink_type_t;
+  using typename base_t::source_type_t;
+  using typename base_t::subscribe_fn_t;
 
-    /**
-     * @brief Construct a new Add Classifications Stage object
-     *
-     * @param threshold : Threshold to consider true/false for each class
-     * @param idx2label : Index to classification labels map
-     */
-    AddScoresStageBase(std::map<std::size_t, std::string> idx2label, std::optional<float> threshold);
+  /**
+   * @brief Construct a new Add Classifications Stage object
+   *
+   * @param threshold : Threshold to consider true/false for each class
+   * @param idx2label : Index to classification labels map
+   */
+  AddScoresStageBase(std::map<std::size_t, std::string> idx2label,
+                     std::optional<float> threshold);
 
-    /**
-     * Called every time a message is passed to this stage
-     */
-    source_type_t on_data(sink_type_t x);
+  /**
+   * Called every time a message is passed to this stage
+   */
+  source_type_t on_data(sink_type_t msg);
 
-  private:
-    void on_multi_response_message(std::shared_ptr<MultiResponseMessage> x);
-    void on_control_message(std::shared_ptr<ControlMessage> x);
-    std::map<std::size_t, std::string> m_idx2label;
-    std::optional<float> m_threshold;
+private:
+  std::map<std::size_t, std::string> m_idx2label;
+  std::optional<float> m_threshold;
 
-    // The minimum number of columns needed to extract the label data
-    std::size_t m_min_col_count;
+  // The minimum number of columns needed to extract the label data
+  std::size_t m_min_col_count;
 };
 
-using AddScoresStageBaseMM =  // NOLINT(readability-identifier-naming)
-    AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>;
-using AddScoresStageBaseCM =  // NOLINT(readability-identifier-naming)
-    AddScoresStageBase<ControlMessage, ControlMessage>;
-
-/** @} */  // end of group
-}  // namespace morpheus
+/** @} */ // end of group
+} // namespace morpheus

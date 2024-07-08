@@ -95,16 +95,6 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
 
     std::map<std::size_t, std::string> idx2label = {{0, "bool"}};
 
-    // Create MultiResponseMessage
-    auto tensor        = Tensor::create(packed_data, DType::create<double>(), {mess_count, cols_size}, {}, 0);
-    auto tensor_memory = std::make_shared<TensorMemory>(mess_count);
-    tensor_memory->set_tensor("probs", std::move(tensor));
-    auto mm = std::make_shared<MultiResponseMessage>(std::move(meta_mm), 0, mess_count, std::move(tensor_memory));
-
-    // Create PreProcessMultiMessageStage
-    auto mm_stage    = std::make_shared<AddClassificationsStageMM>(idx2label, 0.4);
-    auto mm_response = mm_stage->on_data(mm);
-
     // Create a separate dataframe from a file (otherwise they will overwrite eachother)
     auto meta_cm = MessageMeta::create_from_cpp(cudf::io::read_csv(read_opts));
 
@@ -116,22 +106,17 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
     cm_tensor_memory->set_tensor("probs", std::move(cm_tensor));
     cm->tensors(cm_tensor_memory);
 
-    // Create PreProcessControlMessageStage
-    auto cm_stage    = std::make_shared<AddClassificationsStageCM>(idx2label, 0.4);
+    // Create AddClassificationStage
+    auto cm_stage    = std::make_shared<AddClassificationsStage>(idx2label, 0.4);
     auto cm_response = cm_stage->on_data(cm);
 
     // Verify the output meta
     std::vector<uint8_t> expected_meta = {'\0', '\x1', '\x1'};
-    auto mm_meta                       = mm_response->get_meta().get_column(0);
     auto cm_meta                       = cm_response->payload()->get_info().get_column(0);
 
     // std::vector<bool> is a template specialization which does not have data() method, use std::vector<uint8_t> here
-    std::vector<uint8_t> mm_meta_host(mm_meta.size());
     std::vector<uint8_t> cm_meta_host(cm_meta.size());
     MRC_CHECK_CUDA(
-        cudaMemcpy(mm_meta_host.data(), mm_meta.data<bool>(), mm_meta.size() * sizeof(bool), cudaMemcpyDeviceToHost));
-    MRC_CHECK_CUDA(
         cudaMemcpy(cm_meta_host.data(), cm_meta.data<bool>(), cm_meta.size() * sizeof(bool), cudaMemcpyDeviceToHost));
-    EXPECT_EQ(mm_meta_host, expected_meta);
-    EXPECT_EQ(mm_meta_host, cm_meta_host);
+    EXPECT_EQ(cm_meta_host, expected_meta);
 }
