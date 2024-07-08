@@ -21,12 +21,17 @@ pushd ${SCRIPT_DIR} &> /dev/null
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-"$(git rev-parse --show-toplevel)"}
 popd &> /dev/null
 
+FULL_VERSION=$(git describe --tags --abbrev=0)
+MAJOR_VERSION=$(echo ${FULL_VERSION} | awk '{split($0, a, "[v.]"); print a[2]}')
+MINOR_VERSION=$(echo ${FULL_VERSION} | awk '{split($0, a, "."); print a[2]}')
+SHORT_VERSION=${MAJOR_VERSION}.${MINOR_VERSION}
+
 # Build args
 FROM_IMAGE=${FROM_IMAGE:-"nvcr.io/nvidia/tritonserver"}
 FROM_IMAGE_TAG=${FROM_IMAGE_TAG:-"23.06-py3"}
 
 DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"nvcr.io/nvidia/morpheus/morpheus-tritonserver-models"}
-DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"${FROM_IMAGE_TAG}-$(git describe --tags --abbrev=0)"}
+DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"${SHORT_VERSION}"}
 
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
@@ -54,7 +59,3 @@ echo "   COMMAND: docker build ${DOCKER_ARGS} -f ${SCRIPT_DIR}/Dockerfile ."
 echo "   Note: add '--progress plain' to DOCKER_EXTRA_ARGS to show all container build output"
 
 docker build ${DOCKER_ARGS} -f ${SCRIPT_DIR}/Dockerfile .
-
-echo ""
-echo "Tagging ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} as ${DOCKER_IMAGE_NAME}:latest"
-docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest
