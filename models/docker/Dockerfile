@@ -17,5 +17,12 @@ ARG FROM_IMAGE="nvcr.io/nvidia/tritonserver"
 ARG FROM_IMAGE_TAG="23.06-py3"
 FROM ${FROM_IMAGE}:${FROM_IMAGE_TAG} AS base
 
+WORKDIR /
+
 # Copy the model repository
 COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
+
+# Copy the two example models that live in the examples dir
+COPY "${MORPHEUS_ROOT_HOST}/examples/abp_pcap_detection/abp-pcap-xgb" "./models/triton-model-repo/abp-pcap-xgb"
+COPY "${HOST_MORPHEUS_ROOT}/examples/ransomware_detection/models/ransomw-model-short-rf" \
+     "./models/triton-model-repo/ransomw-model-short-rf"
