@@ -27,9 +27,7 @@ from _utils.dataset_manager import DatasetManager
 from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 
 
@@ -47,7 +45,6 @@ def test_constructor(config: Config):
     assert stage.name == "add-class"
 
     accepted_union = typing.Union[stage.accepted_types()]
-    assert typing_utils.issubtype(MultiResponseMessage, accepted_union)
     assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
@@ -64,7 +61,7 @@ def test_constructor_errors(config: Config):
 
 
 @pytest.mark.use_python
-def test_add_labels_with_multi_response_message_and_contgrol_message():
+def test_add_labels():
 
     class_labels = {0: "frogs", 1: "lizards", 2: "toads"}
 
@@ -74,14 +71,6 @@ def test_add_labels_with_multi_response_message_and_contgrol_message():
     probs_array = cp.array([[0.1, 0.6, 0.8], [0.3, 0.61, 0.9]])
     probs_array_bool = probs_array > threshold
 
-    mrm = MultiResponseMessage(meta=MessageMeta(df), memory=TensorMemory(count=2, tensors={"probs": probs_array}))
-
-    labeled_mrm = AddClassificationsStage._add_labels(mrm, idx2label=class_labels, threshold=threshold)
-
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("frogs"), probs_array_bool[:, 0])
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("lizards"), probs_array_bool[:, 1])
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("toads"), probs_array_bool[:, 2])
-
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
     cm.tensors(CppTensorMemory(count=2, tensors={"probs": probs_array}))
@@ -89,37 +78,11 @@ def test_add_labels_with_multi_response_message_and_contgrol_message():
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=threshold)
 
     # Check that the labeled control message and labeled multi response message are the same
-    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("frogs"), labeled_mrm.get_meta("frogs"))
-    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("lizards"), labeled_mrm.get_meta("lizards"))
-    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("toads"), labeled_mrm.get_meta("toads"))
-
-    # Same thing but change the probs tensor name
-    mrm = MultiResponseMessage(meta=MessageMeta(df),
-                               memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
-                               probs_tensor_name="other_probs")
-
-    labeled_mrm = AddClassificationsStage._add_labels(mrm, idx2label=class_labels, threshold=threshold)
-
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("frogs"), probs_array_bool[:, 0])
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("lizards"), probs_array_bool[:, 1])
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("toads"), probs_array_bool[:, 2])
-
-    # Fail in missing probs data
-    mrm = MultiResponseMessage(meta=MessageMeta(df),
-                               memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
-                               probs_tensor_name="other_probs")
-    mrm.probs_tensor_name = "probs"
-
-    with pytest.raises(KeyError):
-        AddClassificationsStage._add_labels(mrm, idx2label=class_labels, threshold=threshold)
+    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("frogs"), probs_array_bool[:, 0])
+    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("lizards"), probs_array_bool[:, 1])
+    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("toads"), probs_array_bool[:, 2])
 
     # Too small of a probs array
-    mrm = MultiResponseMessage(meta=MessageMeta(df),
-                               memory=TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
-
-    with pytest.raises(RuntimeError):
-        AddClassificationsStage._add_labels(mrm, idx2label=class_labels, threshold=threshold)
-
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
     cm.tensors(CppTensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))

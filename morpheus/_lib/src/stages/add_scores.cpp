@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,16 @@
 
 #include "morpheus/stages/add_scores.hpp"
 
-#include "mrc/segment/builder.hpp"
-#include "mrc/segment/object.hpp"
+#include "mrc/segment/builder.hpp"  // for Builder
+#include "mrc/segment/object.hpp"   // for Object
 
-#include "morpheus/messages/control.hpp"
-#include "morpheus/stages/add_scores_stage_base.hpp"
+#include "morpheus/stages/add_scores_stage_base.hpp"  // for AddScoresStageBase
 
-#include <cstddef>  // for size_t
-#include <map>
-#include <memory>
-#include <optional>
-#include <utility>  // for move
-// IWYU thinks we need __alloc_traits<>::value_type for vector assignments
-// IWYU pragma: no_include <ext/alloc_traits.h>
+#include <cstddef>   // for size_t
+#include <map>       // for map
+#include <memory>    // for shared_ptr
+#include <optional>  // for nullopt, optional
+#include <utility>   // for move
 
 namespace morpheus {
 

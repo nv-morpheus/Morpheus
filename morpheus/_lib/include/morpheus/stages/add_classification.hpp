@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,16 @@
 
 #pragma once
 
-#include "morpheus/export.h"                          // for exporting symbols
-#include "morpheus/messages/control.hpp"              // for ControlMessage
-#include "morpheus/messages/multi_response.hpp"       // for MultiResponseMessage
+#include "morpheus/export.h"                          // for MORPHEUS_EXPORT
 #include "morpheus/stages/add_scores_stage_base.hpp"  // for AddScoresStageBase
 
 #include <mrc/segment/builder.hpp>  // for Builder
 #include <mrc/segment/object.hpp>   // for Object
-#include <rxcpp/rx.hpp>             // for trace_activity
 
 #include <cstddef>  // for size_t
 #include <map>      // for map
 #include <memory>   // for shared_ptr
 #include <string>   // for string
-
 namespace morpheus {
 
 /****** Component public implementations *******************/
@@ -43,8 +39,9 @@ namespace morpheus {
  */
 
 /**
- * @brief Add detected classifications to each message. Classification labels based on probabilities calculated in
- * inference stage. Label indexes will be looked up in the idx2label property.
+ * @brief Add detected classifications to each message. Classification labels
+ * based on probabilities calculated in inference stage. Label indexes will be
+ * looked up in the idx2label property.
  */
 class MORPHEUS_EXPORT AddClassificationsStage : public AddScoresStageBase
 {
@@ -65,8 +62,8 @@ class MORPHEUS_EXPORT AddClassificationsStage : public AddScoresStageBase
 struct MORPHEUS_EXPORT AddClassificationStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a AddClassificationStage that receives ControlMessage and emits ControlMessage, and
-     * return the result
+     * @brief Create and initialize a AddClassificationStage that receives
+     * ControlMessage and emits ControlMessage, and return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference

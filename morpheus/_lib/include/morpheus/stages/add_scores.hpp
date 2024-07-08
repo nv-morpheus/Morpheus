@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,11 @@
 
 #pragma once
 
-#include "morpheus/export.h"
-#include "morpheus/messages/control.hpp"              // for ControlMessage
-#include "morpheus/messages/multi_response.hpp"       // for MultiResponseMessage
+#include "morpheus/export.h"                          // for MORPHEUS_EXPORT
 #include "morpheus/stages/add_scores_stage_base.hpp"  // for AddScoresStageBase
 
 #include <mrc/segment/builder.hpp>  // for Builder
 #include <mrc/segment/object.hpp>   // for Object
-#include <rxcpp/rx.hpp>             // for trace_activity
 
 #include <cstddef>  // for size_t
 #include <map>      // for map
@@ -42,8 +39,9 @@ namespace morpheus {
  */
 
 /**
- * @brief Add probability scores to each message. Score labels based on probabilities calculated in inference stage.
- * Label indexes will be looked up in the idx2label property.
+ * @brief Add probability scores to each message. Score labels based on
+ * probabilities calculated in inference stage. Label indexes will be looked up
+ * in the idx2label property.
  */
 class MORPHEUS_EXPORT AddScoresStage : public AddScoresStageBase
 {
@@ -63,8 +61,8 @@ class MORPHEUS_EXPORT AddScoresStage : public AddScoresStageBase
 struct MORPHEUS_EXPORT AddScoresStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a AddScoresStage that receives ControlMessage and emits ControlMessage,
-     * and return the result
+     * @brief Create and initialize a AddScoresStage that receives ControlMessage
+     * and emits ControlMessage, and return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
@@ -72,8 +70,9 @@ struct MORPHEUS_EXPORT AddScoresStageInterfaceProxy
      * @param idx2label : Index to classification labels map
      * @return std::shared_ptr<mrc::segment::Object<AddScoresStage>>>
      */
-    static std::shared_ptr<mrc::segment::Object<AddScoresStage>> init(
-        mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label);
+    static std::shared_ptr<mrc::segment::Object<AddScoresStage>> init(mrc::segment::Builder& builder,
+                                                                      const std::string& name,
+                                                                      std::map<std::size_t, std::string> idx2label);
 };
 
 /** @} */  // end of group

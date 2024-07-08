@@ -17,22 +17,19 @@
 
 #pragma once
 
-#include "morpheus/export.h"
-#include "morpheus/messages/control.hpp"
-#include "morpheus/messages/multi_response.hpp"
+#include "morpheus/export.h"              // for MORPHEUS_EXPORT
+#include "morpheus/messages/control.hpp"  // for ControlMessage
 
-#include <boost/fiber/context.hpp>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>
+#include <boost/fiber/context.hpp>  // for operator<<
+#include <pymrc/node.hpp>           // for PythonNode
+#include <rxcpp/rx.hpp>             // for observable_member, trace_activity, decay_t, from
 
-#include <cstddef>
-#include <map>
-#include <memory>
-#include <optional>
-#include <string>
-#include <thread>
-
-// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
+#include <cstddef>   // for size_t
+#include <map>       // for map
+#include <memory>    // for shared_ptr
+#include <optional>  // for optional
+#include <string>    // for string
+#include <thread>    // for operator<<
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -48,36 +45,34 @@ namespace morpheus {
  * @brief Base class for both `AddScoresStage` and `AddClassificationStage`
  */
 class MORPHEUS_EXPORT AddScoresStageBase
-    : public mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>,
-                                    std::shared_ptr<ControlMessage>> {
-public:
-  using base_t =
-      mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>;
-  using typename base_t::sink_type_t;
-  using typename base_t::source_type_t;
-  using typename base_t::subscribe_fn_t;
+  : public mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>
+{
+  public:
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
-  /**
-   * @brief Construct a new Add Classifications Stage object
-   *
-   * @param threshold : Threshold to consider true/false for each class
-   * @param idx2label : Index to classification labels map
-   */
-  AddScoresStageBase(std::map<std::size_t, std::string> idx2label,
-                     std::optional<float> threshold);
+    /**
+     * @brief Construct a new Add Classifications Stage object
+     *
+     * @param threshold : Threshold to consider true/false for each class
+     * @param idx2label : Index to classification labels map
+     */
+    AddScoresStageBase(std::map<std::size_t, std::string> idx2label, std::optional<float> threshold);
 
-  /**
-   * Called every time a message is passed to this stage
-   */
-  source_type_t on_data(sink_type_t msg);
+    /**
+     * Called every time a message is passed to this stage
+     */
+    source_type_t on_data(sink_type_t msg);
 
-private:
-  std::map<std::size_t, std::string> m_idx2label;
-  std::optional<float> m_threshold;
+  private:
+    std::map<std::size_t, std::string> m_idx2label;
+    std::optional<float> m_threshold;
 
-  // The minimum number of columns needed to extract the label data
-  std::size_t m_min_col_count;
+    // The minimum number of columns needed to extract the label data
+    std::size_t m_min_col_count;
 };
 
-/** @} */ // end of group
-} // namespace morpheus
+/** @} */  // end of group
+}  // namespace morpheus

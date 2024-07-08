@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES.
+ * All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-#include "../test_utils/common.hpp"  // for get_morpheus_root, TEST_CLASS, morpheus
+#include "../test_utils/common.hpp"  // for get_morpheus_root, TEST_CLASS_WITH_PYTHON, morpheus
 
 #include "morpheus/messages/control.hpp"               // for ControlMessage
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
 #include "morpheus/messages/meta.hpp"                  // for MessageMeta
-#include "morpheus/messages/multi_response.hpp"        // for MultiResponseMessage
 #include "morpheus/objects/dtype.hpp"                  // for DType
 #include "morpheus/objects/table_info.hpp"             // for TableInfo
 #include "morpheus/objects/tensor.hpp"                 // for Tensor
@@ -29,11 +28,11 @@
 
 #include <cuda_runtime.h>                      // for cudaMemcpy, cudaMemcpyKind
 #include <cudf/column/column_view.hpp>         // for column_view
-#include <cudf/io/csv.hpp>                     // for csv_reader_options_builder, read_csv, csv_reader_options
-#include <cudf/io/types.hpp>                   // for source_info, table_with_metadata
+#include <cudf/io/csv.hpp>                     // for read_csv, csv_reader_options_builder, csv_reader_options
+#include <cudf/io/types.hpp>                   // for source_info
 #include <cudf/types.hpp>                      // for data_type
 #include <cudf/utilities/type_dispatcher.hpp>  // for type_to_id
-#include <gtest/gtest.h>                       // for EXPECT_EQ, Message, TestInfo, TestPartResult, TEST_F
+#include <gtest/gtest.h>                       // for TestInfo, EXPECT_EQ, Message, TEST_F, TestPartResult
 #include <mrc/cuda/common.hpp>                 // for __check_cuda_errors, MRC_CHECK_CUDA
 #include <pybind11/gil.h>                      // for gil_scoped_release
 #include <rmm/cuda_stream_view.hpp>            // for cuda_stream_per_thread
@@ -43,7 +42,7 @@
 #include <cstdint>     // for uint8_t
 #include <filesystem>  // for operator/, path
 #include <map>         // for map
-#include <memory>      // for make_shared, allocator, __shared_ptr_access, shared_ptr
+#include <memory>      // for allocator, make_shared, __shared_ptr_access, shared_ptr
 #include <string>      // for string
 #include <utility>     // for move
 #include <vector>      // for vector
@@ -95,7 +94,8 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
 
     std::map<std::size_t, std::string> idx2label = {{0, "bool"}};
 
-    // Create a separate dataframe from a file (otherwise they will overwrite eachother)
+    // Create a separate dataframe from a file (otherwise they will overwrite
+    // eachother)
     auto meta_cm = MessageMeta::create_from_cpp(cudf::io::read_csv(read_opts));
 
     // Create ControlMessage
@@ -114,7 +114,8 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
     std::vector<uint8_t> expected_meta = {'\0', '\x1', '\x1'};
     auto cm_meta                       = cm_response->payload()->get_info().get_column(0);
 
-    // std::vector<bool> is a template specialization which does not have data() method, use std::vector<uint8_t> here
+    // std::vector<bool> is a template specialization which does not have data()
+    // method, use std::vector<uint8_t> here
     std::vector<uint8_t> cm_meta_host(cm_meta.size());
     MRC_CHECK_CUDA(
         cudaMemcpy(cm_meta_host.data(), cm_meta.data<bool>(), cm_meta.size() * sizeof(bool), cudaMemcpyDeviceToHost));

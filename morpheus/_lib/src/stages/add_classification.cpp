@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,19 @@
 
 #include "morpheus/stages/add_classification.hpp"
 
-#include "mrc/segment/builder.hpp"
-#include "mrc/segment/object.hpp"
+#include "mrc/segment/builder.hpp"  // for Builder
+#include "mrc/segment/object.hpp"   // for Object
 
-#include "morpheus/messages/control.hpp"
-
-#include <cstddef>
-#include <memory>
-#include <optional>
-#include <utility>  // for move
-// IWYU thinks we need __alloc_traits<>::value_type for vector assignments
-// IWYU pragma: no_include <ext/alloc_traits.h>
+#include <cstddef>   // for size_t
+#include <memory>    // for shared_ptr
+#include <optional>  // for optional
+#include <utility>   // for move
 
 namespace morpheus {
 
 // Component public implementations
 // ************ AddClassificationStage **************************** //
-AddClassificationsStage::AddClassificationsStage(std::map<std::size_t, std::string> idx2label,
-                                                                  float threshold) :
+AddClassificationsStage::AddClassificationsStage(std::map<std::size_t, std::string> idx2label, float threshold) :
   AddScoresStageBase(std::move(idx2label), threshold)
 {}
 
