@@ -102,12 +102,10 @@ DOCKER_IMAGE_TAG="v24.10.00-runtime" ./docker/run_container_release.sh
 
 ## Launching Triton Server
 
-Many of the validation tests and example workflows require a Triton server to function. In a new terminal, from the root of the Morpheus repo, use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
-
+Many of the validation tests and example workflows require a Triton server to function. For simplicity Morpheus provides a pre-built models container which contains both Triton and the Morpheus models. In a new terminal use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-  -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:23.06-py3 \
+  nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -118,6 +116,19 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
 This will launch Triton using the default network ports (8000 for HTTP, 8001 for GRPC, and 8002 for metrics), loading all of the examples models in the Morpheus repo.
 
 Note: The above command is useful for testing out Morpheus, however it does load several models into GPU memory, which at time of writing consumes roughly 2GB of GPU memory. Production users should consider only loading the specific model(s) they plan on using with the `--model-control-mode=explicit` and `--load-model` flags. For example to launch Triton only loading the `abp-nvsmi-xgb` model:
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
+  nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10  \
+  tritonserver --model-repository=/models/triton-model-repo \
+    --exit-on-error=false \
+    --log-info=true \
+    --strict-readiness=false \
+    --disable-auto-complete-config \
+    --model-control-mode=explicit \
+    --load-model abp-nvsmi-xgb
+```
+
+Alternately, for users who have checked out the Morpheus git repository, launching the Triton server container directly mounting the models from the repository is an option. This approach is most useful for users training their own models. From the root of the Morpheus repo, use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
   -v $PWD/models:/models \

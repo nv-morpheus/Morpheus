@@ -279,7 +279,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
     - Reload the docker container, specifying that we also need to load paraphrase-multilingual-mpnet-base-v2
     ```bash
     docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-     -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver \
+     nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver \
      --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit  --load-model \
      all-MiniLM-L6-v2 --load-model sentence-transformers/paraphrase-multilingual-mpnet-base-v2
     ```

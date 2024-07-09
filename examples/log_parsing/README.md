@@ -29,7 +29,7 @@ Example Morpheus pipeline using Triton Inference server and Morpheus.
 ### Set up Triton Inference Server
 
 ##### Pull Triton Inference Server Docker Image
-Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tritonserver) suitable for your environment.
+Pull the Morpheus Triton models Docker image from NGC.
 
 Example:
 
