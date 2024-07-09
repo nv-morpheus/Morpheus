@@ -73,7 +73,7 @@ class PreprocessFILStage(PreprocessBaseStage):
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
+        msg : `morpheus.messages.ControlMessage`
             Input rows received from Deserialized stage.
         fea_len : int
             Number features are being used in the inference.

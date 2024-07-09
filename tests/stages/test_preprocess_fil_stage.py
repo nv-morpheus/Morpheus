@@ -55,7 +55,7 @@ def test_process_control_message(config: Config):
 
     output_cm = stage.pre_process_batch(input_cm, stage._fea_length, stage.features)
     assert cp.array_equal(output_cm.tensors().get_tensor("input__0"), cp.asarray(df.to_cupy()))
-    expect_seg_ids = cp.zeros((df.shape[0], 3), dtype=cp.uint32)
-    expect_seg_ids[:, 0] = cp.arange(0, df.shape[0], dtype=cp.uint32)
-    expect_seg_ids[:, 2] = stage._fea_length - 1
-    assert cp.array_equal(output_cm.tensors().get_tensor("seq_ids"), expect_seg_ids)
+    expect_seq_ids = cp.zeros((df.shape[0], 3), dtype=cp.uint32)
+    expect_seq_ids[:, 0] = cp.arange(0, df.shape[0], dtype=cp.uint32)
+    expect_seq_ids[:, 2] = stage._fea_length - 1
+    assert cp.array_equal(output_cm.tensors().get_tensor("seq_ids"), expect_seq_ids)
