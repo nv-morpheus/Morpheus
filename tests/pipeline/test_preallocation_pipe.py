@@ -23,6 +23,7 @@ from _utils.stages.check_pre_alloc import CheckPreAlloc
 from _utils.stages.conv_msg import ConvMsg
 from morpheus.common import TypeId
 from morpheus.common import typeid_to_numpy_str
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
@@ -109,8 +110,8 @@ def test_preallocation_error(config, filter_probs_df):
 
     pipe = LinearPipeline(config)
     mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type='f4'))
+    pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=ControlMessage))
+    pipe.add_stage(ConvMsg(config, message_type=ControlMessage, columns=list(filter_probs_df.columns), probs_type='f4'))
     add_scores = pipe.add_stage(AddScoresStage(config))
     pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     mem_sink = pipe.add_stage(InMemorySinkStage(config))
