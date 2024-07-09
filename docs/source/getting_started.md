@@ -57,6 +57,7 @@ scripts/fetch_data.py fetch <dataset> [<dataset>...]
 
 At time of writing the defined datasets are:
 * all - Metaset includes all others
+* datasets - Input files needed for many of the examples
 * docs - Graphics needed for documentation
 * examples - Data needed by scripts in the `examples` subdir
 * models - Morpheus models (largest dataset)
