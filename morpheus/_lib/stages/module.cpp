@@ -274,26 +274,11 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("features"));
 
-    py::class_<mrc::segment::Object<PreprocessNLPStageMM>,
+    py::class_<mrc::segment::Object<PreprocessNLPStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessNLPStageMM>>>(
-        _module, "PreprocessNLPMultiMessageStage", py::multiple_inheritance())
-        .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init_multi),
-             py::arg("builder"),
-             py::arg("name"),
-             py::arg("vocab_hash_file"),
-             py::arg("sequence_length"),
-             py::arg("truncation"),
-             py::arg("do_lower_case"),
-             py::arg("add_special_token"),
-             py::arg("stride"),
-             py::arg("column"));
-
-    py::class_<mrc::segment::Object<PreprocessNLPStageCM>,
-               mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreprocessNLPStageCM>>>(
-        _module, "PreprocessNLPControlMessageStage", py::multiple_inheritance())
-        .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init_cm),
+               std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>>(
+        _module, "PreprocessNLPStage", py::multiple_inheritance())
+        .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
              py::arg("vocab_hash_file"),
