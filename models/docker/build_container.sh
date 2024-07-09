@@ -21,6 +21,9 @@ pushd ${SCRIPT_DIR} &> /dev/null
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-"$(git rev-parse --show-toplevel)"}
 popd &> /dev/null
 
+# Determine the relative path from $PWD to $MORPHEUS_ROOT
+MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST:-"$(realpath --relative-to=${PWD} ${MORPHEUS_ROOT})"}
+
 FULL_VERSION=$(git describe --tags --abbrev=0)
 MAJOR_VERSION=$(echo ${FULL_VERSION} | awk '{split($0, a, "[v.]"); print a[2]}')
 MINOR_VERSION=$(echo ${FULL_VERSION} | awk '{split($0, a, "."); print a[2]}')
@@ -35,8 +38,8 @@ DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"${SHORT_VERSION}"}
 
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
-# Determine the relative path from $PWD to $MORPHEUS_ROOT
-MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST:-"$(realpath --relative-to=${PWD} ${MORPHEUS_ROOT})"}
+# Ensure all models are fetched
+"${MORPHEUS_ROOT}/scripts/fetch_data.py" fetch models
 
 # Build the docker arguments
 DOCKER_ARGS="-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
