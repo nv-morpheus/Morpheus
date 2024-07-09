@@ -41,14 +41,18 @@ More advanced users, or those who are interested in using the latest pre-release
 ### Pull the Morpheus Image
 1. Go to [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags)
 1. Choose a version
-1. Download the selected version, for example for `24.06`:
-```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus:24.06-runtime
-```
+1. Download the selected version, for example for `24.10`:
+    ```bash
+    docker pull nvcr.io/nvidia/morpheus/morpheus:24.10-runtime
+    ```
+1. Optional, many of the examples require NVIDIA Triton Inference Server to be running with the included models. To download the Morpheus Triton Server Models container (ensure that the version number matches that of the Morpheus container you downloaded in the previous step):
+    ```bash
+    docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+    ```
 
 > **Note about Morpheus versions:**
 >
-> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v24.06.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v24.06.01-runtime`, `v24.06.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference that point release.
+> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v24.10.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v24.10.01-runtime`, `v24.10.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference that point release.
 >
 > Users who want to ensure they are running with the latest bug fixes should use a release image tag (`YY.MM-runtime`). Users who need to deploy a specific version into production should use a point release image tag (`vYY.MM.00-runtime`).
 
@@ -56,8 +60,9 @@ docker pull nvcr.io/nvidia/morpheus/morpheus:24.06-runtime
 1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) is installed.
 1. Start the container downloaded from the previous section:
 ```bash
-docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:24.06-runtime bash
+docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:24.10-runtime bash
 ```
+
 
 Note about some of the flags above:
 | Flag | Description |
