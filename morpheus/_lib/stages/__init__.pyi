@@ -19,8 +19,7 @@ __all__ = [
     "DeserializeControlMessageStage",
     "DeserializeMultiMessageStage",
     "FileSourceStage",
-    "FilterDetectionsControlMessageStage",
-    "FilterDetectionsMultiMessageStage",
+    "FilterDetectionsStage",
     "FilterSource",
     "HttpServerSourceStage",
     "InferenceClientStageCM",
@@ -31,8 +30,7 @@ __all__ = [
     "PreallocateMultiMessageStage",
     "PreprocessFILStage",
     "PreprocessNLPStage",
-    "SerializeControlMessageStage",
-    "SerializeMultiMessageStage",
+    "SerializeStage",
     "WriteToFileStage"
 ]
 
@@ -55,10 +53,7 @@ class FileSourceStage(mrc.core.segment.SegmentObject):
     @typing.overload
     def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: str, repeat: int, filter_null: bool, filter_null_columns: typing.List[str], parser_kwargs: dict) -> None: ...
     pass
-class FilterDetectionsControlMessageStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, threshold: float, copy: bool, filter_source: morpheus._lib.common.FilterSource, field_name: str = 'probs') -> None: ...
-    pass
-class FilterDetectionsMultiMessageStage(mrc.core.segment.SegmentObject):
+class FilterDetectionsStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, threshold: float, copy: bool, filter_source: morpheus._lib.common.FilterSource, field_name: str = 'probs') -> None: ...
     pass
 class HttpServerSourceStage(mrc.core.segment.SegmentObject):
@@ -91,10 +86,7 @@ class PreprocessFILStage(mrc.core.segment.SegmentObject):
 class PreprocessNLPStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, vocab_hash_file: str, sequence_length: int, truncation: bool, do_lower_case: bool, add_special_token: bool, stride: int, column: str) -> None: ...
     pass
-class SerializeControlMessageStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, include: typing.List[str], exclude: typing.List[str], fixed_columns: bool = True) -> None: ...
-    pass
-class SerializeMultiMessageStage(mrc.core.segment.SegmentObject):
+class SerializeStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, include: typing.List[str], exclude: typing.List[str], fixed_columns: bool = True) -> None: ...
     pass
 class WriteToFileStage(mrc.core.segment.SegmentObject):

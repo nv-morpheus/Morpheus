@@ -104,9 +104,9 @@ class FilterDetectionsStage(SinglePortStage):
 
         """
         if self._controller.filter_source == FilterSource.TENSOR:
-            return (MultiResponseMessage, ControlMessage)
+            return (ControlMessage, )
 
-        return (MultiMessage, ControlMessage)
+        return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):
         self._controller.update_filter_source(message_type=schema.input_type)
@@ -118,21 +118,12 @@ class FilterDetectionsStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node():
-            if (self._schema.input_type == ControlMessage):
-                node = _stages.FilterDetectionsControlMessageStage(builder,
-                                                                   self.unique_name,
-                                                                   self._controller.threshold,
-                                                                   self._copy,
-                                                                   self._controller.filter_source,
-                                                                   self._controller.field_name)
-
-            else:
-                node = _stages.FilterDetectionsMultiMessageStage(builder,
-                                                                 self.unique_name,
-                                                                 self._controller.threshold,
-                                                                 self._copy,
-                                                                 self._controller.filter_source,
-                                                                 self._controller.field_name)
+            node = _stages.FilterDetectionsStage(builder,
+                                                 self.unique_name,
+                                                 self._controller.threshold,
+                                                 self._copy,
+                                                 self._controller.filter_source,
+                                                 self._controller.field_name)
         else:
 
             if self._copy:

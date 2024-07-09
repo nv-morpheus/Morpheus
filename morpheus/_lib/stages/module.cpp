@@ -147,23 +147,11 @@ PYBIND11_MODULE(stages, _module)
              py::arg("filter_null_columns"),
              py::arg("parser_kwargs"));
 
-    py::class_<mrc::segment::Object<FilterDetectionsStageMM>,
+    py::class_<mrc::segment::Object<FilterDetectionsStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<FilterDetectionsStageMM>>>(
-        _module, "FilterDetectionsMultiMessageStage", py::multiple_inheritance())
-        .def(py::init<>(&FilterDetectionStageInterfaceProxy::init_mm),
-             py::arg("builder"),
-             py::arg("name"),
-             py::arg("threshold"),
-             py::arg("copy"),
-             py::arg("filter_source"),
-             py::arg("field_name") = "probs");
-
-    py::class_<mrc::segment::Object<FilterDetectionsStageCM>,
-               mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<FilterDetectionsStageCM>>>(
-        _module, "FilterDetectionsControlMessageStage", py::multiple_inheritance())
-        .def(py::init<>(&FilterDetectionStageInterfaceProxy::init_cm),
+               std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>>>(
+        _module, "FilterDetectionsStage", py::multiple_inheritance())
+        .def(py::init<>(&FilterDetectionStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
              py::arg("threshold"),
