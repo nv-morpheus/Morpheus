@@ -29,8 +29,7 @@ __all__ = [
     "PreallocateControlMessageStage",
     "PreallocateMessageMetaStage",
     "PreallocateMultiMessageStage",
-    "PreprocessFILControlMessageStage",
-    "PreprocessFILMultiMessageStage",
+    "PreprocessFILStage",
     "PreprocessNLPStage",
     "SerializeControlMessageStage",
     "SerializeMultiMessageStage",
@@ -86,10 +85,7 @@ class PreallocateMessageMetaStage(mrc.core.segment.SegmentObject):
 class PreallocateMultiMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: typing.List[typing.Tuple[str, morpheus._lib.common.TypeId]]) -> None: ...
     pass
-class PreprocessFILControlMessageStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, features: typing.List[str]) -> None: ...
-    pass
-class PreprocessFILMultiMessageStage(mrc.core.segment.SegmentObject):
+class PreprocessFILStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, features: typing.List[str]) -> None: ...
     pass
 class PreprocessNLPStage(mrc.core.segment.SegmentObject):

@@ -50,12 +50,11 @@ namespace morpheus {
 /**
  * @brief FIL input data for inference
  */
-template <typename InputT, typename OutputT>
 class MORPHEUS_EXPORT PreprocessFILStage
-  : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
+  : public mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>
 {
   public:
-    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -73,19 +72,11 @@ class MORPHEUS_EXPORT PreprocessFILStage
     source_type_t on_data(sink_type_t x);
 
   private:
-    std::shared_ptr<MultiInferenceMessage> on_multi_message(std::shared_ptr<MultiMessage> x);
-    std::shared_ptr<ControlMessage> on_control_message(std::shared_ptr<ControlMessage> x);
-    void transform_bad_columns(std::vector<std::string>& fea_cols, morpheus::MutableTableInfo& mutable_info);
     TableInfo fix_bad_columns(sink_type_t x);
 
     std::vector<std::string> m_fea_cols;
     std::string m_vocab_file;
 };
-
-using PreprocessFILStageMM =  // NOLINT(readability-identifier-naming)
-    PreprocessFILStage<MultiMessage, MultiInferenceMessage>;
-using PreprocessFILStageCM =  // NOLINT(readability-identifier-naming)
-    PreprocessFILStage<ControlMessage, ControlMessage>;
 
 /****** PreprocessFILStageInferenceProxy********************/
 /**
@@ -94,26 +85,14 @@ using PreprocessFILStageCM =  // NOLINT(readability-identifier-naming)
 struct MORPHEUS_EXPORT PreprocessFILStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a PreprocessFILStage that receives MultiMessage and emits MultiInferenceMessage,
-     * and return the result
-     *
-     * @param builder : Pipeline context object reference
-     * @param name : Name of a stage reference
-     * @param features : Reference to the features that are required for model inference
-     * @return std::shared_ptr<mrc::segment::Object<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>>
-     */
-    static std::shared_ptr<mrc::segment::Object<PreprocessFILStage<MultiMessage, MultiInferenceMessage>>> init_multi(
-        mrc::segment::Builder& builder, const std::string& name, const std::vector<std::string>& features);
-
-    /**
      * @brief Create and initialize a PreprocessFILStage, and return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param features : Reference to the features that are required for model inference
-     * @return std::shared_ptr<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>>
+     * @return std::shared_ptr<mrc::segment::Object<PreprocessFILStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<PreprocessFILStage<ControlMessage, ControlMessage>>> init_cm(
+    static std::shared_ptr<mrc::segment::Object<PreprocessFILStage>> init(
         mrc::segment::Builder& builder, const std::string& name, const std::vector<std::string>& features);
 };
 /** @} */  // end of group
