@@ -305,22 +305,11 @@ PYBIND11_MODULE(stages, _module)
              py::arg("lines")              = false,
              py::arg("stop_after")         = 0);
 
-    py::class_<mrc::segment::Object<SerializeStageMM>,
+    py::class_<mrc::segment::Object<SerializeStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<SerializeStageMM>>>(
-        _module, "SerializeMultiMessageStage", py::multiple_inheritance())
-        .def(py::init<>(&SerializeStageInterfaceProxy::init_mm),
-             py::arg("builder"),
-             py::arg("name"),
-             py::arg("include"),
-             py::arg("exclude"),
-             py::arg("fixed_columns") = true);
-
-    py::class_<mrc::segment::Object<SerializeStageCM>,
-               mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<SerializeStageCM>>>(
-        _module, "SerializeControlMessageStage", py::multiple_inheritance())
-        .def(py::init<>(&SerializeStageInterfaceProxy::init_cm),
+               std::shared_ptr<mrc::segment::Object<SerializeStage>>>(
+        _module, "SerializeStage", py::multiple_inheritance())
+        .def(py::init<>(&SerializeStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
              py::arg("include"),
