@@ -251,7 +251,6 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_DOCS=ON -DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_CUDA_ARCHITECTURES=RAPIDS"\
          ./scripts/compile.sh --target morpheus_docs
 
-
 # ============ Stage: runtime_conda_create ============
 # Setup conda for the runtime environment
 FROM base_extended as runtime_conda_create
