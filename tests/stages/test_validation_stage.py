@@ -25,10 +25,6 @@ from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 
 
-def _make_multi_message(df):
-    return MultiMessage(meta=MessageMeta(df))
-
-
 def _make_control_message(df):
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
@@ -43,7 +39,6 @@ def test_constructor(config):
 
     # Just ensure that we get a valid non-empty tuple
     accepted_union = typing.Union[stage.accepted_types()]
-    assert typing_utils.issubtype(MultiMessage, accepted_union)
     assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
@@ -51,11 +46,9 @@ def test_do_comparison(config):
     df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
     stage = ValidationStage(config, val_file_name=df)
 
-    mm = _make_multi_message(df)
     cm = _make_control_message(df)
 
-    stage._append_message(mm)
-    mm_results = stage.get_results(clear=True)
+    expected_dict = {'total_rows': 3, 'matching_rows': 3, 'diff_rows': 0, 'matching_cols': ['a', 'b'], 'extra_cols': [], 'missing_cols': [], 'diff_cols': 0}
     stage._append_message(cm)
     cm_results = stage.get_results(clear=True)
-    assert mm_results == cm_results
+    assert cm_results == expected_dict

@@ -111,11 +111,11 @@ class ValidationStage(CompareDataFrameStage):
 
         Returns
         -------
-        typing.Tuple(`morpheus.pipeline.messages.MultiMessage`, ControlMessage)
+        typing.Tuple(ControlMessage)
             Accepted input types.
 
         """
-        return (MultiMessage, ControlMessage)
+        return (ControlMessage,)
 
     def _do_comparison(self):
         results = self.get_results(clear=False)
