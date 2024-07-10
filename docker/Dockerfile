@@ -22,7 +22,7 @@
 #                               \
 #                         [conda_env_dev] -> [development] -> [development_pydbg]
 #                               \
-#                         [conda_bld_docs]
+#                         [build_docs]
 #
 #  base: Contains all system packages common across all environments
 #  conda_env: Create morpheus conda environment and set it as the new base
@@ -222,16 +222,11 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     cd ${MORPHEUS_ROOT_HOST} &&\
     MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld ./ci/conda/recipes/run_conda_build.sh morpheus
 
-# ============ Stage: conda_bld_docs ============
+# ============ Stage: build_docs ============
 # Now build the morpheus docs
-FROM conda_env_dev as conda_bld_docs
+FROM conda_env_dev as build_docs
 
 ARG MORPHEUS_ROOT_HOST
-ARG CUDA_MAJOR_VER
-ARG CUDA_MINOR_VER
-
-ENV GIT_CLONE_PROTECTION_ACTIVE=false
-
 
 # Copy the source
 COPY . ./
@@ -298,7 +293,7 @@ ARG MORPHEUS_ROOT_HOST
 # Only copy specific files/folders over that are necessary for runtime
 COPY "${MORPHEUS_ROOT_HOST}/conda/environments/*.yaml" "./conda/environments/"
 COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
-COPY --from=conda_bld_docs "/workspace/build/docs/html" "./docs"
+COPY --from=build_docs "/workspace/build/docs/html" "./docs"
 COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
 COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
 COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
