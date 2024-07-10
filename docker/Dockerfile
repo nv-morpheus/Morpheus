@@ -21,6 +21,8 @@
 # [base] -> [conda_env] -> [base_extended] -> [runtime_conda_create] -> [runtime]
 #                               \
 #                         [conda_env_dev] -> [development] -> [development_pydbg]
+#                               \
+#                         [conda_bld_docs]
 #
 #  base: Contains all system packages common across all environments
 #  conda_env: Create morpheus conda environment and set it as the new base
@@ -220,12 +222,48 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     cd ${MORPHEUS_ROOT_HOST} &&\
     MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld ./ci/conda/recipes/run_conda_build.sh morpheus
 
+# ============ Stage: conda_bld_docs ============
+# Now build the morpheus docs
+FROM conda_env_dev as conda_bld_docs
+
+ARG MORPHEUS_ROOT_HOST
+ARG CUDA_MAJOR_VER
+ARG CUDA_MINOR_VER
+
+ENV GIT_CLONE_PROTECTION_ACTIVE=false
+
+
+# Copy the source
+COPY . ./
+
+RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
+    --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
+    --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    source activate morpheus &&\
+    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus \
+        -c local \
+        -c conda-forge \
+        -c huggingface \
+        -c rapidsai \
+        -c rapidsai-nightly \
+        -c nvidia \
+        -c nvidia/label/dev \
+        -c pytorch \
+        -c defaults \
+        morpheus && \
+    # Change to the morpheus directory and build the docs
+    cd ${MORPHEUS_ROOT_HOST} &&\
+    CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_DOCS=ON -DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_CUDA_ARCHITECTURES=RAPIDS"\
+         ./scripts/compile.sh --target morpheus_docs
+
+
 # ============ Stage: runtime_conda_create ============
 # Setup conda for the runtime environment
 FROM base_extended as runtime_conda_create
 ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
+
 
 COPY "${MORPHEUS_ROOT_HOST}/conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml" "./conda/environments/"
 
@@ -260,7 +298,7 @@ ARG MORPHEUS_ROOT_HOST
 # Only copy specific files/folders over that are necessary for runtime
 COPY "${MORPHEUS_ROOT_HOST}/conda/environments/*.yaml" "./conda/environments/"
 COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
-COPY "${MORPHEUS_ROOT_HOST}/docs" "./docs"
+COPY --from=conda_bld_docs "/workspace/build/docs/html" "./docs"
 COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
 COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
 COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
