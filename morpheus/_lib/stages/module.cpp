@@ -92,21 +92,11 @@ PYBIND11_MODULE(stages, _module)
         .def(
             py::init<>(&AddScoresStageInterfaceProxy::init), py::arg("builder"), py::arg("name"), py::arg("idx2label"));
 
-    py::class_<mrc::segment::Object<DeserializeStage<MultiMessage>>,
+    py::class_<mrc::segment::Object<DeserializeStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<DeserializeStage<MultiMessage>>>>(
-        _module, "DeserializeMultiMessageStage", py::multiple_inheritance())
-        .def(py::init<>(&DeserializeStageInterfaceProxy::init_multi),
-             py::arg("builder"),
-             py::arg("name"),
-             py::arg("batch_size"),
-             py::arg("ensure_sliceable_index") = true);
-
-    py::class_<mrc::segment::Object<DeserializeStage<ControlMessage>>,
-               mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<DeserializeStage<ControlMessage>>>>(
-        _module, "DeserializeControlMessageStage", py::multiple_inheritance())
-        .def(py::init<>(&DeserializeStageInterfaceProxy::init_cm),
+               std::shared_ptr<mrc::segment::Object<DeserializeStage>>>(
+        _module, "DeserializeStage", py::multiple_inheritance())
+        .def(py::init<>(&DeserializeStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
              py::arg("batch_size"),

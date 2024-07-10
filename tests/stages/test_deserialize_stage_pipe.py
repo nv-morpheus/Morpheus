@@ -68,7 +68,7 @@ def _assert_received_types(sink: CompareDataFrameStage, message_type: type):
 
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
+@pytest.mark.parametrize("message_type", [ControlMessage])
 def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bool, message_type: type):
     """
     End-to-end test for DeserializeStage
@@ -90,7 +90,7 @@ def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bo
 
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
+@pytest.mark.parametrize("message_type", [ControlMessage])
 def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetManager, dup_index: bool, message_type: type):
     """
     End-to-end test across mulitiple segments

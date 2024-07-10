@@ -119,18 +119,12 @@ class DeserializeStage(MultiMessageStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if (self._build_cpp_node()):
             import morpheus._lib.stages as _stages
-            if (self._message_type is ControlMessage):
-                out_node = _stages.DeserializeControlMessageStage(builder,
-                                                                  self.unique_name,
-                                                                  batch_size=self._batch_size,
-                                                                  ensure_sliceable_index=self._ensure_sliceable_index,
-                                                                  task_type=self._task_type,
-                                                                  task_payload=self._task_payload)
-            else:
-                out_node = _stages.DeserializeMultiMessageStage(builder,
-                                                                self.unique_name,
-                                                                batch_size=self._batch_size,
-                                                                ensure_sliceable_index=self._ensure_sliceable_index)
+            out_node = _stages.DeserializeStage(builder,
+                                                self.unique_name,
+                                                batch_size=self._batch_size,
+                                                ensure_sliceable_index=self._ensure_sliceable_index,
+                                                task_type=self._task_type,
+                                                task_payload=self._task_payload)
 
             builder.make_edge(input_node, out_node)
         else:
