@@ -37,6 +37,7 @@
 #    source directory.
 #  development_pydbg: Development + debug build of cpython and various GDB
 #    debugging macros.
+#  build_docs: Build the Morpheus documentation
 # ========================================================================= #
 
 # Args used in FROM commands must come first
