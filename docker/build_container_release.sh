@@ -24,10 +24,14 @@ export DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"nvcr.io/nvidia/morpheus/morpheus"
 export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"$(git describe --tags --abbrev=0)-runtime"}
 export DOCKER_TARGET=${DOCKER_TARGET:-"runtime"}
 
-popd &> /dev/null
+export GIT_URL=${GIT_URL:-$(git remote get-url origin)}
 
-# Fetch data
-"${SCRIPT_DIR}/../scripts/fetch_data.py" fetch docs examples models
+# Ensure we have an https url
+GIT_URL=$(echo $url | sed -e 's|^git@github\.com:|https://github.com/|')
+export GIT_BRANCH=$(git branch --show-current)
+export GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
+
+popd &> /dev/null
 
 # Call the general build script
 ${SCRIPT_DIR}/build_container.sh
