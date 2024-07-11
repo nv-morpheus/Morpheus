@@ -71,7 +71,6 @@ def _run_pipeline(config: Config, llm_client: LLMClient, countries: list[str], c
     deserialize_config = config
     pipe.add_stage(
         DeserializeStage(deserialize_config,
-                         message_type=ControlMessage,
                          task_type="llm_engine",
                          task_payload=completion_task))
 

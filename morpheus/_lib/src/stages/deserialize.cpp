@@ -26,16 +26,15 @@
 
 namespace morpheus {
 
-
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
                          TensorIndex stop,
                          cm_task_t* task,
                          std::shared_ptr<ControlMessage>& windowed_message)
 {
-    auto slidced_meta = std::make_shared<SlicedMessageMeta>(incoming_message, start, stop);
-    auto message      = std::make_shared<ControlMessage>();
-    message->payload(slidced_meta);
+    auto sliced_meta = std::make_shared<SlicedMessageMeta>(incoming_message, start, stop);
+    auto message     = std::make_shared<ControlMessage>();
+    message->payload(sliced_meta);
     if (task)
     {
         message->add_task(task->first, task->second);
@@ -93,7 +92,6 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
     };
 }
 
-
 std::shared_ptr<mrc::segment::Object<DeserializeStage>> DeserializeStageInterfaceProxy::init(
     mrc::segment::Builder& builder,
     const std::string& name,
@@ -110,8 +108,7 @@ std::shared_ptr<mrc::segment::Object<DeserializeStage>> DeserializeStageInterfac
                                            mrc::pymrc::cast_from_pyobject(task_payload));
     }
 
-    auto stage = builder.construct_object<DeserializeStage>(
-        name, batch_size, ensure_sliceable_index, std::move(task));
+    auto stage = builder.construct_object<DeserializeStage>(name, batch_size, ensure_sliceable_index, std::move(task));
 
     return stage;
 }

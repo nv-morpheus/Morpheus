@@ -60,7 +60,7 @@ def _run_pipeline(config: Config, llm_client: LLMClient, country_prompts: list[s
     pipe.set_source(InMemorySourceStage(config, dataframes=[source_df]))
 
     pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
+        DeserializeStage(config, task_type="llm_engine", task_payload=completion_task))
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(llm_client)))
     sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))

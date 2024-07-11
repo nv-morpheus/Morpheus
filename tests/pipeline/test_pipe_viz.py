@@ -49,7 +49,7 @@ def viz_pipeline_fixture(config, filter_probs_df):
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, filter_probs_df, message_type=ControlMessage))
+    pipe.add_stage(ConvMsg(config, filter_probs_df))
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     pipe.add_stage(InMemorySinkStage(config))

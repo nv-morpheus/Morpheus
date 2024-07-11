@@ -225,15 +225,6 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("needed_columns"));
 
-    py::class_<mrc::segment::Object<PreallocateStage<MultiMessage>>,
-               mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<PreallocateStage<MultiMessage>>>>(
-        _module, "PreallocateMultiMessageStage", py::multiple_inheritance())
-        .def(py::init<>(&PreallocateStageInterfaceProxy<MultiMessage>::init),
-             py::arg("builder"),
-             py::arg("name"),
-             py::arg("needed_columns"));
-
     py::class_<mrc::segment::Object<PreprocessFILStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<PreprocessFILStage>>>(

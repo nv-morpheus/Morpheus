@@ -26,7 +26,6 @@ __all__ = [
     "KafkaSourceStage",
     "PreallocateControlMessageStage",
     "PreallocateMessageMetaStage",
-    "PreallocateMultiMessageStage",
     "PreprocessFILStage",
     "PreprocessNLPStage",
     "SerializeStage",
@@ -71,9 +70,6 @@ class PreallocateControlMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: typing.List[typing.Tuple[str, morpheus._lib.common.TypeId]]) -> None: ...
     pass
 class PreallocateMessageMetaStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: typing.List[typing.Tuple[str, morpheus._lib.common.TypeId]]) -> None: ...
-    pass
-class PreallocateMultiMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: typing.List[typing.Tuple[str, morpheus._lib.common.TypeId]]) -> None: ...
     pass
 class PreprocessFILStage(mrc.core.segment.SegmentObject):

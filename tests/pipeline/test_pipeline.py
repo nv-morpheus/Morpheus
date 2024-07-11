@@ -184,8 +184,8 @@ def test_pipeline_narrowing_types(config: Config, filter_probs_df: DataFrameType
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=ControlMessage))
-    pipe.add_stage(ConvMsg(config, message_type=ControlMessage))
+    pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
+    pipe.add_stage(ConvMsg(config))
     # pipe.add_stage(MultiMessagePassThruStage(config))
     pipe.add_stage(AddScoresStage(config))
     pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))

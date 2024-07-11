@@ -59,8 +59,8 @@ def _test_filter_detections_stage_pipe(config: Config,
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
-    pipe.add_stage(DeserializeStage(config, message_type=ControlMessage))
-    pipe.add_stage(ConvMsg(config, message_type=ControlMessage))
+    pipe.add_stage(DeserializeStage(config))
+    pipe.add_stage(ConvMsg(config))
     pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy, filter_source=FilterSource.TENSOR))
     pipe.add_stage(SerializeStage(config))
     comp_stage = pipe.add_stage(
@@ -79,9 +79,9 @@ def _test_filter_detections_control_message_stage_multi_segment_pipe(config: Con
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(DeserializeStage(config, message_type=ControlMessage))
+    pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(data_type=ControlMessage)
-    pipe.add_stage(ConvMsg(config, message_type=ControlMessage))
+    pipe.add_stage(ConvMsg(config))
     pipe.add_segment_boundary(ControlMessage)
     pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy, filter_source=FilterSource.TENSOR))
     pipe.add_segment_boundary(ControlMessage)

@@ -48,8 +48,8 @@ def test_add_classifications_stage_pipe(config, filter_probs_df):
 
     pipe_cm = LinearPipeline(config)
     pipe_cm.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    pipe_cm.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=ControlMessage))
-    pipe_cm.add_stage(ConvMsg(config, filter_probs_df, message_type=ControlMessage))
+    pipe_cm.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
+    pipe_cm.add_stage(ConvMsg(config, filter_probs_df))
     pipe_cm.add_stage(AddClassificationsStage(config, threshold=threshold))
     pipe_cm.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     comp_stage = pipe_cm.add_stage(
@@ -68,9 +68,9 @@ def test_add_classifications_stage_multi_segment_pipe(config, filter_probs_df):
     pipe_mm = LinearPipeline(config)
     pipe_mm.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe_mm.add_segment_boundary(MessageMeta)
-    pipe_mm.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=ControlMessage))
+    pipe_mm.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
     pipe_mm.add_segment_boundary(ControlMessage)
-    pipe_mm.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), message_type=ControlMessage))
+    pipe_mm.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns)))
     pipe_mm.add_segment_boundary(ControlMessage)
     pipe_mm.add_stage(AddClassificationsStage(config, threshold=threshold))
     pipe_mm.add_segment_boundary(ControlMessage)
