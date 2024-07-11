@@ -86,6 +86,10 @@ def test_undefined_variable_error(config: Config,
                                   import_mod: typing.List[types.ModuleType],
                                   bert_cased_vocab: str,
                                   model_config_file: str):
+    """
+    Test for undefined variable error, which occurrs when the first token_id is unexpected resulting in the `new_label`
+    and `new_confidence` variables being undefined.
+    """
     postprocessing_mod = import_mod
 
     log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing')

@@ -15,6 +15,7 @@
 import json
 import pathlib
 import typing
+import warnings
 from collections import defaultdict
 
 import mrc
@@ -122,17 +123,24 @@ class LogParsingPostProcessingStage(SinglePortStage):
     def __get_label_dicts(self, row):
         token_dict = defaultdict(str)
         confidence_dict = defaultdict(list)
+        new_label = None
+        new_confidence = None
         for label, confidence, token_id in zip(row["labels"], row["confidences"], row["token_ids"]):
             text_token = self._vocab_lookup[token_id]
             if text_token[:2] != "##" and text_token[0] != '.':
                 # if not a subword use the current label, else use previous
                 new_label = label
                 new_confidence = confidence
-            if self._label_map[new_label] in token_dict:
-                token_dict[self._label_map[new_label]] = (token_dict[self._label_map[new_label]] + " " + text_token)
+
+            if new_label is not None and new_confidence is not None:
+                if self._label_map[new_label] in token_dict:
+                    token_dict[self._label_map[new_label]] = (token_dict[self._label_map[new_label]] + " " + text_token)
+                else:
+                    token_dict[self._label_map[new_label]] = text_token
+                confidence_dict[self._label_map[label]].append(new_confidence)
             else:
-                token_dict[self._label_map[new_label]] = text_token
-            confidence_dict[self._label_map[label]].append(new_confidence)
+                warnings.warn(f"Ignoring unexecpected subword token: {text_token}")
+
         return token_dict, confidence_dict
 
     def __decode_cleanup(self, df):
