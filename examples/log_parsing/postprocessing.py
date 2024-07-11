@@ -137,6 +137,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
                     token_dict[self._label_map[new_label]] = (token_dict[self._label_map[new_label]] + " " + text_token)
                 else:
                     token_dict[self._label_map[new_label]] = text_token
+
                 confidence_dict[self._label_map[label]].append(new_confidence)
             else:
                 warnings.warn(f"Ignoring unexecpected subword token: {text_token}")
