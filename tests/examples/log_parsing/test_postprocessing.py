@@ -29,6 +29,11 @@ from morpheus.messages import MultiResponseMessage
 from morpheus.messages import TensorMemory
 
 
+@pytest.fixture(scope='module', name="model_config_file")
+def fixture_model_config_file():
+    return os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing/log-parsing-config.json')
+
+
 def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str):
     input_file = os.path.join(TEST_DIRS.validation_data_dir, 'log-parsing-validation-data-input.csv')
     input_df = dataset_cudf[input_file]
@@ -56,11 +61,11 @@ def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str
 def test_log_parsing_post_processing_stage(config: Config,
                                            dataset_cudf: DatasetManager,
                                            import_mod: typing.List[types.ModuleType],
-                                           bert_cased_vocab: str):
+                                           bert_cased_vocab: str,
+                                           model_config_file: str):
     postprocessing_mod = import_mod
 
     log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing')
-    model_config_file = os.path.join(log_test_data_dir, 'log-parsing-config.json')
 
     stage = postprocessing_mod.LogParsingPostProcessingStage(config,
                                                              vocab_path=bert_cased_vocab,
@@ -73,3 +78,24 @@ def test_log_parsing_post_processing_stage(config: Config,
 
     assert isinstance(out_meta, MessageMeta)
     DatasetManager.assert_compare_df(out_meta.df, expected_df)
+
+
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py'))
+def test_undefined_variable_error(config: Config,
+                                  dataset_cudf: DatasetManager,
+                                  import_mod: typing.List[types.ModuleType],
+                                  bert_cased_vocab: str,
+                                  model_config_file: str):
+    postprocessing_mod = import_mod
+
+    log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing')
+
+    stage = postprocessing_mod.LogParsingPostProcessingStage(config,
+                                                             vocab_path=bert_cased_vocab,
+                                                             model_config_path=model_config_file)
+
+    post_proc_message = build_post_proc_message(dataset_cudf, log_test_data_dir)
+    post_proc_message.get_tensor('input_ids')[0] = 27716.0
+
+    with pytest.warns(UserWarning, match=r'Ignoring unexecpected subword token'):
+        stage._postprocess(post_proc_message)
