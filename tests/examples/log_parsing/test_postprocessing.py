@@ -55,15 +55,15 @@ def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py'))
 def test_log_parsing_post_processing_stage(config: Config,
                                            dataset_cudf: DatasetManager,
-                                           import_mod: typing.List[types.ModuleType]):
+                                           import_mod: typing.List[types.ModuleType],
+                                           bert_cased_vocab: str):
     postprocessing_mod = import_mod
 
-    model_vocab_file = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-vocab.txt')
     log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing')
     model_config_file = os.path.join(log_test_data_dir, 'log-parsing-config.json')
 
     stage = postprocessing_mod.LogParsingPostProcessingStage(config,
-                                                             vocab_path=model_vocab_file,
+                                                             vocab_path=bert_cased_vocab,
                                                              model_config_path=model_config_file)
 
     post_proc_message = build_post_proc_message(dataset_cudf, log_test_data_dir)
