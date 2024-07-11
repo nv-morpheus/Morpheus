@@ -39,8 +39,8 @@
 #    source directory.
 #  development_pydbg: Development + debug build of cpython and various GDB
 #    debugging macros.
-# build_docs: Build the Morpheus documentation
-# git_clone: Clone the Morpheus repository to ensure we do not unintentionally
+#  build_docs: Build the Morpheus documentation
+#  git_clone: Clone the Morpheus repository to ensure we do not unintentionally
 #    copy local build artifacts
 # ========================================================================= #
 
