@@ -88,13 +88,17 @@ data = cudf.DataFrame()
 msg_meta = MessageMeta(data)
 ```
 
-| **Functionality**                                              | **MultiMessage**                      | **ControlMessage**                                                  |
-| -------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------- |
-| Initialization                                                 | `multi_msg = MultiMessage(msg_meta)`  | `control_msg = ControlMessage()`<br>`control_msg.payload(msg_meta)` |
-| Get `cudf.DataFrame`                                           | `multi_msg.get_meta()`                | `control_msg.payload().df`                                          |
-| Get columns from `cudf.DataFrame`                              | `multi_msg.get_meta(col_name)`        | `control_msg.payload().get_data(col_name)`                          |
-| Set columns values to `cudf.DataFrame`                         | `multi_msg.set_meta(col_name, value)` | `control_msg.payload().set_data(col_name, value)`                   |
-| Get sliced `cudf.DataFrame` for given start and stop positions | `multi_msg.get_slice(start, stop)`    | `control_msg.payload().get_slice(start, stop)`                      |
-| Copy the `cudf.DataFrame` for given ranges of rows             | `multi_msg.copy_ranges(ranges)`       | `control_msg.payload().copy_ranges(ranges)`                         |
+| **Functionality**                                              | **MultiMessage**                           | **ControlMessage**                                                  |
+| -------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------- |
+| Initialization                                                 | `multi_msg = MultiMessage(msg_meta)`       | `control_msg = ControlMessage()`<br>`control_msg.payload(msg_meta)` |
+| Get `cudf.DataFrame`                                           | `multi_msg.get_meta()`                     | `control_msg.payload().df`                                          |
+| Get columns from `cudf.DataFrame`                              | `multi_msg.get_meta(col_name)`             | `control_msg.payload().get_data(col_name)`                          |
+| Set columns values to `cudf.DataFrame`                         | `multi_msg.set_meta(col_name, value)`      | `control_msg.payload().set_data(col_name, value)`                   |
+| Get sliced `cudf.DataFrame` for given start and stop positions | `multi_msg.get_slice(start, stop)`         | `control_msg.payload().get_slice(start, stop)`                      |
+| Copy the `cudf.DataFrame` for given ranges of rows             | `multi_msg.copy_ranges(ranges)`            | `control_msg.payload().copy_ranges(ranges)`                         |
+|                                                                | **MultiTensorMessage**                     | **ControlMessage**                                                  |
+| Get the inference tensor `cupy.ndarray`                        | `multi_tensor_msg.tensor()`                | `control_msg.tensor()`                                              |
+| Get a specifc inference tensor                                 | `multi_tensor_msg.get_tensor(tensor_name)` | `control_msg.tensor(tensor_name)`                                   |
+
 
 Note that the `get_slice()` and `copy_ranges()` functions in `ControlMessage` return the `MessageMeta` after slicing, whereas these functions in `MultiMessage` return a new `MultiMessage` instance.
