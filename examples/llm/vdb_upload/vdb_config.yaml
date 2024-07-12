@@ -31,7 +31,7 @@ vdb_pipeline:
 
   sources:
     - type: rss
-      name: "rss_cve"
+      name: "rss"
       config:
         batch_size: 128 # Number of rss feeds per batch
         cache_dir: "./.cache/http"
