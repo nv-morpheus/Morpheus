@@ -31,7 +31,7 @@ from morpheus.config import CppConfig
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.serializers import write_df_to_file
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
@@ -274,7 +274,7 @@ def test_file_rw_serialize_deserialize_multi_segment_pipe(tmp_path: pathlib.Path
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_segment_boundary(MultiMessage)
+    pipe.add_segment_boundary(ControlMessage)
     pipe.add_stage(SerializeStage(config))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))

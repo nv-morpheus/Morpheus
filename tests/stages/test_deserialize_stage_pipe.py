@@ -21,6 +21,7 @@ from _utils.dataset_manager import DatasetManager
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.modules.preprocess.deserialize import _process_dataframe_to_control_message
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -39,14 +40,14 @@ def test_fixing_non_unique_indexes(dataset: DatasetManager):
 
     # When processing the dataframe, a warning should be generated when there are non-unique IDs
     with pytest.warns(RuntimeWarning):
-        _process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=False)
+        _process_dataframe_to_control_message(meta, 5, ensure_sliceable_index=False, task_tuple=None)
 
         assert not meta.has_sliceable_index()
         assert "_index_" not in meta.df.columns
 
     dataset.assert_df_equal(meta.df, df)
 
-    _process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=True)
+    _process_dataframe_to_control_message(meta, 5, ensure_sliceable_index=True, task_tuple=None)
 
     assert meta.has_sliceable_index()
     assert "_index_" in meta.df.columns

@@ -166,8 +166,8 @@ def _deserialize(builder: mrc.Builder):
     # max_concurrency = deserializer_config.max_concurrency
     # should_log_timestamp = deserializer_config.should_log_timestamp
 
-    if task_type is not None or task_payload is not None:
-        raise ValueError("task_type and task_payload can only be specified for ControlMessage")
+    if (task_type is not None) != (task_payload is not None):
+        raise ValueError("task_type and task_payload must be both specified or both None")
 
     if (task_type is not None and task_payload is not None):
         task_tuple = (task_type, task_payload)
