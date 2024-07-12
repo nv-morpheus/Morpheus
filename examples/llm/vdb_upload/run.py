@@ -16,7 +16,6 @@ import logging
 import os
 
 import click
-from vdb_upload.vdb_utils import build_cli_configs
 from vdb_upload.vdb_utils import build_config
 from vdb_upload.vdb_utils import is_valid_service
 
@@ -192,7 +191,7 @@ def pipeline(ctx: click.Context, **kwargs):
     type=click.Path(file_okay=True, dir_okay=False),
     help="Location to save the cache to",
 )
-def langchain(**kwargs)
+def langchain(**kwargs):
     from .langchain import chain
 
     return chain(**kwargs)

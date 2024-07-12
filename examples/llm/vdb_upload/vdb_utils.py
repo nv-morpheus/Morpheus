@@ -446,16 +446,3 @@ def build_config(vdb_conf_path: str | None,
     final_config['pipeline_config'] = build_pipeline_config(final_config['pipeline_config'])
 
     return final_config
-
-
-def build_rss_urls() -> typing.List[str]:
-    """
-    Builds a list of RSS feed URLs.
-
-    Returns
-    -------
-    typing.List[str]
-        A list of URLs as strings, each pointing to a different RSS feed.
-    """
-
-    return DEFAULT_RSS_URLS.copy()
