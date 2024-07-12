@@ -138,6 +138,13 @@ DEFAULT_MILVUS_CONFIG = {
     }
 }
 
+YAML_TO_CONFIG_MAPPING = {
+    'embeddings': 'embeddings_config',
+    'pipeline': 'pipeline_config',
+    'tokenizer': 'tokenizer_config',
+    'vdb': 'vdb_config'
+}
+
 
 def build_milvus_config(resource_schema_config: dict):
     schema_fields = []
@@ -294,7 +301,7 @@ def _cli_args_to_config(cli_args: dict[str, typing.Any], include_defaults: bool 
         if len(cli_args.get('feed_inputs', [])) > 0:
             rss_config['feed_input'] = cli_args['feed_inputs']
 
-        source_config['rss'] = {'type': 'rss', 'name': 'rss-cli', 'config': rss_config}
+        source_config['rss'] = {'type': 'rss', 'name': 'rss', 'config': rss_config}
 
     if 'filesystem' in source_type:
         fs_config = {"extractor_config": {}}
@@ -418,9 +425,11 @@ def build_config(vdb_conf_path: str | None,
             yaml_config = yaml.safe_load(file).get('vdb_pipeline', {})
 
         # Yaml specific transforms
-        yaml_config['vdb_config'] = yaml_config.pop('vdb', {})
+        for (yaml_key, config_key) in YAML_TO_CONFIG_MAPPING.items():
+            yaml_config[config_key] = yaml_config.pop(yaml_key, {})
+
         sources = yaml_config.pop('sources', [])
-        yaml_config['source_config'] = {src['type']: src for src in sources}
+        yaml_config['source_config'] = {src['name']: src for src in sources}
 
     else:
         yaml_config = {}
