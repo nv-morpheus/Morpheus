@@ -65,7 +65,7 @@ DEFAULT_RSS_CONFIG = {
     "output_batch_size": 2048,
     "cache_dir": "./.cache/http",
     "stop_after_rec": 0,
-    "feed_input": DEFAULT_RSS_URLS,
+    "feed_input": DEFAULT_RSS_URLS.copy(),
     "strip_markup": True,
     "web_scraper_config": {}
 }
@@ -264,7 +264,7 @@ def _cli_args_to_config(cli_args: dict[str, typing.Any], include_defaults: bool 
     allowing for easy merging of the two.
     """
     config = {}
-    source_configs = []
+    source_config = {}
     source_type = cli_args.get('source_type', [])
     if 'rss' in source_type:
         if include_defaults:
@@ -274,7 +274,7 @@ def _cli_args_to_config(cli_args: dict[str, typing.Any], include_defaults: bool 
 
         _set_values_if_exists(rss_config['web_scraper_config'],
                               cli_args, {
-                                  "content_chunking_size": "chunk_size", "enable_cache": "enable_cache"
+                                  "chunk_size": "content_chunking_size", "enable_cache": "enable_cache"
                               })
         _set_values_if_exists(
             rss_config,
@@ -294,7 +294,7 @@ def _cli_args_to_config(cli_args: dict[str, typing.Any], include_defaults: bool 
         if len(cli_args.get('feed_inputs', [])) > 0:
             rss_config['feed_input'] = cli_args['feed_inputs']
 
-        source_configs.append({'type': 'rss', 'name': 'rss-cli', 'config': rss_config})
+        source_config['rss'] = {'type': 'rss', 'name': 'rss-cli', 'config': rss_config}
 
     if 'filesystem' in source_type:
         fs_config = {"extractor_config": {}}
@@ -314,9 +314,9 @@ def _cli_args_to_config(cli_args: dict[str, typing.Any], include_defaults: bool 
                 "watch": "run_indefinitely"
             })
 
-        source_configs.append({'type': 'filesystem', 'name': 'filesystem-cli', 'config': fs_config})
+        source_config['filesystem'] = {'type': 'filesystem', 'name': 'filesystem-cli', 'config': fs_config}
 
-    config['source_configs'] = source_configs
+    config['source_config'] = source_config
 
     embeddings_model_kwargs = {}
     if include_defaults:
@@ -381,6 +381,8 @@ def _cli_args_to_config(cli_args: dict[str, typing.Any], include_defaults: bool 
     if resource_name is not None:
         vdb_config["resource_schemas"] = {resource_name: None}
 
+    config['vdb_config'] = vdb_config
+
     return config
 
 
@@ -415,7 +417,11 @@ def build_config(vdb_conf_path: str | None,
         with open(vdb_conf_path, 'r', encoding='utf-8') as file:
             yaml_config = yaml.safe_load(file).get('vdb_pipeline', {})
 
+        # Yaml specific transforms
         yaml_config['vdb_config'] = yaml_config.pop('vdb', {})
+        sources = yaml_config.pop('sources', [])
+        yaml_config['source_config'] = {src['type']: src for src in sources}
+
     else:
         yaml_config = {}
 
@@ -424,6 +430,9 @@ def build_config(vdb_conf_path: str | None,
 
     final_config = merge_dicts(implicit_cli_config, yaml_config)
     final_config = merge_dicts(final_config, explicit_cli_config)
+
+    # Flatten the source configs into a list
+    final_config['source_config'] = list(final_config.pop('source_config').values())
 
     # Handle the resource schema separately, the reason is we need both the service type, resource name and the
     # embedding size to all be defined, some or all of these values could be defined at any level.
