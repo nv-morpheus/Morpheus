@@ -21,6 +21,7 @@ import mrc
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import MultiMessage
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 def _get_time_ms():
     return round(time.time() * 1000)
 
-# TODO(Yuchen): rename this stage
+
 class MultiMessageStage(_pipeline.SinglePortStage):
     """
     Subclass of SinglePortStage with option to log timestamps in MessageMeta dataframe.
@@ -47,7 +48,7 @@ class MultiMessageStage(_pipeline.SinglePortStage):
         super().__init__(c)
 
     def compute_schema(self, schema: _pipeline.StageSchema):
-        schema.output_schema.set_type(ControlMessage)
+        schema.output_schema.set_type(MultiMessage)
 
     def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
@@ -58,11 +59,14 @@ class MultiMessageStage(_pipeline.SinglePortStage):
 
             logger.info("Adding timestamp info for stage: '%s'", cached_name)
 
-            def post_timestamps(message: ControlMessage):
+            def post_timestamps(message: typing.Union[MultiMessage, ControlMessage]):
 
                 curr_time = _get_time_ms()
 
-                message.set_metadata("_ts_" + cached_name, str(curr_time))
+                if (isinstance(message, MultiMessage)):
+                    message.set_meta("_ts_" + cached_name, curr_time)
+                else:
+                    message.set_metadata("_ts_" + cached_name, str(curr_time))
 
                 # Must return the original object
                 return message
