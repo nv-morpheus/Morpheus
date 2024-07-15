@@ -138,7 +138,7 @@ class MLFlowDriftStage(PassThruTypeMixin, SinglePortStage):
         for label in range(len(self._labels), shifted.shape[1]):
             self._labels.append(str(label))
 
-        count = msg.payload().count
+        count = msg.tensors().count
 
         for i in list(range(0, count, self._batch_size)):
             start = i

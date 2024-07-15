@@ -569,12 +569,15 @@ class TritonInferenceWorker(InferenceWorker):
                              exc_info=ex)
             raise ex
 
-    def calc_output_dims(self, x: MultiInferenceMessage) -> typing.Tuple:
-        return (x.count, self._outputs[list(self._outputs.keys())[0]].shape[1])
+    def calc_output_dims(self, x: MultiInferenceMessage | ControlMessage) -> typing.Tuple:
+        if isinstance(x, MultiInferenceMessage):
+            return (x.count, self._outputs[list(self._outputs.keys())[0]].shape[1])
+        if isinstance(x, ControlMessage):
+            return (x.tensors().count, self._outputs[list(self._outputs.keys())[0]].shape[1])
 
     def _build_response(
             self,
-            batch: MultiInferenceMessage,  # pylint: disable=unused-argument
+            batch: MultiInferenceMessage | ControlMessage,  # pylint: disable=unused-argument
             result: tritonclient.InferResult) -> TensorMemory:
         output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
 

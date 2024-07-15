@@ -18,6 +18,7 @@ import cupy as cp
 import numpy as np
 import pandas as pd
 
+import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -27,6 +28,7 @@ from morpheus.messages import TensorMemory
 from morpheus.messages.multi_inference_ae_message import MultiInferenceAEMessage
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
+from morpheus.messages.control_message import ControlMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -46,7 +48,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
 
         pass
 
-    def build_output_message(self, x: MultiInferenceAEMessage) -> MultiResponseAEMessage:
+    def build_output_message(self, x: MultiInferenceAEMessage | ControlMessage) -> MultiResponseAEMessage:
         """
         Create initial inference response message with result values initialized to zero. Results will be
         set in message as each inference batch is processed.
@@ -61,27 +63,37 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
         `morpheus.pipeline.messagesMultiResponseAEMessage`
             Response message with autoencoder results calculated from inference results.
         """
+        if isinstance(x, MultiInferenceAEMessage):
+            dims = self.calc_output_dims(x)
+            output_dims = (x.mess_count, *dims[1:])
 
-        dims = self.calc_output_dims(x)
-        output_dims = (x.mess_count, *dims[1:])
+            memory = ResponseMemoryAE(count=output_dims[0], probs=cp.zeros(output_dims))
 
-        memory = ResponseMemoryAE(count=output_dims[0], probs=cp.zeros(output_dims))
+            # Override the default to return the response AE
+            output_message = MultiResponseAEMessage(meta=x.meta,
+                                                    mess_offset=x.mess_offset,
+                                                    mess_count=x.mess_count,
+                                                    memory=memory,
+                                                    offset=x.offset,
+                                                    count=x.count,
+                                                    user_id=x.user_id)
 
-        # Override the default to return the response AE
-        output_message = MultiResponseAEMessage(meta=x.meta,
-                                                mess_offset=x.mess_offset,
-                                                mess_count=x.mess_count,
-                                                memory=memory,
-                                                offset=x.offset,
-                                                count=x.count,
-                                                user_id=x.user_id)
+            return output_message
 
-        return output_message
+        if isinstance(x, ControlMessage):
+            dims = self.calc_output_dims(x)
+            output_dims = (x.payload().count, *dims[1:])
+            x.tensors(_messages.TensorMemory(count=output_dims[0], tensors={"probs": cp.zeros(output_dims)}))
+            
+            return x
 
-    def calc_output_dims(self, x: MultiInferenceAEMessage) -> typing.Tuple:
+    def calc_output_dims(self, x: MultiInferenceAEMessage | ControlMessage) -> typing.Tuple:
 
         # reconstruction loss and zscore
-        return (x.count, 2)
+        if isinstance(x, MultiInferenceAEMessage):
+            return (x.count, 2)
+        if isinstance(x, ControlMessage):
+            return (x.tensors().count, 2)
 
     def process(self, batch: MultiInferenceAEMessage, callback: typing.Callable[[TensorMemory], None]):
         """
