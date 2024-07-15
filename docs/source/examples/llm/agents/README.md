@@ -1,1 +1,4 @@
-../../../../../examples/llm/agents/README.md
+```{include} ../../../../../examples/llm/agents/README.md
+:relative-docs: ..
+:relative-images:
+```
