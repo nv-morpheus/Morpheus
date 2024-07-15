@@ -115,7 +115,7 @@ class PreprocessFILStage(PreprocessBaseStage):
 
         # We need the C++ impl of TensorMemory until #1646 is resolved
         msg.tensors(_messages.TensorMemory(count=count, tensors={"input__0": data, "seq_ids": seg_ids}))
-        # msg.set_metadata("inference_memory_params", {"inference_type": "fil"})
+        msg.set_metadata("inference_memory_params", {"inference_type": "fil"})
         return msg
 
     def _get_preprocess_fn(
