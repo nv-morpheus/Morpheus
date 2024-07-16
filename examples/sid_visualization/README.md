@@ -32,7 +32,7 @@ git submodule update --init --recursive
 
 ### Build Morpheus Dev Container
 
-Before launching the demo, we need the dev container for Morpheus to be created:
+Before launching the demo, we need the docker container for Morpheus to be created:
 ```bash
 export DOCKER_IMAGE_TAG="sid-viz"
 ./docker/build_container_dev.sh
