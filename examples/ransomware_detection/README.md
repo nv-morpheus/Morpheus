@@ -37,10 +37,6 @@ Example:
 ```bash
 docker pull nvcr.io/nvidia/tritonserver:23.06-py3
 ```
-##### Setup Env Variable
-```bash
-export MORPHEUS_ROOT=$(pwd)
-```
 
 ##### Start Triton Inference Server Container
 From the Morpheus repo root directory, run the following to launch Triton and load the `ransomw-model-short-rf` model:
