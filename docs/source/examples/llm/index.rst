@@ -22,9 +22,12 @@ LLM
 .. toctree::
    :maxdepth: 20
 
-   ./README.md
    ./completion/README.md
    ./vdb_upload/README.md
    ./rag/README.md
    ./agents/README.md
 
+.. toctree::
+   :hidden:
+
+   ./README.md

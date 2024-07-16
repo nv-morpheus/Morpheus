@@ -24,7 +24,8 @@ from langchain.agents import Tool
 from langchain.agents import initialize_agent
 from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain_community.chat_models import ChatOpenAI
+from langchain_community.chat_models.openai import ChatOpenAI
+from langchain_core.exceptions import OutputParserException
 from langchain_core.tools import BaseTool
 
 from _utils.llm import execute_node
@@ -264,3 +265,45 @@ def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], m
 
     # Since we are running in async mode, we will need to sort saved metadata
     assert sorted(metadata_saver_tool.saved_metadata, key=itemgetter('morpheus')) == expected_saved_metadata
+
+
+@pytest.mark.parametrize(
+    "arun_return,replace_value,expected_output",
+    [
+        (
+            [[OutputParserException("Parsing Error"), "A valid result."]],
+            "Default error message.",
+            [["Default error message.", "A valid result."]],
+        ),
+        (
+            [["A valid result."], [Exception("General error"), "Another valid result."]],
+            "Another default error message.",
+            [["A valid result."], ["Another default error message.", "Another valid result."]],
+        ),
+        (
+            [
+                ["A valid result.", OutputParserException("Parsing Error")],
+                [Exception("General error"), "Another valid result."],
+            ],
+            None,
+            [["A valid result.", None], [None, "Another valid result."]],
+        ),
+    ],
+    ids=["parsing_error_handling", "exception_handling", "none_as_replacement_value"],
+)
+def test_execute_replaces_exceptions(
+    mock_agent_executor: mock.MagicMock,
+    arun_return: list,
+    replace_value: str,
+    expected_output: list,
+):
+    placeholder_input_values = {"foo": "bar"}  # a non-empty placeholder input for the context
+    mock_agent_executor.arun.return_value = arun_return
+
+    node = LangChainAgentNode(
+        agent_executor=mock_agent_executor,
+        replace_exceptions=True,
+        replace_exceptions_value=replace_value,
+    )
+    output = execute_node(node, **placeholder_input_values)
+    assert output == expected_output

@@ -19,6 +19,14 @@ limitations under the License.
 
 This example illustrates how to use Morpheus to detect Sensitive Information (SI) in network packets automatically by utilizing a Natural Language Processing (NLP) neural network and Triton Inference Server.
 
+## Supported Environments
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Triton on the host |
+| Morpheus Release Container | ✔ | Requires launching Triton on the host |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script and replacing `--server_url=localhost:8000` with `--server_url=triton:8000` |
+
 ## Background
 
 The goal of this example is to identify potentially sensitive information in network packet data as quickly as possible to limit exposure and take corrective action. Sensitive information is a broad term but can be generalized to any data that should be guarded from unauthorized access. Credit card numbers, passwords, authorization keys, and emails are all examples of sensitive information.

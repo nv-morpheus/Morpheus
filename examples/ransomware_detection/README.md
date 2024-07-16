@@ -19,6 +19,14 @@ limitations under the License.
 
 Example of a Morpheus Pipeline using Triton Inference server.
 
+## Supported Environments
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Triton on the host |
+| Morpheus Release Container | ✔ | Requires launching Triton on the host |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script. If using the `run.py` script this requires adding the `--server_url=triton:8000` flag. If using the CLI example this requires replacing `--server_url=localhost:8000` with `--server_url=triton:8000` |
+
 ## Setup Triton Inference Server
 
 ##### Pull Triton Inference Server Docker Image
@@ -59,12 +67,6 @@ Once Triton server finishes starting up, it will display the status of all loade
 
 > **Note**: If this is not present in the output, check the Triton log for any error messages related to loading the model.
 
-## Requirements
-> **Note**: Make sure `dask` and `distributed` are installed in your Conda environment before running the ransomware detection pipeline. Run the installation command specified below if not.
-
-```bash
-mamba install 'dask>=2023.1.1' 'distributed>=2023.1.1'
-```
 
 ## Run Ransomware Detection Pipeline
 Run the following from the root of the Morpheus repo to start the ransomware detection pipeline:

@@ -77,11 +77,11 @@ def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, ou
     config.mode = PipelineModes.NLP
 
     # Below properties are specified by the command line
-    config.num_threads = 1
+    config.num_threads = 5
+    config.edge_buffer_size = 1024
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
     config.feature_length = model_fea_length
-    config.mode = PipelineModes.NLP
 
     config.class_labels = [
         'address',
@@ -95,8 +95,6 @@ def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, ou
         'secret_keys',
         'user'
     ]
-
-    config.edge_buffer_size = 128
 
     pipeline = LinearPipeline(config)
 

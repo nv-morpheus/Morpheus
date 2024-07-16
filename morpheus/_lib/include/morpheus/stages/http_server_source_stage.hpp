@@ -29,11 +29,11 @@
 #include <pymrc/node.hpp>                    // for PythonSource
 #include <rxcpp/rx.hpp>                      // for subscriber
 
+#include <atomic>  // for atomic
 #include <chrono>   // for duration
 #include <cstddef>  // for size_t
 #include <cstdint>  // for int64_t
 #include <memory>   // for shared_ptr & unique_ptr
-#include <ratio>    // for std::milli
 #include <string>   // for string & to_string
 // IWYU thinks we're using thread::operator<<
 // IWYU pragma: no_include <thread>
@@ -63,7 +63,11 @@ class MORPHEUS_EXPORT HttpServerSourceStage : public mrc::pymrc::PythonSource<st
     HttpServerSourceStage(std::string bind_address             = "127.0.0.1",
                           unsigned short port                  = 8080,
                           std::string endpoint                 = "/message",
+                          std::string live_endpoint            = "/live",
+                          std::string ready_endpoint           = "/ready",
                           std::string method                   = "POST",
+                          std::string live_method              = "GET",
+                          std::string ready_method             = "GET",
                           unsigned accept_status               = 201,
                           float sleep_time                     = 0.1f,
                           long queue_timeout                   = 5,
@@ -81,10 +85,12 @@ class MORPHEUS_EXPORT HttpServerSourceStage : public mrc::pymrc::PythonSource<st
     subscriber_fn_t build();
     void source_generator(rxcpp::subscriber<source_type_t> subscriber);
 
-    std::chrono::duration<float, std::milli> m_sleep_time;
+    std::atomic<int> m_queue_cnt = 0;
+    std::chrono::steady_clock::duration m_sleep_time;
     std::chrono::duration<long> m_queue_timeout;
     std::unique_ptr<HttpServer> m_server;
     request_queue_t m_queue;
+    std::size_t m_max_queue_size;
     std::size_t m_stop_after;
     std::size_t m_records_emitted;
 };
@@ -100,7 +106,11 @@ struct MORPHEUS_EXPORT HttpServerSourceStageInterfaceProxy
                                                                              std::string bind_address,
                                                                              unsigned short port,
                                                                              std::string endpoint,
+                                                                             std::string live_endpoint,
+                                                                             std::string ready_endpoint,
                                                                              std::string method,
+                                                                             std::string live_method,
+                                                                             std::string ready_method,
                                                                              unsigned accept_status,
                                                                              float sleep_time,
                                                                              long queue_timeout,

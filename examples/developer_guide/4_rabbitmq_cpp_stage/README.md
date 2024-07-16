@@ -20,6 +20,14 @@ This example builds upon the `examples/developer_guide/2_2_rabbitmq` example add
 
 This example adds two flags to the `read_simple.py` script. A `--use_cpp` flag which defaults to `True` and a `--num_threads` flag which defaults to the number of cores on the system as returned by `os.cpu_count()`.
 
+## Supported Environments
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching the RabbitMQ container on the host |
+| Morpheus Release Container | ✔ | Requires launching the RabbitMQ container on the host, and adding development packages to the container's Conda environment via `conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-121_arch-x86_64.yaml` |
+| Dev Container | ✘ |  |
+
 ## Installing Pika
 The `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages use the [pika](https://pika.readthedocs.io/en/stable/#) RabbitMQ client for Python. To install this into the current env run:
 ```bash
@@ -55,7 +63,7 @@ In a second terminal from the root of the Morpheus repo execute:
 python examples/developer_guide/4_rabbitmq_cpp_stage/src/read_simple.py
 ```
 
-This will read from a RabbitMQ exchange named 'logs', and write the results to `/tmp/results.json`.
+This will read from a RabbitMQ exchange named 'logs', and write the results to `results.json`.
 
 If no exchange named 'logs' exists in RabbitMQ it will be created.
 

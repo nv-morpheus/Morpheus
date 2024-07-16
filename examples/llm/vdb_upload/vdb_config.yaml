@@ -20,7 +20,7 @@ vdb_pipeline:
       force_convert_inputs: true
       model_name: "all-MiniLM-L6-v2"
       server_url: "http://localhost:8001"
-      use_shared_memory: true
+      use_shared_memory: false
 
   pipeline:
     edge_buffer_size: 128

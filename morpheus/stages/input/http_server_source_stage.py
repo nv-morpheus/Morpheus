@@ -38,6 +38,7 @@ from morpheus.utils.producer_consumer_queue import Closed
 logger = logging.getLogger(__name__)
 
 SUPPORTED_METHODS = (HTTPMethod.POST, HTTPMethod.PUT)
+HEALTH_SUPPORTED_METHODS = (HTTPMethod.GET, HTTPMethod.POST)
 
 
 @register_stage("from-http")
@@ -88,7 +89,11 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                  bind_address: str = "127.0.0.1",
                  port: int = 8080,
                  endpoint: str = "/message",
+                 live_endpoint: str = "/live",
+                 ready_endpoint: str = "/ready",
                  method: HTTPMethod = HTTPMethod.POST,
+                 live_method: HTTPMethod = HTTPMethod.GET,
+                 ready_method: HTTPMethod = HTTPMethod.GET,
                  accept_status: HTTPStatus = HTTPStatus.CREATED,
                  sleep_time: float = 0.1,
                  queue_timeout: int = 5,
@@ -103,7 +108,11 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         self._bind_address = bind_address
         self._port = port
         self._endpoint = endpoint
+        self._live_endpoint = live_endpoint
+        self._ready_endpoint = ready_endpoint
         self._method = method
+        self._live_method = live_method
+        self._ready_method = ready_method
         self._accept_status = accept_status
         self._sleep_time = sleep_time
         self._queue_timeout = queue_timeout
@@ -114,14 +123,16 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         self._lines = lines
         self._stop_after = stop_after
         self._payload_to_df_fn = payload_to_df_fn
+        self._http_server = None
 
         # These are only used when C++ mode is disabled
         self._queue = None
+        self._queue_size = 0
         self._processing = False
         self._records_emitted = 0
 
-        if method not in SUPPORTED_METHODS:
-            raise ValueError(f"Unsupported method: {method}")
+        for url, http_method in [(endpoint, method), (live_endpoint, live_method), (ready_endpoint, ready_method)]:
+            check_supported_method(url, http_method, SUPPORTED_METHODS if url == endpoint else HEALTH_SUPPORTED_METHODS)
 
         if accept_status.value < 200 or accept_status.value > 299:
             raise ValueError(f"Invalid accept_status: {accept_status}")
@@ -155,6 +166,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
 
         try:
             self._queue.put(df, block=True, timeout=self._queue_timeout)
+            self._queue_size += 1
             return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
 
         except (queue.Full, Closed) as e:
@@ -175,21 +187,51 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                                      content_type=MimeTypes.TEXT.value,
                                      body=err_msg)
 
+    def _liveliness_check(self, _: str) -> HttpParseResponse:
+        if not self._http_server.is_running():
+            err_msg = "Source server is not running"
+            logger.error(err_msg)
+            return HttpParseResponse(status_code=HTTPStatus.SERVICE_UNAVAILABLE.value,
+                                     content_type=MimeTypes.TEXT.value,
+                                     body=err_msg)
+
+        return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
+
+    def _readiness_check(self, _: str) -> HttpParseResponse:
+        if not self._http_server.is_running():
+            err_msg = "Source server is not running"
+            logger.error(err_msg)
+            return HttpParseResponse(status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                                     content_type=MimeTypes.TEXT.value,
+                                     body=err_msg)
+
+        if self._queue_size < self._max_queue_size:
+            return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
+
+        err_msg = "HTTP payload queue is full or unavailable to accept new values"
+        logger.error(err_msg)
+        return HttpParseResponse(status_code=HTTPStatus.SERVICE_UNAVAILABLE.value,
+                                 content_type=MimeTypes.TEXT.value,
+                                 body=err_msg)
+
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         from morpheus.common import FiberQueue
+        from morpheus.common import HttpEndpoint
         from morpheus.common import HttpServer
 
+        msg = HttpEndpoint(self._parse_payload, self._endpoint, self._method.name)
+        live = HttpEndpoint(self._liveliness_check, self._live_endpoint, self._live_method.name)
+        ready = HttpEndpoint(self._readiness_check, self._ready_endpoint, self._ready_method.name)
         with (FiberQueue(self._max_queue_size) as self._queue,
-              HttpServer(parse_fn=self._parse_payload,
+              HttpServer(endpoints=[msg, live, ready],
                          bind_address=self._bind_address,
                          port=self._port,
-                         endpoint=self._endpoint,
-                         method=self._method.value,
                          num_threads=self._num_server_threads,
                          max_payload_size=self._max_payload_size_bytes,
                          request_timeout=self._request_timeout_secs) as http_server):
 
             self._processing = True
+            self._http_server = http_server
             while self._processing:
                 # Read as many messages as we can from the queue if it's empty check to see if we should be shutting
                 # down. It is important that any messages we received that are in the queue are processed before we
@@ -197,8 +239,9 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                 df = None
                 try:
                     df = self._queue.get()
+                    self._queue_size -= 1
                 except queue.Empty:
-                    if (not http_server.is_running()):
+                    if (not self._http_server.is_running()):
                         self._processing = False
                     else:
                         logger.debug("Queue empty, sleeping ...")
@@ -237,3 +280,9 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
             node = builder.make_source(self.unique_name, self._generate_frames())
 
         return node
+
+
+def check_supported_method(endpoint: str, method: HTTPMethod, supported_methods: typing.Tuple[HTTPMethod, ...]) -> None:
+    if method not in supported_methods:
+        raise ValueError(
+            f"Unsupported method {method} for endpoint {endpoint}. Supported methods are {supported_methods}")
