@@ -111,6 +111,7 @@ dependencies:
 - transformers=4.36.2
 - tritonclient=2.34
 - typing_utils=0.1
+- vale=3.6
 - versioneer
 - versioneer-518
 - watchdog=3.0
