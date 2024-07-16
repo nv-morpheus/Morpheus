@@ -91,6 +91,8 @@ dependencies:
 - tqdm=4
 - tritonclient=2.34
 - typing_utils=0.1
+- vale-styles-microsoft
+- vale-styles-write-good
 - vale=3.6
 - versioneer
 - versioneer-518

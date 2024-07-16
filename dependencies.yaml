@@ -269,6 +269,8 @@ dependencies:
         packages:
           - pre-commit
           - vale=3.6
+          - vale-styles-microsoft
+          - vale-styles-write-good
 
   data_retrieval:
     common:
