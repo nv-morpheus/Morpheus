@@ -1,5 +1,9 @@
+[Bb]oolean
+Conda
+[Cc]ryptocurrenc[y|ies]
 [Cc]yber
 [Cc]ybersecurity
+Dev
 GPU
 GPUs
 Morpheus
@@ -8,3 +12,5 @@ NIM
 NIMs
 NVIDIA
 [Pp]retrained
+[Rr]epo
+XGBoost
