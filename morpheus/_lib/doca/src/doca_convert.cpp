@@ -184,6 +184,15 @@ DocaConvertStage::subscribe_fn_t DocaConvertStage::build()
     };
 }
 
+void log_time(const std::string& item,
+              const std::chrono::time_point<std::chrono::steady_clock> t1,
+              const std::chrono::time_point<std::chrono::steady_clock> t2)
+{
+    // TODO: Remove before merging
+    auto diff = std::chrono::duration_cast<std::chrono::duration<float>>(t2-t1);
+    std::cerr << item << " : " << std::fixed << diff.count() << "\n";
+}
+
 void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& output, sink_type_t raw_msg)
 {
     auto packet_count      = raw_msg->count();
@@ -196,8 +205,12 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
 
     // LOG(WARNING) << "New RawPacketMessage with " << packet_count << " packets from queue id " << queue_idx;
 
+    auto t1 = std::chrono::steady_clock::now();
     const auto [header_buff_size, payload_buff_size] = doca::gather_sizes(
         packet_count, m_fixed_hdr_size_list, m_fixed_pld_size_list,  m_stream_cpp);
+
+    auto t2 = std::chrono::steady_clock::now();
+    log_time("gather_sizes", t1, t2);
 
     // both m_fixed_hdr_size_list and m_fixed_pld_size_list should be the same size in bytes
     auto sizes_buff_size = packet_count * sizeof(uint32_t);  
@@ -269,7 +282,12 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
             auto packet_rate = (num_packets / count);
             m_last_emit = now;
 
-            // std::cerr << "Convert Packets: " << num_packets << "\nDelta: " << deltaf.count() << "s\nPackets/s : " << packet_rate << "\n";
+            const float bytes = m_payload_buffer->cur_offset_bytes + m_header_buffer->cur_offset_bytes;
+            const float mb = bytes / (1024 * 1024);
+            std::cerr << "Convert Packets: " << num_packets
+                      << "\nDelta: " << deltaf.count()
+                      << "s\nPackets/s : " << packet_rate
+                      << "\nMB/s: " << mb << "\n\n";
         }
 
         // In the case where existing empty buffers were too small for the data we still need to re-allocate
@@ -297,16 +315,27 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
 #if ENABLE_TIMERS == 1
     const auto t0 = now_ns();
 #endif
+
+    auto t3 = std::chrono::steady_clock::now();
     // gather header data
     doca::gather_header(
         packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_header_buffer->current_location(), m_stream_cpp);
+
+    auto t4 = std::chrono::steady_clock::now();
+
+    log_time("gather_header", t3, t4);
 
     // gather payload data
     doca::gather_payload(
         packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_payload_buffer->current_location(), m_stream_cpp);
 
+    auto t5 = std::chrono::steady_clock::now();
+
+    log_time("gather_payload", t4, t5);
     cudaStreamSynchronize(m_stream_cpp);
 
+    auto t6 = std::chrono::steady_clock::now();
+    log_time("sync", t5, t6);
 
 #if ENABLE_TIMERS == 1
     const auto t1 = now_ns();
@@ -321,6 +350,9 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     MRC_CHECK_CUDA(cudaMemcpy(m_payload_sizes_buffer->current_location(), m_fixed_pld_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice));
     m_payload_sizes_buffer->advance(sizes_buff_size, packet_count);
 
+    auto t7 = std::chrono::steady_clock::now();
+    log_time("cudaMemcpy", t6, t7);
+    std::cerr << "\n\n\n";
 
 #if ENABLE_TIMERS == 1
     const auto t2 = now_ns();
