@@ -34,7 +34,16 @@ limitations under the License.
         - [Run example (Simple Pipeline)](#run-example-simple-pipeline)
         - [Run example (Kafka Pipeline)](#run-example-kafka-pipeline)
 
-# Background Information
+## Supported Environments
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-121_arch-x86_64.yaml` or `conda/environments/examples_cuda-121_arch-x86_64.yaml` environment files. Refer to the [Install Dependencies](#install-dependencies) section for more information.
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ |  |
+| Morpheus Release Container | ✔ |  |
+| Dev Container | ✔ |  |
+
+## Background Information
 
 ### Purpose
 The Morpheus LLM Agents pipeline is designed to seamlessly integrate Large Language Model (LLM) agents into the Morpheus framework. This implementation focuses on efficiently executing multiple LLM queries using the ReAct agent type, which is tailored for versatile task handling. The use of the Langchain library streamlines the process, minimizing the need for additional system migration.
@@ -190,6 +199,14 @@ python examples/llm/main.py agents kafka [OPTIONS]
 - `--model_name TEXT`
     - **Description**: The name of the model to use in OpenAI.
     - **Default**: `gpt-3.5-turbo-instruct`
+
+- `--bootstrap_servers TEXT`
+    - **Description**: The Kafka bootstrap servers to connect to, if undefined the client will attempt to infer the bootrap servers from the environment.
+    - **Default**: `auto`
+
+- `--topic TEXT`
+    - **Description**: The Kafka topic to listen to for input messages.
+    - **Default**: `input`
 
 - `--help`
     - **Description**: Show the help message with options and commands details.

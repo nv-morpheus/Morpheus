@@ -63,21 +63,13 @@ Review the unassigned issues, and find an issue to which you are comfortable con
 
 The following instructions are for developers who are getting started with the Morpheus repository. The Morpheus development environment is flexible (Docker, Conda and bare metal workflows) but has a high number of dependencies that can be difficult to set up. These instructions outline the steps for setting up a development environment inside a Docker container or on a host machine with Conda.
 
-All of the following instructions assume several variables have been set:
+All of the following instructions assume that the given variable has been defined:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
- - `PYTHON_VER`: The desired Python version. Minimum required is `3.10`
- - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. If in doubt use `23.06`
- - `TRITONCLIENT_VERSION`: The desired Triton client. If in doubt use `22.10`
- - `CUDA_VER`: The desired CUDA version to use. If in doubt use `12.1`
 
 
 ### Clone the repository and pull large file data from Git LFS
 
 ```bash
-export PYTHON_VER=3.10
-export RAPIDS_VER=23.06
-export TRITONCLIENT_VERSION=22.10
-export CUDA_VER=12.1
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
@@ -144,26 +136,19 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
       Then once the container is started you will need to install some extra packages to enable launching Docker containers:
       ```bash
       ./external/utilities/docker/install_docker.sh
-
-      # Install utils for checking output
-      apt install -y jq bc
       ```
 
 3. Compile Morpheus
    ```bash
    ./scripts/compile.sh
    ```
-   This script will run both CMake Configure with default options and CMake build.
-4. Install Morpheus
-   ```bash
-   pip install -e /workspace
-   ```
-   Once Morpheus has been built, it can be installed into the current virtual environment.
-5. [Run Morpheus](../getting_started.md#running-morpheus)
+   This script will run CMake Configure with default options, the CMake build and install Morpheus into the environment.
+
+4. [Run Morpheus](../getting_started.md#running-morpheus)
    ```bash
    morpheus run pipeline-nlp ...
    ```
-   At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`. Installing Morpheus is only required once per virtual environment.
+   At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`.
 
 ### Build in a Conda Environment
 
@@ -188,9 +173,6 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 1. Set up env variables and clone the repo:
    ```bash
-   export PYTHON_VER=3.10
-   export RAPIDS_VER=23.06
-   export CUDA_VER=12.1
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT

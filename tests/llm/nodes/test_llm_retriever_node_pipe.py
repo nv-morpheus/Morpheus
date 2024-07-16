@@ -103,7 +103,15 @@ def test_pipeline_with_milvus(config: Config,
     values = {'prompt': ["prompt1", "prompt2"]}
     input_df = cudf.DataFrame(values)
     expected_df = input_df.copy(deep=True)
-    expected_df["response"] = [[{'0': 27, '1': 2}, {'0': 26, '1': 1}], [{'0': 27, '1': 2}, {'0': 26, '1': 1}]]
+    expected_df["response"] = [[{
+        'age': 27, 'id': 2
+    }, {
+        'age': 26, 'id': 1
+    }], [{
+        'age': 27, 'id': 2
+    }, {
+        'age': 26, 'id': 1
+    }]]
 
     task_payload = {"task_type": "llm_engine", "task_dict": {"input_keys": sorted(values.keys())}}
 

@@ -84,7 +84,7 @@ limitations under the License.
 ## Evaluation Dataset:
 
 **Link:** 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/validation-data/phishing-email-validation-data.jsonlines  <br>
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/models/datasets/validation-data/phishing-email-validation-data.jsonlines  <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 * Dataset consists of SMSs <br>

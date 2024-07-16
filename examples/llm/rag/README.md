@@ -17,6 +17,15 @@ limitations under the License.
 
 # Retrieval Augmented Generation (RAG) Pipeline
 
+## Supported Environments
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-121_arch-x86_64.yaml` or `conda/environments/examples_cuda-121_arch-x86_64.yaml` environment files. This example also requires the [VDB upload](../vdb_upload/README.md) pipeline to have been run previously.
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Milvus on the host |
+| Morpheus Release Container | ✔ | Requires launching Milvus on the host |
+| Dev Container | ✘ |  |
+
 ## Table of Contents
 
 ## Background Information
@@ -35,12 +44,6 @@ additional background contextual and factual information which the LLM can pull 
   that can be retrieved.
 - An example of populating a database is illustrated in [VDB upload](../vdb_upload/README.md)
 - This example assumes that pipeline has already been run to completion.
-
-### Embedding Model
-
-- This pipeline can support any type of embedding model that can convert text into a vector of floats.
-- For the example, we will use `all-MiniLM-L6-v2`. It is small, accurate, and included in the Morpheus repo via LFS;
-  it is also the default model used in the [VDB upload](../vdb_upload/README.md) pipeline.
 
 ### Vector Database Service
 
@@ -67,8 +70,6 @@ were incorporated:
 
 ### Rationale Behind Design Decisions
 
-- **Choice of Embedding Model:** all-MiniLM-L6-v2 was chosen due to its compactness and accuracy. This makes it ideal
-  for real-time operations and ensures that the embeddings are of high quality.
 - **Using Milvus as VDB:** Milvus offers scalable and efficient vector search capabilities, making it a natural choice
   for embedding retrieval in real-time.
 - **Flexible LLM integration:** The LLM is integrated into the pipeline as a standalone component, which allows for
@@ -92,59 +93,6 @@ The standalone Morpheus pipeline is built using the following components:
 
 > **Note:** For this to function correctly, the VDB upload pipeline must have been run previously.
 
-### Persistent Morpheus Pipeline
-
-#### Technical Overview
-
-![Example RAG Pipeline Diagram](./images/persistent_pipeline.png)
-
-The provided diagram illustrates the structural composition of the Morpheus data processing pipeline. This pipeline is
-designed with the intent to handle various data streams in support of Retrieval Augmented Generation.
-
-> **Note**: The current `persistent` pipeline implementation differs from the above diagram in the follwing ways:
-
-- The source for the upload and retrieval are both KafkaSourceStage to make it easy for the user to control when
-  messages are processed by the example pipeline.
-- There is a SplitStage added after the embedding portion of the pipeline which determines which sink to send each
-  message to.
-- The final sink for the retrieval task is sent to another Kafka topic retrieve_output.
-
-#### Data Input Points
-
-The pipeline has multiple data input avenues:
-
-1. **User Uploaded Documents**: Raw documents provided by users for further processing.
-2. **Streaming Event Logs**: Logs that are streamed in real-time.
-3. **Streaming Data Feeds**: Continuous streams of data that could be dynamic in nature.
-4. **RSS Threat Intel Feeds**: RSS-based feeds that might focus on threat intelligence.
-5. **LLM Input Query**: Queries that are inputted for processing by the Large Language Model.
-
-#### Data Processing Stages
-
-The ingested data traverses several processing stages:
-
-1. **Sources Integration**: Data from different origins such as REST Server, Kafka, and RSS Scraper are directed into
-   the pipeline.
-2. **Batching**: Data items are grouped together for more efficient bulk processing.
-3. **Data Transformation**:
-    - **Chunking**: Data might be broken into smaller chunks if too large.
-    - **Tokenization**: Textual data is typically converted into tokens suitable for model processing.
-    - **Embedding**: This step likely converts data into its vector representation.
-    - **Mean Pooling**: Embeddings might be combined to yield a mean vector.
-
-4. **Inference**: Models may be used to extract patterns or make predictions from the data.
-5. **Storage and Retrieval**: Vector representations are stored in the Vector DB and can be fetched upon request.
-   Retrieval might employ GPU-based IVF indexes (such as RAFT or FAISS).
-
-### Backend Components
-
-The pipeline is supported by a set of backend components:
-
-1. **Knowledge Graph DB & Service**: This serves as a potential repository and query mechanism for stored knowledge.
-2. **Vector DB & Service**: Appears to handle the storage and querying of vector data.
-3. **Triton Inference Server**: An inference component that interfaces with the LLM Service.
-
-## Getting Started
 
 ## Prerequisites
 
@@ -162,7 +110,7 @@ To retrieve models from LFS run the following:
 
 #### NGC
 
-- Follow the instructions [here](TODO)
+- Follow the instructions [here](https://docs.nvidia.com/ngc/gpu-cloud/ngc-user-guide/index.html#generating-personal-api-key)
 - We'll refer to your NGC API key as `${NGC_API_KEY}` for the rest of this document.
 
 #### OpenAI
@@ -178,27 +126,6 @@ Before running the pipeline, we need to ensure that the following services are r
 - Follow the instructions [here](https://milvus.io/docs/install_standalone-docker.md) to install and run a Milvus
   service.
 
-### Triton Service
-
-- Pull the Docker image for Triton:
-  ```bash
-  docker pull nvcr.io/nvidia/tritonserver:23.06-py3
-  ```
-
-- From the Morpheus repo root directory, run the following to launch Triton and load the `all-MiniLM-L6-v2` model:
-  ```bash
-  docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model all-MiniLM-L6-v2
-  ```
-
-  This will launch Triton and only load the `all-MiniLM-L6-v2` model. Once Triton has loaded the model, the following
-  will be displayed:
-    ```
-    +------------------+---------+--------+
-    | Model            | Version | Status |
-    +------------------+---------+--------+
-    | all-MiniLM-L6-v2 | 1       | READY  |
-    +------------------+---------+--------+
-    ```
 
 ### Running the Morpheus Pipeline
 
@@ -207,8 +134,6 @@ of Options and a Pipeline to run. Baseline options are below, and for the purpos
 pipeline option of `rag`:
 
 ### Run example (Standalone Pipeline):
-
-**TODO:** Add model specification syntax
 
 **Using NGC Nemo LLMs**
 
@@ -223,53 +148,3 @@ python examples/llm/main.py rag pipeline
 export OPENAI_API_KEY=[YOUR_KEY_HERE]
 python examples/llm/main.py rag pipeline --llm_service=OpenAI --model_name=gpt-3.5-turbo
 ```
-
-### Run example (Persistent Pipeline):
-
-**TODO**
-
-**Using NGC Nemo LLMs**
-
-```bash
-export NGC_API_KEY=[YOUR_KEY_HERE]
-python examples/llm/main.py rag persistent
-```
-
-**Using OpenAI LLM models**
-
-```bash
-export OPENAI_API_KEY=[YOUR_KEY_HERE]
-python examples/llm/main.py rag persistent
-```
-
-### Options:
-
-- `--log_level [CRITICAL|FATAL|ERROR|WARN|WARNING|INFO|DEBUG]`
-    - **Description**: Specifies the logging level.
-    - **Default**: `INFO`
-
-- `--use_cpp BOOLEAN`
-    - **Description**: Opt to use C++ node and message types over python. Recommended only in case of bugs.
-    - **Default**: `False`
-
-- `--version`
-    - **Description**: Display the script's current version.
-
-- `--help`
-    - **Description**: Show the help message with options and commands details.
-
-### Commands:
-
-- ... other pipelines ...
-- `rag`
-
----
-
-## Options for `rag` Command
-
-The `rag` command has its own set of options and commands:
-
-### Commands:
-
-- `persistant`
-- `pipeline`

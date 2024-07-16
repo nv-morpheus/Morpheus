@@ -20,7 +20,7 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 
 rapids-dependency-file-generator \
   --output conda \
-  --file_key build \
+  --file-key build \
   --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee "${WORKSPACE_TMP}/env.yaml"
 
 update_conda_env "${WORKSPACE_TMP}/env.yaml"

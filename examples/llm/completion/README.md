@@ -15,6 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# Completion Pipeline
+
 ## Table of Contents
 
 1. [Background Information](#background-information)
@@ -27,6 +29,16 @@ limitations under the License.
         - [Install Dependencies](#install-dependencies)
         - [Setting up NGC API Key](#setting-up-ngc-api-key)
     - [Running the Morpheus Pipeline](#running-the-morpheus-pipeline)
+
+## Supported Environments
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-121_arch-x86_64.yaml` or `conda/environments/examples_cuda-121_arch-x86_64.yaml` environment files. Refer to the [Install Dependencies](#install-dependencies) section for more information.
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ |  |
+| Morpheus Release Container | ✔ |  |
+| Dev Container | ✔ |  |
+
 
 ## Background Information
 

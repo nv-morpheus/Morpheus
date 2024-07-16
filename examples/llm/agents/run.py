@@ -91,6 +91,20 @@ def simple(**kwargs):
     default='gpt-3.5-turbo-instruct',
     help="The name of the model to use in OpenAI",
 )
+@click.option(
+    "--bootstrap_servers",
+    required=True,
+    type=str,
+    default='auto',
+    help="The Kafka bootstrap servers to connect to",
+)
+@click.option(
+    "--topic",
+    required=True,
+    type=str,
+    default='input',
+    help="The Kafka topic to listen to for input messages",
+)
 def kafka(**kwargs):
 
     from .kafka_pipeline import pipeline as _pipeline

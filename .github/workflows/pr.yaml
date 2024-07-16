@@ -43,14 +43,6 @@ permissions:
 
 jobs:
 
-  pr-builder:
-    needs:
-      - prepare
-      - checks
-      - ci_pipe
-    secrets: inherit
-    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.02
-
   prepare:
     # Executes the get-pr-info action to determine if the PR has the skip-ci label, if the action fails we assume the
     # PR does not have the label
@@ -95,7 +87,17 @@ jobs:
       # Disable conda upload for now, once we have morpheus packages in conda forge set the value to
       # !fromJSON(needs.prepare.outputs.is_pr) && (fromJSON(needs.prepare.outputs.is_main_branch) && 'main' || 'dev') || ''
       conda_upload_label: ""
-      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-240524
-      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-240524
+      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-240614
+      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-240614
     secrets:
       NGC_API_KEY: ${{ secrets.NGC_API_KEY }}
+
+  pr-builder:
+    # Always run this step even if others are skipped or cancelled
+    if: '!cancelled()'
+    needs:
+      - prepare
+      - checks
+      - ci_pipe
+    secrets: inherit
+    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.02

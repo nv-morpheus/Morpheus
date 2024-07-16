@@ -16,12 +16,20 @@ limitations under the License.
 -->
 # GNN Fraud Detection Pipeline
 
+## Supported Environments
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-121_arch-x86_64.yaml` or `conda/environments/examples_cuda-121_arch-x86_64.yaml` environment files. Refer to the [Requirements](#requirements) section for more information.
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ |  |
+| Morpheus Release Container | ✔ |  |
+| Dev Container | ✔ |  |
+
 ## Requirements
 
 Prior to running the GNN fraud detection pipeline, additional requirements must be installed in to your Conda environment. A supplemental requirements file has been provided in this example directory.
 
 ```bash
-export CUDA_VER=12.1
 mamba env update \
   -n ${CONDA_DEFAULT_ENV} \
   --file ./conda/environments/examples_cuda-121_arch-x86_64.yaml

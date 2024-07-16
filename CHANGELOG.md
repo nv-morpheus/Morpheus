@@ -14,6 +14,93 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+# Morpheus 24.06.00 (03 Jul 2024)
+## 🚨 Breaking Changes
+
+- Introduce multi-endpoint servers and health check endpoints to HttpServerSourceStage ([#1734](https://github.com/nv-morpheus/Morpheus/pull/1734)) [@jadu-nv](https://github.com/jadu-nv)
+- Update devcontainer to use latest build utils ([#1658](https://github.com/nv-morpheus/Morpheus/pull/1658)) [@cwharris](https://github.com/cwharris)
+- Update CI to install DOCA and build Morpheus DOCA components. ([#1622](https://github.com/nv-morpheus/Morpheus/pull/1622)) [@cwharris](https://github.com/cwharris)
+- Support non-json serializable objects in LLMContext ([#1589](https://github.com/nv-morpheus/Morpheus/pull/1589)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 🐛 Bug Fixes
+
+- Fix LLM Agents Kafka pipeline ([#1793](https://github.com/nv-morpheus/Morpheus/pull/1793)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add fetch data command in build_container_release.sh ([#1787](https://github.com/nv-morpheus/Morpheus/pull/1787)) [@ifengw-nv](https://github.com/ifengw-nv)
+- Add cuda and cudf to link targets for C++ examples ([#1777](https://github.com/nv-morpheus/Morpheus/pull/1777)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Release container fixes ([#1766](https://github.com/nv-morpheus/Morpheus/pull/1766)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Remove setting of `prog_name`, this implies that an executable named `morpheus_llm` exists ([#1759](https://github.com/nv-morpheus/Morpheus/pull/1759)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Provide a default set of questions for the standalone RAG pipeline ([#1758](https://github.com/nv-morpheus/Morpheus/pull/1758)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Disable shared memory by default, and fix `--stop_after` flag for `vdb_upload` example ([#1755](https://github.com/nv-morpheus/Morpheus/pull/1755)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix conda errors in release container ([#1750](https://github.com/nv-morpheus/Morpheus/pull/1750)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fixes for C++ impl for `DeserializeStage` and add missing `get_info` overloads to `SlicedMessageMeta` ([#1749](https://github.com/nv-morpheus/Morpheus/pull/1749)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add GIT_CLONE_PROTECTION_ACTIVE env config to fix build script ([#1748](https://github.com/nv-morpheus/Morpheus/pull/1748)) [@jadu-nv](https://github.com/jadu-nv)
+- Fix triton multi threading when using the C++ stage ([#1739](https://github.com/nv-morpheus/Morpheus/pull/1739)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- resolve rapids-dependency-file-generator warning ([#1735](https://github.com/nv-morpheus/Morpheus/pull/1735)) [@jameslamb](https://github.com/jameslamb)
+- Updating all uses of the `secrets.PROJECT_MANAGEMENT_PAT` to use a registered Github App ([#1730](https://github.com/nv-morpheus/Morpheus/pull/1730)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- DOCA: fix optional deps + remove PreallocatorMixin from source stage ([#1729](https://github.com/nv-morpheus/Morpheus/pull/1729)) [@e-ago](https://github.com/e-ago)
+- Remove `pyarrow_hotfix` import from `__init__.py` ([#1692](https://github.com/nv-morpheus/Morpheus/pull/1692)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Support the filter_null parameter in the C++ impl of the FileSourceStage ([#1689](https://github.com/nv-morpheus/Morpheus/pull/1689)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Enable C++ mode for `abp_pcap_detection` example ([#1687](https://github.com/nv-morpheus/Morpheus/pull/1687)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Strip HTML &amp; XML tags from RSS feed input ([#1670](https://github.com/nv-morpheus/Morpheus/pull/1670)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Truncate strings exceeding max_length when inserting to Milvus ([#1665](https://github.com/nv-morpheus/Morpheus/pull/1665)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix a typo in the devcontainer base image ([#1638](https://github.com/nv-morpheus/Morpheus/pull/1638)) [@cwharris](https://github.com/cwharris)
+- Fix tests to detect issue #1626 ([#1629](https://github.com/nv-morpheus/Morpheus/pull/1629)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix `cupy_to_tensor` to also infer `uint8` and `int8` dtypes ([#1621](https://github.com/nv-morpheus/Morpheus/pull/1621)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Add struct column support to `cudf_helpers` ([#1538](https://github.com/nv-morpheus/Morpheus/pull/1538)) [@efajardo-nv](https://github.com/efajardo-nv)
+
+## 📖 Documentation
+
+- Cleanup docs so that each as a single H1 title ([#1794](https://github.com/nv-morpheus/Morpheus/pull/1794)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Mark the LLM Agents Kafka pipeline as broken ([#1792](https://github.com/nv-morpheus/Morpheus/pull/1792)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Document supported environments for each example ([#1786](https://github.com/nv-morpheus/Morpheus/pull/1786)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Removes unused environment variables from Morpheus build docs ([#1784](https://github.com/nv-morpheus/Morpheus/pull/1784)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Remove documentation for yaml config files in `vdb_upload` pipeline until #1752 is resolved ([#1778](https://github.com/nv-morpheus/Morpheus/pull/1778)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Remove out of date instructions from  `contributing.md` ([#1774](https://github.com/nv-morpheus/Morpheus/pull/1774)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add troubleshooting reference for unsuccessful documentation builds ([#1768](https://github.com/nv-morpheus/Morpheus/pull/1768)) [@ifengw-nv](https://github.com/ifengw-nv)
+- Remove pre-built container section from `getting_started.md` ([#1764](https://github.com/nv-morpheus/Morpheus/pull/1764)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Clarify Documentation: Run fetch_data.py Outside Docker Container ([#1762](https://github.com/nv-morpheus/Morpheus/pull/1762)) [@ifengw-nv](https://github.com/ifengw-nv)
+- Add function return documentation for `LLMService` ([#1721](https://github.com/nv-morpheus/Morpheus/pull/1721)) [@acaklovic-nv](https://github.com/acaklovic-nv)
+- Fix description for `cache_mode` option of DFP Rolling Window module ([#1707](https://github.com/nv-morpheus/Morpheus/pull/1707)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Update root-cause-analysis-model-card.md ([#1684](https://github.com/nv-morpheus/Morpheus/pull/1684)) [@HesAnEasyCoder](https://github.com/HesAnEasyCoder)
+- Update abp-model-card.md ([#1683](https://github.com/nv-morpheus/Morpheus/pull/1683)) [@HesAnEasyCoder](https://github.com/HesAnEasyCoder)
+- Update dfp-model-card.md ([#1682](https://github.com/nv-morpheus/Morpheus/pull/1682)) [@HesAnEasyCoder](https://github.com/HesAnEasyCoder)
+- Update gnn-fsi-model-card.md ([#1681](https://github.com/nv-morpheus/Morpheus/pull/1681)) [@HesAnEasyCoder](https://github.com/HesAnEasyCoder)
+- Update phishing-model-card.md ([#1680](https://github.com/nv-morpheus/Morpheus/pull/1680)) [@HesAnEasyCoder](https://github.com/HesAnEasyCoder)
+- Update examples to execute from the root of the repo ([#1674](https://github.com/nv-morpheus/Morpheus/pull/1674)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update dfp-model-card.md ([#1644](https://github.com/nv-morpheus/Morpheus/pull/1644)) [@HesAnEasyCoder](https://github.com/HesAnEasyCoder)
+
+## 🚀 New Features
+
+- Add ransomware model to devcontainer ([#1785](https://github.com/nv-morpheus/Morpheus/pull/1785)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Introduce multi-endpoint servers and health check endpoints to HttpServerSourceStage ([#1734](https://github.com/nv-morpheus/Morpheus/pull/1734)) [@jadu-nv](https://github.com/jadu-nv)
+- Support `ControlMessage` for `Preprocess` and `PostProcess` stages ([#1623](https://github.com/nv-morpheus/Morpheus/pull/1623)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Update CI to install DOCA and build Morpheus DOCA components. ([#1622](https://github.com/nv-morpheus/Morpheus/pull/1622)) [@cwharris](https://github.com/cwharris)
+- DOCA stage split: source + convert ([#1617](https://github.com/nv-morpheus/Morpheus/pull/1617)) [@e-ago](https://github.com/e-ago)
+- `ControlMessage` support in `TritonInferenceStage` and `PreallocatorMixin` ([#1610](https://github.com/nv-morpheus/Morpheus/pull/1610)) [@cwharris](https://github.com/cwharris)
+
+## 🛠️ Improvements
+
+- Merge Agent Morpheus changes ([#1760](https://github.com/nv-morpheus/Morpheus/pull/1760)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix `RabbitMQ` output path ([#1756](https://github.com/nv-morpheus/Morpheus/pull/1756)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Misc improvements for sid_visualization example ([#1751](https://github.com/nv-morpheus/Morpheus/pull/1751)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Auditing the dependencies and syncing `dependencies.yaml` with `meta.yaml` ([#1743](https://github.com/nv-morpheus/Morpheus/pull/1743)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Always run the PR builder step even if others are cancelled ([#1736](https://github.com/nv-morpheus/Morpheus/pull/1736)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Enable Python install by default in `compile.sh` ([#1724](https://github.com/nv-morpheus/Morpheus/pull/1724)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Generate deprecation warning for `MultiMessage` ([#1719](https://github.com/nv-morpheus/Morpheus/pull/1719)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Improve the logging tests and add support for resetting the logger ([#1716](https://github.com/nv-morpheus/Morpheus/pull/1716)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Allow passing `metadata` to `LangChainAgentNode._run_single` ([#1710](https://github.com/nv-morpheus/Morpheus/pull/1710)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Support passing a custom parser to `HttpServerSourceStage` and `HttpClientSourceStage` stages ([#1705](https://github.com/nv-morpheus/Morpheus/pull/1705)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Use EnvConfigValue for passing env-configured arguments to services ([#1704](https://github.com/nv-morpheus/Morpheus/pull/1704)) [@cwharris](https://github.com/cwharris)
+- Remove unused MLflow client arg from DFP inference implementations ([#1700](https://github.com/nv-morpheus/Morpheus/pull/1700)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Add group by column stage ([#1699](https://github.com/nv-morpheus/Morpheus/pull/1699)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix non-deterministic output of gnn sampler ([#1677](https://github.com/nv-morpheus/Morpheus/pull/1677)) [@tzemicheal](https://github.com/tzemicheal)
+- Ensuring consistent use of the export macro `MORPHEUS_EXPORT` ([#1672](https://github.com/nv-morpheus/Morpheus/pull/1672)) [@aserGarcia](https://github.com/aserGarcia)
+- Update devcontainer to use latest build utils ([#1658](https://github.com/nv-morpheus/Morpheus/pull/1658)) [@cwharris](https://github.com/cwharris)
+- Update `ControlMessage` to hold arbitrary Python objects &amp; update `MessageMeta` to copy &amp; slice ([#1637](https://github.com/nv-morpheus/Morpheus/pull/1637)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Use conda env create --yes instead of --force ([#1636](https://github.com/nv-morpheus/Morpheus/pull/1636)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Misc CI improvements ([#1618](https://github.com/nv-morpheus/Morpheus/pull/1618)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Support non-json serializable objects in LLMContext ([#1589](https://github.com/nv-morpheus/Morpheus/pull/1589)) [@dagardner-nv](https://github.com/dagardner-nv)
+
 # Morpheus 24.03.02 (24 Apr 2024)
 
 ## 🐛 Bug Fixes

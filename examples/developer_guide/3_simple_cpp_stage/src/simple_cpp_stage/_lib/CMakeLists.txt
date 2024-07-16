@@ -22,6 +22,8 @@ morpheus_add_pybind11_module(pass_thru_cpp
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   LINK_TARGETS
     morpheus
+    CUDA::nvtx3
+    cudf::cudf
 )
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
