@@ -51,7 +51,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 ```
 
 ## ABP Detection Pipeline
-Use Morpheus to run the Anomalous Behavior Profiling Detection Pipeline with the pcap data. A pipeline has been configured in `run.py` with several command line options:
+Use Morpheus to run the Anomalous Behavior Profiling Detection Pipeline with the PCAP data. A pipeline has been configured in `run.py` with several command line options:
 
 From the root of the Morpheus repo, run:
 ```bash
