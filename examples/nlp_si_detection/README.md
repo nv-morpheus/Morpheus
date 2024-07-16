@@ -46,7 +46,7 @@ In this example, we will be using Morpheus' provided NLP SI Detection model. Thi
 
 ### The Dataset
 
-The dataset that this workflow was designed to process is PCAP, or Packet Capture data, that is serialized into a JSON format. Several different applications are capable of capurting this type of network traffic. Each packet contains information about the source, destination, timestamp, and body of the packet, among other things. For example, below is a single packet that is from a HTTP POST request to cumulusnetworks.com:
+The dataset that this workflow was designed to process is PCAP, or Packet Capture data, that is serialized into a JSON format. Several different applications are capable of capturing this type of network traffic. Each packet contains information about the source, destination, timestamp, and body of the packet, among other things. For example, below is a single packet that is from a HTTP POST request to cumulusnetworks.com:
 
 ```json
 {
@@ -199,16 +199,16 @@ Inference Rate[Complete]: 93085inf [00:07, 12673.63inf/s]
 ```
 
 The output file `detections.jsonlines` will contain the original PCAP messages with the following additional fields added:
-* address
-* bank_acct
-* credit_card
-* email
-* govt_id
-* name
-* password
-* phone_num
-* secret_keys
-* user
+* `address`
+* `bank_acct`
+* `credit_card`
+* `email`
+* `govt_id`
+* `name`
+* `password`
+* `phone_num`
+* `secret_keys`
+* `user`
 
 The value for these fields will be a `1` indicating a detection or a `0` indicating no detection. An example row with a detection is:
 ```json
