@@ -17,7 +17,7 @@ limitations under the License.
 
 ## File to DataFrame Module
 
-This module reads data from the batched files into a DataFrame after receiving input from the "FileBatcher" module. In
+This module reads data from the batched files into a DataFrame after receiving input from the `FileBatcher` module. In
 addition to loading data from the disk, it has the ability to load the file content from S3 buckets.
 
 ### Configurable Parameters
@@ -26,7 +26,7 @@ addition to loading data from the disk, it has the ability to load the file cont
 |-------------------------|------------|--------------------------------------------|----------------------|---------------|
 | `cache_dir`             | string     | Directory to cache the rolling window data | `"/path/to/cache"`     | `-`           |
 | `file_type`             | string     | Type of the input file                     | `"csv"`                | `"JSON"`      |
-| `filter_null`           | boolean    | Whether to filter out null values          | `True`                 | `false`       |
+| `filter_null`           | boolean    | Whether to filter out null values          | `True`                 | `False`       |
 | `parser_kwargs`         | dictionary | Keyword arguments to pass to the parser    | `{"delimiter": ","}`   | `-`           |
 | `schema`                | dictionary | Schema of the input data                   | Refer Below            | `-`           |
 | `timestamp_column_name` | string     | Name of the timestamp column               | `"timestamp"`          | `-`           |

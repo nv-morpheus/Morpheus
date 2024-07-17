@@ -36,7 +36,7 @@ This module function sets up modular Digital Fingerprinting Pipeline instance.
 | `mlflow_writer_options`      | `dict` | Options for the MLflow model writer            | Refer Below            | `-`           |
 | `preprocessing_options`      | `dict` | Options for preprocessing the data             | Refer Below            | `-`           |
 | `stream_aggregation_options` | `dict` | Options for aggregating the data by stream     | Refer Below            | `-`           |
-| `timestamp_column_name`      | `str`  | Name of the timestamp column used in the data  | `"my_timestamp"`       | `timestamp`   |
+| `timestamp_column_name`      | `str`  | Name of the timestamp column used in the data  | `"my_timestamp"`       | `"timestamp"`   |
 | `user_splitting_options`     | `dict` | Options for splitting the data by user         | Refer Below            | `-`           |
 
 ### Inference Options Parameters
@@ -46,11 +46,11 @@ This module function sets up modular Digital Fingerprinting Pipeline instance.
 | `batching_options`           | `dict` | Options for batching the data                  | Refer Below            | `-`            |
 | `cache_dir`                  | `str`  | Directory to cache the rolling window data     | `"/path/to/cache/dir"` | `"./.cache"`     |
 | `detection_criteria`         | `dict` | Criteria for filtering detections              | Refer Below            | `-`            |
-| `fallback_username`          | `str`  | User ID to use if user ID not found            | `"generic_user"`       | `generic_user` |
+| `fallback_username`          | `str`  | User ID to use if user ID not found            | `"generic_user"`       | `"generic_user"`|
 | `inference_options`          | `dict` | Options for the inference module               | Refer Below            | `-`            |
 | `model_name_formatter`       | `str`  | Format string for the model name               | `"model_{timestamp}"`  | `[Required]`   |
 | `num_output_ports`           | `int`  | Number of output ports for the module          | `3`                    | `-`            |
-| `timestamp_column_name`      | `str`  | Name of the timestamp column in the input data | `"timestamp"`          | `timestamp`    |
+| `timestamp_column_name`      | `str`  | Name of the timestamp column in the input data | `"timestamp"`          | `"timestamp"`    |
 | `stream_aggregation_options` | `dict` | Options for aggregating the data by stream     | Refer Below            | `-`            |
 | `user_splitting_options`     | `dict` | Options for splitting the data by user         | Refer Below            | `-`            |
 | `write_to_file_options`      | `dict` | Options for writing the detections to a file   | Refer Below            | `-`            |
