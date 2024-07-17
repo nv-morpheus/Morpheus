@@ -6,6 +6,7 @@ Conda
 Dev
 GPU
 GPUs
+Milvus
 Morpheus
 NeMo
 NIM
