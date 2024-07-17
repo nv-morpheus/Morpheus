@@ -48,7 +48,7 @@ All environments require additional Conda packages which can be installed with e
 ### Purpose
 The Morpheus LLM Agents pipeline is designed to seamlessly integrate Large Language Model (LLM) agents into the Morpheus framework. This implementation focuses on efficiently executing multiple LLM queries using the ReAct agent type, which is tailored for versatile task handling. The use of the LangChain library streamlines the process, minimizing the need for additional system migration.
 
-Within the Morpheus LLM Agents context, these agents act as intermediaries, facilitating communication between users and the LLM service. Their primary role is to execute tools and manage multiple LLM queries, enhancing the LLM's capabilities in solving complex tasks. Agents utilize various tools, such as internet searches, VDB retrievers, calculators, and more, to assist in resolving inquiries, enabling seamless execution of tasks and efficient handling of diverse queries.
+Within the Morpheus LLM Agents context, these agents act as intermediaries, facilitating communication between users and the LLM service. Their primary role is to execute tools and manage multiple LLM queries, enhancing the LLMs capabilities in solving complex tasks. Agents utilize various tools, such as internet searches, VDB retrievers, calculators, and more, to assist in resolving inquiries, enabling seamless execution of tasks and efficient handling of diverse queries.
 
 ### LLM Service
 This pipeline supports various LLM services compatible with our LLMService interface, including OpenAI, NeMo, or local execution using llama-cpp-python. In this example, we'll focus on using OpenAI, chosen for its compatibility with the ReAct agent architecture.
@@ -201,7 +201,7 @@ python examples/llm/main.py agents kafka [OPTIONS]
     - **Default**: `gpt-3.5-turbo-instruct`
 
 - `--bootstrap_servers TEXT`
-    - **Description**: The Kafka bootstrap servers to connect to, if undefined the client will attempt to infer the bootrap servers from the environment.
+    - **Description**: The Kafka bootstrap servers to connect to, if undefined the client will attempt to infer the bootstrap servers from the environment.
     - **Default**: `auto`
 
 - `--topic TEXT`
