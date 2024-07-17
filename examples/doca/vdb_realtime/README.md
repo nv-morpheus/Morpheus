@@ -21,7 +21,7 @@ In this example, the DOCA stages are used to receive packets from the network an
 
 ## Run Milvus
 
-Download the milvus docker-compose file from the [Milvus GitHub repository]()
+Download the Milvus docker-compose file from the [Milvus GitHub repository](https://github.com/milvus-io/milvus)
 
 ```bash
 mkdir milvus
