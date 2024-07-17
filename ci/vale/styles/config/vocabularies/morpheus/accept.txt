@@ -7,6 +7,7 @@ Conda
 [Cc]yber
 [Cc]ybersecurity
 Databricks
+[Dd]eserialize
 Dev
 GPU(s?)
 Grafana
@@ -20,6 +21,7 @@ NIM(s?)
 NVIDIA
 PCIe
 PDF(s?)
+[Pp]reprocess
 [Pp]retrained
 [Rr]epo
 [Uu]ploader
