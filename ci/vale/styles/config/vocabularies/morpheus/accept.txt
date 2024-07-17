@@ -11,8 +11,10 @@ LLM(s?)
 Milvus
 Morpheus
 NeMo
+NIC
 NIM(s?)
 NVIDIA
+PCIe
 PDF(s?)
 [Pp]retrained
 [Rr]epo
