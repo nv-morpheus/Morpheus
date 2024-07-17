@@ -5,13 +5,12 @@ Conda
 [Cc]yber
 [Cc]ybersecurity
 Dev
-GPU
-GPUs
+GPU(s?)
+LLM(s?)
 Milvus
 Morpheus
 NeMo
-NIM
-NIMs
+NIM(s?)
 NVIDIA
 PDF(s?)
 [Pp]retrained
