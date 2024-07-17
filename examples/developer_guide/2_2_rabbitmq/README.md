@@ -36,7 +36,7 @@ docker run --rm -it --hostname my-rabbit -p 15672:15672 -p 5672:5672 rabbitmq:3-
 The image can be verified with the web management console by opening http://localhost:15672 in a web browser. Enter "guest" for both the username and the password.
 
 ## Installing Pika
-The `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages use the [pika](https://pika.readthedocs.io/en/stable/#) RabbitMQ client for Python. To install this into the current env run:
+The `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages use the [pika](https://pika.readthedocs.io/en/stable/#) RabbitMQ client for Python. To install this into the current environment run:
 ```bash
 pip install -r examples/developer_guide/2_2_rabbitmq/requirements.txt
 ```
