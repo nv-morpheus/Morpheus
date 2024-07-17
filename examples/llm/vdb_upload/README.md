@@ -30,7 +30,7 @@ limitations under the License.
         - [Milvus Service](#milvus-service)
         - [Triton Service](#triton-service)
     - [Running the Morpheus Pipeline](#running-the-morpheus-pipeline)
-    - [Options for vdb_upload Command](#options-for-vdb_upload-command)
+    - [Options for `vdb_upload` Command](#options-for-vdb_upload-command)
     - [Exporting and Deploying a Different Model from Huggingface](#exporting-and-deploying-a-different-model-from-huggingface)
 
 ## Supported Environments
@@ -161,7 +161,7 @@ To retrieve models from LFS run the following:
 ### Running the Morpheus Pipeline
 
 The top-level entry point for each of the LLM example pipelines is examples/llm/main.py. This script accepts a set of
-options and a pipeline to run. For the purposes of this document, we'll focus on the vdb_upload pipeline option, which
+options and a pipeline to run. For the purposes of this document, we'll focus on the `vdb_upload` pipeline option, which
 incorporates various functionalities like handling RSS and filesystem sources, embedding configurations, and vector
 database (VDB) settings.
 
