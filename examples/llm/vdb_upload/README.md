@@ -100,9 +100,7 @@ The pipeline is composed of three primary components:
    their embeddings. Leveraging the model `all-MiniLM-L6-v2` from Hugging Face, the text data is transformed into
    embeddings with a dimension of 384.
 
-3. **Vector Database Uploader**: Post embedding generation, this module takes the embeddings alongside their associated
-   metadata and pushes them to a Vector Database (VDB). For our implementation, Milvus, a GPU-accelerated vector
-   database, has been chosen.
+3. **Vector Database Uploader**: Post embedding generation, this module takes the embeddings alongside their associated metadata and pushes them to a Vector Database (VDB). For our implementation, Milvus, a GPU-accelerated vector database, has been chosen.
 
 ### Rationale Behind Design Decisions
 
@@ -314,11 +312,9 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
      sentence-transformers/paraphrase-multilingual-mpnet-base-v2
     ```
 
-### Running the Langchain Pipeline (Optional)
+### Running the LangChain Pipeline (Optional)
 
-- Optional guide for running the Langchain pipeline, if applicable.## Developer Docs
-
-- A link to the developer documentation where the README.md is also linked.
+- Optional guide for running the LangChain pipeline, if applicable.
 
 > **Note**: This pipeline will, by default, run continuously repeatedly polling the configured RSS sources. To run for a
 > fixed number of iterations, add the `--stop_after=N` flag.
