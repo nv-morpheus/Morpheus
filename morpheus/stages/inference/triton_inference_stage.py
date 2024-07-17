@@ -616,7 +616,7 @@ class TritonInferenceWorker(InferenceWorker):
 
     # pylint: enable=invalid-name
 
-    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: MultiInferenceMessage | ControlMessage, callback: typing.Callable[[TensorMemory], None]):
         """
         This function sends batch of events as a requests to Triton inference server using triton client API.
 
@@ -630,11 +630,18 @@ class TritonInferenceWorker(InferenceWorker):
         """
         mem: InputWrapper = self._mem_pool.borrow_obj()
 
-        inputs: typing.List[tritonclient.InferInput] = [
-            mem.build_input(input.name,
-                            batch.get_input(input.mapped_name),
-                            force_convert_inputs=self._force_convert_inputs) for input in self._inputs.values()
-        ]
+        if isinstance(batch, MultiInferenceMessage):
+            inputs: typing.List[tritonclient.InferInput] = [
+                mem.build_input(input.name,
+                                batch.get_input(input.mapped_name),
+                                force_convert_inputs=self._force_convert_inputs) for input in self._inputs.values()
+            ]
+        elif isinstance(batch, ControlMessage):
+            inputs: typing.List[tritonclient.InferInput] = [
+                mem.build_input(input.name,
+                                batch.tensors().get_tensor(input.mapped_name),
+                                force_convert_inputs=self._force_convert_inputs) for input in self._inputs.values()
+            ]
 
         outputs = [tritonclient.InferRequestedOutput(output.name) for output in self._outputs.values()]
 

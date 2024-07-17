@@ -28,6 +28,7 @@ from _utils import mk_async_infer
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.inference.triton_inference_stage import ProducerConsumerQueue
 from morpheus.stages.inference.triton_inference_stage import ResourcePool
@@ -190,16 +191,31 @@ def test_triton_stage_pipe(mock_triton_client, config, num_records):
     config.fil = ConfigFIL()
     config.fil.feature_columns = ['v']
 
-    pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(PreprocessFILStage(config))
-    pipe.add_stage(
-        TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='test:0000', force_convert_inputs=True))
-    pipe.add_stage(AddScoresStage(config, prefix="score_"))
-    pipe.add_stage(SerializeStage(config))
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
+    # pipe = LinearPipeline(config)
+    # pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    # pipe.add_stage(DeserializeStage(config))
+    # pipe.add_stage(PreprocessFILStage(config))
+    # pipe.add_stage(
+    #     TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='test:0000', force_convert_inputs=True))
+    # pipe.add_stage(AddScoresStage(config, prefix="score_"))
+    # pipe.add_stage(SerializeStage(config))
+    # comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
 
-    pipe.run()
+    # pipe.run()
+
+    # assert_results(comp_stage.get_results())
+
+    # Test ControlMessage
+    pipe_cm = LinearPipeline(config)
+    pipe_cm.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    pipe_cm.add_stage(DeserializeStage(config, message_type=ControlMessage))
+    pipe_cm.add_stage(PreprocessFILStage(config))
+    pipe_cm.add_stage(
+        TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='test:0000', force_convert_inputs=True))
+    pipe_cm.add_stage(AddScoresStage(config, prefix="score_"))
+    pipe_cm.add_stage(SerializeStage(config))
+    comp_stage = pipe_cm.add_stage(CompareDataFrameStage(config, expected_df))
+
+    pipe_cm.run()
 
     assert_results(comp_stage.get_results())

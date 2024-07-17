@@ -23,6 +23,7 @@ from mrc.core import operators as ops
 
 import cudf
 
+import morpheus._lib.messages as _messages
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.config import Config
@@ -100,11 +101,12 @@ class InferenceWorker:
             return output_message
         if isinstance(msg, ControlMessage):
             dims = self.calc_output_dims(msg)
-            output_dims = (msg.mess_count, *dims[1:])
+            output_dims = (msg.payload().count, *dims[1:])
 
-            memory = TensorMemory(count=output_dims[0], tensors={'probs': cp.zeros(output_dims)})
-
-            output_message = MultiResponseMessage.from_message(msg, memory=memory)
+            memory = _messages.TensorMemory(count=output_dims[0], tensors={'probs': cp.zeros(output_dims)})
+            output_message = ControlMessage(msg)
+            output_message.payload(msg.payload())
+            output_message.tensors(memory)
 
             return output_message
 
@@ -411,7 +413,10 @@ class InferenceStage(MultiMessageStage):
             out_resp = []
 
             for start, stop in out_batches:
-                out_resp.append(msg.payload().get_slice(start, stop))
+                out_msg = ControlMessage(msg)
+                out_msg.payload(msg.payload().get_slice(start, stop))
+                out_msg.tensors(msg.tensors())
+                out_resp.append(out_msg)
 
             assert len(out_resp) > 0
 
@@ -453,13 +458,15 @@ class InferenceStage(MultiMessageStage):
             return MultiResponseMessage.from_message(inf, memory=memory, offset=seq_offset, count=seq_count)
 
         if isinstance(output, ControlMessage):
-            probs = output.tensors().get_tensor("probs")
+            memory = output.tensors()
+
+            probs = memory.get_tensor("probs")
             resp_probs = res.get_tensor("probs")
 
             seq_ids = inf.tensors().get_tensor("seq_ids")
 
             seq_offset = seq_ids[0, 0].item()
-            seq_count = (seq_ids[-1, 0].item() + 1 - seq_offset)
+            seq_count = seq_ids[-1, 0].item() + 1 - seq_offset
 
             # Two scenarios:
             if (inf.payload().count == inf.tensors().count):
@@ -478,5 +485,6 @@ class InferenceStage(MultiMessageStage):
 
             msg = ControlMessage(inf)
             msg.payload(inf.payload())
-            msg.tensors(output.tensors())
+            msg.tensors(memory)
+
             return msg
