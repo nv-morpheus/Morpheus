@@ -28,7 +28,7 @@ from morpheus.messages import TensorMemory
 from morpheus.messages.multi_inference_ae_message import MultiInferenceAEMessage
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
-from morpheus.messages.control_message import ControlMessage
+from morpheus.messages import ControlMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -84,7 +84,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
             dims = self.calc_output_dims(x)
             output_dims = (x.payload().count, *dims[1:])
             x.tensors(_messages.TensorMemory(count=output_dims[0], tensors={"probs": cp.zeros(output_dims)}))
-            
+
             return x
 
     def calc_output_dims(self, x: MultiInferenceAEMessage | ControlMessage) -> typing.Tuple:
