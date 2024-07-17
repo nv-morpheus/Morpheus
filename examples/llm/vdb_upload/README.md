@@ -212,7 +212,7 @@ python examples/llm/main.py vdb_upload pipeline \
 ```bash
 python examples/llm/main.py vdb_upload pipeline \
   --source_type filesystem \
-  --file_source "./morpheus/data/*" \
+  --file_source="./examples/data/vdb_upload/*.jsonlines" \
   --enable_monitors \
   --embedding_model_name all-MiniLM-L6-v2
 ```
@@ -222,7 +222,7 @@ python examples/llm/main.py vdb_upload pipeline \
 ```bash
 python examples/llm/main.py vdb_upload pipeline \
   --source_type rss --source_type filesystem \
-  --file_source "./morpheus/data/*" \
+  --file_source="./examples/data/vdb_upload/*.jsonlines" \
   --interval_secs 600 \
   --enable_cache \
   --enable_monitors \
