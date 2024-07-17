@@ -1,5 +1,6 @@
 [Bb]oolean
 [Cc]hatbot(s?)
+CMake
 Conda
 [Cc]ryptocurrenc[y|ies]
 [Cc]yber
