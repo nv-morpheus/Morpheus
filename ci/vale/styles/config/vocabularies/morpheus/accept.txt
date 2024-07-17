@@ -1,3 +1,4 @@
+[Aa]utoencoder
 [Bb]oolean
 [Cc]hatbot(s?)
 CMake

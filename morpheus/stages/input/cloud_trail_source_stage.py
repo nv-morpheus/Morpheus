@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 @register_stage("from-cloudtrail", modes=[PipelineModes.AE])
 class CloudTrailSourceStage(AutoencoderSourceStage):
     """
-    Load messages from a Cloudtrail directory.
+    Load messages from a CloudTrail directory.
 
     """
 
