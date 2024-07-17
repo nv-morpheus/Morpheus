@@ -31,7 +31,7 @@ limitations under the License.
         - [Triton Service](#triton-service)
     - [Running the Morpheus Pipeline](#running-the-morpheus-pipeline)
     - [Options for `vdb_upload` Command](#options-for-vdb_upload-command)
-    - [Exporting and Deploying a Different Model from Huggingface](#exporting-and-deploying-a-different-model-from-huggingface)
+    - [Exporting and Deploying a Different Model from Hugging Face](#exporting-and-deploying-a-different-model-from-hugging-face)
 
 ## Supported Environments
 All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-121_arch-x86_64.yaml` or `conda/environments/examples_cuda-121_arch-x86_64.yaml` environment files.
@@ -71,7 +71,7 @@ tasks:
 ### Embedding Model
 
 - The pipeline can accommodate various embedding models that transform text into vectors of floating-point numbers.
-  Several models from Huggingface, such as `paraphrase-multilingual-mpnet-base-v2`, `e5-large-v2`,
+  Several models from Hugging Face, such as `paraphrase-multilingual-mpnet-base-v2`, `e5-large-v2`,
   and `all-mpnet-base-v2`, have been evaluated for compatibility.
 
 - For the purposes of this demonstration, the model `all-MiniLM-L6-v2` is employed. This model is included via LFS
@@ -97,7 +97,7 @@ The pipeline is composed of three primary components:
    the feeds, perform preliminary data cleaning, and standardize the format for subsequent steps.
 
 2. **Embedding Generator**: This is the heart of the pipeline, which takes the preprocessed text chunks and computes
-   their embeddings. Leveraging the model `all-MiniLM-L6-v2` from Huggingface, the text data is transformed into
+   their embeddings. Leveraging the model `all-MiniLM-L6-v2` from Hugging Face, the text data is transformed into
    embeddings with a dimension of 384.
 
 3. **Vector Database Uploader**: Post embedding generation, this module takes the embeddings alongside their associated
@@ -241,13 +241,13 @@ The `vdb_upload` command has its own set of options and commands:
 - `langchain`
 - `pipeline`
 
-### Exporting and Deploying a Different Model from Huggingface
+### Exporting and Deploying a Different Model from Hugging Face
 
-If you're looking to incorporate a different embedding model from Huggingface into the pipeline, follow the steps below
+If you're looking to incorporate a different embedding model from Hugging Face into the pipeline, follow the steps below
 using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an example:
 
 1. **Identify the Desired Model**:
-    - Head over to the [Huggingface Model Hub](https://huggingface.co/models) and search for the model you want. For
+    - Head over to the [Hugging Face Model Hub](https://huggingface.co/models) and search for the model you want. For
       this example, we are looking at `e5-large-v2`.
 
 2. **Run the Pipeline Call with the Chosen Model**:
@@ -263,7 +263,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
       ```text
       requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url:
       ```
-      This typically means the model name you provided does not match the one available on Huggingface. Double-check
+      This typically means the model name you provided does not match the one available on Hugging Face. Double-check
       the model name and try again.
 
 4. **Confirm Successful Model Export**:
