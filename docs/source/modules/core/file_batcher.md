@@ -15,7 +15,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+<!-- Allow the name "Batcher" without allowing it everywhere -->
+<!-- vale off -->
 ## File Batcher Module
+<!-- vale on -->
 
 This module loads the input files, removes files that are older than the chosen window of time, and then groups the
 remaining files by period that fall inside the window.
@@ -35,7 +38,7 @@ remaining files by period that fall inside the window.
 
 | Key                      | Type            | Description                         | Example Value                               | Default Value              |
 |--------------------------|-----------------|-------------------------------------|---------------------------------------------|----------------------------|
-| `end_time`               | datetime/string | Endtime of the time window          | "2023-03-14T23:59:59"                       | `None`                     |
+| `end_time`               | datetime/string | End of the time window          | "2023-03-14T23:59:59"                       | `None`                     |
 | `iso_date_regex_pattern` | string          | Regex pattern for ISO date matching | "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" | `<iso_date_regex_pattern>` |
 | `parser_kwargs`          | dictionary      | Additional arguments for the parser | {}                                          | `{}`                       |
 | `period`                 | string          | Time period for grouping files      | "1d"                                        | `"D"`                      |
