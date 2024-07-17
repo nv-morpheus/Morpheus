@@ -17,11 +17,11 @@ limitations under the License.
 
 ## REST to DataFrame Loader
 
-[DataLoader](../../modules/core/data_loader.md) module is used to load data files content into a dataframe using custom loader function. This loader function can be configured to send REST requests with customized parameters to retrieve data from endpoints. See below for the specific configuration format.
+[DataLoader](../../modules/core/data_loader.md) module is used to load data files content into a DataFrame using custom loader function. This loader function can be configured to send REST requests with customized parameters to retrieve data from endpoints. See below for the specific configuration format.
 
 ### Example Loader Configuration
 
-Using below configuration while loading DataLoader module, specifies that the DataLoader module should utilize the `rest` loader when loading files into a dataframe.
+Using below configuration while loading DataLoader module, specifies that the DataLoader module should utilize the `rest` loader when loading files into a DataFrame.
 
 ```json
 {
@@ -40,7 +40,7 @@ The parameters that can be configured for this specific loader at load task leve
 | Parameter   | Type   | Description                         | Example Value | Default Value |
 | ----------- | ------ | ----------------------------------- | ------------- | ------------- |
 | `loader_id` | string | Unique identifier for the loader    | "rest"        | `[Required]`  |
-| `strategy`  | string | Strategy for constructing dataframe | "aggregate"   | `[Required]`  |
+| `strategy`  | string | Strategy for constructing DataFrame | "aggregate"   | `[Required]`  |
 | `queries`   | array  | parameters of REST queries          | See below     | `[Required]`  |
 
 

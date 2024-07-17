@@ -173,9 +173,9 @@ The module itself consists of a series of chained sub-modules, which are connect
 - `file_batcher_module`
     - Responsible for batching files, either into a single control message in the case of an encapsulated training message, or into a series of control messages in the of streaming data.
 - `file_to_df_dataloader_module`
-    - Responsible for file retrieval and insertion into a cuDF dataframe.
+    - Responsible for file retrieval and insertion into a cuDF DataFrame.
 - `dfp_split_users_module`
-    - Responsible for splitting the dataframe into a series of dataframes, one per user.
+    - Responsible for splitting the DataFrame into a series of dataframes, one per user.
 
 For a complete reference, refer to: [DFP Preproc](../../modules/examples/digital_fingerprinting/dfp_preproc.md)
 
@@ -227,7 +227,7 @@ def file_batcher(builder: mrc.Builder):
 
 Source: `morpheus/loaders/file_to_df_loader.py`
 
-This is an instance of the new DataLoader module, utilizing a pre-defined 'file_to_df' style loader. The module is used to process 'load' tasks that reference files which need to be retrieved, possibly cached, and then loaded into a cuDF dataframe with is set as the control message payload.
+This is an instance of the new DataLoader module, utilizing a pre-defined 'file_to_df' style loader. The module is used to process 'load' tasks that reference files which need to be retrieved, possibly cached, and then loaded into a cuDF DataFrame with is set as the control message payload.
 
 For a complete reference, refer to: [DataLoader Module](../../modules/core/data_loader.md)
 
@@ -275,7 +275,7 @@ Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_dat
 
 The `dfp_data_prep` module is responsible for preparing data for either inference or model training. The module requires a defined schema for data preparation.
 
-The main functionality of the module is in the `process_features` function. For each control message containing data, the function processes the columns of the data according to the given schema. The processed dataframe is then applied to the control message payload.
+The main functionality of the module is in the `process_features` function. For each control message containing data, the function processes the columns of the data according to the given schema. The processed DataFrame is then applied to the control message payload.
 
 For a complete reference, refer to: [DFP Data Prep](../../modules/examples/digital_fingerprinting/dfp_data_prep.md)
 
@@ -462,7 +462,7 @@ Source: `morpheus/modules/serialize.py`
 
 The serialize module function is responsible for filtering columns from a `MultiMessage` object and emitting a `MessageMeta` object.
 
-The `convert_to_df` function converts a dataframe to JSON lines. It takes a `MultiMessage` instance, `include_columns` (a pattern for columns to include), `exclude_columns` (a list of patterns for columns to exclude), and `columns` (a list of columns to include). The function filters the columns of the input dataframe based on the include and exclude patterns and retrieves the metadata of the filtered columns.
+The `convert_to_df` function converts a DataFrame to JSON lines. It takes a `MultiMessage` instance, `include_columns` (a pattern for columns to include), `exclude_columns` (a list of patterns for columns to exclude), and `columns` (a list of columns to include). The function filters the columns of the input DataFrame based on the include and exclude patterns and retrieves the metadata of the filtered columns.
 
 The module function compiles the include and exclude patterns into regular expressions. It then creates a node using the `convert_to_df` function with the compiled include and exclude patterns and the specified columns.
 

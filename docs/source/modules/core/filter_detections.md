@@ -19,8 +19,8 @@ limitations under the License.
 
 Filter message by a classification threshold.
 
-The Filter Detections module is used to filter rows from a dataframe based on values in a tensor using a specified
-criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or equal
+The Filter Detections module is used to filter rows from a DataFrame based on values in a tensor using a specified
+criteria. Rows in the `meta` DataFrame are excluded if their associated value in the `probs` array is less than or equal
 to `threshold`.
 
 ### Configurable Parameters

@@ -17,13 +17,13 @@ limitations under the License.
 
 ## File to DataFrame Loader
 
-[DataLoader](../../modules/core/data_loader.md) module is used to load data files content into a dataframe using custom loader function. This loader function can be configured to use different processing methods, such as single-threaded, dask, or dask_thread, as determined by the `MORPHEUS_FILE_DOWNLOAD_TYPE` environment variable. When download_method starts with "dask," a dask client is created to process the files, otherwise, a single thread is used.
+[DataLoader](../../modules/core/data_loader.md) module is used to load data files content into a DataFrame using custom loader function. This loader function can be configured to use different processing methods, such as single-threaded, dask, or dask_thread, as determined by the `MORPHEUS_FILE_DOWNLOAD_TYPE` environment variable. When download_method starts with "dask," a dask client is created to process the files, otherwise, a single thread is used.
 
-After processing, the resulting dataframe is cached using a hash of the file paths. This loader also has the ability to load file content from S3 buckets, in addition to loading data from the disk.
+After processing, the resulting DataFrame is cached using a hash of the file paths. This loader also has the ability to load file content from S3 buckets, in addition to loading data from the disk.
 
 ### Example Loader Configuration
 
-Using below configuration while loading DataLoader module, specifies that the DataLoader module should utilize the `file_to_df` loader when loading files into a dataframe.
+Using below configuration while loading DataLoader module, specifies that the DataLoader module should utilize the `file_to_df` loader when loading files into a DataFrame.
 
 ```json
 {

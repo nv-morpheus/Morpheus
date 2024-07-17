@@ -283,8 +283,8 @@ Commands:
   deserialize     Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
   dropna          Drop null data entries from a DataFrame.
   filter          Filter message by a classification threshold.
-  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a dataframe. It normalizes nested json messages and arranges them
-                  into a dataframe by snapshot and source.
+  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a DataFrame. It normalizes nested json messages and arranges them
+                  into a DataFrame by snapshot and source.
   from-file       Load messages from a file.
   from-kafka      Load messages from a Kafka cluster.
   inf-identity    Perform inference for testing that performs a no-op.
@@ -315,7 +315,7 @@ Commands:
   delay            (Deprecated) Delay results for a certain duration.
   filter           Filter message by a classification threshold.
   from-azure       Source stage is used to load Azure Active Directory messages.
-  from-cloudtrail  Load messages from a Cloudtrail directory.
+  from-cloudtrail  Load messages from a CloudTrail directory.
   from-duo         Source stage is used to load Duo Authentication messages.
   inf-pytorch      Perform inference with PyTorch.
   inf-triton       Perform inference with Triton Inference Server.

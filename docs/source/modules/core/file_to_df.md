@@ -17,7 +17,7 @@ limitations under the License.
 
 ## File to DataFrame Module
 
-This module reads data from the batched files into a dataframe after receiving input from the "FileBatcher" module. In
+This module reads data from the batched files into a DataFrame after receiving input from the "FileBatcher" module. In
 addition to loading data from the disk, it has the ability to load the file content from S3 buckets.
 
 ### Configurable Parameters

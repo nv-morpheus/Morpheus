@@ -364,7 +364,7 @@ The {py:obj}`~morpheus.stages.postprocess.filter_detections_stage.FilterDetectio
 | Name | Type | Default | Description |
 | --- | --- | --- | :-- |
 | `threshold` | `float` | `0.5` | The threshold value above which logs are considered to be anomalous. The default is `0.5`; however, the DFP pipeline uses a value of `2.0`. All normal logs will be filtered out and anomalous logs will be passed on. |
-| `copy` | `bool` | `True` | When the `copy` argument is `True` (default), rows that meet the filter criteria are copied into a new dataframe. When `False` sliced views are used instead. This is a performance optimization, and has no functional impact. |
+| `copy` | `bool` | `True` | When the `copy` argument is `True` (default), rows that meet the filter criteria are copied into a new DataFrame. When `False` sliced views are used instead. This is a performance optimization, and has no functional impact. |
 | `filter_source` | `FilterSource` | `FilterSource.Auto` | Indicates if the filter criteria exists in an output tensor (`FilterSource.TENSOR`) or a column in a DataFrame (`FilterSource.DATAFRAME`). |
 | `field_name` | `str` | `probs` | Name of the tensor (`filter_source=FilterSource.TENSOR`) or DataFrame column (`filter_source=FilterSource.DATAFRAME`) to use as the filter criteria. |
 
