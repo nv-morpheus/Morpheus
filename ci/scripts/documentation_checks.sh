@@ -19,10 +19,10 @@ source ${SCRIPT_DIR}/common.sh
 
 set +e
 
-# Ignore the viz directory as it is a submodule
+# Ignore the sid & DFP viz directories as they're symlinks into a submodule
 # Intentionally not including CHANGELOG.md as it immutable
 vale \
-    --glob="!examples/digital_fingerprinting/visualization/viz/*" \
+    --glob='!examples/{digital_fingerprinting/visualization,sid_visualization}/viz/*' \
     examples \
     CONTRIBUTING.md \
     README.md \
