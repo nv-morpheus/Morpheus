@@ -1,4 +1,5 @@
 [Bb]oolean
+[Cc]hatbot(s?)
 Conda
 [Cc]ryptocurrenc[y|ies]
 [Cc]yber
@@ -12,6 +13,8 @@ NeMo
 NIM
 NIMs
 NVIDIA
+PDF(s?)
 [Pp]retrained
 [Rr]epo
+[Uu]ploader
 XGBoost
