@@ -8,8 +8,10 @@ Conda
 [Cc]ybersecurity
 Dev
 GPU(s?)
+Grafana
 LLM(s?)
 Milvus
+MLflow
 Morpheus
 NeMo
 NIC
