@@ -79,8 +79,8 @@ Options:
                                   [x>=1]
   --model_name TEXT               The name of the model that is deployed on
                                   Tritonserver.
-  --iterative                     Iterative mode will emit dataframes one at a
-                                  time. Otherwise a list of dataframes is
+  --iterative                     Iterative mode will emit DataFrames one at a
+                                  time. Otherwise a list of DataFrames is
                                   emitted. Iterative mode is good for
                                   interleaving source stages.
   --server_url TEXT               Tritonserver url.  [required]

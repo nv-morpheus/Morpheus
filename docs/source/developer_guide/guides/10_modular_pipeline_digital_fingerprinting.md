@@ -175,7 +175,7 @@ The module itself consists of a series of chained sub-modules, which are connect
 - `file_to_df_dataloader_module`
     - Responsible for file retrieval and insertion into a cuDF DataFrame.
 - `dfp_split_users_module`
-    - Responsible for splitting the DataFrame into a series of dataframes, one per user.
+    - Responsible for splitting the DataFrame into a series of DataFrames, one per user.
 
 For a complete reference, refer to: [DFP Preproc](../../modules/examples/digital_fingerprinting/dfp_preproc.md)
 
