@@ -51,12 +51,13 @@ __global__ void _packet_gather_payload_kernel(
 
   while (pkt_idx < packet_count) {
     uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx] + header_sizes[pkt_idx]);
-    // if (!pkt_hdr_addr)
-    //   continue;
+
     for (j = 0; j < payload_sizes[pkt_idx]; j++)
       payload_chars_out[(MAX_PKT_SIZE * pkt_idx) + j] = pkt_hdr_addr[j];
+
     for (; j < MAX_PKT_SIZE; j++)
       payload_chars_out[(MAX_PKT_SIZE * pkt_idx) + j] = '\0';
+
     pkt_idx += blockDim.x;
   }
 
@@ -74,11 +75,11 @@ __global__ void _packet_gather_header_kernel(
 
   while (pkt_idx < packet_count) {
     uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx]);
-    // if (!pkt_hdr_addr)
-    //   continue;
+
     int len = ip_to_string(((struct eth_ip *)pkt_hdr_addr)->l3_hdr.src_addr, header_src_ip_addr + (IP_ADDR_STRING_LEN * pkt_idx));
     while (len < IP_ADDR_STRING_LEN)
       header_src_ip_addr[(IP_ADDR_STRING_LEN * pkt_idx) + len++] = '\0';
+
     pkt_idx += blockDim.x;
   }
 }
@@ -134,6 +135,59 @@ rmm::device_buffer sizes_to_offsets(
     return out_buffer;
 }
 
+rmm::device_buffer sizes_to_offsets(
+    int32_t packet_count,
+    uint32_t* header_sizes_buff,
+    uint32_t* payload_sizes_buff,
+    rmm::cuda_stream_view stream)
+{
+    std::cerr << "sizes_to_offsets\n";
+    const auto out_elem_count = packet_count+1;
+    const auto out_byte_size = out_elem_count*sizeof(int32_t);
+    rmm::device_buffer out_buffer(out_byte_size, stream);
+
+    auto header_sizes_tensor = matx::make_tensor<uint32_t>(header_sizes_buff, {packet_count});
+    auto payload_sizes_tensor = matx::make_tensor<uint32_t>(payload_sizes_buff, {packet_count});
+    auto sizes_tensor = matx::make_tensor<int32_t>({packet_count});
+    auto cum_tensor = matx::make_tensor<int32_t>({packet_count});
+
+    // first element needs to be a 0
+    auto zero_tensor = matx::make_tensor<int32_t>({1});
+    zero_tensor.SetVals({0});
+
+    auto offsets_tensor = matx::make_tensor<int32_t>(static_cast<int32_t*>(out_buffer.data()), {out_elem_count});
+
+
+    (sizes_tensor = matx::as_type<int32_t>(header_sizes_tensor) + matx::as_type<int32_t>(payload_sizes_tensor)).run(stream.value());
+    (cum_tensor = matx::cumsum(sizes_tensor)).run(stream.value());
+    (offsets_tensor = matx::concat(0, zero_tensor, cum_tensor)).run(stream.value());
+
+    std::cerr << "sizes_to_offsets - done\n";
+    cudaStreamSynchronize(stream);
+    std::cerr << "sizes_to_offsets - synced\n";
+
+    return out_buffer;
+}
+
+void gather_header(
+  int32_t      packet_count,
+  uintptr_t*   packets_buffer,
+  uint32_t*    header_sizes,
+  uint32_t*    payload_sizes,
+  uint8_t*     dst_buff,
+  rmm::cuda_stream_view stream,
+  rmm::mr::device_memory_resource* mr)
+{
+  _packet_gather_header_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
+    packet_count,
+    packets_buffer,
+    header_sizes,
+    payload_sizes,
+    dst_buff
+  );
+
+}
+
 void gather_payload(
   int32_t      packet_count,
   uintptr_t*   packets_buffer,
@@ -150,28 +204,7 @@ void gather_payload(
     payload_sizes,
     dst_buff
   );
-
 }
-
-void gather_header(
-  int32_t      packet_count,
-  uintptr_t*   packets_buffer,
-  uint32_t*    header_sizes,
-  uint32_t*    payload_sizes,
-  uint8_t*     dst_buff,
-  rmm::cuda_stream_view stream,
-  rmm::mr::device_memory_resource* mr)
-{
-
-  _packet_gather_header_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
-    packet_count,
-    packets_buffer,
-    header_sizes,
-    payload_sizes,
-    dst_buff
-  );
-}
-
 
 } //doca
 } //morpheus

@@ -213,6 +213,14 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     const auto [header_buff_size, payload_buff_size] = doca::gather_sizes(
         packet_count, m_fixed_hdr_size_list, m_fixed_pld_size_list,  m_stream_cpp);
 
+    const auto [in_header_buff_size, in_payload_buff_size] = doca::gather_sizes(
+        packet_count, pkt_hdr_size_list, pkt_pld_size_list,  m_stream_cpp);
+
+    std::cerr << "Incoming header data = "  << in_header_buff_size << "\n"
+              << "Outgoing header data = " << header_buff_size << "\t" << packet_count * IP_ADDR_STRING_LEN << "\n"
+              << "Incoming payload data = " << in_payload_buff_size << "\n"
+              << "Outgoing payload data = " << payload_buff_size << "\n" << std::flush;
+
     auto t2 = std::chrono::steady_clock::now();
     log_time("gather_sizes", t1, t2);
 
@@ -269,6 +277,8 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
 #if ENABLE_TIMERS == 1
     const auto t0 = now_ns();
 #endif
+
+    //auto offsets = doca::sizes_to_offsets(packet_count, pkt_hdr_size_list, pkt_pld_size_list, m_stream_cpp);
 
     auto t3 = std::chrono::steady_clock::now();
     // gather header data
