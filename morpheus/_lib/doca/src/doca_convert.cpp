@@ -229,6 +229,9 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     bool buffer_time_expired = (time_since_last_emit >= m_max_time_delta);
 
     // TODO: If the buffers are not full, but buffer_time_expired, we should include the current message in the output.
+    // TODO: The current logic for calculating expiration time doesn't account for the possibility that we could have a
+    // large burst of incoming data and then not receive anymore data for quite some time. In this case we could have
+    // data in the buffer long past the m_max_time_delta
     if (buffers_full || buffer_time_expired)
     {
         // Build a MessageMeta emit it, and reset the buffers.
