@@ -179,6 +179,10 @@ DocaConvertStage::subscribe_fn_t DocaConvertStage::build()
                 output.on_error(error_ptr);
             },
             [&]() {
+                if (!m_header_buffer->empty()) {
+                    std::cerr << "flushing buffer prior to shutdown" << std::endl << std::flush;
+                    send_buffered_data(output);
+                }
                 output.on_completed();
             }));
     };
@@ -234,65 +238,7 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
         bool buffer_has_data = !m_header_buffer->empty();
         if (buffer_has_data)
         {
-            // std::cerr << "\nConverting buffered packets (" << m_header_buffer->elements << ") to a MessageMeta:\n";
-            // if (buffer_time_expired)
-            // {
-            //     std::cerr << "Time delta: " << time_since_last_emit.count() << "\n";
-            // }
-
-            // if (header_buff_size > m_header_buffer->available_bytes())
-            // {
-            //     std::cerr << "Header buffer : " << m_header_buffer->cur_offset_bytes << "/" << m_header_buffer->capacity() << "\n";
-            // }
-
-            // if (payload_buff_size > m_payload_buffer->available_bytes())
-            // {
-            //     std::cerr << "Payload buffer: " << m_payload_buffer->cur_offset_bytes << "/" << m_payload_buffer->capacity() << "\n";
-            // }
-
-            // if (sizes_buff_size > m_header_sizes_buffer->available_bytes() || sizes_buff_size > m_payload_sizes_buffer->available_bytes())
-            // {
-            //     std::cerr << "Sizes buffers : " << m_header_sizes_buffer->cur_offset_bytes << "/" << m_header_sizes_buffer->capacity() << "\n";
-            // }
-
-            auto cudf_t1 = std::chrono::steady_clock::now();
-            const auto num_packets = m_payload_buffer->elements;
-            auto header_col = make_string_col(*m_header_buffer, *m_header_sizes_buffer, m_stream_cpp);
-            auto payload_col = make_string_col(*m_payload_buffer, *m_payload_sizes_buffer, m_stream_cpp);
-
-            std::vector<std::unique_ptr<cudf::column>> gathered_columns;
-            gathered_columns.emplace_back(std::move(header_col));
-            gathered_columns.emplace_back(std::move(payload_col));
-
-            auto gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
-
-            auto gathered_metadata = cudf::io::table_metadata();
-            gathered_metadata.schema_info.emplace_back("src_ip");
-            gathered_metadata.schema_info.emplace_back("data");
-
-            auto gathered_table_w_metadata =
-                cudf::io::table_with_metadata{std::move(gathered_table), std::move(gathered_metadata)};
-
-            auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
-            output.on_next(std::move(meta));
-
-            auto now = std::chrono::steady_clock::now();
-            m_last_emit = now;
-
-
-            // auto delta = now - m_last_emit;
-            // std::chrono::duration<float> deltaf = std::chrono::duration_cast<std::chrono::duration<float>>(delta);
-            // float count = deltaf.count();
-            // auto packet_rate = (num_packets / count);
-
-            log_time("cudf_time", cudf_t1, now);
-
-            // const float bytes = m_payload_buffer->cur_offset_bytes + m_header_buffer->cur_offset_bytes;
-            // const float mb = bytes / (1024 * 1024);
-            // std::cerr << "Convert Packets: " << num_packets
-            //           << "\nDelta: " << deltaf.count()
-            //           << "s\nPackets/s : " << packet_rate
-            //           << "\nMB/s: " << mb << "\n\n";
+            send_buffered_data(output);
         }
 
         // In the case where existing empty buffers were too small for the data we still need to re-allocate
@@ -363,6 +309,48 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     const auto t2 = now_ns();
 #endif
 
+}
+
+void DocaConvertStage::send_buffered_data(rxcpp::subscriber<source_type_t>& output)
+{
+    auto cudf_t1 = std::chrono::steady_clock::now();
+    const auto num_packets = m_payload_buffer->elements;
+    auto header_col = make_string_col(*m_header_buffer, *m_header_sizes_buffer, m_stream_cpp);
+    auto payload_col = make_string_col(*m_payload_buffer, *m_payload_sizes_buffer, m_stream_cpp);
+
+    std::vector<std::unique_ptr<cudf::column>> gathered_columns;
+    gathered_columns.emplace_back(std::move(header_col));
+    gathered_columns.emplace_back(std::move(payload_col));
+
+    auto gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
+
+    auto gathered_metadata = cudf::io::table_metadata();
+    gathered_metadata.schema_info.emplace_back("src_ip");
+    gathered_metadata.schema_info.emplace_back("data");
+
+    auto gathered_table_w_metadata =
+        cudf::io::table_with_metadata{std::move(gathered_table), std::move(gathered_metadata)};
+
+    auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
+    output.on_next(std::move(meta));
+
+    auto now = std::chrono::steady_clock::now();
+    m_last_emit = now;
+
+
+    // auto delta = now - m_last_emit;
+    // std::chrono::duration<float> deltaf = std::chrono::duration_cast<std::chrono::duration<float>>(delta);
+    // float count = deltaf.count();
+    // auto packet_rate = (num_packets / count);
+
+    log_time("cudf_time", cudf_t1, now);
+
+    // const float bytes = m_payload_buffer->cur_offset_bytes + m_header_buffer->cur_offset_bytes;
+    // const float mb = bytes / (1024 * 1024);
+    // std::cerr << "Convert Packets: " << num_packets
+    //           << "\nDelta: " << deltaf.count()
+    //           << "s\nPackets/s : " << packet_rate
+    //           << "\nMB/s: " << mb << "\n\n";
 }
 
 std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfaceProxy::init(

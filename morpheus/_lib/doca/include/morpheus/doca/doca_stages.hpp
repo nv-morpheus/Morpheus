@@ -119,6 +119,7 @@ class MORPHEUS_EXPORT DocaConvertStage
      */
     //source_type_t on_data(sink_type_t x);
     void on_raw_packet_message(rxcpp::subscriber<source_type_t>& output, sink_type_t x);
+    void send_buffered_data(rxcpp::subscriber<source_type_t>& output);
 
     cudaStream_t m_stream;
     rmm::cuda_stream_view m_stream_cpp;
