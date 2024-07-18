@@ -24,7 +24,7 @@ This module uploads trained models to the MLflow server.
 | Parameter                   | Type       | Description                       | Example Value                 | Default Value |
 |-----------------------------|------------|-----------------------------------|-------------------------------|---------------|
 | `conda_env`                 | string     | Conda environment for the model   | "path/to/conda_env.yml"       | `[Required]`  |
-| `databricks_permissions`    | dictionary | Permissions for the model         | See Below                     | `None`        |
+| `databricks_permissions`    | dictionary | Permissions for the model         | Refer Below                     | `None`        |
 | `experiment_name_formatter` | string     | Formatter for the experiment name | "experiment_name_{timestamp}" | `[Required]`  |
 | `model_name_formatter`      | string     | Formatter for the model name      | "model_name_{timestamp}"      | `[Required]`  |
 | `timestamp_column_name`     | string     | Name of the timestamp column      | "timestamp"                   | `timestamp`   |

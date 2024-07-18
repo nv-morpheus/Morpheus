@@ -27,11 +27,11 @@ remaining files by period that fall inside the window.
 
 | Parameter               | Type       | Description                   | Example Value          | Default Value |
 |-------------------------|------------|-------------------------------|------------------------|---------------|
-| `batching_options`      | dictionary | Options for batching          | See below              | `-`           |
+| `batching_options`      | dictionary | Options for batching          | Refer Below              | `-`           |
 | `cache_dir`             | string     | Cache directory               | "./file_batcher_cache" | `None`        |
 | `file_type`             | string     | File type                     | "JSON"                 | `"JSON"`      |
 | `filter_nulls`          | boolean    | Whether to filter null values | false                  | `false`       |
-| `schema`                | dictionary | Data schema                   | See below              | `[Required]`  |
+| `schema`                | dictionary | Data schema                   | Refer Below              | `[Required]`  |
 | `timestamp_column_name` | string     | Name of the timestamp column  | "timestamp"            | `"timestamp"` |
 
 ### `batching_options`

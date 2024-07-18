@@ -27,7 +27,7 @@ label and score module, updates the sender sketch, and prepares the final output
 
 | Parameter              | Type | Description                                                                                                  |
 |------------------------|------|--------------------------------------------------------------------------------------------------------------|
-| `scoring_config`       | dictionary | Configuration for scoring, can include custom parameters for the scoring module. See below for more details. |
+| `scoring_config`       | dictionary | Configuration for scoring, can include custom parameters for the scoring module. Refer below for more details. |
 | `sender_sketch_config` | dictionary | Configuration for sender sketch module, including parameters such as endpoint details and sketch settings.   |
 
 #### `scoring_config`
