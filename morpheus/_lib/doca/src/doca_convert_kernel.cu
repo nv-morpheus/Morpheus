@@ -60,44 +60,6 @@ __global__ void _packet_gather_payload_kernel(
     pkt_idx += blockDim.x;
   }
 
-#if 0
-
-  // Specialize BlockScan for a 1D block of 128 threads of type int
-  using BlockScan = cub::BlockScan<int32_t, THREADS_PER_BLOCK>;
-  // Allocate shared memory for BlockScan
-  __shared__ typename BlockScan::TempStorage temp_storage;
-  int32_t payload_offsets[PACKETS_PER_THREAD];
-  /* Th0 will work on first 4 packets, etc.. */
-  for (auto i = 0; i < PACKETS_PER_THREAD; i++) {
-    auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
-    if (packet_idx >= packet_count)
-      payload_offsets[i] = 0;
-    else
-      payload_offsets[i] = payload_sizes[packet_idx];
-  }
-  __syncthreads();
-
-  /* Calculate the right payload offset for each thread */
-  int32_t data_offsets_agg;
-  BlockScan(temp_storage).ExclusiveSum(payload_offsets, payload_offsets, data_offsets_agg);
-  __syncthreads();
-
-  for (auto i = 0; i < PACKETS_PER_THREAD; i++) {
-    auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
-    if (packet_idx >= packet_count)
-      continue;
-
-    auto payload_size = payload_sizes[packet_idx];
-    for (auto j = 0; j < payload_size; j++) {
-      auto value = *(((uint8_t*)packets_buffer[packet_idx]) + header_sizes[packet_idx] + j);
-      payload_chars_out[payload_offsets[i] + j] = value;
-      // printf("payload %d size %d : 0x%1x / 0x%1x addr %lx\n",
-      //     payload_offsets[i] + j, payload_size,
-      //     payload_chars_out[payload_offsets[i] + j], value,
-      //     packets_buffer[packet_idx]);
-    }
-  }
-#endif
 }
 
 __global__ void _packet_gather_header_kernel(
