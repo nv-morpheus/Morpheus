@@ -19,6 +19,7 @@ from functools import partial
 import cupy as cp
 import mrc
 
+import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -82,7 +83,7 @@ class PreprocessAEStage(PreprocessBaseStage):
         """
         meta_df = msg.payload().get_data(msg.payload().df.columns.intersection(feature_columns))
 
-        autoencoder = msg.get_metadata("autoencoder")
+        autoencoder = msg.get_metadata("model")
         scores_mean = msg.get_metadata("train_scores_mean")
         scores_std = msg.get_metadata("train_scores_std")
         count = len(meta_df.index)
@@ -99,10 +100,10 @@ class PreprocessAEStage(PreprocessBaseStage):
         seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
         seg_ids[:, 2] = fea_len - 1
 
-        msg.set_metadata("autoencoder", autoencoder)
+        msg.set_metadata("model", autoencoder)
         msg.set_metadata("train_scores_mean", scores_mean)
         msg.set_metadata("train_scores_std", scores_std)
-        msg.tensors(CppTensorMemory(count=count, tensors={"input": inputs, "seq_ids": seg_ids}))
+        msg.tensors(_messages.TensorMemory(count=count, tensors={"input": inputs, "seq_ids": seg_ids}))
         return msg
 
     def _get_preprocess_fn(

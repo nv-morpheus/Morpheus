@@ -375,6 +375,7 @@ class MORPHEUS_EXPORT ControlMessage
     morpheus::utilities::json_t m_tasks{};
     morpheus::utilities::json_t m_config{};
 
+    std::map<std::string, time_point_t> m_timestamps{};
 };
 
 struct MORPHEUS_EXPORT ControlMessageProxy

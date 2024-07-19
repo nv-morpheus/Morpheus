@@ -19,9 +19,11 @@ import numpy as np
 import tritonclient.grpc as tritonclient
 from scipy.special import softmax
 
+import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiInferenceNLPMessage
 from morpheus.messages import MultiResponseMessage
@@ -58,26 +60,45 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
         Determines whether a logits calculation is needed for the value returned by the Triton inference response.
     """
 
-    def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseMessage:
-        seq_ids = cp.zeros((x.count, 3), dtype=cp.uint32)
-        seq_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + x.count, dtype=cp.uint32)
-        seq_ids[:, 2] = x.get_tensor('seq_ids')[:, 2]
+    def build_output_message(self, x: MultiInferenceMessage | ControlMessage) -> MultiResponseMessage | ControlMessage:
+        if isinstance(x, MultiInferenceMessage):
+            seq_ids = cp.zeros((x.count, 3), dtype=cp.uint32)
+            seq_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + x.count, dtype=cp.uint32)
+            seq_ids[:, 2] = x.get_tensor('seq_ids')[:, 2]
 
-        memory = TensorMemory(
-            count=x.count,
-            tensors={
-                'confidences': cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
-                'labels': cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
-                'input_ids': cp.zeros((x.count, x.get_tensor('input_ids').shape[1])),
-                'seq_ids': seq_ids
-            })
+            memory = TensorMemory(
+                count=x.count,
+                tensors={
+                    'confidences': cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
+                    'labels': cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
+                    'input_ids': cp.zeros((x.count, x.get_tensor('input_ids').shape[1])),
+                    'seq_ids': seq_ids
+                })
 
-        return MultiResponseMessage(meta=x.meta,
-                                    mess_offset=x.mess_offset,
-                                    mess_count=x.mess_count,
-                                    memory=memory,
-                                    offset=0,
-                                    count=x.count)
+            return MultiResponseMessage(meta=x.meta,
+                                        mess_offset=x.mess_offset,
+                                        mess_count=x.mess_count,
+                                        memory=memory,
+                                        offset=0,
+                                        count=x.count)
+        if isinstance(x, ControlMessage):
+            seq_ids = cp.zeros((x.tensors().count, 3), dtype=cp.uint32)
+            seq_ids[:, 0] = cp.arange(0, x.tensors().count, dtype=cp.uint32)
+            seq_ids[:, 2] = x.tensors().get_tensor('seq_ids')[:, 2]
+
+            memory = _messages.TensorMemory(
+                count=x.tensors().count,
+                tensors={
+                    'confidences': cp.zeros((x.tensors().count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
+                    'labels': cp.zeros((x.tensors().count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
+                    'input_ids': cp.zeros((x.tensors().count, x.tensors().get_tensor('input_ids').shape[1])),
+                    'seq_ids': seq_ids
+                })
+
+            resp = ControlMessage(x)
+            resp.payload(x.payload())
+            resp.tensors(memory)
+            return resp
 
     def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> TensorMemory:
 
@@ -143,41 +164,80 @@ class LogParsingInferenceStage(TritonInferenceStage):
         schema.output_schema.set_type(MultiResponseMessage)
 
     @staticmethod
-    def _convert_one_response(output: MultiResponseMessage, inf: MultiInferenceNLPMessage,
-                              res: TensorMemory) -> MultiResponseMessage:
-        memory = output.memory
+    def _convert_one_response(output: MultiResponseMessage | ControlMessage, inf: MultiInferenceNLPMessage | ControlMessage,
+                              res: TensorMemory) -> MultiResponseMessage | ControlMessage:
+        if isinstance(output, MultiResponseMessage):
+            memory = output.memory
 
-        out_seq_ids = memory.get_tensor('seq_ids')
-        input_ids = memory.get_tensor('input_ids')
-        confidences = memory.get_tensor('confidences')
-        labels = memory.get_tensor('labels')
+            out_seq_ids = memory.get_tensor('seq_ids')
+            input_ids = memory.get_tensor('input_ids')
+            confidences = memory.get_tensor('confidences')
+            labels = memory.get_tensor('labels')
 
-        seq_ids = inf.get_id_tensor()
+            seq_ids = inf.get_id_tensor()
 
-        seq_offset = seq_ids[0, 0].item() - output.mess_offset
-        seq_count = (seq_ids[-1, 0].item() + 1 - seq_offset) - output.mess_offset
+            seq_offset = seq_ids[0, 0].item() - output.mess_offset
+            seq_count = (seq_ids[-1, 0].item() + 1 - seq_offset) - output.mess_offset
 
-        input_ids[inf.offset:inf.count + inf.offset, :] = inf.get_tensor('input_ids')
-        out_seq_ids[inf.offset:inf.count + inf.offset, :] = seq_ids
+            input_ids[inf.offset:inf.count + inf.offset, :] = inf.get_tensor('input_ids')
+            out_seq_ids[inf.offset:inf.count + inf.offset, :] = seq_ids
 
-        resp_confidences = res.get_tensor('confidences')
-        resp_labels = res.get_tensor('labels')
+            resp_confidences = res.get_tensor('confidences')
+            resp_labels = res.get_tensor('labels')
 
-        # Two scenarios:
-        if (inf.mess_count == inf.count):
-            assert seq_count == res.count
-            confidences[inf.offset:inf.offset + inf.count, :] = resp_confidences
-            labels[inf.offset:inf.offset + inf.count, :] = resp_labels
-        else:
-            assert inf.count == res.count
+            # Two scenarios:
+            if (inf.mess_count == inf.count):
+                assert seq_count == res.count
+                confidences[inf.offset:inf.offset + inf.count, :] = resp_confidences
+                labels[inf.offset:inf.offset + inf.count, :] = resp_labels
+            else:
+                assert inf.count == res.count
 
-            mess_ids = seq_ids[:, 0].get().tolist()
+                mess_ids = seq_ids[:, 0].get().tolist()
 
-            for i, idx in enumerate(mess_ids):
-                confidences[idx, :] = cp.maximum(confidences[idx, :], resp_confidences[i, :])
-                labels[idx, :] = cp.maximum(labels[idx, :], resp_labels[i, :])
+                for i, idx in enumerate(mess_ids):
+                    confidences[idx, :] = cp.maximum(confidences[idx, :], resp_confidences[i, :])
+                    labels[idx, :] = cp.maximum(labels[idx, :], resp_labels[i, :])
 
-        return MultiResponseMessage.from_message(inf, memory=memory, offset=inf.offset, count=inf.mess_count)
+            return MultiResponseMessage.from_message(inf, memory=memory, offset=inf.offset, count=inf.mess_count)
+
+        if isinstance(output, ControlMessage):
+            memory = output.tensors()
+
+            out_seq_ids = memory.get_tensor('seq_ids')
+            input_ids = memory.get_tensor('input_ids')
+            confidences = memory.get_tensor('confidences')
+            labels = memory.get_tensor('labels')
+
+            seq_ids = inf.tensors().get_tensor('seq_ids')
+
+            seq_offset = seq_ids[0, 0].item()
+            seq_count = seq_ids[-1, 0].item() + 1 - seq_offset
+
+            input_ids[0:inf.tensors().count, :] = inf.tensors().get_tensor('input_ids')
+            out_seq_ids[0:inf.tensors().count, :] = seq_ids
+
+            resp_confidences = res.get_tensor('confidences')
+            resp_labels = res.get_tensor('labels')
+
+            # Two scenarios:
+            if (inf.payload().count == inf.tensors().count):
+                assert seq_count == res.count
+                confidences[0:inf.tensors().count, :] = resp_confidences
+                labels[0:inf.tensors().count, :] = resp_labels
+            else:
+                assert inf.tensors().count == res.count
+
+                mess_ids = seq_ids[:, 0].get().tolist()
+
+                for i, idx in enumerate(mess_ids):
+                    confidences[idx, :] = cp.maximum(confidences[idx, :], resp_confidences[i, :])
+                    labels[idx, :] = cp.maximum(labels[idx, :], resp_labels[i, :])
+
+            resp = ControlMessage(inf)
+            resp.payload(inf.payload())
+            resp.tensors(memory)
+            return resp
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> TritonInferenceLogParsing:
         return TritonInferenceLogParsing(inf_queue=inf_queue,

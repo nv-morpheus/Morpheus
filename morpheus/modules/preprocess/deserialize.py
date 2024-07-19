@@ -23,7 +23,6 @@ from pydantic import ValidationError
 
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.modules.schemas.deserialize_schema import DeserializeSchema
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
@@ -70,39 +69,6 @@ def _check_slicable_index(message: MessageMeta, ensure_sliceable_index: bool = T
                 RuntimeWarning)
 
     return message
-
-
-def _process_dataframe_to_multi_message(message: MessageMeta, batch_size: int,
-                                        ensure_sliceable_index: bool) -> typing.List[MultiMessage]:
-    """
-    Processes a DataFrame into a list of MultiMessage objects.
-
-    Parameters
-    ----------
-    message : MessageMeta
-        The message containing the DataFrame to process.
-    batch_size : int
-        The size of each batch.
-    ensure_sliceable_index : bool
-        Whether to ensure the message has a sliceable index.
-
-    Returns
-    -------
-    list of MultiMessage
-        A list of MultiMessage objects.
-    """
-
-    message = _check_slicable_index(message, ensure_sliceable_index)
-
-    full_message = MultiMessage(meta=message)
-
-    # Now break it up by batches
-    output = []
-
-    for i in range(0, full_message.mess_count, batch_size):
-        output.append(full_message.get_slice(i, min(i + batch_size, full_message.mess_count)))
-
-    return output
 
 
 def _process_dataframe_to_control_message(message: MessageMeta,
@@ -163,7 +129,7 @@ def _process_dataframe_to_control_message(message: MessageMeta,
 @register_module("deserialize", "morpheus")
 def _deserialize(builder: mrc.Builder):
     """
-    Deserializes incoming messages into either MultiMessage or ControlMessage format.
+    Deserializes incoming messages into ControlMessage format.
 
     Parameters
     ----------
@@ -174,7 +140,6 @@ def _deserialize(builder: mrc.Builder):
     -----
     The `module_config` should contain:
     - 'ensure_sliceable_index': bool, whether to ensure messages have a sliceable index.
-    - 'message_type': type, the type of message to output (MultiMessage or ControlMessage).
     - 'task_type': str, optional, the type of task for ControlMessages.
     - 'task_payload': dict, optional, the payload for the task in ControlMessages.
     - 'batch_size': int, the size of batches for message processing.
@@ -195,7 +160,6 @@ def _deserialize(builder: mrc.Builder):
         raise
 
     ensure_sliceable_index = deserializer_config.ensure_sliceable_index
-    message_type = ControlMessage if deserializer_config.message_type == "ControlMessage" else MultiMessage
     task_type = deserializer_config.task_type
     task_payload = deserializer_config.task_payload
     batch_size = deserializer_config.batch_size
@@ -205,25 +169,16 @@ def _deserialize(builder: mrc.Builder):
     if (task_type is not None) != (task_payload is not None):
         raise ValueError("task_type and task_payload must be both specified or both None")
 
-    if (task_type is not None or task_payload is not None) and message_type != ControlMessage:
-        raise ValueError("task_type and task_payload can only be specified for ControlMessage")
-
-    if (message_type == MultiMessage):
-        map_func = partial(_process_dataframe_to_multi_message,
-                           batch_size=batch_size,
-                           ensure_sliceable_index=ensure_sliceable_index)
-    elif (message_type == ControlMessage):
-        if (task_type is not None and task_payload is not None):
-            task_tuple = (task_type, task_payload)
-        else:
-            task_tuple = None
-
-        map_func = partial(_process_dataframe_to_control_message,
-                           batch_size=batch_size,
-                           ensure_sliceable_index=ensure_sliceable_index,
-                           task_tuple=task_tuple)
+    if (task_type is not None and task_payload is not None):
+        task_tuple = (task_type, task_payload)
     else:
-        raise ValueError(f"Invalid message_type: {message_type}")
+        task_tuple = None
+
+    map_func = partial(_process_dataframe_to_control_message,
+                        batch_size=batch_size,
+                        ensure_sliceable_index=ensure_sliceable_index,
+                        task_tuple=task_tuple)
+
 
     node = builder.make_node("deserialize",
                              ops.map(map_func),

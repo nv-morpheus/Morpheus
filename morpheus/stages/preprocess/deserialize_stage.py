@@ -23,7 +23,6 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
@@ -33,12 +32,12 @@ logger = logging.getLogger(__name__)
 
 @register_stage("deserialize",
                 modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
-                ignore_args=["message_type", "task_type", "task_payload"])
+                ignore_args=["task_type", "task_payload"])
 class DeserializeStage(MultiMessageStage):
     """
     Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
 
-    This stage deserialize the output of `FileSourceStage`/`KafkaSourceStage` into a `MultiMessage`. This
+    This stage deserialize the output of `FileSourceStage`/`KafkaSourceStage` into a `ControlMessage`. This
     should be one of the first stages after the `Source` object.
 
     Parameters
@@ -48,21 +47,16 @@ class DeserializeStage(MultiMessageStage):
     ensure_sliceable_index : bool, default = True
         Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`, which will replace the index
         of the underlying dataframe if the existing one is not unique and monotonic.
-    message_type : typing.Literal[MultiMessage, ControlMessage], default = MultiMessage
-        Sets the type of message to be emitted from this stage.
     task_type : str, default = None
-        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
-        is set to `ControlMessage`. If not `None`, `task_payload` must also be specified.
+        If specified, adds the specified task to the `ControlMessage`. If not `None`, `task_payload` must also be specified.
     task_payload : dict, default = None
-        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
-        is set to `ControlMessage`. If not `None`, `task_type` must also be specified.
+        If specified, adds the specified task to the `ControlMessage`. If not `None`, `task_type` must also be specified.
     """
 
     def __init__(self,
                  c: Config,
                  *,
                  ensure_sliceable_index: bool = True,
-                 message_type: type[MultiMessage] | type[ControlMessage] = MultiMessage,
                  task_type: str = None,
                  task_payload: dict = None):
         super().__init__(c)
@@ -75,22 +69,16 @@ class DeserializeStage(MultiMessageStage):
         # Mark these stages to log timestamps if requested
         self._should_log_timestamps = True
 
-        self._message_type = message_type
         self._task_type = task_type
         self._task_payload = task_payload
 
-        if (self._message_type is ControlMessage):
-            if ((self._task_type is None) != (self._task_payload is None)):
-                raise ValueError("Both `task_type` and `task_payload` must be specified if either is specified.")
-        elif (self._message_type is MultiMessage):
-            if (self._task_type is not None or self._task_payload is not None):
-                raise ValueError("Cannot specify `task_type` or `task_payload` for non-control messages.")
-        else:
-            raise ValueError(f"Invalid message type: {self._message_type}")
+
+        if ((self._task_type is None) != (self._task_payload is None)):
+            raise ValueError("Both `task_type` and `task_payload` must be specified if either is specified.")
+
 
         self._module_config = {
             "ensure_sliceable_index": self._ensure_sliceable_index,
-            "message_type": "MultiMessage" if self._message_type is MultiMessage else "ControlMessage",
             "task_type": self._task_type,
             "task_payload": self._task_payload,
             "batch_size": self._batch_size,
@@ -114,23 +102,17 @@ class DeserializeStage(MultiMessageStage):
         return True
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(self._message_type)
+        schema.output_schema.set_type(ControlMessage)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if (self._build_cpp_node()):
             import morpheus._lib.stages as _stages
-            if (self._message_type is ControlMessage):
-                out_node = _stages.DeserializeControlMessageStage(builder,
-                                                                  self.unique_name,
-                                                                  batch_size=self._batch_size,
-                                                                  ensure_sliceable_index=self._ensure_sliceable_index,
-                                                                  task_type=self._task_type,
-                                                                  task_payload=self._task_payload)
-            else:
-                out_node = _stages.DeserializeMultiMessageStage(builder,
-                                                                self.unique_name,
-                                                                batch_size=self._batch_size,
-                                                                ensure_sliceable_index=self._ensure_sliceable_index)
+            out_node = _stages.DeserializeStage(builder,
+                                                self.unique_name,
+                                                batch_size=self._batch_size,
+                                                ensure_sliceable_index=self._ensure_sliceable_index,
+                                                task_type=self._task_type,
+                                                task_payload=self._task_payload)
 
             builder.make_edge(input_node, out_node)
         else:
@@ -138,7 +120,6 @@ class DeserializeStage(MultiMessageStage):
                                                                   module_config=self._module_config)
 
             module = module_loader.load(builder=builder)
-
             mod_in_node = module.input_port("input")
             out_node = module.output_port("output")
 

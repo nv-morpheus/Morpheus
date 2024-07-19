@@ -213,27 +213,27 @@ def test_abp_multi_segment_no_cpp(mock_triton_client: mock.MagicMock,
     pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
     pipe.add_stage(DeserializeStage(config))
 
-    pipe.add_segment_boundary(MultiMessage)  # Boundary 1
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 1
 
     pipe.add_stage(PreprocessFILStage(config))
 
-    pipe.add_segment_boundary(MultiInferenceMessage)  # Boundary 2
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 2
 
     pipe.add_stage(
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='test:0000', force_convert_inputs=True))
 
-    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 3
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 3
 
     pipe.add_stage(
         MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config))
 
-    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 4
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 4
 
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
 
-    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 5
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 5
 
     pipe.add_stage(SerializeStage(config))
 
