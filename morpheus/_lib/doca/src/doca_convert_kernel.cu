@@ -76,7 +76,13 @@ __global__ void _packet_gather_src_ip_kernel(
 
   while (pkt_idx < packet_count) {
     uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx]);
-    dst_buff[pkt_idx] = ((struct eth_ip *)pkt_hdr_addr)->l3_hdr.src_addr;
+
+    // We need to convert from LSB to MSB
+    uint32_t src_ip = ((struct eth_ip *)pkt_hdr_addr)->l3_hdr.src_addr;
+    uint32_t src_ip_swapped = ((src_ip & 0x000000FF) << 24u) | ((src_ip & 0x0000FF00) << 8u) |
+                              ((src_ip & 0x00FF0000) >> 8u) | ((src_ip & 0xFF000000) >> 24u);
+    
+    dst_buff[pkt_idx] = src_ip_swapped;
     pkt_idx += blockDim.x;
   }
 }
