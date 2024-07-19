@@ -211,7 +211,7 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
 
     auto t1 = std::chrono::steady_clock::now();
     const auto [header_buff_size, payload_buff_size] = doca::gather_sizes(
-        packet_count, m_fixed_hdr_size_list, m_fixed_pld_size_list,  m_stream_cpp);
+        packet_count, m_fixed_hdr_size_list, pkt_pld_size_list,  m_stream_cpp);
 
     const auto [in_header_buff_size, in_payload_buff_size] = doca::gather_sizes(
         packet_count, pkt_hdr_size_list, pkt_pld_size_list,  m_stream_cpp);
@@ -224,7 +224,7 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     auto t2 = std::chrono::steady_clock::now();
     log_time("gather_sizes", t1, t2);
 
-    // both m_fixed_hdr_size_list and m_fixed_pld_size_list should be the same size in bytes
+    // both sizes lists should be the same size in bytes
     auto sizes_buff_size = packet_count * sizeof(uint32_t);
 
     bool buffers_full = (header_buff_size > m_header_buffer->available_bytes() ||
@@ -311,7 +311,7 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     MRC_CHECK_CUDA(cudaMemcpy(m_header_sizes_buffer->current_location(), m_fixed_hdr_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice));
     m_header_sizes_buffer->advance(sizes_buff_size, packet_count);
 
-    MRC_CHECK_CUDA(cudaMemcpy(m_payload_sizes_buffer->current_location(), m_fixed_pld_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice));
+    MRC_CHECK_CUDA(cudaMemcpy(m_payload_sizes_buffer->current_location(), pkt_pld_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice));
     m_payload_sizes_buffer->advance(sizes_buff_size, packet_count);
 
     auto t7 = std::chrono::steady_clock::now();

@@ -43,7 +43,8 @@ __global__ void _packet_gather_payload_kernel(
   uintptr_t*  packets_buffer,
   uint32_t* header_sizes,
   uint32_t* payload_sizes,
-  uint8_t*  payload_chars_out
+  uint8_t*  payload_chars_out,
+  int32_t* dst_offsets
 )
 {
   int pkt_idx = threadIdx.x;
@@ -51,12 +52,12 @@ __global__ void _packet_gather_payload_kernel(
 
   while (pkt_idx < packet_count) {
     uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx] + header_sizes[pkt_idx]);
+    const int32_t dst_offset = dst_offsets[pkt_idx];
+    const uint32_t payload_size = payload_sizes[pkt_idx];
 
-    for (j = 0; j < payload_sizes[pkt_idx]; j++)
-      payload_chars_out[(MAX_PKT_SIZE * pkt_idx) + j] = pkt_hdr_addr[j];
-
-    for (; j < MAX_PKT_SIZE; j++)
-      payload_chars_out[(MAX_PKT_SIZE * pkt_idx) + j] = '\0';
+    for (j = 0; j < payload_size; ++j) {
+      payload_chars_out[dst_offset + j] = pkt_hdr_addr[j];
+    }
 
     pkt_idx += blockDim.x;
   }
@@ -78,7 +79,7 @@ __global__ void _packet_gather_header_kernel(
 
     int len = ip_to_string(((struct eth_ip *)pkt_hdr_addr)->l3_hdr.src_addr, header_src_ip_addr + (IP_ADDR_STRING_LEN * pkt_idx));
     while (len < IP_ADDR_STRING_LEN)
-      header_src_ip_addr[(IP_ADDR_STRING_LEN * pkt_idx) + len++] = '\0';
+      header_src_ip_addr[(IP_ADDR_STRING_LEN * pkt_idx) + len++] = ' ';
 
     pkt_idx += blockDim.x;
   }
@@ -197,12 +198,14 @@ void gather_payload(
   rmm::cuda_stream_view stream,
   rmm::mr::device_memory_resource* mr)
 {
+  auto dst_offsets = sizes_to_offsets(packet_count, payload_sizes, stream);
   _packet_gather_payload_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     packet_count,
     packets_buffer,
     header_sizes,
     payload_sizes,
-    dst_buff
+    dst_buff,
+    static_cast<int32_t*>(dst_offsets.data())
   );
 }
 
