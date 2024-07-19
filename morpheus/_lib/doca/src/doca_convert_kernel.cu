@@ -137,7 +137,7 @@ void gather_header(
   int32_t      packet_count,
   uintptr_t*   packets_buffer,
   uint32_t*    header_sizes,
-  uint32_t*    payload_sizes,
+  uint32_t*    payload_sizes, 
   uint32_t*     dst_buff,
   rmm::cuda_stream_view stream,
   rmm::mr::device_memory_resource* mr)

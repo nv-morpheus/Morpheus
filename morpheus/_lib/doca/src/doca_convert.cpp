@@ -110,7 +110,7 @@ std::unique_ptr<cudf::column> make_string_col(
     data.shrink_to_fit();
     CHECK(sizes.elements == data.elements);
 
-    auto offsets_buffer = morpheus::doca::sizes_to_offsets(sizes.elements, sizes.data<uint32_t>(), stream);
+    auto offsets_buffer = morpheus::doca::sizes_to_offsets(sizes.elements, sizes.data<uint32_t>(), stream);  
 
     const auto offset_count = sizes.elements+1;
     const auto offset_buff_size = (offset_count)*sizeof(int32_t);
@@ -259,14 +259,13 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     const auto t0 = now_ns();
 #endif
 
+    // gather payload data, intentionally calling this first as it needs to perform an early sync operation
+    doca::gather_payload(
+        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_payload_buffer->current_location(), m_stream_cpp);
+
     // gather header data
     doca::gather_header(
         packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_header_buffer->current_location<uint32_t>(), m_stream_cpp);
-
-    // gather payload data
-    doca::gather_payload(
-        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_payload_buffer->current_location(), m_stream_cpp);
-    cudaStreamSynchronize(m_stream_cpp);
 
 #if ENABLE_TIMERS == 1
     const auto t1 = now_ns();
@@ -275,7 +274,9 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     m_header_buffer->advance(header_buff_size, packet_count);
     m_payload_buffer->advance(payload_buff_size, packet_count);
 
-    MRC_CHECK_CUDA(cudaMemcpy(m_payload_sizes_buffer->current_location(), pkt_pld_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice));
+    MRC_CHECK_CUDA(cudaMemcpyAsync(m_payload_sizes_buffer->current_location(), pkt_pld_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice, m_stream_cpp));
+    cudaStreamSynchronize(m_stream_cpp);
+
     m_payload_sizes_buffer->advance(sizes_buff_size, packet_count);
 
 
