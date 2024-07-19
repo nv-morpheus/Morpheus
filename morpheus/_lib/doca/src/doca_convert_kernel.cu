@@ -69,14 +69,14 @@ __global__ void _packet_gather_src_ip_kernel(
   uintptr_t*  packets_buffer,
   uint32_t* header_sizes,
   uint32_t* payload_sizes,
-  uint32_t*  header_src_ip_addr
+  uint32_t*  dst_buff
 )
 {
   int pkt_idx = threadIdx.x;
 
   while (pkt_idx < packet_count) {
     uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx]);
-    header_src_ip_addr[pkt_idx] = ((struct eth_ip *)pkt_hdr_addr)->l3_hdr.src_addr;
+    dst_buff[pkt_idx] = ((struct eth_ip *)pkt_hdr_addr)->l3_hdr.src_addr;
     pkt_idx += blockDim.x;
   }
 }

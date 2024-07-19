@@ -49,7 +49,8 @@ struct packet_data_buffer
     template <typename T = uint8_t>
     T* current_location()
     {
-        return data<T>() + cur_offset_bytes;
+        // Get the head in bytes to perform the offset math, then cast to the user's desired type
+        return reinterpret_cast<T*>(data<uint8_t>() + cur_offset_bytes);
     }
 
     void shrink_to_fit();
