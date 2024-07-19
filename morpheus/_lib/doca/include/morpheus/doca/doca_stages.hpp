@@ -135,7 +135,6 @@ class MORPHEUS_EXPORT DocaConvertStage
 
     std::chrono::time_point<std::chrono::steady_clock> m_last_emit;
     std::unique_ptr<morpheus::doca::packet_data_buffer> m_header_buffer{nullptr};
-    std::unique_ptr<morpheus::doca::packet_data_buffer> m_header_sizes_buffer{nullptr};
     std::unique_ptr<morpheus::doca::packet_data_buffer> m_payload_buffer{nullptr};
     std::unique_ptr<morpheus::doca::packet_data_buffer> m_payload_sizes_buffer{nullptr};
 };
