@@ -64,23 +64,19 @@ __global__ void _packet_gather_payload_kernel(
 
 }
 
-__global__ void _packet_gather_header_kernel(
+__global__ void _packet_gather_src_ip_kernel(
   int32_t   packet_count,
   uintptr_t*  packets_buffer,
   uint32_t* header_sizes,
   uint32_t* payload_sizes,
-  uint8_t*  header_src_ip_addr
+  uint32_t*  header_src_ip_addr
 )
 {
   int pkt_idx = threadIdx.x;
 
   while (pkt_idx < packet_count) {
     uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx]);
-
-    int len = ip_to_string(((struct eth_ip *)pkt_hdr_addr)->l3_hdr.src_addr, header_src_ip_addr + (IP_ADDR_STRING_LEN * pkt_idx));
-    while (len < IP_ADDR_STRING_LEN)
-      header_src_ip_addr[(IP_ADDR_STRING_LEN * pkt_idx) + len++] = ' ';
-
+    header_src_ip_addr[pkt_idx] = ((struct eth_ip *)pkt_hdr_addr)->l3_hdr.src_addr;
     pkt_idx += blockDim.x;
   }
 }
@@ -88,24 +84,19 @@ __global__ void _packet_gather_header_kernel(
 namespace morpheus {
 namespace doca {
 
-std::pair<uint32_t, uint32_t> gather_sizes(
+uint32_t gather_sizes(
     int32_t packet_count,
-    uint32_t* fixed_header_size_list,
-    uint32_t* fixed_payload_size_list,
+    uint32_t* size_list,
     rmm::cuda_stream_view stream
 )
 {
-    auto header_sizes_tensor = matx::make_tensor<uint32_t>(fixed_header_size_list, {packet_count});
-    auto payload_sizes_tensor = matx::make_tensor<uint32_t>(fixed_payload_size_list, {packet_count});
+    auto sizes_tensor = matx::make_tensor<uint32_t>(size_list, {packet_count});
+    auto bytes_tensor = matx::make_tensor<uint32_t>({1});
 
-    auto header_bytes_tensor = matx::make_tensor<uint32_t>({1});
-    auto payload_bytes_tensor = matx::make_tensor<uint32_t>({1});
-
-    (header_bytes_tensor = matx::sum(header_sizes_tensor)).run(stream.value());
-    (payload_bytes_tensor = matx::sum(payload_sizes_tensor)).run(stream.value());
+    (bytes_tensor = matx::sum(sizes_tensor)).run(stream.value());
 
     cudaStreamSynchronize(stream);
-    return {header_bytes_tensor(0), payload_bytes_tensor(0)};
+    return bytes_tensor(0);
 }
 
 rmm::device_buffer sizes_to_offsets(
@@ -175,11 +166,11 @@ void gather_header(
   uintptr_t*   packets_buffer,
   uint32_t*    header_sizes,
   uint32_t*    payload_sizes,
-  uint8_t*     dst_buff,
+  uint32_t*     dst_buff,
   rmm::cuda_stream_view stream,
   rmm::mr::device_memory_resource* mr)
 {
-  _packet_gather_header_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
+  _packet_gather_src_ip_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     packet_count,
     packets_buffer,
     header_sizes,

@@ -30,10 +30,9 @@
 
 namespace morpheus::doca {
 
-std::pair<uint32_t, uint32_t> gather_sizes(
+uint32_t gather_sizes(
     int32_t packet_count,
-    uint32_t* fixed_header_size_list,
-    uint32_t* fixed_payload_size_list,
+    uint32_t* size_list,
     rmm::cuda_stream_view stream);
 
 void gather_payload(
@@ -50,7 +49,7 @@ void gather_header(
     uintptr_t* packets_buffer,
     uint32_t* header_sizes,
     uint32_t* payload_sizes,
-    uint8_t* dst_buff,
+    uint32_t* dst_buff,
     rmm::cuda_stream_view stream,
     rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
