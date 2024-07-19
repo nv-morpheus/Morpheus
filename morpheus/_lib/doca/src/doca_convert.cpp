@@ -206,7 +206,7 @@ DocaConvertStage::subscribe_fn_t DocaConvertStage::build()
             },
             [&]() {
                 if (!m_header_buffer->empty()) {
-                    std::cerr << "flushing buffer prior to shutdown" << std::endl << std::flush;
+                    LOG(INFO) << "flushing buffer prior to shutdown";
                     send_buffered_data(output);
                 }
                 output.on_completed();
@@ -219,8 +219,8 @@ void log_time(const std::string& item,
               const std::chrono::time_point<std::chrono::steady_clock> t2)
 {
     // TODO: Remove before merging
-    auto diff = std::chrono::duration_cast<std::chrono::duration<float>>(t2-t1);
-    std::cerr << item << " : " << std::fixed << diff.count() << "\n";
+    // auto diff = std::chrono::duration_cast<std::chrono::duration<float>>(t2-t1);
+    // std::cerr << item << " : " << std::fixed << diff.count() << "\n";
 }
 
 void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& output, sink_type_t raw_msg)
@@ -331,7 +331,6 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
 
     auto t7 = std::chrono::steady_clock::now();
     log_time("cudaMemcpy", t6, t7);
-    std::cerr << "\n\n\n";
 
 #if ENABLE_TIMERS == 1
     const auto t2 = now_ns();
