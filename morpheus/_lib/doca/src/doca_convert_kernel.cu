@@ -133,40 +133,6 @@ rmm::device_buffer sizes_to_offsets(
     return out_buffer;
 }
 
-rmm::device_buffer sizes_to_offsets(
-    int32_t packet_count,
-    uint32_t* header_sizes_buff,
-    uint32_t* payload_sizes_buff,
-    rmm::cuda_stream_view stream)
-{
-    std::cerr << "sizes_to_offsets\n";
-    const auto out_elem_count = packet_count+1;
-    const auto out_byte_size = out_elem_count*sizeof(int32_t);
-    rmm::device_buffer out_buffer(out_byte_size, stream);
-
-    auto header_sizes_tensor = matx::make_tensor<uint32_t>(header_sizes_buff, {packet_count});
-    auto payload_sizes_tensor = matx::make_tensor<uint32_t>(payload_sizes_buff, {packet_count});
-    auto sizes_tensor = matx::make_tensor<int32_t>({packet_count});
-    auto cum_tensor = matx::make_tensor<int32_t>({packet_count});
-
-    // first element needs to be a 0
-    auto zero_tensor = matx::make_tensor<int32_t>({1});
-    zero_tensor.SetVals({0});
-
-    auto offsets_tensor = matx::make_tensor<int32_t>(static_cast<int32_t*>(out_buffer.data()), {out_elem_count});
-
-
-    (sizes_tensor = matx::as_type<int32_t>(header_sizes_tensor) + matx::as_type<int32_t>(payload_sizes_tensor)).run(stream.value());
-    (cum_tensor = matx::cumsum(sizes_tensor)).run(stream.value());
-    (offsets_tensor = matx::concat(0, zero_tensor, cum_tensor)).run(stream.value());
-
-    std::cerr << "sizes_to_offsets - done\n";
-    cudaStreamSynchronize(stream);
-    std::cerr << "sizes_to_offsets - synced\n";
-
-    return out_buffer;
-}
-
 void gather_header(
   int32_t      packet_count,
   uintptr_t*   packets_buffer,

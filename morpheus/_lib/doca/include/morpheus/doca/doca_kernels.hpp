@@ -58,12 +58,6 @@ rmm::device_buffer sizes_to_offsets(
     uint32_t* sizes_buff,
     rmm::cuda_stream_view stream);
 
-rmm::device_buffer sizes_to_offsets(
-    int32_t packet_count,
-    uint32_t* header_sizes_buff,
-    uint32_t* payload_sizes_buff,
-    rmm::cuda_stream_view stream);
-
 int packet_receive_kernel(doca_gpu_eth_rxq* rxq_0,
                           doca_gpu_eth_rxq* rxq_1,
                           doca_gpu_semaphore_gpu* sem_0,
