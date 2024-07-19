@@ -131,16 +131,16 @@ std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::packet_data_buffer& da
     // cudf doesn't support uint32, need to cast to int64
     data.shrink_to_fit();
     const morpheus::TensorIndex num_packets = static_cast<morpheus::TensorIndex>(data.elements);
+
     auto src_type = morpheus::DType::create<uint32_t>();
-    auto dst_type =  morpheus::DType( morpheus::TypeId::INT64);
+    auto dst_type =  morpheus::DType(morpheus::TypeId::INT64);
     auto src_buffer = std::make_shared<rmm::device_buffer>(std::move(data.buffer));
     auto dev_mem_info =  morpheus::DevMemInfo(src_buffer, src_type, {num_packets}, {1});
 
     auto ip_int64_buff =  morpheus::MatxUtil::cast(dev_mem_info, dst_type.type_id());
-
     
     auto src_ip_int_col = std::make_unique<cudf::column>(cudf::data_type(dst_type.cudf_type_id()), 
-                                                         num_packets * dst_type.item_size(),
+                                                         num_packets,
                                                          std::move(*ip_int64_buff), 
                                                          std::move(rmm::device_buffer(0, stream)), 
                                                          0);
@@ -343,8 +343,9 @@ void DocaConvertStage::send_buffered_data(rxcpp::subscriber<source_type_t>& outp
 {
     auto cudf_t1 = std::chrono::steady_clock::now();
     const auto num_packets = m_payload_buffer->elements;
+    CHECK(num_packets == m_header_buffer->elements);
     
-    auto src_ip_col = make_ip_col(*m_header_buffer, m_stream_cpp);    
+    auto src_ip_col = make_ip_col(*m_header_buffer, m_stream_cpp);
     auto payload_col = make_string_col(*m_payload_buffer, *m_payload_sizes_buffer, m_stream_cpp);
 
     std::vector<std::unique_ptr<cudf::column>> gathered_columns;
