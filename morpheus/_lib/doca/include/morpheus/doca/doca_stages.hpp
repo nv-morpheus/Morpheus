@@ -123,10 +123,6 @@ class MORPHEUS_EXPORT DocaConvertStage
 
     cudaStream_t m_stream;
     rmm::cuda_stream_view m_stream_cpp;
-    uint32_t* m_fixed_pld_size_list;
-    uint32_t* m_fixed_pld_size_list_cpu;
-    uint32_t* m_fixed_hdr_size_list;
-    uint32_t* m_fixed_hdr_size_list_cpu;
 
     std::chrono::milliseconds m_max_time_delta;
     std::size_t m_sizes_buffer_size;

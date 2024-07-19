@@ -163,31 +163,15 @@ DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_time_delta,
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp              = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
-    m_fixed_pld_size_list_cpu = (uint32_t*)calloc(MAX_PKT_RECEIVE, sizeof(uint32_t));
-    cudaMalloc((void**)&m_fixed_pld_size_list, MAX_PKT_RECEIVE * sizeof(uint32_t));
-    for (int idx = 0; idx < MAX_PKT_RECEIVE; idx++)
-        m_fixed_pld_size_list_cpu[idx] = MAX_PKT_SIZE;
-    MRC_CHECK_CUDA(cudaMemcpy(m_fixed_pld_size_list, m_fixed_pld_size_list_cpu, MAX_PKT_RECEIVE * sizeof(uint32_t), cudaMemcpyDefault));
-
-    m_fixed_hdr_size_list_cpu = (uint32_t*)calloc(MAX_PKT_RECEIVE, sizeof(uint32_t));
-    cudaMalloc((void**)&m_fixed_hdr_size_list, MAX_PKT_RECEIVE * sizeof(uint32_t));
-    for (int idx = 0; idx < MAX_PKT_RECEIVE; idx++)
-        m_fixed_hdr_size_list_cpu[idx] = IP_ADDR_STRING_LEN;
-    MRC_CHECK_CUDA(cudaMemcpy(m_fixed_hdr_size_list, m_fixed_hdr_size_list_cpu, MAX_PKT_RECEIVE * sizeof(uint32_t), cudaMemcpyDefault));
 
     auto mr = rmm::mr::get_current_device_resource();
     m_header_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(m_header_buffer_size, m_stream_cpp, mr);
     m_payload_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(m_payload_buffer_size, m_stream_cpp, mr);
     m_payload_sizes_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(m_sizes_buffer_size, m_stream_cpp, mr);
-
 }
 
 DocaConvertStage::~DocaConvertStage()
 {
-    free(m_fixed_pld_size_list_cpu);
-    cudaFree(m_fixed_pld_size_list);
-    free(m_fixed_hdr_size_list_cpu);
-    cudaFree(m_fixed_hdr_size_list);
     cudaStreamDestroy(m_stream);
 }
 
