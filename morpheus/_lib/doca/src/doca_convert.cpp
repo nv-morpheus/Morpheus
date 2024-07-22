@@ -53,41 +53,6 @@
 #include <utility>
 #include <vector>
 
-#define BE_IPV4_ADDR(a, b, c, d) (RTE_BE32((a << 24) + (b << 16) + (c << 8) + d)) /* Big endian conversion */
-#define ENABLE_TIMERS 0
-
-std::optional<uint32_t> ip_to_int(std::string const& ip_address)
-{
-    if (ip_address.empty())
-    {
-        return 0;
-    }
-
-    uint8_t a, b, c, d;
-    uint32_t ret;
-
-    ret = sscanf(ip_address.c_str(), "%hhu.%hhu.%hhu.%hhu", &a, &b, &c, &d);
-
-    printf("%u: %u %u %u %u\n", ret, a, b, c, d);
-
-    if (ret == 4)
-    {
-        return BE_IPV4_ADDR(a, b, c, d);
-    }
-
-    return std::nullopt;
-}
-
-static uint64_t now_ns()
-{
-    struct timespec t;
-    if (clock_gettime(CLOCK_REALTIME, &t) != 0)
-        return 0;
-    return (uint64_t)t.tv_nsec + (uint64_t)t.tv_sec * 1000 * 1000 * 1000;
-}
-
-#define DEBUG_GET_TIMESTAMP(ts) clock_gettime(CLOCK_REALTIME, (ts))
-
 std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, const std::string& buffer_name)
 {
     if (incoming_size > default_size)
@@ -251,10 +216,6 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
            payload_buff_size <= m_payload_buffer->available_bytes() &&
            sizes_buff_size <= m_payload_sizes_buffer->available_bytes());
 
-#if ENABLE_TIMERS == 1
-    const auto t0 = now_ns();
-#endif
-
     // gather payload data, intentionally calling this first as it needs to perform an early sync operation
     doca::gather_payload(packet_count,
                          pkt_addr_list,
@@ -271,10 +232,6 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
                         m_header_buffer->current_location<uint32_t>(),
                         m_stream_cpp);
 
-#if ENABLE_TIMERS == 1
-    const auto t1 = now_ns();
-#endif
-
     m_header_buffer->advance(header_buff_size, packet_count);
     m_payload_buffer->advance(payload_buff_size, packet_count);
 
@@ -286,10 +243,6 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     cudaStreamSynchronize(m_stream_cpp);
 
     m_payload_sizes_buffer->advance(sizes_buff_size, packet_count);
-
-#if ENABLE_TIMERS == 1
-    const auto t2 = now_ns();
-#endif
 }
 
 void DocaConvertStage::send_buffered_data(rxcpp::subscriber<source_type_t>& output)
