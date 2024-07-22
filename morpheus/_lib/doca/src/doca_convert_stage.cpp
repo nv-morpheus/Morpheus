@@ -123,7 +123,7 @@ DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_time_delta,
   m_payload_buffer_size{payload_buffer_size}
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
-    m_stream_cpp = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
+    m_stream_cpp = rmm::cuda_stream_view(m_stream);
 
     auto mr          = rmm::mr::get_current_device_resource();
     m_header_buffer  = std::make_unique<morpheus::doca::packet_data_buffer>(m_header_buffer_size, m_stream_cpp, mr);
