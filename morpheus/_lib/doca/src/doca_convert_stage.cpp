@@ -69,37 +69,37 @@ std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, con
 
 std::unique_ptr<cudf::column> make_string_col(morpheus::doca::packet_data_buffer& packet_buffer)
 {
-    auto offsets_buffer = morpheus::doca::sizes_to_offsets(packet_buffer.num_packets, 
-                                                           static_cast<uint32_t*>(packet_buffer.payload_sizes_buffer->data()), 
-                                                           packet_buffer.stream);
+    auto offsets_buffer = morpheus::doca::sizes_to_offsets(packet_buffer.m_num_packets, 
+                                                           static_cast<uint32_t*>(packet_buffer.m_payload_sizes_buffer->data()), 
+                                                           packet_buffer.m_stream);
 
-    const auto offset_count     = packet_buffer.num_packets + 1;
+    const auto offset_count     = packet_buffer.m_num_packets + 1;
     const auto offset_buff_size = (offset_count) * sizeof(int32_t);
 
     auto offsets_col = std::make_unique<cudf::column>(cudf::data_type(cudf::type_id::INT32),
                                                       offset_count,
                                                       std::move(offsets_buffer),
-                                                      std::move(rmm::device_buffer(0, packet_buffer.stream)),
+                                                      std::move(rmm::device_buffer(0, packet_buffer.m_stream)),
                                                       0);
 
-    return cudf::make_strings_column(packet_buffer.num_packets, std::move(offsets_col), std::move(*packet_buffer.payload_buffer), 0, {});
+    return cudf::make_strings_column(packet_buffer.m_num_packets, std::move(offsets_col), std::move(*packet_buffer.m_payload_buffer), 0, {});
 }
 
 std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::packet_data_buffer& packet_buffer)
 {
     // cudf doesn't support uint32, need to cast to int64
-    const morpheus::TensorIndex num_packets = static_cast<morpheus::TensorIndex>(packet_buffer.num_packets);
+    const morpheus::TensorIndex num_packets = static_cast<morpheus::TensorIndex>(packet_buffer.m_num_packets);
 
     auto src_type     = morpheus::DType::create<uint32_t>();
     auto dst_type     = morpheus::DType(morpheus::TypeId::INT64);
-    auto dev_mem_info = morpheus::DevMemInfo(packet_buffer.header_buffer, src_type, {num_packets}, {1});
+    auto dev_mem_info = morpheus::DevMemInfo(packet_buffer.m_header_buffer, src_type, {num_packets}, {1});
 
     auto ip_int64_buff = morpheus::MatxUtil::cast(dev_mem_info, dst_type.type_id());
 
     auto src_ip_int_col = std::make_unique<cudf::column>(cudf::data_type(dst_type.cudf_type_id()),
                                                          num_packets,
                                                          std::move(*ip_int64_buff),
-                                                         std::move(rmm::device_buffer(0, packet_buffer.stream)),
+                                                         std::move(rmm::device_buffer(0, packet_buffer.m_stream)),
                                                          0);
 
     return cudf::strings::integers_to_ipv4(src_ip_int_col->view());
@@ -166,7 +166,7 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
                          pkt_addr_list,
                          pkt_hdr_size_list,
                          pkt_pld_size_list,
-                         static_cast<uint8_t*>(packet_buffer.payload_buffer->data()),
+                         static_cast<uint8_t*>(packet_buffer.m_payload_buffer->data()),
                          m_stream_cpp);
 
     // gather header data
@@ -174,10 +174,10 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
                         pkt_addr_list,
                         pkt_hdr_size_list,
                         pkt_pld_size_list,
-                        static_cast<uint32_t*>(packet_buffer.header_buffer->data()),
+                        static_cast<uint32_t*>(packet_buffer.m_header_buffer->data()),
                         m_stream_cpp);
 
-    MRC_CHECK_CUDA(cudaMemcpyAsync(static_cast<uint8_t*>(packet_buffer.payload_sizes_buffer->data()),
+    MRC_CHECK_CUDA(cudaMemcpyAsync(static_cast<uint8_t*>(packet_buffer.m_payload_sizes_buffer->data()),
                                    pkt_pld_size_list,
                                    sizes_buff_size,
                                    cudaMemcpyDeviceToDevice,

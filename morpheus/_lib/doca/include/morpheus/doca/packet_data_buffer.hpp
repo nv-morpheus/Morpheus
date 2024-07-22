@@ -26,17 +26,17 @@ namespace morpheus::doca {
 
 struct packet_data_buffer
 {
-    packet_data_buffer(std::size_t packet_count,
+    packet_data_buffer(std::size_t num_packets,
                        std::size_t header_size,
                        std::size_t payload_size,
                        std::size_t payload_sizes_size,    
-                       rmm::cuda_stream_view rmm_stream,
+                       rmm::cuda_stream_view stream,
                        rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-    std::size_t num_packets;
-    rmm::cuda_stream_view stream;
-    std::shared_ptr<rmm::device_buffer> header_buffer;
-    std::unique_ptr<rmm::device_buffer> payload_buffer;
-    std::unique_ptr<rmm::device_buffer> payload_sizes_buffer;
+    std::size_t m_num_packets;
+    rmm::cuda_stream_view m_stream;
+    std::shared_ptr<rmm::device_buffer> m_header_buffer;
+    std::unique_ptr<rmm::device_buffer> m_payload_buffer;
+    std::unique_ptr<rmm::device_buffer> m_payload_sizes_buffer;
 };
 }  // namespace morpheus::doca
