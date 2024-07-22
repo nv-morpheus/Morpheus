@@ -17,7 +17,7 @@
 
 #include "morpheus/doca/common.hpp"
 #include "morpheus/doca/doca_kernels.hpp"
-#include "morpheus/doca/doca_stages.hpp"
+#include "morpheus/doca/doca_convert_stage.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/raw_packet.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo

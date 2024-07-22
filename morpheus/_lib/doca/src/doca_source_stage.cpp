@@ -24,7 +24,7 @@
 #include "morpheus/doca/doca_rx_pipe.hpp"
 #include "morpheus/doca/doca_rx_queue.hpp"
 #include "morpheus/doca/doca_semaphore.hpp"
-#include "morpheus/doca/doca_stages.hpp"
+#include "morpheus/doca/doca_source_stage.hpp"
 #include "morpheus/messages/raw_packet.hpp"
 #include "morpheus/utilities/error.hpp"
 

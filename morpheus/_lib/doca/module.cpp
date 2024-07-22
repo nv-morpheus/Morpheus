@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-#include "morpheus/doca/doca_stages.hpp"
+#include "morpheus/doca/doca_convert_stage.hpp"
+#include "morpheus/doca/doca_source_stage.hpp"
 
 #include <mrc/segment/builder.hpp>  // IWYU pragma: keep
 #include <mrc/segment/object.hpp>

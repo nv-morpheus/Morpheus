@@ -23,13 +23,11 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/raw_packet.hpp"
 
-#include <cudf/table/table.hpp>
 #include <mrc/segment/builder.hpp>
 #include <pymrc/node.hpp>
 
 #include <chrono>
 #include <memory>
-#include <vector>
 
 namespace morpheus {
 
@@ -37,58 +35,6 @@ constexpr std::chrono::milliseconds DEFAULT_MAX_TIME_DELTA = std::chrono::second
 constexpr std::size_t DEFAULT_SIZES_BUFFER_SIZE            = 1024 * 1024 * 3;
 constexpr std::size_t DEFAULT_HEADER_BUFFER_SIZE           = 1024 * 1024 * 10;
 constexpr std::size_t DEFAULT_PAYLOAD_BUFFER_SIZE          = 1024 * 1024 * 1024;
-
-namespace doca {
-
-struct DocaContext;
-struct DocaRxQueue;
-struct DocaRxPipe;
-struct DocaSemaphore;
-
-}  // namespace doca
-
-/**
- * @brief Receives a firehose of raw packets from a GPUNetIO-enabled device.
- *
- * Tested only on ConnectX 6-Dx with a single GPU on the same NUMA node running firmware 24.35.2000
- */
-class MORPHEUS_EXPORT DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>
-{
-  public:
-    using base_t = mrc::pymrc::PythonSource<std::shared_ptr<RawPacketMessage>>;
-    using typename base_t::source_type_t;
-    using typename base_t::subscriber_fn_t;
-
-    DocaSourceStage(std::string const& nic_pci_address,
-                    std::string const& gpu_pci_address,
-                    std::string const& traffic_type);
-    ~DocaSourceStage() override;
-
-  private:
-    subscriber_fn_t build();
-
-    std::shared_ptr<morpheus::doca::DocaContext> m_context;
-    std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue>> m_rxq;
-    std::vector<std::shared_ptr<morpheus::doca::DocaSemaphore>> m_semaphore;
-    std::shared_ptr<morpheus::doca::DocaRxPipe> m_rxpipe;
-    enum doca::doca_traffic_type m_traffic_type;
-};
-
-/****** DocaSourceStageInterfaceProxy***********************/
-/**
- * @brief Interface proxy, used to insulate python bindings.
- */
-struct MORPHEUS_EXPORT DocaSourceStageInterfaceProxy
-{
-    /**
-     * @brief Create and initialize a DocaSourceStage, and return the result.
-     */
-    static std::shared_ptr<mrc::segment::Object<DocaSourceStage>> init(mrc::segment::Builder& builder,
-                                                                       std::string const& name,
-                                                                       std::string const& nic_pci_address,
-                                                                       std::string const& gpu_pci_address,
-                                                                       std::string const& traffic_type);
-};
 
 /**
  * @brief Transform DOCA GPUNetIO raw packets into Dataframe for other Morpheus stages.
