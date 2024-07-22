@@ -17,46 +17,26 @@
 
 #pragma once
 
-#include "morpheus/types.hpp"  // for TensorSize
-
 #include <rmm/device_buffer.hpp>
 
 #include <memory>
-#include <vector>
+
 
 namespace morpheus::doca {
 
 struct packet_data_buffer
 {
-    packet_data_buffer(std::size_t buffer_size_bytes,
-                       rmm::cuda_stream_view stream,
+    packet_data_buffer(std::size_t packet_count,
+                       std::size_t header_size,
+                       std::size_t payload_size,
+                       std::size_t payload_sizes_size,    
+                       rmm::cuda_stream_view rmm_stream,
                        rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-    morpheus::TensorSize capacity() const;
-
-    morpheus::TensorSize available_bytes() const;
-
-    bool empty() const;
-
-    void advance(morpheus::TensorSize num_bytes, morpheus::TensorSize num_elements);
-
-    template <typename T = uint8_t>
-    T* data()
-    {
-        return static_cast<T*>(buffer.data());
-    }
-
-    template <typename T = uint8_t>
-    T* current_location()
-    {
-        // Get the head in bytes to perform the offset math, then cast to the user's desired type
-        return reinterpret_cast<T*>(data<uint8_t>() + cur_offset_bytes);
-    }
-
-    void shrink_to_fit();
-
-    rmm::device_buffer buffer;
-    morpheus::TensorSize cur_offset_bytes;
-    morpheus::TensorSize elements;
+    std::size_t num_packets;
+    rmm::cuda_stream_view stream;
+    std::shared_ptr<rmm::device_buffer> header_buffer;
+    std::unique_ptr<rmm::device_buffer> payload_buffer;
+    std::unique_ptr<rmm::device_buffer> payload_sizes_buffer;
 };
 }  // namespace morpheus::doca

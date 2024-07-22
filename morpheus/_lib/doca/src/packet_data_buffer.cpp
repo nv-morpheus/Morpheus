@@ -17,47 +17,19 @@
 
 #include "morpheus/doca/packet_data_buffer.hpp"
 
-#include <glog/logging.h>
-
 namespace morpheus::doca {
 
-packet_data_buffer::packet_data_buffer(std::size_t buffer_size_bytes,
-                                       rmm::cuda_stream_view stream,
+packet_data_buffer::packet_data_buffer(std::size_t packet_count,
+                                       std::size_t header_size,
+                                       std::size_t payload_size,
+                                       std::size_t payload_sizes_size, 
+                                       rmm::cuda_stream_view rmm_stream,
                                        rmm::mr::device_memory_resource* mr) :
-  buffer{buffer_size_bytes, stream, mr},
-  cur_offset_bytes{0},
-  elements{0}
+  num_packets{packet_count},
+  stream{rmm_stream},
+  header_buffer{std::make_shared<rmm::device_buffer>(header_size, stream, mr)},
+  payload_buffer{std::make_unique<rmm::device_buffer>(payload_size, stream, mr)},
+  payload_sizes_buffer{std::make_unique<rmm::device_buffer>(payload_sizes_size, stream, mr)}
 {}
-
-morpheus::TensorSize packet_data_buffer::capacity() const
-{
-    return buffer.size();
-}
-
-morpheus::TensorSize packet_data_buffer::available_bytes() const
-{
-    return capacity() - cur_offset_bytes;
-}
-
-bool packet_data_buffer::empty() const
-{
-    return cur_offset_bytes == 0;
-}
-
-void packet_data_buffer::advance(morpheus::TensorSize num_bytes, morpheus::TensorSize num_elements)
-{
-    cur_offset_bytes += num_bytes;
-    elements += num_elements;
-    CHECK(cur_offset_bytes <= capacity());
-}
-
-void packet_data_buffer::shrink_to_fit()
-{
-    if (available_bytes() > 0)
-    {
-        buffer.resize(cur_offset_bytes, buffer.stream());
-        buffer.shrink_to_fit(buffer.stream());
-    }
-}
 
 }  // namespace morpheus::doca

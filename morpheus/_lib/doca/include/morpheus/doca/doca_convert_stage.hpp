@@ -65,20 +65,13 @@ class MORPHEUS_EXPORT DocaConvertStage
      */
     // source_type_t on_data(sink_type_t x);
     void on_raw_packet_message(rxcpp::subscriber<source_type_t>& output, sink_type_t x);
-    void send_buffered_data(rxcpp::subscriber<source_type_t>& output);
+    void send_buffered_data(rxcpp::subscriber<source_type_t>& output, doca::packet_data_buffer&& paccket_buffer);
 
     cudaStream_t m_stream;
     rmm::cuda_stream_view m_stream_cpp;
 
     std::chrono::milliseconds m_max_time_delta;
-    std::size_t m_sizes_buffer_size;
-    std::size_t m_header_buffer_size;
     std::size_t m_payload_buffer_size;
-
-    std::chrono::time_point<std::chrono::steady_clock> m_last_emit;
-    std::unique_ptr<morpheus::doca::packet_data_buffer> m_header_buffer{nullptr};
-    std::unique_ptr<morpheus::doca::packet_data_buffer> m_payload_buffer{nullptr};
-    std::unique_ptr<morpheus::doca::packet_data_buffer> m_payload_sizes_buffer{nullptr};
 };
 
 /****** DocaConvertStageInterfaceProxy***********************/
