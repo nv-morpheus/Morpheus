@@ -16,7 +16,6 @@
 
 import glob
 import os
-from pathlib import Path
 
 import click
 from scapy.all import IP  # pylint: disable=no-name-in-module
@@ -33,9 +32,9 @@ MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
 def get_data(input_glob: str) -> list[str]:
     data = []
     for file in glob.glob(input_glob):
-        with open(file, 'r', encoding='utf-8') as fp:
+        with open(file, 'r', encoding='utf-8') as fh:
             while True:
-                content = fp.read(1024)
+                content = fh.read(1024)
                 if not content:
                     break
 
@@ -106,4 +105,4 @@ def main(iface: str | None,
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter
