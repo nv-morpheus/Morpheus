@@ -238,15 +238,15 @@ class _UserTimeSeries:
             anomalies = action.window["event_bin"].isin(is_anomaly.get())
 
             # Set the anomalies by matching indexes
-            action.message.set_meta(
+            action.message.payload().set_data(
                 "ts_anomaly",
-                anomalies[action.message.mess_offset:action.message.mess_offset + action.message.mess_count])
+                anomalies[0:action.message.payload().count])
 
-            idx = action.message.get_meta().index
+            idx = action.message.payload().get_data().index
 
             # Find anomalies that are in the active message
             # pylint: disable=singleton-comparison
-            paired_anomalies = anomalies[anomalies == True].index.intersection(idx)  # noqa: E712
+            paired_anomalies = anomalies[anomalies == True].index.intersection(idx.to_pandas())  # noqa: E712
 
             # Return the anomalies for priting. But only if the current message has anomalies that will get flagged
             if (len(paired_anomalies) > 0):
