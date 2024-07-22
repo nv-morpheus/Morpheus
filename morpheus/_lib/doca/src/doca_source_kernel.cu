@@ -46,6 +46,8 @@
 
 #define DEVICE_GET_TIME(globaltimer) asm volatile("mov.u64 %0, %globaltimer;" : "=l"(globaltimer))
 
+using namespace morpheus::doca;
+
 __global__ void _packet_receive_kernel(doca_gpu_eth_rxq* rxq_0,
                                        doca_gpu_eth_rxq* rxq_1,
                                        doca_gpu_semaphore_gpu* sem_0,

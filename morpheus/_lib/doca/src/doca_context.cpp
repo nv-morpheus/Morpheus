@@ -115,7 +115,7 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
     RTE_TRY(rte_eth_dev_info_get(port_id, &dev_info));
     RTE_TRY(rte_eth_dev_configure(port_id, rxq_num, rxq_num, &eth_conf));
 
-    mp = rte_pktmbuf_pool_create("TEST", 8192, 0, 0, MAX_PKT_SIZE, rte_eth_dev_socket_id(port_id));
+    mp = rte_pktmbuf_pool_create("TEST", 8192, 0, 0, morpheus::doca::MAX_PKT_SIZE, rte_eth_dev_socket_id(port_id));
 
     if (mp == nullptr)
     {

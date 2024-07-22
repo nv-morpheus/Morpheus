@@ -71,7 +71,7 @@ class MORPHEUS_EXPORT DocaSourceStage : public mrc::pymrc::PythonSource<std::sha
     std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue>> m_rxq;
     std::vector<std::shared_ptr<morpheus::doca::DocaSemaphore>> m_semaphore;
     std::shared_ptr<morpheus::doca::DocaRxPipe> m_rxpipe;
-    enum doca_traffic_type m_traffic_type;
+    enum doca::doca_traffic_type m_traffic_type;
 };
 
 /****** DocaSourceStageInterfaceProxy***********************/

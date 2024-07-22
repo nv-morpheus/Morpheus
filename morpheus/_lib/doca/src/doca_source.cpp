@@ -55,6 +55,8 @@
 
 namespace morpheus {
 
+using namespace morpheus::doca;
+
 DocaSourceStage::DocaSourceStage(std::string const& nic_pci_address,
                                  std::string const& gpu_pci_address,
                                  std::string const& traffic_type) :

@@ -21,7 +21,8 @@
 #include <string>
 #include <type_traits>
 
-// TODO: move this to the morpheus::doca namespace
+namespace morpheus::doca {
+
 uint32_t const PACKETS_PER_THREAD   = 16;
 uint32_t const THREADS_PER_BLOCK    = 512;
 uint32_t const PACKETS_PER_BLOCK    = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
@@ -65,3 +66,5 @@ struct packets_info
     int32_t* next_proto_id_out;
     uint32_t* timestamp_out;
 };
+
+} // namespace morpheus::doca
