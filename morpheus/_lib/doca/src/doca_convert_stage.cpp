@@ -129,12 +129,7 @@ DocaConvertStage::subscribe_fn_t DocaConvertStage::build()
                 output.on_error(error_ptr);
             },
             [&]() {
-                // if (!m_header_buffer->empty())
-                // {
-                //     LOG(INFO) << "flushing buffer prior to shutdown";
-                //     send_buffered_data(output);
-                // }
-                output.on_completed();
+                m_buffer_channel->close_channel();
             }));
     };
 }
@@ -181,7 +176,7 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
 
     cudaStreamSynchronize(m_stream_cpp);
 
-    send_buffered_data(output, std::move(packet_buffer));
+    m_buffer_channel->await_write(std::move(packet_buffer));
 }
 
 void DocaConvertStage::send_buffered_data(rxcpp::subscriber<source_type_t>& output, doca::packet_data_buffer&& packet_buffer)

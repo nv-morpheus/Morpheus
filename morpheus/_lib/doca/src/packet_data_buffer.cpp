@@ -22,7 +22,6 @@ namespace morpheus::doca {
 packet_data_buffer::packet_data_buffer() :
   m_num_packets{0},
   m_stream{rmm::cuda_stream_per_thread},
-  // The header buffer needs to be a shared pointer to construct a DevMemInfo
   m_header_buffer{nullptr},
   m_payload_buffer{nullptr},
   m_payload_offsets_buffer{nullptr}
@@ -36,7 +35,6 @@ packet_data_buffer::packet_data_buffer(std::size_t num_packets,
                                        rmm::mr::device_memory_resource* mr) :
   m_num_packets{num_packets},
   m_stream{stream},
-  // The header buffer needs to be a shared pointer to construct a DevMemInfo
   m_header_buffer{std::make_shared<rmm::device_buffer>(header_size, stream, mr)},
   m_payload_buffer{std::make_unique<rmm::device_buffer>(payload_size, stream, mr)},
   m_payload_offsets_buffer{std::make_unique<rmm::device_buffer>(payload_sizes_size, stream, mr)}

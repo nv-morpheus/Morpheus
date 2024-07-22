@@ -33,9 +33,14 @@ struct packet_data_buffer
                        std::size_t payload_sizes_size,    
                        rmm::cuda_stream_view stream,
                        rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+    
+    packet_data_buffer(packet_data_buffer&& other) = default;
+    packet_data_buffer& operator=(packet_data_buffer&& other) = default;
 
     std::size_t m_num_packets;
     rmm::cuda_stream_view m_stream;
+
+    // The header buffer needs to be a shared pointer to construct a DevMemInfo
     std::shared_ptr<rmm::device_buffer> m_header_buffer;
     std::unique_ptr<rmm::device_buffer> m_payload_buffer;
     std::unique_ptr<rmm::device_buffer> m_payload_offsets_buffer;
