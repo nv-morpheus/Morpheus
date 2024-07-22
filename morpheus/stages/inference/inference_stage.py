@@ -415,7 +415,10 @@ class InferenceStage(MultiMessageStage):
             for start, stop in out_batches:
                 out_msg = ControlMessage(msg)
                 out_msg.payload(msg.payload().get_slice(start, stop))
-                out_msg.tensors(msg.tensors())
+                out_msg_tensors = _messages.TensorMemory(count=stop - start, tensors={})
+                for (name, tensor) in msg.tensors().get_tensors().items():
+                    out_msg_tensors.set_tensor(name, tensor[start:stop])
+                out_msg.tensors(out_msg_tensors)
                 out_resp.append(out_msg)
 
             assert len(out_resp) > 0
