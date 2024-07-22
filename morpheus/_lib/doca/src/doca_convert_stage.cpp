@@ -69,16 +69,9 @@ std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, con
 
 std::unique_ptr<cudf::column> make_string_col(morpheus::doca::packet_data_buffer& packet_buffer)
 {
-    auto offsets_buffer = morpheus::doca::sizes_to_offsets(packet_buffer.m_num_packets, 
-                                                           static_cast<uint32_t*>(packet_buffer.m_payload_sizes_buffer->data()), 
-                                                           packet_buffer.m_stream);
-
-    const auto offset_count     = packet_buffer.m_num_packets + 1;
-    const auto offset_buff_size = (offset_count) * sizeof(int32_t);
-
     auto offsets_col = std::make_unique<cudf::column>(cudf::data_type(cudf::type_id::INT32),
-                                                      offset_count,
-                                                      std::move(offsets_buffer),
+                                                      packet_buffer.m_num_packets + 1,
+                                                      std::move(*packet_buffer.m_payload_offsets_buffer),
                                                       std::move(rmm::device_buffer(0, packet_buffer.m_stream)),
                                                       0);
 
@@ -157,17 +150,17 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     const auto payload_buff_size = doca::gather_sizes(packet_count, pkt_pld_size_list, m_stream_cpp);
 
     const uint32_t header_buff_size = packet_count * sizeof(uint32_t);
-    const auto sizes_buff_size      = packet_count * sizeof(uint32_t);
+
+    // The offsets buffer needs to start with a 0, and end with the offset of the last element, and is always one
+    // element longer than the number of packets
+    const auto sizes_buff_size = (packet_count + 1) * sizeof(uint32_t);
 
     auto packet_buffer = doca::packet_data_buffer(packet_count, header_buff_size, payload_buff_size, sizes_buff_size, m_stream_cpp);
     
-    // gather payload data, intentionally calling this first as it needs to perform an early sync operation
-    doca::gather_payload(packet_count,
-                         pkt_addr_list,
-                         pkt_hdr_size_list,
-                         pkt_pld_size_list,
-                         static_cast<uint8_t*>(packet_buffer.m_payload_buffer->data()),
-                         m_stream_cpp);
+    morpheus::doca::sizes_to_offsets(packet_buffer.m_num_packets, 
+                                     pkt_pld_size_list,
+                                     *packet_buffer.m_payload_offsets_buffer,
+                                     packet_buffer.m_stream);
 
     // gather header data
     doca::gather_header(packet_count,
@@ -177,11 +170,14 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
                         static_cast<uint32_t*>(packet_buffer.m_header_buffer->data()),
                         m_stream_cpp);
 
-    MRC_CHECK_CUDA(cudaMemcpyAsync(static_cast<uint8_t*>(packet_buffer.m_payload_sizes_buffer->data()),
-                                   pkt_pld_size_list,
-                                   sizes_buff_size,
-                                   cudaMemcpyDeviceToDevice,
-                                   m_stream_cpp));
+    doca::gather_payload(packet_count,
+                         pkt_addr_list,
+                         pkt_hdr_size_list,
+                         pkt_pld_size_list,
+                         static_cast<int32_t*>(packet_buffer.m_payload_offsets_buffer->data()),
+                         static_cast<uint8_t*>(packet_buffer.m_payload_buffer->data()),
+                         m_stream_cpp);
+
     cudaStreamSynchronize(m_stream_cpp);
 
     send_buffered_data(output, std::move(packet_buffer));

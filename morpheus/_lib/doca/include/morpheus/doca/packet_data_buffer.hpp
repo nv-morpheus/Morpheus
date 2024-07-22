@@ -37,6 +37,6 @@ struct packet_data_buffer
     rmm::cuda_stream_view m_stream;
     std::shared_ptr<rmm::device_buffer> m_header_buffer;
     std::unique_ptr<rmm::device_buffer> m_payload_buffer;
-    std::unique_ptr<rmm::device_buffer> m_payload_sizes_buffer;
+    std::unique_ptr<rmm::device_buffer> m_payload_offsets_buffer;
 };
 }  // namespace morpheus::doca
