@@ -137,8 +137,8 @@ void gather_payload(int32_t packet_count,
                     rmm::mr::device_memory_resource* mr)
 {
     auto dst_offsets = sizes_to_offsets(packet_count, payload_sizes, stream);
-    dim3 threadsPerBlock(16, 16);
-    dim3 numBlocks(packet_count / threadsPerBlock.x, MAX_PKT_SIZE / threadsPerBlock.y);
+    dim3 threadsPerBlock(32, 32);
+    dim3 numBlocks((packet_count + threadsPerBlock.x - 1) / threadsPerBlock.x, (MAX_PKT_SIZE+threadsPerBlock.y-1) / threadsPerBlock.y);
     _packet_gather_payload_kernel<<<numBlocks, threadsPerBlock, 0, stream>>>(
         packet_count, packets_buffer, header_sizes, payload_sizes, dst_buff, static_cast<int32_t*>(dst_offsets.data()));
 }
