@@ -46,21 +46,19 @@ __global__ void _packet_gather_payload_kernel(int32_t packet_count,
                                               uint8_t* payload_chars_out,
                                               int32_t* dst_offsets)
 {
-    int pkt_idx = threadIdx.x;
-    int j       = 0;
+    int pkt_idx     = blockIdx.x * blockDim.x + threadIdx.x;
+    int byte_offset = blockIdx.y * blockDim.y + threadIdx.y;
 
-    while (pkt_idx < packet_count)
+    if (pkt_idx < packet_count)
     {
-        uint8_t* pkt_hdr_addr       = (uint8_t*)(packets_buffer[pkt_idx] + header_sizes[pkt_idx]);
-        const int32_t dst_offset    = dst_offsets[pkt_idx];
         const uint32_t payload_size = payload_sizes[pkt_idx];
 
-        for (j = 0; j < payload_size; ++j)
+        if (byte_offset < payload_size)
         {
-            payload_chars_out[dst_offset + j] = pkt_hdr_addr[j];
+            uint8_t* pkt_hdr_addr                       = (uint8_t*)(packets_buffer[pkt_idx] + header_sizes[pkt_idx]);
+            const int32_t dst_offset                    = dst_offsets[pkt_idx];
+            payload_chars_out[dst_offset + byte_offset] = pkt_hdr_addr[byte_offset];
         }
-
-        pkt_idx += blockDim.x;
     }
 }
 
@@ -145,7 +143,9 @@ void gather_payload(int32_t packet_count,
                     rmm::mr::device_memory_resource* mr)
 {
     auto dst_offsets = sizes_to_offsets(packet_count, payload_sizes, stream);
-    _packet_gather_payload_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
+    dim3 threadsPerBlock(16, 16);
+    dim3 numBlocks(packet_count / threadsPerBlock.x, MAX_PKT_SIZE / threadsPerBlock.y);
+    _packet_gather_payload_kernel<<<numBlocks, threadsPerBlock, 0, stream>>>(
         packet_count, packets_buffer, header_sizes, payload_sizes, dst_buff, static_cast<int32_t*>(dst_offsets.data()));
 }
 
