@@ -106,7 +106,8 @@ DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_time_delta,
                                    std::size_t payload_buffer_size) :
   base_t(base_t::op_factory_from_sub_fn(build())),
   m_max_time_delta{max_time_delta},
-  m_payload_buffer_size{payload_buffer_size}
+  m_payload_buffer_size{payload_buffer_size},
+  m_buffer_channel{std::make_shared<mrc::BufferedChannel<doca::packet_data_buffer>>(payload_buffer_size)}
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp = rmm::cuda_stream_view(m_stream);

@@ -23,6 +23,7 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/raw_packet.hpp"
 
+#include <mrc/channel/buffered_channel.hpp>
 #include <mrc/segment/builder.hpp>
 #include <pymrc/node.hpp>
 
@@ -72,6 +73,7 @@ class MORPHEUS_EXPORT DocaConvertStage
 
     std::chrono::milliseconds m_max_time_delta;
     std::size_t m_payload_buffer_size;
+    std::shared_ptr<mrc::BufferedChannel<doca::packet_data_buffer>> m_buffer_channel;
 };
 
 /****** DocaConvertStageInterfaceProxy***********************/

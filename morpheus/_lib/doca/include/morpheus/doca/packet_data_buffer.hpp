@@ -26,6 +26,7 @@ namespace morpheus::doca {
 
 struct packet_data_buffer
 {
+    packet_data_buffer();
     packet_data_buffer(std::size_t num_packets,
                        std::size_t header_size,
                        std::size_t payload_size,
