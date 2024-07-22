@@ -30,33 +30,25 @@
 
 namespace morpheus::doca {
 
-uint32_t gather_sizes(
-    int32_t packet_count,
-    uint32_t* size_list,
-    rmm::cuda_stream_view stream);
+uint32_t gather_sizes(int32_t packet_count, uint32_t* size_list, rmm::cuda_stream_view stream);
 
-void gather_payload(
-    int32_t packet_count,
-    uintptr_t* packets_buffer,
-    uint32_t* header_sizes,
-    uint32_t* payload_sizes,
-    uint8_t* dst_buff,
-    rmm::cuda_stream_view stream,
-    rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+void gather_payload(int32_t packet_count,
+                    uintptr_t* packets_buffer,
+                    uint32_t* header_sizes,
+                    uint32_t* payload_sizes,
+                    uint8_t* dst_buff,
+                    rmm::cuda_stream_view stream,
+                    rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-void gather_header(
-    int32_t packet_count,
-    uintptr_t* packets_buffer,
-    uint32_t* header_sizes,
-    uint32_t* payload_sizes,
-    uint32_t* dst_buff,
-    rmm::cuda_stream_view stream,
-    rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+void gather_header(int32_t packet_count,
+                   uintptr_t* packets_buffer,
+                   uint32_t* header_sizes,
+                   uint32_t* payload_sizes,
+                   uint32_t* dst_buff,
+                   rmm::cuda_stream_view stream,
+                   rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-rmm::device_buffer sizes_to_offsets(
-    int32_t packet_count,
-    uint32_t* sizes_buff,
-    rmm::cuda_stream_view stream);
+rmm::device_buffer sizes_to_offsets(int32_t packet_count, uint32_t* sizes_buff, rmm::cuda_stream_view stream);
 
 int packet_receive_kernel(doca_gpu_eth_rxq* rxq_0,
                           doca_gpu_eth_rxq* rxq_1,

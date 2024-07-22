@@ -36,65 +36,60 @@
 #include <thrust/gather.h>
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/iterator/counting_iterator.h>
+
 #include <memory>
 
-__global__ void _packet_gather_payload_kernel(
-  int32_t  packet_count,
-  uintptr_t*  packets_buffer,
-  uint32_t* header_sizes,
-  uint32_t* payload_sizes,
-  uint8_t*  payload_chars_out,
-  int32_t* dst_offsets
-)
+__global__ void _packet_gather_payload_kernel(int32_t packet_count,
+                                              uintptr_t* packets_buffer,
+                                              uint32_t* header_sizes,
+                                              uint32_t* payload_sizes,
+                                              uint8_t* payload_chars_out,
+                                              int32_t* dst_offsets)
 {
-  int pkt_idx = threadIdx.x;
-  int j = 0;
+    int pkt_idx = threadIdx.x;
+    int j       = 0;
 
-  while (pkt_idx < packet_count) {
-    uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx] + header_sizes[pkt_idx]);
-    const int32_t dst_offset = dst_offsets[pkt_idx];
-    const uint32_t payload_size = payload_sizes[pkt_idx];
+    while (pkt_idx < packet_count)
+    {
+        uint8_t* pkt_hdr_addr       = (uint8_t*)(packets_buffer[pkt_idx] + header_sizes[pkt_idx]);
+        const int32_t dst_offset    = dst_offsets[pkt_idx];
+        const uint32_t payload_size = payload_sizes[pkt_idx];
 
-    for (j = 0; j < payload_size; ++j) {
-      payload_chars_out[dst_offset + j] = pkt_hdr_addr[j];
+        for (j = 0; j < payload_size; ++j)
+        {
+            payload_chars_out[dst_offset + j] = pkt_hdr_addr[j];
+        }
+
+        pkt_idx += blockDim.x;
     }
-
-    pkt_idx += blockDim.x;
-  }
-
 }
 
-__global__ void _packet_gather_src_ip_kernel(
-  int32_t   packet_count,
-  uintptr_t*  packets_buffer,
-  uint32_t* header_sizes,
-  uint32_t* payload_sizes,
-  uint32_t*  dst_buff
-)
+__global__ void _packet_gather_src_ip_kernel(int32_t packet_count,
+                                             uintptr_t* packets_buffer,
+                                             uint32_t* header_sizes,
+                                             uint32_t* payload_sizes,
+                                             uint32_t* dst_buff)
 {
-  int pkt_idx = threadIdx.x;
+    int pkt_idx = threadIdx.x;
 
-  while (pkt_idx < packet_count) {
-    uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx]);
+    while (pkt_idx < packet_count)
+    {
+        uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx]);
 
-    // We need to convert from LSB to MSB
-    uint32_t src_ip = ((struct eth_ip *)pkt_hdr_addr)->l3_hdr.src_addr;
-    uint32_t src_ip_swapped = ((src_ip & 0x000000FF) << 24u) | ((src_ip & 0x0000FF00) << 8u) |
-                              ((src_ip & 0x00FF0000) >> 8u) | ((src_ip & 0xFF000000) >> 24u);
-    
-    dst_buff[pkt_idx] = src_ip_swapped;
-    pkt_idx += blockDim.x;
-  }
+        // We need to convert from LSB to MSB
+        uint32_t src_ip         = ((struct eth_ip*)pkt_hdr_addr)->l3_hdr.src_addr;
+        uint32_t src_ip_swapped = ((src_ip & 0x000000FF) << 24u) | ((src_ip & 0x0000FF00) << 8u) |
+                                  ((src_ip & 0x00FF0000) >> 8u) | ((src_ip & 0xFF000000) >> 24u);
+
+        dst_buff[pkt_idx] = src_ip_swapped;
+        pkt_idx += blockDim.x;
+    }
 }
 
 namespace morpheus {
 namespace doca {
 
-uint32_t gather_sizes(
-    int32_t packet_count,
-    uint32_t* size_list,
-    rmm::cuda_stream_view stream
-)
+uint32_t gather_sizes(int32_t packet_count, uint32_t* size_list, rmm::cuda_stream_view stream)
 {
     auto sizes_tensor = matx::make_tensor<uint32_t>(size_list, {packet_count});
     auto bytes_tensor = matx::make_tensor<uint32_t>({1});
@@ -105,25 +100,21 @@ uint32_t gather_sizes(
     return bytes_tensor(0);
 }
 
-rmm::device_buffer sizes_to_offsets(
-    int32_t packet_count,
-    uint32_t* sizes_buff,
-    rmm::cuda_stream_view stream)
+rmm::device_buffer sizes_to_offsets(int32_t packet_count, uint32_t* sizes_buff, rmm::cuda_stream_view stream)
 {
     // The cudf offsets column wants int32
-    const auto out_elem_count = packet_count+1;
-    const auto out_byte_size = out_elem_count*sizeof(int32_t);
+    const auto out_elem_count = packet_count + 1;
+    const auto out_byte_size  = out_elem_count * sizeof(int32_t);
     rmm::device_buffer out_buffer(out_byte_size, stream);
 
     auto sizes_tensor = matx::make_tensor<uint32_t>(sizes_buff, {packet_count});
-    auto cum_tensor = matx::make_tensor<int32_t>({packet_count});
+    auto cum_tensor   = matx::make_tensor<int32_t>({packet_count});
 
     // first element needs to be a 0
     auto zero_tensor = matx::make_tensor<int32_t>({1});
     zero_tensor.SetVals({0});
 
     auto offsets_tensor = matx::make_tensor<int32_t>(static_cast<int32_t*>(out_buffer.data()), {out_elem_count});
-
 
     (cum_tensor = matx::cumsum(matx::as_type<int32_t>(sizes_tensor))).run(stream.value());
     (offsets_tensor = matx::concat(0, zero_tensor, cum_tensor)).run(stream.value());
@@ -133,44 +124,30 @@ rmm::device_buffer sizes_to_offsets(
     return out_buffer;
 }
 
-void gather_header(
-  int32_t      packet_count,
-  uintptr_t*   packets_buffer,
-  uint32_t*    header_sizes,
-  uint32_t*    payload_sizes, 
-  uint32_t*     dst_buff,
-  rmm::cuda_stream_view stream,
-  rmm::mr::device_memory_resource* mr)
+void gather_header(int32_t packet_count,
+                   uintptr_t* packets_buffer,
+                   uint32_t* header_sizes,
+                   uint32_t* payload_sizes,
+                   uint32_t* dst_buff,
+                   rmm::cuda_stream_view stream,
+                   rmm::mr::device_memory_resource* mr)
 {
-  _packet_gather_src_ip_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
-    packet_count,
-    packets_buffer,
-    header_sizes,
-    payload_sizes,
-    dst_buff
-  );
-
+    _packet_gather_src_ip_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
+        packet_count, packets_buffer, header_sizes, payload_sizes, dst_buff);
 }
 
-void gather_payload(
-  int32_t      packet_count,
-  uintptr_t*   packets_buffer,
-  uint32_t*    header_sizes,
-  uint32_t*    payload_sizes,
-  uint8_t*     dst_buff,
-  rmm::cuda_stream_view stream,
-  rmm::mr::device_memory_resource* mr)
+void gather_payload(int32_t packet_count,
+                    uintptr_t* packets_buffer,
+                    uint32_t* header_sizes,
+                    uint32_t* payload_sizes,
+                    uint8_t* dst_buff,
+                    rmm::cuda_stream_view stream,
+                    rmm::mr::device_memory_resource* mr)
 {
-  auto dst_offsets = sizes_to_offsets(packet_count, payload_sizes, stream);
-  _packet_gather_payload_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
-    packet_count,
-    packets_buffer,
-    header_sizes,
-    payload_sizes,
-    dst_buff,
-    static_cast<int32_t*>(dst_offsets.data())
-  );
+    auto dst_offsets = sizes_to_offsets(packet_count, payload_sizes, stream);
+    _packet_gather_payload_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
+        packet_count, packets_buffer, header_sizes, payload_sizes, dst_buff, static_cast<int32_t*>(dst_offsets.data()));
 }
 
-} //doca
-} //morpheus
+}  // namespace doca
+}  // namespace morpheus

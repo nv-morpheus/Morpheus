@@ -30,8 +30,8 @@ struct packet_data_buffer
 {
     packet_data_buffer(std::size_t buffer_size_bytes,
                        rmm::cuda_stream_view stream,
-                       rmm::mr::device_memory_resource* mr= rmm::mr::get_current_device_resource());
-    
+                       rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+
     morpheus::TensorSize capacity() const;
 
     morpheus::TensorSize available_bytes() const;
@@ -59,4 +59,4 @@ struct packet_data_buffer
     morpheus::TensorSize cur_offset_bytes;
     morpheus::TensorSize elements;
 };
-} // namespace morpheus::doca
+}  // namespace morpheus::doca

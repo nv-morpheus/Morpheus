@@ -18,20 +18,20 @@
 #include "morpheus/doca/common.hpp"
 #include "morpheus/doca/doca_kernels.hpp"
 #include "morpheus/doca/doca_stages.hpp"
-#include "morpheus/objects/dev_mem_info.hpp" // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"                  // for DType
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/raw_packet.hpp"
-#include "morpheus/utilities/matx_util.hpp"            // for MatxUtil
+#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"         // for DType
+#include "morpheus/utilities/matx_util.hpp"   // for MatxUtil
 
 #include <boost/fiber/context.hpp>
 #include <cuda_runtime.h>
-#include <cudf/concatenate.hpp>
 #include <cudf/column/column.hpp>
 #include <cudf/column/column_factories.hpp>
+#include <cudf/concatenate.hpp>
 #include <cudf/io/types.hpp>
-#include <cudf/table/table.hpp>
 #include <cudf/strings/convert/convert_ipv4.hpp>
+#include <cudf/table/table.hpp>
 #include <generic/rte_byteorder.h>
 #include <glog/logging.h>
 #include <mrc/segment/builder.hpp>
@@ -93,8 +93,8 @@ std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, con
     if (incoming_size > default_size)
     {
         LOG(WARNING) << "RawPacketMessage requires a " << buffer_name << " buffer of size " << incoming_size
-                     << " bytes, but the default allocation size is only " << default_size
-                     << " allocating " << incoming_size;
+                     << " bytes, but the default allocation size is only " << default_size << " allocating "
+                     << incoming_size;
 
         return incoming_size;
     }
@@ -102,28 +102,25 @@ std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, con
     return default_size;
 }
 
-std::unique_ptr<cudf::column> make_string_col(
-    morpheus::doca::packet_data_buffer& data,
-    morpheus::doca::packet_data_buffer& sizes,
-    rmm::cuda_stream_view stream)
+std::unique_ptr<cudf::column> make_string_col(morpheus::doca::packet_data_buffer& data,
+                                              morpheus::doca::packet_data_buffer& sizes,
+                                              rmm::cuda_stream_view stream)
 {
     data.shrink_to_fit();
     CHECK(sizes.elements == data.elements);
 
-    auto offsets_buffer = morpheus::doca::sizes_to_offsets(sizes.elements, sizes.data<uint32_t>(), stream);  
+    auto offsets_buffer = morpheus::doca::sizes_to_offsets(sizes.elements, sizes.data<uint32_t>(), stream);
 
-    const auto offset_count = sizes.elements+1;
-    const auto offset_buff_size = (offset_count)*sizeof(int32_t);
+    const auto offset_count     = sizes.elements + 1;
+    const auto offset_buff_size = (offset_count) * sizeof(int32_t);
 
-    auto offsets_col = std::make_unique<cudf::column>(cudf::data_type(cudf::type_id::INT32), offset_count, std::move(offsets_buffer), std::move(rmm::device_buffer(0, stream)), 0);
+    auto offsets_col = std::make_unique<cudf::column>(cudf::data_type(cudf::type_id::INT32),
+                                                      offset_count,
+                                                      std::move(offsets_buffer),
+                                                      std::move(rmm::device_buffer(0, stream)),
+                                                      0);
 
-
-
-    return cudf::make_strings_column(data.elements,
-                                     std::move(offsets_col),
-                                     std::move(data.buffer),
-                                     0,
-                                     {});
+    return cudf::make_strings_column(data.elements, std::move(offsets_col), std::move(data.buffer), 0, {});
 }
 
 std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::packet_data_buffer& data, rmm::cuda_stream_view stream)
@@ -132,22 +129,21 @@ std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::packet_data_buffer& da
     data.shrink_to_fit();
     const morpheus::TensorIndex num_packets = static_cast<morpheus::TensorIndex>(data.elements);
 
-    auto src_type = morpheus::DType::create<uint32_t>();
-    auto dst_type =  morpheus::DType(morpheus::TypeId::INT64);
-    auto src_buffer = std::make_shared<rmm::device_buffer>(std::move(data.buffer));
-    auto dev_mem_info =  morpheus::DevMemInfo(src_buffer, src_type, {num_packets}, {1});
+    auto src_type     = morpheus::DType::create<uint32_t>();
+    auto dst_type     = morpheus::DType(morpheus::TypeId::INT64);
+    auto src_buffer   = std::make_shared<rmm::device_buffer>(std::move(data.buffer));
+    auto dev_mem_info = morpheus::DevMemInfo(src_buffer, src_type, {num_packets}, {1});
 
-    auto ip_int64_buff =  morpheus::MatxUtil::cast(dev_mem_info, dst_type.type_id());
-    
-    auto src_ip_int_col = std::make_unique<cudf::column>(cudf::data_type(dst_type.cudf_type_id()), 
+    auto ip_int64_buff = morpheus::MatxUtil::cast(dev_mem_info, dst_type.type_id());
+
+    auto src_ip_int_col = std::make_unique<cudf::column>(cudf::data_type(dst_type.cudf_type_id()),
                                                          num_packets,
-                                                         std::move(*ip_int64_buff), 
-                                                         std::move(rmm::device_buffer(0, stream)), 
+                                                         std::move(*ip_int64_buff),
+                                                         std::move(rmm::device_buffer(0, stream)),
                                                          0);
 
     return cudf::strings::integers_to_ipv4(src_ip_int_col->view());
 }
-
 
 namespace morpheus {
 
@@ -162,12 +158,13 @@ DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_time_delta,
   m_payload_buffer_size{payload_buffer_size}
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
-    m_stream_cpp              = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
+    m_stream_cpp = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(m_stream));
 
-    auto mr = rmm::mr::get_current_device_resource();
-    m_header_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(m_header_buffer_size, m_stream_cpp, mr);
+    auto mr          = rmm::mr::get_current_device_resource();
+    m_header_buffer  = std::make_unique<morpheus::doca::packet_data_buffer>(m_header_buffer_size, m_stream_cpp, mr);
     m_payload_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(m_payload_buffer_size, m_stream_cpp, mr);
-    m_payload_sizes_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(m_sizes_buffer_size, m_stream_cpp, mr);
+    m_payload_sizes_buffer =
+        std::make_unique<morpheus::doca::packet_data_buffer>(m_sizes_buffer_size, m_stream_cpp, mr);
 }
 
 DocaConvertStage::~DocaConvertStage()
@@ -187,7 +184,8 @@ DocaConvertStage::subscribe_fn_t DocaConvertStage::build()
                 output.on_error(error_ptr);
             },
             [&]() {
-                if (!m_header_buffer->empty()) {
+                if (!m_header_buffer->empty())
+                {
                     LOG(INFO) << "flushing buffer prior to shutdown";
                     send_buffered_data(output);
                 }
@@ -205,19 +203,18 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     auto pkt_pld_size_list = raw_msg->get_pkt_pld_size_list();
     auto queue_idx         = raw_msg->get_queue_idx();
 
-
-    const auto payload_buff_size = doca::gather_sizes(packet_count, pkt_pld_size_list,  m_stream_cpp);
+    const auto payload_buff_size = doca::gather_sizes(packet_count, pkt_pld_size_list, m_stream_cpp);
 
     const uint32_t header_buff_size = packet_count * sizeof(uint32_t);
-    const auto sizes_buff_size = packet_count * sizeof(uint32_t);
+    const auto sizes_buff_size      = packet_count * sizeof(uint32_t);
 
     bool buffers_full = (header_buff_size > m_header_buffer->available_bytes() ||
                          payload_buff_size > m_payload_buffer->available_bytes() ||
                          sizes_buff_size > m_payload_sizes_buffer->available_bytes());
 
-    auto cur_time = std::chrono::steady_clock::now();
+    auto cur_time             = std::chrono::steady_clock::now();
     auto time_since_last_emit = cur_time - m_last_emit;
-    bool buffer_time_expired = (time_since_last_emit >= m_max_time_delta);
+    bool buffer_time_expired  = (time_since_last_emit >= m_max_time_delta);
 
     // TODO: If the buffers are not full, but buffer_time_expired, we should include the current message in the output.
     // TODO: The current logic for calculating expiration time doesn't account for the possibility that we could have a
@@ -239,12 +236,12 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
         if (buffer_has_data || buffers_full)
         {
             auto header_size = get_alloc_size(m_header_buffer_size, header_buff_size, "header");
-            m_header_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(header_size, m_stream_cpp);
+            m_header_buffer  = std::make_unique<morpheus::doca::packet_data_buffer>(header_size, m_stream_cpp);
 
             auto payload_size = get_alloc_size(m_payload_buffer_size, payload_buff_size, "payload");
-            m_payload_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(payload_size, m_stream_cpp);
+            m_payload_buffer  = std::make_unique<morpheus::doca::packet_data_buffer>(payload_size, m_stream_cpp);
 
-            auto sizes_size = get_alloc_size(m_sizes_buffer_size, sizes_buff_size, "sizes");
+            auto sizes_size        = get_alloc_size(m_sizes_buffer_size, sizes_buff_size, "sizes");
             m_payload_sizes_buffer = std::make_unique<morpheus::doca::packet_data_buffer>(sizes_size, m_stream_cpp);
         }
     }
@@ -254,18 +251,25 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
            payload_buff_size <= m_payload_buffer->available_bytes() &&
            sizes_buff_size <= m_payload_sizes_buffer->available_bytes());
 
-
 #if ENABLE_TIMERS == 1
     const auto t0 = now_ns();
 #endif
 
     // gather payload data, intentionally calling this first as it needs to perform an early sync operation
-    doca::gather_payload(
-        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_payload_buffer->current_location(), m_stream_cpp);
+    doca::gather_payload(packet_count,
+                         pkt_addr_list,
+                         pkt_hdr_size_list,
+                         pkt_pld_size_list,
+                         m_payload_buffer->current_location(),
+                         m_stream_cpp);
 
     // gather header data
-    doca::gather_header(
-        packet_count, pkt_addr_list, pkt_hdr_size_list, pkt_pld_size_list, m_header_buffer->current_location<uint32_t>(), m_stream_cpp);
+    doca::gather_header(packet_count,
+                        pkt_addr_list,
+                        pkt_hdr_size_list,
+                        pkt_pld_size_list,
+                        m_header_buffer->current_location<uint32_t>(),
+                        m_stream_cpp);
 
 #if ENABLE_TIMERS == 1
     const auto t1 = now_ns();
@@ -274,24 +278,26 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     m_header_buffer->advance(header_buff_size, packet_count);
     m_payload_buffer->advance(payload_buff_size, packet_count);
 
-    MRC_CHECK_CUDA(cudaMemcpyAsync(m_payload_sizes_buffer->current_location(), pkt_pld_size_list, sizes_buff_size, cudaMemcpyDeviceToDevice, m_stream_cpp));
+    MRC_CHECK_CUDA(cudaMemcpyAsync(m_payload_sizes_buffer->current_location(),
+                                   pkt_pld_size_list,
+                                   sizes_buff_size,
+                                   cudaMemcpyDeviceToDevice,
+                                   m_stream_cpp));
     cudaStreamSynchronize(m_stream_cpp);
 
     m_payload_sizes_buffer->advance(sizes_buff_size, packet_count);
 
-
 #if ENABLE_TIMERS == 1
     const auto t2 = now_ns();
 #endif
-
 }
 
 void DocaConvertStage::send_buffered_data(rxcpp::subscriber<source_type_t>& output)
 {
     const auto num_packets = m_payload_buffer->elements;
     CHECK(num_packets == m_header_buffer->elements);
-    
-    auto src_ip_col = make_ip_col(*m_header_buffer, m_stream_cpp);
+
+    auto src_ip_col  = make_ip_col(*m_header_buffer, m_stream_cpp);
     auto payload_col = make_string_col(*m_payload_buffer, *m_payload_sizes_buffer, m_stream_cpp);
 
     std::vector<std::unique_ptr<cudf::column>> gathered_columns;
@@ -310,15 +316,13 @@ void DocaConvertStage::send_buffered_data(rxcpp::subscriber<source_type_t>& outp
     auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
     output.on_next(std::move(meta));
 
-    auto now = std::chrono::steady_clock::now();
+    auto now    = std::chrono::steady_clock::now();
     m_last_emit = now;
-
 
     // auto delta = now - m_last_emit;
     // std::chrono::duration<float> deltaf = std::chrono::duration_cast<std::chrono::duration<float>>(delta);
     // float count = deltaf.count();
     // auto packet_rate = (num_packets / count);
-
 
     // const float bytes = m_payload_buffer->cur_offset_bytes + m_header_buffer->cur_offset_bytes;
     // const float mb = bytes / (1024 * 1024);

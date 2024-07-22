@@ -33,10 +33,10 @@
 
 namespace morpheus {
 
-constexpr std::chrono::milliseconds DEFAULT_MAX_TIME_DELTA =  std::chrono::seconds(3);
-constexpr std::size_t DEFAULT_SIZES_BUFFER_SIZE = 1024 * 1024 * 3;
-constexpr std::size_t DEFAULT_HEADER_BUFFER_SIZE = 1024 * 1024 * 10;
-constexpr std::size_t DEFAULT_PAYLOAD_BUFFER_SIZE = 1024 * 1024 * 1024;
+constexpr std::chrono::milliseconds DEFAULT_MAX_TIME_DELTA = std::chrono::seconds(3);
+constexpr std::size_t DEFAULT_SIZES_BUFFER_SIZE            = 1024 * 1024 * 3;
+constexpr std::size_t DEFAULT_HEADER_BUFFER_SIZE           = 1024 * 1024 * 10;
+constexpr std::size_t DEFAULT_PAYLOAD_BUFFER_SIZE          = 1024 * 1024 * 1024;
 
 namespace doca {
 
@@ -106,10 +106,10 @@ class MORPHEUS_EXPORT DocaConvertStage
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    DocaConvertStage(std::chrono::milliseconds max_time_delta =  DEFAULT_MAX_TIME_DELTA,
-                     std::size_t sizes_buffer_size = DEFAULT_SIZES_BUFFER_SIZE,
-                     std::size_t header_buffer_size = DEFAULT_HEADER_BUFFER_SIZE,
-                     std::size_t payload_buffer_size = DEFAULT_PAYLOAD_BUFFER_SIZE);
+    DocaConvertStage(std::chrono::milliseconds max_time_delta = DEFAULT_MAX_TIME_DELTA,
+                     std::size_t sizes_buffer_size            = DEFAULT_SIZES_BUFFER_SIZE,
+                     std::size_t header_buffer_size           = DEFAULT_HEADER_BUFFER_SIZE,
+                     std::size_t payload_buffer_size          = DEFAULT_PAYLOAD_BUFFER_SIZE);
     ~DocaConvertStage() override;
 
   private:
@@ -117,7 +117,7 @@ class MORPHEUS_EXPORT DocaConvertStage
     /**
      * Called every time a message is passed to this stage
      */
-    //source_type_t on_data(sink_type_t x);
+    // source_type_t on_data(sink_type_t x);
     void on_raw_packet_message(rxcpp::subscriber<source_type_t>& output, sink_type_t x);
     void send_buffered_data(rxcpp::subscriber<source_type_t>& output);
 
@@ -144,12 +144,13 @@ struct MORPHEUS_EXPORT DocaConvertStageInterfaceProxy
     /**
      * @brief Create and initialize a DocaConvertStage, and return the result.
      */
-    static std::shared_ptr<mrc::segment::Object<DocaConvertStage>> init(mrc::segment::Builder& builder,
-                                                                        std::string const& name,
-                                                                        std::chrono::milliseconds max_time_delta =  DEFAULT_MAX_TIME_DELTA,
-                                                                        std::size_t sizes_buffer_size = DEFAULT_SIZES_BUFFER_SIZE,
-                                                                        std::size_t header_buffer_size = DEFAULT_HEADER_BUFFER_SIZE,
-                                                                        std::size_t payload_buffer_size = DEFAULT_PAYLOAD_BUFFER_SIZE);
+    static std::shared_ptr<mrc::segment::Object<DocaConvertStage>> init(
+        mrc::segment::Builder& builder,
+        std::string const& name,
+        std::chrono::milliseconds max_time_delta = DEFAULT_MAX_TIME_DELTA,
+        std::size_t sizes_buffer_size            = DEFAULT_SIZES_BUFFER_SIZE,
+        std::size_t header_buffer_size           = DEFAULT_HEADER_BUFFER_SIZE,
+        std::size_t payload_buffer_size          = DEFAULT_PAYLOAD_BUFFER_SIZE);
 };
 
 }  // namespace morpheus

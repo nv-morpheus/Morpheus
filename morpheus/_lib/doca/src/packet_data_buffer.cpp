@@ -21,15 +21,13 @@
 
 namespace morpheus::doca {
 
-packet_data_buffer::packet_data_buffer(
-    std::size_t buffer_size_bytes,
-    rmm::cuda_stream_view stream,
-    rmm::mr::device_memory_resource* mr):
-    buffer{buffer_size_bytes, stream, mr},
-    cur_offset_bytes{0},
-    elements{0}
-{
-}
+packet_data_buffer::packet_data_buffer(std::size_t buffer_size_bytes,
+                                       rmm::cuda_stream_view stream,
+                                       rmm::mr::device_memory_resource* mr) :
+  buffer{buffer_size_bytes, stream, mr},
+  cur_offset_bytes{0},
+  elements{0}
+{}
 
 morpheus::TensorSize packet_data_buffer::capacity() const
 {
@@ -62,4 +60,4 @@ void packet_data_buffer::shrink_to_fit()
     }
 }
 
-} // namespace morpheus::doca
+}  // namespace morpheus::doca
