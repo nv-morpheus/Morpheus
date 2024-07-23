@@ -28,10 +28,6 @@ from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SIZES_BUFFER_SIZE = 1024 * 1024 * 3
-DEFAULT_HEADER_BUFFER_SIZE = 1024 * 1024 * 10
-DEFAULT_PAYLOAD_BUFFER_SIZE = 1024 * 1024 * 1024
-
 
 @register_stage("from-doca-convert", modes=[PipelineModes.NLP])
 class DocaConvertStage(PreallocatorMixin, SinglePortStage):
@@ -44,19 +40,12 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
         Pipeline configuration instance.
     """
 
-    def __init__(self,
-                 c: Config,
-                 max_time_delta_sec: float = 3.0,
-                 sizes_buffer_size: int = DEFAULT_SIZES_BUFFER_SIZE,
-                 header_buffer_size: int = DEFAULT_HEADER_BUFFER_SIZE,
-                 payload_buffer_size: int = DEFAULT_PAYLOAD_BUFFER_SIZE):
+    def __init__(self, c: Config, max_time_delta_sec: float = 3.0, buffer_channel_size: int = 1024):
 
         super().__init__(c)
 
         self._max_time_delta = timedelta(seconds=max_time_delta_sec)
-        self._sizes_buffer_size = sizes_buffer_size
-        self._header_buffer_size = header_buffer_size
-        self._payload_buffer_size = payload_buffer_size
+        self._buffer_channel_size = buffer_channel_size
 
         # Attempt to import the C++ stage on creation
         try:
@@ -93,9 +82,7 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
             node = self.doca_convert_class(builder,
                                            self.unique_name,
                                            max_time_delta=self._max_time_delta,
-                                           sizes_buffer_size=self._sizes_buffer_size,
-                                           header_buffer_size=self._header_buffer_size,
-                                           payload_buffer_size=self._payload_buffer_size)
+                                           buffer_channel_size=self._buffer_channel_size)
 
             builder.make_edge(input_node, node)
             return node

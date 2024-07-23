@@ -166,14 +166,10 @@ std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::PacketDataBuffer& pack
 
 namespace morpheus {
 
-DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_time_delta,
-                                   std::size_t sizes_buffer_size,
-                                   std::size_t header_buffer_size,
-                                   std::size_t payload_buffer_size) :
+DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_time_delta, std::size_t buffer_channel_size) :
   base_t(base_t::op_factory_from_sub_fn(build())),
   m_max_time_delta{max_time_delta},
-  m_payload_buffer_size{payload_buffer_size},
-  m_buffer_channel{std::make_shared<mrc::BufferedChannel<doca::PacketDataBuffer>>(payload_buffer_size)}
+  m_buffer_channel{std::make_shared<mrc::BufferedChannel<doca::PacketDataBuffer>>(buffer_channel_size)}
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp = rmm::cuda_stream_view(m_stream);

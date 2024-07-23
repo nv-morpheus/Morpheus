@@ -33,9 +33,7 @@
 namespace morpheus {
 
 constexpr std::chrono::milliseconds DEFAULT_MAX_TIME_DELTA = std::chrono::seconds(3);
-constexpr std::size_t DEFAULT_SIZES_BUFFER_SIZE            = 1024 * 1024 * 3;
-constexpr std::size_t DEFAULT_HEADER_BUFFER_SIZE           = 1024 * 1024 * 10;
-constexpr std::size_t DEFAULT_PAYLOAD_BUFFER_SIZE          = 1024 * 1024 * 1024;
+constexpr std::size_t DEFAULT_BUFFER_CHANNEL_SIZE          = 1024;
 
 /**
  * @brief Transform DOCA GPUNetIO raw packets into Dataframe for other Morpheus stages.
@@ -54,9 +52,7 @@ class MORPHEUS_EXPORT DocaConvertStage
     using typename base_t::subscribe_fn_t;
 
     DocaConvertStage(std::chrono::milliseconds max_time_delta = DEFAULT_MAX_TIME_DELTA,
-                     std::size_t sizes_buffer_size            = DEFAULT_SIZES_BUFFER_SIZE,
-                     std::size_t header_buffer_size           = DEFAULT_HEADER_BUFFER_SIZE,
-                     std::size_t payload_buffer_size          = DEFAULT_PAYLOAD_BUFFER_SIZE);
+                     std::size_t buffer_channel_size          = DEFAULT_BUFFER_CHANNEL_SIZE);
     ~DocaConvertStage() override;
 
   private:
@@ -73,7 +69,6 @@ class MORPHEUS_EXPORT DocaConvertStage
     rmm::cuda_stream_view m_stream_cpp;
 
     std::chrono::milliseconds m_max_time_delta;
-    std::size_t m_payload_buffer_size;
     std::shared_ptr<mrc::BufferedChannel<doca::PacketDataBuffer>> m_buffer_channel;
 };
 
@@ -90,9 +85,7 @@ struct MORPHEUS_EXPORT DocaConvertStageInterfaceProxy
         mrc::segment::Builder& builder,
         std::string const& name,
         std::chrono::milliseconds max_time_delta = DEFAULT_MAX_TIME_DELTA,
-        std::size_t sizes_buffer_size            = DEFAULT_SIZES_BUFFER_SIZE,
-        std::size_t header_buffer_size           = DEFAULT_HEADER_BUFFER_SIZE,
-        std::size_t payload_buffer_size          = DEFAULT_PAYLOAD_BUFFER_SIZE);
+        std::size_t buffer_channel_size          = DEFAULT_BUFFER_CHANNEL_SIZE);
 };
 
 }  // namespace morpheus

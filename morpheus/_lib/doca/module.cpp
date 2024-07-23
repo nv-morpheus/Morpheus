@@ -54,9 +54,7 @@ PYBIND11_MODULE(doca, m)
              py::arg("builder"),
              py::arg("name"),
              py::arg("max_time_delta")      = DEFAULT_MAX_TIME_DELTA,
-             py::arg("sizes_buffer_size")   = DEFAULT_SIZES_BUFFER_SIZE,
-             py::arg("header_buffer_size")  = DEFAULT_HEADER_BUFFER_SIZE,
-             py::arg("payload_buffer_size") = DEFAULT_PAYLOAD_BUFFER_SIZE);
+             py::arg("buffer_channel_size") = DEFAULT_BUFFER_CHANNEL_SIZE);
 }
 
 }  // namespace morpheus
