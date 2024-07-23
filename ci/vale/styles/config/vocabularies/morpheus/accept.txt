@@ -12,6 +12,7 @@ Databricks
 Dev
 GPU(s?)
 Grafana
+[Ii]nferencing
 LLM(s?)
 Milvus
 MLflow
@@ -26,6 +27,7 @@ PDF(s?)
 [Pp]reprocess
 [Pp]retrained
 [Rr]epo
+[Ss]ubgraph(s?)
 [Tt]imestamp(s?)
 [Uu]ploader
 XGBoost
