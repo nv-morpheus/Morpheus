@@ -33,9 +33,11 @@ struct packet_data_buffer
                        std::size_t payload_sizes_size,    
                        rmm::cuda_stream_view stream,
                        rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
-    
+
     packet_data_buffer(packet_data_buffer&& other) = default;
     packet_data_buffer& operator=(packet_data_buffer&& other) = default;
+
+    static packet_data_buffer combine_buffers(std::vector<doca::packet_data_buffer>&& packets);
 
     std::size_t m_num_packets;
     rmm::cuda_stream_view m_stream;

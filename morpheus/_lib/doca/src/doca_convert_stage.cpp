@@ -25,6 +25,7 @@
 #include "morpheus/utilities/matx_util.hpp"   // for MatxUtil
 
 #include <boost/fiber/context.hpp>
+#include <boost/fiber/fiber.hpp>
 #include <cuda_runtime.h>
 #include <cudf/column/column.hpp>
 #include <cudf/column/column_factories.hpp>
@@ -121,8 +122,14 @@ DocaConvertStage::~DocaConvertStage()
 DocaConvertStage::subscribe_fn_t DocaConvertStage::build()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+        
+        auto buffer_reader_fiber = boost::fibers::fiber([this, &output]()
+        {
+            this->buffer_reader(output);
+        });
+
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output](sink_type_t x) {
+            [this, &output, &buffer_reader_fiber](sink_type_t x) {
                 this->on_raw_packet_message(output, x);
             },
             [&](std::exception_ptr error_ptr) {
@@ -130,11 +137,12 @@ DocaConvertStage::subscribe_fn_t DocaConvertStage::build()
             },
             [&]() {
                 m_buffer_channel->close_channel();
+                buffer_reader_fiber.join()
             }));
     };
 }
 
-void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& output, sink_type_t raw_msg)
+void DocaConvertStage::on_raw_packet_message(sink_type_t raw_msg)
 {
     auto packet_count      = raw_msg->count();
     auto max_size          = raw_msg->get_max_size();
@@ -177,6 +185,34 @@ void DocaConvertStage::on_raw_packet_message(rxcpp::subscriber<source_type_t>& o
     cudaStreamSynchronize(m_stream_cpp);
 
     m_buffer_channel->await_write(std::move(packet_buffer));
+}
+
+void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
+{
+    std::vector<doca::packet_data_buffer> packets;
+
+    while (!m_buffer_channel->is_channel_closed())
+    {
+        auto poll_start = std::chrono::steady_clock::now();
+        auto poll_end = poll_start + m_max_time_delta;
+        while (std::chrono::steady_clock::now() < poll_end && !m_buffer_channel->is_channel_closed())
+        {
+            doca::packet_data_buffer packet_buffer;
+            auto status = m_buffer_channel->await_read_until(packet_buffer, poll_end);
+
+            if (status == mrc::channel::Status::success)
+            {
+                packets.emplace_back(std::move(packet_buffer));
+            }
+        }
+
+        if (!packets.empty())
+        {
+            packet_data_buffer combined_data(std::move(packets));
+            send_buffered_data(output, std::move(combined_data));
+            packets.clear();
+        }
+    }
 }
 
 void DocaConvertStage::send_buffered_data(rxcpp::subscriber<source_type_t>& output, doca::packet_data_buffer&& packet_buffer)
