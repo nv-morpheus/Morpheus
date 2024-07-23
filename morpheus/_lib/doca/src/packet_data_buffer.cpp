@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-#include "morpheus/doca/packet_data_buffer.hpp"
+#include "morpheus/doca/PacketDataBuffer.hpp"
 
 namespace morpheus::doca {
 
-packet_data_buffer::packet_data_buffer() :
+PacketDataBuffer::PacketDataBuffer() :
   m_num_packets{0},
   m_stream{rmm::cuda_stream_per_thread},
   m_header_buffer{nullptr},
@@ -27,12 +27,12 @@ packet_data_buffer::packet_data_buffer() :
   m_payload_offsets_buffer{nullptr}
 {}
 
-packet_data_buffer::packet_data_buffer(std::size_t num_packets,
-                                       std::size_t header_size,
-                                       std::size_t payload_size,
-                                       std::size_t payload_sizes_size,
-                                       rmm::cuda_stream_view stream,
-                                       rmm::mr::device_memory_resource* mr) :
+PacketDataBuffer::PacketDataBuffer(std::size_t num_packets,
+                                   std::size_t header_size,
+                                   std::size_t payload_size,
+                                   std::size_t payload_sizes_size,
+                                   rmm::cuda_stream_view stream,
+                                   rmm::mr::device_memory_resource* mr) :
   m_num_packets{num_packets},
   m_stream{stream},
   m_header_buffer{std::make_shared<rmm::device_buffer>(header_size, stream, mr)},

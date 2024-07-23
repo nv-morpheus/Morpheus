@@ -69,11 +69,11 @@ std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, con
     return default_size;
 }
 
-morpheus::doca::packet_data_buffer concat_packet_buffers(std::size_t ttl_packets,
-                                                         std::size_t ttl_header_bytes,
-                                                         std::size_t ttl_payload_bytes,
-                                                         std::size_t ttl_payload_sizes_bytes,
-                                                         std::vector<doca::packet_data_buffer>&& packet_buffers)
+morpheus::doca::PacketDataBuffer concat_packet_buffers(std::size_t ttl_packets,
+                                                       std::size_t ttl_header_bytes,
+                                                       std::size_t ttl_payload_bytes,
+                                                       std::size_t ttl_payload_sizes_bytes,
+                                                       std::vector<doca::PacketDataBuffer>&& packet_buffers)
 {
     DCHECK(!packet_buffers.empty());
 
@@ -82,7 +82,7 @@ morpheus::doca::packet_data_buffer concat_packet_buffers(std::size_t ttl_packets
         return std::move(packet_buffers[0]);
     }
 
-    morpheus::doca::packet_data_buffer combined_buffer(
+    morpheus::doca::PacketDataBuffer combined_buffer(
         ttl_packets, ttl_header_bytes, ttl_payload_bytes, ttl_payload_sizes_bytes, packet_buffers[0].m_stream);
 
     std::size_t curr_header_offset        = 0;
@@ -123,7 +123,7 @@ morpheus::doca::packet_data_buffer concat_packet_buffers(std::size_t ttl_packets
     return combined_buffer;
 }
 
-std::unique_ptr<cudf::column> make_string_col(morpheus::doca::packet_data_buffer& packet_buffer)
+std::unique_ptr<cudf::column> make_string_col(morpheus::doca::PacketDataBuffer& packet_buffer)
 {
     auto offsets_buffer =
         morpheus::doca::sizes_to_offsets(packet_buffer.m_num_packets,
@@ -143,7 +143,7 @@ std::unique_ptr<cudf::column> make_string_col(morpheus::doca::packet_data_buffer
         packet_buffer.m_num_packets, std::move(offsets_col), std::move(*packet_buffer.m_payload_buffer), 0, {});
 }
 
-std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::packet_data_buffer& packet_buffer)
+std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::PacketDataBuffer& packet_buffer)
 {
     // cudf doesn't support uint32, need to cast to int64 remove this once
     // https://github.com/rapidsai/cudf/issues/16324 is resolved
@@ -173,7 +173,7 @@ DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_time_delta,
   base_t(base_t::op_factory_from_sub_fn(build())),
   m_max_time_delta{max_time_delta},
   m_payload_buffer_size{payload_buffer_size},
-  m_buffer_channel{std::make_shared<mrc::BufferedChannel<doca::packet_data_buffer>>(payload_buffer_size)}
+  m_buffer_channel{std::make_shared<mrc::BufferedChannel<doca::PacketDataBuffer>>(payload_buffer_size)}
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp = rmm::cuda_stream_view(m_stream);
@@ -220,7 +220,7 @@ void DocaConvertStage::on_raw_packet_message(sink_type_t raw_msg)
     const auto sizes_buff_size      = packet_count * sizeof(uint32_t);
 
     auto packet_buffer =
-        doca::packet_data_buffer(packet_count, header_buff_size, payload_buff_size, sizes_buff_size, m_stream_cpp);
+        doca::PacketDataBuffer(packet_count, header_buff_size, payload_buff_size, sizes_buff_size, m_stream_cpp);
 
     // gather payload data, intentionally calling this first as it needs to perform an early sync operation
     doca::gather_payload(packet_count,
@@ -250,7 +250,7 @@ void DocaConvertStage::on_raw_packet_message(sink_type_t raw_msg)
 
 void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
 {
-    std::vector<doca::packet_data_buffer> packets;
+    std::vector<doca::PacketDataBuffer> packets;
 
     while (!m_buffer_channel->is_channel_closed())
     {
@@ -261,7 +261,7 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
         auto poll_end                       = std::chrono::steady_clock::now() + m_max_time_delta;
         while (std::chrono::steady_clock::now() < poll_end && !m_buffer_channel->is_channel_closed())
         {
-            doca::packet_data_buffer packet_buffer;
+            doca::PacketDataBuffer packet_buffer;
             auto status = m_buffer_channel->await_read_until(packet_buffer, poll_end);
 
             if (status == mrc::channel::Status::success)
@@ -285,7 +285,7 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
 }
 
 void DocaConvertStage::send_buffered_data(rxcpp::subscriber<source_type_t>& output,
-                                          doca::packet_data_buffer&& packet_buffer)
+                                          doca::PacketDataBuffer&& packet_buffer)
 {
     auto src_ip_col  = make_ip_col(packet_buffer);
     auto payload_col = make_string_col(packet_buffer);

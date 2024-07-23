@@ -17,8 +17,8 @@
 
 #pragma once
 
+#include "morpheus/doca/PacketDataBuffer.hpp"
 #include "morpheus/doca/common.hpp"
-#include "morpheus/doca/packet_data_buffer.hpp"
 #include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/raw_packet.hpp"
@@ -61,12 +61,12 @@ class MORPHEUS_EXPORT DocaConvertStage
 
   private:
     subscribe_fn_t build();
-    
+
     /**
      * Called every time a message is passed to this stage
      */
     void on_raw_packet_message(sink_type_t x);
-    void send_buffered_data(rxcpp::subscriber<source_type_t>& output, doca::packet_data_buffer&& paccket_buffer);
+    void send_buffered_data(rxcpp::subscriber<source_type_t>& output, doca::PacketDataBuffer&& paccket_buffer);
     void buffer_reader(rxcpp::subscriber<source_type_t>& output);
 
     cudaStream_t m_stream;
@@ -74,7 +74,7 @@ class MORPHEUS_EXPORT DocaConvertStage
 
     std::chrono::milliseconds m_max_time_delta;
     std::size_t m_payload_buffer_size;
-    std::shared_ptr<mrc::BufferedChannel<doca::packet_data_buffer>> m_buffer_channel;
+    std::shared_ptr<mrc::BufferedChannel<doca::PacketDataBuffer>> m_buffer_channel;
 };
 
 /****** DocaConvertStageInterfaceProxy***********************/
