@@ -34,7 +34,6 @@ from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
@@ -84,8 +83,7 @@ def _run_pipeline(config: Config, source_dfs: list[cudf.DataFrame], model_name: 
 
     pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs))
 
-    pipe.add_stage(
-        DeserializeStage(config, task_type="llm_engine", task_payload=completion_task))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=completion_task))
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
 

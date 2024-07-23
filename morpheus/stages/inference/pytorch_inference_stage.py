@@ -21,7 +21,6 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiInferenceMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker

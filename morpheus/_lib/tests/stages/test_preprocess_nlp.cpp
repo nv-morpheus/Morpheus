@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES.
+ * All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,8 +69,8 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessage)
                                                          "country" /*column*/);
 
     auto cm_response = cm_stage->on_data(cm);
-    auto cm_tensors = cm_response->tensors();
-    
+    auto cm_tensors  = cm_response->tensors();
+
     // Verify output tensors
     std::vector<int32_t> expected_input_ids = {6469, 10278, 11347, 1262, 27583, 13833};
     auto cm_input_ids                       = cm_tensors->get_tensor("input_ids");

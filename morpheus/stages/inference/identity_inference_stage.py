@@ -20,7 +20,6 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import TensorMemory
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
@@ -52,11 +51,10 @@ class _IdentityInferenceWorker(InferenceWorker):
 
         def tmp(batch: ControlMessage, f):
             count = batch.tensors().count
-            f(
-                TensorMemory(
-                    count=count,
-                    tensors={'probs': cp.zeros((count, self._seq_length), dtype=cp.float32)},
-                ))
+            f(TensorMemory(
+                count=count,
+                tensors={'probs': cp.zeros((count, self._seq_length), dtype=cp.float32)},
+            ))
 
         # Call directly instead of enqueing
         tmp(batch, callback)

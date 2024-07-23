@@ -25,7 +25,6 @@ from morpheus.config import Config
 from morpheus.controllers.serialize_controller import SerializeController
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -37,7 +36,7 @@ class SerializeStage(SinglePortStage):
     """
     Includes & excludes columns from messages.
 
-    This class filters columns from a `MultiMessage` object emitting a `MessageMeta`.
+    This class filters columns from a `ControlMessage` object emitting a `MessageMeta`.
 
     Parameters
     ----------
@@ -93,10 +92,10 @@ class SerializeStage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if (self._build_cpp_node()):
             node = _stages.SerializeStage(builder,
-                                                        self.unique_name,
-                                                        self._controller.include_columns or [],
-                                                        self._controller.exclude_columns,
-                                                        self._controller.fixed_columns)
+                                          self.unique_name,
+                                          self._controller.include_columns or [],
+                                          self._controller.exclude_columns,
+                                          self._controller.fixed_columns)
         else:
             include_columns = self._controller.get_include_col_pattern()
             exclude_columns = self._controller.get_exclude_col_pattern()

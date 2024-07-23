@@ -24,7 +24,6 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
-from morpheus.messages import TensorMemory as CppTensorMemory
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 logger = logging.getLogger(__name__)
@@ -56,14 +55,13 @@ class PreprocessAEStage(PreprocessBaseStage):
         """
         Returns accepted input types for this stage.
         """
-        return (ControlMessage,)
+        return (ControlMessage, )
 
     def supports_cpp_node(self):
         return False
 
     @staticmethod
-    def pre_process_batch(msg: ControlMessage, fea_len: int,
-                          feature_columns: typing.List[str]) -> ControlMessage:
+    def pre_process_batch(msg: ControlMessage, fea_len: int, feature_columns: typing.List[str]) -> ControlMessage:
         """
         This function performs pre-processing for autoencoder.
 
@@ -106,8 +104,7 @@ class PreprocessAEStage(PreprocessBaseStage):
         msg.tensors(_messages.TensorMemory(count=count, tensors={"input": inputs, "seq_ids": seg_ids}))
         return msg
 
-    def _get_preprocess_fn(
-            self) -> typing.Callable[[ControlMessage], ControlMessage]:
+    def _get_preprocess_fn(self) -> typing.Callable[[ControlMessage], ControlMessage]:
         return partial(PreprocessAEStage.pre_process_batch,
                        fea_len=self._fea_length,
                        feature_columns=self._feature_columns)

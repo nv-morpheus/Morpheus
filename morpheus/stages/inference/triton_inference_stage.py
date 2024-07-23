@@ -33,7 +33,6 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiInferenceMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
@@ -569,8 +568,8 @@ class TritonInferenceWorker(InferenceWorker):
                              exc_info=ex)
             raise ex
 
-    def calc_output_dims(self, x: ControlMessage) -> typing.Tuple:
-        return (x.tensors().count, self._outputs[list(self._outputs.keys())[0]].shape[1])
+    def calc_output_dims(self, msg: ControlMessage) -> typing.Tuple:
+        return (msg.tensors().count, self._outputs[list(self._outputs.keys())[0]].shape[1])
 
     def _build_response(
             self,

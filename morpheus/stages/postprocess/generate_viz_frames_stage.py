@@ -95,7 +95,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
             Accepted input types
 
         """
-        return (ControlMessage,)
+        return (ControlMessage, )
 
     def supports_cpp_node(self):
         return False

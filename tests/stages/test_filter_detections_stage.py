@@ -15,9 +15,10 @@
 # limitations under the License.
 
 import typing
-import typing_utils
+
 import cupy as cp
 import pytest
+import typing_utils
 
 import morpheus._lib.messages as _messages
 from morpheus.common import FilterSource

@@ -77,7 +77,6 @@ def test_add_labels():
 
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=threshold)
 
-    # Check that the labeled control message and labeled multi response message are the same
     DatasetManager.assert_df_equal(labeled_cm.payload().get_data("frogs"), probs_array_bool[:, 0])
     DatasetManager.assert_df_equal(labeled_cm.payload().get_data("lizards"), probs_array_bool[:, 1])
     DatasetManager.assert_df_equal(labeled_cm.payload().get_data("toads"), probs_array_bool[:, 2])

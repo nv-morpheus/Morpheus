@@ -175,10 +175,9 @@ def _deserialize(builder: mrc.Builder):
         task_tuple = None
 
     map_func = partial(_process_dataframe_to_control_message,
-                        batch_size=batch_size,
-                        ensure_sliceable_index=ensure_sliceable_index,
-                        task_tuple=task_tuple)
-
+                       batch_size=batch_size,
+                       ensure_sliceable_index=ensure_sliceable_index,
+                       task_tuple=task_tuple)
 
     node = builder.make_node("deserialize",
                              ops.map(map_func),

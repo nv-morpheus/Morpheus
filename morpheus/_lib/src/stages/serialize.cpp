@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,16 @@
 
 #include "morpheus/stages/serialize.hpp"
 
-#include "mrc/segment/builder.hpp"
-#include "mrc/segment/object.hpp"
+#include "mrc/segment/builder.hpp"  // for Builder
+#include "mrc/segment/object.hpp"   // for Object
 
-#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/meta.hpp"       // for MessageMeta, SlicedMessageMeta
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 
-#include <exception>
-#include <memory>
-#include <string>
-#include <type_traits>  // for is_same_v
-#include <utility>      // for move
+#include <exception>  // for exception_ptr
+#include <memory>     // for shared_ptr, __shared_ptr_access, make_shared
+#include <string>     // for string
+#include <utility>    // for move
 
 // IWYU thinks basic_stringbuf & map are needed for the regex constructor
 // IWYU pragma: no_include <map>
@@ -39,8 +38,8 @@ constexpr std::regex_constants::syntax_option_type RegexOptions =
     std::regex_constants::ECMAScript | std::regex_constants::icase;
 
 SerializeStage::SerializeStage(const std::vector<std::string>& include,
-                                       const std::vector<std::string>& exclude,
-                                       bool fixed_columns) :
+                               const std::vector<std::string>& exclude,
+                               bool fixed_columns) :
   base_t(base_t::op_factory_from_sub_fn(build_operator())),
   m_fixed_columns{fixed_columns}
 {
@@ -48,8 +47,7 @@ SerializeStage::SerializeStage(const std::vector<std::string>& include,
     make_regex_objs(exclude, m_exclude);
 }
 
-void SerializeStage::make_regex_objs(const std::vector<std::string>& regex_strs,
-                                             std::vector<std::regex>& regex_objs)
+void SerializeStage::make_regex_objs(const std::vector<std::string>& regex_strs, std::vector<std::regex>& regex_objs)
 {
     for (const auto& s : regex_strs)
     {
@@ -88,16 +86,17 @@ bool SerializeStage::exclude_column(const std::string& column) const
 
 std::shared_ptr<SlicedMessageMeta> SerializeStage::get_meta(sink_type_t& msg)
 {
-    // If none of the columns match the include regex patterns or are all are excluded this has the effect
-    // of including all of the rows since calling msg->get_meta({}) will return a view with all columns.
-    // The Python impl appears to have the same behavior.
+    // If none of the columns match the include regex patterns or are all are
+    // excluded this has the effect of including all of the rows since calling
+    // msg->get_meta({}) will return a view with all columns. The Python impl
+    // appears to have the same behavior.
     if (!m_fixed_columns || m_column_names.empty())
     {
         m_column_names.clear();
 
         std::vector<std::string> column_names;
 
-            column_names = msg->payload()->get_info().get_column_names();
+        column_names = msg->payload()->get_info().get_column_names();
 
         for (const auto& c : column_names)
         {
@@ -128,7 +127,6 @@ SerializeStage::subscribe_fn_t SerializeStage::build_operator()
             }));
     };
 }
-
 
 // ************ SerializeStageInterfaceProxy ************* //
 std::shared_ptr<mrc::segment::Object<SerializeStage>> SerializeStageInterfaceProxy::init(

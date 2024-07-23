@@ -121,8 +121,12 @@ typename PreallocateStage<MessageT>::subscribe_fn_t PreallocateStage<MessageT>::
                 preallocate(x, m_needed_columns);
                 output.on_next(std::move(x));
             },
-            [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-            [&]() { output.on_completed(); }));
+            [&](std::exception_ptr error_ptr) {
+                output.on_error(error_ptr);
+            },
+            [&]() {
+                output.on_completed();
+            }));
     };
 }
 

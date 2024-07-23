@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,21 @@
 
 #include "morpheus/stages/deserialize.hpp"
 
-#include "morpheus/messages/control.hpp"
-#include "morpheus/types.hpp"
+#include "morpheus/messages/control.hpp"       // for ControlMessage
+#include "morpheus/types.hpp"                  // for TensorIndex
+#include "morpheus/utilities/json_types.hpp"   // for PythonByteContainer
+#include "morpheus/utilities/python_util.hpp"  // for show_warning_message
+#include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 
-#include <pybind11/pybind11.h>
-#include <pymrc/utils.hpp>  // for cast_from_pyobject
+#include <glog/logging.h>       // for COMPACT_GOOGLE_LOG_WARNING, LOG, LogMessage
+#include <pybind11/pybind11.h>  // for cast
+#include <pyerrors.h>           // for PyExc_RuntimeWarning
+#include <pymrc/utils.hpp>      // for cast_from_pyobject
+
+#include <algorithm>  // for min
+#include <exception>  // for exception_ptr
+#include <optional>   // for optional
+#include <sstream>    // for operator<<, basic_ostringstream
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 namespace morpheus {
@@ -58,7 +68,8 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
                         {
                             // Generate a warning
                             LOG(WARNING) << MORPHEUS_CONCAT_STR(
-                                "Incoming MessageMeta does not have a unique and monotonic index. Updating index "
+                                "Incoming MessageMeta does not have a unique and monotonic "
+                                "index. Updating index "
                                 "to be unique. Existing index will be retained in column '"
                                 << *old_index_name << "'");
                         }
@@ -66,8 +77,10 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
                     else
                     {
                         utilities::show_warning_message(
-                            "Detected a non-sliceable index on an incoming MessageMeta. Performance when taking slices "
-                            "of messages may be degraded. Consider setting `ensure_sliceable_index==True`",
+                            "Detected a non-sliceable index on an incoming MessageMeta. "
+                            "Performance when taking slices "
+                            "of messages may be degraded. Consider setting "
+                            "`ensure_sliceable_index==True`",
                             PyExc_RuntimeWarning);
                     }
                 }

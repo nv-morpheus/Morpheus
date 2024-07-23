@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,8 @@
 
 #pragma once
 
-#include "morpheus/export.h"                      // for exporting symbols
-#include "morpheus/messages/control.hpp"          // for ControlMessage
-#include "morpheus/messages/multi.hpp"            // for MultiMessage
-#include "morpheus/messages/multi_inference.hpp"  // for MultiInferenceMessage
+#include "morpheus/export.h"              // for MORPHEUS_EXPORT
+#include "morpheus/messages/control.hpp"  // for ControlMessage
 
 #include <boost/fiber/context.hpp>                   // for operator<<
 #include <cudf/strings/strings_column_view.hpp>      // for strings_column_view
@@ -29,7 +27,7 @@
 #include <nvtext/subword_tokenize.hpp>               // for tokenizer_result
 #include <pymrc/node.hpp>                            // for PythonNode
 #include <rmm/mr/device/device_memory_resource.hpp>  // for device_memory_resource
-#include <rxcpp/rx.hpp>                              // for observable_member, trace_activity, decay_t
+#include <rxcpp/rx.hpp>                              // for trace_activity, decay_t, from
 
 #include <cstdint>  // for uint32_t
 #include <memory>   // for shared_ptr, allocator
@@ -63,20 +61,27 @@ class MORPHEUS_EXPORT PreprocessNLPStage
     /**
      * @brief Construct a new Preprocess NLP Stage object
      *
-     * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created
-     * from the raw vocabulary using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
-     * @param sequence_length : Sequence Length to use (We add to special tokens for NER classification job).
-     * @param truncation : If set to true, strings will be truncated and padded to max_length. Each input string will
-     * result in exactly one output sequence. If set to false, there may be multiple output sequences when the
-     * max_length is smaller than generated tokens.
-     * @param do_lower_case : If set to true, original text will be lowercased before encoding.
-     * @param add_special_token : Whether or not to encode the sequences with the special tokens of the BERT
-     * classification model.
-     * @param stride : If `truncation` == False and the tokenized string is larger than max_length, the sequences
-     * containing the overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is
-     * equal to stride there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will
-     * be repeated on the second sequence and so on until the entire sentence is encoded.
-     * @param column : Name of the string column to operate on, defaults to "data".
+     * @param vocab_hash_file : Path to hash file containing vocabulary of words
+     * with token-ids. This can be created from the raw vocabulary using the
+     * `cudf.utils.hash_vocab_utils.hash_vocab` function.
+     * @param sequence_length : Sequence Length to use (We add to special tokens
+     * for NER classification job).
+     * @param truncation : If set to true, strings will be truncated and padded to
+     * max_length. Each input string will result in exactly one output sequence.
+     * If set to false, there may be multiple output sequences when the max_length
+     * is smaller than generated tokens.
+     * @param do_lower_case : If set to true, original text will be lowercased
+     * before encoding.
+     * @param add_special_token : Whether or not to encode the sequences with the
+     * special tokens of the BERT classification model.
+     * @param stride : If `truncation` == False and the tokenized string is larger
+     * than max_length, the sequences containing the overflowing token-ids can
+     * contain duplicated token-ids from the main sequence. If max_length is equal
+     * to stride there are no duplicated-id tokens. If stride is 80% of
+     * max_length, 20% of the first sequence will be repeated on the second
+     * sequence and so on until the entire sentence is encoded.
+     * @param column : Name of the string column to operate on, defaults to
+     * "data".
      */
     PreprocessNLPStage(std::string vocab_hash_file,
                        uint32_t sequence_length,
@@ -108,7 +113,6 @@ class MORPHEUS_EXPORT PreprocessNLPStage
     int m_stride{-1};
 };
 
-
 /****** PreprocessNLPStageInferenceProxy********************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
@@ -116,37 +120,43 @@ class MORPHEUS_EXPORT PreprocessNLPStage
 struct MORPHEUS_EXPORT PreprocessNLPStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a ProcessNLPStage that receives ControlMessage and emits ControlMessage, and return
-     * the result
+     * @brief Create and initialize a ProcessNLPStage that receives ControlMessage
+     * and emits ControlMessage, and return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
-     * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created
-     * from the raw vocabulary using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
-     * @param sequence_length : Sequence Length to use (We add to special tokens for NER classification job).
-     * @param truncation : If set to true, strings will be truncated and padded to max_length. Each input string will
-     * result in exactly one output sequence. If set to false, there may be multiple output sequences when the
-     * max_length is smaller than generated tokens.
-     * @param do_lower_case : If set to true, original text will be lowercased before encoding.
-     * @param add_special_token : Whether or not to encode the sequences with the special tokens of the BERT
-     * classification model.
-     * @param stride : If `truncation` == False and the tokenized string is larger than max_length, the sequences
-     * containing the overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is
-     * equal to stride there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will
-     * be repeated on the second sequence and so on until the entire sentence is encoded.
-     * @param column : Name of the string column to operate on, defaults to "data".
+     * @param vocab_hash_file : Path to hash file containing vocabulary of words
+     * with token-ids. This can be created from the raw vocabulary using the
+     * `cudf.utils.hash_vocab_utils.hash_vocab` function.
+     * @param sequence_length : Sequence Length to use (We add to special tokens
+     * for NER classification job).
+     * @param truncation : If set to true, strings will be truncated and padded to
+     * max_length. Each input string will result in exactly one output sequence.
+     * If set to false, there may be multiple output sequences when the max_length
+     * is smaller than generated tokens.
+     * @param do_lower_case : If set to true, original text will be lowercased
+     * before encoding.
+     * @param add_special_token : Whether or not to encode the sequences with the
+     * special tokens of the BERT classification model.
+     * @param stride : If `truncation` == False and the tokenized string is larger
+     * than max_length, the sequences containing the overflowing token-ids can
+     * contain duplicated token-ids from the main sequence. If max_length is equal
+     * to stride there are no duplicated-id tokens. If stride is 80% of
+     * max_length, 20% of the first sequence will be repeated on the second
+     * sequence and so on until the entire sentence is encoded.
+     * @param column : Name of the string column to operate on, defaults to
+     * "data".
      * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> init(
-        mrc::segment::Builder& builder,
-        const std::string& name,
-        std::string vocab_hash_file,
-        uint32_t sequence_length,
-        bool truncation,
-        bool do_lower_case,
-        bool add_special_token,
-        int stride         = -1,
-        std::string column = "data");
+    static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> init(mrc::segment::Builder& builder,
+                                                                          const std::string& name,
+                                                                          std::string vocab_hash_file,
+                                                                          uint32_t sequence_length,
+                                                                          bool truncation,
+                                                                          bool do_lower_case,
+                                                                          bool add_special_token,
+                                                                          int stride         = -1,
+                                                                          std::string column = "data");
 };
 /** @} */  // end of group
 }  // namespace morpheus

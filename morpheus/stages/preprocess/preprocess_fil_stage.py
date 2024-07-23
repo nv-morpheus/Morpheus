@@ -29,10 +29,6 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
-from morpheus.messages import InferenceMemoryFIL
-from morpheus.messages import MultiInferenceFILMessage
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 logger = logging.getLogger(__name__)
@@ -118,10 +114,7 @@ class PreprocessFILStage(PreprocessBaseStage):
         msg.set_metadata("inference_memory_params", {"inference_type": "fil"})
         return msg
 
-    def _get_preprocess_fn(
-        self
-    ) -> typing.Callable[[ControlMessage],
-                         ControlMessage]:
+    def _get_preprocess_fn(self) -> typing.Callable[[ControlMessage], ControlMessage]:
         return partial(PreprocessFILStage.pre_process_batch, fea_len=self._fea_length, fea_cols=self.features)
 
     def _get_preprocess_node(self, builder: mrc.Builder):

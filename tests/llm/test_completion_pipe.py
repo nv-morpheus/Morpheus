@@ -32,7 +32,6 @@ from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.llm.services.openai_chat_service import OpenAIChatService
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
@@ -69,10 +68,7 @@ def _run_pipeline(config: Config, llm_client: LLMClient, countries: list[str], c
     pipe.set_source(InMemorySourceStage(config, dataframes=[source_df]))
 
     deserialize_config = config
-    pipe.add_stage(
-        DeserializeStage(deserialize_config,
-                         task_type="llm_engine",
-                         task_payload=completion_task))
+    pipe.add_stage(DeserializeStage(deserialize_config, task_type="llm_engine", task_payload=completion_task))
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(llm_client)))
 

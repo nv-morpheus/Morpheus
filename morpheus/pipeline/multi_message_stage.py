@@ -14,7 +14,6 @@
 
 import logging
 import time
-import typing
 
 import mrc
 
@@ -27,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 def _get_time_ms():
     return round(time.time() * 1000)
+
 
 # TODO(Yuchen): rename this stage
 class MultiMessageStage(_pipeline.SinglePortStage):

@@ -110,7 +110,6 @@ class LogParsingPostProcessingStage(SinglePortStage):
                     else:
                         parsed_df[col_name] = ext_parsed[label]
 
-
             # decode cleanup
             parsed_df = self.__decode_cleanup(parsed_df)
             parsed_df["doc"] = parsed_dfs.index

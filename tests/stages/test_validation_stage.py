@@ -20,7 +20,6 @@ import pandas as pd
 import typing_utils
 
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 
@@ -48,7 +47,15 @@ def test_do_comparison(config):
 
     cm = _make_control_message(df)
 
-    expected_dict = {'total_rows': 3, 'matching_rows': 3, 'diff_rows': 0, 'matching_cols': ['a', 'b'], 'extra_cols': [], 'missing_cols': [], 'diff_cols': 0}
+    expected_dict = {
+        'total_rows': 3,
+        'matching_rows': 3,
+        'diff_rows': 0,
+        'matching_cols': ['a', 'b'],
+        'extra_cols': [],
+        'missing_cols': [],
+        'diff_cols': 0
+    }
     stage._append_message(cm)
     cm_results = stage.get_results(clear=True)
     assert cm_results == expected_dict

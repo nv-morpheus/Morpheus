@@ -334,7 +334,8 @@ class TrainAEStage(MultiMessageStage):
             # Now split into batches
             for i in range(0, full_message.payload().count, self._batch_size):
                 output_message = ControlMessage(full_message)
-                output_message.payload(full_message.payload().get_slice(i, min(i + self._batch_size, full_message.payload().count)))
+                output_message.payload(full_message.payload().get_slice(
+                    i, min(i + self._batch_size, full_message.payload().count)))
                 to_send.append(output_message)
 
             return to_send

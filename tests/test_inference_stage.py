@@ -74,11 +74,12 @@ def _mk_control_message(mess_count=1, count=1):
     msg = ControlMessage()
     msg.payload(MessageMeta(df))
     msg.tensors(
-        _messages.InferenceMemory(count=total_tensor_count,
-                        tensors={
-                            "probs": cp.random.rand(total_tensor_count, 2),
-                            "seq_ids": cp.tile(cp.expand_dims(cp.arange(0, total_tensor_count), axis=1), (1, 3))
-                        }))
+        _messages.InferenceMemory(
+            count=total_tensor_count,
+            tensors={
+                "probs": cp.random.rand(total_tensor_count, 2),
+                "seq_ids": cp.tile(cp.expand_dims(cp.arange(0, total_tensor_count), axis=1), (1, 3))
+            }))
     return msg
 
 
@@ -186,7 +187,8 @@ def test_convert_one_response():
     # Test for the second branch
     inf = _mk_control_message(mess_count=2, count=3)
     inf.tensors().set_tensor("seq_ids", cp.array([[0], [1], [1]]))
-    res = _messages.ResponseMemory(count=3, tensors={"probs": cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]])})
+    res = _messages.ResponseMemory(count=3,
+                                   tensors={"probs": cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]])})
 
     mem = _messages.ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 3))})
     output = _mk_control_message(mess_count=2, count=3)

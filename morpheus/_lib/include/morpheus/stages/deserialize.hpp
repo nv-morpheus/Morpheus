@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +17,23 @@
 
 #pragma once
 
-#include "morpheus/export.h"
-#include "morpheus/messages/control.hpp"
-#include "morpheus/messages/meta.hpp"
-#include "morpheus/messages/multi.hpp"
-#include "morpheus/types.hpp"                  // for TensorIndex
-#include "morpheus/utilities/python_util.hpp"  // for show_warning_message
-#include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
+#include "morpheus/export.h"              // for MORPHEUS_EXPORT
+#include "morpheus/messages/control.hpp"  // for ControlMessage
+#include "morpheus/messages/meta.hpp"     // for MessageMeta
+#include "morpheus/types.hpp"             // for TensorIndex
 
-#include <glog/logging.h>
-#include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>
-#include <nlohmann/json.hpp>
-#include <pybind11/pytypes.h>  // for object
-#include <pyerrors.h>          // for PyExc_RuntimeWarning
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>
+#include <boost/fiber/context.hpp>  // for operator<<
+#include <mrc/segment/builder.hpp>  // for Builder
+#include <mrc/segment/object.hpp>   // for Object
+#include <nlohmann/json.hpp>        // for basic_json, json
+#include <pybind11/pytypes.h>       // for object
+#include <pymrc/node.hpp>           // for PythonNode
+#include <rxcpp/rx.hpp>             // for decay_t, trace_activity, from, observable_member
 
-#include <algorithm>  // IWYU pragma: keep for std::min
-#include <exception>  // for exception_ptr
-#include <memory>
-#include <sstream>  // IWYU pragma: keep for glog
-#include <string>
-#include <utility>  // for pair
+#include <memory>   // for shared_ptr, unique_ptr
+#include <string>   // for string
+#include <thread>   // for operator<<
+#include <utility>  // for move, pair
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -72,7 +66,8 @@ class MORPHEUS_EXPORT DeserializeStage
      * @brief Construct a new Deserialize Stage object
      *
      * @param batch_size Number of messages to be divided into each batch
-     * @param ensure_sliceable_index Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`
+     * @param ensure_sliceable_index Whether or not to call
+     * `ensure_sliceable_index()` on all incoming `MessageMeta`
      * @param task Optional task to be added to all outgoing `ControlMessage`s
      */
     DeserializeStage(TensorIndex batch_size,
@@ -98,26 +93,27 @@ class MORPHEUS_EXPORT DeserializeStage
 struct MORPHEUS_EXPORT DeserializeStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a DeserializationStage that emits ControlMessage's, and return the result.
-     * If `task_type` is not None, `task_payload` must also be not None, and vice versa.
+     * @brief Create and initialize a DeserializationStage that emits
+     * ControlMessage's, and return the result. If `task_type` is not None,
+     * `task_payload` must also be not None, and vice versa.
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param batch_size : Number of messages to be divided into each batch
-     * @param ensure_sliceable_index Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`
+     * @param ensure_sliceable_index Whether or not to call
+     * `ensure_sliceable_index()` on all incoming `MessageMeta`
      * @param task_type : Optional task type to be added to all outgoing messages
-     * @param task_payload : Optional json object describing the task to be added to all outgoing messages
+     * @param task_payload : Optional json object describing the task to be added
+     * to all outgoing messages
      * @return std::shared_ptr<mrc::segment::Object<DeserializeStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<DeserializeStage>> init(
-        mrc::segment::Builder& builder,
-        const std::string& name,
-        TensorIndex batch_size,
-        bool ensure_sliceable_index,
-        const pybind11::object& task_type,
-        const pybind11::object& task_payload);
+    static std::shared_ptr<mrc::segment::Object<DeserializeStage>> init(mrc::segment::Builder& builder,
+                                                                        const std::string& name,
+                                                                        TensorIndex batch_size,
+                                                                        bool ensure_sliceable_index,
+                                                                        const pybind11::object& task_type,
+                                                                        const pybind11::object& task_payload);
 };
-
 
 /** @} */  // end of group
 }  // namespace morpheus

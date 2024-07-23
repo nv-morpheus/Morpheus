@@ -17,19 +17,19 @@ import pandas as pd
 import pytest
 
 from _utils.dataset_manager import DatasetManager
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.utils import concat_df
 
 
 @pytest.mark.usefixtures("config")
 def test_concat_df(dataset: DatasetManager):
     meta = MessageMeta(dataset["filter_probs.csv"])
-    messages = [
-        meta,
-        MultiMessage(meta=meta, mess_offset=0, mess_count=10),
-        MultiMessage(meta=meta, mess_offset=10, mess_count=10)
-    ]
+    cm1 = ControlMessage()
+    cm1.payload(meta.get_slice(0, 10))
+    cm2 = ControlMessage()
+    cm2.payload(meta.get_slice(10, 20))
+    messages = [meta, cm1, cm2]
 
     results = concat_df.concat_dataframes(messages)
 

@@ -28,8 +28,6 @@ from _utils import mk_async_infer
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
-from morpheus.messages import ControlMessage
-from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -191,10 +189,7 @@ def test_minibert_no_trunc(config: Config, tmp_path: str, morpheus_log_level: in
 @pytest.mark.slow
 @pytest.mark.usefixtures("launch_mock_triton")
 @pytest.mark.parametrize("data_col_name", ["data", "definitely_not_data"])
-def test_minibert_truncated(config: Config,
-                            tmp_path: str,
-                            morpheus_log_level: int,
-                            data_col_name: str):
+def test_minibert_truncated(config: Config, tmp_path: str, morpheus_log_level: int, data_col_name: str):
 
     results = _run_minibert(config=config,
                             tmp_path=tmp_path,

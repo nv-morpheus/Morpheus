@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,20 @@
 
 #pragma once
 
-#include "morpheus/export.h"
-#include "morpheus/messages/control.hpp"
-#include "morpheus/messages/multi.hpp"
-#include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/objects/table_info.hpp"
+#include "morpheus/export.h"                // for MORPHEUS_EXPORT
+#include "morpheus/messages/control.hpp"    // for ControlMessage
+#include "morpheus/objects/table_info.hpp"  // for TableInfo
 
-#include <boost/fiber/context.hpp>
-#include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>
+#include <boost/fiber/context.hpp>  // for operator<<
+#include <mrc/segment/builder.hpp>  // for Builder
+#include <mrc/segment/object.hpp>   // for Object
+#include <pymrc/node.hpp>           // for PythonNode
+#include <rxcpp/rx.hpp>             // for trace_activity, decay_t, from
 
-#include <memory>
-#include <string>
-#include <thread>
-#include <vector>
+#include <memory>  // for shared_ptr
+#include <string>  // for string
+#include <thread>  // for operator<<
+#include <vector>  // for vector
 
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
@@ -62,7 +60,8 @@ class MORPHEUS_EXPORT PreprocessFILStage
     /**
      * @brief Constructor for a class `PreprocessFILStage`
      *
-     * @param features : Reference to the features that are required for model inference
+     * @param features : Reference to the features that are required for model
+     * inference
      */
     PreprocessFILStage(const std::vector<std::string>& features);
 
@@ -89,11 +88,13 @@ struct MORPHEUS_EXPORT PreprocessFILStageInterfaceProxy
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
-     * @param features : Reference to the features that are required for model inference
+     * @param features : Reference to the features that are required for model
+     * inference
      * @return std::shared_ptr<mrc::segment::Object<PreprocessFILStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<PreprocessFILStage>> init(
-        mrc::segment::Builder& builder, const std::string& name, const std::vector<std::string>& features);
+    static std::shared_ptr<mrc::segment::Object<PreprocessFILStage>> init(mrc::segment::Builder& builder,
+                                                                          const std::string& name,
+                                                                          const std::vector<std::string>& features);
 };
 /** @} */  // end of group
 }  // namespace morpheus

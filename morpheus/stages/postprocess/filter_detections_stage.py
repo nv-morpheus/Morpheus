@@ -24,8 +24,6 @@ from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.controllers.filter_detections_controller import FilterDetectionsController
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -99,13 +97,10 @@ class FilterDetectionsStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiMessage`, ]
+        typing.Tuple[`morpheus.messages.ControlMessage`, ]
             Accepted input types.
 
         """
-        if self._controller.filter_source == FilterSource.TENSOR:
-            return (ControlMessage, )
-
         return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):

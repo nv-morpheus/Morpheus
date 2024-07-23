@@ -22,13 +22,9 @@ import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiResponseAEMessage
+from morpheus.messages import ControlMessage
 from morpheus.messages import ResponseMemoryAE
 from morpheus.messages import TensorMemory
-from morpheus.messages.multi_inference_ae_message import MultiInferenceAEMessage
-from morpheus.messages.multi_inference_message import MultiInferenceMessage
-from morpheus.messages.multi_response_message import MultiResponseMessage
-from morpheus.messages import ControlMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -84,7 +80,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
 
         Parameters
         ----------
-        batch : `morpheus.pipeline.messages.MultiInferenceMessage`
+        batch : `morpheus.messages.ControlMessage`
             Batch of inference messages.
         callback : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
             Inference callback.
@@ -95,7 +91,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
 
         explain_cols = [x + "_z_loss" for x in self._feature_columns] + ["max_abs_z", "mean_abs_z"]
         explain_df = pd.DataFrame(np.empty((batch.tensors().count, (len(self._feature_columns) + 2)), dtype=object),
-                                columns=explain_cols)
+                                  columns=explain_cols)
 
         model = batch.get_metadata("model")
         if model is not None:

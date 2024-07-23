@@ -25,7 +25,6 @@ from _utils import assert_path_exists
 from _utils.dataset_manager import DatasetManager
 from _utils.stages.conv_msg import ConvMsg
 from morpheus.cli.commands import RANKDIR_CHOICES
-from morpheus.messages import ControlMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.pipeline.pipeline import PipelineState

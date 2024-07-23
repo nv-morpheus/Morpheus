@@ -12,18 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import inspect
 import typing
 from abc import abstractmethod
 
 import mrc
-import typing_utils
 from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -44,37 +40,20 @@ class PreprocessBaseStage(MultiMessageStage):
 
         self._preprocess_fn = None
         self._should_log_timestamps = True
-        self._use_control_message = False
 
     def accepted_types(self) -> typing.Tuple:
         """
         Returns accepted input types for this stage.
 
         """
-        return (
-            MultiMessage,
-            ControlMessage,
-        )
+        return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):
-        out_type = MultiInferenceMessage
-        if (schema.input_type == ControlMessage):
-            self._use_control_message = True
-            out_type = ControlMessage
-            self._preprocess_fn = self._get_preprocess_fn()
-        else:
-            self._use_control_message = False
-            self._preprocess_fn = self._get_preprocess_fn()
-            preproc_sig = inspect.signature(self._preprocess_fn)
-            # If the innerfunction returns a type annotation, update the output type
-            if (preproc_sig.return_annotation
-                    and typing_utils.issubtype(preproc_sig.return_annotation, MultiInferenceMessage)):
-                out_type = preproc_sig.return_annotation
-
-        schema.output_schema.set_type(out_type)
+        self._preprocess_fn = self._get_preprocess_fn()
+        schema.output_schema.set_type(ControlMessage)
 
     @abstractmethod
-    def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
+    def _get_preprocess_fn(self) -> typing.Callable[[ControlMessage], ControlMessage]:
         pass
 
     @abstractmethod

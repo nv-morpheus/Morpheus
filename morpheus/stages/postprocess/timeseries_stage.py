@@ -238,9 +238,7 @@ class _UserTimeSeries:
             anomalies = action.window["event_bin"].isin(is_anomaly.get())
 
             # Set the anomalies by matching indexes
-            action.message.payload().set_data(
-                "ts_anomaly",
-                anomalies[0:action.message.payload().count])
+            action.message.payload().set_data("ts_anomaly", anomalies[0:action.message.payload().count])
 
             idx = action.message.payload().get_data().index
 
@@ -270,11 +268,11 @@ class _UserTimeSeries:
 
         # Get the first message timestamp
         message_start = calc_bin(pd.Timestamp(x.payload().get_data(self._timestamp_col).iloc[0]),
-                                    self._t0_epoch,
-                                    self._resolution_sec)
+                                 self._t0_epoch,
+                                 self._resolution_sec)
         message_end = calc_bin(pd.Timestamp(x.payload().get_data(self._timestamp_col).iloc[-1]),
-                                self._t0_epoch,
-                                self._resolution_sec)
+                               self._t0_epoch,
+                               self._resolution_sec)
 
         window_start = message_start - self._half_window_bins
         window_end = message_end + self._half_window_bins
@@ -477,7 +475,7 @@ class TimeSeriesStage(PassThruTypeMixin, SinglePortStage):
             Accepted input types.
 
         """
-        return (ControlMessage,)
+        return (ControlMessage, )
 
     def supports_cpp_node(self):
         return False
@@ -510,8 +508,7 @@ class TimeSeriesStage(PassThruTypeMixin, SinglePortStage):
             to_send = []
 
             for timestamp in self._timeseries_per_user.values():
-                message_list: typing.List[ControlMessage] = timestamp._calc_timeseries(
-                    None, True)
+                message_list: typing.List[ControlMessage] = timestamp._calc_timeseries(None, True)
 
                 to_send = to_send + message_list
 

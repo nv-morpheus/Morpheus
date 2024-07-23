@@ -48,9 +48,11 @@ class DeserializeStage(MultiMessageStage):
         Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`, which will replace the index
         of the underlying dataframe if the existing one is not unique and monotonic.
     task_type : str, default = None
-        If specified, adds the specified task to the `ControlMessage`. If not `None`, `task_payload` must also be specified.
+        If specified, adds the specified task to the `ControlMessage`. If not `None`, `task_payload` must also be
+        specified.
     task_payload : dict, default = None
-        If specified, adds the specified task to the `ControlMessage`. If not `None`, `task_type` must also be specified.
+        If specified, adds the specified task to the `ControlMessage`. If not `None`, `task_type` must also be
+        specified.
     """
 
     def __init__(self,
@@ -72,10 +74,8 @@ class DeserializeStage(MultiMessageStage):
         self._task_type = task_type
         self._task_payload = task_payload
 
-
         if ((self._task_type is None) != (self._task_payload is None)):
             raise ValueError("Both `task_type` and `task_payload` must be specified if either is specified.")
-
 
         self._module_config = {
             "ensure_sliceable_index": self._ensure_sliceable_index,

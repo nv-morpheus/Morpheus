@@ -23,7 +23,6 @@ import mrc.core.operators as ops
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -87,11 +86,11 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiResponseMessage`, ]
+        typing.Tuple[`morpheus.messages.ControlMessage`,]
             Accepted input types.
 
         """
-        return (MultiResponseMessage, ControlMessage)
+        return (ControlMessage, )
 
     @abstractmethod
     def _get_cpp_node(self, builder: mrc.Builder):
@@ -113,23 +112,18 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
 
     @typing.overload
     @staticmethod
-    def _add_labels(x: MultiResponseMessage, idx2label: dict[int, str],
-                    threshold: typing.Optional[float]) -> MultiResponseMessage:
+    def _add_labels(msg: ControlMessage, idx2label: dict[int, str],
+                    threshold: typing.Optional[float]) -> ControlMessage:
         ...
 
     @typing.overload
     @staticmethod
-    def _add_labels(x: ControlMessage, idx2label: dict[int, str], threshold: typing.Optional[float]) -> ControlMessage:
+    def _add_labels(msg: ControlMessage, idx2label: dict[int, str],
+                    threshold: typing.Optional[float]) -> ControlMessage:
         ...
 
     @staticmethod
-    def _add_labels(msg: ControlMessage,
-                    idx2label: dict[int, str],
-                    threshold: typing.Optional[float]):
-        return AddScoresStageBase.process_control_message(msg, idx2label, threshold)
-
-    @staticmethod
-    def process_control_message(msg: ControlMessage, idx2label: typing.Dict[int, str], threshold: typing.Optional[float]):
+    def _add_labels(msg: ControlMessage, idx2label: dict[int, str], threshold: typing.Optional[float]):
         probs = msg.tensors().get_tensor("probs")
 
         if (probs.shape[1] <= max(idx2label.keys())):

@@ -60,7 +60,7 @@ def _test_filter_detections_stage_pipe(config: Config,
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config))
+    pipe.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
     pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy, filter_source=FilterSource.TENSOR))
     pipe.add_stage(SerializeStage(config))
     comp_stage = pipe.add_stage(

@@ -14,15 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import mock
-
-import cudf
 import cupy as cp
-import pandas as pd
 import pytest
 
-from _utils.inference_worker import IW
+import cudf
+
 import morpheus._lib.messages as _messages
+from _utils.inference_worker import IW
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.stages.inference import inference_stage
@@ -58,10 +56,11 @@ def test_build_output_message():
     msg.payload(MessageMeta(df))
 
     input__0 = cp.array([[0.], [2.], [4.], [6.], [8.], [10.], [12.], [14.], [16.], [18.]])
-    seq_ids = cp.array([[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0], [4, 0, 0], [5, 0, 0], [6, 0, 0], [7, 0, 0], [8, 0, 0], [9, 0, 0]])
+    seq_ids = cp.array([[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0], [4, 0, 0], [5, 0, 0], [6, 0, 0], [7, 0, 0],
+                        [8, 0, 0], [9, 0, 0]])
     msg.tensors(_messages.TensorMemory(count=num_records, tensors={'input__0': input__0, 'seq_ids': seq_ids}))
 
     output_message = worker.build_output_message(msg)
 
-    assert(output_message.payload().df.equals(df))
-    assert(cp.array_equal(output_message.tensors().get_tensor('probs'), cp.zeros((10, 2))))
+    assert (output_message.payload().df.equals(df))
+    assert (cp.array_equal(output_message.tensors().get_tensor('probs'), cp.zeros((10, 2))))

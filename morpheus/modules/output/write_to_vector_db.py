@@ -15,7 +15,6 @@
 import logging
 import pickle
 import time
-import typing
 from dataclasses import dataclass
 
 import mrc
@@ -25,8 +24,6 @@ from pydantic import ValidationError
 import cudf
 
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.modules.schemas.write_to_vector_db_schema import WriteToVDBSchema
 from morpheus.service.vdb.milvus_client import DATA_TYPE_MAP
 from morpheus.service.vdb.utils import VectorDBServiceFactory
@@ -79,7 +76,7 @@ class AccumulationStats:
 @register_module(WRITE_TO_VECTOR_DB, MORPHEUS_MODULE_NAMESPACE)
 def _write_to_vector_db(builder: mrc.Builder):
     """
-    Deserializes incoming messages into either MultiMessage or ControlMessage format.
+    Deserializes incoming messages into ControlMessage format.
 
     Parameters
     ----------

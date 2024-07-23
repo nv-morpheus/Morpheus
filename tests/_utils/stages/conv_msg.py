@@ -66,9 +66,7 @@ class ConvMsg(SinglePortStage):
         return "test"
 
     def accepted_types(self) -> typing.Tuple:
-        return (
-            ControlMessage,
-        )
+        return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(ControlMessage)

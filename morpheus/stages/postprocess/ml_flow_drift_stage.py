@@ -119,11 +119,11 @@ class MLFlowDriftStage(PassThruTypeMixin, SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiResponseMessage`, ControlMessage]
+        typing.Tuple[`morpheus.messages.ControlMessage`]
             Accepted input types.
 
         """
-        return (ControlMessage,)
+        return (ControlMessage, )
 
     def supports_cpp_node(self):
         return False
