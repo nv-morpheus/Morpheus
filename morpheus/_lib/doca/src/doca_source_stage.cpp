@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "cuda.h"
+#include "morpheus/doca/doca_source_stage.hpp"
 
 #include "morpheus/doca/common.hpp"
 #include "morpheus/doca/doca_context.hpp"
@@ -24,7 +24,6 @@
 #include "morpheus/doca/doca_rx_pipe.hpp"
 #include "morpheus/doca/doca_rx_queue.hpp"
 #include "morpheus/doca/doca_semaphore.hpp"
-#include "morpheus/doca/doca_source_stage.hpp"
 #include "morpheus/messages/raw_packet.hpp"
 #include "morpheus/utilities/error.hpp"
 
