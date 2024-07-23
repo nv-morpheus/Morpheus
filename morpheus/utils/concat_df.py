@@ -38,13 +38,11 @@ def concat_dataframes(messages: typing.List[MessageBase]) -> pd.DataFrame:
     """
 
     all_meta = []
-    for x in messages:
-        if isinstance(x, MultiMessage):
-            df = x.get_meta()
-        elif isinstance(x, ControlMessage):
-            df = x.payload().df
+    for msg in messages:
+        if isinstance(msg, ControlMessage):
+            df = msg.payload().df
         else:
-            df = x.df
+            df = msg.df
 
         if isinstance(df, cudf.DataFrame):
             df = df.to_pandas()

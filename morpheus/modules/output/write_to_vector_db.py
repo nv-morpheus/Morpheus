@@ -120,7 +120,6 @@ def _write_to_vector_db(builder: mrc.Builder):
 
         raise
 
-    embedding_column_name = write_to_vdb_config.embedding_column_name
     recreate = write_to_vdb_config.recreate
     service = write_to_vdb_config.service
     is_service_serialized = write_to_vdb_config.is_service_serialized
@@ -155,7 +154,7 @@ def _write_to_vector_db(builder: mrc.Builder):
         # Close vector database service connection
         service.close()
 
-    def extract_df(msg: typing.Union[ControlMessage, MultiResponseMessage, MultiMessage]):
+    def extract_df(msg: ControlMessage):
         df = None
         resource_name = None
 
@@ -165,19 +164,12 @@ def _write_to_vector_db(builder: mrc.Builder):
                 resource_name = msg.get_metadata("vdb_resource")
             else:
                 resource_name = None
-        elif isinstance(msg, MultiResponseMessage):
-            df = msg.get_meta()
-            if df is not None and not df.empty:
-                embeddings = msg.get_probs_tensor()
-                df[embedding_column_name] = embeddings.tolist()
-        elif isinstance(msg, MultiMessage):
-            df = msg.get_meta()
         else:
             raise RuntimeError(f"Unexpected message type '{type(msg)}' was encountered.")
 
         return df, resource_name
 
-    def on_data(msg: typing.Union[ControlMessage, MultiResponseMessage, MultiMessage]):
+    def on_data(msg: ControlMessage):
         msg_resource_target = None
         try:
             df, msg_resource_target = extract_df(msg)
@@ -219,28 +211,26 @@ def _write_to_vector_db(builder: mrc.Builder):
                             accum_stats.last_insert_time = current_time
                             accum_stats.msg_count = 0
 
-                        if (isinstance(msg, ControlMessage)):
-                            msg.set_metadata(
-                                "insert_response",
-                                {
-                                    "status": "inserted",
-                                    "accum_count": 0,
-                                    "insert_count": df_size,
-                                    "succ_count": df_size,
-                                    "err_count": 0
-                                })
+                        msg.set_metadata(
+                            "insert_response",
+                            {
+                                "status": "inserted",
+                                "accum_count": 0,
+                                "insert_count": df_size,
+                                "succ_count": df_size,
+                                "err_count": 0
+                            })
                     else:
                         logger.debug("Accumulated %d rows for collection: %s", accum_stats.msg_count, key)
-                        if (isinstance(msg, ControlMessage)):
-                            msg.set_metadata(
-                                "insert_response",
-                                {
-                                    "status": "accumulated",
-                                    "accum_count": df_size,
-                                    "insert_count": 0,
-                                    "succ_count": 0,
-                                    "err_count": 0
-                                })
+                        msg.set_metadata(
+                            "insert_response",
+                            {
+                                "status": "accumulated",
+                                "accum_count": df_size,
+                                "insert_count": 0,
+                                "succ_count": 0,
+                                "err_count": 0
+                            })
 
                 return msg
 
@@ -249,8 +239,7 @@ def _write_to_vector_db(builder: mrc.Builder):
             # TODO(Devin): This behavior is likely buggy; we need to decide whether or not to collect control messages
             # and output all of them when an accumulation is flushed, or to simply mark a control message as "done",
             # even if it is just accumulated.
-            if (isinstance(msg, ControlMessage)):
-                msg.set_metadata("insert_response", {"status": "failed", "err_count": 1})
+            msg.set_metadata("insert_response", {"status": "failed", "err_count": 1})
 
         return msg
 

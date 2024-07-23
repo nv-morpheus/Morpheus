@@ -48,57 +48,36 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
 
         pass
 
-    def build_output_message(self, x: MultiInferenceAEMessage | ControlMessage) -> MultiResponseAEMessage | ControlMessage:
+    def build_output_message(self, msg: ControlMessage) -> ControlMessage:
         """
         Create initial inference response message with result values initialized to zero. Results will be
         set in message as each inference batch is processed.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiInferenceAEMessage`
-            Batch of autoencoder inference messages.
+        msg : `morpheus.messages.ControlMessage`
+            Batch of ControlMessage.
 
         Returns
         -------
-        `morpheus.pipeline.messagesMultiResponseAEMessage`
-            Response message with autoencoder results calculated from inference results.
+        `morpheus.messages.ControlMessage`
+            Response ControlMessage.
         """
-        if isinstance(x, MultiInferenceAEMessage):
-            dims = self.calc_output_dims(x)
-            output_dims = (x.mess_count, *dims[1:])
 
-            memory = ResponseMemoryAE(count=output_dims[0], probs=cp.zeros(output_dims))
+        dims = self.calc_output_dims(msg)
+        output_dims = (msg.payload().count, *dims[1:])
 
-            # Override the default to return the response AE
-            output_message = MultiResponseAEMessage(meta=x.meta,
-                                                    mess_offset=x.mess_offset,
-                                                    mess_count=x.mess_count,
-                                                    memory=memory,
-                                                    offset=x.offset,
-                                                    count=x.count,
-                                                    user_id=x.user_id)
+        output_message = ControlMessage(msg)
+        output_message.payload(msg.payload())
+        output_message.tensors(_messages.TensorMemory(count=output_dims[0], tensors={"probs": cp.zeros(output_dims)}))
 
-            return output_message
+        return output_message
 
-        if isinstance(x, ControlMessage):
-            dims = self.calc_output_dims(x)
-            output_dims = (x.payload().count, *dims[1:])
-
-            output_message = ControlMessage(x)
-            output_message.payload(x.payload())
-            output_message.tensors(_messages.TensorMemory(count=output_dims[0], tensors={"probs": cp.zeros(output_dims)}))
-
-            return output_message
-
-    def calc_output_dims(self, x: MultiInferenceAEMessage | ControlMessage) -> typing.Tuple:
-
+    def calc_output_dims(self, msg: ControlMessage) -> typing.Tuple:
         # reconstruction loss and zscore
-        if isinstance(x, MultiInferenceAEMessage):
-            return (x.count, 2)
-        if isinstance(x, ControlMessage):
-            return (x.tensors().count, 2)
+        return (msg.tensors().count, 2)
 
-    def process(self, batch: MultiInferenceAEMessage | ControlMessage, callback: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: ControlMessage, callback: typing.Callable[[TensorMemory], None]):
         """
         This function processes inference batch by using batch's model to calculate anomaly scores
         and adding results to response.
@@ -111,80 +90,43 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
             Inference callback.
 
         """
-        if isinstance(batch, MultiInferenceAEMessage):
-            data = batch.get_meta(batch.meta.df.columns.intersection(self._feature_columns))
 
-            explain_cols = [x + "_z_loss" for x in self._feature_columns] + ["max_abs_z", "mean_abs_z"]
-            explain_df = pd.DataFrame(np.empty((batch.count, (len(self._feature_columns) + 2)), dtype=object),
-                                    columns=explain_cols)
+        data = batch.payload().get_data(batch.payload().df.columns.intersection(self._feature_columns))
 
-            if batch.model is not None:
-                rloss_scores = batch.model.get_anomaly_score(data)
+        explain_cols = [x + "_z_loss" for x in self._feature_columns] + ["max_abs_z", "mean_abs_z"]
+        explain_df = pd.DataFrame(np.empty((batch.tensors().count, (len(self._feature_columns) + 2)), dtype=object),
+                                columns=explain_cols)
 
-                results = batch.model.get_results(data, return_abs=True)
-                scaled_z_scores = [col for col in results.columns if col.endswith('_z_loss')]
-                scaled_z_scores.extend(['max_abs_z', 'mean_abs_z'])
-                scaledz_df = results[scaled_z_scores]
-                for col in scaledz_df.columns:
-                    explain_df[col] = scaledz_df[col]
+        model = batch.get_metadata("model")
+        if model is not None:
+            rloss_scores = model.get_anomaly_score(data)
 
-                zscores = (rloss_scores - batch.train_scores_mean) / batch.train_scores_std
-                rloss_scores = rloss_scores.reshape((batch.count, 1))
-                zscores = np.absolute(zscores)
-                zscores = zscores.reshape((batch.count, 1))
-            else:
-                rloss_scores = np.empty((batch.count, 1))
-                rloss_scores[:] = np.NaN
-                zscores = np.empty((batch.count, 1))
-                zscores[:] = np.NaN
+            results = model.get_results(data, return_abs=True)
+            scaled_z_scores = [col for col in results.columns if col.endswith('_z_loss')]
+            scaled_z_scores.extend(['max_abs_z', 'mean_abs_z'])
+            scaledz_df = results[scaled_z_scores]
+            for col in scaledz_df.columns:
+                explain_df[col] = scaledz_df[col]
 
-            ae_scores = np.concatenate((rloss_scores, zscores), axis=1)
+            zscores = (rloss_scores - batch.get_metadata("train_scores_mean")) / batch.get_metadata("train_scores_std")
+            rloss_scores = rloss_scores.reshape((batch.tensors().count, 1))
+            zscores = np.absolute(zscores)
+            zscores = zscores.reshape((batch.tensors().count, 1))
+        else:
+            rloss_scores = np.empty((batch.tensors().count, 1))
+            rloss_scores[:] = np.NaN
+            zscores = np.empty((batch.tensors().count, 1))
+            zscores[:] = np.NaN
 
-            ae_scores = cp.asarray(ae_scores)
+        ae_scores = np.concatenate((rloss_scores, zscores), axis=1)
 
-            mem = ResponseMemoryAE(count=batch.count, probs=ae_scores)
+        ae_scores = cp.asarray(ae_scores)
 
-            mem.explain_df = explain_df
+        mem = ResponseMemoryAE(count=batch.tensors().count, probs=ae_scores)
 
-            callback(mem)
+        mem.explain_df = explain_df
 
-        elif isinstance(batch, ControlMessage):
-            data = batch.payload().get_data(batch.payload().df.columns.intersection(self._feature_columns))
-
-            explain_cols = [x + "_z_loss" for x in self._feature_columns] + ["max_abs_z", "mean_abs_z"]
-            explain_df = pd.DataFrame(np.empty((batch.tensors().count, (len(self._feature_columns) + 2)), dtype=object),
-                                    columns=explain_cols)
-
-            model = batch.get_metadata("model")
-            if model is not None:
-                rloss_scores = model.get_anomaly_score(data)
-
-                results = model.get_results(data, return_abs=True)
-                scaled_z_scores = [col for col in results.columns if col.endswith('_z_loss')]
-                scaled_z_scores.extend(['max_abs_z', 'mean_abs_z'])
-                scaledz_df = results[scaled_z_scores]
-                for col in scaledz_df.columns:
-                    explain_df[col] = scaledz_df[col]
-
-                zscores = (rloss_scores - batch.get_metadata("train_scores_mean")) / batch.get_metadata("train_scores_std")
-                rloss_scores = rloss_scores.reshape((batch.tensors().count, 1))
-                zscores = np.absolute(zscores)
-                zscores = zscores.reshape((batch.tensors().count, 1))
-            else:
-                rloss_scores = np.empty((batch.tensors().count, 1))
-                rloss_scores[:] = np.NaN
-                zscores = np.empty((batch.tensors().count, 1))
-                zscores[:] = np.NaN
-
-            ae_scores = np.concatenate((rloss_scores, zscores), axis=1)
-
-            ae_scores = cp.asarray(ae_scores)
-
-            mem = ResponseMemoryAE(count=batch.tensors().count, probs=ae_scores)
-
-            mem.explain_df = explain_df
-
-            callback(mem)
+        callback(mem)
 
 
 @register_stage("inf-pytorch", modes=[PipelineModes.AE])
@@ -203,16 +145,10 @@ class AutoEncoderInferenceStage(InferenceStage):
         return _AutoEncoderInferenceWorker(inf_queue, self._config)
 
     @staticmethod
-    def _convert_one_response(output: MultiResponseMessage | ControlMessage, inf: MultiInferenceMessage | ControlMessage, res: ResponseMemoryAE):
-        if isinstance(output, MultiResponseMessage):
-            # Set the explainability and then call the base
-            res.explain_df.index = range(inf.mess_offset, inf.mess_offset + inf.mess_count)
-            for col in res.explain_df.columns:
-                inf.set_meta(col, res.explain_df[col])
-        elif isinstance(output, ControlMessage):
-            # Set the explainability and then call the base
-            res.explain_df.index = range(0, inf.payload().count)
-            for col in res.explain_df.columns:
-                inf.payload().set_data(col, res.explain_df[col])
+    def _convert_one_response(output: ControlMessage, inf: ControlMessage, res: ResponseMemoryAE):
+        # Set the explainability and then call the base
+        res.explain_df.index = range(0, inf.payload().count)
+        for col in res.explain_df.columns:
+            inf.payload().set_data(col, res.explain_df[col])
 
         return InferenceStage._convert_one_response(output=output, inf=inf, res=res)

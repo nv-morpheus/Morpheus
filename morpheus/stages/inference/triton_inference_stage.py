@@ -569,15 +569,12 @@ class TritonInferenceWorker(InferenceWorker):
                              exc_info=ex)
             raise ex
 
-    def calc_output_dims(self, x: MultiInferenceMessage | ControlMessage) -> typing.Tuple:
-        if isinstance(x, MultiInferenceMessage):
-            return (x.count, self._outputs[list(self._outputs.keys())[0]].shape[1])
-        if isinstance(x, ControlMessage):
-            return (x.tensors().count, self._outputs[list(self._outputs.keys())[0]].shape[1])
+    def calc_output_dims(self, x: ControlMessage) -> typing.Tuple:
+        return (x.tensors().count, self._outputs[list(self._outputs.keys())[0]].shape[1])
 
     def _build_response(
             self,
-            batch: MultiInferenceMessage | ControlMessage,  # pylint: disable=unused-argument
+            batch: ControlMessage,  # pylint: disable=unused-argument
             result: tritonclient.InferResult) -> TensorMemory:
         output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
 
@@ -598,7 +595,7 @@ class TritonInferenceWorker(InferenceWorker):
     def _infer_callback(self,
                         cb: typing.Callable[[TensorMemory], None],
                         m: InputWrapper,
-                        b: MultiInferenceMessage,
+                        b: ControlMessage,
                         result: tritonclient.InferResult,
                         error: tritonclient.InferenceServerException):
 
@@ -616,13 +613,13 @@ class TritonInferenceWorker(InferenceWorker):
 
     # pylint: enable=invalid-name
 
-    def process(self, batch: MultiInferenceMessage | ControlMessage, callback: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: ControlMessage, callback: typing.Callable[[TensorMemory], None]):
         """
         This function sends batch of events as a requests to Triton inference server using triton client API.
 
         Parameters
         ----------
-        batch : `morpheus.pipeline.messages.MultiInferenceMessage`
+        batch : `morpheus.messages.ControlMessage`
             Mini-batch of inference messages.
         callback : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
             Callback to set the values for the inference response.
@@ -630,18 +627,11 @@ class TritonInferenceWorker(InferenceWorker):
         """
         mem: InputWrapper = self._mem_pool.borrow_obj()
 
-        if isinstance(batch, MultiInferenceMessage):
-            inputs: typing.List[tritonclient.InferInput] = [
-                mem.build_input(input.name,
-                                batch.get_input(input.mapped_name),
-                                force_convert_inputs=self._force_convert_inputs) for input in self._inputs.values()
-            ]
-        elif isinstance(batch, ControlMessage):
-            inputs: typing.List[tritonclient.InferInput] = [
-                mem.build_input(input.name,
-                                batch.tensors().get_tensor(input.mapped_name),
-                                force_convert_inputs=self._force_convert_inputs) for input in self._inputs.values()
-            ]
+        inputs: typing.List[tritonclient.InferInput] = [
+            mem.build_input(input.name,
+                            batch.tensors().get_tensor(input.mapped_name),
+                            force_convert_inputs=self._force_convert_inputs) for input in self._inputs.values()
+        ]
 
         outputs = [tritonclient.InferRequestedOutput(output.name) for output in self._outputs.values()]
 

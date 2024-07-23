@@ -45,19 +45,13 @@ class _IdentityInferenceWorker(InferenceWorker):
         self._max_batch_size = c.model_max_batch_size
         self._seq_length = c.feature_length
 
-    def calc_output_dims(self, x: MultiInferenceMessage | ControlMessage) -> typing.Tuple:
-        if isinstance(x, MultiInferenceMessage):
-            return (x.count, self._seq_length)
-        if isinstance(x, ControlMessage):
-            return (x.tensors().count, self._seq_length)
+    def calc_output_dims(self, msg: ControlMessage) -> typing.Tuple:
+        return (msg.tensors().count, self._seq_length)
 
-    def process(self, batch: MultiInferenceMessage | ControlMessage, callback: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: ControlMessage, callback: typing.Callable[[TensorMemory], None]):
 
-        def tmp(batch: MultiInferenceMessage | ControlMessage, f):
-            if isinstance(batch, MultiInferenceMessage):
-                count = batch.count
-            elif isinstance(batch, ControlMessage):
-                count = batch.tensors().count
+        def tmp(batch: ControlMessage, f):
+            count = batch.tensors().count
             f(
                 TensorMemory(
                     count=count,

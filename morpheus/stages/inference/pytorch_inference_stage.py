@@ -71,15 +71,10 @@ class _PyTorchInferenceWorker(InferenceWorker):
         # Load the model into CUDA memory
         self._model = torch.load(self._model_filename).to('cuda')
 
-    def calc_output_dims(self, x: MultiInferenceMessage | ControlMessage) -> typing.Tuple:
-        if isinstance(x, MultiInferenceMessage):
-            input_ids = x.get_input("input_ids")
-            input_mask = x.get_input("input_mask")
-            count = x.count
-        elif isinstance(x, ControlMessage):
-            input_ids = x.tensors().get_tensor("input_ids")
-            input_mask = x.tensors().get_tensor("input_mask")
-            count = x.tensors().count
+    def calc_output_dims(self, msg: ControlMessage) -> typing.Tuple:
+        input_ids = msg.tensors().get_tensor("input_ids")
+        input_mask = msg.tensors().get_tensor("input_mask")
+        count = msg.tensors().count
         # If we haven't cached the output dimension, do that here
         if (not self._output_size):
             test_intput_ids_shape = (self._max_batch_size, ) + input_ids.shape[1:]
@@ -94,15 +89,10 @@ class _PyTorchInferenceWorker(InferenceWorker):
 
         return (count, self._outputs[list(self._outputs.keys())[0]].shape[1])
 
-    def process(self, batch: MultiInferenceMessage | ControlMessage, callback: typing.Callable[[TensorMemory], None]):
-        if isinstance(batch, MultiInferenceMessage):
-            input_ids = batch.get_input("input_ids")
-            input_mask = batch.get_input("input_mask")
-            count = batch.count
-        elif isinstance(batch, ControlMessage):
-            input_ids = batch.tensors().get_tensor("input_ids")
-            input_mask = batch.tensors().get_tensor("input_mask")
-            count = batch.tensors().count
+    def process(self, batch: ControlMessage, callback: typing.Callable[[TensorMemory], None]):
+        input_ids = batch.tensors().get_tensor("input_ids")
+        input_mask = batch.tensors().get_tensor("input_mask")
+        count = batch.tensors().count
 
         # convert from cupy to torch tensor using dlpack
         input_ids = from_dlpack(input_ids.astype(cp.float).toDlpack()).type(torch.long)
