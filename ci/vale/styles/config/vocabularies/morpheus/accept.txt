@@ -1,4 +1,5 @@
 [Aa]utoencoder
+[Bb]atcher
 [Bb]oolean
 [Cc]hatbot(s?)
 CMake

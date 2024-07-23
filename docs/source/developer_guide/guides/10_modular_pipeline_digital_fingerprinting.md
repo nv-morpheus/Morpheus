@@ -27,7 +27,7 @@ limitations under the License.
   - [Setting up Morpheus](#setting-up-morpheus)
   - [Morpheus Modules](#morpheus-modules)
   - [DFP Deployment](#dfp-deployment)
-    - [fsspec Dataloader](#fsspec-dataloader)
+    - [`fsspec` Data Loader](#fsspec-data-loader)
   - [DFP Training and Inference Pipelines](#dfp-training-and-inference-pipelines)
     - [DFP Preprocessing](#dfp-preprocessing)
     - [Control Message Filter](#control-message-filter)
@@ -38,7 +38,7 @@ limitations under the License.
     - [DFP Data Prep](#dfp-data-prep)
   - [DFP Training Pipeline](#dfp-training-pipeline)
     - [DFP Training](#dfp-training)
-    - [MLFlow Model Writer](#mlflow-model-writer)
+    - [MLflow Model Writer](#mlflow-model-writer)
   - [DFP Inference Pipeline](#dfp-inference-pipeline)
     - [DFP Inference](#dfp-inference)
     - [Filter Detections](#filter-detections)
@@ -106,7 +106,7 @@ pipeline.run()
 
 ## Setting up Morpheus
 
-For a full introduction in how to set up and run morpheus, please refer to the [Getting Started](../../getting_started.md) guide.
+For a full introduction in how to set up and run Morpheus, please refer to the [Getting Started](../../getting_started.md) guide.
 
 ## Morpheus Modules
 
@@ -147,12 +147,12 @@ def dfp_deployment(builder: mrc.Builder):
     builder.register_module_input("input", fsspec_dataloader_module.input_port("input"))
 ```
 
-### fsspec Dataloader
+### `fsspec` Data Loader
 
 
 Source: `morpheus/loaders/fsspec_loader.py`
 
-This is an instance of the new DataLoader module, utilizing a pre-defined 'fsspec' style loader. The module is used to transform glob specified file lists into individual file paths and update the control message with those paths.
+This is an instance of the new DataLoader module, utilizing a pre-defined `fsspec` style loader. The module is used to transform glob specified file lists into individual file paths and update the control message with those paths.
 
 For a complete reference, refer to: [DataLoader Module](../../modules/core/data_loader.md)
 
@@ -164,7 +164,7 @@ There are a number of modules that are used in both the training and inference p
 
 Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_preproc.py`
 
-The `dfp_preproc` module is a functional component within the Morpheus framework that combines multiple data filtering and processing pipeline modules related to inference and training. This module simplifies the pipeline by consolidating various modules into a single, cohesive unit. The `dfp_preproc` module offers configurability for parameters such as cache directory, timestamp column name, pre-filter options, batching options, user splitting options, and supported data loaders for different file types.
+The `dfp_preproc` module is a functional component within the Morpheus framework that combines multiple data filtering and processing pipeline modules related to inference and training. This module simplifies the pipeline by consolidating various modules into a single, cohesive unit. The `dfp_preproc` module allows for the configuration of parameters such as the cache directory, timestamp column name, pre-filter options, batching options, user splitting options, and supported data loaders for various file types.
 
 The module itself consists of a series of chained sub-modules, which are connected in a logical sequence:
 
@@ -177,7 +177,7 @@ The module itself consists of a series of chained sub-modules, which are connect
 - `dfp_split_users_module`
     - Responsible for splitting the DataFrame into a series of DataFrames, one per user.
 
-For a complete reference, refer to: [DFP Preproc](../../modules/examples/digital_fingerprinting/dfp_preproc.md)
+For a complete reference, refer to: [`dfp_preproc`](../../modules/examples/digital_fingerprinting/dfp_preproc.md)
 
 ```python
 @register_module(DFP_PREPROC, MORPHEUS_MODULE_NAMESPACE)
@@ -208,7 +208,7 @@ For a complete reference, refer to: [Filter Control Message](../../modules/core/
 
 Source: `morpheus/modules/file_batcher.py`
 
-The `file_batcher` module is a component that is responsible for loading input files, filtering out files older than the specified time window, and grouping the remaining files by periods that fall within the time window. This module offers configurability for parameters such as batching options, cache directory, file type, filtering null values, data schema, and the timestamp column name. The `file_batcher` module processes control messages, validates them, and generates a list of files with their timestamps. The module then groups files by the given period, creates control messages for each batch, and sends them downstream for further processing. A node function is used to handle the processing of control messages, and input and output ports are registered to integrate the module into the data processing pipeline seamlessly.
+The `file_batcher` module is a component that is responsible for loading input files, filtering out files older than the specified time window, and grouping the remaining files by periods that fall within the time window. This module offers configuration for parameters such as batching options, cache directory, file type, filtering null values, data schema, and the timestamp column name. The `file_batcher` module processes control messages, validates them, and generates a list of files with their timestamps. The module then groups files by the given period, creates control messages for each batch, and sends them downstream for further processing. A node function is used to handle the processing of control messages, and input and output ports are registered to integrate the module into the data processing pipeline seamlessly.
 
 The file batcher is one of the first pipeline components that begins to differ more substantially from the previous raw-data pipeline, prior to 23.03. In addition to its previous functionality, the file batcher is now control message aware, and can handle both streaming and encapsulated control messages, a property denoted by the `data_type` property of the control message's metadata being set as either `streaming` or `payload`. Additionally, the file batcher's default processing criteria for `period`, `sampling_rate_s`, `start_time`, and `end_time` can now be overridden by their corresponding values in the control message's `batching_options` metadata entry.
 
@@ -227,7 +227,7 @@ def file_batcher(builder: mrc.Builder):
 
 Source: `morpheus/loaders/file_to_df_loader.py`
 
-This is an instance of the new DataLoader module, utilizing a pre-defined 'file_to_df' style loader. The module is used to process 'load' tasks that reference files which need to be retrieved, possibly cached, and then loaded into a cuDF DataFrame with is set as the control message payload.
+This is an instance of the new DataLoader module, utilizing a pre-defined `file_to_df` style loader. The module is used to process `load` tasks that reference files which need to be retrieved, possibly cached, and then loaded into a cuDF DataFrame with is set as the control message payload.
 
 For a complete reference, refer to: [DataLoader Module](../../modules/core/data_loader.md)
 
@@ -339,7 +339,7 @@ def dfp_inference(builder: mrc.Builder):
     ...
 ```
 
-### MLFlow Model Writer
+### MLflow Model Writer
 
 Source: `morpheus/modules/mlflow_model_writer.py`
 
@@ -481,7 +481,7 @@ Source: `morpheus/modules/write_to_file.py`
 
 The `write_to_file` module function writes all messages to a file.
 
-The convert_to_strings function takes a `DataFrame`` (either pandas or cuDF) and converts it into the appropriate string format based on the file type (JSON or CSV). It checks whether to include the index column or not.
+The `convert_to_strings` function takes a DataFrame (either pandas or cuDF) and converts it into the appropriate string format based on the file type (JSON or CSV). It checks whether to include the index column or not.
 
 ```python
 @register_module(WRITE_TO_FILE, MORPHEUS_MODULE_NAMESPACE)
@@ -497,10 +497,10 @@ For a complete reference, refer to: [Write to File](../../modules/core/write_to_
 The following are steps to run modular DFP pipelines with example Azure and Duo datasets.
 
 ### System requirements
-* [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/) installed on the host machine​
-* Supported GPU with [nvidia-docker runtime​](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+* [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/) installed on the host machine​
+* Supported GPU with [NVIDIA Container Toolkit​](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 
-> **Note:**  For GPU Requirements refer to [getting_started](../../getting_started.md#requirements)
+> **Note:**  For GPU requirements refer to the [Getting Started](../../getting_started.md#requirements) guide.
 
 ### Building the services
 From the root of the Morpheus repo, run:
@@ -520,7 +520,7 @@ docker compose build
 > This is most likely due to using an older version of the `docker-compose` command, instead re-run the build with `docker compose`. Refer to [Migrate to Compose V2](https://docs.docker.com/compose/migrate/) for more information.
 
 ### Downloading the example datasets
-First, we will need to install `s3fs` and then run the `examples/digital_fingerprinting/fetch_example_data.py` script.  This will download the example data into the `examples/data/dfp` dir.
+First, we will need to install `s3fs` and then run the `examples/digital_fingerprinting/fetch_example_data.py` script. This will download the example data into the `examples/data/dfp` dir.
 
 From the Morpheus repo, run:
 ```bash
@@ -609,10 +609,10 @@ The output files, `dfp_detectiions_duo.csv` and `dfp_detections_azure.csv`, will
 Most of the fields in the output files generated by running the above examples are input fields or derived from input fields. The additional output fields are:
 | Field | Type | Description |
 | ----- | ---- | ----------- |
-| event_time | TEXT | ISO 8601 formatted date string, the time the anomaly was detected by Morpheus |
-| model_version | TEXT | Name and version of the model used to performed the inference, in the form of `<model name>:<version>` |
-| max_abs_z | FLOAT | Max z-score across all features |
-| mean_abs_z | FLOAT | Average z-score across all features |
+| `event_time` | TEXT | ISO 8601 formatted date string, the time the anomaly was detected by Morpheus |
+| `model_version` | TEXT | Name and version of the model used to performed the inference, in the form of `<model name>:<version>` |
+| `max_abs_z` | FLOAT | Max z-score across all features |
+| `mean_abs_z` | FLOAT | Average z-score across all features |
 
 In addition to this, for each input feature the following output fields will exist:
 | Field | Type | Description |

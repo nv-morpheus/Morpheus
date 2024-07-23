@@ -15,10 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-<!-- Allow the name "Batcher" without allowing it everywhere -->
-<!-- vale off -->
 ## File Batcher Module
-<!-- vale on -->
 
 This module loads the input files, removes files that are older than the chosen window of time, and then groups the
 remaining files by period that fall inside the window.
