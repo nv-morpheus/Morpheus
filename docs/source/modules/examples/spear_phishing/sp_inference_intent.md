@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Inference Intent
 
-Module ID: infer_email_intent
-Module Namespace: morpheus_spear_phishing
+Module ID: `infer_email_intent`
+Module Namespace: `morpheus_spear_phishing`
 
 Infers an 'intent' for a given email body.
 
@@ -29,7 +29,7 @@ Infers an 'intent' for a given email body.
 | `intent`           | string  | The intent for the model                | `"classify"`            | `None`                  |
 | `task`             | string  | The task for the model                  | `"text-classification"` | `"text-classification"` |
 | `model_path`       | string  | The path to the model                   | `"/path/to/model"`      | `None`                  |
-| `truncation`       | boolean | If true, truncates inputs to max_length | `true`                  | `true`                  |
+| `truncation`       | boolean | If true, truncates inputs to `max_length` | `true`                  | `true`                  |
 | `max_length`       | integer  | Maximum length for model input          | `512`                   | `512`                   |
 | `batch_size`       | integer  | The size of batches for processing      | `256`                   | `256`                   |
 | `feature_col`      | string  | The feature column to use               | `"body"`                | `"body"`                |

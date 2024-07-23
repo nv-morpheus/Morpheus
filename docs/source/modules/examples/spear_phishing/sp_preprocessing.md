@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Spear Phishing Inference Pipeline Preprocessing Module
 
-Module ID: inference_pipeline_preproc
-Module Namespace: morpheus_spear_phishing
+Module ID: `inference_pipeline_preproc`
+Module Namespace: `morpheus_spear_phishing`
 
 This module defines a pre-processing setup for the spear phishing inference pipeline.
 

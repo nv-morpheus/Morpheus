@@ -15,6 +15,7 @@ LLM(s?)
 Milvus
 MLflow
 Morpheus
+[Nn]amespace(s?)
 NeMo
 NIC
 NIM(s?)

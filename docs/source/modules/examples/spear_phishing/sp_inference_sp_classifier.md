@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Spear Phishing Inference Module
 
-Module ID: inference
-Module Namespace: morpheus_spear_phishing
+Module ID: `inference`
+Module Namespace: `morpheus_spear_phishing`
 
 This module defines a setup for spear-phishing inference.
 

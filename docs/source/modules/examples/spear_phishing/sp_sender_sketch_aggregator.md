@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Spear Phishing Sender Sketch Aggregator Module
 
-Module ID: sender_sketch_aggregator
-Module Namespace: morpheus_spear_phishing
+Module ID: `sender_sketch_aggregator`
+Module Namespace: `morpheus_spear_phishing`
 
 This module aggregates sender sketches in the spear phishing detection pipeline.
 

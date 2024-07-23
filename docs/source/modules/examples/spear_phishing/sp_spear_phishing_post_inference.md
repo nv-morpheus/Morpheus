@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Pre-inference Module
 
-Module ID: post_inference
-Module Namespace: morpheus_spear_phishing
+Module ID: `post_inference`
+Module Namespace: `morpheus_spear_phishing`
 
 This module represents the post-inference phase of the spear phishing inference pipeline. It handles the output from the
 label and score module, updates the sender sketch, and prepares the final output.
@@ -42,7 +42,7 @@ label and score module, updates the sender sketch, and prepares the final output
 
 | Key                           | Type | Description                                                  | Default Value |
 |-------------------------------|------|--------------------------------------------------------------|---------------|
-| `endpoint`                    | dictionary | See `endpoint` subparameters                                 | `None`        |
+| `endpoint`                    | dictionary | See `endpoint` sub-parameters                                 | `None`        |
 | `sender_sketches`             | list | List of sender sketches                                      | `[]`          |
 | `required_intents`            | list | List of required intents                                     | `[]`          |
 | `raise_on_failure`            | boolean | If true, raise exceptions on failures                        | `False`       |

@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Pre-inference Module
 
-Module ID: `"pre_inference"`
-Module Namespace: `"morpheus_spear_phishing"`
+Module ID: `pre_inference`
+Module Namespace: `morpheus_spear_phishing`
 
 Pre-inference phase of the spear phishing inference pipeline. It loads the necessary modules and establishes the
 required connections between modules.
@@ -29,8 +29,8 @@ required connections between modules.
 |------------------------|------|------------------------------------------|---------------|
 | `raise_on_failure`     | boolean | If true, raise exceptions on failures    | `False`       |
 | `max_batch_size`       | integer  | Maximum size of each batch               | `500`         |
-| `intent_config`        | dictionary | See `intent_config` subparameters        | `{}`          |
-| `sender_sketch_config` | dictionary | See `sender_sketch_config` subparameters | `None`        |
+| `intent_config`        | dictionary | See `intent_config` sub-parameters        | `{}`          |
+| `sender_sketch_config` | dictionary | See `sender_sketch_config` sub-parameters | `None`        |
 
 #### `intent_config`
 
@@ -43,7 +43,7 @@ required connections between modules.
 
 | Key                           | Type | Description                                                  | Default Value |
 |-------------------------------|------|--------------------------------------------------------------|---------------|
-| `endpoint`                    | dictionary | See `endpoint` subparameters                                 | `None`        |
+| `endpoint`                    | dictionary | See `endpoint` sub-parameters                                 | `None`        |
 | `sender_sketches`             | list | List of sender sketches                                      | `[]`          |
 | `required_intents`            | list | List of required intents                                     | `[]`          |
 | `raise_on_failure`            | boolean | If true, raise exceptions on failures                        | `False`       |

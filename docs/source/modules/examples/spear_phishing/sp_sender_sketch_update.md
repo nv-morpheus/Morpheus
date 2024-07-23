@@ -18,8 +18,8 @@ limitations under the License.
 
 ## Sender Sketch Update Module
 
-Module ID: sender_sketch_update
-Module Namespace: morpheus_spear_phishing
+Module ID: `sender_sketch_update`
+Module Namespace: `morpheus_spear_phishing`
 
 This module updates the sender sketch for spear phishing detection.
 

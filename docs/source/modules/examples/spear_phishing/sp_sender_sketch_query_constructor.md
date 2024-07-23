@@ -18,8 +18,8 @@ limitations under the License.
 
 ## SQL Sender Sketch Query Constructor Module
 
-Module ID: sql_sender_sketch_query_constructor
-Module Namespace: morpheus_spear_phishing
+Module ID: `sql_sender_sketch_query_constructor`
+Module Namespace: `morpheus_spear_phishing`
 
 This module constructs SQL sender sketch queries in the spear phishing detection pipeline.
 

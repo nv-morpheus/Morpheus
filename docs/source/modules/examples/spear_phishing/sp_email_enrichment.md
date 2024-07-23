@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Spear Phishing Email Enrichment Module
 
-Module ID: email_enrichment
-Module Namespace: morpheus_spear_phishing
+Module ID: `email_enrichment`
+Module Namespace: `morpheus_spear_phishing`
 
 This module performs spear phishing email enrichment.
 

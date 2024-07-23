@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Spear Phishing Email Scoring Module
 
-Module ID: label_and_score
-Module Namespace: morpheus_spear_phishing
+Module ID: `label_and_score`
+Module Namespace: `morpheus_spear_phishing`
 
 This module defines a setup for spear-phishing email scoring.
 
