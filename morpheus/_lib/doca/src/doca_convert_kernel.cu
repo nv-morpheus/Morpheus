@@ -92,13 +92,12 @@ uint32_t gather_sizes(int32_t packet_count, uint32_t* size_list, rmm::cuda_strea
     return bytes_tensor(0);
 }
 
-void sizes_to_offsets(int32_t packet_count, 
-                      uint32_t* sizes_buff,
-                      rmm::device_buffer& out_buffer,
-                      rmm::cuda_stream_view stream)
+rmm::device_buffer sizes_to_offsets(int32_t packet_count, uint32_t* sizes_buff, rmm::cuda_stream_view stream)
 {
     // The cudf offsets column wants int32
     const auto out_elem_count = packet_count + 1;
+    const auto out_byte_size  = out_elem_count * sizeof(int32_t);
+    rmm::device_buffer out_buffer(out_byte_size, stream);
 
     auto sizes_tensor = matx::make_tensor<uint32_t>(sizes_buff, {packet_count});
     auto cum_tensor   = matx::make_tensor<int32_t>({packet_count});
@@ -113,6 +112,8 @@ void sizes_to_offsets(int32_t packet_count,
     (offsets_tensor = matx::concat(0, zero_tensor, cum_tensor)).run(stream.value());
 
     cudaStreamSynchronize(stream);
+
+    return out_buffer;
 }
 
 void gather_header(int32_t packet_count,
@@ -131,15 +132,15 @@ void gather_payload(int32_t packet_count,
                     uintptr_t* packets_buffer,
                     uint32_t* header_sizes,
                     uint32_t* payload_sizes,
-                    int32_t* dst_offsets,
                     uint8_t* dst_buff,
                     rmm::cuda_stream_view stream,
                     rmm::mr::device_memory_resource* mr)
 {
+    auto dst_offsets = sizes_to_offsets(packet_count, payload_sizes, stream);
     dim3 threadsPerBlock(32, 32);
     dim3 numBlocks((packet_count + threadsPerBlock.x - 1) / threadsPerBlock.x, (MAX_PKT_SIZE+threadsPerBlock.y-1) / threadsPerBlock.y);
     _packet_gather_payload_kernel<<<numBlocks, threadsPerBlock, 0, stream>>>(
-        packet_count, packets_buffer, header_sizes, payload_sizes, dst_buff, dst_offsets);
+        packet_count, packets_buffer, header_sizes, payload_sizes, dst_buff, static_cast<int32_t*>(dst_offsets.data()));
 }
 
 }  // namespace doca

@@ -45,6 +45,6 @@ struct packet_data_buffer
     // The header buffer needs to be a shared pointer to construct a DevMemInfo
     std::shared_ptr<rmm::device_buffer> m_header_buffer;
     std::unique_ptr<rmm::device_buffer> m_payload_buffer;
-    std::unique_ptr<rmm::device_buffer> m_payload_offsets_buffer;
+    std::unique_ptr<rmm::device_buffer> m_payload_sizes_buffer;
 };
 }  // namespace morpheus::doca

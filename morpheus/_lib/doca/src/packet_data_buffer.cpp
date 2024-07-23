@@ -39,7 +39,7 @@ packet_data_buffer::packet_data_buffer(std::size_t num_packets,
   m_stream{stream},
   m_header_buffer{std::make_shared<rmm::device_buffer>(header_size, stream, mr)},
   m_payload_buffer{std::make_unique<rmm::device_buffer>(payload_size, stream, mr)},
-  m_payload_offsets_buffer{std::make_unique<rmm::device_buffer>(payload_sizes_size, stream, mr)}
+  m_payload_sizes_buffer{std::make_unique<rmm::device_buffer>(payload_sizes_size, stream, mr)}
 {}
 
 packet_data_buffer packet_data_buffer::combine_buffers(std::vector<doca::packet_data_buffer>&& packets)
