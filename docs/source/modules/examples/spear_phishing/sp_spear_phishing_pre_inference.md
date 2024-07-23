@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Pre-inference Module
 
-Module ID: pre_inference
-Module Namespace: morpheus_spear_phishing
+Module ID: `"pre_inference"`
+Module Namespace: `"morpheus_spear_phishing"`
 
 Pre-inference phase of the spear phishing inference pipeline. It loads the necessary modules and establishes the
 required connections between modules.
