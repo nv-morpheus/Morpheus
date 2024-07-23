@@ -81,9 +81,4 @@ Below JSON configuration specifies how to pass additional configuration to the l
 }
 ```
 
-**Note** : The {py:mod}`~morpheus.modules.file_batcher` module currently generates tasks internally and assigns them to control messages, and then sends them to [DataLoader](../../modules/core/data_loader.md) module which uses {py:mod}`~morpheus.loaders.file_to_df_loader`. Having stated that, this loader configuration is obtained from the
-<!-- Allow the name "Batcher" without allowing it everywhere -->
-<!-- vale off -->
-[File Batcher](../../modules/core/file_batcher.md)
-<!-- vale on -->
-module configuration.
+**Note** : The {py:mod}`~morpheus.modules.file_batcher` module currently generates tasks internally and assigns them to control messages, and then sends them to [DataLoader](../../modules/core/data_loader.md) module which uses {py:mod}`~morpheus.loaders.file_to_df_loader`. Having stated that, this loader configuration is obtained from the <!-- Allow the name "Batcher" without allowing it everywhere --><!-- vale off -->[File Batcher](../../modules/core/file_batcher.md)<!-- vale on --> module configuration.
