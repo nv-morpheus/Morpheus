@@ -26,9 +26,9 @@ process into a single module.
 |--------------------------|------------|--------------------------------------------------|---------------|----------------|
 | `cache_dir`              | string     | Directory used for caching intermediate results. | "/tmp/cache"  | `-`            |
 | `timestamp_column_name`  | string     | Name of the column containing timestamps.        | "timestamp"   | `-`            |
-| `pre_filter_options`     | dictionary | Options for pre-filtering control messages.      | See Below     | `-`            |
-| `batching_options`       | dictionary | Options for batching files.                      | See Below     | `-`            |
-| `user_splitting_options` | dictionary | Options for splitting data by user.              | See Below     | `-`            |
+| `pre_filter_options`     | dictionary | Options for pre-filtering control messages.      | Refer Below    | `-`            |
+| `batching_options`       | dictionary | Options for batching files.                      | Refer Below    | `-`            |
+| `user_splitting_options` | dictionary | Options for splitting data by user.              | Refer Below    | `-`            |
 | `supported_loaders`      | dictionary | Supported data loaders for different file types. | -             | `-`            |
 
 #### `pre_filter_options`

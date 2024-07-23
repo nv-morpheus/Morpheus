@@ -27,7 +27,7 @@ This module updates the sender sketch for spear phishing detection.
 
 | Parameter              | Type       | Description                     | Example Value | Default Value |
 |------------------------|------------|---------------------------------|---------------|---------------|
-| `sender_sketch_config` | dictionary | Configuration for sender sketch | See Below     | `None`        |
+| `sender_sketch_config` | dictionary | Configuration for sender sketch | Refer Below    | `None`        |
 
 ### `sender_sketch_config`
 

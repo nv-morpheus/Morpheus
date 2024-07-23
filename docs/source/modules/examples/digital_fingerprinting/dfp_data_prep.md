@@ -23,7 +23,7 @@ This module function prepares data for either inference or model training.
 
 | Parameter               | Type   | Description                  | Example Value | Default Value |
 |-------------------------|--------|------------------------------|---------------|---------------|
-| `schema`                | dict   | Schema configuration         | See Below     | `-`           |
+| `schema`                | dict   | Schema configuration         | Refer Below    | `-`           |
 | `timestamp_column_name` | string | Name of the timestamp column | "timestamp"   | `timestamp`   |
 
 #### `schema`

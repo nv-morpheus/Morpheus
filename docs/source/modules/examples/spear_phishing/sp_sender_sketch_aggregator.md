@@ -26,7 +26,7 @@ This module aggregates sender sketches in the spear phishing detection pipeline.
 
 | Parameter              | Type       | Description                                | Example Value | Default Value |
 |------------------------|------------|--------------------------------------------|---------------|---------------|
-| `sender_sketch_config` | dictionary | The configuration for the sender sketches. | See Below     | `None`        |
+| `sender_sketch_config` | dictionary | The configuration for the sender sketches. | Refer Below    | `None`        |
 
 ### `sender_sketch_config`
 
