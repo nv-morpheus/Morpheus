@@ -35,7 +35,7 @@ label and score module, updates the sender sketch, and prepares the final output
 | Key                | Type  | Description                                                        |
 |--------------------|-------|--------------------------------------------------------------------|
 | `threshold`        | float | Detection threshold for scoring.                                   |
-| `scoring_type`     | string   | Type of scoring to use. Currently only "probability" is supported. |
+| `scoring_type`     | string   | Type of scoring to use. Currently only `"probability"` is supported. |
 | `raise_on_failure` | boolean  | If true, raise exceptions on failures. Default is False.           |
 
 #### `sender_sketch_config`

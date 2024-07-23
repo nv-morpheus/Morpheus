@@ -33,10 +33,10 @@ This module updates the sender sketch for spear phishing detection.
 
 | Key                           | Type       | Description                            | Example Value            | Default Value |
 |-------------------------------|------------|----------------------------------------|--------------------------|---------------|
-| `endpoint`                    | string     | The endpoint configuration             | "http://my-endpoint.com" | `None`        |
-| `required_intents`            | list       | List of required intents               | ["intent1", "intent2"]   | `[]`          |
-| `sender_sketch_tables_config` | dictionary | Configuration for sender sketch tables | {"table1": "config1"}    | `{}`          |
-| `raise_on_failure`            | boolean       | If true, raise exceptions on failures  | false                    | `false`       |
+| `endpoint`                    | string     | The endpoint configuration             | `"http://my-endpoint.com"` | `None`        |
+| `required_intents`            | list       | List of required intents               | `["intent1", "intent2"]`   | `[]`          |
+| `sender_sketch_tables_config` | dictionary | Configuration for sender sketch tables | `{"table1": "config1"}`    | `{}`          |
+| `raise_on_failure`            | boolean       | If true, raise exceptions on failures  | `false`                    | `false`       |
 
 ### Example JSON Configuration
 

@@ -32,8 +32,8 @@ This module aggregates sender sketches in the spear phishing detection pipeline.
 
 | Key                | Type  | Description                              | Example Value          | Default Value |
 |--------------------|-------|------------------------------------------|------------------------|---------------|
-| `sender_sketches`  | array | The list of sender sketches to aggregate | ["sketch1", "sketch2"] | `[]`          |
-| `raise_on_failure` | boolean  | If true, raise exceptions on failures    | false                  | `false`       |
+| `sender_sketches`  | array | The list of sender sketches to aggregate | `["sketch1", "sketch2"]` | `[]`          |
+| `raise_on_failure` | boolean  | If true, raise exceptions on failures    | `false`                  | `false`       |
 
 ### Example JSON Configuration
 
