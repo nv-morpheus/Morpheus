@@ -142,7 +142,7 @@ morpheus run pipeline-nlp --help
 ## Basic Usage Examples
 
 ### Remove Fields from JSON Objects
-This example only copies the fields 'timestamp', 'src_ip' and 'dest_ip' from `examples/data/pcap_dump.jsonlines` to
+This example only copies the fields `timestamp`, `src_ip` and `dest_ip` from `examples/data/pcap_dump.jsonlines` to
 `out.jsonlines`.
 
 ![../img/remove_fields_from_json_objects.png](../img/remove_fields_from_json_objects.png)
