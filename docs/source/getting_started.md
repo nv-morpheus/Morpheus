@@ -63,7 +63,6 @@ More advanced users, or those who are interested in using the latest pre-release
 docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:24.10-runtime bash
 ```
 
-
 Note about some of the flags above:
 | Flag | Description |
 | ---- | ----------- |
@@ -77,7 +76,7 @@ Once launched, users wishing to launch Triton using the included Morpheus models
 ./external/utilities/docker/install_docker.sh
 ```
 
-Skip ahead to the [Launching Triton Server](#launching-triton-server) section.
+Skip ahead to the [Acquiring the Morpheus Models Container](#acquiring-the-morpheus-models-container) section.
 
 ## Building the Morpheus Container
 ### Clone the Repository
@@ -147,9 +146,21 @@ The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NA
 DOCKER_IMAGE_TAG="v24.10.00-runtime" ./docker/run_container_release.sh
 ```
 
+## Acquiring the Morpheus Models Container
+
+Many of the validation tests and example workflows require a Triton server to function. For simplicity Morpheus provides a pre-built models container which contains both Triton and the Morpheus models. Users using a release version of Morpheus can download the corresponding Triton models container from NGC with the following command:
+```bash
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+```
+
+Users working with an unreleased development version of Morpheus can build the Triton models container from the Morpheus repository. To build the Triton models container, from the root of the Morpheus repository run the following command:
+```bash
+models/docker/build_container.sh
+```
+
 ## Launching Triton Server
 
-Many of the validation tests and example workflows require a Triton server to function. For simplicity Morpheus provides a pre-built models container which contains both Triton and the Morpheus models. In a new terminal use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
+In a new terminal use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
   nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 \
