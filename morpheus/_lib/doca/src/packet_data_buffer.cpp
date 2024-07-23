@@ -17,8 +17,6 @@
 
 #include "morpheus/doca/packet_data_buffer.hpp"
 
-#include <glog/logging.h>
-
 namespace morpheus::doca {
 
 packet_data_buffer::packet_data_buffer() :
@@ -32,7 +30,7 @@ packet_data_buffer::packet_data_buffer() :
 packet_data_buffer::packet_data_buffer(std::size_t num_packets,
                                        std::size_t header_size,
                                        std::size_t payload_size,
-                                       std::size_t payload_sizes_size, 
+                                       std::size_t payload_sizes_size,
                                        rmm::cuda_stream_view stream,
                                        rmm::mr::device_memory_resource* mr) :
   m_num_packets{num_packets},
@@ -41,15 +39,5 @@ packet_data_buffer::packet_data_buffer(std::size_t num_packets,
   m_payload_buffer{std::make_unique<rmm::device_buffer>(payload_size, stream, mr)},
   m_payload_sizes_buffer{std::make_unique<rmm::device_buffer>(payload_sizes_size, stream, mr)}
 {}
-
-packet_data_buffer packet_data_buffer::combine_buffers(std::vector<doca::packet_data_buffer>&& packets)
-{
-  DCHECK(!packets.empty());
-
-  if (packets.size() == 1)
-  {
-    return packets[0];
-  }
-}
 
 }  // namespace morpheus::doca

@@ -69,6 +69,60 @@ std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, con
     return default_size;
 }
 
+morpheus::doca::packet_data_buffer concat_packet_buffers(std::size_t ttl_packets,
+                                                         std::size_t ttl_header_bytes,
+                                                         std::size_t ttl_payload_bytes,
+                                                         std::size_t ttl_payload_sizes_bytes,
+                                                         std::vector<doca::packet_data_buffer>&& packet_buffers)
+{
+    DCHECK(!packet_buffers.empty());
+
+    if (packet_buffers.size() == 1)
+    {
+        return std::move(packet_buffers[0]);
+    }
+
+    morpheus::doca::packet_data_buffer combined_buffer(
+        ttl_packets, ttl_header_bytes, ttl_payload_bytes, ttl_payload_sizes_bytes, packet_buffers[0].m_stream);
+
+    std::size_t curr_header_offset        = 0;
+    std::size_t curr_payload_offset       = 0;
+    std::size_t curr_payload_sizes_offset = 0;
+    for (auto& packet_buffer : packet_buffers)
+    {
+        auto header_addr  = static_cast<uint8_t*>(combined_buffer.m_header_buffer->data()) + curr_header_offset;
+        auto payload_addr = static_cast<uint8_t*>(combined_buffer.m_payload_buffer->data()) + curr_payload_offset;
+        auto payload_sizes_addr =
+            static_cast<uint8_t*>(combined_buffer.m_payload_sizes_buffer->data()) + curr_payload_sizes_offset;
+
+        MRC_CHECK_CUDA(cudaMemcpyAsync(static_cast<void*>(header_addr),
+                                       packet_buffer.m_header_buffer->data(),
+                                       packet_buffer.m_header_buffer->size(),
+                                       cudaMemcpyDeviceToDevice,
+                                       combined_buffer.m_stream_cpp));
+
+        MRC_CHECK_CUDA(cudaMemcpyAsync(static_cast<void*>(payload_addr),
+                                       packet_buffer.m_payload_buffer->data(),
+                                       packet_buffer.m_payload_buffer->size(),
+                                       cudaMemcpyDeviceToDevice,
+                                       combined_buffer.m_stream_cpp));
+
+        MRC_CHECK_CUDA(cudaMemcpyAsync(static_cast<void*>(payload_sizes_addr),
+                                       packet_buffer.m_payload_sizes_buffer->data(),
+                                       packet_buffer.m_payload_sizes_buffer->size(),
+                                       cudaMemcpyDeviceToDevice,
+                                       combined_buffer.m_stream_cpp));
+
+        curr_header_offset += packet_buffer.m_header_buffer->size();
+        curr_payload_offset += packet_buffer.m_payload_buffer->size();
+        curr_payload_sizes_offset += packet_buffer.m_payload_sizes_buffer->size();
+    }
+
+    MRC_CHECK_CUDA(cudaStreamSynchronize(combined_buffer.m_stream_cpp));
+
+    return combined_buffer;
+}
+
 std::unique_ptr<cudf::column> make_string_col(morpheus::doca::packet_data_buffer& packet_buffer)
 {
     auto offsets_buffer =
@@ -200,8 +254,11 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
 
     while (!m_buffer_channel->is_channel_closed())
     {
-        auto poll_start = std::chrono::steady_clock::now();
-        auto poll_end   = poll_start + m_max_time_delta;
+        std::size_t ttl_packets             = 0;
+        std::size_t ttl_header_bytes        = 0;
+        std::size_t ttl_payload_bytes       = 0;
+        std::size_t ttl_payload_sizes_bytes = 0;
+        auto poll_end                       = std::chrono::steady_clock::now() + m_max_time_delta;
         while (std::chrono::steady_clock::now() < poll_end && !m_buffer_channel->is_channel_closed())
         {
             doca::packet_data_buffer packet_buffer;
@@ -209,13 +266,18 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
 
             if (status == mrc::channel::Status::success)
             {
+                ttl_packets += packet_buffer.m_num_packets;
+                ttl_header_bytes += packet_buffer.m_header_buffer->size();
+                ttl_payload_bytes += packet_buffer.m_payload_buffer->size();
+                ttl_payload_sizes_bytes += packet_buffer.m_payload_sizes_buffer->size();
                 packets.emplace_back(std::move(packet_buffer));
             }
         }
 
         if (!packets.empty())
         {
-            packet_data_buffer combined_data(std::move(packets));
+            auto combined_data = concat_packet_buffers(
+                ttl_packets, ttl_header_bytes, ttl_payload_bytes, ttl_payload_sizes_bytes, std::move(packets));
             send_buffered_data(output, std::move(combined_data));
             packets.clear();
         }
