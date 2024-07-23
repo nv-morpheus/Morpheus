@@ -6,6 +6,7 @@ Conda
 [Cc]ryptocurrenc[y|ies]
 [Cc]yber
 [Cc]ybersecurity
+Dask
 Databricks
 [Dd]eserialize
 Dev
