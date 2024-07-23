@@ -19,14 +19,18 @@ source ${SCRIPT_DIR}/common.sh
 
 set +e
 
-# Ignore the sid & DFP viz directories as they're symlinks into a submodule
+# Ignore symlinks
+DOCS_MD_FILES=$(find -P ${MORPHEUS_ROOT}/docs/source/ -type f -iname "*.md")
+DOCS_RST_FILES=$(find -P ${MORPHEUS_ROOT}/docs/source/ -type f -iname "*.rst")
+EXAMPLES_MD_FILES=$(find -P ${MORPHEUS_ROOT}/examples/ -type f -iname "*.md")
+
 # Intentionally not including CHANGELOG.md as it immutable
 vale \
-    --glob='!examples/{digital_fingerprinting/visualization,sid_visualization}/viz/*' \
-    examples \
-    CONTRIBUTING.md \
-    README.md \
-    docs/source
+    ${DOCS_MD_FILES} \
+    ${DOCS_RST_FILES} \
+    ${EXAMPLES_MD_FILES} \
+    ${MORPHEUS_ROOT}/CONTRIBUTING.md \
+    ${MORPHEUS_ROOT}/README.md
 
 RETVAL=$?
 exit $RETVAL
