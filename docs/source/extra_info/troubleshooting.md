@@ -56,7 +56,7 @@ loaded_model = model_cache.load_model(self._client)
 ModuleNotFoundError: No module named 'dfencoder'
 ```
 
-The work arounds available for this issue are:
+The workarounds available for this issue are:
 
 * Revert to the previous version of Morpheus until the models can be re-trained.
 * Re-train the model using the current version of Morpheus
@@ -76,7 +76,7 @@ docker compose up mlflow
 
 **Debugging Python Code**
 
-To debug issues in python code, several Visual Studio Code launch configurations have been included in the repo. These launch configurations can be found in `${MORPHEUS_ROOT}/morpheus.code-workspace`. To launch the debugging environment, ensure Visual Studio Code has opened the morpheus workspace file (File->Open Workspace from File...). Once the workspace has been loaded, the launch configurations should be available in the debugging tab.
+To debug issues in python code, several Visual Studio Code launch configurations have been included in the repo. These launch configurations can be found in `${MORPHEUS_ROOT}/morpheus.code-workspace`. To launch the debugging environment, ensure Visual Studio Code has opened the Morpheus workspace file (File->Open Workspace from File...). Once the workspace has been loaded, the launch configurations should be available in the debugging tab.
 
 **Debugging C++ Code**
 
