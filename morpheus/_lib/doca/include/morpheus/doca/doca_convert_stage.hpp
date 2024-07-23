@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "morpheus/doca/PacketDataBuffer.hpp"
 #include "morpheus/doca/common.hpp"
+#include "morpheus/doca/packet_data_buffer.hpp"
 #include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/raw_packet.hpp"

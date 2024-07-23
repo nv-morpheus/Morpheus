@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "morpheus/doca/PacketDataBuffer.hpp"
+#include "morpheus/doca/packet_data_buffer.hpp"
 
 namespace morpheus::doca {
 
