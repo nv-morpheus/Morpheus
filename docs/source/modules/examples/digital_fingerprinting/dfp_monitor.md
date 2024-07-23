@@ -23,10 +23,10 @@ This module function monitors the pipeline message flow rate.
 
 | Key                         | Type    | Description                                                | Example Value | Default Value |
 | ----------------------------|---------|------------------------------------------------------------|---------------|---------------|
-| `description`               | string  | Name to show for this Monitor Stage in the console window  | "Progress"    | `Progress`    |
-| `silence_monitors`          | bool    | Silence the monitors on the console                        | True     | `False`        |
-| `smoothing`                 | float   | Smoothing parameter to determine how much the throughput should be averaged | 0.01 | `0.05` |
-| `unit`                      | string  | Units to show in the rate value                             | "messages"    | `messages`    |
-| `delayed_start`             | bool    | When delayed_start is enabled, the progress bar will not be shown until the first message is received. Otherwise, the progress bar is shown on pipeline startup and will begin timing immediately. In large pipelines, this option may be desired to give a more accurate timing. | True  | `False`   |
-| `determine_count_fn_schema` | string  | Custom function for determining the count in a message      | "Progress"    | `Progress`    |
-| `log_level`                 | string  | Enable this stage when the configured log level is at `log_level` or lower. | "DEBUG" | `INFO` |
+| `description`               | string  | Name to show for this Monitor Stage in the console window  | `"Progress"`    | `"Progress"`    |
+| `silence_monitors`          | boolean    | Silence the monitors on the console                        | `True`     | `False`        |
+| `smoothing`                 | float   | Smoothing parameter to determine how much the throughput should be averaged | `0.01` | `0.05` |
+| `unit`                      | string  | Units to show in the rate value                             | `"messages"`    | `"messages"`    |
+| `delayed_start`             | boolean    | When delayed_start is enabled, the progress bar will not be shown until the first message is received. Otherwise, the progress bar is shown on pipeline startup and will begin timing immediately. In large pipelines, this option may be desired to give a more accurate timing. | `True`  | `False`   |
+| `determine_count_fn_schema` | string  | Custom function for determining the count in a message      | `"Progress"`    | `"Progress"`    |
+| `log_level`                 | string  | Enable this stage when the configured log level is at `log_level` or lower. | `"DEBUG"` | `"INFO"` |
