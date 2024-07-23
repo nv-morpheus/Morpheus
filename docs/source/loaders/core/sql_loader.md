@@ -41,23 +41,23 @@ The parameters that can be configured for this specific loader at load task leve
 
 | Parameter    | Type       | Description                              | Example Value      | Default Value |
 |--------------|------------|------------------------------------------|--------------------|---------------|
-| `strategy`   | string     | Strategy for combining queries           | "aggregate"      	 | `aggregate`   |
-| `loader_id`  | string     | Unique identifier for the loader         | "file_to_df"       | `[Required]`  |
-| `sql_config` | dictionary | Dictionary containing SQL queries to run | "file_to_df"       | `See below`   |
+| `strategy`   | string     | Strategy for combining queries           | `"aggregate"`      	 | `aggregate`   |
+| `loader_id`  | string     | Unique identifier for the loader         | `"file_to_df"`       | `[Required]`  |
+| `sql_config` | dictionary | Dictionary containing SQL queries to run | `"file_to_df"`       | Refer Below   |
 
 `sql_config`
 
 | Parameter | Type | Description                                       | Example Value                              | Default Value |
 |-----------|------|---------------------------------------------------|--------------------------------------------|---------------|
-| `queries` | list | List of dictionaries composing a query definition | "[query_dict_1, ..., query_dict_n]"      	 | `See below`   |
+| `queries` | list | List of dictionaries composing a query definition | `"[query_dict_1, ..., query_dict_n]"`      	 | Refer Below   |
 
 `queries`
 
 | Parameter           | Type       | Description                          | Example Value                                                   | Default Value |
 |---------------------|------------|--------------------------------------|-----------------------------------------------------------------|---------------|
-| `connection_string` | string     | Strategy for combining queries       | "postgresql://postgres:postgres@localhost:5432/postgres"      	 | `[required]`  |
-| `query`             | string     | SQL Query to execute                 | "SELECT * FROM test_table WHERE id IN (?, ?, ?)"                | `[Required]`  |
-| `params`            | dictionary | Named or positional paramters values | "[foo, bar, baz]"                                               | `-`           |
+| `connection_string` | string     | Strategy for combining queries       | `"postgresql://postgres:postgres@localhost:5432/postgres"`      	 | `[required]`  |
+| `query`             | string     | SQL Query to execute                 | `"SELECT * FROM test_table WHERE id IN (?, ?, ?)"`                | `[Required]`  |
+| `params`            | dictionary | Named or positional parameters values | `"[foo, bar, baz]"`                                               | `-`           |
 
 ### Example Load Task Configuration
 
