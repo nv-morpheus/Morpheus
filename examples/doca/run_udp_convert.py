@@ -23,9 +23,6 @@ from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.messages import RawPacketMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.stages.doca.doca_convert_stage import DEFAULT_HEADER_BUFFER_SIZE
-from morpheus.stages.doca.doca_convert_stage import DEFAULT_PAYLOAD_BUFFER_SIZE
-from morpheus.stages.doca.doca_convert_stage import DEFAULT_SIZES_BUFFER_SIZE
 from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -66,25 +63,11 @@ from morpheus.utils.logger import configure_logging
     help="Maximum amount of time in seconds to buffer incoming packets.",
 )
 @click.option(
-    "--sizes_buffer_size",
-    default=DEFAULT_SIZES_BUFFER_SIZE,
+    "--buffer_channel_size",
+    default=1024,
     type=click.IntRange(min=1),
     show_default=True,
-    help="Size of the sizes buffers.",
-)
-@click.option(
-    "--header_buffer_size",
-    default=DEFAULT_HEADER_BUFFER_SIZE,
-    type=click.IntRange(min=1),
-    show_default=True,
-    help="Size of the header buffer.",
-)
-@click.option(
-    "--payload_buffer_size",
-    default=DEFAULT_PAYLOAD_BUFFER_SIZE,
-    type=click.IntRange(min=1),
-    show_default=True,
-    help="Size of the payload buffer.",
+    help="Size of the internal buffer channel used by the DocaConvertStage.",
 )
 @click.option("--log_level",
               default="INFO",
@@ -100,9 +83,7 @@ def run_pipeline(nic_addr: str,
                  num_threads: int,
                  edge_buffer_size: int,
                  max_time_delta_sec: float,
-                 sizes_buffer_size: int,
-                 header_buffer_size: int,
-                 payload_buffer_size: int,
+                 buffer_channel_size: int,
                  log_level: int,
                  output_file: str | None):
     # Enable the default logger
@@ -133,11 +114,7 @@ def run_pipeline(nic_addr: str,
                      delayed_start=True))
 
     pipeline.add_stage(
-        DocaConvertStage(config,
-                         max_time_delta_sec=max_time_delta_sec,
-                         sizes_buffer_size=sizes_buffer_size,
-                         header_buffer_size=header_buffer_size,
-                         payload_buffer_size=payload_buffer_size))
+        DocaConvertStage(config, max_time_delta_sec=max_time_delta_sec, buffer_channel_size=buffer_channel_size))
 
     pipeline.add_stage(MonitorStage(config, description="Convert rate", unit='pkts', delayed_start=True))
 
