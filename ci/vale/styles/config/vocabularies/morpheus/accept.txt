@@ -24,5 +24,7 @@ PDF(s?)
 [Pp]reprocess
 [Pp]retrained
 [Rr]epo
+[Tt]imestamp(s?)
 [Uu]ploader
 XGBoost
+zsh
