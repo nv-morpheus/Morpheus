@@ -23,13 +23,13 @@ This module is responsible for maintaining a rolling window of historical data, 
 
 | Parameter                | Type   | Description                                                  | Example Value | Default Value |
 |--------------------------|--------|--------------------------------------------------------------|---------------|---------------|
-| cache_mode               | string | Mode for managing user cache. Setting to `batch` flushes cache once trigger conditions are met. Otherwise, continue to aggregate user's history.  | "batch"       | "batch"       |
-| trigger_on_min_history   | int    | Minimum history to trigger a new training event              | 1             | 1             |
-| trigger_on_min_increment | int    | Minmum increment from the last trained to new training event | 0             | 0             |
-| timestamp_column_name    | string | Name of the column containing timestamps                     | "timestamp"   | "timestamp"   |
-| aggregation_span         | string | Look back timespan for training data in a new training event  | "60d"         | "60d"         |
-| cache_to_disk            | bool   | Whether or not to cache streaming data to disk               | false         | false         |
-| cache_dir                | string | Directory to use for caching streaming data                  | "./.cache"    | "./.cache"    |
+| `cache_mode`               | string | Mode for managing user cache. Setting to `batch` flushes cache once trigger conditions are met. Otherwise, continue to aggregate user's history.  | `"batch"`       | `"batch"`       |
+| `trigger_on_min_history`   | integer    | Minimum history to trigger a new training event              | `1`             | `1`             |
+| `trigger_on_min_increment` | integer    | Minimum increment from the last trained to new training event | `0`             | `0`             |
+| `timestamp_column_name`    | string | Name of the column containing timestamps                     | `"timestamp"`   | `"timestamp"`   |
+| `aggregation_span`         | string | Look back time span for training data in a new training event  | `"60d"`         | `"60d"`         |
+| `cache_to_disk`            | boolean   | Whether or not to cache streaming data to disk               | `false`         | `false`         |
+| `cache_dir`                | string | Directory to use for caching streaming data                  | `"./.cache"`    | `"./.cache"`    |
 
 ### Example JSON Configuration
 

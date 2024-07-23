@@ -63,7 +63,7 @@ This module function consolidates multiple DFP pipeline modules relevant to the 
 | `min_history`           | int    | Minimum history to trigger a new training event             | 1             | `1`           |
 | `max_history`           | int    | Maximum history to include in a new training event          | 0             | `0`           |
 | `timestamp_column_name` | string | Name of the column containing timestamps                    | 'timestamp'   | `timestamp`   |
-| `aggregation_span`      | string | Look back timespan for training data in a new training event | "60d"         | `60d`         |
+| `aggregation_span`      | string | Look back time span for training data in a new training event | "60d"         | `60d`         |
 | `cache_to_disk`         | bool   | Whether or not to cache streaming data to disk              | false         | `false`       |
 | `cache_dir`             | string | Directory to use for caching streaming data                 | "./.cache"    | `./.cache`    |
 
