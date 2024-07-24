@@ -21,8 +21,6 @@
 #include "morpheus/messages/control.hpp"               // for ControlMessage
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
 #include "morpheus/messages/meta.hpp"                  // for MessageMeta
-#include "morpheus/messages/multi.hpp"                 // for MultiMessage
-#include "morpheus/messages/multi_inference.hpp"       // for MultiInferenceMessage
 #include "morpheus/objects/tensor_object.hpp"          // for TensorObject
 #include "morpheus/stages/preprocess_fil.hpp"          // for PreprocessFILStage, PreprocessFILStageCC, PreprocessFI...
 #include "morpheus/types.hpp"                          // for TensorIndex
