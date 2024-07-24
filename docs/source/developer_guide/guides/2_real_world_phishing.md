@@ -182,7 +182,7 @@ class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
 
 ### Stand-alone Function
 
-For this example we started with the class based aproach. However we could have just as easily written this as a stand-alone function. The following example is equivalent to the class based example above:
+For this example we started with the class based approach. However we could have just as easily written this as a stand-alone function. The following example is equivalent to the class based example above:
 
 ```python
 from morpheus.common import TypeId
@@ -223,7 +223,7 @@ In the above the `needed_columns` were provided to as an argument to the `stage`
 
 Now we'll use the `RecipientFeaturesStage` that we just made in a real-world pipeline to detect fraudulent emails. The pipeline we will be building makes use of the `TritonInferenceStage` which is a pre-defined Morpheus stage designed to support the execution of Natural Language Processing (NLP) models via NVIDIA's [Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server). NVIDIA Triton Inference Server allows for GPU accelerated ML/DL and seamless co-location and execution of a wide variety of model frameworks. For our application, we will be using the `phishing-bert-onnx` model, which is included with Morpheus in the `models/triton-model-repo/` directory.
 
-It's important to note here that Triton is a service that is external to the Morpheus pipeline and often will not reside on the same machine(s) as the rest of the pipeline. The `TritonInferenceStage` will use HTTP and [gRPC](https://grpc.io/) network protocols to allow us to interact with the machine learning models that are hosted by the Triton server.
+It's important to note here that Triton is a service that is external to the Morpheus pipeline and often will not reside on the same machine as the rest of the pipeline. The `TritonInferenceStage` will use HTTP and [gRPC](https://grpc.io/) network protocols to allow us to interact with the machine learning models that are hosted by the Triton server.
 
 ### Launching Triton
 
@@ -258,7 +258,7 @@ We can also query Triton for the available models:
 curl -X POST "localhost:8000/v2/repository/index"
 ```
 
-Let's ask Triton for some information about the `phishing-bert-onnx` model which we are going to be using, parsing the large JSON output with [jq](https://stedolan.github.io/jq/):
+Let's ask Triton for some information about the `phishing-bert-onnx` model which we are going to be using, parsing the large JSON output with [`jq`](https://stedolan.github.io/jq/):
 
 ```shell
 curl "localhost:8000/v2/models/phishing-bert-onnx/config" | jq
@@ -402,7 +402,7 @@ The `feature_length` property needs to match the dimensions of the model inputs,
 
 Ground truth classification labels are read from the `morpheus/data/labels_phishing.txt` file included in Morpheus.
 
-Now that our config object is populated, we move on to the pipeline itself. We will be using the same input file from the previous example.
+Now that our configuration object is populated, we move on to the pipeline itself. We will be using the same input file from the previous example.
 
 Next, we will add our custom recipient features stage to the pipeline. We imported both implementations of the stage, allowing us to add the appropriate one based on the `use_stage_function` value provided by the command-line.
 
@@ -414,7 +414,7 @@ else:
     pipeline.add_stage(RecipientFeaturesStage(config))
 ```
 
-To tokenize the input data we will use Morpheus' `PreprocessNLPStage`. This stage uses the [cudf subword tokenizer](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.core.subword_tokenizer.SubwordTokenizer.__call__.html) to transform strings into a tensor of numbers to be fed into the neural network model. Rather than split the string by characters or whitespaces, we split them into meaningful subwords based upon the occurrence of the subwords in a large training corpus. You can find more details here: [https://arxiv.org/abs/1810.04805v2](https://arxiv.org/abs/1810.04805v2). All we need to know for now is that the text will be converted to subword token ids based on the vocabulary file that we provide (`vocab_hash_file=vocab file`).
+To tokenize the input data we will use Morpheus' `PreprocessNLPStage`. This stage uses the [cuDF subword tokenizer](https://docs.rapids.ai/api/cudf/stable/user_guide/api_docs/subword_tokenize/#subwordtokenizer) to transform strings into a tensor of numbers to be fed into the neural network model. Rather than split the string by characters or whitespaces, we split them into meaningful subwords based upon the occurrence of the subwords in a large training corpus. You can find more details here: [https://arxiv.org/abs/1810.04805v2](https://arxiv.org/abs/1810.04805v2). All we need to know for now is that the text will be converted to subword token ids based on the vocabulary file that we provide (`vocab_hash_file=vocab file`).
 
 Let's go ahead and instantiate our `PreprocessNLPStage` and add it to the pipeline:
 
@@ -453,7 +453,7 @@ pipeline.add_stage(
 pipeline.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
 ```
 
-Here we add a postprocessing stage that adds the probability score for `is_phishing`:
+Here we add a post-processing stage that adds the probability score for `is_phishing`:
 
 ```python
 pipeline.add_stage(AddScoresStage(config, labels=["is_phishing"]))
@@ -642,7 +642,7 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
 
 In our `RecipientFeaturesStage` example we added a constructor to our stage, however we didn't go into much detail on the implementation. Every stage constructor must receive an instance of a `morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus configuration object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments. It is a best practice to perform any necessary validation checks in the constructor, and raising an exception in the case of mis-configuration. This allows us to fail early rather than after the pipeline has started.
 
-In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument. This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users. Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
+In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument. This new constructor argument is documented following the [`numpydoc`](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users. Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
 
 > **Note**: Setting the pipeline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
 
@@ -749,7 +749,7 @@ In this example, we will create a source that reads messages from a [RabbitMQ](h
 
 The `PreallocatorMixin` when added to a stage class, typically a source stage, indicates that the stage emits newly constructed DataFrames either directly or contained in a `MessageMeta` instance into the pipeline. Adding this mixin allows any columns needed by other stages to be inserted into the DataFrame.
 
-The `compute_schema` method allows us to define our output type of `MessageMeta`, we do so by calling the `set_type` method of the `output_schema` attribute of the `StageSchema` object passed into the method.  Of note here is that it is perfectly valid for a stage to determine its output type based upon configuration arguments passed into the constructor. However the stage must document a single output type per output port. If a stage emitted multiple output types, then the types must share a common base class which would serve as the stage's output type.
+The `compute_schema` method allows us to define our output type of `MessageMeta`, we do so by calling the `set_type` method of the `output_schema` attribute of the `StageSchema` object passed into the method. Of note here is that it is perfectly valid for a stage to determine its output type based upon configuration arguments passed into the constructor. However the stage must document a single output type per output port. If a stage emitted multiple output types, then the types must share a common base class which would serve as the stage's output type.
 ```python
 def compute_schema(self, schema: StageSchema):
     schema.output_schema.set_type(MessageMeta)
@@ -786,7 +786,7 @@ def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
         self._connection.close()
 ```
 
-Note that we read messages as quickly as we can from the queue. When the queue is empty we call `time.sleep`, allowing for a context switch to occur if needed. We acknowledge the message (by calling `basic_ack`) only once we have successfully emitted the message or failed to deserialize the message. This means that if the pipeline shuts down while consuming the queue, we will not lose any messages. However, in that situation we may end up with a duplicate message (i.e., if the pipeline is shut down after we have yielded the message but before calling `basic_ack`).
+Note that we read messages as quickly as we can from the queue. When the queue is empty we call `time.sleep`, allowing for a context switch to occur if needed. We acknowledge the message (by calling `basic_ack`) only once we have successfully emitted the message or failed to deserialize the message. This means that if the pipeline shuts down while consuming the queue, we will not lose any messages. However, in that situation we may end up with a duplicate message (that is, if the pipeline is shut down after we have yielded the message but before calling `basic_ack`).
 
 #### The Completed Source Stage
 
@@ -1001,7 +1001,7 @@ def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> 
     return node
 ```
 
-Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [io.StringIO](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
+Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [`io.StringIO`](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
 
 ```python
 def on_data(self, message: MessageMeta):
@@ -1107,4 +1107,4 @@ class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
         self._connection.close()
 ```
 
-> **Note**: For information about testing the `RabbitMQSourceStage`, `rabbitmq_source`, and `WriteToRabbitMQStage` stages refer to `examples/developer_guide/2_2_rabbitmq/README.md` in the the Morpheus repo.
+> **Note**: For information about testing the `RabbitMQSourceStage`, `rabbitmq_source`, and `WriteToRabbitMQStage` stages refer to `examples/developer_guide/2_2_rabbitmq/README.md` in the Morpheus repo.
