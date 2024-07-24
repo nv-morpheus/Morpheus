@@ -23,7 +23,7 @@ limitations under the License.
 ### Pipeline Structure Configuration
 ![Pipeline Structure Configuration](img/dfp_pipeline_structure.png)
 
-The stages in both the Training and Inference pipelines can be mixed and matched with little impact​, that is, the `MultiFileSource` can be configured to pull from S3 or from local files and can be replaced altogether with any other Morpheus input stage. Similarly, the S3 writer can be replaced with any Morpheus output stage. Regardless of the inputs and outputs the core pipeline should remain unchanged. While stages in the core of the pipeline (inside the blue areas in the above diagram) perform common actions that should be configured not exchanged.
+The stages in both the Training and Inference pipelines can be mixed and matched with little impact, that is, the `MultiFileSource` can be configured to pull from S3 or from local files and can be replaced altogether with any other Morpheus input stage. Similarly, the S3 writer can be replaced with any Morpheus output stage. Regardless of the inputs and outputs the core pipeline should remain unchanged. While stages in the core of the pipeline (inside the blue areas in the above diagram) perform common actions that should be configured not exchanged.
 
 ### Morpheus `Config`
 
@@ -308,9 +308,9 @@ The {py:obj}`~dfp.stages.dfp_preprocessing_stage.DFPPreprocessingStage` stage, t
 ## Training Pipeline
 ![Training PipelineOverview](img/dfp_training_overview.png)
 
-Training must begin with the generic user model​ which is trained with the logs from all users. This model serves as a fallback model for users and accounts without sufficient training data​. The name of the generic user is defined in the `ae.fallback_username` attribute of the Morpheus configuration object and defaults to `generic_user`.
+Training must begin with the generic user model which is trained with the logs from all users. This model serves as a fallback model for users and accounts without sufficient training data. The name of the generic user is defined in the `ae.fallback_username` attribute of the Morpheus configuration object and defaults to `generic_user`.
 
-After training the generic model, individual user models can be trained​. Individual user models provide better accuracy but require sufficient data​. Many users do not have sufficient data to train the model accurately​.
+After training the generic model, individual user models can be trained. Individual user models provide better accuracy but require sufficient data. Many users do not have sufficient data to train the model accurately.
 
 ### Training Stages
 
