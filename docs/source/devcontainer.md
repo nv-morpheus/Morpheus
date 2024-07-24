@@ -15,7 +15,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-```{include} ../../../../../examples/llm/completion/README.md
+<!-- Inform Sphinx that it's OK that this file doesn't appear in a TOC -->
+```{eval-rst}
+:orphan:
+```
+```{include} ../../.devcontainer/README.md
 :relative-docs: ..
 :relative-images:
 ```

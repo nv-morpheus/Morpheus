@@ -50,7 +50,7 @@ sys.path.insert(0, os.path.abspath('sphinxext'))
 
 from github_link import make_linkcode_resolve  # noqa
 
-# Set an environment variable we can use to determine ifuncf we are building docs
+# Set an environment variable we can use to determine if we are building docs
 os.environ["MORPHEUS_IN_SPHINX_BUILD"] = "1"
 
 # -- Project information -----------------------------------------------------
