@@ -381,7 +381,7 @@ From this information, we note that the expected dimensions of the model inputs 
 ### Defining our Pipeline
 For this pipeline we will have several configuration parameters such as the paths to the input and output files, we will be using the (click)[https://click.palletsprojects.com/] library to expose and parse these parameters as command line arguments. We will also expose the choice of using the class or function based stage implementation via the `--use_stage_function` command-line flag.
 
-> **Note**: For simplicity, we assume that the `MORPHEUS_ROOT` environment variable is set to the root of the Morpheus project repository. 
+> **Note**: For simplicity, we assume that the `MORPHEUS_ROOT` environment variable is set to the root of the Morpheus project repository.
 
 To start, we will need to instantiate and set a few attributes of the `Config` class. This object is used for configuration options that are global to the pipeline as a whole. We will provide this object to each stage along with stage-specific configuration parameters.
 
@@ -402,7 +402,7 @@ The `feature_length` property needs to match the dimensions of the model inputs,
 
 Ground truth classification labels are read from the `morpheus/data/labels_phishing.txt` file included in Morpheus.
 
-Now that our config object is populated, we move on to the pipeline itself. We will be using the same input file from the previous example. 
+Now that our config object is populated, we move on to the pipeline itself. We will be using the same input file from the previous example.
 
 Next, we will add our custom recipient features stage to the pipeline. We imported both implementations of the stage, allowing us to add the appropriate one based on the `use_stage_function` value provided by the command-line.
 
@@ -640,7 +640,7 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
 
 ## Stage Constructors
 
-In our `RecipientFeaturesStage` example we added a constructor to our stage, however we didn't go into much detail on the implementation. Every stage constructor must receive an instance of a `morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus config object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments. It is a best practice to perform any necessary validation checks in the constructor, and raising an exception in the case of mis-configuration. This allows us to fail early rather than after the pipeline has started.
+In our `RecipientFeaturesStage` example we added a constructor to our stage, however we didn't go into much detail on the implementation. Every stage constructor must receive an instance of a `morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus configuration object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments. It is a best practice to perform any necessary validation checks in the constructor, and raising an exception in the case of mis-configuration. This allows us to fail early rather than after the pipeline has started.
 
 In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument. This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users. Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
 
