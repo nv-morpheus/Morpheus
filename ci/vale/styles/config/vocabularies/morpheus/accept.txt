@@ -13,6 +13,7 @@ Databricks
 Dev
 GPU(s?)
 Grafana
+[Hh]ashable
 [Ii]nferencing
 LLM(s?)
 Milvus
@@ -23,6 +24,7 @@ NeMo
 NIC
 NIM(s?)
 NVIDIA
+[Pp]arsable
 PCIe
 PDF(s?)
 [Pp]reprocess
