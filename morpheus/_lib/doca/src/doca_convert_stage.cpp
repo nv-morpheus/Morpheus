@@ -198,8 +198,8 @@ void DocaConvertStage::on_raw_packet_message(sink_type_t raw_msg)
 
     const auto payload_buff_size = doca::gather_sizes(packet_count, pkt_pld_size_list, m_stream_cpp);
 
-    const uint32_t header_buff_size = packet_count * sizeof(uint32_t);
-    const auto sizes_buff_size      = packet_count * sizeof(uint32_t);
+    const auto header_buff_size = packet_count * sizeof(uint32_t);
+    const auto sizes_buff_size  = packet_count * sizeof(uint32_t);
 
     auto packet_buffer =
         doca::PacketDataBuffer(packet_count, header_buff_size, payload_buff_size, sizes_buff_size, m_stream_cpp);
