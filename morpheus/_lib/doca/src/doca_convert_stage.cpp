@@ -254,8 +254,8 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
         std::size_t ttl_header_bytes        = 0;
         std::size_t ttl_payload_bytes       = 0;
         std::size_t ttl_payload_sizes_bytes = 0;
-        auto poll_end                       = std::chrono::steady_clock::now() + m_max_time_delta;
-        while (std::chrono::steady_clock::now() < poll_end && !m_buffer_channel->is_channel_closed())
+        const auto poll_end                 = std::chrono::high_resolution_clock::now() + m_max_time_delta;
+        while (std::chrono::high_resolution_clock::now() < poll_end && !m_buffer_channel->is_channel_closed())
         {
             doca::PacketDataBuffer packet_buffer;
             auto status = m_buffer_channel->await_read_until(packet_buffer, poll_end);
