@@ -24,7 +24,7 @@ PacketDataBuffer::PacketDataBuffer() :
   m_stream{rmm::cuda_stream_per_thread},
   m_header_buffer{nullptr},
   m_payload_buffer{nullptr},
-  m_payload_offsets_buffer{nullptr}
+  m_payload_sizes_buffer{nullptr}
 {}
 
 PacketDataBuffer::PacketDataBuffer(std::size_t num_packets,

@@ -73,7 +73,7 @@ morpheus::doca::PacketDataBuffer concat_packet_buffers(std::size_t ttl_packets,
                                                        std::size_t ttl_header_bytes,
                                                        std::size_t ttl_payload_bytes,
                                                        std::size_t ttl_payload_sizes_bytes,
-                                                       std::vector<doca::PacketDataBuffer>&& packet_buffers)
+                                                       std::vector<morpheus::doca::PacketDataBuffer>&& packet_buffers)
 {
     DCHECK(!packet_buffers.empty());
 
@@ -99,26 +99,26 @@ morpheus::doca::PacketDataBuffer concat_packet_buffers(std::size_t ttl_packets,
                                        packet_buffer.m_header_buffer->data(),
                                        packet_buffer.m_header_buffer->size(),
                                        cudaMemcpyDeviceToDevice,
-                                       combined_buffer.m_stream_cpp));
+                                       combined_buffer.m_stream));
 
         MRC_CHECK_CUDA(cudaMemcpyAsync(static_cast<void*>(payload_addr),
                                        packet_buffer.m_payload_buffer->data(),
                                        packet_buffer.m_payload_buffer->size(),
                                        cudaMemcpyDeviceToDevice,
-                                       combined_buffer.m_stream_cpp));
+                                       combined_buffer.m_stream));
 
         MRC_CHECK_CUDA(cudaMemcpyAsync(static_cast<void*>(payload_sizes_addr),
                                        packet_buffer.m_payload_sizes_buffer->data(),
                                        packet_buffer.m_payload_sizes_buffer->size(),
                                        cudaMemcpyDeviceToDevice,
-                                       combined_buffer.m_stream_cpp));
+                                       combined_buffer.m_stream));
 
         curr_header_offset += packet_buffer.m_header_buffer->size();
         curr_payload_offset += packet_buffer.m_payload_buffer->size();
         curr_payload_sizes_offset += packet_buffer.m_payload_sizes_buffer->size();
     }
 
-    MRC_CHECK_CUDA(cudaStreamSynchronize(combined_buffer.m_stream_cpp));
+    MRC_CHECK_CUDA(cudaStreamSynchronize(combined_buffer.m_stream));
 
     return combined_buffer;
 }
@@ -189,14 +189,14 @@ DocaConvertStage::subscribe_fn_t DocaConvertStage::build()
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, &buffer_reader_fiber](sink_type_t x) {
-                this->on_raw_packet_message(output, x);
+                this->on_raw_packet_message(x);
             },
             [&](std::exception_ptr error_ptr) {
                 output.on_error(error_ptr);
             },
             [&]() {
                 m_buffer_channel->close_channel();
-                buffer_reader_fiber.join()
+                buffer_reader_fiber.join();
             }));
     };
 }
