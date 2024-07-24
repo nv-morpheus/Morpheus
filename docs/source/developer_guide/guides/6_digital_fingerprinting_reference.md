@@ -277,6 +277,8 @@ The {py:obj}`~dfp.stages.dfp_split_users_stage.DFPSplitUsersStage` stage receive
 
 #### Rolling Window Stage (`DFPRollingWindowStage`)
 The {py:obj}`~dfp.stages.dfp_rolling_window_stage.DFPRollingWindowStage` stage performs several key pieces of functionality for DFP.
+<!-- Work-around for https://github.com/errata-ai/vale/issues/874 -->
+<!-- vale off -->
 1. This stage keeps a moving window of logs on a per user basis
    * These logs are saved to disk to reduce memory requirements between logs from the same user
 1. It only emits logs when the window history requirements are met
@@ -286,6 +288,7 @@ The {py:obj}`~dfp.stages.dfp_rolling_window_stage.DFPRollingWindowStage` stage p
    * To support all column feature types, incoming log messages can be combined with existing history and sent to downstream stages.
    * For example, to calculate a feature that increments a counter for the number of logs a particular user has generated in a single day, we must have the user's log history for the past 24 hours. To support this, this stage will combine new logs with existing history into a single `DataFrame`.
    * It is the responsibility of downstream stages to distinguish between new logs and existing history.
+<!-- vale on -->
 
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
@@ -294,6 +297,7 @@ The {py:obj}`~dfp.stages.dfp_rolling_window_stage.DFPRollingWindowStage` stage p
 | `min_increment` | `int` | Exclude incoming batches for users where less than `min_increment` new records have been added since the last batch, setting this to `0` effectively disables this feature |
 | `max_history` | `int`, `str` or `None` | When not `None`, include up to `max_history` records. When `max_history` is an int, then the last `max_history` records will be included. When `max_history` is a `str` it is assumed to represent a duration parsable by [`pandas.Timedelta`](https://pandas.pydata.org/docs/reference/api/pandas.Timedelta.html) and only those records within the window of [latest timestamp - `max_history`, latest timestamp] will be included. |
 | `cache_dir` | `str` | Optional path to cache directory, cached items will be stored in a subdirectory under `cache_dir` named `rolling-user-data` this directory, along with `cache_dir` will be created if it does not already exist. |
+
 
 > **Note:**  this stage computes a row hash for the first and last rows of the incoming `DataFrame` as such all data contained must be hashable, any non-hashable values such as `lists` should be dropped or converted into hashable types in the `DFPFileToDataFrameStage`.
 
