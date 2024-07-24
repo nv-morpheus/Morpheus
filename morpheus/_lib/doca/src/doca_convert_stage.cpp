@@ -55,6 +55,7 @@
 #include <utility>
 #include <vector>
 
+namespace {
 morpheus::doca::PacketDataBuffer concat_packet_buffers(std::size_t ttl_packets,
                                                        std::size_t ttl_header_bytes,
                                                        std::size_t ttl_payload_bytes,
@@ -149,6 +150,7 @@ std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::PacketDataBuffer& pack
 
     return cudf::strings::integers_to_ipv4(src_ip_int_col->view());
 }
+} //namespace
 
 namespace morpheus {
 
