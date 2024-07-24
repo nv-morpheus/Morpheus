@@ -30,7 +30,7 @@ add_library(morpheus_doca
   src/doca_semaphore.cpp
   src/doca_source_kernel.cu
   src/doca_source_stage.cpp
-  src/PacketDataBuffer.cpp
+  src/packet_data_buffer.cpp
   src/rte_context.cpp
 )
 
