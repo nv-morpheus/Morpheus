@@ -307,12 +307,9 @@ std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfac
     mrc::segment::Builder& builder,
     std::string const& name,
     std::chrono::milliseconds max_time_delta,
-    std::size_t sizes_buffer_size,
-    std::size_t header_buffer_size,
-    std::size_t payload_buffer_size)
+    std::size_t buffer_channel_size)
 {
-    return builder.construct_object<DocaConvertStage>(
-        name, max_time_delta, sizes_buffer_size, header_buffer_size, payload_buffer_size);
+    return builder.construct_object<DocaConvertStage>(name, max_time_delta, buffer_channel_size);
 }
 
 }  // namespace morpheus
