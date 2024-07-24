@@ -268,7 +268,7 @@ dependencies:
       - output_types: [conda]
         packages:
           - pre-commit
-          - vale=3.6
+          - vale=3.7
           - vale-styles-microsoft
           - vale-styles-write-good
 

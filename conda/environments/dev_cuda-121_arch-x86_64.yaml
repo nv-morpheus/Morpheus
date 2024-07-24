@@ -93,7 +93,7 @@ dependencies:
 - typing_utils=0.1
 - vale-styles-microsoft
 - vale-styles-write-good
-- vale=3.6
+- vale=3.7
 - versioneer
 - versioneer-518
 - watchdog=3.0
