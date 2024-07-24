@@ -131,10 +131,10 @@ std::unique_ptr<cudf::column> make_string_col(morpheus::doca::PacketDataBuffer& 
 
 std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::PacketDataBuffer& packet_buffer)
 {
-    // cudf doesn't support uint32, need to cast to int64 remove this once
-    // https://github.com/rapidsai/cudf/issues/16324 is resolved
     const auto num_packets = static_cast<morpheus::TensorIndex>(packet_buffer.m_num_packets);
 
+    // cudf doesn't support uint32, need to cast to int64 remove this once
+    // https://github.com/rapidsai/cudf/issues/16324 is resolved
     auto src_type     = morpheus::DType::create<uint32_t>();
     auto dst_type     = morpheus::DType(morpheus::TypeId::INT64);
     auto dev_mem_info = morpheus::DevMemInfo(packet_buffer.m_header_buffer, src_type, {num_packets}, {1});
