@@ -55,20 +55,6 @@
 #include <utility>
 #include <vector>
 
-std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, const std::string& buffer_name)
-{
-    if (incoming_size > default_size)
-    {
-        LOG(WARNING) << "RawPacketMessage requires a " << buffer_name << " buffer of size " << incoming_size
-                     << " bytes, but the default allocation size is only " << default_size << " allocating "
-                     << incoming_size;
-
-        return incoming_size;
-    }
-
-    return default_size;
-}
-
 morpheus::doca::PacketDataBuffer concat_packet_buffers(std::size_t ttl_packets,
                                                        std::size_t ttl_header_bytes,
                                                        std::size_t ttl_payload_bytes,
