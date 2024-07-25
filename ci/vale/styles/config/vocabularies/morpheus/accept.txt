@@ -1,3 +1,4 @@
+API(s?)
 [Aa]utoencoder
 [Bb]ackpressure
 [Bb]atcher
@@ -62,6 +63,7 @@ PDF(s?)
 [Tt]okenization
 [Tt]okenizer(s?)
 triages
+[Uu]nittest(s?)
 [Uu]ploader
 XGBoost
 zsh
