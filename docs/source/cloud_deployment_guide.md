@@ -402,7 +402,7 @@ To publish messages to a Kafka topic, we need to copy datasets to locations wher
 kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
 ```
 
-Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/docs/source/basics/building_a_pipeline.md) documentation for more information regarding the commands.
+Refer to the [Morpheus CLI Overview](./basics/overview.rst) and [Building a Pipeline](./basics/building_a_pipeline.md) documentation for more information regarding the commands.
 
 > **Note**: Before running the example pipelines, ensure the criteria below are met:
 -   Ensure models specific to the pipeline are deployed.
@@ -782,8 +782,8 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 
 ## Additional Documentation
 For more information on how to use the Morpheus Python API to customize and run your own optimized AI pipelines, Refer to below documentation.
-- [Morpheus Developer Guides](https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/docs/source/developer_guide/guides.md)
-- [Morpheus Pipeline Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-24.10/examples)
+- [Morpheus Developer Guides](./developer_guide/guides.md)
+- [Morpheus Pipeline Examples](./examples.md)
 
 
 ## Troubleshooting
