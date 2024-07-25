@@ -107,7 +107,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
    ```
    1. Note: When debugging Python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's
    source path.
-   1. Once created, you will be able to introspect Python objects from within GDB. For example, if we were to break within a generator setup call and examine its PyFrame_Object `f`, it might be similar to:
+   1. Once created, you will be able to introspect Python objects from within GDB. For example, if we were to break within a generator setup call and examine its `PyFrame_Object` `f`, it might be similar to:
    ```shell
     #4  0x000056498ce685f4 in gen_send_ex (gen=0x7f3ecc07ad40, arg=<optimized out>, exc=<optimized out>, closing=<optimized out>) at Objects/genobject.c:222
     (gdb) pyo f
@@ -171,7 +171,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
   - **Note:** `mamba` should only be installed once in the base environment
 
-1. Set up env variables and clone the repo:
+1. Set up environment variables and clone the repo:
    ```bash
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
@@ -279,12 +279,12 @@ Launching a full production Kafka cluster is outside the scope of this project; 
       $ echo $KAFKA_ADVERTISED_HOST_NAME
       "172.17.0.1"
       ```
-6. Launch kafka with 3 instances:
+6. Launch Kafka with 3 instances:
 
    ```bash
    docker compose up -d --scale kafka=3
    ```
-   In practice, 3 instances have been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
+   In practice, 3 instances have been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 GB of memory.
 7. Launch the Kafka shell
    1. To configure the cluster, you will need to launch into a container that has the Kafka shell.
    2. You can do this with:

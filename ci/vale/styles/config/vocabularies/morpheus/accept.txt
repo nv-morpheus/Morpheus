@@ -2,15 +2,25 @@
 [Bb]ackpressure
 [Bb]atcher
 [Bb]oolean
+
+# Documentation for ccache only capitalizes the name at the start of a sentence https://ccache.dev/
+[Cc]cache
 [Cc]hatbot(s?)
+
+# clangd is never capitalized even at the start of a sentence https://clangd.llvm.org/
+clangd
 CMake
 [Cc]omposable
 Conda
+CPython
 [Cc]ryptocurrenc[y|ies]
 [Cc]yber
 [Cc]ybersecurity
 Dask
 Databricks
+
+# Allow for the possesive form (ex debugger's source path)
+debugger's
 [Dd]eserialize
 Dev
 [Dd]ocstring(s?)
@@ -51,6 +61,7 @@ PDF(s?)
 [Tt]imestamp(s?)
 [Tt]okenization
 [Tt]okenizer(s?)
+triages
 [Uu]ploader
 XGBoost
 zsh
