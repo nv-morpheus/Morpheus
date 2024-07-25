@@ -18,12 +18,15 @@ services:
   triton:
     container_name: morpheus-triton
     runtime: nvidia
-    image: nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+    image: nvcr.io/nvidia/tritonserver:23.06-py3
     command: tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false ${TRITON_MODEL_ARGS}
     ports:
       - 8000:8000
       - 8001:8001
       - 8002:8002
+    volumes:
+      - ${HOST_MORPHEUS_ROOT}/models:/models
+      - ${HOST_MORPHEUS_ROOT}/examples/abp_pcap_detection/abp-pcap-xgb:/models/triton-model-repo/abp-pcap-xgb
 
   zookeeper:
     image: bitnami/zookeeper:latest
