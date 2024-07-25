@@ -15,7 +15,9 @@ Dev
 glog
 GPU(s?)
 Grafana
+[Gg]ranularities
 [Hh]ashable
+[Hh]ostname(s?)
 [Ii]nferencing
 
 # libcudf isn't styled in the way that cuDF is https://docs.rapids.ai/api/libcudf/stable/
