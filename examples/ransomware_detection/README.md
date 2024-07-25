@@ -35,7 +35,7 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:23.06-py3
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
 ```
 ##### Setup Env Variable
 ```bash
@@ -47,7 +47,7 @@ From the Morpheus repo root directory, run the following to launch Triton and lo
 ```bash
 # Run Triton in explicit mode
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-    -v $PWD/examples/ransomware_detection/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:23.06-py3 \
+    nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 \
     tritonserver --model-repository=/models/triton-model-repo \
                  --exit-on-error=false \
                  --model-control-mode=explicit \
@@ -84,7 +84,7 @@ Input features for a short model can be taken from every three snapshots sequenc
 The configuration options for this example can be queried with:
 
 ```bash
-python run.py --help
+python examples/ransomware_detection/run.py --help
 ```
 
 ```

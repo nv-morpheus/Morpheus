@@ -17,10 +17,14 @@ limitations under the License.
 
 # Getting Started with Morpheus
 
-There are two ways to get started with Morpheus:
+There are three ways to get started with Morpheus:
+- [Using pre-built Docker containers](#using-pre-built-docker-containers)
 - [Building the Morpheus Docker container](#building-the-morpheus-container)
 - [Building Morpheus from source](./developer_guide/contributing.md#building-from-source)
 
+The [pre-built Docker containers](#using-pre-built-docker-containers) are the easiest way to get started with the latest release of Morpheus. Released versions of Morpheus containers can be found on [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_).
+
+More advanced users, or those who are interested in using the latest pre-release features, will need to [build the Morpheus container](#building-the-morpheus-container) or [build from source](./developer_guide/contributing.md#building-from-source).
 
 ## Requirements
 - Volta architecture GPU or better
@@ -32,6 +36,47 @@ There are two ways to get started with Morpheus:
 > **Note about Docker:**
 >
 > The Morpheus documentation and examples assume that the [Manage Docker as a non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user) post install step has been performed allowing Docker commands to be executed by a non-root user. This is not strictly necessary so long as the current user has `sudo` privileges to execute Docker commands.
+
+## Using pre-built Docker containers
+### Pull the Morpheus Image
+1. Go to [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags)
+1. Choose a version
+1. Download the selected version, for example for `24.10`:
+    ```bash
+    docker pull nvcr.io/nvidia/morpheus/morpheus:24.10-runtime
+    ```
+1. Optional, many of the examples require NVIDIA Triton Inference Server to be running with the included models. To download the Morpheus Triton Server Models container (ensure that the version number matches that of the Morpheus container you downloaded in the previous step):
+    ```bash
+    docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+    ```
+
+> **Note about Morpheus versions:**
+>
+> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v24.10.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v24.10.01-runtime`, `v24.10.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference that point release.
+>
+> Users who want to ensure they are running with the latest bug fixes should use a release image tag (`YY.MM-runtime`). Users who need to deploy a specific version into production should use a point release image tag (`vYY.MM.00-runtime`).
+
+### Starting the Morpheus Container
+1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) is installed.
+1. Start the container downloaded from the previous section:
+```bash
+docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:24.10-runtime bash
+```
+
+Note about some of the flags above:
+| Flag | Description |
+| ---- | ----------- |
+| `--runtime=nvidia` | Choose the NVIDIA docker runtime, this enables access to the GPU inside the container. This flag isn't needed if the `nvidia` runtime is already set as the default runtime for Docker. |
+| `--gpus=all` | Specify which GPUs the container has access to.  Alternately, a specific GPU could be chosen with `--gpus=<gpu-id>` |
+| `--net=host` | Most of the Morpheus pipelines utilize [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver), which will be running in another container. For simplicity we will give the container access to the host system's network, production deployments may opt for an explicit network configuration. |
+| `-v /var/run/docker.sock:/var/run/docker.sock` | Enables access to the Docker socket file from within the running container, this allows launching other Docker containers from within the Morpheus container. This flag is required for launching Triton with access to the included Morpheus models, users with their own models can omit this. |
+
+Once launched, users wishing to launch Triton using the included Morpheus models will need to install the Docker tools in the Morpheus container by running:
+```bash
+./external/utilities/docker/install_docker.sh
+```
+
+Skip ahead to the [Acquiring the Morpheus Models Container](#acquiring-the-morpheus-models-container) section.
 
 ## Building the Morpheus Container
 ### Clone the Repository
@@ -57,6 +102,7 @@ scripts/fetch_data.py fetch <dataset> [<dataset>...]
 
 At time of writing the defined datasets are:
 * all - Metaset includes all others
+* datasets - Input files needed for many of the examples
 * docs - Graphics needed for documentation
 * examples - Data needed by scripts in the `examples` subdir
 * models - Morpheus models (largest dataset)
@@ -100,14 +146,24 @@ The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NA
 DOCKER_IMAGE_TAG="v24.10.00-runtime" ./docker/run_container_release.sh
 ```
 
+## Acquiring the Morpheus Models Container
+
+Many of the validation tests and example workflows require a Triton server to function. For simplicity Morpheus provides a pre-built models container which contains both Triton and the Morpheus models. Users using a release version of Morpheus can download the corresponding Triton models container from NGC with the following command:
+```bash
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+```
+
+Users working with an unreleased development version of Morpheus can build the Triton models container from the Morpheus repository. To build the Triton models container, from the root of the Morpheus repository run the following command:
+```bash
+models/docker/build_container.sh
+```
+
 ## Launching Triton Server
 
-Many of the validation tests and example workflows require a Triton server to function. In a new terminal, from the root of the Morpheus repo, use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
-
+In a new terminal use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-  -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:23.06-py3 \
+  nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -118,6 +174,19 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
 This will launch Triton using the default network ports (8000 for HTTP, 8001 for GRPC, and 8002 for metrics), loading all of the examples models in the Morpheus repo.
 
 Note: The above command is useful for testing out Morpheus, however it does load several models into GPU memory, which at time of writing consumes roughly 2GB of GPU memory. Production users should consider only loading the specific model(s) they plan on using with the `--model-control-mode=explicit` and `--load-model` flags. For example to launch Triton only loading the `abp-nvsmi-xgb` model:
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
+  nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10  \
+  tritonserver --model-repository=/models/triton-model-repo \
+    --exit-on-error=false \
+    --log-info=true \
+    --strict-readiness=false \
+    --disable-auto-complete-config \
+    --model-control-mode=explicit \
+    --load-model abp-nvsmi-xgb
+```
+
+Alternately, for users who have checked out the Morpheus git repository, launching the Triton server container directly mounting the models from the repository is an option. This approach is most useful for users training their own models. From the root of the Morpheus repo, use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
   -v $PWD/models:/models \

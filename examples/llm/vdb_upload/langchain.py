@@ -20,7 +20,7 @@ from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores.milvus import Milvus
 
-from examples.llm.vdb_upload.vdb_utils import build_rss_urls
+from examples.llm.vdb_upload.vdb_utils import DEFAULT_RSS_URLS
 from morpheus.utils.logging_timer import log_time
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 def chain(model_name, save_cache):
     with log_time(msg="Seeding with chain took {duration} ms. {rate_per_sec} docs/sec", log_fn=logger.debug) as log:
-        loader = RSSFeedLoader(urls=build_rss_urls())
+        loader = RSSFeedLoader(urls=DEFAULT_RSS_URLS.copy())
 
         documents = loader.load()
 
