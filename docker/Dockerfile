@@ -306,7 +306,7 @@ RUN source activate morpheus &&\
     cd /tmp/morpheus_repo &&\
     git checkout ${GIT_COMMIT} &&\
     git lfs install &&\
-    /tmp/morpheus_repo/scripts/fetch_data.py fetch examples models
+    /tmp/morpheus_repo/scripts/fetch_data.py fetch datasets examples
 
 # ============ Stage: runtime ============
 # Setup container for runtime environment
@@ -319,7 +319,7 @@ COPY --from=git_clone "/tmp/morpheus_repo/conda/environments/*.yaml" "./conda/en
 COPY --from=git_clone "/tmp/morpheus_repo/docker" "./docker"
 COPY --from=build_docs "/workspace/build/docs/html" "./docs"
 COPY --from=git_clone "/tmp/morpheus_repo/examples" "./examples"
-COPY --from=git_clone "/tmp/morpheus_repo/models" "./models"
+COPY --from=git_clone "/tmp/models/datasets" "./models/datasets"
 COPY --from=git_clone "/tmp/morpheus_repo/scripts" "./scripts"
 COPY --from=git_clone "/tmp/morpheus_repo/*.md" "./"
 COPY --from=git_clone "/tmp/morpheus_repo/LICENSE" "./"
