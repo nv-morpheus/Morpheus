@@ -17,28 +17,24 @@
 
 #pragma once
 
-#include "morpheus/export.h"
-#include "morpheus/messages/control.hpp"
-#include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/messages/multi_response.hpp"
-#include "morpheus/types.hpp"
+#include "morpheus/export.h"              // for MORPHEUS_EXPORT
+#include "morpheus/messages/control.hpp"  // for ControlMessage
+#include "morpheus/types.hpp"             // for TensorMap
 
-#include <boost/fiber/policy.hpp>
-#include <mrc/coroutines/async_generator.hpp>
-#include <mrc/coroutines/scheduler.hpp>
-#include <mrc/coroutines/task.hpp>
-#include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>
-#include <pybind11/pybind11.h>
-#include <pymrc/asyncio_runnable.hpp>
-#include <rxcpp/rx.hpp>
+#include <mrc/coroutines/async_generator.hpp>  // for AsyncGenerator
+#include <mrc/coroutines/scheduler.hpp>        // for Scheduler
+#include <mrc/coroutines/task.hpp>             // for Task
+#include <mrc/segment/builder.hpp>             // for Builder
+#include <mrc/segment/object.hpp>              // for Object
+#include <pybind11/pybind11.h>                 // for object_api::operator()
+#include <pymrc/asyncio_runnable.hpp>          // for AsyncioRunnable
 
-#include <cstdint>
-#include <map>
-#include <memory>
-#include <mutex>
-#include <string>
-#include <vector>
+#include <cstdint>  // for int32_t
+#include <map>      // for map
+#include <memory>   // for shared_ptr, unique_ptr
+#include <mutex>    // for mutex
+#include <string>   // for string
+#include <vector>   // for vector
 
 namespace morpheus {
 
@@ -124,7 +120,7 @@ class MORPHEUS_EXPORT InferenceClientStage
      * Process a single InputT by running the constructor-provided inference client against it's Tensor,
      * and yields the result as a OutputT
      */
-     mrc::coroutines::AsyncGenerator<std::shared_ptr<ControlMessage>> on_data(
+    mrc::coroutines::AsyncGenerator<std::shared_ptr<ControlMessage>> on_data(
         std::shared_ptr<ControlMessage>&& data, std::shared_ptr<mrc::coroutines::Scheduler> on) override;
 
   private:

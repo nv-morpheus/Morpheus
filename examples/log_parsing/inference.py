@@ -74,6 +74,7 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
         resp = ControlMessage(msg)
         resp.payload(msg.payload())
         resp.tensors(memory)
+
         return resp
 
     def _build_response(self, batch: ControlMessage, result: tritonclient.InferResult) -> TensorMemory:

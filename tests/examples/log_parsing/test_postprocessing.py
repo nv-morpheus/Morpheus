@@ -21,12 +21,12 @@ import cupy as cp
 import numpy as np
 import pytest
 
+import morpheus._lib.messages as _messages
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiResponseMessage
-from morpheus.messages import TensorMemory
 
 
 def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str):
@@ -48,8 +48,13 @@ def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str
     seq_ids[:, 2] = cp.asarray(host__seq_data)[:, 2]
     tensors['seq_ids'] = seq_ids
 
-    memory = TensorMemory(count=5, tensors=tensors)
-    return MultiResponseMessage(meta=meta, mess_offset=0, mess_count=count, memory=memory, offset=0, count=count)
+    memory = _messages.TensorMemory(count=5, tensors=tensors)
+
+    msg = ControlMessage()
+    msg.payload(meta)
+    msg.tensors(memory)
+
+    return msg
 
 
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py'))

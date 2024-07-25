@@ -17,8 +17,6 @@
 
 #include "morpheus/messages/control.hpp"                 // for ControlMessage
 #include "morpheus/messages/meta.hpp"                    // for MessageMeta
-#include "morpheus/messages/multi_inference.hpp"         // for MultiInferenceMessage
-#include "morpheus/messages/multi_response.hpp"          // for MultiResponseMessage
 #include "morpheus/objects/file_types.hpp"               // for FileTypes
 #include "morpheus/stages/add_classification.hpp"        // for AddClassificationsStage, AddClassificationStageInter...
 #include "morpheus/stages/add_scores.hpp"                // for AddScoresStage, AddScoresStageInterfaceProxy
@@ -42,10 +40,10 @@
 #include <mrc/utils/string_utils.hpp>  // for MRC_CONCAT_STR
 #include <pybind11/attr.h>             // for multiple_inheritance
 #include <pybind11/pybind11.h>         // for arg, init, class_, module_, overload_cast, overload_...
-#include <pybind11/pytypes.h>          // for dict, none, str_attr
-#include <pybind11/stl/filesystem.h>   // IWYU pragma: keep
-#include <pymrc/utils.hpp>             // for from_import, import
-#include <rxcpp/rx.hpp>                // for trace_activity, decay_t
+#include <pybind11/pytypes.h>          // for none, dict, str_attr
+#include <pybind11/stl/filesystem.h>
+#include <pymrc/utils.hpp>  // for from_import, import
+#include <rxcpp/rx.hpp>     // for trace_activity, decay_t
 
 #include <filesystem>  // for path
 #include <memory>      // for shared_ptr, allocator
@@ -147,7 +145,6 @@ PYBIND11_MODULE(stages, _module)
              py::arg("copy"),
              py::arg("filter_source"),
              py::arg("field_name") = "probs");
-
 
     py::class_<mrc::segment::Object<InferenceClientStage>,
                mrc::segment::ObjectProperties,

@@ -25,11 +25,7 @@ import cudf
 import morpheus._lib.messages as _messages
 from _utils.inference_worker import IW
 from morpheus.messages import ControlMessage
-from morpheus.messages import ResponseMemory
-from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.messages.multi_inference_message import MultiInferenceMessage
-from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
 
 
@@ -39,31 +35,6 @@ class InferenceStageT(InferenceStage):
         # Intentionally calling the abc empty method for coverage
         super()._get_inference_worker(inf_queue)
         return IW(inf_queue)
-
-
-def _mk_multi_message(mess_offset=0, mess_count=1, offset=0, count=1):
-    total_message_count = mess_offset + mess_count
-    total_tensor_count = offset + count
-
-    df = cudf.DataFrame(list(range(total_message_count)), columns=["col1"])
-
-    msg = MultiInferenceMessage(meta=MessageMeta(df),
-                                mess_offset=mess_offset,
-                                mess_count=mess_count,
-                                memory=InferenceMemory(count=total_tensor_count,
-                                                       tensors={
-                                                           "probs":
-                                                               cp.random.rand(total_tensor_count, 2),
-                                                           "seq_ids":
-                                                               cp.tile(
-                                                                   cp.expand_dims(cp.arange(
-                                                                       mess_offset, mess_offset + total_tensor_count),
-                                                                                  axis=1), (1, 3))
-                                                       }),
-                                offset=offset,
-                                count=count)
-
-    return msg
 
 
 def _mk_control_message(mess_count=1, count=1):

@@ -19,7 +19,6 @@
 import dataclasses
 import string
 import typing
-from unittest.mock import patch
 
 import cupy as cp
 import numpy as np
@@ -29,7 +28,6 @@ import pytest
 import cudf
 
 from _utils.dataset_manager import DatasetManager
-from morpheus.messages import ControlMessage
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
@@ -44,7 +42,6 @@ from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
-from morpheus.utils import logger as morpheus_logger
 
 
 @pytest.mark.use_python

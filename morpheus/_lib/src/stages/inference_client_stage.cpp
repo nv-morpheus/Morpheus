@@ -17,34 +17,36 @@
 
 #include "morpheus/stages/inference_client_stage.hpp"
 
-#include "morpheus/messages/control.hpp"
-#include "morpheus/messages/memory/response_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/messages/meta.hpp"
-#include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/messages/multi_response.hpp"
-#include "morpheus/objects/data_table.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"
-#include "morpheus/objects/dtype.hpp"
-#include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/stages/triton_inference.hpp"
-#include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/messages/control.hpp"                 // for ControlMessage
+#include "morpheus/messages/memory/response_memory.hpp"  // for ResponseMemory
+#include "morpheus/messages/memory/tensor_memory.hpp"    // for TensorMemory
+#include "morpheus/messages/meta.hpp"                    // for MessageMeta
+#include "morpheus/messages/multi_inference.hpp"         // for MultiInferenceMessage
+#include "morpheus/messages/multi_response.hpp"          // for MultiResponseMessage
+#include "morpheus/objects/data_table.hpp"               // for morpheus
+#include "morpheus/objects/dev_mem_info.hpp"             // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"                    // for DType
+#include "morpheus/objects/tensor.hpp"                   // for Tensor
+#include "morpheus/objects/tensor_object.hpp"            // for TensorObject
+#include "morpheus/stages/triton_inference.hpp"          // for HttpTritonClient, TritonInferenceClient
+#include "morpheus/utilities/matx_util.hpp"              // for MatxUtil
 
-#include <cuda_runtime.h>
-#include <glog/logging.h>
-#include <mrc/cuda/common.hpp>
-#include <pybind11/pybind11.h>
+#include <boost/fiber/policy.hpp>  // for launch
+#include <cuda_runtime.h>          // for cudaMemcpy2D, cudaMemcpyKind
+#include <glog/logging.h>          // for COMPACT_GOOGLE_LOG_WARNING, LOG, LogMessage
+#include <mrc/cuda/common.hpp>     // for MRC_CHECK_CUDA
+#include <pybind11/pybind11.h>     // for object_api::operator()
+#include <rxcpp/rx.hpp>            // for decay_t, trace_activity
 
-#include <chrono>
-#include <compare>
-#include <coroutine>
-#include <memory>
-#include <mutex>
-#include <ostream>
-#include <ratio>
-#include <stdexcept>
-#include <utility>
+#include <chrono>     // for milliseconds, operator""ms, operator<=>, chrono_lite...
+#include <compare>    // for operator>, strong_ordering
+#include <coroutine>  // for coroutine_handle, suspend_always
+#include <memory>     // for shared_ptr, __shared_ptr_access, dynamic_pointer_cast
+#include <mutex>      // for unique_lock
+#include <ostream>    // for operator<<, basic_ostream
+#include <ratio>      // for ratio
+#include <stdexcept>  // for runtime_error, invalid_argument
+#include <utility>    // for move, pair
 
 namespace {
 
@@ -190,7 +192,6 @@ static std::shared_ptr<ControlMessage> make_response(std::shared_ptr<ControlMess
     return message;
 }
 
-
 mrc::coroutines::AsyncGenerator<std::shared_ptr<ControlMessage>> InferenceClientStage::on_data(
     std::shared_ptr<ControlMessage>&& message, std::shared_ptr<mrc::coroutines::Scheduler> on)
 {
@@ -319,15 +320,15 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<ControlMessage>> InferenceClient
 }
 
 // ************ InferenceClientStageInterfaceProxy********* //
-std::shared_ptr<mrc::segment::Object<InferenceClientStage>>
-InferenceClientStageInterfaceProxy::init(mrc::segment::Builder& builder,
-                                            const std::string& name,
-                                            std::string server_url,
-                                            std::string model_name,
-                                            bool needs_logits,
-                                            bool force_convert_inputs,
-                                            std::map<std::string, std::string> input_mappings,
-                                            std::map<std::string, std::string> output_mappings)
+std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::string server_url,
+    std::string model_name,
+    bool needs_logits,
+    bool force_convert_inputs,
+    std::map<std::string, std::string> input_mappings,
+    std::map<std::string, std::string> output_mappings)
 {
     std::vector<TensorModelMapping> input_mappings_{};
     std::vector<TensorModelMapping> output_mappings_{};
