@@ -914,12 +914,11 @@ class TestCLI:
         assert config.mode == PipelineModes.NLP
 
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_nlp_relative_paths(self, config, callback_values):
+    def test_pipeline_nlp_relative_paths(self, config, callback_values, bert_cased_hash: str):
         """
         Ensure that the default paths in the nlp pipeline are valid when run from outside the morpheus repo
         """
 
-        vocab_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-hash.txt')
         args = (GENERAL_ARGS + ['pipeline-nlp'] + FILE_SRC_ARGS + [
             'deserialize',
             'preprocess',
@@ -941,7 +940,7 @@ class TestCLI:
         # pylint: disable=unused-variable
         [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
 
-        assert process_nlp._vocab_hash_file == os.path.realpath(vocab_file_name)
+        assert process_nlp._vocab_hash_file == os.path.realpath(bert_cased_hash)
 
     @pytest.mark.replace_callback('pipeline_nlp')
     def test_pipeline_nlp_relative_path_precedence(self, config, callback_values, tmp_path):
