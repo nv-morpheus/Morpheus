@@ -11,6 +11,7 @@ Dask
 Databricks
 [Dd]eserialize
 Dev
+[Dd]ocstring(s?)
 glog
 GPU(s?)
 Grafana
