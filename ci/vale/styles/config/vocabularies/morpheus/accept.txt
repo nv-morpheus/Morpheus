@@ -1,8 +1,10 @@
 [Aa]utoencoder
+[Bb]ackpressure
 [Bb]atcher
 [Bb]oolean
 [Cc]hatbot(s?)
 CMake
+[Cc]omposable
 Conda
 [Cc]ryptocurrenc[y|ies]
 [Cc]yber
@@ -35,6 +37,7 @@ NeMo
 NIC
 NIM(s?)
 NVIDIA
+[Pp]arallelization
 [Pp]arsable
 PCIe
 PDF(s?)
