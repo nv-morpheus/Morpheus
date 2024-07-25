@@ -292,8 +292,12 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
 # unintentionally including build artifacts or other files that shouldn't be in the final image
 FROM conda_env_dev as git_clone
 
-RUN source activate morpheus &&\
-    git clone file://${MORPHEUS_ROOT_HOST} /tmp/morpheus_repo &&\
+ARG MORPHEUS_ROOT_HOST
+
+# Source the morpheus env to pick up the git-lfs package
+RUN --mount=type=bind,source=${MORPHEUS_ROOT_HOST},target=/opt/host_repo \
+    source activate morpheus &&\
+    git clone file:///opt/host_repo /tmp/morpheus_repo &&\
     cd /tmp/morpheus_repo &&\
     git lfs install &&\
     /tmp/morpheus_repo/scripts/fetch_data.py fetch datasets examples
@@ -309,7 +313,7 @@ COPY --from=git_clone "/tmp/morpheus_repo/conda/environments/*.yaml" "./conda/en
 COPY --from=git_clone "/tmp/morpheus_repo/docker" "./docker"
 COPY --from=build_docs "/workspace/build/docs/html" "./docs"
 COPY --from=git_clone "/tmp/morpheus_repo/examples" "./examples"
-COPY --from=git_clone "/tmp/models/datasets" "./models/datasets"
+COPY --from=git_clone "/tmp/morpheus_repo/models/datasets" "./models/datasets"
 COPY --from=git_clone "/tmp/morpheus_repo/scripts" "./scripts"
 COPY --from=git_clone "/tmp/morpheus_repo/*.md" "./"
 COPY --from=git_clone "/tmp/morpheus_repo/LICENSE" "./"
