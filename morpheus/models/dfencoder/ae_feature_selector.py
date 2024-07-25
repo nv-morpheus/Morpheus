@@ -33,34 +33,51 @@ class AutoencoderFeatureSelector:
     A class to select features using an autoencoder, handling categorical and numerical data.
     Supports handling ambiguities in data types and ensures selected feature count constraints.
 
-    Attributes:
-        input_json (dict): List of dictionary objects to normalize into a dataframe
-        id_column (str) : Column name that contains ID for morpheus AE pipeline. Default None.
-        timestamp_column (str) : Column name that contains the
-            timestamp for morpheus AE pipeline. Default None.
-        encoding_dim (int): Dimension of the encoding layer, defaults to half of input
-            dimensions if not set.
-        batch_size (int): Batch size for training the autoencoder.
-        variance_threshold (float) : Minimum variance a column must contain
-            to remain in consideration. Default 0.
-        null_threshold (float): Maximum proportion of null values a column can contain. Default 0.3.
-        cardinality_threshold_high (float): Maximum proportion
-            of cardinality to length of data allowable. Default 0.99.
-        cardinality_threshold_low_n (int): Minimum cardinalty for a feature to be considered numerical
-            during type infernce. Default 10.
-        categorical_features (list[str]): List of features in the data to be considered categorical. Default [].
-        numeric_features (list[str]): List of features in the data to be considered numeric. Default [].
-        ablation_epochs (int): Number of epochs to train the autoencoder.
-        device (str): Device to run the model on, defaults to 'cuda' if available.
+    Attributes
+    ----------
+    input_json : dict
+        List of dictionary objects to normalize into a dataframe.
+    id_column : str, optional
+        Column name that contains ID for morpheus AE pipeline. Default is None.
+    timestamp_column : str, optional
+        Column name that contains the timestamp for morpheus AE pipeline. Default is None.
+    encoding_dim : int, optional
+        Dimension of the encoding layer, defaults to half of input dimensions if not set.
+    batch_size : int
+        Batch size for training the autoencoder.
+    variance_threshold : float, optional
+        Minimum variance a column must contain to remain in consideration. Default is 0.
+    null_threshold : float, optional
+        Maximum proportion of null values a column can contain. Default is 0.3.
+    cardinality_threshold_high : float, optional
+        Maximum proportion of cardinality to length of data allowable. Default is 0.99.
+    cardinality_threshold_low_n : int, optional
+        Minimum cardinality for a feature to be considered numerical during type inference. Default is 10.
+    categorical_features : list of str, optional
+        List of features in the data to be considered categorical. Default is [].
+    numeric_features : list of str, optional
+        List of features in the data to be considered numeric. Default is [].
+    ablation_epochs : int
+        Number of epochs to train the autoencoder.
+    device : str
+        Device to run the model on, defaults to 'cuda' if available.
 
-    Methods:
-        train_autoencoder(data_loader): Trains the autoencoder using the provided data loader.
-        calculate_loss(model, data_loader): Calculates reconstruction loss using the trained model.
-        preprocess_data(): Preprocesses the DataFrame to handle numerical and categorical data appropriately.
-        remove_low_variance(processed_data): Removes features with low variance.
-        remove_high_correlation(data): Removes highly correlated features based on a threshold.
-        feature_importance_evaluation(processed_data): Evaluates feature importance using the autoencoder.
-        select_features(k_min, k_max): Selects features based on importance, adhering to min/max constraints.
+    Methods
+    -------
+    train_autoencoder(data_loader)
+        Trains the autoencoder using the provided data loader.
+    calculate_loss(model, data_loader)
+        Calculates reconstruction loss using the trained model.
+    preprocess_data()
+        Preprocesses the DataFrame to handle numerical and categorical data appropriately.
+    remove_low_variance(processed_data)
+        Removes features with low variance.
+    remove_high_correlation(data)
+        Removes highly correlated features based on a threshold.
+    feature_importance_evaluation(processed_data)
+        Evaluates feature importance using the autoencoder.
+    select_features(k_min, k_max)
+        Selects features based on importance, adhering to min/max constraints.
     """
 
     def __init__(
@@ -80,11 +97,11 @@ class AutoencoderFeatureSelector:
             device="cuda" if torch.cuda.is_available() else "cpu",
     ):
         self.df = pd.json_normalize(input_json)
-        self.df_orig = pd.json_normalize(input_json)
+        self._df_orig = pd.json_normalize(input_json)
         self.encoding_dim = encoding_dim or self.df.shape[1] // 2
         self.batch_size = batch_size
         self.device = device
-        self.preprocessor = None  # To store the preprocessor for transforming data
+        self._preprocessor = None  # To store the preprocessor for transforming data
         self.variance_threshold = variance_threshold
         self.null_threshold = null_threshold
         self.cardinality_threshold_high = cardinality_threshold_high
@@ -94,7 +111,7 @@ class AutoencoderFeatureSelector:
         self.ablation_epochs = ablation_epochs
         self.id_col = id_column
         self.ts_col = timestamp_column
-        self.final_features = self.df.columns.tolist()  # Initialize with all features
+        self._final_features = self.df.columns.tolist()  # Initialize with all features
 
         self._model_kwargs = {
             "encoder_layers": [512, 500],  # layers of the encoding part
@@ -115,13 +132,13 @@ class AutoencoderFeatureSelector:
 
         if self.id_col is not None:
             self.df.drop([self.id_col], axis=1, inplace=True)
-            self.df_orig.drop([self.id_col], axis=1, inplace=True)
+            self._df_orig.drop([self.id_col], axis=1, inplace=True)
 
         if self.ts_col is not None:
             self.df.drop([self.ts_col], axis=1, inplace=True)
-            self.df_orig.drop([self.ts_col], axis=1, inplace=True)
+            self._df_orig.drop([self.ts_col], axis=1, inplace=True)
 
-    def train_autoencoder(self, dataframe):
+    def train_autoencoder(self, dataframe:pd.DataFrame):
         """
         Trains the autoencoder model on the data provided by the DataLoader.
 
@@ -200,7 +217,7 @@ class AutoencoderFeatureSelector:
                 continue
 
         dataframe_columns = list(self.df.columns)
-        self.final_features = dataframe_columns  # Update final_features
+        self._final_features = dataframe_columns  # Update final_features
 
         # Perform type inferencing if needed
 
@@ -243,14 +260,14 @@ class AutoencoderFeatureSelector:
                         else:
                             self.categorical_features.append(col)
 
-        self.preprocessor = ColumnTransformer(
+        self._preprocessor = ColumnTransformer(
             transformers=[
                 ("num", StandardScaler(), self.numeric_features),
                 ("cat", OneHotEncoder(), self.categorical_features),
             ]
         )
 
-        processed_data = self.preprocessor.fit_transform(self.df)
+        processed_data = self._preprocessor.fit_transform(self.df)
 
         # Convert to dense if the output is sparse
         if hasattr(processed_data, "toarray"):
@@ -260,9 +277,9 @@ class AutoencoderFeatureSelector:
             )
 
         self.preprocessed_df = pd.DataFrame(
-            processed_data, columns=self.preprocessor.get_feature_names_out()
+            processed_data, columns=self._preprocessor.get_feature_names_out()
         )
-        self.final_features = self.preprocessed_df.columns.tolist()  # Update final_features
+        self._final_features = self.preprocessed_df.columns.tolist()  # Update final_features
 
         return processed_data
 
@@ -382,7 +399,7 @@ class AutoencoderFeatureSelector:
         selector = VarianceThreshold(threshold=self.variance_threshold)
         reduced_data = selector.fit_transform(processed_data)
         LOG.info("\n##########\nDropped Features with Low Variance.")
-        self.final_features = [f for f, s in zip(self.final_features, selector.get_support()) if
+        self._final_features = [f for f, s in zip(self._final_features, selector.get_support()) if
                                s]  # Update final_features
         return reduced_data, selector.get_support()
 
@@ -410,7 +427,7 @@ class AutoencoderFeatureSelector:
         to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
         LOG.info("\n##########\nDropped Features with High Correlation.")
         LOG.info(to_drop)
-        self.final_features = [f for i, f in enumerate(self.final_features) if
+        self._final_features = [f for i, f in enumerate(self._final_features) if
                                i not in to_drop]  # Update final_features
         return np.delete(data, to_drop, axis=1), to_drop
 
@@ -512,24 +529,24 @@ class AutoencoderFeatureSelector:
         list
             selected features based on importance scores.
         """
-        raw_schema = self.prepare_schema(self.df_orig, raw_schema_path)
+        raw_schema = self.prepare_schema(self._df_orig, raw_schema_path)
         processed_data = self.preprocess_data()
         processed_data, _ = self.remove_low_variance(processed_data)
         processed_data, _ = self.remove_high_correlation(processed_data)
 
         if perform_ablation:
-            feature_scores = self.feature_importance_evaluation(self.preprocessed_df[self.final_features])
+            feature_scores = self.feature_importance_evaluation(self.preprocessed_df[self._final_features])
             sorted_features = sorted(feature_scores, key=feature_scores.get, reverse=True)
             selected_features = sorted_features[: min(k_max, len(sorted_features))]
             final_features = selected_features[: max(k_min, len(selected_features))]
             final_feature_names = [
                 f
-                for i, f in enumerate(self.preprocessor.get_feature_names_out())
+                for i, f in enumerate(self._preprocessor.get_feature_names_out())
                 if i in final_features
             ]
             final_feature_names = self.print_report(final_feature_names)
         else:
-            final_feature_names = self.final_features[: max(k_min, len(self.final_features))]
+            final_feature_names = self._final_features[: max(k_min, len(self._final_features))]
 
         preproc_schema = self.prepare_schema(
             self.df[final_feature_names], preprocess_schema_path
