@@ -221,22 +221,21 @@ In the above the `needed_columns` were provided to as an argument to the `stage`
 
 ## Predicting Fraudulent Emails with Accelerated Machine Learning
 
-Now we'll use the `RecipientFeaturesStage` that we just made in a real-world pipeline to detect fraudulent emails. The pipeline we will be building makes use of the `TritonInferenceStage` which is a pre-defined Morpheus stage designed to support the execution of Natural Language Processing (NLP) models via NVIDIA's [Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server). NVIDIA Triton Inference Server allows for GPU accelerated ML/DL and seamless co-location and execution of a wide variety of model frameworks. For our application, we will be using the `phishing-bert-onnx` model, which is included with Morpheus in the `models/triton-model-repo/` directory.
+Now we'll use the `RecipientFeaturesStage` that we just made in a real-world pipeline to detect fraudulent emails. The pipeline we will be building makes use of the `TritonInferenceStage` which is a pre-defined Morpheus stage designed to support the execution of Natural Language Processing (NLP) models via NVIDIA's [Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server). NVIDIA Triton Inference Server allows for GPU accelerated ML/DL and seamless co-location and execution of a wide variety of model frameworks. For our application, we will be using the `phishing-bert-onnx` model, which is included with Morpheus models Docker container as well as in the `models/triton-model-repo/phishing-bert-onnx` directory.
 
 It's important to note here that Triton is a service that is external to the Morpheus pipeline and often will not reside on the same machine as the rest of the pipeline. The `TritonInferenceStage` will use HTTP and [gRPC](https://grpc.io/) network protocols to allow us to interact with the machine learning models that are hosted by the Triton server.
 
 ### Launching Triton
 
-Triton will need to be running while we execute our pipeline. For simplicity, we will launch it locally inside of a Docker container.
+Triton will need to be running while we execute our pipeline. For simplicity, we will be using the Morpheus models container which includes both Trtion and the Morpheus models.
 
 > **Note**: This step assumes you have both [Docker](https://docs.docker.com/engine/install/) and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#installation-guide) installed.
 
-From the root of the Morpheus project we will launch a Triton Docker container with the `models` directory mounted into the container:
+We will launch a Triton Docker container with:
 
 ```shell
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-  -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:23.06-py3 \
+  nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \

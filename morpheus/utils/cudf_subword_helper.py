@@ -150,6 +150,13 @@ def tokenize_text_series(vocab_hash_file: str,
     max_rows_tensor = len(text_ser) * 2
     max_length = seq_len
 
+    # Preflight check to ensure that the input strings are not too long
+    if not truncation:
+        max_value_length = text_ser.str.len().max()
+        if max_value_length > max_length:
+            raise ValueError(
+                f"Input strings are too long ({max_value_length}) to be tokenized without truncation seq_len={seq_len}")
+
     # Call the tokenizer
     tokenizer_output = tokenizer(text_ser,
                                  max_length=max_length,

@@ -98,10 +98,10 @@ Before running the pipeline, we need obtain service API keys for the following s
 
 ### Ensure that LFS files are downloaded
 
-To retrieve models from LFS run the following:
+To retrieve datasets from LFS run the following:
 
 ```bash
-./scripts/fetch_data.py fetch models
+./scripts/fetch_data.py fetch datasets
 ```
 
 ### Obtain an OpenAI API or NGC API Key

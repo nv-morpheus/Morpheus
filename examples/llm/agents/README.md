@@ -161,7 +161,7 @@ The Kafka Example in the Morpheus LLM Agents demonstrates an streaming implement
 facilitate the near real-time processing of LLM queries. This example is similar to the Simple example but makes use of
 a KafkaSourceStage to stream and retrieve messages from the Kafka topic
 
-First, to run the Kafka example, you need to create a Kafka cluster that enables the persistent pipeline to accept queries for the LLM agents. You can create the Kafka cluster using the following guide: [Quick Launch Kafka Cluster Guide](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/developer_guide/contributing.md#quick-launch-kafka-cluster)
+First, to run the Kafka example, you need to create a Kafka cluster that enables the persistent pipeline to accept queries for the LLM agents. You can create the Kafka cluster using the following guide: [Quick Launch Kafka Cluster Guide](../../../docs/source/developer_guide/contributing.md#quick-launch-kafka-cluster)
 
 Once the Kafka cluster is running, create Kafka topic to produce input to the pipeline.
 
