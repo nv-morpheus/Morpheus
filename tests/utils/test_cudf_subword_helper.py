@@ -44,11 +44,10 @@ def test_needs_trunc_error(bert_cased_hash: str, seq_length: int, do_lower_case:
     stride = (seq_length // 2) + (seq_length // 4)
 
     with pytest.raises(ValueError):
-        tokenized = tokenize_text_series(vocab_hash_file=bert_cased_hash,
-                                         do_lower_case=do_lower_case,
-                                         text_ser=series,
-                                         seq_len=seq_length,
-                                         truncation=False,
-                                         stride=stride,
-                                         add_special_tokens=add_special_tokens)
-        print(tokenized.segment_ids)
+        tokenize_text_series(vocab_hash_file=bert_cased_hash,
+                             do_lower_case=do_lower_case,
+                             text_ser=series,
+                             seq_len=seq_length,
+                             truncation=False,
+                             stride=stride,
+                             add_special_tokens=add_special_tokens)
