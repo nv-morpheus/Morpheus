@@ -37,11 +37,6 @@ LINUX_VER=${LINUX_VER:-22.04}
 MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-"OFF"}
 PYTHON_VER=${PYTHON_VER:-3.10}
 
-# Build args needed for the release build
-GIT_URL=${GIT_URL:-""}
-GIT_BRANCH=${GIT_BRANCH:-""}
-GIT_COMMIT=${GIT_COMMIT:-""}
-
 # Determine the relative path from $PWD to $MORPHEUS_ROOT
 MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST:-"$(realpath --relative-to=${PWD} ${MORPHEUS_ROOT})"}
 
@@ -58,8 +53,6 @@ DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST}
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg PYTHON_VER=${PYTHON_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg GIT_URL=${GIT_URL}"
-DOCKER_ARGS="${DOCKER_ARGS} --build-arg GIT_BRANCH=${GIT_BRANCH}"
-DOCKER_ARGS="${DOCKER_ARGS} --build-arg GIT_COMMIT=${GIT_COMMIT}"
 DOCKER_ARGS="${DOCKER_ARGS} --network=host"
 
 # Last add any extra args (duplicates override earlier ones)

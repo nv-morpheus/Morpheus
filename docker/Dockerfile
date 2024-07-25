@@ -60,11 +60,6 @@ ARG MORPHEUS_ROOT_HOST=.
 # Supply a channel alias to use for conda. This is needed if the conda channels go down
 ARG CONDA_CHANNEL_ALIAS="https://conda.anaconda.org"
 
-# Git arguments used for the release build
-ARG GIT_URL=""
-ARG GIT_BRANCH=""
-ARG GIT_COMMIT=""
-
 # ============ Stage: base ============
 # Configure the base conda environment
 FROM ${FROM_IMAGE}:${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}.${CUDA_REV_VER}-base-${LINUX_DISTRO}${LINUX_VER} AS base
@@ -297,14 +292,9 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
 # unintentionally including build artifacts or other files that shouldn't be in the final image
 FROM conda_env_dev as git_clone
 
-ARG GIT_URL
-ARG GIT_BRANCH
-ARG GIT_COMMIT
-
 RUN source activate morpheus &&\
-    git clone --branch ${GIT_BRANCH} ${GIT_URL} /tmp/morpheus_repo &&\
+    git clone file://${MORPHEUS_ROOT_HOST} /tmp/morpheus_repo &&\
     cd /tmp/morpheus_repo &&\
-    git checkout ${GIT_COMMIT} &&\
     git lfs install &&\
     /tmp/morpheus_repo/scripts/fetch_data.py fetch datasets examples
 

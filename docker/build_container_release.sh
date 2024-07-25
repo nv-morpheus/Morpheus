@@ -24,13 +24,6 @@ export DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"nvcr.io/nvidia/morpheus/morpheus"
 export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"$(git describe --tags --abbrev=0)-runtime"}
 export DOCKER_TARGET=${DOCKER_TARGET:-"runtime"}
 
-export GIT_URL=${GIT_URL:-$(git remote get-url origin)}
-
-# Ensure we have an https url
-GIT_URL=$(echo $url | sed -e 's|^git@github\.com:|https://github.com/|')
-export GIT_BRANCH=$(git branch --show-current)
-export GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
-
 popd &> /dev/null
 
 # Call the general build script
