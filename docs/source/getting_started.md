@@ -67,7 +67,7 @@ Note about some of the flags above:
 | Flag | Description |
 | ---- | ----------- |
 | `--runtime=nvidia` | Choose the NVIDIA docker runtime, this enables access to the GPU inside the container. This flag isn't needed if the `nvidia` runtime is already set as the default runtime for Docker. |
-| `--gpus=all` | Specify which GPUs the container has access to.  Alternately, a specific GPU could be chosen with `--gpus=<gpu-id>` |
+| `--gpus=all` | Specify which GPUs the container has access to. Alternately, a specific GPU could be chosen with `--gpus=<gpu-id>` |
 | `--net=host` | Most of the Morpheus pipelines utilize [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver), which will be running in another container. For simplicity we will give the container access to the host system's network, production deployments may opt for an explicit network configuration. |
 | `-v /var/run/docker.sock:/var/run/docker.sock` | Enables access to the Docker socket file from within the running container, this allows launching other Docker containers from within the Morpheus container. This flag is required for launching Triton with access to the included Morpheus models, users with their own models can omit this. |
 

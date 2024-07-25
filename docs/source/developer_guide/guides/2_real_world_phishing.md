@@ -227,7 +227,7 @@ It's important to note here that Triton is a service that is external to the Mor
 
 ### Launching Triton
 
-Triton will need to be running while we execute our pipeline. For simplicity, we will be using the Morpheus models container which includes both Trtion and the Morpheus models.
+Triton will need to be running while we execute our pipeline. For simplicity, we will be using the Morpheus models container which includes both Triton and the Morpheus models.
 
 > **Note**: This step assumes you have both [Docker](https://docs.docker.com/engine/install/) and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#installation-guide) installed.
 
