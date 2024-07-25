@@ -17,7 +17,7 @@ limitations under the License.
 
 # Morpheus Devcontainer
 
-The Morpheus devcontainer is provided as a quick-to-set-up development and exploration environment for use with [Visual Studio Code](https://code.visualstudio.com) (Code). The devcontainer is a lightweight container which mounts-in a conda environment with cached packages, alleviating long conda download times on subsequent launches. It provides a simple framework for adding developer-centric [scripts](#scripts), and incorperates some helpful Code plugins, such as clangd and cmake support.
+The Morpheus devcontainer is provided as a quick-to-set-up development and exploration environment for use with [Visual Studio Code](https://code.visualstudio.com) (Code). The devcontainer is a lightweight container which mounts-in a conda environment with cached packages, alleviating long conda download times on subsequent launches. It provides a simple framework for adding developer-centric [scripts](#development-scripts), and incorperates some helpful Code plugins, such as clangd and cmake support.
 
 More information about devcontainers can be found at [containers.dev](https://containers.dev/).
 
