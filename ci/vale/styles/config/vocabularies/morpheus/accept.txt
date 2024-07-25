@@ -11,10 +11,12 @@ Dask
 Databricks
 [Dd]eserialize
 Dev
+glog
 GPU(s?)
 Grafana
 [Hh]ashable
 [Ii]nferencing
+libcudf
 LLM(s?)
 Milvus
 [Mm]ixin
@@ -31,6 +33,7 @@ PDF(s?)
 [Pp]reprocess
 [Pp]retrained
 [Rr]epo
+[Ss]erializable
 [Ss]ubclassing
 [Ss]ubgraph(s?)
 [Ss]ubword(s?)
