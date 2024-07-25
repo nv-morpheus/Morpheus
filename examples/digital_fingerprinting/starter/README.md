@@ -22,7 +22,7 @@ We show here how to set up and run the DFP pipeline for three log types: CloudTr
 
 ## Environment Setup
 
-Follow the instructions [here](https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/docs/source/developer_guide/contributing.md) to set up your development environment in either a Docker container or conda environment.
+Follow the instructions [here](../../../docs/source/developer_guide/contributing.md) to set up your development environment in either a Docker container or conda environment.
 
 ## Morpheus CLI
 

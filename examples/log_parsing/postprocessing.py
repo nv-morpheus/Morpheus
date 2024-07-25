@@ -19,7 +19,6 @@ import warnings
 from collections import defaultdict
 
 import mrc
-import numpy as np
 import pandas as pd
 from mrc.core import operators as ops
 
@@ -102,22 +101,18 @@ class LogParsingPostProcessingStage(SinglePortStage):
         parsed_dfs = infer_pdf.apply(lambda row: self.__get_label_dicts(row), axis=1, result_type="expand")
 
         ext_parsed = pd.DataFrame(parsed_dfs[0].tolist())
-        ext_confidence = pd.DataFrame(parsed_dfs[1].tolist())
         parsed_df = pd.DataFrame()
-        confidence_df = pd.DataFrame()
-        ext_confidence = ext_confidence.applymap(np.mean)
         for label in ext_parsed.columns:
             if label[0] == "B":
                 col_name = label[2:]
                 if "I-" + col_name in ext_parsed.columns:
                     parsed_df[col_name] = ext_parsed[label] + " " + ext_parsed["I-" + col_name].fillna('')
-                    confidence_df[col_name] = (ext_confidence[label] + ext_confidence[label]) / 2
                 else:
                     parsed_df[col_name] = ext_parsed[label]
-                    confidence_df[col_name] = ext_confidence[label]
 
         # decode cleanup
         parsed_df = self.__decode_cleanup(parsed_df)
+        parsed_df["doc"] = parsed_dfs.index
         return MessageMeta(df=cudf.DataFrame.from_pandas(parsed_df))
 
     def __get_label_dicts(self, row):
