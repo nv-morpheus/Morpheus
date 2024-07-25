@@ -30,7 +30,7 @@ from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.seed import manual_seed
 
@@ -124,7 +124,7 @@ class _UserModelManager:
 
 
 @register_stage("train-ae", modes=[PipelineModes.AE])
-class TrainAEStage(MultiMessageStage):
+class TrainAEStage(ControlMessageStage):
     """
     Train an Autoencoder model on incoming data.
 

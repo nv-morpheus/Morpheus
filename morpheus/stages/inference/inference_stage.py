@@ -25,7 +25,7 @@ import morpheus._lib.messages as _messages
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
@@ -124,7 +124,7 @@ class InferenceWorker:
         pass
 
 
-class InferenceStage(MultiMessageStage):
+class InferenceStage(ControlMessageStage):
     """
     This class serves as the base for any inference stage. Inference stages operate differently than other
     stages due to the fact that they operate in a separate thread and have their own batch size which is

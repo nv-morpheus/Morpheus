@@ -29,7 +29,7 @@ def _get_time_ms():
 
 
 # TODO(Yuchen): rename this stage
-class MultiMessageStage(_pipeline.SinglePortStage):
+class ControlMessageStage(_pipeline.SinglePortStage):
     """
     Subclass of SinglePortStage with option to log timestamps in MessageMeta dataframe.
 
@@ -62,7 +62,7 @@ class MultiMessageStage(_pipeline.SinglePortStage):
 
                 curr_time = _get_time_ms()
 
-                message.set_metadata("_ts_" + cached_name, str(curr_time))
+                message.set_timestamp("_ts_" + cached_name, str(curr_time))
 
                 # Must return the original object
                 return message

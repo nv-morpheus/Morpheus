@@ -781,24 +781,15 @@ class TritonInferenceStage(InferenceStage):
                                      needs_logits=self._needs_logits)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        if self._schema.input_type == ControlMessage:
-            return _stages.InferenceClientStageCM(builder,
-                                                  self.unique_name,
-                                                  self._server_url,
-                                                  self._model_name,
-                                                  self._needs_logits,
-                                                  self._force_convert_inputs,
-                                                  self._input_mapping,
-                                                  self._output_mapping)
+        return _stages.InferenceClientStage(builder,
+                                                self.unique_name,
+                                                self._server_url,
+                                                self._model_name,
+                                                self._needs_logits,
+                                                self._force_convert_inputs,
+                                                self._input_mapping,
+                                                self._output_mapping)
 
-        return _stages.InferenceClientStageMM(builder,
-                                              self.unique_name,
-                                              self._server_url,
-                                              self._model_name,
-                                              self._needs_logits,
-                                              self._force_convert_inputs,
-                                              self._input_mapping,
-                                              self._output_mapping)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = super()._build_single(builder, input_node)

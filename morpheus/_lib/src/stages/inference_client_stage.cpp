@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES.
+ * All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,31 +50,12 @@ namespace {
 
 using namespace morpheus;
 
-static ShapeType get_seq_ids(const std::shared_ptr<MultiInferenceMessage>& message)
-{
-    // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
-    // The output tensors we store in `reponse_memory` will all be of the same length as the the
-    // dataframe. seq_ids has three columns, but we are only interested in the first column.
-    auto seq_ids         = message->get_input("seq_ids");
-    const auto item_size = seq_ids.dtype().item_size();
-
-    ShapeType host_seq_ids(message->count);
-    MRC_CHECK_CUDA(cudaMemcpy2D(host_seq_ids.data(),
-                                item_size,
-                                seq_ids.data(),
-                                seq_ids.stride(0) * item_size,
-                                item_size,
-                                host_seq_ids.size(),
-                                cudaMemcpyDeviceToHost));
-
-    return host_seq_ids;
-}
-
 static ShapeType get_seq_ids(const std::shared_ptr<ControlMessage>& message)
 {
-    // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
-    // The output tensors we store in `reponse_memory` will all be of the same length as the the
-    // dataframe. seq_ids has three columns, but we are only interested in the first column.
+    // Take a copy of the sequence Ids allowing us to map rows in the response to
+    // rows in the dataframe The output tensors we store in `reponse_memory` will
+    // all be of the same length as the the dataframe. seq_ids has three columns,
+    // but we are only interested in the first column.
     auto seq_ids         = message->tensors()->get_tensor("seq_ids");
     const auto item_size = seq_ids.dtype().item_size();
 
@@ -90,55 +71,14 @@ static ShapeType get_seq_ids(const std::shared_ptr<ControlMessage>& message)
     return host_seq_ids;
 }
 
-static bool has_tensor(std::shared_ptr<MultiInferenceMessage> message, std::string const& tensor_name)
-{
-    return message->memory->has_tensor(tensor_name);
-}
-
 static bool has_tensor(std::shared_ptr<ControlMessage> message, std::string const& tensor_name)
 {
     return message->tensors()->has_tensor(tensor_name);
 }
 
-static TensorObject get_tensor(std::shared_ptr<MultiInferenceMessage> message, std::string const& tensor_name)
-{
-    return message->get_input(tensor_name);
-}
-
 static TensorObject get_tensor(std::shared_ptr<ControlMessage> message, std::string const& tensor_name)
 {
     return message->tensors()->get_tensor(tensor_name);
-}
-
-static void reduce_outputs(std::shared_ptr<MultiInferenceMessage> const& message, TensorMap& output_tensors)
-{
-    if (message->mess_count == message->count)
-    {
-        return;
-    }
-
-    // When our tensor lengths are longer than our dataframe we will need to use the seq_ids array to
-    // lookup how the values should map back into the dataframe.
-    auto host_seq_ids = get_seq_ids(message);
-
-    for (auto& mapping : output_tensors)
-    {
-        auto& output_tensor = mapping.second;
-
-        ShapeType shape  = output_tensor.get_shape();
-        ShapeType stride = output_tensor.get_stride();
-
-        ShapeType reduced_shape{shape};
-        reduced_shape[0] = message->mess_count;
-
-        auto reduced_buffer = MatxUtil::reduce_max(
-            DevMemInfo{output_tensor.data(), output_tensor.dtype(), output_tensor.get_memory(), shape, stride},
-            host_seq_ids,
-            0,
-            reduced_shape);
-
-        output_tensor.swap(Tensor::create(std::move(reduced_buffer), output_tensor.dtype(), reduced_shape, stride, 0));
-    }
 }
 
 static void reduce_outputs(std::shared_ptr<ControlMessage> const& message, TensorMap& output_tensors)
@@ -148,8 +88,9 @@ static void reduce_outputs(std::shared_ptr<ControlMessage> const& message, Tenso
         return;
     }
 
-    // When our tensor lengths are longer than our dataframe we will need to use the seq_ids array to
-    // lookup how the values should map back into the dataframe.
+    // When our tensor lengths are longer than our dataframe we will need to use
+    // the seq_ids array to lookup how the values should map back into the
+    // dataframe.
     auto host_seq_ids = get_seq_ids(message);
 
     for (auto& mapping : output_tensors)
@@ -193,12 +134,11 @@ static void apply_logits(TensorMap& output_tensors)
 
 namespace morpheus {
 
-template <typename InputT, typename OutputT>
-InferenceClientStage<InputT, OutputT>::InferenceClientStage(std::unique_ptr<IInferenceClient>&& client,
-                                                            std::string model_name,
-                                                            bool needs_logits,
-                                                            std::vector<TensorModelMapping> input_mapping,
-                                                            std::vector<TensorModelMapping> output_mapping) :
+InferenceClientStage::InferenceClientStage(std::unique_ptr<IInferenceClient>&& client,
+                                           std::string model_name,
+                                           bool needs_logits,
+                                           std::vector<TensorModelMapping> input_mapping,
+                                           std::vector<TensorModelMapping> output_mapping) :
   m_model_name(std::move(model_name)),
   m_client(std::move(client)),
   m_needs_logits(needs_logits),
@@ -250,9 +190,9 @@ static std::shared_ptr<ControlMessage> make_response(std::shared_ptr<ControlMess
     return message;
 }
 
-template <typename InputT, typename OutputT>
-mrc::coroutines::AsyncGenerator<std::shared_ptr<OutputT>> InferenceClientStage<InputT, OutputT>::on_data(
-    std::shared_ptr<InputT>&& message, std::shared_ptr<mrc::coroutines::Scheduler> on)
+
+mrc::coroutines::AsyncGenerator<std::shared_ptr<ControlMessage>> InferenceClientStage::on_data(
+    std::shared_ptr<ControlMessage>&& message, std::shared_ptr<mrc::coroutines::Scheduler> on)
 {
     int32_t retry_count = 0;
 
@@ -266,11 +206,12 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<OutputT>> InferenceClientStage<I
 
         try
         {
-            // Using the `count` which is the number of rows in the inference tensors. We will check later if this
-            // doesn't match the number of rows in the dataframe (`mess_count`). This happens when the size of the
-            // input is too large and needs to be broken up in chunks in the pre-process stage. When this is the
-            // case we will reduce the rows in the response outputs such that we have a single response for each
-            // row int he dataframe.
+            // Using the `count` which is the number of rows in the inference tensors.
+            // We will check later if this doesn't match the number of rows in the
+            // dataframe (`mess_count`). This happens when the size of the input is
+            // too large and needs to be broken up in chunks in the pre-process stage.
+            // When this is the case we will reduce the rows in the response outputs
+            // such that we have a single response for each row int he dataframe.
             // TensorMap output_tensors;
             // buffer_map_t output_buffers;
 
@@ -286,9 +227,10 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<OutputT>> InferenceClientStage<I
                 message_session = m_session;
             }
 
-            // We want to prevent entering this section of code if the session is being reset, but we also want this
-            // section of code to be entered simultanously by multiple coroutines. To accomplish this, we use a shared
-            // lock instead of a unique lock.
+            // We want to prevent entering this section of code if the session is
+            // being reset, but we also want this section of code to be entered
+            // simultanously by multiple coroutines. To accomplish this, we use a
+            // shared lock instead of a unique lock.
 
             TensorMap model_input_tensors;
 
@@ -351,7 +293,8 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<OutputT>> InferenceClientStage<I
                 throw;
             }
 
-            LOG(WARNING) << "Exception while processing message for InferenceClientStage, attempting retry. ex.what(): "
+            LOG(WARNING) << "Exception while processing message for "
+                            "InferenceClientStage, attempting retry. ex.what(): "
                          << ex.what();
         } catch (...)
         {
@@ -367,7 +310,8 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<OutputT>> InferenceClientStage<I
                 throw;
             }
 
-            LOG(WARNING) << "Exception while processing message for InferenceClientStage, attempting retry.";
+            LOG(WARNING) << "Exception while processing message for "
+                            "InferenceClientStage, attempting retry.";
         }
 
         co_await backoff.yield();
@@ -375,8 +319,8 @@ mrc::coroutines::AsyncGenerator<std::shared_ptr<OutputT>> InferenceClientStage<I
 }
 
 // ************ InferenceClientStageInterfaceProxy********* //
-std::shared_ptr<mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>>
-InferenceClientStageInterfaceProxy::init_mm(mrc::segment::Builder& builder,
+std::shared_ptr<mrc::segment::Object<InferenceClientStage>>
+InferenceClientStageInterfaceProxy::init(mrc::segment::Builder& builder,
                                             const std::string& name,
                                             std::string server_url,
                                             std::string model_name,
@@ -401,46 +345,10 @@ InferenceClientStageInterfaceProxy::init_mm(mrc::segment::Builder& builder,
     auto triton_client = std::make_unique<HttpTritonClient>(server_url);
     auto triton_inference_client =
         std::make_unique<TritonInferenceClient>(std::move(triton_client), model_name, force_convert_inputs);
-    auto stage = builder.construct_object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>(
+    auto stage = builder.construct_object<InferenceClientStage>(
         name, std::move(triton_inference_client), model_name, needs_logits, input_mappings_, output_mappings_);
 
     return stage;
 }
-
-// ************ InferenceClientStageInterfaceProxy********* //
-std::shared_ptr<mrc::segment::Object<InferenceClientStage<ControlMessage, ControlMessage>>>
-InferenceClientStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
-                                            const std::string& name,
-                                            std::string server_url,
-                                            std::string model_name,
-                                            bool needs_logits,
-                                            bool force_convert_inputs,
-                                            std::map<std::string, std::string> input_mappings,
-                                            std::map<std::string, std::string> output_mappings)
-{
-    std::vector<TensorModelMapping> input_mappings_{};
-    std::vector<TensorModelMapping> output_mappings_{};
-
-    for (auto& mapping : input_mappings)
-    {
-        input_mappings_.emplace_back(TensorModelMapping{mapping.first, mapping.second});
-    }
-
-    for (auto& mapping : output_mappings)
-    {
-        output_mappings_.emplace_back(TensorModelMapping{mapping.first, mapping.second});
-    }
-
-    auto triton_client = std::make_unique<HttpTritonClient>(server_url);
-    auto triton_inference_client =
-        std::make_unique<TritonInferenceClient>(std::move(triton_client), model_name, force_convert_inputs);
-    auto stage = builder.construct_object<InferenceClientStage<ControlMessage, ControlMessage>>(
-        name, std::move(triton_inference_client), model_name, needs_logits, input_mappings_, output_mappings_);
-
-    return stage;
-}
-
-template class InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>;
-template class InferenceClientStage<ControlMessage, ControlMessage>;
 
 }  // namespace morpheus

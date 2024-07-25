@@ -148,26 +148,12 @@ PYBIND11_MODULE(stages, _module)
              py::arg("filter_source"),
              py::arg("field_name") = "probs");
 
-    py::class_<
-        mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>,
-        mrc::segment::ObjectProperties,
-        std::shared_ptr<mrc::segment::Object<InferenceClientStage<MultiInferenceMessage, MultiResponseMessage>>>>(
-        _module, "InferenceClientStageMM", py::multiple_inheritance())
-        .def(py::init<>(&InferenceClientStageInterfaceProxy::init_mm),
-             py::arg("builder"),
-             py::arg("name"),
-             py::arg("server_url"),
-             py::arg("model_name"),
-             py::arg("needs_logits"),
-             py::arg("force_convert_inputs"),
-             py::arg("input_mapping")  = py::dict(),
-             py::arg("output_mapping") = py::dict());
 
-    py::class_<mrc::segment::Object<InferenceClientStage<ControlMessage, ControlMessage>>,
+    py::class_<mrc::segment::Object<InferenceClientStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<InferenceClientStage<ControlMessage, ControlMessage>>>>(
-        _module, "InferenceClientStageCM", py::multiple_inheritance())
-        .def(py::init<>(&InferenceClientStageInterfaceProxy::init_cm),
+               std::shared_ptr<mrc::segment::Object<InferenceClientStage>>>(
+        _module, "InferenceClientStage", py::multiple_inheritance())
+        .def(py::init<>(&InferenceClientStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
              py::arg("server_url"),

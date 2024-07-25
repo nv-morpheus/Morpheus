@@ -124,51 +124,8 @@ def test_join(config):
         worker.join.assert_awaited_once()
 
 
-# def test_split_batches():
-#     seq_ids = cp.zeros((10, 1))
-#     seq_ids[2][0] = 15
-#     seq_ids[6][0] = 16
-
-#     mock_message = mock.MagicMock()
-#     mock_message.get_input.return_value = seq_ids
-
-#     out_resp = InferenceStageT._split_batches(mock_message, 5)
-#     assert len(out_resp) == 3
-
-#     assert mock_message.get_slice.call_count == 3
-#     mock_message.get_slice.assert_has_calls([mock.call(0, 3), mock.call(3, 7), mock.call(7, 10)])
-
-
 @pytest.mark.use_python
 def test_convert_one_response():
-    # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
-    # pylint: disable=no-member
-
-    # Test MultiMessage
-    # Test first branch where `inf.mess_count == inf.count`
-    mem = ResponseMemory(count=4, tensors={"probs": cp.zeros((4, 3))})
-
-    inf = _mk_multi_message(mess_count=4, count=4)
-    res = ResponseMemory(count=4, tensors={"probs": cp.random.rand(4, 3)})
-
-    mpm = InferenceStageT._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res)
-    assert mpm.meta == inf.meta
-    assert mpm.mess_offset == 0
-    assert mpm.mess_count == 4
-    assert mpm.offset == 0
-    assert mpm.count == 4
-    assert cp.all(mem.get_output('probs') == res.get_output("probs"))
-
-    # Test for the second branch
-    inf = _mk_multi_message(mess_count=3, count=3)
-    inf.memory.set_tensor("seq_ids", cp.array([[0], [1], [1]]))
-    inf.mess_count = 2  # Get around the consistency check
-    res = ResponseMemory(count=3, tensors={"probs": cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]])})
-
-    mem = ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 3))})
-    mpm = InferenceStageT._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res)
-    assert mem.get_output('probs').tolist() == [[0, 0.6, 0.7], [5.6, 6.7, 9.2]]
-
     # Test ControlMessage
     # Test first branch where `inf.mess_count == inf.count`
     mem = _messages.ResponseMemory(count=4, tensors={"probs": cp.zeros((4, 3))})
@@ -198,9 +155,9 @@ def test_convert_one_response():
 
 
 def test_convert_one_response_error():
-    mem = ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 2))})
-    inf = _mk_multi_message(mess_count=2, count=2)
-    res = _mk_multi_message(mess_count=1, count=1)
+    inf = _mk_control_message(mess_count=2, count=2)
+    res = _mk_control_message(mess_count=1, count=1)
+    output = inf
 
     with pytest.raises(AssertionError):
-        InferenceStageT._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res.memory)
+        InferenceStageT._convert_one_response(output, inf, res.tensors())

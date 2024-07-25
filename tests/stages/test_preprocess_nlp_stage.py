@@ -26,7 +26,6 @@ import cudf
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 
@@ -64,7 +63,6 @@ def test_constructor(config: Config):
     assert stage._add_special_tokens is False
 
     accepted_union = typing.Union[stage.accepted_types()]
-    assert typing_utils.issubtype(MultiMessage, accepted_union)
     assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 

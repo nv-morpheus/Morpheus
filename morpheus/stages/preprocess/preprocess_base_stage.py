@@ -20,11 +20,11 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
 
 
-class PreprocessBaseStage(MultiMessageStage):
+class PreprocessBaseStage(ControlMessageStage):
     """
     This is a base pre-processing class holding general functionality for all preprocessing stages.
 
