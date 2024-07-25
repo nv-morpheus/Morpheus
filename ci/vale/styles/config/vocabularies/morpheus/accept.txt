@@ -17,12 +17,16 @@ GPU(s?)
 Grafana
 [Hh]ashable
 [Ii]nferencing
+
+# libcudf isn't styled in the way that cuDF is https://docs.rapids.ai/api/libcudf/stable/
 libcudf
 LLM(s?)
 Milvus
 [Mm]ixin
 MLflow
 Morpheus
+
+# Allow for possessive form ex: "... using MRC's PythonNode class"
 MRC's
 [Nn]amespace(s?)
 NeMo
