@@ -250,7 +250,7 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `-f`, `--input_file` | TEXT | List of files to process. Can specify multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. Refer to [`fsspec` documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
 | `--watch_inputs` | FLAG | Instructs the pipeline to continuously check the paths specified by `--input_file` for new files. This assumes that the at least one paths contains a wildcard. |
 | `--watch_interval` | FLOAT | Amount of time, in seconds, to wait between checks for new files. Only used if --watch_inputs is set. [default `1.0`] |
-| `--tracking_uri` | TEXT | The MLflow tracking URI to connect to the tracking backend. [default: `http://localhost:5000`] |
+| `--tracking_uri` | TEXT | The MLflow tracking URI to connect to. [default: `http://localhost:5000`] |
 | `--help` | | Show this message and exit. |
 
 
@@ -309,7 +309,7 @@ docker compose up mlflow
 * [Kubernetes](https://kubernetes.io/) cluster configured with GPU resources​
 * [NVIDIA GPU Operator](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/gpu-operator) installed in the cluster
 
-> **Note:**  For GPU Requirements refer to [getting_started](../../getting_started.md#requirements)
+> **Note:**  For GPU Requirements refer to the [Getting Started](../../getting_started.md#requirements) guide.
 
 ## Customizing DFP
 For details on customizing the DFP pipeline refer to [Digital Fingerprinting (DFP) Reference](./6_digital_fingerprinting_reference.md).
