@@ -37,6 +37,22 @@ Sym links are used to minimize changes to the `config.pbtxt` files while still a
 
 The downside of using symlinks is that the entire Morpheus model repo must be volume mounted when launching Triton. Refer to the next section for information on how to correctly mount this repo, and select which models should be loaded.
 
+## Models Container
+The models in this directory are available in a pre-built container image containing Triton Inference Server, along with the models themselves. The container image is available on NGC and can be pulled using the following command:
+```bash
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+```
+
+Those users who are working on training their own models have two options available:
+1) Build the models container locally by running the following command from the root of the Morpheus repo:
+```bash
+./models/docker/build_container.sh
+```
+
+This option is good for users who have a model which has already been trained and is ready for deployment. For more information refer to the [README](./docker/README.md) in the `docker` directory.
+
+2) Using the Triton Docker image directly, and mounting the `models` directory into the container. This option is good for users who are iterating on a single model and do not wish to build the entire container each time. The rest of this document covers using this option.
+
 ## Launching Triton
 
 To launch Triton with one of the models in `triton-model-repo`, this entire repo must be volume mounted into the container. Once the entire repository is mounted, the Triton options: `--model-repository` and `--load-model` can be selectively used to choose which models to load. The following are several examples on launching Triton with different models and different setups:
