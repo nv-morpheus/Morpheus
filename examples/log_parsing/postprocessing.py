@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import json
+import logging
 import pathlib
 import typing
-import warnings
 from collections import defaultdict
 
 import mrc
@@ -31,6 +31,8 @@ from morpheus.messages import MessageMeta
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
+
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_stage("log-postprocess", modes=[PipelineModes.NLP])
@@ -135,7 +137,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
 
                 confidence_dict[self._label_map[label]].append(new_confidence)
             else:
-                warnings.warn(f"Ignoring unexecpected subword token: {text_token}")
+                logger.warning("Ignoring unexecpected subword token: %s", text_token)
 
         return token_dict, confidence_dict
 
