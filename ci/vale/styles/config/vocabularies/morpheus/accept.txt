@@ -22,6 +22,7 @@ Milvus
 [Mm]ixin
 MLflow
 Morpheus
+MRC's
 [Nn]amespace(s?)
 NeMo
 NIC
