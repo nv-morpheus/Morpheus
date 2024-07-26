@@ -164,7 +164,7 @@ There are a number of modules that are used in both the training and inference p
 
 Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_preproc.py`
 
-The `dfp_preproc` module is a functional component within the Morpheus framework that combines multiple data filtering and processing pipeline modules related to inference and training. This module simplifies the pipeline by consolidating various modules into a single, cohesive unit. The `dfp_preproc` module allows for the configuration of parameters such as the cache directory, timestamp column name, pre-filter options, batching options, user splitting options, and supported data loaders for various file types.
+The `dfp_preproc` module is a functional component within the Morpheus framework that combines multiple data filtering and processing pipeline modules related to inference and training. This module simplifies the pipeline by consolidating various modules into a single, cohesive unit. The `dfp_preproc` module supports configuration parameters such as the cache directory, timestamp column name, pre-filter options, batching options, user splitting options, and supported data loaders for various file types.
 
 The module itself consists of a series of chained sub-modules, which are connected in a logical sequence:
 
