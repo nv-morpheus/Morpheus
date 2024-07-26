@@ -53,20 +53,7 @@
 #include <utility>
 #include <vector>
 
-std::size_t get_alloc_size(std::size_t default_size, uint32_t incoming_size, const std::string& buffer_name)
-{
-    if (incoming_size > default_size)
-    {
-        LOG(WARNING) << "RawPacketMessage requires a " << buffer_name << " buffer of size " << incoming_size
-                     << " bytes, but the default allocation size is only " << default_size << " allocating "
-                     << incoming_size;
-
-        return incoming_size;
-    }
-
-    return default_size;
-}
-
+namespace {
 morpheus::doca::PacketDataBuffer concat_packet_buffers(std::size_t ttl_packets,
                                                        std::size_t ttl_header_bytes,
                                                        std::size_t ttl_payload_bytes,
@@ -143,10 +130,10 @@ std::unique_ptr<cudf::column> make_string_col(morpheus::doca::PacketDataBuffer& 
 
 std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::PacketDataBuffer& packet_buffer)
 {
-    // cudf doesn't support uint32, need to cast to int64 remove this once
-    // https://github.com/rapidsai/cudf/issues/16324 is resolved
     const auto num_packets = static_cast<morpheus::TensorIndex>(packet_buffer.m_num_packets);
 
+    // cudf doesn't support uint32, need to cast to int64 remove this once
+    // https://github.com/rapidsai/cudf/issues/16324 is resolved
     auto src_type     = morpheus::DType::create<uint32_t>();
     auto dst_type     = morpheus::DType(morpheus::TypeId::INT64);
     auto dev_mem_info = morpheus::DevMemInfo(packet_buffer.m_header_buffer, src_type, {num_packets}, {1});
@@ -161,6 +148,7 @@ std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::PacketDataBuffer& pack
 
     return cudf::strings::integers_to_ipv4(src_ip_int_col->view());
 }
+} //namespace
 
 namespace morpheus {
 
@@ -210,8 +198,8 @@ void DocaConvertStage::on_raw_packet_message(sink_type_t raw_msg)
 
     const auto payload_buff_size = doca::gather_sizes(packet_count, pkt_pld_size_list, m_stream_cpp);
 
-    const uint32_t header_buff_size = packet_count * sizeof(uint32_t);
-    const auto sizes_buff_size      = packet_count * sizeof(uint32_t);
+    const auto header_buff_size = packet_count * sizeof(uint32_t);
+    const auto sizes_buff_size  = packet_count * sizeof(uint32_t);
 
     auto packet_buffer =
         doca::PacketDataBuffer(packet_count, header_buff_size, payload_buff_size, sizes_buff_size, m_stream_cpp);

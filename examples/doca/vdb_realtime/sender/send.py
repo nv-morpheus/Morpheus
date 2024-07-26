@@ -38,11 +38,7 @@ def get_data(input_glob: str) -> list[str]:
                 if not content:
                     break
 
-                # TODO: Remove the next two lines prior to merging
-                content_stripped = content.replace('\n', ' ')
-                block = f"{len(data)}: {content_stripped}"
-
-                data.append(block)
+                data.append(content)
 
     return data
 
