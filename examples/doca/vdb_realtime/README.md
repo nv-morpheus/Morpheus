@@ -35,6 +35,12 @@ Start Milvus
 docker compose up -d
 ```
 
+## Fetch the examples data
+
+```bash
+./scripts/fetch_data.py fetch examples
+```
+
 ## Launch Triton Inference Server
 
 To serve the embedding model, we will use Triton:
@@ -42,10 +48,8 @@ To serve the embedding model, we will use Triton:
 ```bash
 cd ${MORPHEUS_ROOT}
 
-# Fetch all models
-./scripts/fetch_data.py fetch models
 # Launch Triton
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:24.01-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model all-MiniLM-L6-v2
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model all-MiniLM-L6-v2
 ```
 
 ## Populate the Milvus database
