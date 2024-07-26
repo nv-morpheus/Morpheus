@@ -174,7 +174,7 @@ DocaConvertStage::subscribe_fn_t DocaConvertStage::build()
         });
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output, &buffer_reader_fiber](sink_type_t x) {
+            [this](sink_type_t x) {
                 this->on_raw_packet_message(x);
             },
             [&](std::exception_ptr error_ptr) {
