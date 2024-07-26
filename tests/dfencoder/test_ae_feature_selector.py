@@ -27,12 +27,12 @@ def sample_data():
     """Fixture to provide the Iris dataset for testing."""
     iris = load_iris()
     data = pd.DataFrame(data=iris.data, columns=iris.feature_names)
-    return data.to_dict(orient='records')
+    return data
 
 
 def test_preprocess_data(sample_data):
     """Test the preprocess_data method."""
-    selector = AutoencoderFeatureSelector(sample_data)
+    selector = AutoencoderFeatureSelector(sample_data.to_dict(orient='records'))
     processed_data = selector.preprocess_data()
     assert isinstance(processed_data, np.ndarray)
     assert processed_data.shape[1] > 0  # Ensure columns exist after preprocessing
@@ -41,7 +41,7 @@ def test_preprocess_data(sample_data):
 def test_remove_low_variance(sample_data):
     """Test removing low variance features."""
     sample_data['low_variance'] = 0
-    selector = AutoencoderFeatureSelector(sample_data, variance_threshold=0.1)
+    selector = AutoencoderFeatureSelector(sample_data.to_dict(orient='records'), variance_threshold=0.1)
     reduced_data, mask = selector.remove_low_variance(sample_data.values)
     assert reduced_data.shape == (150,4)
 
@@ -50,7 +50,7 @@ def test_remove_high_correlation(sample_data):
     """Test removing highly correlated features."""
     sample_data['high_corr_1'] = sample_data['sepal length (cm)'] + 1
     sample_data['high_corr_2'] = 2 * sample_data['sepal length (cm)'] + 1
-    selector = AutoencoderFeatureSelector(sample_data, variance_threshold=0.1)
+    selector = AutoencoderFeatureSelector(sample_data.to_dict(orient='records'), variance_threshold=0.1)
     reduced_data, mask = selector.remove_high_correlation(sample_data.values, threshold=0.99)
     assert reduced_data.shape == (150,4)
     assert mask == [4,5]
@@ -58,7 +58,7 @@ def test_remove_high_correlation(sample_data):
 
 def test_select_features(sample_data):
     """Test the select_features method."""
-    selector = AutoencoderFeatureSelector(sample_data)
+    selector = AutoencoderFeatureSelector(sample_data.to_dict(orient='records'))
     raw_schema, preproc_schema = selector.select_features(k_min=3, k_max=5)
     assert isinstance(raw_schema, dict)
     assert isinstance(preproc_schema, dict)
