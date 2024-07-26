@@ -35,7 +35,7 @@ Adding a new source for the DFP pipeline requires defining five critical pieces:
    * A username or full name  (for example, `"johndoe"` or `"Jane Doe"`)
    * User's LDAP ID number
    * A user group (for example, `"sales"` or `"engineering"`)
-   * Hostname of a machine on the network
+   * Host name of a machine on the network
    * IP address of a client
    * Name of a service (for example, `"DNS"`, `"Customer DB"`, or `"SMTP"`)
 

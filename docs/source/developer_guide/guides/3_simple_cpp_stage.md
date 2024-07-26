@@ -60,14 +60,14 @@ C++ message object declarations can be found in the header files that are locate
 #include <morpheus/messages/meta.hpp>
 ```
 
-Morpheus C++ source stages inherit from MRC's `PythonSource` class:
+Morpheus C++ source stages inherit from the `PythonSource` class from MRC:
 
 ```cpp
 template <typename OutputT, typename ContextT = mrc::runnable::Context>
 class PythonSource  : ...
 ```
 
-The `OutputT` type will be the datatype emitted by this stage. In contrast, general stages and sinks must inherit from MRC's `PythonNode` class, which specifies both receive and emit types:
+The `OutputT` type will be the datatype emitted by this stage. In contrast, general stages and sinks must inherit from the `PythonNode` class from MRC, which specifies both receive and emit types:
 
 ```cpp
 template <typename InputT, typename OutputT, typename ContextT = mrc::runnable::Context>

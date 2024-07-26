@@ -24,8 +24,6 @@ CPython
 Dask
 Databricks
 
-# Allow for the possesive form (ex debugger's source path)
-debugger's
 [Dd]eserialize
 Dev
 [Dd]ocstring(s?)
@@ -34,7 +32,6 @@ GPU(s?)
 Grafana
 [Gg]ranularities
 [Hh]ashable
-[Hh]ostname(s?)
 [Ii]nferencing
 
 # libcudf isn't styled in the way that cuDF is https://docs.rapids.ai/api/libcudf/stable/
@@ -45,8 +42,6 @@ Milvus
 MLflow
 Morpheus
 
-# Allow for possessive form ex: "... using MRC's PythonNode class"
-MRC's
 [Nn]amespace(s?)
 NeMo
 NIC
