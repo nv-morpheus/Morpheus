@@ -40,20 +40,20 @@ def test_preprocess_data(sample_data):
 
 def test_remove_low_variance(sample_data):
     """Test removing low variance features."""
-    selector = AutoencoderFeatureSelector(sample_data)
-    processed_data = selector.preprocess_data()
-    reduced_data, mask = selector.remove_low_variance(processed_data)
-    assert reduced_data.shape[1] <= processed_data.shape[1]
-    assert isinstance(mask, np.ndarray)
+    sample_data['low_variance'] = 0
+    selector = AutoencoderFeatureSelector(sample_data, variance_threshold=0.1)
+    reduced_data, mask = selector.remove_low_variance(sample_data.values)
+    assert reduced_data.shape == (150,4)
 
 
 def test_remove_high_correlation(sample_data):
     """Test removing highly correlated features."""
-    selector = AutoencoderFeatureSelector(sample_data)
-    processed_data = selector.preprocess_data()
-    reduced_data, dropped_cols = selector.remove_high_correlation(processed_data)
-    assert reduced_data.shape[1] <= processed_data.shape[1]
-    assert isinstance(dropped_cols, list)
+    sample_data['high_corr_1'] = sample_data['sepal length (cm)'] + 1
+    sample_data['high_corr_2'] = 2 * sample_data['sepal length (cm)'] + 1
+    selector = AutoencoderFeatureSelector(sample_data, variance_threshold=0.1)
+    reduced_data, mask = selector.remove_high_correlation(sample_data.values, threshold=0.99)
+    assert reduced_data.shape == (150,4)
+    assert mask == [4,5]
 
 
 def test_select_features(sample_data):
