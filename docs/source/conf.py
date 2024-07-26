@@ -192,6 +192,17 @@ suppress_warnings = [
 numpydoc_show_inherited_class_members = True
 numpydoc_class_members_toctree = False
 
+# Config linkcheck
+# Ignore localhost and url prefix fragments
+# Ignore openai.com links, as these always report a 403 when requested by the linkcheck agent
+linkcheck_ignore = [
+    r'http://localhost:\d+/',
+    r'https://localhost:\d+/',
+    r'^http://$',
+    r'^https://$',
+    r'https://(platform\.)?openai.com',
+]
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
