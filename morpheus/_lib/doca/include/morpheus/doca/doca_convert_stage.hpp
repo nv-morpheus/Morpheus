@@ -32,8 +32,8 @@
 
 namespace morpheus {
 
-constexpr std::chrono::milliseconds DEFAULT_MAX_TIME_DELTA = std::chrono::seconds(3);
-constexpr std::size_t DEFAULT_BUFFER_CHANNEL_SIZE          = 1024;
+constexpr std::chrono::milliseconds DefaultMaxTimeDelta = std::chrono::seconds(3);
+constexpr std::size_t DefaultBufferChannelSize          = 1024;
 
 /**
  * @brief Transform DOCA GPUNetIO raw packets into Dataframe for other Morpheus stages.
@@ -51,8 +51,8 @@ class MORPHEUS_EXPORT DocaConvertStage
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    DocaConvertStage(std::chrono::milliseconds max_time_delta = DEFAULT_MAX_TIME_DELTA,
-                     std::size_t buffer_channel_size          = DEFAULT_BUFFER_CHANNEL_SIZE);
+    DocaConvertStage(std::chrono::milliseconds max_time_delta = DefaultMaxTimeDelta,
+                     std::size_t buffer_channel_size          = DefaultBufferChannelSize);
     ~DocaConvertStage() override;
 
   private:
@@ -84,8 +84,8 @@ struct MORPHEUS_EXPORT DocaConvertStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<DocaConvertStage>> init(
         mrc::segment::Builder& builder,
         std::string const& name,
-        std::chrono::milliseconds max_time_delta = DEFAULT_MAX_TIME_DELTA,
-        std::size_t buffer_channel_size          = DEFAULT_BUFFER_CHANNEL_SIZE);
+        std::chrono::milliseconds max_time_delta = DefaultMaxTimeDelta,
+        std::size_t buffer_channel_size          = DefaultBufferChannelSize);
 };
 
 }  // namespace morpheus

@@ -53,8 +53,8 @@ PYBIND11_MODULE(doca, m)
         .def(py::init<>(&DocaConvertStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("max_time_delta")      = DEFAULT_MAX_TIME_DELTA,
-             py::arg("buffer_channel_size") = DEFAULT_BUFFER_CHANNEL_SIZE);
+             py::arg("max_time_delta")      = DefaultMaxTimeDelta,
+             py::arg("buffer_channel_size") = DefaultBufferChannelSize);
 }
 
 }  // namespace morpheus
