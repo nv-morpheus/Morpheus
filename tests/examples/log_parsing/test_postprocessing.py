@@ -107,7 +107,7 @@ def test_undefined_variable_error(caplog: pytest.LogCaptureFixture,
                                                              model_config_path=model_config_file)
 
     post_proc_message = build_post_proc_message(dataset_cudf, log_test_data_dir)
-    post_proc_message.get_tensor('input_ids')[0] = 27716.0
+    post_proc_message.payload().get_tensor('input_ids')[0] = 27716.0
 
     expected_log_re = re.compile(r"^Ignoring unexecpected subword token:.*")
 
