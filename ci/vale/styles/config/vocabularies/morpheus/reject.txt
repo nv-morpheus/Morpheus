@@ -1,0 +1,2 @@
+# List of words to reject. Even though we don't have any words listed this
+# file needs to exitst in order for vale to pick up our accept.txt file
