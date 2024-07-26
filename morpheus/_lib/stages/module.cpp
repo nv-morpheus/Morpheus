@@ -41,9 +41,9 @@
 #include <pybind11/attr.h>             // for multiple_inheritance
 #include <pybind11/pybind11.h>         // for arg, init, class_, module_, overload_cast, overload_...
 #include <pybind11/pytypes.h>          // for none, dict, str_attr
-#include <pybind11/stl/filesystem.h>
-#include <pymrc/utils.hpp>  // for from_import, import
-#include <rxcpp/rx.hpp>     // for trace_activity, decay_t
+#include <pybind11/stl/filesystem.h>   // IWYU pragma: keep
+#include <pymrc/utils.hpp>             // for from_import, import
+#include <rxcpp/rx.hpp>                // for trace_activity, decay_t
 
 #include <filesystem>  // for path
 #include <memory>      // for shared_ptr, allocator
