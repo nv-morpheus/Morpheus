@@ -30,7 +30,7 @@ More advanced users, or those who are interested in using the latest pre-release
 - Volta architecture GPU or better
 - [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-0-download-archive)
 - [Docker](https://docs.docker.com/get-docker/)
-- [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+- [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation)
 - [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `23.06` or higher
 
 > **Note about Docker:**
@@ -57,7 +57,7 @@ More advanced users, or those who are interested in using the latest pre-release
 > Users who want to ensure they are running with the latest bug fixes should use a release image tag (`YY.MM-runtime`). Users who need to deploy a specific version into production should use a point release image tag (`vYY.MM.00-runtime`).
 
 ### Starting the Morpheus Container
-1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) is installed.
+1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation) is installed.
 1. Start the container downloaded from the previous section:
 ```bash
 docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:24.10-runtime bash

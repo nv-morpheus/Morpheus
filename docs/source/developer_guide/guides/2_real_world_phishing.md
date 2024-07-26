@@ -29,7 +29,7 @@ For this task, we'll need to define a new stage, which we will call our `Recipie
 1. Count the number of recipients in the email's metadata.
 1. Emit a Morpheus `MessageMeta` object that will contain the record content along with the augmented metadata.
 
-For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on `MessageMeta` types, our new `accepted_types` method is defined as:
+For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/user_guide/api_docs/dataframe/). Since we will expect our new stage to operate on `MessageMeta` types, our new `accepted_types` method is defined as:
 
 ```python
 def accepted_types(self) -> tuple:
@@ -229,7 +229,7 @@ It's important to note here that Triton is a service that is external to the Mor
 
 Triton will need to be running while we execute our pipeline. For simplicity, we will be using the Morpheus models container which includes both Triton and the Morpheus models.
 
-> **Note**: This step assumes you have both [Docker](https://docs.docker.com/engine/install/) and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#installation-guide) installed.
+> **Note**: This step assumes you have both [Docker](https://docs.docker.com/engine/install/) and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation) installed.
 
 We will launch a Triton Docker container with:
 
@@ -1000,7 +1000,7 @@ def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> 
     return node
 ```
 
-Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [`io.StringIO`](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
+Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/user_guide/api_docs/dataframe/) attached to the incoming message. We then serialize to an [`io.StringIO`](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
 
 ```python
 def on_data(self, message: MessageMeta):

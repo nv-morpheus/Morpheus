@@ -75,7 +75,7 @@ Continue with the setup steps below once the host system is installed, configure
 
 ### Set up NGC API Key and Install NGC Registry CLI
 
-First, you will need to set up your NGC API Key to access all the Morpheus components, using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1).
+First, you will need to set up your NGC API Key to access all the Morpheus components, using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/ngc/gpu-cloud/ngc-private-registry-user-guide/index.html#generating-personal-api-key).
 
 Once you've created your API key, create an environment variable containing your API key for use by the commands used further in this document:
 
@@ -83,7 +83,7 @@ Once you've created your API key, create an environment variable containing your
 export API_KEY="<NGC_API_KEY>"
 ```
 
-Next, install and configure the NGC Registry CLI on your system using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1).
+Next, install and configure the NGC Registry CLI on your system using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/ngc/gpu-cloud/ngc-private-registry-user-guide/index.html#generating-personal-api-key).
 
 ### Create Namespace for Morpheus
 
