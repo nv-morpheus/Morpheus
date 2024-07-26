@@ -17,18 +17,23 @@
 
 #pragma once
 
-#include "morpheus/doca/common.hpp"
 #include "morpheus/doca/packet_data_buffer.hpp"
 #include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/raw_packet.hpp"
 
+#include <cuda_runtime.h>  // for cudaStream_t
 #include <mrc/channel/buffered_channel.hpp>
 #include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
 #include <pymrc/node.hpp>
+#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_view
+#include <rxcpp/rx.hpp>              // for subscriber
 
 #include <chrono>
+#include <cstddef>  // for size_t
 #include <memory>
+#include <string>
 
 namespace morpheus {
 

@@ -28,6 +28,7 @@
 #include "morpheus/utilities/error.hpp"
 
 #include <boost/fiber/context.hpp>
+#include <cuda.h>
 #include <cuda_runtime.h>
 #include <doca_gpunetio.h>
 #include <doca_types.h>

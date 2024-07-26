@@ -17,8 +17,12 @@
 
 #pragma once
 
-#include <rmm/device_buffer.hpp>
+#include <rmm/cuda_stream_view.hpp>                  // for cuda_stream_view
+#include <rmm/device_buffer.hpp>                     // for device_buffer
+#include <rmm/mr/device/device_memory_resource.hpp>  // for device_memory_resource
+#include <rmm/mr/device/per_device_resource.hpp>     // for get_current_device_resource
 
+#include <cstddef>  // for size_t
 #include <memory>
 
 namespace morpheus::doca {
