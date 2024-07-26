@@ -47,11 +47,6 @@ Save the Morpheus repo directory:
 export MORPHEUS_ROOT=$(git rev-parse --show-toplevel)
 ```
 
-Ensure SID model is downloaded for deployment to Triton:
-```bash
-./scripts/fetch_data.py fetch models
-```
-
 Change to the example directory:
 ```bash
 cd ${MORPHEUS_ROOT}/examples/sid_visualization

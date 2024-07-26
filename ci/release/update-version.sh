@@ -113,3 +113,16 @@ sed_runner "s/${CURRENT_SHORT_TAG}/${NEXT_SHORT_TAG}/g" docs/source/getting_star
 # models/model-cards
 sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" models/model-cards/*.md
 sed_runner "s|tree/branch-${CURRENT_SHORT_TAG}|tree/branch-${NEXT_SHORT_TAG}|g" models/model-cards/*.md
+
+# Update the version of the Morpheus model container
+# We need to update several files, however we need to avoid symlinks as well as the build and .cache directories
+DOCS_MD_FILES=$(find -P ./docs/source/ -type f -iname "*.md")
+EXAMPLES_MD_FILES=$(find -P ./examples/ -type f -iname "*.md")
+sed_runner "s|morpheus-tritonserver-models:${CURRENT_SHORT_TAG}|morpheus-tritonserver-models:${NEXT_SHORT_TAG}|g" \
+   ${DOCS_MD_FILES} \
+   ${EXAMPLES_MD_FILES} \
+   .devcontainer/docker-compose.yml \
+   examples/sid_visualization/docker-compose.yml \
+   models/triton-model-repo/README.md \
+   scripts/validation/val-globals.sh \
+   tests/benchmarks/README.md

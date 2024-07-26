@@ -129,7 +129,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
    ```
    1. The container tag follows the same rules as `build_container_dev.sh` and will default to the current `YYMMDD`. Specify the desired tag with `DOCKER_IMAGE_TAG`. i.e. `DOCKER_IMAGE_TAG=my_tag ./docker/run_container_dev.sh`
    2. This will automatically mount the current working directory to `/workspace`.
-   3. Some of the validation tests require launching a Triton Docker container within the Morpheus container. To enable this you will need to grant the Morpheus container access to your host OS's Docker socket file with:
+   3. Some of the validation tests require launching the Morpheus models Docker container within the Morpheus container. To enable this you will need to grant the Morpheus container access to your host OS's Docker socket file with:
       ```bash
       DOCKER_EXTRA_ARGS="-v /var/run/docker.sock:/var/run/docker.sock" ./docker/run_container_dev.sh
       ```
@@ -234,6 +234,13 @@ git submodule update --init --recursive
    morpheus run pipeline-nlp ...
    ```
    At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`. Installing Morpheus is only required once per virtual environment.
+
+### Build the Morpheus Models Container
+
+From the root of the Morpheus repository run the following command:
+```bash
+models/docker/build_container.sh
+```
 
 ### Quick Launch Kafka Cluster
 

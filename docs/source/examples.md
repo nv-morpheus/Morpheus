@@ -33,9 +33,14 @@ Ensure the environment is set up by following [Getting Started with Morpheus](./
 
 
 ## Environments
-Morpheus supports multiple environments, each environment is intended to support a given use-case. Each example documents which environments it is able to run in. With the exception of the Morpheus Release Container, the examples require fetching the model and example datasets via the `fetch_data.sh` script:
+Morpheus supports multiple environments, each environment is intended to support a given use-case. Each example documents which environments it is able to run in. With the exception of the Morpheus Release Container, the examples require fetching both the `datasets` and `examples` dataset via the `fetch_data.sh` script:
 ```bash
-./scripts/fetch_data.py fetch examples models
+./scripts/fetch_data.py fetch examples datasets
+```
+
+In addition to this many of the examples utilize the Morpheus Triton Models container which can be obtained by running the following command:
+```bash
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
 ```
 
 The following are the supported environments:

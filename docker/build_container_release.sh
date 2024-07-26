@@ -27,7 +27,7 @@ export DOCKER_TARGET=${DOCKER_TARGET:-"runtime"}
 popd &> /dev/null
 
 # Fetch data
-"${SCRIPT_DIR}/../scripts/fetch_data.py" fetch docs examples models
+"${SCRIPT_DIR}/../scripts/fetch_data.py" fetch docs examples datasets
 
 # Call the general build script
 ${SCRIPT_DIR}/build_container.sh
