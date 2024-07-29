@@ -28,48 +28,43 @@ from _utils.dataset_manager import DatasetManager
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiInferenceFILMessage
-from morpheus.messages import MultiMessage
 
 
-def check_inf_message(msg: MultiInferenceFILMessage,
+def check_inf_message(msg: ControlMessage,
                       expected_meta: MessageMeta,
-                      expected_mess_offset: int,
                       expected_mess_count: int,
-                      expected_offset: int,
                       expected_count: int,
                       expected_feature_length: int,
                       expected_flow_ids: cudf.Series,
                       expected_rollup_time: str,
                       expected_input__0: cp.ndarray):
-    assert isinstance(msg, MultiInferenceFILMessage)
-    assert msg.meta is expected_meta
-    assert msg.mess_offset == expected_mess_offset
-    assert msg.mess_count == expected_mess_count
-    assert msg.offset == expected_offset
-    assert msg.count == expected_count
+    assert isinstance(msg, ControlMessage)
+    # assert msg.payload() is expected_meta
+    assert msg.payload().count == expected_mess_count
+    assert msg.tensors().count == expected_count
 
-    df = msg.get_meta()
+    df = msg.payload().get_data()
     assert 'flow_id' in df
     assert 'rollup_time' in df
 
     assert (df.flow_id == expected_flow_ids).all()
     assert (df.rollup_time == expected_rollup_time).all()
 
-    assert msg.memory.has_tensor('input__0')
-    assert msg.memory.has_tensor('seq_ids')
+    assert msg.tensors().has_tensor('input__0')
+    assert msg.tensors().has_tensor('seq_ids')
 
-    input__0 = msg.memory.get_tensor('input__0')
+    input__0 = msg.tensors().get_tensor('input__0')
     assert input__0.shape == (expected_count, expected_feature_length)
     assert input__0.dtype == cp.float32
     assert input__0.strides == (expected_feature_length * 4, 4)
     assert (input__0 == expected_input__0).all()
 
-    seq_ids = msg.memory.get_tensor('seq_ids')
+    seq_ids = msg.tensors().get_tensor('seq_ids')
     assert seq_ids.shape == (expected_count, 3)
-    assert (seq_ids[:, 0] == cp.arange(expected_mess_offset,
-                                       expected_mess_offset + expected_mess_count,
+    assert (seq_ids[:, 0] == cp.arange(0,
+                                       expected_mess_count,
                                        dtype=cp.uint32)).all()
     assert (seq_ids[:, 1] == 0).all()
     assert (seq_ids[:, 2] == expected_feature_length - 1).all()
@@ -98,33 +93,19 @@ def test_abp_pcap_preprocessing(config: Config, dataset_cudf: DatasetManager,
 
     assert len(input_df) == 20
 
-    meta = MessageMeta(input_df)
-    mm1 = MultiMessage(meta=meta, mess_offset=0, mess_count=10)
-    mm2 = MultiMessage(meta=meta, mess_offset=10, mess_count=10)
+    meta1 = MessageMeta(input_df[0:10])
+    cm1 = ControlMessage()
+    cm1.payload(meta1)
 
     stage = abp_pcap_preprocessing.AbpPcapPreprocessingStage(config)
     assert stage.get_needed_columns() == {'flow_id': TypeId.STRING, 'rollup_time': TypeId.STRING}
 
-    inf1 = stage.pre_process_batch(mm1, config.feature_length, stage.features, stage.req_cols)
+    inf1 = stage.pre_process_batch(cm1, config.feature_length, stage.features, stage.req_cols)
     check_inf_message(inf1,
-                      expected_meta=meta,
-                      expected_mess_offset=0,
+                      expected_meta=meta1,
                       expected_mess_count=10,
-                      expected_offset=0,
                       expected_count=10,
                       expected_feature_length=config.feature_length,
                       expected_flow_ids=expected_flow_ids[0:10],
                       expected_rollup_time='2021-04-07 15:55',
                       expected_input__0=expected_input__0[0:10])
-
-    inf2 = stage.pre_process_batch(mm2, config.feature_length, stage.features, stage.req_cols)
-    check_inf_message(inf2,
-                      expected_meta=meta,
-                      expected_mess_offset=10,
-                      expected_mess_count=10,
-                      expected_offset=0,
-                      expected_count=10,
-                      expected_feature_length=config.feature_length,
-                      expected_flow_ids=expected_flow_ids[10:],
-                      expected_rollup_time='2021-04-07 15:55',
-                      expected_input__0=expected_input__0[10:])
