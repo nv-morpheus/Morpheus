@@ -109,7 +109,8 @@ class Downloader:
                 logger.debug("Creating dask cluster...")
 
                 Downloader._dask_cluster = dask.distributed.LocalCluster(start=True,
-                                                               processes=self.download_method != "dask_thread")
+                                                                         processes=self.download_method
+                                                                         != "dask_thread")
 
                 # n_workers = dask_cuda.utils.get_n_gpus()
                 # threads_per_worker = mp.cpu_count() // n_workers
