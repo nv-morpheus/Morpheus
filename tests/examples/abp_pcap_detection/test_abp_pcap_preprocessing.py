@@ -33,7 +33,6 @@ from morpheus.messages import MessageMeta
 
 
 def check_inf_message(msg: ControlMessage,
-                      expected_meta: MessageMeta,
                       expected_mess_count: int,
                       expected_count: int,
                       expected_feature_length: int,
@@ -63,9 +62,7 @@ def check_inf_message(msg: ControlMessage,
 
     seq_ids = msg.tensors().get_tensor('seq_ids')
     assert seq_ids.shape == (expected_count, 3)
-    assert (seq_ids[:, 0] == cp.arange(0,
-                                       expected_mess_count,
-                                       dtype=cp.uint32)).all()
+    assert (seq_ids[:, 0] == cp.arange(0, expected_mess_count, dtype=cp.uint32)).all()
     assert (seq_ids[:, 1] == 0).all()
     assert (seq_ids[:, 2] == expected_feature_length - 1).all()
 
@@ -93,16 +90,15 @@ def test_abp_pcap_preprocessing(config: Config, dataset_cudf: DatasetManager,
 
     assert len(input_df) == 20
 
-    meta1 = MessageMeta(input_df[0:10])
-    cm1 = ControlMessage()
-    cm1.payload(meta1)
+    meta = MessageMeta(input_df[0:10])
+    cm = ControlMessage()
+    cm.payload(meta)
 
     stage = abp_pcap_preprocessing.AbpPcapPreprocessingStage(config)
     assert stage.get_needed_columns() == {'flow_id': TypeId.STRING, 'rollup_time': TypeId.STRING}
 
-    inf1 = stage.pre_process_batch(cm1, config.feature_length, stage.features, stage.req_cols)
-    check_inf_message(inf1,
-                      expected_meta=meta1,
+    inf = stage.pre_process_batch(cm, config.feature_length, stage.features, stage.req_cols)
+    check_inf_message(inf,
                       expected_mess_count=10,
                       expected_count=10,
                       expected_feature_length=config.feature_length,
