@@ -108,11 +108,11 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
         // Add per queue
         auto pkt_addr_unique = std::make_unique<morpheus::doca::DocaMem<uintptr_t>>(
-            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
         auto pkt_hdr_size_unique = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(
-            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
         auto pkt_pld_size_unique = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(
-            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
 
         if (thread_idx > 1)
         {
@@ -131,9 +131,9 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
             for (int idxs = 0; idxs < MAX_SEM_X_QUEUE; idxs++)
             {
                 pkt_ptr               = static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(idxs));
-                pkt_ptr->pkt_addr     = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
-                pkt_ptr->pkt_hdr_size = pkt_hdr_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
-                pkt_ptr->pkt_pld_size = pkt_pld_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
+                pkt_ptr->pkt_addr     = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
+                pkt_ptr->pkt_hdr_size = pkt_hdr_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
+                pkt_ptr->pkt_pld_size = pkt_pld_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
             }
         }
 
@@ -164,7 +164,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                                                   m_semaphore[1]->gpu_ptr(),
                                                   sem_idx[0],
                                                   sem_idx[1],
-                                                  (m_traffic_type == DOCA_TRAFFIC_TYPE_TCP) ? true : false,
+                                                  (m_traffic_type == DOCA_TRAFFIC_TYPE_TCP),
                                                   exit_condition->gpu_ptr(),
                                                   rstream);
             cudaStreamSynchronize(rstream);
