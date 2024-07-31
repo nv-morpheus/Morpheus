@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "morpheus/doca/common.hpp"  // for MAX_PKT_CONVERT
 #include "morpheus/doca/doca_convert_stage.hpp"
 #include "morpheus/doca/doca_source_stage.hpp"
 
@@ -53,8 +54,8 @@ PYBIND11_MODULE(doca, m)
         .def(py::init<>(&DocaConvertStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("max_batch_delay")     = DefaultMaxBatchDelay,
-             py::arg("buffer_channel_size") = DefaultBufferChannelSize);
+             py::arg("max_batch_delay") = DefaultMaxBatchDelay,
+             py::arg("max_batch_size")  = doca::MAX_PKT_CONVERT);
 }
 
 }  // namespace morpheus

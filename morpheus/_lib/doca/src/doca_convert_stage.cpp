@@ -151,11 +151,15 @@ std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::PacketDataBuffer& pack
 
 namespace morpheus {
 
-DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_batch_delay, std::size_t buffer_channel_size) :
+DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_batch_delay, std::size_t max_batch_size) :
   base_t(base_t::op_factory_from_sub_fn(build())),
   m_max_batch_delay{max_batch_delay},
-  m_buffer_channel{std::make_shared<mrc::BufferedChannel<doca::PacketDataBuffer>>(buffer_channel_size)}
+  m_max_batch_size{max_batch_size},
+  m_buffer_channel{std::make_shared<mrc::BufferedChannel<doca::PacketDataBuffer>>(max_batch_size*2)}
 {
+    DCHECK(m_max_batch_size >= doca::MAX_PKT_RECEIVE) 
+        << "max_batch_size must be larger than the maximum number of packets in a RawPacketMessage";
+    
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp = rmm::cuda_stream_view(m_stream);
 }
@@ -235,7 +239,7 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
         std::size_t ttl_header_bytes        = 0;
         std::size_t ttl_payload_bytes       = 0;
         std::size_t ttl_payload_sizes_bytes = 0;
-        const auto poll_end                 = std::chrono::high_resolution_clock::now() + m_max_batch_delay;
+        auto poll_end                       = std::chrono::high_resolution_clock::now() + m_max_batch_delay;
         while (std::chrono::high_resolution_clock::now() < poll_end && !m_buffer_channel->is_channel_closed())
         {
             doca::PacketDataBuffer packet_buffer;
@@ -243,6 +247,21 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
 
             if (status == mrc::channel::Status::success)
             {
+                // check if we will go over the m_max_batch_size
+                if (ttl_packets + packet_buffer.m_num_packets > m_max_batch_size)
+                {
+                    auto combined_data = concat_packet_buffers(
+                        ttl_packets, ttl_header_bytes, ttl_payload_bytes, ttl_payload_sizes_bytes, std::move(packets));
+                    send_buffered_data(output, std::move(combined_data));
+                    packets.clear();
+
+                    ttl_packets             = 0;
+                    ttl_header_bytes        = 0;
+                    ttl_payload_bytes       = 0;
+                    ttl_payload_sizes_bytes = 0;
+                    poll_end                = std::chrono::high_resolution_clock::now() + m_max_batch_delay;
+                }
+
                 ttl_packets += packet_buffer.m_num_packets;
                 ttl_header_bytes += packet_buffer.m_header_buffer->size();
                 ttl_payload_bytes += packet_buffer.m_payload_buffer->size();
@@ -288,9 +307,9 @@ std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfac
     mrc::segment::Builder& builder,
     std::string const& name,
     std::chrono::milliseconds max_batch_delay,
-    std::size_t buffer_channel_size)
+    std::size_t max_batch_size)
 {
-    return builder.construct_object<DocaConvertStage>(name, max_batch_delay, buffer_channel_size);
+    return builder.construct_object<DocaConvertStage>(name, max_batch_delay, max_batch_size);
 }
 
 }  // namespace morpheus

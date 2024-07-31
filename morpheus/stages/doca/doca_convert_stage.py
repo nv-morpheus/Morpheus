@@ -28,6 +28,8 @@ from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
+MAX_PKT_RECEIVE = 512 * 16
+
 
 @register_stage("from-doca-convert", modes=[PipelineModes.NLP])
 class DocaConvertStage(PreallocatorMixin, SinglePortStage):
@@ -38,14 +40,24 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
+    max_batch_delay_sec : `float`
+        Maximum amount of time to wait, in seconds, for additional incoming packets prior to constructing a cuDF
+        DataFrame.
+    max_batch_size : `int`
+        Maximum number of packets to attempt to combine into a single cuDF DataFrame. Must be greater than or equal to
+        `MAX_PKT_RECEIVE`.
     """
 
-    def __init__(self, c: Config, max_batch_delay_sec: float = 0.5, buffer_channel_size: int = 1024):
+    def __init__(self, c: Config, max_batch_delay_sec: float = 0.5, max_batch_size: int = MAX_PKT_RECEIVE * 5):
 
         super().__init__(c)
 
         self._max_batch_delay = timedelta(seconds=max_batch_delay_sec)
-        self._buffer_channel_size = buffer_channel_size
+
+        if max_batch_size < MAX_PKT_RECEIVE:
+            raise RuntimeError(f"max_batch_size ({max_batch_size}) must be greater than or equal to {MAX_PKT_RECEIVE}")
+
+        self._max_batch_size = max_batch_size
 
         # Attempt to import the C++ stage on creation
         try:
@@ -82,7 +94,7 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
             node = self.doca_convert_class(builder,
                                            self.unique_name,
                                            max_batch_delay=self._max_batch_delay,
-                                           buffer_channel_size=self._buffer_channel_size)
+                                           max_batch_size=self._max_batch_size)
 
             builder.make_edge(input_node, node)
             return node

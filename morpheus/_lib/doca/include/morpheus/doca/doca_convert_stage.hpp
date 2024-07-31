@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/doca/common.hpp"  // for MAX_PKT_CONVERT
 #include "morpheus/doca/packet_data_buffer.hpp"
 #include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
@@ -40,7 +41,6 @@
 namespace morpheus {
 
 constexpr std::chrono::milliseconds DefaultMaxBatchDelay(500);
-constexpr std::size_t DefaultBufferChannelSize          = 1024;
 
 /**
  * @brief Transform DOCA GPUNetIO raw packets into Dataframe for other Morpheus stages.
@@ -58,8 +58,15 @@ class MORPHEUS_EXPORT DocaConvertStage
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
+    /**
+     * @brief Construct a new DocaConvertStage object
+     *
+     * @param max_batch_delay : Maximum amount of time to wait for additional incoming packets prior to
+     * constructing a cuDF DataFrame.
+     * @param max_batch_size : Maximum number of packets to attempt to combine into a single cuDF DataFrame.
+     */
     DocaConvertStage(std::chrono::milliseconds max_batch_delay = DefaultMaxBatchDelay,
-                     std::size_t buffer_channel_size          = DefaultBufferChannelSize);
+                     std::size_t max_batch_size                = doca::MAX_PKT_CONVERT);
     ~DocaConvertStage() override;
 
   private:
@@ -76,6 +83,7 @@ class MORPHEUS_EXPORT DocaConvertStage
     rmm::cuda_stream_view m_stream_cpp;
 
     std::chrono::milliseconds m_max_batch_delay;
+    const std::size_t m_max_batch_size;
     std::shared_ptr<mrc::BufferedChannel<doca::PacketDataBuffer>> m_buffer_channel;
 };
 
@@ -86,13 +94,18 @@ class MORPHEUS_EXPORT DocaConvertStage
 struct MORPHEUS_EXPORT DocaConvertStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a DocaConvertStage, and return the result.
+     * @brief Create and initialize a DocaConvertStage, and return the result as a shared pointer.
+     *
+     * @param max_batch_delay : Maximum amount of time to wait for additional incoming packets prior to
+     * constructing a cuDF DataFrame.
+     * @param max_batch_size : Maximum number of packets to attempt to combine into a single cuDF DataFrame.
+     * @return std::shared_ptr<mrc::segment::Object<DocaConvertStage>>
      */
     static std::shared_ptr<mrc::segment::Object<DocaConvertStage>> init(
         mrc::segment::Builder& builder,
         std::string const& name,
         std::chrono::milliseconds max_batch_delay = DefaultMaxBatchDelay,
-        std::size_t buffer_channel_size          = DefaultBufferChannelSize);
+        std::size_t max_batch_size                = doca::MAX_PKT_CONVERT);
 };
 
 }  // namespace morpheus
