@@ -40,7 +40,7 @@ target_include_directories(morpheus_doca
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
-    ${doca_ROOT}/include
+    $<BUILD_INTERFACE:${doca_ROOT}/include>
 )
 
 target_link_libraries(morpheus_doca
@@ -66,7 +66,7 @@ target_sources(morpheus_doca
     TYPE HEADERS
     BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include"
     FILES
-  ${morpheus_doca_public_headers}
+      ${morpheus_doca_public_headers}
 )
 
 target_compile_definitions(morpheus_doca
