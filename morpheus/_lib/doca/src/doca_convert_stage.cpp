@@ -213,10 +213,8 @@ void DocaConvertStage::on_raw_packet_message(sink_type_t raw_msg)
                          m_stream_cpp);
 
     // gather header data
-    doca::gather_header(packet_count,
+    doca::gather_src_ip(packet_count,
                         pkt_addr_list,
-                        pkt_hdr_size_list,
-                        pkt_pld_size_list,
                         static_cast<uint32_t*>(packet_buffer.m_header_buffer->data()),
                         m_stream_cpp);
 
