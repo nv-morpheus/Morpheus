@@ -17,16 +17,13 @@ by the `DownloadMethods` enum.
 """
 
 import logging
-import multiprocessing as mp
 import os
 import threading
 import typing
-import warnings
 from enum import Enum
 
 import fsspec
 import pandas as pd
-from merlin.core.utils import Distributed
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +66,6 @@ class Downloader:
                  download_method: typing.Union[DownloadMethods, str] = DownloadMethods.DASK_THREAD,
                  dask_heartbeat_interval: str = "30s"):
 
-        self._merlin_distributed = None
         self._dask_heartbeat_interval = dask_heartbeat_interval
 
         download_method = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", download_method)
@@ -99,20 +95,19 @@ class Downloader:
 
         Returns
         -------
-        dask_cuda.LocalCUDACluster
+        dask.distributed.LocalCluster
         """
 
         with Downloader._mutex:
             if Downloader._dask_cluster is None:
-                import dask_cuda.utils
+                import dask
+                import dask.distributed
 
                 logger.debug("Creating dask cluster...")
 
-                n_workers = dask_cuda.utils.get_n_gpus()
-                threads_per_worker = mp.cpu_count() // n_workers
-
-                Downloader._dask_cluster = dask_cuda.LocalCUDACluster(n_workers=n_workers,
-                                                                      threads_per_worker=threads_per_worker)
+                Downloader._dask_cluster = dask.distributed.LocalCluster(start=True,
+                                                                         processes=self.download_method
+                                                                         != "dask_thread")
 
                 logger.debug("Creating dask cluster... Done. Dashboard: %s", Downloader._dask_cluster.dashboard_link)
 
@@ -127,24 +122,18 @@ class Downloader:
         dask.distributed.Client
         """
         import dask.distributed
-
-        # Up the heartbeat interval which can get violated with long download times
-        dask.config.set({"distributed.client.heartbeat": self._dask_heartbeat_interval})
-
-        if (self._merlin_distributed is None):
-            with warnings.catch_warnings():
-                # Merlin.Distributed will warn if a client already exists, the client in question is the one created
-                # and are explicitly passing to it in the constructor.
-                warnings.filterwarnings("ignore",
-                                        message="Existing Dask-client object detected in the current context.*",
-                                        category=UserWarning)
-                self._merlin_distributed = Distributed(client=dask.distributed.Client(self.get_dask_cluster()))
-
-        return self._merlin_distributed
+        return dask.distributed.Client(self.get_dask_cluster())
 
     def close(self):
-        """Cluster management is handled by Merlin.Distributed"""
-        pass
+        """Close the dask cluster if it exists."""
+        if (self._dask_cluster is not None):
+            logger.debug("Stopping dask cluster...")
+
+            self._dask_cluster.close()
+
+            self._dask_cluster = None
+
+            logger.debug("Stopping dask cluster... Done.")
 
     def download(self,
                  download_buckets: fsspec.core.OpenFiles,
@@ -169,8 +158,8 @@ class Downloader:
         if (self._download_method.startswith("dask")):
             # Create the client each time to ensure all connections to the cluster are closed (they can time out)
             with self.get_dask_client() as dist:
-                dfs = dist.client.map(download_fn, download_buckets)
-                dfs = dist.client.gather(dfs)
+                dfs = dist.map(download_fn, download_buckets)
+                dfs = dist.gather(dfs)
 
         else:
             # Simply loop
