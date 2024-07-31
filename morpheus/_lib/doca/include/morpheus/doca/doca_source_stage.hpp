@@ -22,7 +22,9 @@
 #include "morpheus/messages/raw_packet.hpp"
 
 #include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
 #include <pymrc/node.hpp>
+#include <rxcpp/rx.hpp>
 
 #include <memory>
 #include <string>

@@ -47,7 +47,6 @@
 #include <cstdint>
 #include <exception>  // for exception_ptr
 #include <memory>
-#include <ostream>
 #include <string>
 #include <thread>
 #include <utility>
