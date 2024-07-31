@@ -39,7 +39,7 @@
 
 namespace morpheus {
 
-constexpr std::chrono::milliseconds DefaultMaxTimeDelta = std::chrono::seconds(3);
+constexpr std::chrono::milliseconds DefaultMaxBatchDelay(500);
 constexpr std::size_t DefaultBufferChannelSize          = 1024;
 
 /**
@@ -58,7 +58,7 @@ class MORPHEUS_EXPORT DocaConvertStage
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    DocaConvertStage(std::chrono::milliseconds max_time_delta = DefaultMaxTimeDelta,
+    DocaConvertStage(std::chrono::milliseconds max_batch_delay = DefaultMaxBatchDelay,
                      std::size_t buffer_channel_size          = DefaultBufferChannelSize);
     ~DocaConvertStage() override;
 
@@ -75,7 +75,7 @@ class MORPHEUS_EXPORT DocaConvertStage
     cudaStream_t m_stream;
     rmm::cuda_stream_view m_stream_cpp;
 
-    std::chrono::milliseconds m_max_time_delta;
+    std::chrono::milliseconds m_max_batch_delay;
     std::shared_ptr<mrc::BufferedChannel<doca::PacketDataBuffer>> m_buffer_channel;
 };
 
@@ -91,7 +91,7 @@ struct MORPHEUS_EXPORT DocaConvertStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<DocaConvertStage>> init(
         mrc::segment::Builder& builder,
         std::string const& name,
-        std::chrono::milliseconds max_time_delta = DefaultMaxTimeDelta,
+        std::chrono::milliseconds max_batch_delay = DefaultMaxBatchDelay,
         std::size_t buffer_channel_size          = DefaultBufferChannelSize);
 };
 

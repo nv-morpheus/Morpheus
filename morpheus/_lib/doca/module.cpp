@@ -53,7 +53,7 @@ PYBIND11_MODULE(doca, m)
         .def(py::init<>(&DocaConvertStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("max_time_delta")      = DefaultMaxTimeDelta,
+             py::arg("max_batch_delay")     = DefaultMaxBatchDelay,
              py::arg("buffer_channel_size") = DefaultBufferChannelSize);
 }
 

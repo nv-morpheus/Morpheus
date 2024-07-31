@@ -40,11 +40,11 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
         Pipeline configuration instance.
     """
 
-    def __init__(self, c: Config, max_time_delta_sec: float = 3.0, buffer_channel_size: int = 1024):
+    def __init__(self, c: Config, max_batch_delay_sec: float = 0.5, buffer_channel_size: int = 1024):
 
         super().__init__(c)
 
-        self._max_time_delta = timedelta(seconds=max_time_delta_sec)
+        self._max_batch_delay = timedelta(seconds=max_batch_delay_sec)
         self._buffer_channel_size = buffer_channel_size
 
         # Attempt to import the C++ stage on creation
@@ -81,7 +81,7 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
         if self._build_cpp_node():
             node = self.doca_convert_class(builder,
                                            self.unique_name,
-                                           max_time_delta=self._max_time_delta,
+                                           max_batch_delay=self._max_batch_delay,
                                            buffer_channel_size=self._buffer_channel_size)
 
             builder.make_edge(input_node, node)

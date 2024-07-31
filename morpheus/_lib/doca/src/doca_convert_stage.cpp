@@ -151,9 +151,9 @@ std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::PacketDataBuffer& pack
 
 namespace morpheus {
 
-DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_time_delta, std::size_t buffer_channel_size) :
+DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_batch_delay, std::size_t buffer_channel_size) :
   base_t(base_t::op_factory_from_sub_fn(build())),
-  m_max_time_delta{max_time_delta},
+  m_max_batch_delay{max_batch_delay},
   m_buffer_channel{std::make_shared<mrc::BufferedChannel<doca::PacketDataBuffer>>(buffer_channel_size)}
 {
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
@@ -235,7 +235,7 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
         std::size_t ttl_header_bytes        = 0;
         std::size_t ttl_payload_bytes       = 0;
         std::size_t ttl_payload_sizes_bytes = 0;
-        const auto poll_end                 = std::chrono::high_resolution_clock::now() + m_max_time_delta;
+        const auto poll_end                 = std::chrono::high_resolution_clock::now() + m_max_batch_delay;
         while (std::chrono::high_resolution_clock::now() < poll_end && !m_buffer_channel->is_channel_closed())
         {
             doca::PacketDataBuffer packet_buffer;
@@ -287,10 +287,10 @@ void DocaConvertStage::send_buffered_data(rxcpp::subscriber<source_type_t>& outp
 std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfaceProxy::init(
     mrc::segment::Builder& builder,
     std::string const& name,
-    std::chrono::milliseconds max_time_delta,
+    std::chrono::milliseconds max_batch_delay,
     std::size_t buffer_channel_size)
 {
-    return builder.construct_object<DocaConvertStage>(name, max_time_delta, buffer_channel_size);
+    return builder.construct_object<DocaConvertStage>(name, max_batch_delay, buffer_channel_size);
 }
 
 }  // namespace morpheus
