@@ -70,8 +70,7 @@ def send_data(data: list[str],
     if iface is not None:
         send_kwargs["iface"] = iface
 
-    for packet in packets:
-        send(packet, **send_kwargs)
+    send(packets, **send_kwargs)
 
 
 @click.command()
