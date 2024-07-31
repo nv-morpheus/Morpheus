@@ -17,11 +17,9 @@ by the `DownloadMethods` enum.
 """
 
 import logging
-import multiprocessing as mp
 import os
 import threading
 import typing
-import warnings
 from enum import Enum
 
 import fsspec
@@ -104,19 +102,12 @@ class Downloader:
             if Downloader._dask_cluster is None:
                 import dask
                 import dask.distributed
-                import dask_cuda.utils
 
                 logger.debug("Creating dask cluster...")
 
                 Downloader._dask_cluster = dask.distributed.LocalCluster(start=True,
                                                                          processes=self.download_method
                                                                          != "dask_thread")
-
-                # n_workers = dask_cuda.utils.get_n_gpus()
-                # threads_per_worker = mp.cpu_count() // n_workers
-
-                # Downloader._dask_cluster = dask_cuda.LocalCUDACluster(n_workers=n_workers,
-                #                                                       threads_per_worker=threads_per_worker)
 
                 logger.debug("Creating dask cluster... Done. Dashboard: %s", Downloader._dask_cluster.dashboard_link)
 
