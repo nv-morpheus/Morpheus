@@ -7,11 +7,9 @@ API(s?)
 [Bb]ackpressure
 [Bb]atcher
 [Bb]oolean
-
 # Documentation for ccache only capitalizes the name at the start of a sentence https://ccache.dev/
 [Cc]cache
 [Cc]hatbot(s?)
-
 # clangd is never capitalized even at the start of a sentence https://clangd.llvm.org/
 clangd
 CMake
@@ -23,7 +21,6 @@ CPython
 [Cc]ybersecurity
 Dask
 Databricks
-
 [Dd]eserialize
 Dev
 [Dd]ocstring(s?)
@@ -33,7 +30,6 @@ Grafana
 [Gg]ranularities
 [Hh]ashable
 [Ii]nferencing
-
 # libcudf isn't styled in the way that cuDF is https://docs.rapids.ai/api/libcudf/stable/
 libcudf
 LLM(s?)
@@ -41,7 +37,6 @@ Milvus
 [Mm]ixin
 MLflow
 Morpheus
-
 [Nn]amespace(s?)
 NeMo
 NIC
