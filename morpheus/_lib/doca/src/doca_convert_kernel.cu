@@ -62,16 +62,14 @@ __global__ void _packet_gather_payload_kernel(int32_t packet_count,
     }
 }
 
-__global__ void _packet_gather_src_ip_kernel(int32_t packet_count,
-                                             uintptr_t* packets_buffer,
-                                             uint32_t* dst_buff)
+__global__ void _packet_gather_src_ip_kernel(int32_t packet_count, uintptr_t* packets_buffer, uint32_t* dst_buff)
 {
     int pkt_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (pkt_idx < packet_count)
     {
         uint8_t* pkt_hdr_addr = (uint8_t*)(packets_buffer[pkt_idx]);
-        dst_buff[pkt_idx] = ip_to_int32(((struct eth_ip*)pkt_hdr_addr)->l3_hdr.src_addr);
+        dst_buff[pkt_idx]     = ip_to_int32(((struct eth_ip*)pkt_hdr_addr)->l3_hdr.src_addr);
     }
 }
 
@@ -120,8 +118,7 @@ void gather_src_ip(int32_t packet_count,
                    rmm::mr::device_memory_resource* mr)
 {
     int numBlocks = (packet_count + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
-    _packet_gather_src_ip_kernel<<<numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
-        packet_count, packets_buffer, dst_buff);
+    _packet_gather_src_ip_kernel<<<numBlocks, THREADS_PER_BLOCK, 0, stream>>>(packet_count, packets_buffer, dst_buff);
 }
 
 void gather_payload(int32_t packet_count,
@@ -134,7 +131,8 @@ void gather_payload(int32_t packet_count,
 {
     auto dst_offsets = sizes_to_offsets(packet_count, payload_sizes, stream);
     dim3 threadsPerBlock(32, 32);
-    dim3 numBlocks((packet_count + threadsPerBlock.x - 1) / threadsPerBlock.x, (MAX_PKT_SIZE+threadsPerBlock.y-1) / threadsPerBlock.y);
+    dim3 numBlocks((packet_count + threadsPerBlock.x - 1) / threadsPerBlock.x,
+                   (MAX_PKT_SIZE + threadsPerBlock.y - 1) / threadsPerBlock.y);
     _packet_gather_payload_kernel<<<numBlocks, threadsPerBlock, 0, stream>>>(
         packet_count, packets_buffer, header_sizes, payload_sizes, dst_buff, static_cast<int32_t*>(dst_offsets.data()));
 }

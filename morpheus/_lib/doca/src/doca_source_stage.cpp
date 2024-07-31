@@ -130,10 +130,13 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         {
             for (int idxs = 0; idxs < MAX_SEM_X_QUEUE; idxs++)
             {
-                pkt_ptr               = static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(idxs));
-                pkt_ptr->pkt_addr     = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
-                pkt_ptr->pkt_hdr_size = pkt_hdr_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
-                pkt_ptr->pkt_pld_size = pkt_pld_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
+                pkt_ptr           = static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(idxs));
+                pkt_ptr->pkt_addr = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) +
+                                    (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
+                pkt_ptr->pkt_hdr_size = pkt_hdr_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) +
+                                        (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
+                pkt_ptr->pkt_pld_size = pkt_pld_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) +
+                                        (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
             }
         }
 

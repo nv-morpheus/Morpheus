@@ -172,4 +172,3 @@ __device__ __forceinline__ uint32_t ip_to_int32(uint32_t address)
     return (address & 0x000000ff) << 24 | (address & 0x0000ff00) << 8 | (address & 0x00ff0000) >> 8 |
            (address & 0xff000000) >> 24;
 }
-

@@ -148,7 +148,7 @@ std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::PacketDataBuffer& pack
 
     return cudf::strings::integers_to_ipv4(src_ip_int_col->view());
 }
-} //namespace
+}  // namespace
 
 namespace morpheus {
 
@@ -213,10 +213,8 @@ void DocaConvertStage::on_raw_packet_message(sink_type_t raw_msg)
                          m_stream_cpp);
 
     // gather header data
-    doca::gather_src_ip(packet_count,
-                        pkt_addr_list,
-                        static_cast<uint32_t*>(packet_buffer.m_header_buffer->data()),
-                        m_stream_cpp);
+    doca::gather_src_ip(
+        packet_count, pkt_addr_list, static_cast<uint32_t*>(packet_buffer.m_header_buffer->data()), m_stream_cpp);
 
     MRC_CHECK_CUDA(cudaMemcpyAsync(static_cast<uint8_t*>(packet_buffer.m_payload_sizes_buffer->data()),
                                    pkt_pld_size_list,
