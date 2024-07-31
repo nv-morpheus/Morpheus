@@ -175,7 +175,6 @@ autodoc_mock_imports = [
     "langchain_core",
     "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
-    "nvtabular",
     "pandas",
     "pydantic",
     "pymilvus",

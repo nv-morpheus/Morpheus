@@ -59,7 +59,6 @@ dependencies:
 - nlohmann_json=3.11
 - nodejs=18.*
 - numpydoc=1.5
-- nvtabular=23.08.00
 - pip
 - pkg-config=0.29
 - pluggy=1.3
