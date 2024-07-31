@@ -65,11 +65,7 @@ cp -RL models /opt/triton_models
 
 ## Start Triton Inference Server in EXPLICIT mode
 
-Use the following command to run Triton with our model
-repository you just created. The [NVIDIA Container
-Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) must be installed
-for Docker to recognize the GPU(s). The --gpus=1 flag indicates that 1
-system GPU should be made available to Triton for inferencing.
+Use the following command to run Triton with our model repository you just created. The [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) must be installed for Docker to recognize the GPUs. The `--gpus=1` flag indicates that the GPU with ID `1` should be made available to Triton for inferencing.
 
 ```bash
 docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v /opt/triton_models:/models nvcr.io/nvidia/tritonserver:<xx.yy>-py3 tritonserver --model-repository=/models --model-control-mode=explicit
@@ -77,7 +73,7 @@ docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v /opt/triton_mode
 
 ## MLflow container
 
-Build MLflow image from Dockerfile from the root of the Morpheus repo:
+Build MLflow image, from the root of the Morpheus repo:
 
 ```bash
 cd models/mlflow

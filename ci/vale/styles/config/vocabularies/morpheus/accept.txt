@@ -4,6 +4,7 @@
 
 API(s?)
 [Aa]utoencoder
+[Aa]nonymize(d?)
 [Bb]ackpressure
 [Bb]atcher
 [Bb]oolean
@@ -19,20 +20,28 @@ CPython
 [Cc]ryptocurrenc[y|ies]
 [Cc]yber
 [Cc]ybersecurity
+Cython
 Dask
 Databricks
 [Dd]eserialize
 [Dd]ev
 [Dd]ocstring(s?)
+[Ee]ngineerable
+[Ee]xplainability
+[Gg]eneratable
 glog
 GPU(s?)
 Grafana
 [Gg]ranularities
 [Hh]ashable
+[Hh]yperparameter(s?)
 [Ii]nferencing
+jsonlines
 # libcudf isn't styled in the way that cuDF is https://docs.rapids.ai/api/libcudf/stable/
 libcudf
 LLM(s?)
+# https://github.com/logpai/loghub/
+Loghub
 Milvus
 [Mm]ixin
 MLflow
@@ -48,9 +57,11 @@ PCIe
 PDF(s?)
 [Pp]reprocess
 [Pp]retrained
+pytest
 [Rr]epo
 [Ss]erializable
 [Ss]ubclassing
+[Ss]ubcard(s?)
 [Ss]ubgraph(s?)
 [Ss]ubword(s?)
 [Tt]imestamp(s?)
