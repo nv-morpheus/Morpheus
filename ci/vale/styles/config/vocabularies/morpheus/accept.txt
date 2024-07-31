@@ -48,6 +48,7 @@ MLflow
 Morpheus
 [Nn]amespace(s?)
 NeMo
+nginx
 NIC
 NIM(s?)
 NVIDIA
@@ -59,6 +60,7 @@ PDF(s?)
 [Pp]retrained
 pytest
 [Rr]epo
+[Rr]etarget(ed?)
 [Ss]erializable
 [Ss]ubclassing
 [Ss]ubcard(s?)
@@ -68,6 +70,7 @@ pytest
 [Tt]okenization
 [Tt]okenizer(s?)
 triages
+[Uu]nencrypted
 [Uu]nittest(s?)
 [Uu]ploader
 XGBoost
