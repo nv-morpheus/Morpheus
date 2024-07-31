@@ -21,6 +21,7 @@
 #include "morpheus/export.h"
 #include "morpheus/messages/raw_packet.hpp"
 
+#include <boost/fiber/context.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>  // for Object
 #include <pymrc/node.hpp>
@@ -28,6 +29,7 @@
 
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace morpheus {

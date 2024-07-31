@@ -40,6 +40,7 @@
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
+#include <array>
 #include <cstdint>
 #include <ctime>
 #include <functional>
@@ -50,7 +51,7 @@
 #include <utility>
 #include <vector>
 
-#define debug_get_timestamp(ts) clock_gettime(CLOCK_REALTIME, (ts))
+#define DEBUG_GET_TIMESTAMP(ts) clock_gettime(CLOCK_REALTIME, (ts))
 #define ENABLE_TIMERS 0
 
 namespace morpheus {
@@ -96,15 +97,17 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         CUcontext cuContext;
 
         cudaSetDevice(0);  // Need to rely on GPU 0
-        cudaFree(0);
+        cudaFree(0);       // NOLINT(modernize-use-nullptr)
         cuDeviceGet(&cuDevice, 0);
         cuCtxCreate(&cuContext, CU_CTX_SCHED_SPIN | CU_CTX_MAP_HOST, cuDevice);
         cuCtxPushCurrent(cuContext);
 
         struct packets_info* pkt_ptr;
-        int sem_idx[MAX_QUEUE] = {0};
-        cudaStream_t rstream   = nullptr;
-        int thread_idx         = mrc::runnable::Context::get_runtime_context().rank();
+        std::array<int, MAX_QUEUE> sem_idx;
+        sem_idx.fill(0);
+
+        cudaStream_t rstream = nullptr;
+        int thread_idx       = mrc::runnable::Context::get_runtime_context().rank();
 
         // Add per queue
         auto pkt_addr_unique = std::make_unique<morpheus::doca::DocaMem<uintptr_t>>(

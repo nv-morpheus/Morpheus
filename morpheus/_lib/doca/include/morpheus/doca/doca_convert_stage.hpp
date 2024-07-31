@@ -22,6 +22,7 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/raw_packet.hpp"
 
+#include <boost/fiber/context.hpp>
 #include <cuda_runtime.h>  // for cudaStream_t
 #include <mrc/channel/buffered_channel.hpp>
 #include <mrc/segment/builder.hpp>
@@ -34,6 +35,7 @@
 #include <cstddef>  // for size_t
 #include <memory>
 #include <string>
+#include <thread>
 
 namespace morpheus {
 
