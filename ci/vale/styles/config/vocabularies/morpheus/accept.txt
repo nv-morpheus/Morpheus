@@ -22,7 +22,7 @@ CPython
 Dask
 Databricks
 [Dd]eserialize
-Dev
+[Dd]ev
 [Dd]ocstring(s?)
 glog
 GPU(s?)
