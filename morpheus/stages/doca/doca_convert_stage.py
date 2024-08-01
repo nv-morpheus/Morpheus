@@ -51,7 +51,8 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
         be used.
     """
 
-    def __init__(self, c: Config,
+    def __init__(self,
+                 c: Config,
                  max_batch_delay_sec: float = 0.5,
                  max_batch_size: int = MAX_PKT_RECEIVE * 5,
                  buffer_channel_size: int | None = None):
