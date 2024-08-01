@@ -56,7 +56,7 @@ from morpheus.utils.logger import configure_logging
     help="Size of edge buffers.",
 )
 @click.option(
-    "--max_time_delta_sec",
+    "--max_batch_delay_sec",
     default=3.0,
     type=float,
     show_default=True,
@@ -64,10 +64,11 @@ from morpheus.utils.logger import configure_logging
 )
 @click.option(
     "--buffer_channel_size",
-    default=1024,
-    type=click.IntRange(min=1),
+    default=None,
+    type=click.IntRange(min=2),
     show_default=True,
-    help="Size of the internal buffer channel used by the DocaConvertStage.",
+    help=("Size of the internal buffer channel used by the DocaConvertStage, if None, the value of `--edge_buffer_size`"
+          " will be used."),
 )
 @click.option("--log_level",
               default="INFO",
@@ -82,7 +83,7 @@ def run_pipeline(nic_addr: str,
                  gpu_addr: str,
                  num_threads: int,
                  edge_buffer_size: int,
-                 max_time_delta_sec: float,
+                 max_batch_delay_sec: float,
                  buffer_channel_size: int,
                  log_level: int,
                  output_file: str | None):
@@ -114,7 +115,7 @@ def run_pipeline(nic_addr: str,
                      delayed_start=True))
 
     pipeline.add_stage(
-        DocaConvertStage(config, max_time_delta_sec=max_time_delta_sec, buffer_channel_size=buffer_channel_size))
+        DocaConvertStage(config, max_batch_delay_sec=max_batch_delay_sec, buffer_channel_size=buffer_channel_size))
 
     pipeline.add_stage(MonitorStage(config, description="Convert rate", unit='pkts', delayed_start=True))
 

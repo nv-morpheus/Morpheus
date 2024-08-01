@@ -102,7 +102,7 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
                                            self.unique_name,
                                            max_batch_delay=self._max_batch_delay,
                                            max_batch_size=self._max_batch_size,
-                                           buffer_channel_size = self._buffer_channel_size)
+                                           buffer_channel_size=self._buffer_channel_size)
 
             builder.make_edge(input_node, node)
             return node
