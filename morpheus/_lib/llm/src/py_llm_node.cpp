@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,6 @@
 
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_engine.hpp"
-#include "morpheus/llm/llm_node_base.hpp"
 
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>

@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,21 +63,13 @@ Review the unassigned issues, and find an issue to which you are comfortable con
 
 The following instructions are for developers who are getting started with the Morpheus repository. The Morpheus development environment is flexible (Docker, Conda and bare metal workflows) but has a high number of dependencies that can be difficult to set up. These instructions outline the steps for setting up a development environment inside a Docker container or on a host machine with Conda.
 
-All of the following instructions assume several variables have been set:
+All of the following instructions assume that the given variable has been defined:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
- - `PYTHON_VER`: The desired Python version. Minimum required is `3.10`
- - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. If in doubt use `23.06`
- - `TRITONCLIENT_VERSION`: The desired Triton client. If in doubt use `22.10`
- - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.8`
 
 
 ### Clone the repository and pull large file data from Git LFS
 
 ```bash
-export PYTHON_VER=3.10
-export RAPIDS_VER=23.06
-export TRITONCLIENT_VERSION=22.10
-export CUDA_VER=11.8
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
@@ -137,33 +129,26 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
    ```
    1. The container tag follows the same rules as `build_container_dev.sh` and will default to the current `YYMMDD`. Specify the desired tag with `DOCKER_IMAGE_TAG`. i.e. `DOCKER_IMAGE_TAG=my_tag ./docker/run_container_dev.sh`
    2. This will automatically mount the current working directory to `/workspace`.
-   3. Some of the validation tests require launching a Triton Docker container within the Morpheus container. To enable this you will need to grant the Morpheus container access to your host OS's Docker socket file with:
+   3. Some of the validation tests require launching the Morpheus models Docker container within the Morpheus container. To enable this you will need to grant the Morpheus container access to your host OS's Docker socket file with:
       ```bash
       DOCKER_EXTRA_ARGS="-v /var/run/docker.sock:/var/run/docker.sock" ./docker/run_container_dev.sh
       ```
       Then once the container is started you will need to install some extra packages to enable launching Docker containers:
       ```bash
       ./external/utilities/docker/install_docker.sh
-
-      # Install utils for checking output
-      apt install -y jq bc
       ```
 
 3. Compile Morpheus
    ```bash
    ./scripts/compile.sh
    ```
-   This script will run both CMake Configure with default options and CMake build.
-4. Install Morpheus
-   ```bash
-   pip install -e /workspace
-   ```
-   Once Morpheus has been built, it can be installed into the current virtual environment.
-5. [Run Morpheus](../getting_started.md#running-morpheus)
+   This script will run CMake Configure with default options, the CMake build and install Morpheus into the environment.
+
+4. [Run Morpheus](../getting_started.md#running-morpheus)
    ```bash
    morpheus run pipeline-nlp ...
    ```
-   At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`. Installing Morpheus is only required once per virtual environment.
+   At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`.
 
 ### Build in a Conda Environment
 
@@ -173,9 +158,8 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 #### Prerequisites
 
-- Pascal architecture GPU or better
-- NVIDIA driver `520.61.05` or higher
-- [CUDA 11.8](https://developer.nvidia.com/cuda-11-8-0-download-archive)
+- Volta architecture GPU or better
+- [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-0-download-archive)
 - `conda` and `mamba`
   - Refer to the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
   - Install `mamba`:
@@ -189,9 +173,6 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 1. Set up env variables and clone the repo:
    ```bash
-   export PYTHON_VER=3.10
-   export RAPIDS_VER=23.06
-   export CUDA_VER=11.8
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT
@@ -205,7 +186,7 @@ git submodule update --init --recursive
 
 1. Create the Morpheus Conda environment
    ```bash
-   mamba env create -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
+   conda env create --solver=libmamba -n morpheus --file conda/environments/dev_cuda-121_arch-x86_64.yaml
    conda activate morpheus
    ```
 
@@ -253,6 +234,13 @@ git submodule update --init --recursive
    morpheus run pipeline-nlp ...
    ```
    At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`. Installing Morpheus is only required once per virtual environment.
+
+### Build the Morpheus Models Container
+
+From the root of the Morpheus repository run the following command:
+```bash
+models/docker/build_container.sh
+```
 
 ### Quick Launch Kafka Cluster
 
@@ -420,7 +408,7 @@ Third-party code included in the source tree (that is not pulled in as an extern
 Ex:
 ```
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2018-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2018-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ def run_cli():
 
     from llm.cli import cli
 
-    cli(obj={}, auto_envvar_prefix='MORPHEUS_LLM', show_default=True, prog_name="morpheus_llm")
+    cli(obj={}, auto_envvar_prefix='MORPHEUS_LLM', show_default=True)
 
 
 if __name__ == '__main__':

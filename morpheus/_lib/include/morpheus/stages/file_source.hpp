@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,26 +17,22 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/meta.hpp"
 
 #include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
-#include <mrc/types.hpp>
 #include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
-#include <map>
+#include <filesystem>  // for path
 #include <memory>
 #include <optional>
 #include <string>
 #include <thread>
-#include <vector>  // for vector
+#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -48,12 +44,11 @@ namespace morpheus {
  * @file
  */
 
-#pragma GCC visibility push(default)
 /**
  * @brief Load messages from a file. Source stage is used to load messages from a file and
  * dumping the contents into the pipeline immediately. Useful for testing performance and accuracy of a pipeline.
  */
-class FileSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
+class MORPHEUS_EXPORT FileSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
@@ -67,13 +62,19 @@ class FileSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
      * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging
      * @param json_lines: Whether to force json or jsonlines parsing
      */
-    FileSourceStage(std::string filename, int repeat = 1, std::optional<bool> json_lines = std::nullopt);
+    FileSourceStage(std::string filename,
+                    int repeat                                   = 1,
+                    bool filter_null                             = true,
+                    std::vector<std::string> filter_null_columns = {},
+                    std::optional<bool> json_lines               = std::nullopt);
 
   private:
     subscriber_fn_t build();
 
     std::string m_filename;
     int m_repeat{1};
+    bool m_filter_null{true};
+    std::vector<std::string> m_filter_null_columns;
     std::optional<bool> m_json_lines;
 };
 
@@ -81,7 +82,7 @@ class FileSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct FileSourceStageInterfaceProxy
+struct MORPHEUS_EXPORT FileSourceStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a FileSourceStage, and return the result
@@ -93,12 +94,22 @@ struct FileSourceStageInterfaceProxy
      * @param parser_kwargs : Optional arguments to pass to the file parser.
      * @return std::shared_ptr<mrc::segment::Object<FileSourceStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder& builder,
-                                                                       const std::string& name,
-                                                                       std::string filename,
-                                                                       int repeat                   = 1,
-                                                                       pybind11::dict parser_kwargs = pybind11::dict());
+    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        std::string filename,
+        int repeat                                   = 1,
+        bool filter_null                             = true,
+        std::vector<std::string> filter_null_columns = {},
+        pybind11::dict parser_kwargs                 = pybind11::dict());
+    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        std::filesystem::path filename,
+        int repeat                                   = 1,
+        bool filter_null                             = true,
+        std::vector<std::string> filter_null_columns = {},
+        pybind11::dict parser_kwargs                 = pybind11::dict());
 };
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

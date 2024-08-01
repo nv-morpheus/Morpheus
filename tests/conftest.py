@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,7 @@ import time
 import types
 import typing
 import warnings
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -192,16 +193,18 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     items[:] = [x for x in items if should_filter_test(x)]
 
 
-def clear_handlers(logger):
-    handlers = logger.handlers.copy()
-    for handler in handlers:
-        logger.removeHandler(handler)
+@pytest.fixture(scope="function", name="reset_logging")
+def reset_logging_fixture():
+    from morpheus.utils.logger import reset_logging
+    reset_logging()
+    yield
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_runtest_teardown(item, nextitem):
-    clear_handlers(logging.getLogger("morpheus"))
-    clear_handlers(logging.getLogger())
+    from morpheus.utils.logger import reset_logging
+    reset_logging(logger_name="morpheus")
+    reset_logging(logger_name=None)  # Reset the root logger as well
 
 
 # This fixture will be used by all tests.
@@ -483,7 +486,7 @@ def manual_seed():
 
 
 @pytest.fixture(scope="function")
-def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
+def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path: Path):
     """
     Executes a test in the tmp_path directory
     """
@@ -861,6 +864,15 @@ def loglevel_fatal():
     _wrap_set_log_level(logging.FATAL)
 
 
+@pytest.fixture(scope="function")
+def morpheus_log_level():
+    """
+    Returns the log level of the morpheus logger
+    """
+    logger = logging.getLogger("morpheus")
+    yield logger.getEffectiveLevel()
+
+
 # ==== DataFrame Fixtures ====
 @pytest.fixture(scope="function")
 def dataset(df_type: typing.Literal['cudf', 'pandas']):
@@ -1026,17 +1038,45 @@ def simple_collection_config_fixture():
     yield load_json_file(filename="service/milvus_simple_collection_conf.json")
 
 
+@pytest.fixture(scope="session", name="string_collection_config")
+def string_collection_config_fixture():
+    from _utils import load_json_file
+    yield load_json_file(filename="service/milvus_string_collection_conf.json")
+
+
+@pytest.fixture(scope="session", name="bert_cased_hash")
+def bert_cased_hash_fixture():
+    from _utils import TEST_DIRS
+    yield os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-hash.txt')
+
+
+@pytest.fixture(scope="session", name="bert_cased_vocab")
+def bert_cased_vocab_fixture():
+    from _utils import TEST_DIRS
+    yield os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-vocab.txt')
+
+
 @pytest.fixture(name="nemollm", scope='session')
 def nemollm_fixture(fail_missing: bool):
     """
     Fixture to ensure nemollm is installed
     """
     skip_reason = ("Tests for the NeMoLLMService require the nemollm package to be installed, to install this run:\n"
-                   "`mamba install -n base -c conda-forge conda-merge`\n"
-                   "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
-                   "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
-                   "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
+                   "`conda env update --solver=libmamba -n morpheus "
+                   "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
     yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
+
+
+@pytest.fixture(name="nvfoundationllm", scope='session')
+def nvfoundationllm_fixture(fail_missing: bool):
+    """
+    Fixture to ensure nvfoundationllm is installed
+    """
+    skip_reason = (
+        "Tests for NVFoundation require the langchain-nvidia-ai-endpoints package to be installed, to install this "
+        "run:\n `conda env update --solver=libmamba -n morpheus "
+        "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
+    yield import_or_skip("langchain_nvidia_ai_endpoints", reason=skip_reason, fail_missing=fail_missing)
 
 
 @pytest.fixture(name="openai", scope='session')
@@ -1045,29 +1085,29 @@ def openai_fixture(fail_missing: bool):
     Fixture to ensure openai is installed
     """
     skip_reason = ("Tests for the OpenAIChatService require the openai package to be installed, to install this run:\n"
-                   "`mamba install -n base -c conda-forge conda-merge`\n"
-                   "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
-                   "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
-                   "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
+                   "`conda env update --solver=libmamba -n morpheus "
+                   "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
     yield import_or_skip("openai", reason=skip_reason, fail_missing=fail_missing)
 
 
 @pytest.mark.usefixtures("openai")
 @pytest.fixture(name="mock_chat_completion")
 def mock_chat_completion_fixture():
-    with mock.patch("openai.ChatCompletion") as mock_chat_completion:
-        mock_chat_completion.return_value = mock_chat_completion
+    from _utils.llm import mk_mock_openai_response
+    with (mock.patch("openai.OpenAI") as mock_client, mock.patch("openai.AsyncOpenAI") as mock_async_client):
+        mock_client.return_value = mock_client
+        mock_async_client.return_value = mock_async_client
 
-        response = {'choices': [{'message': {'content': 'test_output'}}]}
-        mock_chat_completion.create.return_value = response.copy()
-        mock_chat_completion.acreate = mock.AsyncMock(return_value=response.copy())
-        yield mock_chat_completion
+        mock_client.chat.completions.create.return_value = mk_mock_openai_response(['test_output'])
+        mock_async_client.chat.completions.create = mock.AsyncMock(
+            return_value=mk_mock_openai_response(['test_output']))
+        yield (mock_client, mock_async_client)
 
 
 @pytest.mark.usefixtures("nemollm")
 @pytest.fixture(name="mock_nemollm")
 def mock_nemollm_fixture():
-    with mock.patch("nemollm.NemoLLM") as mock_nemollm:
+    with mock.patch("nemollm.NemoLLM", autospec=True) as mock_nemollm:
         mock_nemollm.return_value = mock_nemollm
         mock_nemollm.generate_multiple.return_value = ["test_output"]
         mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}

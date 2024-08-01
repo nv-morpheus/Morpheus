@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/io/data_loader.hpp"
 
 #include <mrc/modules/properties/persistent.hpp>
@@ -26,8 +27,8 @@
 #include <string>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
-class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules::PersistentModule
+
+class MORPHEUS_EXPORT DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules::PersistentModule
 {
     using type_t = DataLoaderModule;
 
@@ -46,5 +47,4 @@ class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules
 
     DataLoader m_data_loader{};
 };
-#pragma GCC visibility pop
 }  // namespace morpheus

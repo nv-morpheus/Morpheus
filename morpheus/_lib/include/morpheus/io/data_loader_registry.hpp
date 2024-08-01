@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/io/data_loader.hpp"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/objects/factory_registry.hpp"
@@ -24,18 +25,16 @@
 #include <pybind11/pytypes.h>
 
 #include <functional>
-#include <map>
 #include <memory>
 #include <string>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
 
-extern template class FactoryRegistry<Loader>;
+extern template class MORPHEUS_EXPORT FactoryRegistry<Loader>;
 
 using LoaderRegistry = FactoryRegistry<Loader>;  // NOLINT
 
-struct LoaderRegistryProxy
+struct MORPHEUS_EXPORT LoaderRegistryProxy
 {
     static void register_proxy_factory_fn(
         const std::string& name,
@@ -46,5 +45,4 @@ struct LoaderRegistryProxy
     static void register_factory_cleanup_fn(const std::string& name);
 };
 
-#pragma GCC visibility pop
 }  // namespace morpheus

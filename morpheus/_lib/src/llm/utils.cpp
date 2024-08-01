@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,6 @@
 #include "morpheus/llm/utils.hpp"
 
 #include "morpheus/llm/input_map.hpp"
-#include "morpheus/llm/llm_node_runner.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>
@@ -26,6 +25,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <functional>
 #include <iterator>
 #include <regex>
 #include <set>
@@ -112,9 +112,16 @@ input_mappings_t process_input_names(user_input_mappings_t user_inputs, const st
 
         if (found_star_input_name != found_star_node_name)
         {
-            throw std::invalid_argument(
-                "LLMNode::add_node() called with a placeholder input name and node name that "
-                "do not match");
+            if (found_star_input_name)
+            {
+                throw std::invalid_argument(
+                    "LLMNode::add_node() called with a placeholder external name but no placeholder internal name");
+            }
+            else
+            {
+                throw std::invalid_argument(
+                    "LLMNode::add_node() called with a placeholder internal name but no placeholder external name");
+            }
         }
         else if (found_star_input_name && found_star_node_name)
         {

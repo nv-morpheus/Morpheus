@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import mrc
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.utils.module_utils import ModuleLoader
 from morpheus.utils.module_utils import load_module
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ class LinearModulesStage(SinglePortStage):
 
     def __init__(self,
                  c: Config,
-                 module_config: typing.Dict,
+                 module_config: typing.Union[typing.Dict, ModuleLoader],
                  input_port_name: str,
                  output_port_name: str,
                  input_type=typing.Any,
@@ -62,9 +63,14 @@ class LinearModulesStage(SinglePortStage):
         self._input_port_name = input_port_name
         self._output_port_name = output_port_name
 
+        if (isinstance(self._module_config, dict)):
+            self._unique_name = self._module_config.get("module_name", "linear_module_stage")
+        else:
+            self._unique_name = self._module_config.name
+
     @property
     def name(self) -> str:
-        return self._module_config.get("module_name", "linear_module")
+        return self._unique_name
 
     def supports_cpp_node(self):
         return False
@@ -95,9 +101,10 @@ class LinearModulesStage(SinglePortStage):
         raise NotImplementedError("No C++ node is available for this module type")
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-
-        # Load module from the registry.
-        module = load_module(self._module_config, builder=builder)
+        if (isinstance(self._module_config, dict)):
+            module = load_module(self._module_config, builder=builder)
+        else:
+            module = self._module_config.load(builder)
 
         mod_in_node = module.input_port(self._input_port_name)
         mod_out_node = module.output_port(self._output_port_name)

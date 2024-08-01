@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,7 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
     """Output memory block holding the results of inference."""
 
     def __new__(cls, *args, **kwargs):
-        morpheus_logger.deprecated_message_warning(logger, cls, TensorMemory)
+        morpheus_logger.deprecated_message_warning(cls, TensorMemory)
         return super().__new__(cls, *args, **kwargs)
 
     def get_output(self, name: str):

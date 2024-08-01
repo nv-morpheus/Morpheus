@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import cudf
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -91,11 +92,11 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[morpheus.pipeline.messages.MultiResponseMessage, ]
+        typing.Tuple[morpheus.pipeline.messages.MultiResponseMessage, ControlMessage]
             Accepted input types
 
         """
-        return (MultiResponseMessage, )
+        return (MultiResponseMessage, ControlMessage)
 
     def supports_cpp_node(self):
         return False
@@ -118,7 +119,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
         """
         return int(round(x / 1000.0) * 1000)
 
-    def _to_vis_df(self, x: MultiResponseMessage):
+    def _to_vis_df(self, x: MultiResponseMessage | ControlMessage):
 
         idx2label = {
             0: 'address',
@@ -133,7 +134,11 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
             9: 'user'
         }
 
-        df = x.get_meta(["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "data"])
+        columns = ["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "data"]
+        if isinstance(x, MultiResponseMessage):
+            df = x.get_meta(columns)
+        elif isinstance(x, ControlMessage):
+            df = x.payload().get_data(columns)
 
         def indent_data(y: str):
             try:
@@ -141,9 +146,16 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
             except Exception:
                 return y
 
+        if isinstance(df, cudf.DataFrame):
+            df = df.to_pandas()
+
         df["data"] = df["data"].apply(indent_data)
 
-        probs = x.get_probs_tensor()
+        if isinstance(x, MultiResponseMessage):
+            probs = x.get_probs_tensor()
+        elif isinstance(x, ControlMessage):
+            probs = x.tensors().get_tensor("probs")
+
         pass_thresh = (probs >= 0.5).any(axis=1)
         max_arg = probs.argmax(axis=1)
 
@@ -235,7 +247,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
         return await super().start_async()
 
-    def stop(self):
+    async def join(self):
         """
         Stages can implement this to perform cleanup steps when pipeline is stopped.
         """
@@ -263,14 +275,21 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
         def node_fn(input_obs, output_obs):
 
-            def write_batch(x: MultiResponseMessage):
+            def write_batch(x: MultiResponseMessage | ControlMessage):
 
                 sink = pa.BufferOutputStream()
 
                 # This is the timestamp of the earliest message
-                time0 = x.get_meta("timestamp").min()
+                if isinstance(x, MultiResponseMessage):
+                    time0 = x.get_meta("timestamp").min()
+                elif isinstance(x, ControlMessage):
+                    time0 = x.payload().get_data("timestamp").min()
 
-                df = x.get_meta(["timestamp", "src_ip", "dest_ip", "secret_keys", "data"])
+                columns = ["timestamp", "src_ip", "dest_ip", "secret_keys", "data"]
+                if isinstance(x, MultiResponseMessage):
+                    df = x.get_meta(columns)
+                elif isinstance(x, ControlMessage):
+                    df = x.payload().get_data(columns)
 
                 out_df = cudf.DataFrame()
 

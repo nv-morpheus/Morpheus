@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,10 +17,12 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for ShapeType, TensorIndex, TensorSize
 
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>
 
 #include <cstdint>  // for uint8_t
@@ -44,8 +46,7 @@ namespace morpheus {
  *
  */
 
-#pragma GCC visibility push(default)
-class Tensor
+class MORPHEUS_EXPORT Tensor
 {
   public:
     Tensor(std::shared_ptr<rmm::device_buffer> buffer,
@@ -91,7 +92,5 @@ class Tensor
     TensorSize m_offset;
     std::shared_ptr<rmm::device_buffer> m_device_buffer;
 };
-
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

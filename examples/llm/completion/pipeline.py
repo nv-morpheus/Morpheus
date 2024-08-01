@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -54,8 +54,8 @@ def _build_engine(llm_service: str):
     else:
         raise ValueError(f"Invalid LLM service: {llm_service}")
 
-    llm_service = llm_service_cls()
-    llm_clinet = llm_service.get_client(model_name=model_name)
+    service = llm_service_cls()
+    llm_clinet = service.get_client(model_name=model_name)
 
     engine = LLMEngine()
 

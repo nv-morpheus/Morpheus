@@ -1,5 +1,5 @@
 <!--
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,17 +19,17 @@
 ### Set up Triton Inference Server
 
 ##### Pull Triton Inference Server Docker Image
-Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tritonserver) suitable for your environment.
+Pull Morpheus Models Docker image from NGC.
 
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:23.06-py3
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
 ```
 
 ##### Start Triton Inference Server container
 ```bash
-docker run --gpus=all --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx --load-model all-MiniLM-L6-v2
+docker run --gpus=all --rm -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx --load-model all-MiniLM-L6-v2
 ```
 
 ##### Verify Model Deployments
@@ -198,10 +198,7 @@ Note that the `test_cloudtrail_ae_e2e` benchmarks measure performance of a pipel
 You can use the same Dev container created here to run the Production DFP benchmarks. You would just need to install additional dependencies as follows:
 
 ```bash
-export CUDA_VER=11.8
-mamba install -n base -c conda-forge conda-merge
-conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml \
-  docker/conda/environments/cuda${CUDA_VER}_examples.yml > .tmp/merged.yml \
-  && mamba env update -n ${CONDA_DEFAULT_ENV} --file .tmp/merged.yml
-
+mamba env update \
+  -n ${CONDA_DEFAULT_ENV} \
+  --file ./conda/environments/examples_cuda-121_arch-x86_64.yaml
 ```

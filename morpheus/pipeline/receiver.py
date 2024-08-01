@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ import typing
 
 import mrc
 
-import morpheus.pipeline as _pipeline
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.utils.type_utils import greatest_ancestor
 
 logger = logging.getLogger(__name__)

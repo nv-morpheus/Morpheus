@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,13 +17,13 @@ import os
 import re
 from unittest import mock
 
-import langchain
 import pytest
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent
 from langchain.agents import load_tools
 from langchain.agents.tools import Tool
-from langchain.utilities import serpapi
+from langchain_community.llms import OpenAI  # pylint: disable=no-name-in-module
+from langchain_community.utilities import serpapi
 
 import cudf
 
@@ -50,7 +50,7 @@ def questions_fixture():
 
 def _build_agent_executor(model_name: str):
 
-    llm = langchain.OpenAI(model=model_name, temperature=0, cache=False)
+    llm = OpenAI(model=model_name, temperature=0, cache=False)
 
     # Explicitly construct the serpapi tool, loading it via load_tools makes it too difficult to mock
     tools = [
@@ -111,7 +111,6 @@ def _run_pipeline(config: Config,
 
 
 @pytest.mark.usefixtures("openai", "openai_api_key", "serpapi_api_key")
-@pytest.mark.use_python
 def test_agents_simple_pipe_integration_openai(config: Config, questions: list[str]):
     sink = _run_pipeline(config, questions=questions, model_name="gpt-3.5-turbo-instruct")
 
@@ -126,9 +125,9 @@ def test_agents_simple_pipe_integration_openai(config: Config, questions: list[s
 
 
 @pytest.mark.usefixtures("openai", "restore_environ")
-@pytest.mark.use_python
-@mock.patch("langchain.utilities.serpapi.SerpAPIWrapper.aresults")
-@mock.patch("langchain.OpenAI._agenerate", autospec=True)  # autospec is needed as langchain will inspect the function
+@mock.patch("langchain_community.utilities.serpapi.SerpAPIWrapper.aresults")
+@mock.patch("langchain_community.llms.OpenAI._agenerate",
+            autospec=True)  # autospec is needed as langchain will inspect the function
 def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
                             mock_serpapi_aresults: mock.AsyncMock,
                             config: Config,

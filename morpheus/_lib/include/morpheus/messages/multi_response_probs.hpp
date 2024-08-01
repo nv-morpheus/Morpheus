@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
@@ -44,8 +45,9 @@ namespace morpheus {
  * array. Helps ensure the proper outputs are set and eases debugging
  *
  */
-#pragma GCC visibility push(default)
-class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsMessage, MultiResponseMessage>
+
+class MORPHEUS_EXPORT MultiResponseProbsMessage
+  : public DerivedMultiMessage<MultiResponseProbsMessage, MultiResponseMessage>
 {
   public:
     /**
@@ -94,7 +96,7 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiResponseProbsMessageInterfaceProxy : public MultiResponseMessageInterfaceProxy
+struct MORPHEUS_EXPORT MultiResponseProbsMessageInterfaceProxy : public MultiResponseMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiResponseProbsMessage object, and return a shared pointer to the result
@@ -128,6 +130,5 @@ struct MultiResponseProbsMessageInterfaceProxy : public MultiResponseMessageInte
      */
     static pybind11::object probs(MultiResponseProbsMessage& self);
 };
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

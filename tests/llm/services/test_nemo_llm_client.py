@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,95 +13,104 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 from unittest import mock
 
 import pytest
 
 from morpheus.llm.services.llm_service import LLMClient
-from morpheus.llm.services.nemo_llm_service import NeMoLLMClient
+from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 
 
-def test_constructor(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.MagicMock):
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+def test_constructor():
+    client = NeMoLLMService(api_key="dummy").get_client(model_name="test_model", additional_arg="test_arg")
+
     assert isinstance(client, LLMClient)
-    mock_nemollm.assert_not_called()
 
 
-def test_get_input_names(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.MagicMock):
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+def test_get_input_names():
+    client = NeMoLLMService(api_key="dummy").get_client(model_name="test_model", additional_arg="test_arg")
+
     assert client.get_input_names() == ["prompt"]
-    mock_nemollm.assert_not_called()
 
 
-def test_generate(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.MagicMock):
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
-    assert client.generate({'prompt': "test_prompt"}) == "test_output"
+def test_generate(mock_nemollm: mock.MagicMock):
+
+    client = NeMoLLMService(api_key="dummy").get_client(model_name="test_model", customization_id="test_custom_id")
+
+    assert client.generate(prompt="test_prompt") == "test_prompt"
+
     mock_nemollm.generate_multiple.assert_called_once_with(model="test_model",
                                                            prompts=["test_prompt"],
                                                            return_type="text",
-                                                           additional_arg="test_arg")
+                                                           customization_id="test_custom_id")
 
 
-def test_generate_batch(mock_nemollm: mock.MagicMock, mock_nemo_service: mock.MagicMock):
-    mock_nemollm.generate_multiple.return_value = ["output1", "output2"]
+def test_generate_batch(mock_nemollm: mock.MagicMock):
 
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
-    assert client.generate_batch({'prompt': ["prompt1", "prompt2"]}) == ["output1", "output2"]
+    client = NeMoLLMService(api_key="dummy").get_client(model_name="test_model", customization_id="test_custom_id")
+
+    assert client.generate_batch({'prompt': ["prompt1", "prompt2"]}) == ["prompt1", "prompt2"]
+
     mock_nemollm.generate_multiple.assert_called_once_with(model="test_model",
                                                            prompts=["prompt1", "prompt2"],
                                                            return_type="text",
-                                                           additional_arg="test_arg")
+                                                           customization_id="test_custom_id")
 
 
-@mock.patch("asyncio.wrap_future")
-@mock.patch("asyncio.gather", new_callable=mock.AsyncMock)
-def test_generate_async(
-        mock_asyncio_gather: mock.AsyncMock,
-        mock_asyncio_wrap_future: mock.MagicMock,  # pylint: disable=unused-argument
-        mock_nemollm: mock.MagicMock,
-        mock_nemo_service: mock.MagicMock):
-    mock_asyncio_gather.return_value = [mock.MagicMock()]
+async def test_generate_async(mock_nemollm: mock.MagicMock):
 
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
-    results = asyncio.run(client.generate_async({'prompt': "test_prompt"}))
+    client = NeMoLLMService(api_key="dummy").get_client(model_name="test_model", customization_id="test_custom_id")
+
+    results = await client.generate_async(prompt="test_prompt")
+
     assert results == "test_output"
+
     mock_nemollm.generate.assert_called_once_with("test_model",
                                                   "test_prompt",
                                                   return_type="async",
-                                                  additional_arg="test_arg")
+                                                  customization_id="test_custom_id")
 
 
-@mock.patch("asyncio.wrap_future")
-@mock.patch("asyncio.gather", new_callable=mock.AsyncMock)
-def test_generate_batch_async(
-        mock_asyncio_gather: mock.AsyncMock,
-        mock_asyncio_wrap_future: mock.MagicMock,  # pylint: disable=unused-argument
-        mock_nemollm: mock.MagicMock,
-        mock_nemo_service: mock.MagicMock):
-    mock_asyncio_gather.return_value = [mock.MagicMock(), mock.MagicMock()]
-    mock_nemollm.post_process_generate_response.side_effect = [{"text": "output1"}, {"text": "output2"}]
+async def test_generate_batch_async(mock_nemollm: mock.MagicMock):
+    # mock_nemollm.post_process_generate_response.side_effect = [{"text": "output1"}, {"text": "output2"}]
 
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
-    results = asyncio.run(client.generate_batch_async({'prompt': ["prompt1", "prompt2"]}))
-    assert results == ["output1", "output2"]
+    client = NeMoLLMService(api_key="dummy").get_client(model_name="test_model", customization_id="test_custom_id")
+
+    results = await client.generate_batch_async({'prompt': ["prompt1", "prompt2"]})
+
+    assert results == ["test_output", "test_output"]
+
     mock_nemollm.generate.assert_has_calls([
-        mock.call("test_model", "prompt1", return_type="async", additional_arg="test_arg"),
-        mock.call("test_model", "prompt2", return_type="async", additional_arg="test_arg")
+        mock.call("test_model", "prompt1", return_type="async", customization_id="test_custom_id"),
+        mock.call("test_model", "prompt2", return_type="async", customization_id="test_custom_id")
     ])
 
 
-@mock.patch("asyncio.wrap_future")
-@mock.patch("asyncio.gather", new_callable=mock.AsyncMock)
-def test_generate_batch_async_error(
-        mock_asyncio_gather: mock.AsyncMock,
-        mock_asyncio_wrap_future: mock.MagicMock,  # pylint: disable=unused-argument
-        mock_nemollm: mock.MagicMock,
-        mock_nemo_service: mock.MagicMock):
-    mock_asyncio_gather.return_value = [mock.MagicMock(), mock.MagicMock()]
+async def test_generate_batch_async_error(mock_nemollm: mock.MagicMock):
     mock_nemollm.post_process_generate_response.return_value = {"status": "fail", "msg": "unittest"}
 
-    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+    client = NeMoLLMService(api_key="dummy").get_client(model_name="test_model", customization_id="test_custom_id")
 
     with pytest.raises(RuntimeError, match="unittest"):
-        asyncio.run(client.generate_batch_async({'prompt': ["prompt1", "prompt2"]}))
+        await client.generate_batch_async({'prompt': ["prompt1", "prompt2"]})
+
+
+async def test_generate_batch_async_error_retry(mock_nemollm: mock.MagicMock):
+
+    count = 0
+
+    def mock_post_process_generate_response(*args, **_):
+        nonlocal count
+        if count < 2:
+            count += 1
+            return {"status": "fail", "msg": "unittest"}
+        return {"status": "success", "text": args[0]}
+
+    mock_nemollm.post_process_generate_response.side_effect = mock_post_process_generate_response
+
+    client = NeMoLLMService(api_key="dummy", retry_count=2).get_client(model_name="test_model",
+                                                                       customization_id="test_custom_id")
+
+    results = await client.generate_batch_async({'prompt': ["prompt1", "prompt2"]})
+
+    assert results == ["prompt1", "prompt2"]

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -239,7 +239,7 @@ class SQLUtils:
             database=sql_params.get("database", None),
         )
 
-        return str(url_obj)
+        return url_obj.render_as_string(hide_password=False)
 
     def gen_placeholder_str(self, count: int) -> str:
         """

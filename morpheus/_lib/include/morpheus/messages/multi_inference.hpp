@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
@@ -42,8 +43,8 @@ namespace morpheus {
  * of the data contained within it. Builds on top of the `MultiInferenceMessage` and `MultiTensorMessage` class
  * to add additional data for inferencing.
  */
-#pragma GCC visibility push(default)
-class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiTensorMessage>
+
+class MORPHEUS_EXPORT MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiTensorMessage>
 {
   public:
     /**
@@ -98,7 +99,7 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceProxy
+struct MORPHEUS_EXPORT MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiInferenceMessage object, and return a shared pointer to the result
@@ -121,6 +122,5 @@ struct MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceP
                                                        TensorIndex count,
                                                        std::string id_tensor_name);
 };
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

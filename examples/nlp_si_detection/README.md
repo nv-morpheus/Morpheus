@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,14 @@ limitations under the License.
 # Sensitive Information Detection with Natural Language Processing (NLP) Example
 
 This example illustrates how to use Morpheus to detect Sensitive Information (SI) in network packets automatically by utilizing a Natural Language Processing (NLP) neural network and Triton Inference Server.
+
+## Supported Environments
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Triton on the host |
+| Morpheus Release Container | ✔ | Requires launching Triton on the host |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script and replacing `--server_url=localhost:8000` with `--server_url=triton:8000` |
 
 ## Background
 
@@ -77,10 +85,8 @@ This example utilizes the Triton Inference Server to perform inference. The neur
 From the Morpheus repo root directory, run the following to launch Triton and load the `sid-minibert` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
 ```
-
-Where `23.06-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (refer to [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
 
 This will launch Triton and only load the `sid-minibert-onnx` model. This model has been configured with a max batch size of 32, and to use dynamic batching for increased performance.
 
@@ -103,11 +109,10 @@ The following command line is the entire command to build and launch the pipelin
 
 From the Morpheus repo root directory, run:
 ```bash
-export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
 morpheus --log_level=DEBUG \
-   `# Run a pipeline with 8 threads and a model batch size of 32 (Must match Triton config)` \
-   run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+   `# Run a pipeline with a model batch size of 32 (Must match Triton config)` \
+   run --pipeline_batch_size=1024 --model_max_batch_size=32 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-nlp --model_seq_length=256 \
    `# 1st Stage: Read from file` \

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
+import re
 import types
 import typing
 
@@ -27,6 +29,11 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import TensorMemory
+
+
+@pytest.fixture(scope='module', name="model_config_file")
+def fixture_model_config_file():
+    return os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing/log-parsing-config.json')
 
 
 def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str):
@@ -55,15 +62,15 @@ def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py'))
 def test_log_parsing_post_processing_stage(config: Config,
                                            dataset_cudf: DatasetManager,
-                                           import_mod: typing.List[types.ModuleType]):
+                                           import_mod: typing.List[types.ModuleType],
+                                           bert_cased_vocab: str,
+                                           model_config_file: str):
     postprocessing_mod = import_mod
 
-    model_vocab_file = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-vocab.txt')
     log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing')
-    model_config_file = os.path.join(log_test_data_dir, 'log-parsing-config.json')
 
     stage = postprocessing_mod.LogParsingPostProcessingStage(config,
-                                                             vocab_path=model_vocab_file,
+                                                             vocab_path=bert_cased_vocab,
                                                              model_config_path=model_config_file)
 
     post_proc_message = build_post_proc_message(dataset_cudf, log_test_data_dir)
@@ -73,3 +80,40 @@ def test_log_parsing_post_processing_stage(config: Config,
 
     assert isinstance(out_meta, MessageMeta)
     DatasetManager.assert_compare_df(out_meta.df, expected_df)
+
+
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py'))
+def test_undefined_variable_error(caplog: pytest.LogCaptureFixture,
+                                  config: Config,
+                                  dataset_cudf: DatasetManager,
+                                  import_mod: typing.List[types.ModuleType],
+                                  bert_cased_vocab: str,
+                                  model_config_file: str):
+    """
+    Test for undefined variable error, which occurrs when the first token_id is unexpected resulting in the `new_label`
+    and `new_confidence` variables being undefined.
+    """
+    postprocessing_mod = import_mod
+
+    log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing')
+
+    stage = postprocessing_mod.LogParsingPostProcessingStage(config,
+                                                             vocab_path=bert_cased_vocab,
+                                                             model_config_path=model_config_file)
+
+    post_proc_message = build_post_proc_message(dataset_cudf, log_test_data_dir)
+    post_proc_message.get_tensor('input_ids')[0] = 27716.0
+
+    expected_log_re = re.compile(r"^Ignoring unexecpected subword token:.*")
+
+    caplog.clear()
+    with caplog.at_level(logging.WARNING):
+        stage._postprocess(post_proc_message)
+
+        logged_warning = False
+        for rec in caplog.records:
+            if rec.levelno == logging.WARNING and expected_log_re.match(rec.message) is not None:
+                logged_warning = True
+                break
+
+            assert logged_warning, "Expected warning message not found in logs"

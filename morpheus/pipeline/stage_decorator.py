@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,18 +24,15 @@ from mrc.core import operators as ops
 
 import cudf
 
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
-from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 GeneratorType = typing.Callable[..., collections.abc.Iterator[typing.Any]]
-ComputeSchemaType = typing.Callable[[StageSchema], None]
+ComputeSchemaType = typing.Callable[[_pipeline.StageSchema], None]
 
 
 def _get_name_from_fn(fn: typing.Callable) -> str:
@@ -71,7 +68,7 @@ def _validate_keyword_arguments(fn_name: str,
                              f"{fn_name} contains '{param.name}' that was not provided with a value")
 
 
-class WrappedFunctionSourceStage(SingleOutputSource):
+class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
     """
     Source stage that wraps a generator function as the method for generating messages.
 
@@ -109,14 +106,14 @@ class WrappedFunctionSourceStage(SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def compute_schema(self, schema: StageSchema):
+    def compute_schema(self, schema: _pipeline.StageSchema):
         self._compute_schema_fn(schema)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self._gen_fn)
 
 
-class PreAllocatedWrappedFunctionStage(PreallocatorMixin, WrappedFunctionSourceStage):
+class PreAllocatedWrappedFunctionStage(_pipeline.PreallocatorMixin, WrappedFunctionSourceStage):
     """
     Source stage that wraps a generator function as the method for generating messages.
 
@@ -184,10 +181,12 @@ def source(gen_fn: GeneratorType = None, *, name: str = None, compute_schema_fn:
         if isinstance(return_type, (typing.GenericAlias, typing._GenericAlias)):
             return_type = return_type.__args__[0]
 
-        if compute_schema_fn is None:  # pylint: disable=used-before-assignment
+        if compute_schema_fn is None:
 
-            def compute_schema_fn(schema: StageSchema):
+            def compute_schema_fn_inner(schema: _pipeline.StageSchema):
                 schema.output_schema.set_type(return_type)
+
+            compute_schema_fn = compute_schema_fn_inner
 
         _validate_keyword_arguments(name, signature, kwargs, param_iter=iter(signature.parameters.values()))
 
@@ -209,7 +208,7 @@ def source(gen_fn: GeneratorType = None, *, name: str = None, compute_schema_fn:
     return wrapper
 
 
-class WrappedFunctionStage(SinglePortStage):
+class WrappedFunctionStage(_pipeline.SinglePortStage):
     """
     Stage that wraps a function to be used for processing messages.
 
@@ -262,7 +261,7 @@ class WrappedFunctionStage(SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def compute_schema(self, schema: StageSchema):
+    def compute_schema(self, schema: _pipeline.StageSchema):
         self._compute_schema_fn(schema)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
@@ -345,13 +344,15 @@ def stage(on_data_fn: typing.Callable = None,
                 raise ValueError(
                     "Stage functions must have either a return type annotation or specify a compute_schema_fn")
 
-            def compute_schema_fn(schema: StageSchema):
+            def compute_schema_fn_inner(schema: _pipeline.StageSchema):
                 if return_type is typing.Any:
                     out_type = schema.input_schema.get_type()
                 else:
                     out_type = return_type
 
                 schema.output_schema.set_type(out_type)
+
+            compute_schema_fn = compute_schema_fn_inner
 
         _validate_keyword_arguments(name, signature, kwargs, param_iter=param_iter)
 

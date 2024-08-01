@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import inspect
 import logging
 import os
@@ -59,31 +60,31 @@ def test_constructor(config: Config):
 
 
 @mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
-def test_on_start(mock_morph_tqdm: mock.MagicMock, config: Config):
+def test_start_async(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     stage = MonitorStage(config, log_level=logging.WARNING)
     assert stage._mc._progress is None
 
-    stage.on_start()
+    asyncio.run(stage.start_async())
     mock_morph_tqdm.assert_called_once()
     mock_morph_tqdm.reset.assert_called_once()
     assert stage._mc._progress is mock_morph_tqdm
 
 
 @mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
-def test_stop(mock_morph_tqdm: mock.MagicMock, config: Config):
+async def test_join(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     stage = MonitorStage(config, log_level=logging.WARNING)
     assert stage._mc._progress is None
 
-    # Calling on_stop is a noop if we are stopped
-    stage.stop()
+    # Calling join is a noop if we are stopped
+    await stage.join()
     mock_morph_tqdm.assert_not_called()
 
-    stage.on_start()
-    stage.stop()
+    await stage.start_async()
+    await stage.join()
     mock_morph_tqdm.close.assert_called_once()
 
 
@@ -94,7 +95,7 @@ def test_refresh(mock_morph_tqdm: mock.MagicMock, config: Config):
     stage = MonitorStage(config, log_level=logging.WARNING)
     assert stage._mc._progress is None
 
-    stage.on_start()
+    asyncio.run(stage.start_async())
     stage._mc.refresh_progress(None)
     mock_morph_tqdm.refresh.assert_called_once()
 
@@ -138,7 +139,7 @@ def test_progress_sink(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     stage = MonitorStage(config, log_level=logging.WARNING)
-    stage.on_start()
+    asyncio.run(stage.start_async())
 
     stage._mc.progress_sink(None)
     assert stage._mc._determine_count_fn is None
@@ -150,23 +151,22 @@ def test_progress_sink(mock_morph_tqdm: mock.MagicMock, config: Config):
 
 
 @pytest.mark.usefixtures("reset_loglevel")
-@pytest.mark.parametrize('morpheus_log_level',
-                         [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
+@pytest.mark.parametrize('log_level', [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
 @mock.patch('morpheus.stages.general.monitor_stage.MonitorController.sink_on_completed', autospec=True)
 @mock.patch('morpheus.stages.general.monitor_stage.MonitorController.progress_sink', autospec=True)
 def test_log_level(mock_progress_sink: mock.MagicMock,
                    mock_sink_on_completed: mock.MagicMock,
                    config: Config,
-                   morpheus_log_level: int):
+                   log_level: int):
     """
     Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
     """
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
-    set_log_level(morpheus_log_level)
+    set_log_level(log_level)
     monitor_stage_level = logging.INFO
 
-    should_be_included = (morpheus_log_level <= monitor_stage_level)
+    should_be_included = (log_level <= monitor_stage_level)
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file))
@@ -178,15 +178,12 @@ def test_log_level(mock_progress_sink: mock.MagicMock,
     assert mock_sink_on_completed.call_count == expected_call_count
 
 
-@pytest.mark.usefixtures("reset_loglevel")
 @pytest.mark.use_python
-def test_thread(config: Config):
+def test_thread(config: Config, morpheus_log_level: int):
     """
-    Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
+    Test ensures the monitor stage executes on the same thread as the parent stage
     """
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-
-    set_log_level(log_level=logging.INFO)
 
     monitor_thread_id = None
 
@@ -201,8 +198,9 @@ def test_thread(config: Config):
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file))
     dummy_stage = pipe.add_stage(RecordThreadIdStage(config))
-    pipe.add_stage(MonitorStage(config, determine_count_fn=fake_determine_count_fn))
+    pipe.add_stage(MonitorStage(config, determine_count_fn=fake_determine_count_fn, log_level=morpheus_log_level))
     pipe.run()
 
     # Check that the thread ids are the same
+    assert monitor_thread_id is not None
     assert dummy_stage.thread_id == monitor_thread_id

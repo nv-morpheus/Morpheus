@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,6 +34,14 @@ def openai_fixture(openai):
     All of the tests in this subdir require openai
     """
     yield openai
+
+
+@pytest.fixture(name="nvfoundationllm", autouse=True, scope='session')
+def nvfoundationllm_fixture(nvfoundationllm):
+    """
+    All of the tests in this subdir require nvfoundationllm
+    """
+    yield nvfoundationllm
 
 
 @pytest.fixture(name="mock_chat_completion", autouse=True)

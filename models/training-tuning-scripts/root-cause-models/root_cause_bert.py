@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -85,7 +85,7 @@ def train(trainingdata, unseenerrors):
     print(f1_score(true_labels, tests))
 
 
-def main():
+def main(args):
 
     train(args.trainingdata, args.unseenerrors)
 
@@ -97,6 +97,5 @@ if __name__ == '__main__':
                         required=True,
                         help="""Labelled data to be added to test set for
                         evaluation after training""")
-    args = parser.parse_args()
 
-main()
+    main(parser.parse_args())

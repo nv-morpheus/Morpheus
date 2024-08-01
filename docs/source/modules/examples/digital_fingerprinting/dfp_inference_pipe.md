@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -60,7 +60,7 @@ into a single module.
 
 | Parameter               | Type   | Description                                                 | Example Value | Default Value |
 |-------------------------|--------|-------------------------------------------------------------|---------------|---------------|
-| `cache_mode`            | string | The user ID to use if the user ID is not found              | "batch"       | `batch`       |
+| `cache_mode`            | string | Mode for managing user cache. Setting to `batch` flushes cache once trigger conditions are met. Otherwise, continue to aggregate user's history. | "batch"       | `batch`       |
 | `min_history`           | int    | Minimum history to trigger a new training event             | 1             | `1`             |
 | `max_history`           | int    | Maximum history to include in a new training event          | 0             | `0`             |
 | `timestamp_column_name` | string | Name of the column containing timestamps                    | "timestamp"   | `timestamp`   |
@@ -105,7 +105,7 @@ into a single module.
   },
   "stream_aggregation_options": {
     "timestamp_column_name": "timestamp",
-    "cache_mode": "MEMORY",
+    "cache_mode": "batch",
     "trigger_on_min_history": true,
     "aggregation_span": "1D",
     "trigger_on_min_increment": true,

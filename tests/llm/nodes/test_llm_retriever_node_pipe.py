@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,7 +52,6 @@ def _build_engine(vdb_service, **similarity_search_kwargs) -> LLMEngine:
     return engine
 
 
-@pytest.mark.use_python
 def test_pipeline(config: Config):
     expected_output = [[1, 2, 3], [4, 5, 6]]
 
@@ -83,7 +82,6 @@ def test_pipeline(config: Config):
     assert actual_df.to_pandas().equals(expected_df.to_pandas())
 
 
-@pytest.mark.use_python
 @pytest.mark.milvus
 def test_pipeline_with_milvus(config: Config,
                               milvus_service: MilvusVectorDBService,
@@ -105,7 +103,15 @@ def test_pipeline_with_milvus(config: Config,
     values = {'prompt': ["prompt1", "prompt2"]}
     input_df = cudf.DataFrame(values)
     expected_df = input_df.copy(deep=True)
-    expected_df["response"] = [[{'0': 27, '1': 2}, {'0': 26, '1': 1}], [{'0': 27, '1': 2}, {'0': 26, '1': 1}]]
+    expected_df["response"] = [[{
+        'age': 27, 'id': 2
+    }, {
+        'age': 26, 'id': 1
+    }], [{
+        'age': 27, 'id': 2
+    }, {
+        'age': 26, 'id': 1
+    }]]
 
     task_payload = {"task_type": "llm_engine", "task_dict": {"input_keys": sorted(values.keys())}}
 

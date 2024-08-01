@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ NUMARGS=$#
 ARGS=$*
 
 function hasArg {
-    (( ${NUMARGS} != 0 )) && (echo " ${ARGS} " | grep -q " $1 ")
+   (( ${NUMARGS} != 0 )) && (echo " ${ARGS} " | grep -q " $1 ")
 }
 
 function get_version() {
@@ -48,6 +48,7 @@ export CMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES:-"RAPIDS"}
 export MORPHEUS_PYTHON_BUILD_STUBS=${MORPHEUS_PYTHON_BUILD_STUBS:-"ON"}
 export MORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR:-"${MORPHEUS_ROOT}/.cache"}
 export PARALLEL_LEVEL=${PARALLEL_LEVEL:-$(nproc)}
+export MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
 
 # Set CONDA_CHANNEL_ALIAS to mimic the conda config channel_alias property during the build
 CONDA_CHANNEL_ALIAS=${CONDA_CHANNEL_ALIAS:-""}
@@ -88,13 +89,23 @@ if [[ "${CONDA_COMMAND}" == "mambabuild" || "${CONDA_COMMAND}" == "build" ]]; th
    CONDA_ARGS_ARRAY+=("--build-id-pat" "{n}-{v}")
 fi
 
-# And default channels (with optional channel alias)
+# And default channels (should match dependencies.yaml) with optional channel alias
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}conda-forge")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}huggingface")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}rapidsai")
-CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/cuda-11.8.0")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}rapidsai-nightly")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/dev")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}pytorch")
-CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}conda-forge")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}defaults")
+
+if [[ ${NUMARGS} == 0 ]]; then
+   echo -e "${r}ERROR: No arguments were provided. Please provide at least one package to build. Available packages:${x}"
+   echo -e "${r}   morpheus${x}"
+   echo -e "${r}   pydebug${x}"
+   echo -e "${r}Exiting...${x}"
+   exit 12
+fi
 
 if hasArg morpheus; then
    # Set GIT_VERSION to set the project version inside of meta.yaml
@@ -107,10 +118,10 @@ if hasArg morpheus; then
 fi
 
 if hasArg pydebug; then
-  export MORPHEUS_PYTHON_VER=$(python --version | cut -d ' ' -f 2)
+   export MORPHEUS_PYTHON_VER=$(python --version | cut -d ' ' -f 2)
 
-  echo "Running conda-build for python-dbg..."
-  set -x
-  conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ./ci/conda/recipes/python-dbg
-  set +x
+   echo "Running conda-build for python-dbg..."
+   set -x
+   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ./ci/conda/recipes/python-dbg
+   set +x
 fi

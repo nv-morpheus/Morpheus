@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,19 +27,35 @@ x="\033[0m"
 # Change to the script file to ensure we are in the correct repo (in case were in a submodule)
 pushd ${SCRIPT_DIR} &> /dev/null
 
+MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
+
 DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"nvcr.io/nvidia/morpheus/morpheus"}
 DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"$(git describe --tags --abbrev=0)-runtime"}
+
+# This variable is used for passing extra arguments to the docker run command. Do not use DOCKER_ARGS for this purpose.
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 popd &> /dev/null
 
-DOCKER_ARGS="--runtime=nvidia --env WORKSPACE_VOLUME=${PWD} -v $PWD/models:/workspace/models --net=host --gpus=all --cap-add=sys_nice ${DOCKER_EXTRA_ARGS}"
+DOCKER_ARGS="--runtime=nvidia --env WORKSPACE_VOLUME=${PWD} --net=host --gpus=all --cap-add=sys_nice ${DOCKER_EXTRA_ARGS}"
 
 if [[ -n "${SSH_AUTH_SOCK}" ]]; then
    echo -e "${b}Setting up ssh-agent auth socket${x}"
    DOCKER_ARGS="${DOCKER_ARGS} -v $(readlink -f $SSH_AUTH_SOCK):/ssh-agent:ro -e SSH_AUTH_SOCK=/ssh-agent"
 fi
 
+# DPDK requires hugepage and privileged container
+DOCA_EXTRA_ARGS=""
+if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
+   echo -e "${b}Enabling DOCA Support. Mounting /dev/hugepages and running in privileged mode${x}"
+
+   DOCKER_ARGS="${DOCKER_ARGS} -v /dev/hugepages:/dev/hugepages --privileged"
+fi
+
+
 echo -e "${g}Launching ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}...${x}"
 
-docker run --rm -ti ${DOCKER_ARGS} ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} "${@:-bash}"
+# Enable command logging to show what is being executed
+set -x
+docker run ${DOCA_EXTRA_ARGS} --rm -ti ${DOCKER_ARGS} ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} "${@:-bash}"
+set +x

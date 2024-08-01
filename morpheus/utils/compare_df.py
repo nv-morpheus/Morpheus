@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,7 +52,7 @@ def filter_df(df: pd.DataFrame,
     """
 
     if (include_columns is not None and len(include_columns) > 0):
-        include_columns = re.compile("({})".format("|".join(include_columns)))
+        include_columns = re.compile(f"({'|'.join(include_columns)})")
 
     if exclude_columns is not None:
         exclude_columns = [re.compile(x) for x in exclude_columns]

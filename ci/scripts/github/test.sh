@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,40 +21,27 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 
 rapids-dependency-file-generator \
   --output conda \
-  --file_key test \
-  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee env.yaml
+  --file-key all \
+  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee "${WORKSPACE_TMP}/env.yaml"
 
-update_conda_env env.yaml
+update_conda_env "${WORKSPACE_TMP}/env.yaml"
 
-rapids-logger "Check versions"
-python3 --version
-x86_64-conda-linux-gnu-cc --version
-x86_64-conda-linux-gnu-c++ --version
-cmake --version
-ninja --version
-sccache --version
-
-git submodule update --init --recursive
+log_toolchain
 
 CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=OFF"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_PERFORM_INSTALL=ON"
-if [[ "${LOCAL_CI}" == "" ]]; then
-    CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
-fi
+CMAKE_FLAGS="${CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX}"
 
 rapids-logger "Configuring cmake for Morpheus with ${CMAKE_FLAGS}"
-cmake -B build -G Ninja ${CMAKE_FLAGS} .
+cmake ${CMAKE_FLAGS} .
 
 rapids-logger "Building Morpheus"
-cmake --build build --parallel ${PARALLEL_LEVEL}
+cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target install
 
-if [[ "${LOCAL_CI}" == "" ]]; then
-    rapids-logger "sccache usage for morpheus build:"
-    sccache --show-stats
-fi
+log_sccache_stats
 
 rapids-logger "Checking Python stub files"
 
@@ -67,7 +54,7 @@ if [[ $(git status --short --untracked | grep .pyi) != "" ]]; then
     exit 1
 fi
 
-CPP_TESTS=($(find ${MORPHEUS_ROOT}/build -name "*.x"))
+CPP_TESTS=($(find ${MORPHEUS_ROOT}/${BUILD_DIR} -name "*.x"))
 
 rapids-logger "Pulling LFS assets"
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ from morpheus.utils.logger import configure_logging
 from stages.create_features import CreateFeaturesRWStage
 from stages.preprocessing import PreprocessingRWStage
 
+CUR_DIR = os.path.dirname(__file__)
+
 
 @click.command()
 @click.option('--debug', default=False)
@@ -64,7 +66,7 @@ from stages.preprocessing import PreprocessingRWStage
 @click.option(
     "--conf_file",
     type=click.STRING,
-    default="./config/ransomware_detection.yaml",
+    default=os.path.join(CUR_DIR, "config/ransomware_detection.yaml"),
     help="Ransomware detection configuration filepath.",
 )
 @click.option(

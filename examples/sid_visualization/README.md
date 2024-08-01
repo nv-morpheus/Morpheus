@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,11 +47,6 @@ Save the Morpheus repo directory:
 export MORPHEUS_ROOT=$(git rev-parse --show-toplevel)
 ```
 
-Ensure SID model is downloaded for deployment to Triton:
-```bash
-./scripts/fetch_data.py fetch models
-```
-
 Change to the example directory:
 ```bash
 cd ${MORPHEUS_ROOT}/examples/sid_visualization
@@ -80,11 +75,6 @@ Inside the container, compile Morpheus:
 BUILD_DIR=build-docker ./scripts/compile.sh
 ```
 
-Install Morpheus with an extra dependency:
-```bash
-pip install -e .
-```
-
 Verify Morpheus is installed:
 ```bash
 morpheus --version
@@ -105,7 +95,7 @@ git lfs install
 After the GUI has been launched, Morpheus now needs to be started. In the same shell used to build Morpheus (the one running the Morpheus Dev container), run the following:
 ```bash
 python examples/sid_visualization/run.py \
-  --debug --use_cpp=False --num_threads=1 \
+  --debug \
   --triton_server_url=triton:8001 \
   --input_file=./examples/data/sid_visualization/group1-benign-2nodes.jsonlines \
   --input_file=./examples/data/sid_visualization/group2-benign-50nodes.jsonlines \
@@ -153,7 +143,7 @@ DEMO_DATASET="examples/data/sid_visualization/group1-benign-2nodes.jsonlines"
 
 ```bash
 morpheus --log_level=DEBUG \
-   run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=32 --edge_buffer_size=4 --use_cpp=False \
+   run --pipeline_batch_size=1024 --model_max_batch_size=32 --edge_buffer_size=4  \
       pipeline-nlp --model_seq_length=256 \
          from-file --filename=${DEMO_DATASET} \
          deserialize \

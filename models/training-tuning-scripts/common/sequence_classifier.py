@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +15,15 @@
 
 import logging
 
-import cudf
-from cudf.core.subword_tokenizer import SubwordTokenizer
 import cupy
-
 import torch
 from torch.optim import AdamW
 from torch.utils.dlpack import to_dlpack
 from tqdm import trange
 from transformers import AutoModelForSequenceClassification
+
+import cudf
+from cudf.core.subword_tokenizer import SubwordTokenizer
 
 from .dataloader import DataLoader
 from .dataset import Dataset

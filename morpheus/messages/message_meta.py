@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,12 +18,15 @@ import threading
 import typing
 import warnings
 
+import cupy as cp
+import numpy as np
 import pandas as pd
 
 import cudf
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -78,23 +81,38 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         Input rows in dataframe.
 
     """
-    _df: pd.DataFrame = dataclasses.field(init=False)
+    _df: DataFrameType = dataclasses.field(init=False)
     _mutex: threading.RLock = dataclasses.field(init=False, repr=False)
 
-    def __init__(self, df: pd.DataFrame) -> None:
+    def __init__(self, df: DataFrameType) -> None:
         super().__init__()
+        if isinstance(df, MessageMeta):
+            df = df.copy_dataframe()
+
         self._mutex = threading.RLock()
         self._df = df
 
+    def _get_col_indexers(self, df, columns: typing.Union[None, str, typing.List[str]] = None):
+
+        if (columns is None):
+            columns = df.columns.to_list()
+        elif (isinstance(columns, str)):
+            # Convert a single string into a list so all versions return tables, not series
+            columns = [columns]
+
+        column_indexer = df.columns.get_indexer_for(columns)
+
+        return column_indexer
+
     @property
-    def df(self) -> pd.DataFrame:
+    def df(self) -> DataFrameType:
         msg = ("Warning the df property returns a copy, please use the copy_dataframe method or the mutable_dataframe "
                "context manager to modify the DataFrame in-place instead.")
 
         warnings.warn(msg, DeprecationWarning)
         return self.copy_dataframe()
 
-    def copy_dataframe(self) -> pd.DataFrame:
+    def copy_dataframe(self) -> DataFrameType:
         return self._df.copy(deep=True)
 
     def mutable_dataframe(self):
@@ -196,6 +214,173 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
 
         # If its a str or list, this is the same
         return self._df.loc[idx, columns]
+
+    @typing.overload
+    def get_data(self) -> cudf.DataFrame:
+        ...
+
+    @typing.overload
+    def get_data(self, columns: str) -> cudf.Series:
+        ...
+
+    @typing.overload
+    def get_data(self, columns: typing.List[str]) -> cudf.DataFrame:
+        ...
+
+    def get_data(self, columns: typing.Union[None, str, typing.List[str]] = None):
+        """
+        Return column values from the underlying DataFrame.
+
+        Parameters
+        ----------
+        columns : typing.Union[None, str, typing.List[str]]
+            Input column names. Returns all columns if `None` is specified. When a string is passed, a `Series` is
+            returned. Otherwise, a `Dataframe` is returned.
+
+        Returns
+        -------
+        Series or Dataframe
+            Column values from the dataframe.
+
+        """
+
+        with self.mutable_dataframe() as df:
+            column_indexer = self._get_col_indexers(df, columns=columns)
+
+            if (-1 in column_indexer):
+                missing_columns = [columns[i] for i, index_value in enumerate(column_indexer) if index_value == -1]
+                raise KeyError(f"Requested columns {missing_columns} does not exist in the dataframe")
+
+            if (isinstance(columns, str) and len(column_indexer) == 1):
+                # Make sure to return a series for a single column
+                column_indexer = column_indexer[0]
+
+            return df.iloc[:, column_indexer]
+
+    def set_data(self, columns: typing.Union[None, str, typing.List[str]], value):
+        """
+        Set column values to the underlying DataFrame.
+
+        Parameters
+        ----------
+        columns : typing.Union[None, str, typing.List[str]]
+            Input column names. Sets the value for the corresponding column names. If `None` is specified, all columns
+            will be used. If the column does not exist, a new one will be created.
+        value : Any
+            Value to apply to the specified columns. If a single value is passed, it will be broadcast to all rows. If a
+            `Series` or `Dataframe` is passed, rows will be matched by index.
+
+        """
+
+        # Get exclusive access to the dataframe
+        with self.mutable_dataframe() as df:
+            # First try to set the values on just our slice if the columns exist
+            column_indexer = self._get_col_indexers(df, columns=columns)
+
+            # Check if the value is a cupy array and we have a pandas dataframe, convert to numpy
+            if (isinstance(value, cp.ndarray) and isinstance(df, pd.DataFrame)):
+                value = value.get()
+
+            # Check to see if we are adding a column. If so, we need to use df.loc instead of df.iloc
+            if (-1 not in column_indexer):
+
+                # If we only have one column, convert it to a series (broadcasts work with more types on a series)
+                if (len(column_indexer) == 1):
+                    column_indexer = column_indexer[0]
+
+                try:
+                    # Now update the slice
+                    df.iloc[:, column_indexer] = value
+                except (ValueError, TypeError):
+                    # Try this as a fallback. Works better for strings. See issue #286
+                    df[columns].iloc[:] = value
+
+            else:
+                # Columns should never be empty if we get here
+                assert columns is not None
+
+                # cudf is really bad at adding new columns
+                if (isinstance(df, cudf.DataFrame)):
+
+                    # TODO(morpheus#1487): This logic no longer works in CUDF 24.04.
+                    # We should find a way to reinable the no-dropped-index path as
+                    # that should be more performant than dropping the index.
+                    # # saved_index = None
+
+                    # # # Check to see if we can use slices
+                    # # if (not (df.index.is_unique and
+                    # #          (df.index.is_monotonic_increasing or df.index.is_monotonic_decreasing))):
+                    # #     # Save the index and reset
+                    # #     saved_index = df.index
+                    # #     df.reset_index(drop=True, inplace=True)
+
+                    # # # Perform the update via slices
+                    # # df.loc[df.index[row_indexer], columns] = value
+
+                    # # # Reset the index if we changed it
+                    # # if (saved_index is not None):
+                    # #     df.set_index(saved_index, inplace=True)
+
+                    saved_index = df.index
+                    df.reset_index(drop=True, inplace=True)
+                    df.loc[df.index[:], columns] = value
+                    df.set_index(saved_index, inplace=True)
+                else:
+                    # Now set the slice
+                    df.loc[:, columns] = value
+
+    def get_slice(self, start, stop):
+        """
+        Returns a new MessageMeta with only the rows specified by start/stop.
+
+        Parameters
+        ----------
+        start : int
+            Start offset address.
+        stop : int
+            Stop offset address.
+
+        Returns
+        -------
+        `MessageMeta`
+            A new `MessageMeta` with sliced offset and count.
+        """
+
+        with self.mutable_dataframe() as df:
+            return MessageMeta(df.iloc[start:stop])
+
+    def _ranges_to_mask(self, df, ranges):
+        if isinstance(df, cudf.DataFrame):
+            zeros_fn = cp.zeros
+        else:
+            zeros_fn = np.zeros
+
+        mask = zeros_fn(len(df), bool)
+
+        for range_ in ranges:
+            mask[range_[0]:range_[1]] = True
+
+        return mask
+
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
+        """
+        Perform a copy of the current message instance for the given `ranges` of rows.
+
+        Parameters
+        ----------
+        ranges : typing.List[typing.Tuple[int, int]]
+            Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
+            The `stop_row` isn't included. For example to copy rows 1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
+
+        Returns
+        -------
+        `MessageMeta`
+            A new `MessageMeta` with only the rows specified by `ranges`.
+        """
+
+        with self.mutable_dataframe() as df:
+            mask = self._ranges_to_mask(df, ranges=ranges)
+            return MessageMeta(df.loc[mask, :])
 
 
 @dataclasses.dataclass(init=False)

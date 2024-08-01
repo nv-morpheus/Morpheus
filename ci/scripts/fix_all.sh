@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -82,8 +82,8 @@ if [[ "${SKIP_CLANG_FORMAT}" == "" ]]; then
 
    # If IGNORE_GIT_DIFF is enabled, use all files
    if [[ "${IGNORE_GIT_DIFF}" == "1" ]]; then
-      echo "Running clang-format from '${SCRIPT_DIR}/run-clang-format.py'..."
-      python3 ${SCRIPT_DIR}/run-clang-format.py -inplace -regex "${CPP_FILE_REGEX}" ./ 2>&1
+      echo "Running clang-format from '${SCRIPT_DIR}/run_clang_format.py'..."
+      python3 ${SCRIPT_DIR}/run_clang_format.py -inplace -regex "${CPP_FILE_REGEX}" ./ 2>&1
    else
       CLANG_FORMAT_DIFF=$(find_clang_format_diff)
 
@@ -105,5 +105,5 @@ fi
 # Run yapf
 if [[ "${SKIP_YAPF}" == "" ]]; then
    echo "Running yapf..."
-   python3 -m yapf -i --style ${PY_CFG} ${YAPF_EXCLUDE_FLAGS} -r ${PY_MODIFIED_FILES[@]}
+   python3 -m yapf -i --style ${PY_CFG} -r ${PY_MODIFIED_FILES[@]}
 fi

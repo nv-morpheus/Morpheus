@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -90,7 +90,7 @@ cmake -B ${BUILD_DIR} \
    .
 
 # Build the components
-cmake --build ${BUILD_DIR} -j${PARALLEL_LEVEL:-$(nproc)}
+cmake --build ${BUILD_DIR} -j${PARALLEL_LEVEL:-$(nproc)} --target install
 
 # Install just the python wheel components
 ${PYTHON} -m pip install -vv ${BUILD_DIR}/dist/*.whl

@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,19 +19,29 @@ limitations under the License.
 
 ## Table of Contents
 
-1. [Background Information](#Background-Information)
-    - [Purpose](#Purpose)
-    - [Source Documents](#Source-Documents)
-    - [Embedding Model](#Embedding-Model)
-    - [Vector Database Service](#Vector-Database-Service)
-2. [Implementation and Design Decisions](#Implementation-and-Design-Decisions)
-3. [Getting Started](#Getting-Started)
-    - [Prerequisites](#Prerequisites)
-        - [Milvus Service](#Milvus-Service)
-        - [Triton Service](#Triton-Service)
-    - [Running the Morpheus Pipeline](#Running-the-Morpheus-Pipeline)
-    - [Options for vdb_upload Command](#Options-for-vdb_upload-Command)
-    - [Exporting and Deploying a Different Model from Huggingface](#Exporting-and-Deploying-a-Different-Model-from-Huggingface)
+1. [Background Information](#background-information)
+    - [Purpose](#purpose)
+    - [Source Documents](#source-documents)
+    - [Embedding Model](#embedding-model)
+    - [Vector Database Service](#vector-database-service)
+2. [Implementation and Design Decisions](#implementation-and-design-decisions)
+3. [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+        - [Milvus Service](#milvus-service)
+        - [Triton Service](#triton-service)
+    - [Running the Morpheus Pipeline](#running-the-morpheus-pipeline)
+    - [Options for vdb_upload Command](#options-for-vdb_upload-command)
+    - [Exporting and Deploying a Different Model from Huggingface](#exporting-and-deploying-a-different-model-from-huggingface)
+
+## Supported Environments
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-121_arch-x86_64.yaml` or `conda/environments/examples_cuda-121_arch-x86_64.yaml` environment files.
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Triton and Milvus on the host |
+| Morpheus Release Container | ✔ | Requires launching Triton and Milvus on the host |
+| Dev Container | ✘ |  |
+
 
 ## Background Information
 
@@ -115,9 +125,10 @@ Before running the pipeline, we need to ensure that the following services are r
 
 #### Ensure LFS files are downloaded
 
-To retrieve models from LFS run the following:
+To retrieve datasets from LFS run the following:
+
 ```bash
-./scripts/fetch_data.py fetch models
+./scripts/fetch_data.py fetch datasets
 ```
 
 #### Milvus Service
@@ -129,12 +140,12 @@ To retrieve models from LFS run the following:
 
 - Pull the Docker image for Triton:
   ```bash
-  docker pull nvcr.io/nvidia/tritonserver:23.06-py3
+  docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
   ```
 
-- From the Morpheus repo root directory, run the following to launch Triton and load the `all-MiniLM-L6-v2` model:
+- Run the following to launch Triton and load the `all-MiniLM-L6-v2` model:
   ```bash
-  docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model all-MiniLM-L6-v2
+  docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model all-MiniLM-L6-v2
   ```
 
   This will launch Triton and only load the `all-MiniLM-L6-v2` model. Once Triton has loaded the model, the following
@@ -149,38 +160,76 @@ To retrieve models from LFS run the following:
 
 ### Running the Morpheus Pipeline
 
-The top level entrypoint to each of the LLM example pipelines is `examples/llm/main.py`. This script accepts a set
-of Options and a Pipeline to run. Baseline options are below, and for the purposes of this document we'll assume a
-pipeline option of `vdb_upload`:
+The top-level entry point for each of the LLM example pipelines is examples/llm/main.py. This script accepts a set of
+options and a pipeline to run. For the purposes of this document, we'll focus on the vdb_upload pipeline option, which
+incorporates various functionalities like handling RSS and filesystem sources, embedding configurations, and vector
+database (VDB) settings.
+
+#### Configuration Balance Considerations
+
+When configuring the Morpheus Pipeline, especially for stages like the RSS source and the Vector Database Upload, it's
+important to balance responsiveness and performance.
+
+- **RSS Source Stage**: The RSS source stage is responsible for yielding webpage links for processing. A larger batch size
+  at this stage can lead to decreased responsiveness, as the subsequent web scraper stage may take a considerable amount of
+  time to retrieve and process all the items in each batch. To ensure a responsive experience for users, it's recommended
+  to configure the RSS source stage with a relatively smaller batch size. This adjustment tends to have minimal impact on
+  overall performance while significantly improving the time to process each batch of links.
+
+- **Vector Database Upload Stage**: At the other end of the pipeline, the Vector Database Upload stage has its own
+  considerations. This stage experiences a significant transaction overhead. To mitigate this, it is advisable to configure
+  this stage with the largest batch size possible. This approach helps in efficiently managing transaction overheads and
+  improves the throughput of the pipeline, especially when dealing with large volumes of data.
+
+Balancing these configurations ensures that the pipeline runs efficiently, with optimized responsiveness at the RSS
+source stage and improved throughput at the Vector Database Upload stage.
 
 ### Run example:
 
+Default example usage, with pre-defined RSS source
+
 ```bash
-python examples/llm/main.py [OPTIONS...] vdb_upload [ACTION] --model_name all-MiniLM-L6-v2
+python examples/llm/main.py vdb_upload pipeline \
+  --enable_cache \
+  --enable_monitors \
+  --embedding_model_name all-MiniLM-L6-v2
 ```
 
-### Options:
+Usage with CLI-Defined Sources:
 
-- `--log_level [CRITICAL|FATAL|ERROR|WARN|WARNING|INFO|DEBUG]`
-    - **Description**: Specifies the logging level.
-    - **Default**: `INFO`
+*Example: Defining an RSS Source via CLI*
 
-- `--use_cpp BOOLEAN`
-    - **Description**: Opt to use C++ node and message types over python. Recommended only in case of bugs.
-    - **Default**: `False`
+```bash
+python examples/llm/main.py vdb_upload pipeline \
+  --source_type rss \
+  --interval_secs 300 \
+  --rss_request_timeout_sec 5.0 \
+  --enable_cache \
+  --enable_monitors \
+  --embedding_model_name all-MiniLM-L6-v2
+```
 
-- `--version`
-    - **Description**: Display the script's current version.
+*Example: Defining a Filesystem Source via CLI*
 
-- `--help`
-    - **Description**: Show the help message with options and commands details.
+```bash
+python examples/llm/main.py vdb_upload pipeline \
+  --source_type filesystem \
+  --file_source="./examples/data/vdb_upload/*.jsonlines" \
+  --enable_monitors \
+  --embedding_model_name all-MiniLM-L6-v2
+```
 
-### Commands:
+*Example: Combining RSS and Filesystem Sources via CLI*
 
-- ... other pipelines ...
-- `vdb_upload`
-
----
+```bash
+python examples/llm/main.py vdb_upload pipeline \
+  --source_type rss --source_type filesystem \
+  --file_source="./examples/data/vdb_upload/*.jsonlines" \
+  --interval_secs 600 \
+  --enable_cache \
+  --enable_monitors \
+  --embedding_model_name all-MiniLM-L6-v2
+```
 
 ## Options for `vdb_upload` Command
 
@@ -230,12 +279,12 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
     - Reload the docker container, specifying that we also need to load paraphrase-multilingual-mpnet-base-v2
     ```bash
     docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-     -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver \
+     nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver \
      --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit  --load-model \
      all-MiniLM-L6-v2 --load-model sentence-transformers/paraphrase-multilingual-mpnet-base-v2
     ```
 
-    - You should see seomthing similar to the following, indicating Triton has succesfully loaded the model:
+    - You should see something similar to the following, indicating Triton has successfully loaded the model:
     ```shell
     +----------------------------------+------------------------------------------------------------------------------------------+
     | Option                           | Value                                                                                    |

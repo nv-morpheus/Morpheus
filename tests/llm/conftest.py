@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from unittest import mock
 
 import pytest
 
@@ -94,3 +96,32 @@ def serpapi_api_key_fixture():
     yield require_env_variable(
         varname="SERPAPI_API_KEY",
         reason="serpapi integration tests require the `SERPAPI_API_KEY` environment variable to be defined.")
+
+
+@pytest.mark.usefixtures("nemollm")
+@pytest.fixture(name="mock_nemollm")
+def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
+
+    from concurrent.futures import Future
+
+    def generate_mock(*_, **kwargs):
+
+        fut = Future()
+
+        fut.set_result(kwargs["prompt"])
+
+        return fut
+
+    mock_nemollm.generate.side_effect = generate_mock
+
+    def generate_multiple_mock(*_, **kwargs):
+
+        assert kwargs["return_type"] == "text", "Only text return type is supported for mocking."
+
+        prompts: list[str] = kwargs["prompts"]
+
+        return list(prompts)
+
+    mock_nemollm.generate_multiple.side_effect = generate_multiple_mock
+
+    yield mock_nemollm

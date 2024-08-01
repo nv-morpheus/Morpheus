@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,15 +17,23 @@
 
 #include "morpheus/messages/control.hpp"
 
-#include <glog/logging.h>
-#include <pybind11/pytypes.h>
-#include <pymrc/utils.hpp>
+#include "morpheus/messages/meta.hpp"  // for MessageMeta, MessageMetaInterfaceProxy
 
-#include <optional>
-#include <ostream>
-#include <stdexcept>
+#include <glog/logging.h>       // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
+#include <nlohmann/json.hpp>    // for basic_json, json_ref, iter_impl, operator<<
+#include <pybind11/chrono.h>    // IWYU pragma: keep
+#include <pybind11/pybind11.h>  // for cast, object::cast
+#include <pybind11/pytypes.h>   // for object, none, dict, isinstance, list, str, value_error, generic_item
+#include <pymrc/utils.hpp>      // for cast_from_pyobject
+
+#include <optional>   // for optional, nullopt
+#include <ostream>    // for basic_ostream, operator<<
+#include <regex>      // for regex_search, regex
+#include <stdexcept>  // for runtime_error
+#include <utility>    // for pair
 
 namespace py = pybind11;
+using namespace py::literals;
 
 namespace morpheus {
 
@@ -34,10 +42,10 @@ const std::string ControlMessage::s_config_schema = R"()";
 std::map<std::string, ControlMessageType> ControlMessage::s_task_type_map{{"inference", ControlMessageType::INFERENCE},
                                                                           {"training", ControlMessageType::TRAINING}};
 
-ControlMessage::ControlMessage() : m_config({{"metadata", nlohmann::json::object()}}), m_tasks({}) {}
+ControlMessage::ControlMessage() : m_config({{"metadata", morpheus::utilities::json_t::object()}}), m_tasks({}) {}
 
-ControlMessage::ControlMessage(const nlohmann::json& _config) :
-  m_config({{"metadata", nlohmann::json::object()}}),
+ControlMessage::ControlMessage(const morpheus::utilities::json_t& _config) :
+  m_config({{"metadata", morpheus::utilities::json_t::object()}}),
   m_tasks({})
 {
     config(_config);
@@ -49,14 +57,13 @@ ControlMessage::ControlMessage(const ControlMessage& other)
     m_tasks  = other.m_tasks;
 }
 
-const nlohmann::json& ControlMessage::config() const
+const morpheus::utilities::json_t& ControlMessage::config() const
 {
     return m_config;
 }
 
-void ControlMessage::add_task(const std::string& task_type, const nlohmann::json& task)
+void ControlMessage::add_task(const std::string& task_type, const morpheus::utilities::json_t& task)
 {
-    // TODO(Devin) Schema check
     VLOG(20) << "Adding task of type " << task_type << " to control message" << task.dump(4);
     auto _task_type = s_task_type_map.contains(task_type) ? s_task_type_map[task_type] : ControlMessageType::NONE;
 
@@ -78,14 +85,14 @@ bool ControlMessage::has_task(const std::string& task_type) const
     return m_tasks.contains(task_type) && m_tasks.at(task_type).size() > 0;
 }
 
-const nlohmann::json& ControlMessage::get_tasks() const
+const morpheus::utilities::json_t& ControlMessage::get_tasks() const
 {
     return m_tasks;
 }
 
-const nlohmann::json ControlMessage::list_metadata() const
+std::vector<std::string> ControlMessage::list_metadata() const
 {
-    nlohmann::json key_list = nlohmann::json::array();
+    std::vector<std::string> key_list{};
 
     for (auto it = m_config["metadata"].begin(); it != m_config["metadata"].end(); ++it)
     {
@@ -95,7 +102,7 @@ const nlohmann::json ControlMessage::list_metadata() const
     return key_list;
 }
 
-void ControlMessage::set_metadata(const std::string& key, const nlohmann::json& value)
+void ControlMessage::set_metadata(const std::string& key, const morpheus::utilities::json_t& value)
 {
     if (m_config["metadata"].contains(key))
     {
@@ -110,17 +117,30 @@ bool ControlMessage::has_metadata(const std::string& key) const
     return m_config["metadata"].contains(key);
 }
 
-const nlohmann::json& ControlMessage::get_metadata() const
+morpheus::utilities::json_t ControlMessage::get_metadata() const
 {
-    return m_config["metadata"];
+    auto metadata = m_config["metadata"];
+
+    return metadata;
 }
 
-const nlohmann::json ControlMessage::get_metadata(const std::string& key) const
+morpheus::utilities::json_t ControlMessage::get_metadata(const std::string& key, bool fail_on_nonexist) const
 {
-    return m_config["metadata"].at(key);
+    // Assuming m_metadata is a std::map<std::string, nlohmann::json> storing metadata
+    auto metadata = m_config["metadata"];
+    auto it       = metadata.find(key);
+    if (it != metadata.end())
+    {
+        return metadata.at(key);
+    }
+    else if (fail_on_nonexist)
+    {
+        throw std::runtime_error("Metadata key does not exist: " + key);
+    }
+    return {};
 }
 
-const nlohmann::json ControlMessage::remove_task(const std::string& task_type)
+morpheus::utilities::json_t ControlMessage::remove_task(const std::string& task_type)
 {
     auto& task_set = m_tasks.at(task_type);
     auto iter_task = task_set.begin();
@@ -136,7 +156,44 @@ const nlohmann::json ControlMessage::remove_task(const std::string& task_type)
     throw std::runtime_error("No tasks of type " + task_type + " found");
 }
 
-void ControlMessage::config(const nlohmann::json& config)
+void ControlMessage::set_timestamp(const std::string& key, time_point_t timestamp_ns)
+{
+    // Insert or update the timestamp in the map
+    m_timestamps[key] = timestamp_ns;
+}
+
+std::map<std::string, time_point_t> ControlMessage::filter_timestamp(const std::string& regex_filter)
+{
+    std::map<std::string, time_point_t> matching_timestamps;
+    std::regex filter(regex_filter);
+
+    for (const auto& [key, timestamp] : m_timestamps)
+    {
+        // Check if the key matches the regex
+        if (std::regex_search(key, filter))
+        {
+            matching_timestamps[key] = timestamp;
+        }
+    }
+
+    return matching_timestamps;
+}
+
+std::optional<time_point_t> ControlMessage::get_timestamp(const std::string& key, bool fail_if_nonexist)
+{
+    auto it = m_timestamps.find(key);
+    if (it != m_timestamps.end())
+    {
+        return it->second;  // Return the found timestamp
+    }
+    else if (fail_if_nonexist)
+    {
+        throw std::runtime_error("Timestamp for the specified key does not exist.");
+    }
+    return std::nullopt;
+}
+
+void ControlMessage::config(const morpheus::utilities::json_t& config)
 {
     if (config.contains("type"))
     {
@@ -171,16 +228,22 @@ void ControlMessage::config(const nlohmann::json& config)
 
 std::shared_ptr<MessageMeta> ControlMessage::payload()
 {
-    // auto temp = std::move(m_payload);
-    //  TODO(Devin): Decide if we copy or steal the payload
-    //  m_payload = nullptr;
-
     return m_payload;
 }
 
 void ControlMessage::payload(const std::shared_ptr<MessageMeta>& payload)
 {
     m_payload = payload;
+}
+
+std::shared_ptr<TensorMemory> ControlMessage::tensors()
+{
+    return m_tensors;
+}
+
+void ControlMessage::tensors(const std::shared_ptr<TensorMemory>& tensors)
+{
+    m_tensors = tensors;
 }
 
 ControlMessageType ControlMessage::task_type()
@@ -194,7 +257,6 @@ void ControlMessage::task_type(ControlMessageType type)
 }
 
 /*** Proxy Implementations ***/
-
 std::shared_ptr<ControlMessage> ControlMessageProxy::create(py::dict& config)
 {
     return std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config));
@@ -210,55 +272,89 @@ std::shared_ptr<ControlMessage> ControlMessageProxy::copy(ControlMessage& self)
     return std::make_shared<ControlMessage>(self);
 }
 
-void ControlMessageProxy::add_task(ControlMessage& self, const std::string& task_type, py::dict& task)
+py::object ControlMessageProxy::get_metadata(ControlMessage& self,
+                                             const py::object& key,
+                                             pybind11::object default_value)
 {
-    self.add_task(task_type, mrc::pymrc::cast_from_pyobject(task));
-}
-
-py::dict ControlMessageProxy::remove_task(ControlMessage& self, const std::string& task_type)
-{
-    auto task = self.remove_task(task_type);
-
-    return mrc::pymrc::cast_from_json(task);
-}
-
-py::dict ControlMessageProxy::get_tasks(ControlMessage& self)
-{
-    return mrc::pymrc::cast_from_json(self.get_tasks());
-}
-
-py::dict ControlMessageProxy::config(ControlMessage& self)
-{
-    auto dict = mrc::pymrc::cast_from_json(self.config());
-
-    return dict;
-}
-
-py::object ControlMessageProxy::get_metadata(ControlMessage& self, std::optional<std::string> const& key)
-{
-    if (key == std::nullopt)
+    if (key.is_none())
     {
-        return mrc::pymrc::cast_from_json(self.get_metadata());
+        auto metadata = self.get_metadata();
+        return cast_from_json(metadata);
     }
 
-    return mrc::pymrc::cast_from_json(self.get_metadata(key.value()));
+    auto value = self.get_metadata(py::cast<std::string>(key), false);
+    if (value.empty())
+    {
+        return default_value;
+    }
+
+    return cast_from_json(value);
 }
 
-void ControlMessageProxy::set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value)
+py::list ControlMessageProxy::list_metadata(ControlMessage& self)
 {
-    self.set_metadata(key, mrc::pymrc::cast_from_pyobject(value));
+    auto keys = self.list_metadata();
+    py::list py_keys;
+    for (const auto& key : keys)
+    {
+        py_keys.append(py::str(key));
+    }
+    return py_keys;
 }
 
-py::dict ControlMessageProxy::list_metadata(ControlMessage& self)
+py::dict ControlMessageProxy::filter_timestamp(ControlMessage& self, const std::string& regex_filter)
 {
-    auto dict = mrc::pymrc::cast_from_json(self.list_metadata());
-
-    return dict;
+    auto cpp_map = self.filter_timestamp(regex_filter);
+    py::dict py_dict;
+    for (const auto& [key, timestamp] : cpp_map)
+    {
+        // Directly use the timestamp as datetime.datetime in Python
+        py_dict[py::str(key)] = timestamp;
+    }
+    return py_dict;
 }
 
-void ControlMessageProxy::config(ControlMessage& self, py::dict& config)
+// Get a specific timestamp and return it as datetime.datetime or None
+py::object ControlMessageProxy::get_timestamp(ControlMessage& self, const std::string& key, bool fail_if_nonexist)
 {
-    self.config(mrc::pymrc::cast_from_pyobject(config));
+    try
+    {
+        auto timestamp_opt = self.get_timestamp(key, fail_if_nonexist);
+        if (timestamp_opt)
+        {
+            // Directly return the timestamp as datetime.datetime in Python
+            return py::cast(*timestamp_opt);
+        }
+
+        return py::none();
+    } catch (const std::runtime_error& e)
+    {
+        if (fail_if_nonexist)
+        {
+            throw py::value_error(e.what());
+        }
+        return py::none();
+    }
+}
+
+// Set a timestamp using a datetime.datetime object from Python
+void ControlMessageProxy::set_timestamp(ControlMessage& self, const std::string& key, py::object timestamp_ns)
+{
+    if (!py::isinstance<py::none>(timestamp_ns))
+    {
+        // Convert Python datetime.datetime to std::chrono::system_clock::time_point before setting
+        auto _timestamp_ns = timestamp_ns.cast<time_point_t>();
+        self.set_timestamp(key, _timestamp_ns);
+    }
+    else
+    {
+        throw std::runtime_error("Timestamp cannot be None");
+    }
+}
+
+void ControlMessageProxy::payload_from_python_meta(ControlMessage& self, const pybind11::object& meta)
+{
+    self.payload(MessageMetaInterfaceProxy::init_python_meta(meta));
 }
 
 }  // namespace morpheus

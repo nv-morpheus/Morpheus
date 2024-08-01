@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,8 +26,13 @@ from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
 from _utils.stages.multi_message_pass_thru import MultiMessagePassThruStage
 from _utils.stages.multi_port_pass_thru import MultiPortPassThruStage
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline import Pipeline
+from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryEgressStage
+from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryIngressStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
@@ -42,14 +47,27 @@ class SourceTestStage(InMemorySourceStage):
     def __init__(self,
                  config,
                  dataframes: typing.List[DataFrameType],
+                 on_start_cb: typing.Callable[[], None] = None,
+                 start_async_cb: typing.Callable[[], None] = None,
                  destructor_cb: typing.Callable[[], None] = None,
                  repeat: int = 1):
         super().__init__(config, dataframes, repeat)
+        self._on_start_cb = on_start_cb
+        self._start_async_cb = start_async_cb
         self._destructor_cb = destructor_cb
 
     @property
     def name(self) -> str:
         return "test-source"
+
+    def on_start(self):
+        if self._on_start_cb is not None:
+            self._on_start_cb()
+
+    async def start_async(self):
+        await super().start_async()
+        if self._start_async_cb is not None:
+            self._start_async_cb()
 
     def __del__(self):
         if self._destructor_cb is not None:
@@ -93,7 +111,10 @@ def _run_pipeline(filter_probs_df: DataFrameType,
     pipe = LinearPipeline(config)
     pipe.set_source(SourceTestStage(config, [filter_probs_df], **source_callbacks))
     pipe.add_stage(SinkTestStage(config, **sink_callbacks))
-    pipe.run()
+
+    with pytest.deprecated_call(match="The on_start method is deprecated and may be removed in the future.*"):
+        # The sink stage ensures that the on_start callback method still works, even though it is deprecated.
+        pipe.run()
 
 
 @pytest.mark.use_cudf
@@ -122,21 +143,30 @@ def test_startup_cb_called(filter_probs_df: DataFrameType):
     """
     Test to ensure that the destructors of stages are called (issue #1114).
     """
-    state_dict = {"on_start": False, "start_async": False}
+    state_dict = {
+        "source_on_start": False, "source_start_async": False, "sink_on_start": False, "sink_start_async": False
+    }
 
     def update_state_dict(key: str):
         nonlocal state_dict
         state_dict[key] = True
 
-    sink_callbacks = {
-        'on_start_cb': lambda: update_state_dict("on_start"),
-        'start_async_cb': lambda: update_state_dict("start_async")
+    source_callbacks = {
+        'on_start_cb': lambda: update_state_dict("source_on_start"),
+        'start_async_cb': lambda: update_state_dict("source_start_async")
     }
 
-    _run_pipeline(filter_probs_df, source_callbacks={}, sink_callbacks=sink_callbacks)
+    sink_callbacks = {
+        'on_start_cb': lambda: update_state_dict("sink_on_start"),
+        'start_async_cb': lambda: update_state_dict("sink_start_async")
+    }
 
-    assert state_dict["on_start"]
-    assert state_dict["start_async"]
+    _run_pipeline(filter_probs_df, source_callbacks=source_callbacks, sink_callbacks=sink_callbacks)
+
+    assert state_dict["source_on_start"]
+    assert state_dict["source_start_async"]
+    assert state_dict["sink_on_start"]
+    assert state_dict["sink_start_async"]
 
 
 @pytest.mark.use_cudf
@@ -195,3 +225,58 @@ def test_add_edge_input_port_errors(config: Config, num_inputs: int):
 
     with pytest.raises(AssertionError):
         pipe.add_edge(start_stage.output_ports[0], end_stage)
+
+
+@pytest.mark.parametrize("data_type", [int, float, str, MessageMeta, ControlMessage, MultiMessage])
+def test_add_segment_edge(config: Config, data_type: type):
+    pipe = Pipeline(config)
+
+    boundary_egress = LinearBoundaryEgressStage(config, boundary_port_id="seg_1", data_type=data_type)
+    boundary_ingress = LinearBoundaryIngressStage(config, boundary_port_id="seg_1", data_type=data_type)
+
+    pipe.add_stage(boundary_egress, "seg_1")
+    pipe.add_stage(boundary_ingress, "seg_2")
+    pipe.add_segment_edge(boundary_egress, "seg_1", boundary_ingress, "seg_2", ("seg_1", object, False))
+
+
+def test_add_segment_edge_assert_not_built(config: Config):
+    pipe = Pipeline(config)
+
+    src_stage = InMemSourceXStage(config, data=list(range(3)))
+    boundary_egress = LinearBoundaryEgressStage(config, boundary_port_id="seg_1", data_type=int)
+    boundary_ingress = LinearBoundaryIngressStage(config, boundary_port_id="seg_1", data_type=int)
+
+    pipe.add_stage(src_stage, "seg_1")
+    pipe.add_stage(boundary_egress, "seg_1")
+    pipe.add_edge(src_stage, boundary_egress, "seg_1")
+    pipe.add_stage(boundary_ingress, "seg_2")
+    pipe.build()
+
+    with pytest.raises(AssertionError):
+        pipe.add_segment_edge(boundary_egress, "seg_1", boundary_ingress, "seg_2", ("seg_1", object, False))
+
+
+def test_add_segment_edge_bad_egress(config: Config):
+    pipe = Pipeline(config)
+
+    bad_egress = InMemorySinkStage(config)
+    boundary_ingress = LinearBoundaryIngressStage(config, boundary_port_id="seg_1", data_type=int)
+
+    pipe.add_stage(bad_egress, "seg_1")
+    pipe.add_stage(boundary_ingress, "seg_2")
+
+    with pytest.raises(AssertionError):
+        pipe.add_segment_edge(bad_egress, "seg_1", boundary_ingress, "seg_2", ("seg_1", object, False))
+
+
+def test_add_segment_edge_bad_ingress(config: Config):
+    pipe = Pipeline(config)
+
+    boundary_egress = LinearBoundaryEgressStage(config, boundary_port_id="seg_1", data_type=int)
+    bad_ingress = InMemSourceXStage(config, data=list(range(3)))
+
+    pipe.add_stage(boundary_egress, "seg_1")
+    pipe.add_stage(bad_ingress, "seg_2")
+
+    with pytest.raises(AssertionError):
+        pipe.add_segment_edge(boundary_egress, "seg_1", bad_ingress, "seg_2", ("seg_1", object, False))

@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -229,6 +229,18 @@ from morpheus.utils.logger import configure_logging
 Before constructing the pipeline, we need to do a bit of environment configuration, starting with the Morpheus logger:
 ```python
 configure_logging(log_level=logging.DEBUG)
+```
+We use the default configuration with the `DEBUG` logging level. The logger will output to both the console and a file. The logging handlers are non-blocking since they utilize a queue to send the log messages on a separate thread.
+
+We can also use `configure_logging` to add one or more logging handlers to the default configuration. The added handlers will also be non-blocking. The following is from the Grafana example (`examples/digital_fingerprinting/production/grafana/README.md`) where we add a [Loki](https://grafana.com/oss/loki/) logging handler to also publish Morpheus logs to a Loki log aggregation server.
+```python
+loki_handler = logging_loki.LokiHandler(
+    url=f"{loki_url}/loki/api/v1/push",
+    tags={"app": "morpheus"},
+    version="1",
+)
+
+configure_logging(loki_handler, log_level=log_level)
 ```
 
 Next, we will build a Morpheus `Config` object. We will cover setting some common configuration parameters in the next guide. For now, it is important to know that we will always need to build a `Config` object:

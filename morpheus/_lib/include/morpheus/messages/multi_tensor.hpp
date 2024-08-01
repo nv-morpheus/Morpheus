@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
@@ -30,7 +31,6 @@
 #include <vector>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
 
 /****** MultiTensorMessage*******************************/
 
@@ -53,7 +53,7 @@ namespace morpheus {
  * to the same record
  *
  */
-class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiMessage>
+class MORPHEUS_EXPORT MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiMessage>
 {
   public:
     /**
@@ -138,7 +138,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiTensorMessageInterfaceProxy
+struct MORPHEUS_EXPORT MultiTensorMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiTensorMessage, and return a shared pointer to the result
@@ -228,7 +228,5 @@ struct MultiTensorMessageInterfaceProxy
      */
     static pybind11::object get_tensor_property(MultiTensorMessage& self, const std::string name);
 };
-
-#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

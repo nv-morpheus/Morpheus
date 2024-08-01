@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,13 +50,13 @@ sys.path.insert(0, os.path.abspath('sphinxext'))
 
 from github_link import make_linkcode_resolve  # noqa
 
-# Set an environment variable we can use to determine ifuncf we are building docs
+# Set an environment variable we can use to determine if we are building docs
 os.environ["MORPHEUS_IN_SPHINX_BUILD"] = "1"
 
 # -- Project information -----------------------------------------------------
 
 project = 'morpheus'
-copyright = '2023, NVIDIA'
+copyright = '2024, NVIDIA'
 author = 'NVIDIA'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -170,15 +170,17 @@ autodoc_mock_imports = [
     "cudf",  # Avoid loading GPU libraries during the documentation build
     "cupy",  # Avoid loading GPU libraries during the documentation build
     "databricks.connect",
+    "datacompy",
     "langchain",
+    "langchain_core",
     "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
-    "nvtabular",
     "pandas",
+    "pydantic",
     "pymilvus",
     "tensorrt",
     "torch",
-    "tqdm",
+    "tqdm"
 ]
 
 suppress_warnings = [

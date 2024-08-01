@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -170,7 +170,8 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         del df, grouped_df
 
         # Convert the dataframe to cupy the same way cuml does
-        data = cp.asarray(merged_df[fea_cols].to_cupy())
+        # Explicity casting to float32 to match the model's input, and setting row-major as required by Triton
+        data = cp.asarray(merged_df[fea_cols].to_cupy(), order='C', dtype=cp.float32)
         count = data.shape[0]
 
         for col in req_cols:

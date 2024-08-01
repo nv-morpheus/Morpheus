@@ -1,5 +1,5 @@
 <!--
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,27 +18,30 @@
 
 Example Morpheus pipeline using Triton Inference server and Morpheus.
 
+## Supported Environments
+| Environment | Supported | Notes |
+|-------------|-----------|-------|
+| Conda | ✔ | |
+| Morpheus Docker Container | ✔ | Requires launching Triton on the host |
+| Morpheus Release Container | ✔ | Requires launching Triton on the host |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script. If using the `run.py` script this requires adding the `--server_url=triton:8000` flag. If using the CLI example this requires replacing `--server_url=localhost:8000` with `--server_url=triton:8000` |
+
 ### Set up Triton Inference Server
 
 ##### Pull Triton Inference Server Docker Image
-Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tritonserver) suitable for your environment.
+Pull the Morpheus Triton models Docker image from NGC.
 
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:23.06-py3
-```
-
-##### Setup Env Variable
-```bash
-export MORPHEUS_ROOT=$(pwd)
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
 ```
 
 ##### Start Triton Inference Server Container
 From the Morpheus repo root directory, run the following to launch Triton and load the `log-parsing-onnx` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model log-parsing-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model log-parsing-onnx
 ```
 
 ##### Verify Model Deployment
@@ -56,19 +59,15 @@ Once Triton server finishes starting up, it will display the status of all loade
 
 ### Run Log Parsing Pipeline
 
-Run the following from the `examples/log_parsing` directory to start the log parsing pipeline:
+Run the following from the root of the Morpheus repo to start the log parsing pipeline:
 
 ```bash
-python run.py \
-    --num_threads 1 \
-    --input_file ${MORPHEUS_ROOT}/models/datasets/validation-data/log-parsing-validation-data-input.csv \
-    --output_file ./log-parsing-output.jsonlines \
-    --model_vocab_hash_file=${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt \
-    --model_vocab_file=${MORPHEUS_ROOT}/models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
-    --model_seq_length=256 \
+python examples/log_parsing/run.py \
+    --input_file=./models/datasets/validation-data/log-parsing-validation-data-input.csv \
+    --model_vocab_hash_file=data/bert-base-cased-hash.txt \
+    --model_vocab_file=./models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
     --model_name log-parsing-onnx \
-    --model_config_file=${MORPHEUS_ROOT}/models/log-parsing-models/log-parsing-config-20220418.json \
-    --server_url localhost:8001
+    --model_config_file=./models/log-parsing-models/log-parsing-config-20220418.json
 ```
 
 Use `--help` to display information about the command line options:
@@ -110,11 +109,11 @@ PYTHONPATH="examples/log_parsing" \
 morpheus --log_level INFO \
 	--plugin "inference" \
 	--plugin "postprocessing" \
-	run --num_threads 1 --pipeline_batch_size 1024 --model_max_batch_size 32  \
+	run --pipeline_batch_size 1024 --model_max_batch_size 32  \
 	pipeline-nlp \
 	from-file --filename ./models/datasets/validation-data/log-parsing-validation-data-input.csv  \
 	deserialize \
-	preprocess --vocab_hash_file ${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt --stride 64 --column=raw \
+	preprocess --vocab_hash_file data/bert-base-cased-hash.txt --stride 64 --column=raw \
 	monitor --description "Preprocessing rate" \
 	inf-logparsing --model_name log-parsing-onnx --server_url localhost:8001 --force_convert_inputs=True \
 	monitor --description "Inference rate" --unit inf \

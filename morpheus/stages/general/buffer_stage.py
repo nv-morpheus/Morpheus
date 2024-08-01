@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -66,7 +66,8 @@ class BufferStage(PassThruTypeMixin, SinglePortStage):
         return False
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        # This stage is no longer needed and is just a pass thru stage
-        deprecated_stage_warning(logger, type(self), self.unique_name)
+        reason = "The stage is no longer required to manage backpressure and has been deprecated. It has no" \
+                 " effect acts as a pass through stage."
+        deprecated_stage_warning(logger, type(self), self.unique_name, reason=reason)
 
         return input_node

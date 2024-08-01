@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,7 +49,7 @@ class KafkaWriter:
 def process_cm(request):
     control_messages_json = request.form.get("control-messages-json")
 
-    logging.info("Received control message: {}".format(control_messages_json))
+    logging.info("Received control message: %s", control_messages_json)
 
     return control_messages_json
 

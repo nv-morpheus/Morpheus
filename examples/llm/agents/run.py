@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -90,6 +90,20 @@ def simple(**kwargs):
     type=str,
     default='gpt-3.5-turbo-instruct',
     help="The name of the model to use in OpenAI",
+)
+@click.option(
+    "--bootstrap_servers",
+    required=True,
+    type=str,
+    default='auto',
+    help="The Kafka bootstrap servers to connect to",
+)
+@click.option(
+    "--topic",
+    required=True,
+    type=str,
+    default='input',
+    help="The Kafka topic to listen to for input messages",
 )
 def kafka(**kwargs):
 

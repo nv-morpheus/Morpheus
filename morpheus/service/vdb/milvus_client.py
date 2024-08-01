@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,25 @@ import typing
 from pymilvus import Collection
 from pymilvus import MilvusClient as PyMilvusClient
 from pymilvus.orm.mutation import MutationResult
+
+DATA_TYPE_MAP = {
+    "BOOL": 1,
+    "INT8": 2,
+    "INT16": 3,
+    "INT32": 4,
+    "INT64": 5,
+    "FLOAT": 10,
+    "DOUBLE": 11,
+    "STRING": 20,
+    "VARCHAR": 21,
+    "ARRAY": 22,
+    "JSON": 23,
+    "BINARY_VECTOR": 100,
+    "FLOAT_VECTOR": 101,
+    "FLOAT16_VECTOR": 102,
+    "BFLOAT16_VECTOR": 103,
+    "UNKNOWN": 999
+}
 
 
 def handle_exceptions(func_name: str, error_message: str) -> typing.Callable:

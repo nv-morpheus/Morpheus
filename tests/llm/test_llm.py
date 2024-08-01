@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -172,7 +172,7 @@ async def test_simple_engine():
         def get_input_names(self):
             return ["nested_answers", "answers"]
 
-        async def execute(self, context: LLMContext):
+        async def execute(self, context: LLMContext):  # pylint: disable=invalid-overridden-method
 
             nested_answers = context.get_input("nested_answers")
             answers = context.get_input("answers")
@@ -188,7 +188,7 @@ async def test_simple_engine():
         def get_input_names(self):
             return ["response"]
 
-        async def try_handle(self, context: LLMContext):
+        async def try_handle(self, context: LLMContext):  # pylint: disable=invalid-overridden-method
 
             with context.message().payload().mutable_dataframe() as df:
                 df["response"] = context.get_input()

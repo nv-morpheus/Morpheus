@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,7 @@ cmake -S . -B ${BUILD_DIR} -GNinja \
    -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
    -DMORPHEUS_USE_CLANG_TIDY=OFF \
    -DMORPHEUS_PYTHON_INPLACE_BUILD=ON \
+   -DMORPHEUS_PYTHON_PERFORM_INSTALL=${MORPHEUS_PYTHON_PERFORM_INSTALL:-ON} \
    -DMORPHEUS_USE_CCACHE=ON \
    -DMORPHEUS_USE_CONDA=${MORPHEUS_USE_CONDA:-ON} \
    -DMORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF} \

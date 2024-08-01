@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -116,9 +116,10 @@ def dfp_split_users(builder: mrc.Builder):
         if (include_individual):
             # pylint: disable=unnecessary-comprehension
             # List comprehension is necessary here to convert to a dictionary
-            split_dataframes.update(
-                {username: user_df
-                 for username, user_df in users_df.groupby(userid_column_name, sort=False)})
+            split_dataframes.update({
+                username: user_df
+                for username, user_df in users_df.groupby(userid_column_name, sort=False)
+            })
 
         return split_dataframes
 

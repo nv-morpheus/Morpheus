@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,28 +12,16 @@
 # limitations under the License.
 
 # See the docstring in versioneer.py for instructions. Note that you must
-# re-run 'versioneer.py setup' after changing this section, and commit the
+# re-run 'versioneer setup' after changing this section, and commit the
 # resulting files.
 
-import os
-import sys
-
+import versioneer
 from setuptools import find_packages  # noqa: E402
 from setuptools import setup  # noqa: E402
 
-try:
-    import versioneer
-except ImportError:
-    # we have a versioneer.py file living in the same directory as this file, but
-    # if we're using pep 517/518 to build from pyproject.toml its not going to find it
-    # https://github.com/python-versioneer/python-versioneer/issues/193#issue-408237852
-    # make this work by adding this directory to the python path
-    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-    import versioneer
-
 setup(
     name="morpheus",
-    version=versioneer.get_version(),
+    version=versioneer.get_version(),  # pylint: disable=no-member
     description="Morpheus",
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -50,13 +38,10 @@ setup(
     author="NVIDIA Corporation",
     include_package_data=True,
     packages=find_packages(include=["morpheus*"], exclude=['tests']),
-    install_requires=[
-        # Only list the packages which cannot be installed via conda here.
-        "pyarrow_hotfix",  # CVE-2023-47248. See morpheus/__init__.py for more details
-    ],
+    install_requires=[],
     license="Apache",
     python_requires='>=3.10, <4',
-    cmdclass=versioneer.get_cmdclass(),
+    cmdclass=versioneer.get_cmdclass(),  # pylint: disable=no-member
     entry_points='''
         [console_scripts]
         morpheus=morpheus.cli:run_cli

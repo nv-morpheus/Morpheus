@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import pytest
 
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
@@ -37,7 +35,6 @@ def _build_engine() -> LLMEngine:
     return engine
 
 
-@pytest.mark.use_python
 def test_extractor_simple_task_handler_pipeline(config: Config, dataset_cudf: DatasetManager):
     input_df = dataset_cudf["filter_probs.csv"]
     expected_df = input_df.copy(deep=True)

@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -59,7 +59,7 @@ This module function consolidates multiple DFP pipeline modules relevant to the 
 
 | Key                     | Type   | Description                                                 | Example Value | Default Value |
 |-------------------------|--------|-------------------------------------------------------------|---------------|---------------|
-| `cache_mode`            | string | The user ID to use if the user ID is not found              | "batch"       | `batch`       |
+| `cache_mode`            | string | Mode for managing user cache. Setting to `batch` flushes cache once trigger conditions are met. Otherwise, continue to aggregate user's history. | "batch"       | `batch`       |
 | `min_history`           | int    | Minimum history to trigger a new training event             | 1             | `1`           |
 | `max_history`           | int    | Maximum history to include in a new training event          | 0             | `0`           |
 | `timestamp_column_name` | string | Name of the column containing timestamps                    | 'timestamp'   | `timestamp`   |

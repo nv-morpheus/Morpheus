@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +14,6 @@
 # limitations under the License.
 
 from unittest import mock
-
-import pytest
 
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
@@ -41,14 +39,13 @@ def _build_engine(mock_agent_executor: mock.MagicMock) -> LLMEngine:
     return engine
 
 
-@pytest.mark.use_python
 def test_pipeline(config: Config, dataset_cudf: DatasetManager, mock_agent_executor: mock.MagicMock):
     input_df = dataset_cudf["filter_probs.csv"]
     expected_df = input_df.copy(deep=True)
 
     mock_agent_executor.arun.return_value = 'frogs'
     expected_df['response'] = 'frogs'
-    expected_calls = [mock.call(prompt=x) for x in expected_df['v3'].values_host]
+    expected_calls = [mock.call(prompt=x, metadata=None) for x in expected_df['v3'].values_host]
 
     task_payload = {"task_type": "llm_engine", "task_dict": {"input_keys": ['v3']}}
 

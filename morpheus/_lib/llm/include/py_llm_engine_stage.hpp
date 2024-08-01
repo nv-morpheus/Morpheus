@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -94,7 +94,7 @@ class MORPHEUS_EXPORT PyLLMEngineStage
 
   private:
     mrc::coroutines::AsyncGenerator<std::shared_ptr<ControlMessage>> on_data(
-        std::shared_ptr<ControlMessage>&& data) override
+        std::shared_ptr<ControlMessage>&& data, std::shared_ptr<mrc::coroutines::Scheduler> on) override
     {
         auto result = co_await m_engine->run(std::move(data));
 

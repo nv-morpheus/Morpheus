@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,7 +30,7 @@ from morpheus.models.dfencoder import AutoEncoder
 from morpheus.utils.seed import manual_seed
 
 
-def main():
+def main(args):
     x_train = pd.read_csv(args.trainingdata)
     x_val = pd.read_csv(args.valdata)
 
@@ -114,6 +114,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--trainingdata", required=True, help="CloudTrail CSV")
     parser.add_argument("--valdata", required=True, help="CloudTrail CSV")
-    args = parser.parse_args()
 
-    main()
+    main(parser.parse_args())

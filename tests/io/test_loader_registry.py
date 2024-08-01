@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,7 +33,7 @@ def test_loader_registry_contains():
     loaders = DataLoaderRegistry.list()
     for loader in should_have:
         # Make sure all the loaders in the registry are in the list
-        assert (loader in loaders)
+        assert (loader in loaders)  # pylint: disable=unsupported-membership-test
 
         # Make sure all the loaders in the list are contained in the registry
         assert (DataLoaderRegistry.contains(loader))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,7 +58,8 @@ def test_minibert_no_cpp(mock_triton_client: mock.MagicMock,
                          config: Config,
                          kafka_bootstrap_servers: str,
                          kafka_topics: KafkaTopics,
-                         kafka_consumer: "KafkaConsumer"):
+                         kafka_consumer: "KafkaConsumer",
+                         morpheus_log_level: int):
     mock_metadata = {
         "inputs": [{
             "name": "input_ids", "datatype": "INT32", "shape": [-1, FEATURE_LENGTH]
@@ -117,7 +118,8 @@ def test_minibert_no_cpp(mock_triton_client: mock.MagicMock,
                            add_special_tokens=False))
     pipe.add_stage(
         TritonInferenceStage(config, model_name='sid-minibert-onnx', server_url='fake:001', force_convert_inputs=True))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config, threshold=0.5, prefix="si_"))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
@@ -150,7 +152,8 @@ def test_minibert_cpp(dataset_pandas: DatasetManager,
                       config: Config,
                       kafka_bootstrap_servers: str,
                       kafka_topics: KafkaTopics,
-                      kafka_consumer: "KafkaConsumer"):
+                      kafka_consumer: "KafkaConsumer",
+                      morpheus_log_level: int):
     config.mode = PipelineModes.NLP
     config.class_labels = [
         "address",
@@ -187,7 +190,8 @@ def test_minibert_cpp(dataset_pandas: DatasetManager,
                              model_name='sid-minibert-onnx',
                              server_url='localhost:8001',
                              force_convert_inputs=True))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    pipe.add_stage(
+        MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(AddClassificationsStage(config, threshold=0.5, prefix="si_"))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(

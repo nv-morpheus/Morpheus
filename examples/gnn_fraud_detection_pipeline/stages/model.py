@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -165,7 +165,7 @@ class BaseHeteroGraph(nn.Module):
         """
 
         # create sampler and test dataloaders
-        full_sampler = dgl.dataloading.MultiLayerNeighborSampler(fanouts=[4, 3])
+        full_sampler = dgl.dataloading.MultiLayerFullNeighborSampler(num_layers=3)
         test_dataloader = dgl.dataloading.DataLoader(input_graph, {target_node: test_idx},
                                                      full_sampler,
                                                      batch_size=batch_size,

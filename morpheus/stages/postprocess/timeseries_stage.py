@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,8 +28,9 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
+from morpheus.messages import MultiResponseAEMessage
 from morpheus.messages import MultiResponseMessage
-from morpheus.messages.multi_ae_message import MultiMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -58,7 +59,6 @@ def calc_bin(obj: pd.Timestamp, time0: pd.Timestamp, resolution_sec: float) -> i
     """
     Calculates the bin spacing between the start and stop timestamp at a specified resolution.
     """
-
     return round((round_seconds(obj) - time0).total_seconds()) // resolution_sec
 
 
@@ -164,7 +164,7 @@ class _TimeSeriesAction:
     window_end: dt.datetime = None
 
     send_message: bool = False
-    message: MultiResponseMessage = None
+    message: MultiResponseMessage | ControlMessage = None
 
 
 class _UserTimeSeries:
@@ -207,7 +207,8 @@ class _UserTimeSeries:
         self._holding_timestamps = deque()
 
         # Stateful members
-        self._pending_messages: deque[MultiResponseMessage] = deque()  # Holds the existing messages pending
+        self._pending_messages: deque[MultiResponseMessage
+                                      | ControlMessage] = deque()  # Holds the existing messages pending
         self._timeseries_data: pd.DataFrame = pd.DataFrame(columns=[self._timestamp_col
                                                                     ])  # Holds all available timeseries data
 
@@ -263,16 +264,24 @@ class _UserTimeSeries:
         if (len(self._pending_messages) == 0):
             return None
 
-        # Note: We calculate everything in bins to ensure 1) Full bins, and 2) Even binning
+        # Note: We calculate everything in bins to ensure 1) Full xbins, and 2) Even binning
         timeseries_start = self._timeseries_data["event_bin"].iloc[0]
         timeseries_end = self._timeseries_data["event_bin"].iloc[-1]
 
         # Peek the front message
-        x: MultiResponseMessage = self._pending_messages[0]
+        x: MultiResponseMessage | ControlMessage = self._pending_messages[0]
 
         # Get the first message timestamp
-        message_start = calc_bin(x.get_meta(self._timestamp_col).iloc[0], self._t0_epoch, self._resolution_sec)
-        message_end = calc_bin(x.get_meta(self._timestamp_col).iloc[-1], self._t0_epoch, self._resolution_sec)
+        if isinstance(x, MultiResponseMessage):
+            message_start = calc_bin(x.get_meta(self._timestamp_col).iloc[0], self._t0_epoch, self._resolution_sec)
+            message_end = calc_bin(x.get_meta(self._timestamp_col).iloc[-1], self._t0_epoch, self._resolution_sec)
+        elif isinstance(x, ControlMessage):
+            message_start = calc_bin(pd.Timestamp(x.payload().get_data(self._timestamp_col).iloc[0]),
+                                     self._t0_epoch,
+                                     self._resolution_sec)
+            message_end = calc_bin(pd.Timestamp(x.payload().get_data(self._timestamp_col).iloc[-1]),
+                                   self._t0_epoch,
+                                   self._resolution_sec)
 
         window_start = message_start - self._half_window_bins
         window_end = message_end + self._half_window_bins
@@ -341,17 +350,23 @@ class _UserTimeSeries:
                                  send_message=True,
                                  message=self._pending_messages.popleft())
 
-    def _calc_timeseries(self, x: MultiResponseMessage, is_complete: bool):
+    def _calc_timeseries(self, x: MultiResponseMessage | ControlMessage, is_complete: bool):
 
         if (x is not None):
 
             # Ensure that we have the meta column set for all messages
-            x.set_meta("ts_anomaly", False)
+            if isinstance(x, MultiResponseMessage):
+                x.set_meta("ts_anomaly", False)
+            elif isinstance(x, ControlMessage):
+                x.payload().set_data("ts_anomaly", False)
 
             # Save this message in the pending queue
             self._pending_messages.append(x)
 
-            new_timedata = x.get_meta([self._timestamp_col])
+            if isinstance(x, MultiResponseMessage):
+                new_timedata = x.get_meta([self._timestamp_col])
+            elif isinstance(x, ControlMessage):
+                new_timedata = x.payload().get_data([self._timestamp_col]).to_pandas()
 
             # Save this message event times in the event list. Ensure the values are always sorted
             self._timeseries_data = pd.concat([self._timeseries_data, new_timedata]).sort_index()
@@ -472,34 +487,38 @@ class TimeSeriesStage(PassThruTypeMixin, SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiResponseMessage`, ]
+        typing.Tuple[`morpheus.pipeline.messages.MultiResponseMessage`, ControlMessage]
             Accepted input types.
 
         """
-        return (MultiMessage, )
+        return (MultiResponseMessage, ControlMessage)
 
     def supports_cpp_node(self):
         return False
 
-    def _call_timeseries_user(self, x: MultiMessage):
+    def _call_timeseries_user(self, x: MultiResponseAEMessage | ControlMessage):
+        if isinstance(x, MultiResponseAEMessage):
+            user_id = x.user_id
+        elif isinstance(x, ControlMessage):
+            user_id = x.get_metadata("user_id")
 
-        if (x.user_id not in self._timeseries_per_user):
-            self._timeseries_per_user[x.user_id] = _UserTimeSeries(user_id=x.user_id,
-                                                                   timestamp_col=self._timestamp_col,
-                                                                   resolution=self._resolution,
-                                                                   min_window=self._min_window,
-                                                                   hot_start=self._hot_start,
-                                                                   cold_end=self._cold_end,
-                                                                   filter_percent=self._filter_percent,
-                                                                   zscore_threshold=self._zscore_threshold)
+        if (user_id not in self._timeseries_per_user):
+            self._timeseries_per_user[user_id] = _UserTimeSeries(user_id=user_id,
+                                                                 timestamp_col=self._timestamp_col,
+                                                                 resolution=self._resolution,
+                                                                 min_window=self._min_window,
+                                                                 hot_start=self._hot_start,
+                                                                 cold_end=self._cold_end,
+                                                                 filter_percent=self._filter_percent,
+                                                                 zscore_threshold=self._zscore_threshold)
 
-        return self._timeseries_per_user[x.user_id]._calc_timeseries(x, False)
+        return self._timeseries_per_user[user_id]._calc_timeseries(x, False)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        def on_next(x: MultiMessage):
+        def on_next(x: MultiResponseMessage | ControlMessage):
 
-            message_list: typing.List[MultiResponseMessage] = self._call_timeseries_user(x)
+            message_list: typing.List[MultiResponseMessage | ControlMessage] = self._call_timeseries_user(x)
 
             return message_list
 
@@ -508,7 +527,8 @@ class TimeSeriesStage(PassThruTypeMixin, SinglePortStage):
             to_send = []
 
             for timestamp in self._timeseries_per_user.values():
-                message_list: typing.List[MultiResponseMessage] = timestamp._calc_timeseries(None, True)
+                message_list: typing.List[MultiResponseMessage | ControlMessage] = timestamp._calc_timeseries(
+                    None, True)
 
                 to_send = to_send + message_list
 

@@ -1,0 +1,564 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+      {
+        "datasource": {
+          "type": "marcusolsson-csv-datasource",
+          "uid": "1257c93b-f998-438c-a784-7e90fb94fb36"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "points",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "marcusolsson-csv-datasource",
+              "uid": "1257c93b-f998-438c-a784-7e90fb94fb36"
+            },
+            "decimalSeparator": ".",
+            "delimiter": ",",
+            "header": true,
+            "ignoreUnknown": true,
+            "refId": "A",
+            "schema": [
+              {
+                "name": "timestamp",
+                "type": "time"
+              },
+              {
+                "name": "mean_abs_z",
+                "type": "number"
+              },
+              {
+                "name": "username",
+                "type": "string"
+              }
+            ],
+            "skipRows": 0
+          }
+        ],
+        "title": "Absolute mean z-loss across all features",
+        "transformations": [],
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "marcusolsson-csv-datasource",
+          "uid": "1257c93b-f998-438c-a784-7e90fb94fb36"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "points",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "id": 2,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "marcusolsson-csv-datasource",
+              "uid": "1257c93b-f998-438c-a784-7e90fb94fb36"
+            },
+            "decimalSeparator": ".",
+            "delimiter": ",",
+            "header": true,
+            "ignoreUnknown": true,
+            "refId": "A",
+            "schema": [
+              {
+                "name": "timestamp",
+                "type": "time"
+              },
+              {
+                "name": "logcount_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "locincrement_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "appincrement_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "appDisplayName_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "clientAppUsed_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "deviceDetailbrowser_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "deviceDetaildisplayName_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "deviceDetailoperatingSystem_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "statusfailureReason_z_loss",
+                "type": "number"
+              }
+            ],
+            "skipRows": 0
+          }
+        ],
+        "title": "Feature z-loss",
+        "transformations": [],
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "marcusolsson-csv-datasource",
+          "uid": "1257c93b-f998-438c-a784-7e90fb94fb36"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "id": 3,
+        "options": {
+          "displayMode": "gradient",
+          "minVizHeight": 10,
+          "minVizWidth": 0,
+          "orientation": "horizontal",
+          "reduceOptions": {
+            "calcs": [
+              "max"
+            ],
+            "fields": "",
+            "values": true
+          },
+          "showUnfilled": true,
+          "valueMode": "color"
+        },
+        "pluginVersion": "10.0.0",
+        "targets": [
+          {
+            "datasource": {
+              "type": "marcusolsson-csv-datasource",
+              "uid": "1257c93b-f998-438c-a784-7e90fb94fb36"
+            },
+            "decimalSeparator": ".",
+            "delimiter": ",",
+            "header": true,
+            "ignoreUnknown": true,
+            "refId": "A",
+            "schema": [
+              {
+                "name": "username",
+                "type": "string"
+              },
+              {
+                "name": "mean_abs_z",
+                "type": "string"
+              }
+            ],
+            "skipRows": 0
+          }
+        ],
+        "title": "Max mean_abs_z per user",
+        "transformations": [
+          {
+            "id": "groupBy",
+            "options": {
+              "fields": {
+                "mean_abs_z": {
+                  "aggregations": [
+                    "max"
+                  ],
+                  "operation": "aggregate"
+                },
+                "username": {
+                  "aggregations": [],
+                  "operation": "groupby"
+                }
+              }
+            }
+          }
+        ],
+        "type": "bargauge"
+      },
+      {
+        "datasource": {
+          "type": "marcusolsson-csv-datasource",
+          "uid": "1257c93b-f998-438c-a784-7e90fb94fb36"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "id": 4,
+        "options": {
+          "displayMode": "gradient",
+          "minVizHeight": 10,
+          "minVizWidth": 0,
+          "orientation": "horizontal",
+          "reduceOptions": {
+            "calcs": [
+              "max"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showUnfilled": true,
+          "valueMode": "color"
+        },
+        "pluginVersion": "10.0.0",
+        "targets": [
+          {
+            "datasource": {
+              "type": "marcusolsson-csv-datasource",
+              "uid": "1257c93b-f998-438c-a784-7e90fb94fb36"
+            },
+            "decimalSeparator": ".",
+            "delimiter": ",",
+            "header": true,
+            "ignoreUnknown": true,
+            "refId": "A",
+            "schema": [
+              {
+                "name": "logcount_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "locincrement_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "appincrement_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "appDisplayName_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "clientAppUsed_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "deviceDetailbrowser_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "deviceDetaildisplayName_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "deviceDetailoperatingSystem_z_loss",
+                "type": "number"
+              },
+              {
+                "name": "statusfailureReason_z_loss",
+                "type": "number"
+              }
+            ],
+            "skipRows": 0
+          }
+        ],
+        "title": "Max z-loss per feature",
+        "transformations": [],
+        "type": "bargauge"
+      },
+      {
+        "datasource": {
+          "type": "marcusolsson-csv-datasource",
+          "uid": "1257c93b-f998-438c-a784-7e90fb94fb36"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 13,
+          "w": 24,
+          "x": 0,
+          "y": 16
+        },
+        "id": 5,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "fields": "",
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "showHeader": true
+        },
+        "pluginVersion": "10.0.0",
+        "targets": [
+          {
+            "datasource": {
+              "type": "marcusolsson-csv-datasource",
+              "uid": "1257c93b-f998-438c-a784-7e90fb94fb36"
+            },
+            "decimalSeparator": ".",
+            "delimiter": ",",
+            "header": true,
+            "ignoreUnknown": false,
+            "refId": "A",
+            "schema": [
+              {
+                "name": "",
+                "type": "string"
+              }
+            ],
+            "skipRows": 0
+          }
+        ],
+        "type": "table"
+      }
+    ],
+    "refresh": "",
+    "schemaVersion": 38,
+    "style": "dark",
+    "tags": [],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "2022-08-30T04:00:00.000Z",
+      "to": "2022-09-01T03:59:59.000Z"
+    },
+    "timepicker": {},
+    "timezone": "",
+    "title": "DFP Detections",
+    "uid": "f810d98f-bf31-42d4-98aa-9eb3fa187184",
+    "version": 1,
+    "weekStart": ""
+  }

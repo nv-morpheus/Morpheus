@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "morpheus/export.h"
+
 #include <cstdint>
 #include <string>
 
@@ -27,16 +29,11 @@ namespace morpheus {
  * @{
  * @file
  */
-
-#pragma GCC visibility push(default)
-enum class FilterSource : int32_t
+enum class MORPHEUS_EXPORT FilterSource : int32_t
 {
     Auto,
     TENSOR,
     DATAFRAME
 };
-
-#pragma GCC visibility pop
-
 /** @} */  // end of group
 }  // namespace morpheus

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -205,7 +205,7 @@ def model_eval(model, val_dataloader, idx2label):
         print(cfm)
 
 
-def main():
+def main(args):
     print("Data Preprocessing...")
     train_dataloader, val_dataloader, idx2label = data_preprocessing(args.training_data)
     print("Model Training...")
@@ -227,6 +227,5 @@ if __name__ == "__main__":
                         with model file")
     parser.add_argument("--tokenizer-hash-filepath", required=True, help="hash file for tokenizer vocab")
     parser.add_argument("--output-file", required=True, help="output file to save new model")
-    args = parser.parse_args()
 
-main()
+    main(parser.parse_args())

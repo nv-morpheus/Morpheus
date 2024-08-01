@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +18,9 @@
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 
 #include "morpheus/llm/input_map.hpp"
-#include "morpheus/llm/llm_context.hpp"
+#include "morpheus/llm/llm_context.hpp"  // for LLMContext
 #include "morpheus/llm/llm_lambda_node.hpp"
-#include "morpheus/llm/llm_node.hpp"
+#include "morpheus/llm/llm_node.hpp"  // for LLMNode
 #include "morpheus/llm/llm_node_runner.hpp"
 #include "morpheus/llm/llm_task.hpp"
 #include "morpheus/types.hpp"
@@ -29,11 +29,14 @@
 #include <mrc/channel/forward.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
 #include <mrc/coroutines/when_all.hpp>
+#include <pymrc/utilities/json_values.hpp>  // for JSONValues
 
 #include <coroutine>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <tuple>  // for tuple
+// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
 
 using namespace morpheus;
 using namespace morpheus::test;
@@ -134,6 +137,6 @@ TEST_F(TestLLMNodeRunner, Execute)
 
     coroutines::sync_wait(coroutines::when_all(runner_1->execute(context), runner_2->execute(context)));
 
-    ASSERT_EQ(context->view_outputs()["Root1"], 0);
-    ASSERT_EQ(context->view_outputs()["Root2"], 1);
+    ASSERT_EQ(context->view_outputs().view_json()["Root1"], 0);
+    ASSERT_EQ(context->view_outputs().view_json()["Root2"], 1);
 }

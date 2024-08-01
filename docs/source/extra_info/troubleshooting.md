@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,15 @@ The Morpheus build system, by default, stores all build artifacts and cached out
 # Delete the build and cache folders
 rm -rf ${MORPHEUS_ROOT}/.cache
 rm -rf ${MORPHEUS_ROOT}/build
+
+# Clean out documentation builds:
+rm -rf docs/source/_modules docs/source/_lib
+
+# Clean out shared-libs if compiled with `MORPHEUS_PYTHON_INPLACE_BUILD=ON`:
+find ./morpheus -name "*.so" -delete
+
+# Clean out shared libs if examples have been built:
+find ./examples -name "*.so" -delete
 
 # Restart the build
 ./scripts/compile.sh

@@ -144,28 +144,19 @@ def config_warning_fixture():
 @pytest.mark.use_python
 class TestCLI:
 
-    def test_help(self):
+    @pytest.mark.parametrize('cmd',
+                             [[], ['tools'], ['run'], ['run', 'pipeline-ae'], ['run', 'pipeline-fil'],
+                              ['run', 'pipeline-nlp'], ['run', 'pipeline-other']])
+    def test_help(self, cmd: list[str]):
         runner = CliRunner()
-        result = runner.invoke(commands.cli, ['--help'])
+        result = runner.invoke(commands.cli, cmd + ['--help'])
         assert result.exit_code == 0, result.output
 
-        result = runner.invoke(commands.cli, ['tools', '--help'])
-        assert result.exit_code == 0, result.output
-
-        result = runner.invoke(commands.cli, ['run', '--help'])
-        assert result.exit_code == 0, result.output
-
-        result = runner.invoke(commands.cli, ['run', 'pipeline-ae', '--help'])
-        assert result.exit_code == 0, result.output
-
-    def test_autocomplete(self, tmp_path):
+    @pytest.mark.parametrize('cmd',
+                             [['tools', 'autocomplete', 'show'], ['tools', 'autocomplete', 'install', '--shell=bash']])
+    def test_autocomplete(self, tmp_path, cmd: list[str]):
         runner = CliRunner()
-        result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'show'], env={'HOME': str(tmp_path)})
-        assert result.exit_code == 0, result.output
-
-        # The actual results of this are specific to the implementation of click_completion
-        result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'install', '--shell=bash'],
-                               env={'HOME': str(tmp_path)})
+        result = runner.invoke(commands.cli, cmd, env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
 
     @pytest.mark.usefixtures("restore_environ")
@@ -406,9 +397,9 @@ class TestCLI:
         assert isinstance(process_fil, PreprocessFILStage)
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -529,9 +520,9 @@ class TestCLI:
         assert mlflow_drift._tracking_uri == mlflow_uri
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -663,9 +654,9 @@ class TestCLI:
         assert mlflow_drift._tracking_uri == mlflow_uri
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -744,9 +735,9 @@ class TestCLI:
         assert not process_nlp._add_special_tokens
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -877,9 +868,9 @@ class TestCLI:
         assert mlflow_drift._tracking_uri == mlflow_uri
 
         assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
+        assert triton_inf._model_name == 'test-model'
+        assert triton_inf._server_url == 'test:123'
+        assert triton_inf._force_convert_inputs
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -923,12 +914,11 @@ class TestCLI:
         assert config.mode == PipelineModes.NLP
 
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_nlp_relative_paths(self, config, callback_values):
+    def test_pipeline_nlp_relative_paths(self, config, callback_values, bert_cased_hash: str):
         """
         Ensure that the default paths in the nlp pipeline are valid when run from outside the morpheus repo
         """
 
-        vocab_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-hash.txt')
         args = (GENERAL_ARGS + ['pipeline-nlp'] + FILE_SRC_ARGS + [
             'deserialize',
             'preprocess',
@@ -950,7 +940,7 @@ class TestCLI:
         # pylint: disable=unused-variable
         [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
 
-        assert process_nlp._vocab_hash_file == os.path.realpath(vocab_file_name)
+        assert process_nlp._vocab_hash_file == os.path.realpath(bert_cased_hash)
 
     @pytest.mark.replace_callback('pipeline_nlp')
     def test_pipeline_nlp_relative_path_precedence(self, config, callback_values, tmp_path):

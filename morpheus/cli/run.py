@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 def run_cli():
     """Main entrypoint for the CLI"""
-    from morpheus.cli.commands import cli
+    from morpheus.cli.commands import cli  # pylint: disable=cyclic-import
     cli(obj={}, auto_envvar_prefix='MORPHEUS', show_default=True, prog_name="morpheus")
 
 

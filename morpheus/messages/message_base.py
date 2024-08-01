@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,11 @@ import dataclasses
 import functools
 import typing
 
+from typing_utils import issubtype
+
+from morpheus import messages
 from morpheus.config import CppConfig
+from morpheus.utils import logger as morpheus_logger
 
 
 class MessageImpl(abc.ABCMeta):
@@ -43,6 +47,10 @@ class MessageImpl(abc.ABCMeta):
             # Wrap __new__ to attempt to provide the right type annotations
             @functools.wraps(result.__new__)
             def _internal_new(other_cls, *args, **kwargs):
+
+                # Instantiating MultiMessage and its subclasses from Python or C++ will generate a deprecation warning
+                if issubtype(other_cls, messages.MultiMessage):
+                    morpheus_logger.deprecated_message_warning(other_cls, messages.ControlMessage)
 
                 # If _cpp_class is set, and use_cpp is enabled, create the C++ instance
                 if (getattr(other_cls, "_cpp_class", None) is not None and CppConfig.get_should_use_cpp()):
@@ -72,5 +80,5 @@ class MessageData(MessageBase):
     def __getstate__(self):
         return self.__dict__
 
-    def __setstate__(self, d):
-        self.__dict__ = d
+    def __setstate__(self, state):
+        self.__dict__ = state

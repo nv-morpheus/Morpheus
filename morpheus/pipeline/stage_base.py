@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,12 +18,13 @@ import functools
 import inspect
 import logging
 import typing
+import warnings
 from abc import ABC
 from abc import abstractmethod
 
 import mrc
 
-import morpheus.pipeline as _pipeline
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.utils.atomic_integer import AtomicInteger
@@ -75,7 +76,11 @@ class StageBase(ABC, collections.abc.Hashable):
 
     """
 
+    # pylint:disable=too-many-public-methods
+
     __ID_COUNTER = AtomicInteger(0)
+
+    _schema: _pipeline.StageSchema
 
     def __init__(self, config: Config):
         # Save the config
@@ -95,6 +100,9 @@ class StageBase(ABC, collections.abc.Hashable):
 
         # Mapping of {`column_name`: `TyepId`}
         self._needed_columns = collections.OrderedDict()
+
+        # Schema of the stage
+        self._schema = _pipeline.StageSchema(self)
 
     def __init_subclass__(cls) -> None:
 
@@ -279,7 +287,7 @@ class StageBase(ABC, collections.abc.Hashable):
 
     def _build_cpp_node(self):
         """
-        Specifies whether or not to build a C++ node. Only should be called during the build phase.
+        Specifies whether to build a C++ node. Only should be called during the build phase.
         """
         return CppConfig.get_should_use_cpp() and self.supports_cpp_node()
 
@@ -342,14 +350,15 @@ class StageBase(ABC, collections.abc.Hashable):
         schema = _pipeline.StageSchema(self)
         self._pre_compute_schema(schema)
         self.compute_schema(schema)
+        self._schema = schema
 
-        assert len(schema.output_schemas) == len(self.output_ports), \
+        assert len(self._schema.output_schemas) == len(self.output_ports), \
             (f"Prebuild expected `schema.output_schemas` to be of length {len(self.output_ports)} "
-             f"(one for each output port), but got {len(schema.output_schemas)}.")
+             f"(one for each output port), but got {len(self._schema.output_schemas)}.")
 
-        schema._complete()
+        self._schema._complete()
 
-        for (port_idx, port_schema) in enumerate(schema.output_schemas):
+        for (port_idx, port_schema) in enumerate(self._schema.output_schemas):
             self.output_ports[port_idx].output_schema = port_schema
 
         self._is_pre_built = True
@@ -494,3 +503,15 @@ class StageBase(ABC, collections.abc.Hashable):
         `compute_schema` being called.
         """
         pass
+
+    async def start_async(self):
+        """
+        This function is called along with on_start during stage initialization. Allows stages to utilize the
+        asyncio loop if needed.
+        """
+        if (hasattr(self, 'on_start')):
+            warnings.warn(
+                "The on_start method is deprecated and may be removed in the future. "
+                "Please use start_async instead.",
+                DeprecationWarning)
+            self.on_start()

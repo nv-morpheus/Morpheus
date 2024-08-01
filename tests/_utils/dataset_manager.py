@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ import logging
 import os
 import random
 import typing
+import warnings
 
 import cupy as cp
 import pandas as pd
@@ -214,6 +215,9 @@ class DatasetManager:
         else:
             val_to_check = cls._value_as_pandas(val_to_check, assert_is_pandas=False)
 
+        if (isinstance(val_to_check, (pd.DataFrame, pd.Series))):
+            return df_to_check.equals(val_to_check)
+
         bool_df = df_to_check == val_to_check
 
         return bool(bool_df.all(axis=None))
@@ -235,7 +239,10 @@ class DatasetManager:
                    dfb: typing.Union[pd.DataFrame, cdf.DataFrame],
                    **compare_args):
         """Wrapper for `morpheus.utils.compare_df.compare_df`."""
-        return compare_df.compare_df(cls._value_as_pandas(dfa), cls._value_as_pandas(dfb), **compare_args)
+        with warnings.catch_warnings():
+            # Ignore performance warnings from pandas triggered by the comparison
+            warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+            return compare_df.compare_df(cls._value_as_pandas(dfa), cls._value_as_pandas(dfb), **compare_args)
 
     @classmethod
     def assert_compare_df(cls,

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +14,6 @@
 # limitations under the License.
 
 from unittest import mock
-
-import pytest
 
 import cudf
 
@@ -42,7 +40,6 @@ def _build_engine(mock_llm_client: mock.MagicMock) -> LLMEngine:
     return engine
 
 
-@pytest.mark.use_python
 def test_pipeline(config: Config, mock_llm_client: mock.MagicMock):
     expected_output = ["response1", "response2"]
     mock_llm_client.generate_batch_async.return_value = expected_output.copy()

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@ import functools
 import logging
 import re
 import typing
+from typing import Optional
+from typing import Type
 
 import mrc
 import pandas as pd
+from pydantic import BaseModel
 
 import cudf
 
@@ -305,3 +308,125 @@ def make_nested_module(module_id: str, namespace: str, ordered_modules_meta: typ
         # Register input and output port for a module.
         builder.register_module_input("input", head_module.input_port("input"))
         builder.register_module_output("output", prev_module.output_port("output"))
+
+
+class ModuleLoader:
+    """
+    Class to hold the definition of a module.
+
+    Attributes
+    ----------
+    module_instance : ModuleLoader
+        The instance of the loaded module.
+    name : str
+        The name of the module.
+    config : dict
+        The configuration dictionary for the module.
+    """
+
+    def __init__(self, module_interface, name, config):
+        self._module_interface = module_interface
+        self._name = name
+        self._config = config
+        self._loaded = False
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def config(self):
+        return self._config
+
+    def load(self, builder: mrc.Builder):
+        """
+        Loads the module instance.
+
+        Parameters
+        ----------
+        builder : mrc.Builder
+            The Morpheus builder instance.
+        """
+
+        if (self._loaded):
+            err_msg = f"Module '{self._module_interface.identity}::{self.name}' is already loaded."
+            logger.error(err_msg)
+
+            raise RuntimeError(err_msg)
+
+        module = builder.load_module(self._module_interface.identity,
+                                     self._module_interface.namespace,
+                                     self._name,
+                                     self._config)
+
+        logger.debug("Module '%s' with namespace '%s' is successfully loaded.",
+                     self._module_interface.identity,
+                     self._module_interface.namespace)
+
+        self._loaded = True
+
+        return module
+
+
+class ModuleLoaderFactory:
+    """
+    Class that acts as a simple wrapper to load a SegmentModule.
+
+    Attributes
+    ----------
+    _id : str
+        The module identifier.
+    _namespace : str
+        The namespace of the module.
+    _config_schema : Type[BaseModel], optional
+        The Pydantic model representing the parameter contract for the module.
+    """
+
+    def __init__(self, module_id, module_namespace, config_schema: Optional[Type[BaseModel]] = None):
+        self._id = module_id
+        self._namespace = module_namespace
+        self._config_schema = config_schema
+
+    @property
+    def identity(self):
+        return self._id
+
+    @property
+    def namespace(self):
+        return self._namespace
+
+    def get_instance(self, module_name: str, module_config: dict) -> ModuleLoader:
+        """
+        Loads a module instance and returns its definition.
+
+        Parameters
+        ----------
+        module_name : str
+            The name of the module to be loaded.
+        module_config : dict
+            The configuration dictionary for the module.
+
+        Returns
+        -------
+        ModuleLoader
+            A specific instance of this module.
+        """
+        return ModuleLoader(self, module_name, module_config)
+
+    def print_schema(self) -> str:
+        """
+        Returns a human-readable description of the module's parameter schema.
+
+        Returns
+        -------
+        str
+            A description of the module's parameter schema.
+        """
+        if not self._config_schema:
+            return "No parameter contract defined for this module."
+
+        description = f"Schema for {self._id}:\n"
+        for field in self._config_schema.__fields__.values():
+            description += f"  - {field.name} ({field.type_.__name__}): {field.field_info.description}\n"
+
+        return description

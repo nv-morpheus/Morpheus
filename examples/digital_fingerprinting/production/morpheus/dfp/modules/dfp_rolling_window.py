@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,7 +48,8 @@ def dfp_rolling_window(builder: mrc.Builder):
     Notes
     -----
     Configurable parameters:
-        - cache_mode (str): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
+        - cache_mode (str): Mode for managing user cache. Setting to `batch` flushes cache once trigger conditions are
+          met. Otherwise, continue to aggregate user's history.; Example: 'batch'; Default: 'batch'
         - trigger_on_min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
         - trigger_on_min_increment (int): Minmum increment from the last trained to new training event;
         Example: 0; Default: 0

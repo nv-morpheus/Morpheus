@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 
@@ -28,8 +29,6 @@
 
 namespace morpheus {
 
-#pragma GCC visibility push(default)
-
 /**
  * @brief Abstract class for loading data from a source.
  *
@@ -37,7 +36,7 @@ namespace morpheus {
  * protected method for accessing the configuration information. It can be extended to implement
  * specific loading logic for different types of data sources.
  */
-class Loader
+class MORPHEUS_EXPORT Loader
 {
   public:
     /**
@@ -89,7 +88,7 @@ class Loader
  * loading data using these objects. It also defines a method for loading control messages from data
  * sources using the registered loaders.
  */
-class DataLoader
+class MORPHEUS_EXPORT DataLoader
 {
   public:
     /**
@@ -136,5 +135,4 @@ class DataLoader
     nlohmann::json m_config;
 };
 
-#pragma GCC visibility pop
 }  // namespace morpheus

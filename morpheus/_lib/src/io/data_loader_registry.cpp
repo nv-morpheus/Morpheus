@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,14 +24,12 @@
 
 #include <glog/logging.h>
 #include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
-#include <pybind11/gil.h>
+#include <pybind11/gil.h>  // for gil_scoped_acquire
 #include <pybind11/pybind11.h>
 #include <pymrc/utils.hpp>
 
-#include <array>
 #include <iostream>
-#include <utility>
+#include <utility>  // for move
 
 namespace morpheus {
 template class FactoryRegistry<Loader>;

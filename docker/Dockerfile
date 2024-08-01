@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.3
 
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +18,13 @@
 # ============== LEGEND =================================================== #
 #                         [conda_bld_morpheus]
 #                               /
-# [base] -> [conda_env] -> [base_extended] -> [runtime]
+# [base] -> [conda_env] -> [base_extended] -> [runtime_conda_create] -> [runtime]
 #                               \
 #                         [conda_env_dev] -> [development] -> [development_pydbg]
+#                               \
+#                         [build_docs]
+#                               \
+#                         [git_clone]
 #
 #  base: Contains all system packages common across all environments
 #  conda_env: Create morpheus conda environment and set it as the new base
@@ -35,13 +39,16 @@
 #    source directory.
 #  development_pydbg: Development + debug build of cpython and various GDB
 #    debugging macros.
+#  build_docs: Build the Morpheus documentation
+#  git_clone: Clone the Morpheus repository to ensure we do not unintentionally
+#    copy local build artifacts
 # ========================================================================= #
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="nvidia/cuda"
-ARG CUDA_MAJOR_VER=11
-ARG CUDA_MINOR_VER=8
-ARG CUDA_REV_VER=0
+ARG CUDA_MAJOR_VER=12
+ARG CUDA_MINOR_VER=1
+ARG CUDA_REV_VER=1
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=22.04
 
@@ -112,9 +119,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
-    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "python=${PYTHON_VER}" "tini=0.19" &&\
-    source activate base
-    # conda clean -afy
+    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "python=${PYTHON_VER}" "tini=0.19"
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
@@ -127,8 +132,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Create the environment and install as little dependencies as possible
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba create -n morpheus -c conda-forge  \
       python=${PYTHON_VER} && \
-    # Clean and activate
-    # conda clean -afy && \
+    # Activate the environment automatically from .bashrc
     conda init bash && \
     echo "conda activate morpheus" >> ~/.bashrc
 
@@ -152,17 +156,11 @@ FROM conda_env as base_extended
 # Add one or more optional dependencies to the base environment
 ARG MORPHEUS_ROOT_HOST
 ARG MORPHEUS_SUPPORT_DOCA="FALSE"
-ARG DOCA_ARTIFACTS_HOST
-ARG DOCA_REPO_HOST
-ARG DOCA_BUILD_ID=7930666
-ARG DOCA_VERSION=2.2.0002-1
-ARG DPDK_VERSION=22.11.0-1.4.1
-
 # Set this environment variable so it auto builds DOCA
 ENV MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}
 
 # Copy all of the optional dependency scripts
-COPY ${MORPHEUS_ROOT_HOST}/docker/optional_deps docker/optional_deps
+COPY ${MORPHEUS_ROOT_HOST}/.devcontainer/docker/optional_deps docker/optional_deps
 
 # Install DOCA (If requested)
 RUN --mount=type=cache,id=doca,target=/tmp/doca,sharing=locked \
@@ -179,17 +177,15 @@ ARG CUDA_MINOR_VER
 ARG CONDA_CHANNEL_ALIAS
 
 # Copy the development dependencies file
-COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml ./docker/conda/environments/
+COPY ${MORPHEUS_ROOT_HOST}/conda/environments/dev_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml ./conda/environments/dev.yaml
 
 # Update the morpheus environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Temp add channel_alias to get around conda 404 errors
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS} &&\
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml &&\
+    /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file conda/environments/dev.yaml &&\
     # Remove channel_alias to use the normal channel in the container
-    conda config --env --remove-key channel_alias &&\
-    # Clean and activate
-    conda clean -afy
+    conda config --env --remove-key channel_alias
 
 # ============ Stage: conda_bld_morpheus ============
 # Now build the morpheus conda package
@@ -198,6 +194,8 @@ FROM base_extended as conda_bld_morpheus
 ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
+
+ENV GIT_CLONE_PROTECTION_ACTIVE=false
 
 RUN --mount=type=cache,id=apt,target=/var/cache/apt \
     apt update && \
@@ -229,15 +227,43 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     cd ${MORPHEUS_ROOT_HOST} &&\
     MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld ./ci/conda/recipes/run_conda_build.sh morpheus
 
-# ============ Stage: runtime ============
-# Setup container for runtime environment
-FROM base_extended as runtime
+# ============ Stage: build_docs ============
+# Now build the morpheus docs
+FROM conda_env_dev as build_docs
 
+ARG MORPHEUS_ROOT_HOST
+
+# Copy the source
+COPY . ./
+
+RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
+    --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
+    --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    source activate morpheus &&\
+    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus \
+        -c local \
+        -c conda-forge \
+        -c huggingface \
+        -c rapidsai \
+        -c rapidsai-nightly \
+        -c nvidia \
+        -c nvidia/label/dev \
+        -c pytorch \
+        -c defaults \
+        morpheus && \
+    # Change to the morpheus directory and build the docs
+    cd ${MORPHEUS_ROOT_HOST} &&\
+    CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_DOCS=ON -DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_CUDA_ARCHITECTURES=RAPIDS"\
+         ./scripts/compile.sh --target morpheus_docs
+
+# ============ Stage: runtime_conda_create ============
+# Setup conda for the runtime environment
+FROM base_extended as runtime_conda_create
 ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 
-COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml ./docker/conda/environments/
+COPY "${MORPHEUS_ROOT_HOST}/conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml" "./conda/environments/"
 
 # Mount Morpheus conda package build in `conda_bld_morpheus`
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
@@ -249,21 +275,53 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     # Install morpheus
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus \
         -c local \
+        -c conda-forge \
+        -c huggingface \
         -c rapidsai \
-        -c nvidia/label/cuda-11.8.0 \
-        -c nvidia/label/dev \
+        -c rapidsai-nightly \
         -c nvidia \
+        -c nvidia/label/dev \
         -c pytorch \
-        -c conda-forge morpheus &&\
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml
+        -c defaults \
+        morpheus && \
+    /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file \
+        conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml
+
+# ============ Stage: git_clone ============
+# Perform a clone of the git repository this ensures that when we copy files from the source repository, we aren't
+# unintentionally including build artifacts or other files that shouldn't be in the final image
+FROM conda_env_dev as git_clone
+
+ARG MORPHEUS_ROOT_HOST
+
+# Source the morpheus env to pick up the git-lfs package
+RUN --mount=type=bind,source=${MORPHEUS_ROOT_HOST},target=/opt/host_repo \
+    source activate morpheus &&\
+    git clone file:///opt/host_repo /tmp/morpheus_repo &&\
+    cd /tmp/morpheus_repo &&\
+    git lfs install &&\
+    /tmp/morpheus_repo/scripts/fetch_data.py fetch datasets examples
+
+# ============ Stage: runtime ============
+# Setup container for runtime environment
+FROM runtime_conda_create as runtime
+
+ARG MORPHEUS_ROOT_HOST
 
 # Only copy specific files/folders over that are necessary for runtime
-COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
-COPY "${MORPHEUS_ROOT_HOST}/docs" "./docs"
-COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
-COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
-COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
-COPY ["${MORPHEUS_ROOT_HOST}/*.md", "${MORPHEUS_ROOT_HOST}/LICENSE", "./"]
+COPY --from=git_clone "/tmp/morpheus_repo/conda/environments/*.yaml" "./conda/environments/"
+COPY --from=git_clone "/tmp/morpheus_repo/docker" "./docker"
+COPY --from=build_docs "/workspace/build/docs/html" "./docs"
+COPY --from=git_clone "/tmp/morpheus_repo/examples" "./examples"
+COPY --from=git_clone "/tmp/morpheus_repo/models/datasets" "./models/datasets"
+COPY --from=git_clone "/tmp/morpheus_repo/scripts" "./scripts"
+COPY --from=git_clone "/tmp/morpheus_repo/*.md" "./"
+COPY --from=git_clone "/tmp/morpheus_repo/LICENSE" "./"
+
+RUN /opt/conda/bin/conda clean -afy && \
+    # Ensure the conda-bld directory is indexed even if empty
+    mkdir -p /opt/conda/conda-bld && \
+    /opt/conda/bin/conda index /opt/conda/conda-bld
 
 # Use morpheus by default
 CMD [ "morpheus" ]
@@ -290,10 +348,10 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
     rm -rf /var/lib/apt/lists/*
 
 # Install camouflage needed for unittests to mock a triton server
-# Pin to v0.9 until #967 is resolved
 RUN source activate morpheus && \
     npm install -g camouflage-server@0.15 && \
-    npm cache clean --force
+    npm cache clean --force && \
+    conda clean -afy
 
 # Setup git to allow other users to access /workspace. Requires git 2.35.3 or
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for

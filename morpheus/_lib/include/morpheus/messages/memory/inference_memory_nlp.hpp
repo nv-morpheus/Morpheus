@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex
@@ -39,7 +40,7 @@ namespace morpheus {
     usecases.
  *
  */
-class InferenceMemoryNLP : public InferenceMemory
+class MORPHEUS_EXPORT InferenceMemoryNLP : public InferenceMemory
 {
   public:
     /**
@@ -103,11 +104,11 @@ class InferenceMemoryNLP : public InferenceMemory
 };
 
 /****** InferenceMemoryNLPInterfaceProxy********************/
-#pragma GCC visibility push(default)
+
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
+struct MORPHEUS_EXPORT InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize an InferenceMemoryNLP object, and return a shared pointer to the result
@@ -175,7 +176,5 @@ struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
      */
     static void set_seq_ids(InferenceMemoryNLP& self, pybind11::object cupy_values);
 };
-#pragma GCC visibility pop
-
 /** @} */  // end of group
 }  // namespace morpheus

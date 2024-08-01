@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,13 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import logging
 
 import pymilvus
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings  # pylint: disable=no-name-in-module
 
+from morpheus.llm.services.llm_service import LLMService
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.llm.services.openai_chat_service import OpenAIChatService
+from morpheus.service.vdb.milvus_client import DATA_TYPE_MAP
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.service.vdb.utils import VectorDBServiceFactory
 
@@ -32,20 +35,34 @@ def build_huggingface_embeddings(model_name: str, model_kwargs: dict = None, enc
 
 def build_llm_service(model_name: str, llm_service: str, tokens_to_generate: int, **model_kwargs):
     lowered_llm_service = llm_service.lower()
+
+    service: LLMService | None = None
+
     if (lowered_llm_service == 'nemollm'):
         model_kwargs['tokens_to_generate'] = tokens_to_generate
-        llm_service = NeMoLLMService()
+        service = NeMoLLMService()
     elif (lowered_llm_service == 'openai'):
         model_kwargs['max_tokens'] = tokens_to_generate
-        llm_service = OpenAIChatService()
+        service = OpenAIChatService()
     else:
-        # TODO(Devin) : Add additional options
         raise RuntimeError(f"Unsupported LLM service name: {llm_service}")
 
-    return llm_service.get_client(model_name, **model_kwargs)
+    return service.get_client(model_name=model_name, **model_kwargs)
 
 
-def build_milvus_config(embedding_size: int):
+def build_milvus_config(resource_schema_config: dict):
+    schema_fields = []
+    for field_data in resource_schema_config["schema_conf"]["schema_fields"]:
+        field_data["dtype"] = DATA_TYPE_MAP.get(field_data["dtype"])
+        field_schema = pymilvus.FieldSchema(**field_data)
+        schema_fields.append(field_schema.to_dict())
+
+    resource_schema_config["schema_conf"]["schema_fields"] = schema_fields
+
+    return resource_schema_config
+
+
+def build_default_milvus_config(embedding_size: int):
     milvus_resource_kwargs = {
         "index_conf": {
             "field_name": "embedding",
@@ -93,47 +110,8 @@ def build_milvus_config(embedding_size: int):
 
 
 def build_milvus_service(embedding_size: int, uri: str = "http://localhost:19530"):
-    milvus_resource_kwargs = build_milvus_config(embedding_size)
+    default_service = build_default_milvus_config(embedding_size)
 
-    vdb_service: MilvusVectorDBService = VectorDBServiceFactory.create_instance("milvus",
-                                                                                uri=uri,
-                                                                                **milvus_resource_kwargs)
+    vdb_service: MilvusVectorDBService = VectorDBServiceFactory.create_instance("milvus", uri=uri, **default_service)
 
     return vdb_service
-
-
-def build_rss_urls():
-    return [
-        "https://www.theregister.com/security/headlines.atom",
-        "https://isc.sans.edu/dailypodcast.xml",
-        "https://threatpost.com/feed/",
-        "http://feeds.feedburner.com/TheHackersNews?format=xml",
-        "https://www.bleepingcomputer.com/feed/",
-        "https://therecord.media/feed/",
-        "https://blog.badsectorlabs.com/feeds/all.atom.xml",
-        "https://krebsonsecurity.com/feed/",
-        "https://www.darkreading.com/rss_simple.asp",
-        "https://blog.malwarebytes.com/feed/",
-        "https://msrc.microsoft.com/blog/feed",
-        "https://securelist.com/feed",
-        "https://www.crowdstrike.com/blog/feed/",
-        "https://threatconnect.com/blog/rss/",
-        "https://news.sophos.com/en-us/feed/",
-        "https://www.us-cert.gov/ncas/current-activity.xml",
-        "https://www.csoonline.com/feed",
-        "https://www.cyberscoop.com/feed",
-        "https://research.checkpoint.com/feed",
-        "https://feeds.fortinet.com/fortinet/blog/threat-research",
-        "https://www.mcafee.com/blogs/rss",
-        "https://www.digitalshadows.com/blog-and-research/rss.xml",
-        "https://www.nist.gov/news-events/cybersecurity/rss.xml",
-        "https://www.sentinelone.com/blog/rss/",
-        "https://www.bitdefender.com/blog/api/rss/labs/",
-        "https://www.welivesecurity.com/feed/",
-        "https://unit42.paloaltonetworks.com/feed/",
-        "https://mandiant.com/resources/blog/rss.xml",
-        "https://www.wired.com/feed/category/security/latest/rss",
-        "https://www.wired.com/feed/tag/ai/latest/rss",
-        "https://blog.google/threat-analysis-group/rss/",
-        "https://intezer.com/feed/",
-    ]

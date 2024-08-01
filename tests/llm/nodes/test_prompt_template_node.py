@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,8 +51,8 @@ MULTI_LINE_JINJA_TEMPLATE = """Testing a loop:
           'query': ['query1', 'query2']
       },
       [
-          "Testing a loop:\nTitle: title1, Summary: summary1\nTitle: title2, Summary: summary2\n\nquery1",
-          "Testing a loop:\nTitle: rockets, Summary: space\n\nquery2",
+          "Testing a loop:\nTitle: title1, Summary: summary1\nTitle: title2, Summary: summary2\nquery1",
+          "Testing a loop:\nTitle: rockets, Summary: space\nquery2",
       ])],
     ids=["f-string-hello-world", "f-string-fruit-vegetable", "jinja-fruit-vegetable", "jinja-multi-line"])
 def test_prompt_template_node(template: str, template_format: str, values: dict, expected_output: list[str]):

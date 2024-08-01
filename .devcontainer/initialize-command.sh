@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,5 @@
 
 set -e
 
-# create a docker network for morpheus
+# create a docker network for morpheus if it does not exist
 docker network inspect morpheus >/dev/null 2>&1 || docker network create morpheus
-
-# create the parent conda folder so it's found when mounting
-mkdir -p .cache/conda/envs
-mkdir -p ../.conda/pkgs
-
-# create a config directory if it does not exist so it's found when mounting
-mkdir -p ../.config

@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 """Mixin for single port stages which receive and emit the same type."""
 from abc import ABC
 
-from morpheus.pipeline.stage_schema import StageSchema
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 
 
 class PassThruTypeMixin(ABC):
@@ -23,6 +23,6 @@ class PassThruTypeMixin(ABC):
     `typing.Any`, and who's output type is inferred from the output types of the parent stages.
     """
 
-    def compute_schema(self, schema: StageSchema):
+    def compute_schema(self, schema: _pipeline.StageSchema):
         for (port_idx, port_schema) in enumerate(schema.input_schemas):
             schema.output_schemas[port_idx].set_type(port_schema.get_type())

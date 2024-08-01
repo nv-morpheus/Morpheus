@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,16 @@
 
 from unittest import mock
 
-import pytest
-
 import cudf
 
 from _utils import assert_results
+from _utils.environment import set_env
+from _utils.llm import mk_mock_openai_response
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
-from morpheus.llm.services.llm_service import LLMService
+from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.llm.services.openai_chat_service import OpenAIChatService
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
@@ -36,20 +36,17 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
-def _build_engine(llm_service_cls: LLMService):
-    llm_service = llm_service_cls()
-    llm_clinet = llm_service.get_client(model_name="test_model")
+def _build_engine(llm_client: LLMClient):
 
     engine = LLMEngine()
     engine.add_node("extracter", node=ExtracterNode())
-    engine.add_node("completion", inputs=["/extracter"], node=LLMGenerateNode(llm_client=llm_clinet))
+    engine.add_node("completion", inputs=["/extracter"], node=LLMGenerateNode(llm_client=llm_client))
     engine.add_task_handler(inputs=["/completion"], handler=SimpleTaskHandler())
 
     return engine
 
 
-def _run_pipeline(config: Config, llm_service_cls: LLMService, country_prompts: list[str],
-                  capital_responses: list[str]):
+def _run_pipeline(config: Config, llm_client: LLMClient, country_prompts: list[str], capital_responses: list[str]):
     """
     Loosely patterned after `examples/llm/completion`
     """
@@ -65,7 +62,7 @@ def _run_pipeline(config: Config, llm_service_cls: LLMService, country_prompts: 
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(llm_service_cls)))
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(llm_client)))
     sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
 
     pipe.run()
@@ -73,32 +70,33 @@ def _run_pipeline(config: Config, llm_service_cls: LLMService, country_prompts: 
     assert_results(sink.get_results())
 
 
-@pytest.mark.use_python
-@mock.patch("asyncio.wrap_future")
-@mock.patch("asyncio.gather", new_callable=mock.AsyncMock)
-def test_completion_pipe_nemo(
-        mock_asyncio_gather: mock.AsyncMock,
-        mock_asyncio_wrap_future: mock.MagicMock,  # pylint: disable=unused-argument
-        config: Config,
-        mock_nemollm: mock.MagicMock,
-        country_prompts: list[str],
-        capital_responses: list[str]):
-    mock_asyncio_gather.return_value = [mock.MagicMock() for _ in range(len(country_prompts))]
+def test_completion_pipe_nemo(config: Config,
+                              mock_nemollm: mock.MagicMock,
+                              country_prompts: list[str],
+                              capital_responses: list[str]):
     mock_nemollm.post_process_generate_response.side_effect = [{"text": response} for response in capital_responses]
-    _run_pipeline(config, NeMoLLMService, country_prompts, capital_responses)
+
+    # Set a dummy key to bypass the API key check
+    with set_env(NGC_API_KEY="test"):
+
+        llm_client = NeMoLLMService().get_client(model_name="test_model")
+
+        _run_pipeline(config, llm_client, country_prompts, capital_responses)
 
 
-@pytest.mark.use_python
 def test_completion_pipe_openai(config: Config,
-                                mock_chat_completion: mock.MagicMock,
+                                mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
                                 country_prompts: list[str],
                                 capital_responses: list[str]):
-    mock_chat_completion.acreate.side_effect = [{
-        "choices": [{
-            'message': {
-                'content': response
-            }
-        }]
-    } for response in capital_responses]
+    (mock_client, mock_async_client) = mock_chat_completion
+    mock_async_client.chat.completions.create.side_effect = [
+        mk_mock_openai_response([response]) for response in capital_responses
+    ]
 
-    _run_pipeline(config, OpenAIChatService, country_prompts, capital_responses)
+    with set_env(OPENAI_API_KEY="test"):
+        llm_client = OpenAIChatService().get_client(model_name="test_model")
+
+        _run_pipeline(config, llm_client, country_prompts, capital_responses)
+
+        mock_client.chat.completions.create.assert_not_called()
+        mock_async_client.chat.completions.create.assert_called()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,8 @@ from morpheus.utils.module_utils import make_nested_module
 from morpheus.utils.module_utils import mrc_version
 from morpheus.utils.module_utils import register_module
 from morpheus.utils.module_utils import verify_module_registration
+
+# pylint: disable=unused-argument,too-many-function-args
 
 
 @pytest.mark.use_python
@@ -50,7 +52,7 @@ def test_register_module():
         def module_init2(builder: mrc.Builder):
             pass
 
-        module_init2()
+        module_init2(None)
 
 
 def test_verify_module_registration():

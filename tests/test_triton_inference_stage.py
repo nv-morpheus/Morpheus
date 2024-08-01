@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -120,45 +120,6 @@ def test_resource_pool_create_raises_error():
         pool.borrow_obj()
 
     assert pool.borrow_obj() == 20
-
-
-@pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
-@pytest.mark.parametrize("force_convert_inputs", [True, False])
-@pytest.mark.parametrize("use_shared_memory", [True, False])
-@pytest.mark.parametrize("needs_logits", [True, False, None])
-@pytest.mark.parametrize("inout_mapping", [None, {'unit': 'test'}])
-def test_stage_constructor(config: Config,
-                           pipeline_mode: PipelineModes,
-                           force_convert_inputs: bool,
-                           use_shared_memory: bool,
-                           needs_logits: bool | None,
-                           inout_mapping: dict[str, str] | None):
-    if needs_logits is None:
-        expexted_needs_logits = (pipeline_mode == PipelineModes.NLP)
-    else:
-        expexted_needs_logits = needs_logits
-
-    expected_inout_mapping = TritonInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(pipeline_mode, {})
-    expected_inout_mapping.update(inout_mapping or {})
-
-    config.mode = pipeline_mode
-
-    stage = TritonInferenceStage(config,
-                                 model_name='test',
-                                 server_url='test:0000',
-                                 force_convert_inputs=force_convert_inputs,
-                                 use_shared_memory=use_shared_memory,
-                                 needs_logits=needs_logits,
-                                 inout_mapping=inout_mapping)
-
-    assert stage._kwargs == {
-        "model_name": "test",
-        "server_url": "test:0000",
-        "force_convert_inputs": force_convert_inputs,
-        "use_shared_memory": use_shared_memory,
-        "needs_logits": expexted_needs_logits,
-        'inout_mapping': expected_inout_mapping
-    }
 
 
 @pytest.mark.use_python

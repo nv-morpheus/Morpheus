@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,14 @@ root_cause_inference.py \
     --output root-cause-validation-output.jsonlines
 """
 
+import argparse
+import json
+
+import numpy as np
+import onnxruntime
+import scipy
+import torch
+
 ###########################################################################################
 # cudf imports moved before torch import to avoid the following error:
 # ImportError: /usr/lib/x86_64-linux-gnu/libstdc++.so.6: version `GLIBCXX_3.4.29' not found
@@ -29,14 +37,6 @@ import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
 
 ###########################################################################################
-
-import argparse
-import json
-
-import numpy as np
-import onnxruntime
-import torch
-import scipy
 
 
 def infer(
@@ -88,7 +88,7 @@ def infer(
     ort_inputs = {ort_session.get_inputs()[0].name: input_ids, ort_session.get_inputs()[1].name: att_masks}
     ort_outs = ort_session.run(None, ort_inputs)
 
-    probs = scipy.special.expit(ort_outs[0])
+    probs = scipy.special.expit(ort_outs[0])  # pylint:disable=no-member
 
     preds = (probs >= 0.5).astype(np.int_)
 
@@ -99,7 +99,7 @@ def infer(
     df.to_json(output, orient='records', lines=True)
 
 
-def main():
+def main(args):
 
     infer(args.validationdata, args.vocab, args.model, args.output)
 
@@ -110,6 +110,5 @@ if __name__ == '__main__':
     parser.add_argument('--vocab', required=True, help='BERT voabulary file')
     parser.add_argument('--model', required=True, help='pretrained model')
     parser.add_argument('--output', required=True, help='output filename')
-    args = parser.parse_args()
 
-main()
+    main(parser.parse_args())

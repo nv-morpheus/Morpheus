@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,10 @@ ensure_triton_running
 export USE_CPP=0
 
 ${SCRIPT_DIR}/abp/val-abp-all.sh
-${SCRIPT_DIR}/hammah/val-hammah-all.sh
+
+# Disabled per #1641
+# ${SCRIPT_DIR}/hammah/val-hammah-all.sh
+
 ${SCRIPT_DIR}/phishing/val-phishing-all.sh
 ${SCRIPT_DIR}/sid/val-sid-all.sh
 
@@ -39,6 +42,9 @@ ${SCRIPT_DIR}/sid/val-sid-all.sh
 export USE_CPP=1
 
 ${SCRIPT_DIR}/abp/val-abp-all.sh
-${SCRIPT_DIR}/hammah/val-hammah-all.sh
+
+# Disabled per #1641
+# ${SCRIPT_DIR}/hammah/val-hammah-all.sh
+
 ${SCRIPT_DIR}/phishing/val-phishing-all.sh
 ${SCRIPT_DIR}/sid/val-sid-all.sh

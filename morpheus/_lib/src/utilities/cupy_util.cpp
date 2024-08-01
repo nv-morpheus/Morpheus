@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,8 +23,7 @@
 #include "morpheus/utilities/tensor_util.hpp"
 
 #include <cuda_runtime.h>
-#include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_FATAL, DCHECK, LogMessageFatal
-#include <pybind11/cast.h>
+#include <glog/logging.h>         // for COMPACT_GOOGLE_LOG_FATAL, DCHECK, LogMessageFatal
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/gil.h>         // IWYU pragma: keep
 #include <pybind11/pybind11.h>
@@ -33,7 +32,6 @@
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
-#include <array>    // for array
 #include <cstdint>  // for uintptr_t
 #include <memory>   // for make_shared
 #include <optional>
@@ -46,20 +44,10 @@ namespace morpheus {
 
 namespace py = pybind11;
 
-pybind11::object CupyUtil::cp_module = pybind11::none();
-
 pybind11::module_ CupyUtil::get_cp()
 {
     DCHECK(PyGILState_Check() != 0);
-
-    if (cp_module.is_none())
-    {
-        cp_module = pybind11::module_::import("cupy");
-    }
-
-    auto m = pybind11::cast<pybind11::module_>(cp_module);
-
-    return m;
+    return pybind11::cast<pybind11::module_>(pybind11::module_::import("cupy"));
 }
 
 bool CupyUtil::is_cupy_array(pybind11::object test_obj)

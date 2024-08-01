@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ class DFPInferenceStage(SinglePortStage):
             if (model_cache is None):
                 raise RuntimeError(f"Could not find model for user {user_id}")
 
-            loaded_model = model_cache.load_model(self._client)
+            loaded_model = model_cache.load_model()
 
         except Exception:
             logger.exception("Error trying to get model", exc_info=True)

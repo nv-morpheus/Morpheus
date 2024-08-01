@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 # limitations under the License.
 
 ARG MORPHEUS_CONTAINER=nvcr.io/nvidia/morpheus/morpheus
-ARG MORPHEUS_CONTAINER_VERSION=v24.03.00-runtime
+ARG MORPHEUS_CONTAINER_VERSION=v24.10.00-runtime
 
 FROM ${MORPHEUS_CONTAINER}:${MORPHEUS_CONTAINER_VERSION} as base
 
@@ -26,15 +26,9 @@ SHELL ["/bin/bash", "-c"]
 # Set the workdir to the DFP base folder
 WORKDIR /workspace/examples/digital_fingerprinting/
 
-# Copy the conda_env file
-COPY ./conda_env.yml ./
-
 # Install DFP dependencies
 RUN source activate morpheus \
-    && mamba install -n base -c conda-forge conda-merge \
-    && conda run -n base --live-stream conda-merge /workspace/docker/conda/environments/cuda11.8_dev.yml \
-      ./conda_env.yml > ./merged.yml \
-    && mamba env update -n morpheus --file ./merged.yml
+    && /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/examples_cuda-121_arch-x86_64.yaml
 
 # Set the tracking URI for mlflow
 ENV MLFLOW_TRACKING_URI="http://mlflow:5000"
@@ -59,9 +53,8 @@ FROM base as jupyter
 
 # Install the jupyter specific requirements
 RUN source activate morpheus &&\
-    mamba install -y -c conda-forge \
+    /opt/conda/bin/conda install --solver=libmamba -y -c conda-forge \
         ipywidgets \
-        nb_conda_kernels \
         jupyter_contrib_nbextensions \
         # notebook v7 is incompatible with jupyter_contrib_nbextensions
         notebook=6 &&\

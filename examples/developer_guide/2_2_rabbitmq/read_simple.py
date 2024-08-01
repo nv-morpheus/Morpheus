@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ def run_pipeline(use_source_function: bool):
     pipeline.add_stage(MonitorStage(config))
 
     # Write the to the output file
-    pipeline.add_stage(WriteToFileStage(config, filename='/tmp/results.json', file_type=FileTypes.JSON, overwrite=True))
+    pipeline.add_stage(WriteToFileStage(config, filename='results.json', file_type=FileTypes.JSON, overwrite=True))
 
     # Run the pipeline
     pipeline.run()

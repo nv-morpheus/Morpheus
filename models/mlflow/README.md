@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,8 +22,8 @@ are included for publishing TensorRT, ONNX and FIL models to your MLflow Model R
 
 ## Requirements
 
-* MLflow (tested on 1.24.0)
-* Python (tested on 3.8)
+* MLflow (tested on 2.11.3)
+* Python (tested on 3.11)
 
 ## Install Triton Docker Image
 
@@ -89,7 +89,7 @@ Create an MLflow container with a volume mounting the Triton model repository:
 ```bash
 docker run -it -v /opt/triton_models:/triton_models \
 --env TRITON_MODEL_REPO=/triton_models \
---env MLFLOW_TRACKING_URI=localhost:5000 \
+--env MLFLOW_TRACKING_URI="http://localhost:5000" \
 --gpus '"device=0"' \
 --net=host \
 --rm \
@@ -115,14 +115,14 @@ The `publish_model_to_mlflow` script is used to publish `triton` flavor models t
 ```
 python publish_model_to_mlflow.py \
 	--model_name sid-minibert-onnx \
-	--model_directory <path-to-morpheus-models-repo>/models/triton-model-repo/sid-minibert-onnx \
+	--model_directory /triton_models/triton-model-repo/sid-minibert-onnx \
     --flavor triton
 ```
 
 ## Deployments
 
 The Triton `mlflow-triton-plugin` is installed on this container and can be used to deploy your models from MLflow to Triton Inference Server. The following are examples of how the plugin is used with the `sid-minibert-onnx` model that we published to MLflow above. For more information about the
-`mlflow-triton-plugin`, refer to Triton's [documentation](https://github.com/triton-inference-server/server/tree/r23.01/deploy/mlflow-triton-plugin)
+`mlflow-triton-plugin`, refer to Triton's [documentation](https://github.com/triton-inference-server/server/tree/r24.03/deploy/mlflow-triton-plugin)
 
 ### Create Deployment
 
@@ -130,14 +130,14 @@ To create a deployment use the following command
 
 ##### CLI
 ```
-mlflow deployments create -t triton --flavor triton --name sid-minibert-onnx -m models:/sid-minibert-onnx/1
+mlflow deployments create -t triton --flavor triton --name sid-minibert-onnx -m "models:/sid-minibert-onnx/1"
 ```
 
 ##### Python API
 ```
 from mlflow.deployments import get_deploy_client
 client = get_deploy_client('triton')
-client.create_deployment("sid-minibert-onnx", " models:/sid-minibert-onnx/1", flavor="triton")
+client.create_deployment("sid-minibert-onnx", "models:/sid-minibert-onnx/1", flavor="triton")
 ```
 
 ### Delete Deployment
@@ -158,14 +158,14 @@ client.delete_deployment("sid-minibert-onnx")
 
 ##### CLI
 ```
-mlflow deployments update -t triton --flavor triton --name sid-minibert-onnx -m models:/sid-minibert-onnx/2
+mlflow deployments update -t triton --flavor triton --name sid-minibert-onnx -m "models:/sid-minibert-onnx/1"
 ```
 
 ##### Python API
 ```
 from mlflow.deployments import get_deploy_client
 client = get_deploy_client('triton')
-client.update_deployment("sid-minibert-onnx", "models:/sid-minibert-onnx/2", flavor="triton")
+client.update_deployment("sid-minibert-onnx", "models:/sid-minibert-onnx/1", flavor="triton")
 ```
 
 ### List Deployments

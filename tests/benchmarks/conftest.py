@@ -25,6 +25,11 @@ from pynvml.smi import nvidia_smi
 from test_bench_e2e_pipelines import E2E_TEST_CONFIGS
 
 
+@pytest.fixture(autouse=True)
+def reset_logging_fixture(reset_logging):  # pylint: disable=unused-argument
+    yield
+
+
 # pylint: disable=unused-argument
 def pytest_benchmark_update_json(config, benchmarks, output_json):
 
@@ -128,16 +133,19 @@ def mock_serpapi_request_time_fixture():
 
 @pytest.mark.usefixtures("openai")
 @pytest.fixture(name="mock_chat_completion")
-def mock_chat_completion_fixture(mock_chat_completion: mock.MagicMock, mock_openai_request_time: float):
+def mock_chat_completion_fixture(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
+                                 mock_openai_request_time: float):
+    (mock_client, mock_async_client) = mock_chat_completion
 
     async def sleep_first(*args, **kwargs):
         # Sleep time is based on average request time
         await asyncio.sleep(mock_openai_request_time)
         return mock.DEFAULT
 
-    mock_chat_completion.acreate.side_effect = sleep_first
+    mock_async_client.chat.completions.create.side_effect = sleep_first
+    mock_client.chat.completions.create.side_effect = sleep_first
 
-    yield mock_chat_completion
+    yield (mock_client, mock_async_client)
 
 
 @pytest.mark.usefixtures("nemollm")

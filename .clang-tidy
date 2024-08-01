@@ -5,7 +5,19 @@
 # Disable modernize-use-trailing-return-type (too many hits)
 # Disable modernize-use-nodiscard (why isnt [[nodiscard]] the default?)
 # Enable identifier in TODO comments
-Checks: -*,readability-identifier-naming,modernize-*,-modernize-use-trailing-return-type,-modernize-use-nodiscard,google-readability-todo
+Checks: >
+  -*,
+  readability-identifier-naming,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
+  google-readability-todo
+
+WarningsAsErrors: >
+  *,
+  -clang-diagnostic-unused-command-line-argument,
+  -Wno-ignored-optimization-argument,
+  -Qunused-arguments
 
 #WarningsAsErrors: '*'
 HeaderFilterRegex: '.*\/include\/morpheus\/.*'

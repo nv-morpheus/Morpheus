@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,4 +23,4 @@ def test_old_dfencoder_not_in_env():
     Verify the old external dfencoder doesn't exist in the current env
     """
     with pytest.raises(ModuleNotFoundError):
-        import dfencoder  # noqa: F401
+        import dfencoder  # noqa: F401 #pylint:disable=unused-import

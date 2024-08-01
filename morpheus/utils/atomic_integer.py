@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,13 +29,13 @@ class AtomicInteger():
         self._value = int(value)
         self._lock = threading.Lock()
 
-    def inc(self, d=1):
+    def inc(self, inc_val=1):
         """
         Increments and returns new value.
 
         Parameters
         ----------
-        d : int, optional
+        inc_val : int, optional
             Value to increment by, default 1.
 
         Returns
@@ -44,16 +44,16 @@ class AtomicInteger():
             Incremented value.
         """
         with self._lock:
-            self._value += int(d)
+            self._value += int(inc_val)
             return self._value
 
-    def dec(self, d=1):
+    def dec(self, dec_val=1):
         """
         Decrements and returns new value.
 
         Parameters
         ----------
-        d : int, optional
+        dec_val : int, optional
             Value to decrement by, default 1.
 
         Returns
@@ -61,15 +61,15 @@ class AtomicInteger():
         int
             Decremented value.
         """
-        return self.inc(-d)
+        return self.inc(-dec_val)
 
-    def get_and_inc(self, d=1):
+    def get_and_inc(self, inc_val=1):
         """
         Gets the current value, returns it, and increments. Different from `inc()` which increments, then returns.
 
         Parameters
         ----------
-        d : int, optional
+        inc_val : int, optional
             How much to increment, by default 1.
 
         Returns
@@ -79,7 +79,7 @@ class AtomicInteger():
         """
         with self._lock:
             tmp_val = self._value
-            self._value += int(d)
+            self._value += int(inc_val)
             return tmp_val
 
     @property
@@ -96,13 +96,13 @@ class AtomicInteger():
             return self._value
 
     @value.setter
-    def value(self, v):
+    def value(self, val):
         """
         Set value.
 
         Parameters
         ----------
-        v : int
+        val : int
             Set to this value.
 
         Returns
@@ -111,5 +111,5 @@ class AtomicInteger():
             New value.
         """
         with self._lock:
-            self._value = int(v)
+            self._value = int(val)
             return self._value

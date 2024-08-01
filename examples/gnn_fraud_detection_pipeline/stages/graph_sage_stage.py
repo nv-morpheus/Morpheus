@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -95,7 +95,8 @@ class GraphSAGEStage(SinglePortStage):
         inductive_embedding.rename(lambda x: "ind_emb_" + str(x), axis=1, inplace=True)
 
         for col in inductive_embedding.columns.values.tolist():
-            message.set_meta(col, inductive_embedding[col])
+            # without `to_pandas`, all values in the meta become `<NA>`
+            message.set_meta(col, inductive_embedding[col].to_pandas())
 
         assert (message.mess_count == len(inductive_embedding))
 

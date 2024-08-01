@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,48 +17,60 @@
 
 #include "morpheus/stages/file_source.hpp"
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/source_properties.hpp"
 #include "mrc/segment/object.hpp"
-#include "mrc/types.hpp"
 #include "pymrc/node.hpp"
 
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/file_types.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/utilities/table_util.hpp"  // for filter_null_data
 
 #include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <mrc/segment/builder.hpp>
-#include <pybind11/cast.h>
+#include <pybind11/cast.h>  // IWYU pragma: keep
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
 
-#include <functional>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <sstream>
+#include <stdexcept>  // for invalid_argument
 #include <utility>
-// IWYU thinks we need __alloc_traits<>::value_type for vector assignments
-// IWYU pragma: no_include <ext/alloc_traits.h>
 
 namespace morpheus {
 // Component public implementations
 // ************ FileSourceStage ************* //
-FileSourceStage::FileSourceStage(std::string filename, int repeat, std::optional<bool> json_lines) :
+FileSourceStage::FileSourceStage(std::string filename,
+                                 int repeat,
+                                 bool filter_null,
+                                 std::vector<std::string> filter_null_columns,
+                                 std::optional<bool> json_lines) :
   PythonSource(build()),
   m_filename(std::move(filename)),
   m_repeat(repeat),
+  m_filter_null(filter_null),
+  m_filter_null_columns(std::move(filter_null_columns)),
   m_json_lines(json_lines)
-{}
+{
+    if (m_filter_null && m_filter_null_columns.empty())
+    {
+        throw std::invalid_argument("Filter null columns must not be empty if filter_null is true");
+    }
+}
 
 FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
-        auto data_table     = load_table_from_file(m_filename, FileTypes::Auto, m_json_lines);
+        auto data_table = load_table_from_file(m_filename, FileTypes::Auto, m_json_lines);
+        if (m_filter_null)
+        {
+            CuDFTableUtil::filter_null_data(data_table, m_filter_null_columns);
+        }
+
         int index_col_count = prepare_df_index(data_table);
 
         // Next, create the message metadata. This gets reused for repeats
@@ -120,6 +132,8 @@ std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceP
     const std::string& name,
     std::string filename,
     int repeat,
+    bool filter_null,
+    std::vector<std::string> filter_null_columns,
     pybind11::dict parser_kwargs)
 {
     std::optional<bool> json_lines = std::nullopt;
@@ -129,8 +143,27 @@ std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceP
         json_lines = parser_kwargs["lines"].cast<bool>();
     }
 
-    auto stage = builder.construct_object<FileSourceStage>(name, filename, repeat, json_lines);
+    auto stage = builder.construct_object<FileSourceStage>(
+        name, filename, repeat, filter_null, std::move(filter_null_columns), json_lines);
 
     return stage;
+}
+
+std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::filesystem::path filename,
+    int repeat,
+    bool filter_null,
+    std::vector<std::string> filter_null_columns,
+    pybind11::dict parser_kwargs)
+{
+    return init(builder,
+                name,
+                filename.string(),
+                repeat,
+                filter_null,
+                std::move(filter_null_columns),
+                std::move(parser_kwargs));
 }
 }  // namespace morpheus

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -66,7 +66,7 @@ def test_get_module():
     assert fn_constructor is not None
 
     config = {}
-    # pylint: disable=unused-variable
+    # pylint: disable=unused-variable,not-callable
     module_instance = fn_constructor("ModuleDataLoaderTest", config)  # noqa: F841 -- we don't need to use it
 
 

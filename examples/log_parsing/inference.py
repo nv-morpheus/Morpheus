@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -180,4 +180,12 @@ class LogParsingInferenceStage(TritonInferenceStage):
         return MultiResponseMessage.from_message(inf, memory=memory, offset=inf.offset, count=inf.mess_count)
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> TritonInferenceLogParsing:
-        return TritonInferenceLogParsing(inf_queue=inf_queue, c=self._config, **self._kwargs)
+        return TritonInferenceLogParsing(inf_queue=inf_queue,
+                                         c=self._config,
+                                         server_url=self._server_url,
+                                         model_name=self._model_name,
+                                         force_convert_inputs=self._force_convert_inputs,
+                                         use_shared_memory=self._use_shared_memory,
+                                         input_mapping=self._input_mapping,
+                                         output_mapping=self._output_mapping,
+                                         needs_logits=self._needs_logits)

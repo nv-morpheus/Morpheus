@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,14 +36,6 @@ def dask_distributed(fail_missing: bool):
     yield import_or_skip("dask.distributed",
                          reason="Downloader requires dask and dask.distributed",
                          fail_missing=fail_missing)
-
-
-@pytest.fixture(autouse=True, scope='session')
-def dask_cuda(fail_missing: bool):
-    """
-    Mark tests requiring dask_cuda
-    """
-    yield import_or_skip("dask_cuda", reason="Downloader requires dask_cuda", fail_missing=fail_missing)
 
 
 @pytest.mark.usefixtures("restore_environ")
@@ -90,7 +82,7 @@ def test_constructor_invalid_dltype(use_env: bool):
 @pytest.mark.reload_modules(morpheus.utils.downloader)
 @pytest.mark.parametrize("dl_method", ["dask", "dask_thread"])
 @pytest.mark.usefixtures("reload_modules")
-@mock.patch('dask_cuda.LocalCUDACluster')
+@mock.patch('dask.distributed.LocalCluster')
 def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
     downloader1 = Downloader(download_method=dl_method)
@@ -107,7 +99,7 @@ def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock, dl_method: str):
 @pytest.mark.reload_modules(morpheus.utils.downloader)
 @pytest.mark.parametrize('dl_method', ["dask", "dask_thread"])
 @pytest.mark.usefixtures("reload_modules")
-@mock.patch('dask_cuda.LocalCUDACluster')
+@mock.patch('dask.distributed.LocalCluster')
 def test_close(mock_dask_cluster: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
     downloader = Downloader(download_method=dl_method)
@@ -117,7 +109,7 @@ def test_close(mock_dask_cluster: mock.MagicMock, dl_method: str):
     downloader.close()
 
 
-@mock.patch('dask_cuda.LocalCUDACluster')
+@mock.patch('dask.distributed.LocalCluster')
 @pytest.mark.parametrize('dl_method', ["single_thread"])
 def test_close_noop(mock_dask_cluster: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
@@ -135,7 +127,7 @@ def test_close_noop(mock_dask_cluster: mock.MagicMock, dl_method: str):
 @pytest.mark.parametrize('dl_method', ["single_thread", "dask", "dask_thread"])
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
-@mock.patch('dask_cuda.LocalCUDACluster')
+@mock.patch('dask.distributed.LocalCluster')
 def test_download(mock_dask_cluster: mock.MagicMock,
                   mock_dask_client: mock.MagicMock,
                   mock_dask_config: mock.MagicMock,
@@ -161,7 +153,6 @@ def test_download(mock_dask_cluster: mock.MagicMock,
     downloader = Downloader(download_method=dl_method)
 
     results = downloader.download(download_buckets, download_fn)
-    assert results == [returnd_df for _ in range(num_buckets)]
 
     if dl_method == "single_thread":
         download_fn.assert_has_calls([mock.call(bucket) for bucket in download_buckets])
@@ -176,6 +167,8 @@ def test_download(mock_dask_cluster: mock.MagicMock,
         mock_dask_cluster.assert_not_called()
         mock_dask_client.assert_not_called()
         mock_dask_config.assert_not_called()
+
+    assert results == [returnd_df for _ in range(num_buckets)]
 
 
 @pytest.mark.usefixtures("restore_environ")

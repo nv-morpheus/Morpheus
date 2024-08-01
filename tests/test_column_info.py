@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,7 @@ import pytest
 import cudf
 
 from _utils import TEST_DIRS
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
@@ -34,83 +35,33 @@ from morpheus.utils.column_info import DateTimeColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
-from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.schema_transforms import process_dataframe
 
 
-@pytest.mark.use_python
-def test_dataframe_input_schema_with_json_cols():
+@pytest.fixture(name="_azure_ad_logs_pdf", scope="module")
+def _azure_ad_logs_pdf_fixture():
+    # Explicitly reading this in to ensure that lines=False.
+    # Using pandas since the C++ impl for read_file_to_df doesn't support parser_kwargs, this also avoids a warning
+    # that cudf.read_json uses pandas.read_json under the hood.
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "azure_ad_logs.json")
+    yield read_file_to_df(src_file, df_type='pandas', parser_kwargs={'lines': False})
 
-    input_df = cudf.read_json(src_file)
 
-    raw_data_columns = [
-        'time',
-        'resourceId',
-        'operationName',
-        'operationVersion',
-        'category',
-        'tenantId',
-        'resultType',
-        'resultSignature',
-        'resultDescription',
-        'durationMs',
-        'callerIpAddress',
-        'correlationId',
-        'identity',
-        'Level',
-        'location',
-        'properties'
-    ]
+@pytest.fixture(name="azure_ad_logs_pdf", scope="function")
+def azure_ad_logs_pdf_fixture(_azure_ad_logs_pdf: pd.DataFrame):
+    yield _azure_ad_logs_pdf.copy(deep=True)
 
-    assert len(input_df.columns) == 16
-    assert list(input_df.columns) == raw_data_columns
 
-    column_info = [
-        DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),
-        RenameColumn(name="userId", dtype='str', input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype='str', input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype='str'),
-        RenameColumn(name="clientAppUsed", dtype='str', input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype='str', input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype='str', input_name="properties.deviceDetail.displayName"),
-        RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype='str',
-                     input_name="properties.deviceDetail.operatingSystem"),
-        StringCatColumn(name="location",
-                        dtype='str',
-                        input_columns=[
-                            "properties.location.city",
-                            "properties.location.countryOrRegion",
-                        ],
-                        sep=", "),
-        RenameColumn(name="statusfailureReason", dtype='str', input_name="properties.status.failureReason"),
-    ]
-
-    schema = DataFrameInputSchema(json_columns=["properties"], column_info=column_info)
-
-    df_processed_schema = process_dataframe(input_df, schema)
-    processed_df_cols = df_processed_schema.columns
-
-    assert len(input_df) == len(df_processed_schema)
-    assert len(processed_df_cols) == len(column_info)
-    assert "timestamp" in processed_df_cols
-    assert "userId" in processed_df_cols
-    assert "time" not in processed_df_cols
-    assert "properties.userPrincipalName" not in processed_df_cols
-
-    nvt_workflow = create_and_attach_nvt_workflow(schema)
-    df_processed_workflow = process_dataframe(input_df, nvt_workflow)
-    assert df_processed_schema.equals(df_processed_workflow)
+@pytest.fixture(name="azure_ad_logs_cdf", scope="function")
+def azure_ad_logs_cdf_fixture(_azure_ad_logs_pdf: pd.DataFrame):
+    # cudf.from_pandas essentially does a deep copy, so we can use this to ensure that the source pandas df is not
+    # modified
+    yield cudf.from_pandas(_azure_ad_logs_pdf)
 
 
 @pytest.mark.use_python
-def test_dataframe_input_schema_without_json_cols():
-    src_file = os.path.join(TEST_DIRS.tests_data_dir, "azure_ad_logs.json")
-
-    input_df = pd.read_json(src_file)
-
-    assert len(input_df.columns) == 16
+def test_dataframe_input_schema_without_json_cols(azure_ad_logs_pdf: pd.DataFrame):
+    assert len(azure_ad_logs_pdf.columns) == 16
 
     column_info = [
         DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),
@@ -119,10 +70,10 @@ def test_dataframe_input_schema_without_json_cols():
 
     schema = DataFrameInputSchema(column_info=column_info)
 
-    df_processed = process_dataframe(input_df, schema)
+    df_processed = process_dataframe(azure_ad_logs_pdf, schema)
     processed_df_cols = df_processed.columns
 
-    assert len(input_df) == len(df_processed)
+    assert len(azure_ad_logs_pdf) == len(df_processed)
     assert len(processed_df_cols) == len(column_info)
     assert "timestamp" in processed_df_cols
     assert "time" not in processed_df_cols
@@ -152,7 +103,7 @@ def test_dataframe_input_schema_without_json_cols():
 
     # When trying to concat columns that don't exist in the dataframe, an exception is raised.
     with pytest.raises(Exception):
-        process_dataframe(input_df, schema2)
+        process_dataframe(azure_ad_logs_pdf, schema2)
 
 
 @pytest.mark.use_python

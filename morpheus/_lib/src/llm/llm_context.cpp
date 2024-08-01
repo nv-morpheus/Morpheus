@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +17,10 @@
 
 #include "morpheus/llm/llm_context.hpp"
 
-#include "morpheus/utilities/string_util.hpp"
+#include "morpheus/messages/control.hpp"  // IWYU pragma: keep
 
 #include <algorithm>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
@@ -77,7 +78,7 @@ std::shared_ptr<ControlMessage>& LLMContext::message() const
     return m_state->message;
 }
 
-nlohmann::json::const_reference LLMContext::all_outputs() const
+const mrc::pymrc::JSONValues& LLMContext::all_outputs() const
 {
     return m_outputs;
 }
@@ -115,18 +116,18 @@ void LLMContext::pop()
     else
     {
         // Build a new json object with only the specified keys
-        nlohmann::json new_outputs;
+        mrc::pymrc::JSONValues new_outputs;
 
         for (const auto& output_name : m_output_names)
         {
-            new_outputs[output_name] = m_outputs[output_name];
+            new_outputs = new_outputs.set_value(output_name, std::move(m_outputs[output_name]));
         }
 
         m_parent->set_output(m_name, std::move(new_outputs));
     }
 }
 
-nlohmann::json::const_reference LLMContext::get_input() const
+mrc::pymrc::JSONValues LLMContext::get_input() const
 {
     if (m_inputs.size() > 1)
     {
@@ -137,77 +138,72 @@ nlohmann::json::const_reference LLMContext::get_input() const
     return this->get_input(m_inputs[0].internal_name);
 }
 
-nlohmann::json::const_reference LLMContext::get_input(const std::string& node_name) const
+input_mappings_t::const_iterator LLMContext::find_input(const std::string& node_name, bool throw_if_not_found) const
+{
+    auto found = std::find_if(m_inputs.cbegin(), m_inputs.cend(), [&node_name](const auto& map_iterator) {
+        return map_iterator.internal_name == node_name;
+    });
+
+    if (throw_if_not_found && found == m_inputs.cend())
+    {
+        std::stringstream error_msg;
+        error_msg << "Input '" << node_name << "' not found in the input list.";
+
+        if (!m_inputs.empty())
+        {
+            error_msg << " Available inputs are:";
+            for (const auto& input : m_inputs)
+            {
+                error_msg << " '" << input.internal_name << "'";
+            }
+        }
+        else
+        {
+            error_msg << " Input list is empty.";
+        }
+
+        throw std::runtime_error(error_msg.str());
+    }
+
+    return found;
+}
+
+mrc::pymrc::JSONValues LLMContext::get_input(const std::string& node_name) const
 {
     if (node_name[0] == '/')
     {
-        nlohmann::json::json_pointer node_json_ptr(node_name);
-
-        if (!m_outputs.contains(node_json_ptr))
-        {
-            throw std::runtime_error(MORPHEUS_CONCAT_STR("Input '" << node_name << "' not found in the output map"));
-        }
-
-        // Get the value from a sibling output
-        return m_outputs[node_json_ptr];
+        return m_outputs[node_name];
     }
-    else
-    {
-        // Must be on the parent, so find the mapping between this namespace and the parent
-        auto found = std::find_if(m_inputs.begin(), m_inputs.end(), [&node_name](const auto& map_iterator) {
-            return map_iterator.internal_name == node_name;
-        });
 
-        if (found == m_inputs.end())
-        {
-            std::stringstream error_msg;
-            error_msg << "Input '" << node_name << "' not found in the input list.";
+    // Must be on the parent, so find the mapping between this namespace and the parent
+    auto found       = find_input(node_name);
+    auto& input_name = found->external_name;
 
-            if (!m_inputs.empty())
-            {
-                error_msg << " Available inputs are:";
-                for (const auto& input : m_inputs)
-                {
-                    error_msg << " '" << input.internal_name << "'";
-                }
-            }
-            else
-            {
-                error_msg << " Input list is empty.";
-            }
-
-            throw std::runtime_error(error_msg.str());
-        }
-
-        auto& input_name = found->external_name;
-
-        // Get the value from a parent output
-        return m_parent->get_input(input_name);
-    }
+    // Get the value from a parent output
+    return m_parent->get_input(input_name);
 }
 
-nlohmann::json LLMContext::get_inputs() const
+mrc::pymrc::JSONValues LLMContext::get_inputs() const
 {
-    nlohmann::json inputs = nlohmann::json::object();
-
+    mrc::pymrc::JSONValues inputs;
     for (const auto& in_map : m_inputs)
     {
-        inputs[in_map.internal_name] = this->get_input(in_map.internal_name);
+        auto input_value = this->get_input(in_map.internal_name);
+        inputs           = inputs.set_value(in_map.internal_name, std::move(input_value));
     }
 
     return inputs;
 }
 
-void LLMContext::set_output(nlohmann::json outputs)
+void LLMContext::set_output(mrc::pymrc::JSONValues&& outputs)
 {
     m_outputs = std::move(outputs);
-
     this->outputs_complete();
 }
 
-void LLMContext::set_output(const std::string& output_name, nlohmann::json output)
+void LLMContext::set_output(const std::string& output_name, mrc::pymrc::JSONValues&& output)
 {
-    m_outputs[output_name] = std::move(output);
+    m_outputs = std::move(m_outputs.set_value(output_name, std::move(output)));
 }
 
 void LLMContext::set_output_names(std::vector<std::string> output_names)
@@ -220,7 +216,7 @@ void LLMContext::outputs_complete()
     // m_outputs_promise.set_value();
 }
 
-nlohmann::json::const_reference LLMContext::view_outputs() const
+const mrc::pymrc::JSONValues& LLMContext::view_outputs() const
 {
     // // Wait for the outputs to be available
     // m_outputs_future.wait();

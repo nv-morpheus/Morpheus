@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ from dfp.modules import dfp_data_prep
 from dfp.modules import dfp_deployment
 from dfp.modules import dfp_inference
 from dfp.modules import dfp_inference_pipe
-from dfp.modules import dfp_monitor
 from dfp.modules import dfp_postprocessing
 from dfp.modules import dfp_preproc
 from dfp.modules import dfp_rolling_window
@@ -30,7 +29,6 @@ from dfp.modules import dfp_training
 from dfp.modules import dfp_training_pipe
 
 __all__ = [
-    "dfp_monitor",
     "dfp_split_users",
     "dfp_data_prep",
     "dfp_inference",

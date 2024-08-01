@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,6 +45,12 @@ limitations under the License.
     - [DFP Post Processing](#dfp-post-processing)
     - [Serialize](#serialize)
     - [Write to File](#write-to-file)
+  - [Running Example Modular DFP Pipelines](#running-example-modular-dfp-pipelines)
+    - [System requirements](#system-requirements)
+    - [Building the services](#building-the-services)
+    - [Downloading the example datasets](#downloading-the-example-datasets)
+    - [Run Morpheus pipeline](#run-morpheus-pipeline)
+    - [Output Fields](#output-fields)
 
 ## Introduction
 
@@ -522,7 +528,7 @@ pip install s3fs
 python examples/digital_fingerprinting/fetch_example_data.py all
 ```
 
-### Morpheus Pipeline
+### Run Morpheus pipeline
 From the `examples/digital_fingerprinting/production` dir, run:
 ```bash
 docker compose run morpheus_pipeline bash

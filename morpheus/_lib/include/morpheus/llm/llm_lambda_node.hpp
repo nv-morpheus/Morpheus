@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -78,7 +78,7 @@ class LLMLambdaNode : public LLMNodeBase
         {
             const auto& arg = context->get_input();
 
-            auto output = co_await this->m_function(arg.get<std::tuple_element_t<0, args_tuple_t>>());
+            auto output = co_await this->m_function(arg.view_json().get<std::tuple_element_t<0, args_tuple_t>>());
 
             nlohmann::json outputs_json = std::move(output);
 
@@ -91,7 +91,7 @@ class LLMLambdaNode : public LLMNodeBase
         {
             auto args = context->get_inputs();
 
-            auto outputs = co_await this->m_function(args);
+            auto outputs = co_await this->m_function(args.view_json());
 
             nlohmann::json outputs_json = std::move(outputs);
 

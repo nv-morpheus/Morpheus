@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,21 +33,18 @@
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/messages/multi_tensor.hpp"
+#include "morpheus/messages/raw_packet.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
-#include "morpheus/types.hpp"  // for TensorIndex
+#include "morpheus/pybind11/json.hpp"  // IWYU pragma: keep
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/utilities/json_types.hpp"  // for json_t
 #include "morpheus/utilities/string_util.hpp"
 #include "morpheus/version.hpp"
 
-#include <boost/fiber/future/future.hpp>
-#include <mrc/channel/status.hpp>  // for Status
+#include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
 #include <mrc/edge/edge_connector.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/types.hpp>
-#include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
+#include <nlohmann/json.hpp>      // for basic_json
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -57,18 +54,75 @@
 #include <pymrc/utils.hpp>  // for pymrc::import
 #include <rxcpp/rx.hpp>
 
-#include <array>
+#include <cstddef>  // for size_t
 #include <filesystem>
-#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <tuple>     // IWYU pragma: keep
+#include <typeinfo>  // for type_info
+#include <utility>   // for index_sequence, make_index_sequence
 #include <vector>
+// For some reason IWYU thinks the variant header is needed for tuple, and that the array header is needed for
+// tuple_element
+// IWYU pragma: no_include <array>
+// IWYU pragma: no_include <variant>
 
 namespace morpheus {
 
 namespace fs = std::filesystem;
 namespace py = pybind11;
+
+template <typename FirstT, typename SecondT>
+void reg_converter()
+{
+    mrc::edge::EdgeConnector<std::shared_ptr<FirstT>, std::shared_ptr<SecondT>>::register_converter();
+}
+
+template <typename T>
+void reg_py_type_helper()
+{
+    // Register the port util
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<T>>();
+
+    // Register conversion to and from python
+    mrc::edge::EdgeConnector<std::shared_ptr<T>, mrc::pymrc::PyObjectHolder>::register_converter();
+    mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder, std::shared_ptr<T>>::register_converter();
+}
+
+template <typename TupleT, std::size_t I>
+void do_register_tuple_index()
+{
+    static constexpr std::size_t LeftIndex  = I / std::tuple_size<TupleT>::value;
+    static constexpr std::size_t RightIndex = I % std::tuple_size<TupleT>::value;
+
+    using left_t  = typename std::tuple_element<LeftIndex, TupleT>::type;
+    using right_t = typename std::tuple_element<RightIndex, TupleT>::type;
+
+    // Only register if one of the types is a subclass of the other
+    if constexpr (!std::is_same_v<left_t, right_t> && std::is_base_of_v<right_t, left_t>)
+    {
+        // Print the registration
+        VLOG(20) << "[Type Registration]: Registering: " << typeid(left_t).name() << " -> " << typeid(right_t).name();
+        reg_converter<left_t, right_t>();
+    }
+    else
+    {
+        VLOG(20) << "[Type Registration]: Skipping: " << typeid(left_t).name() << " -> " << typeid(right_t).name();
+    }
+};
+
+template <typename TupleT, std::size_t... Is>
+void register_tuple_index(std::index_sequence<Is...> /*unused*/)
+{
+    (do_register_tuple_index<TupleT, Is>(), ...);
+}
+
+template <typename... TypesT>
+void register_permutations()
+{
+    register_tuple_index<std::tuple<TypesT...>>(std::make_index_sequence<(sizeof...(TypesT)) * (sizeof...(TypesT))>());
+}
 
 PYBIND11_MODULE(messages, _module)
 {
@@ -92,67 +146,25 @@ PYBIND11_MODULE(messages, _module)
     // Allows python objects to keep DataTable objects alive
     py::class_<IDataTable, std::shared_ptr<IDataTable>>(_module, "DataTable");
 
-    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<ControlMessage>>();
-    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
-    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
-    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiTensorMessage>>();
-    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceMessage>>();
-    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceFILMessage>>();
-    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceNLPMessage>>();
-    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseMessage>>();
-    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
-
-    // EdgeConnectors for converting between PyObjectHolders and various Message types
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::ControlMessage>,
-                             mrc::pymrc::PyObjectHolder>::register_converter();
-    mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder,
-                             std::shared_ptr<morpheus::ControlMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MessageMeta>, mrc::pymrc::PyObjectHolder>::register_converter();
-    mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder, std::shared_ptr<morpheus::MessageMeta>>::register_converter();
+    // Add type registrations for all our common types
+    reg_py_type_helper<ControlMessage>();
+    reg_py_type_helper<MessageMeta>();
+    reg_py_type_helper<MultiMessage>();
+    reg_py_type_helper<MultiTensorMessage>();
+    reg_py_type_helper<MultiInferenceMessage>();
+    reg_py_type_helper<MultiInferenceFILMessage>();
+    reg_py_type_helper<MultiInferenceNLPMessage>();
+    reg_py_type_helper<MultiResponseMessage>();
+    reg_py_type_helper<MultiResponseProbsMessage>();
 
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiTensorMessage>,
-                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
-                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
-                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
-                             std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
-                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
-                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
-                             std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
-                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
-                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
-                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
-                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
-                             std::shared_ptr<morpheus::MultiResponseMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
-                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
-
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
-                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+    register_permutations<MultiMessage,
+                          MultiTensorMessage,
+                          MultiInferenceMessage,
+                          MultiInferenceFILMessage,
+                          MultiInferenceNLPMessage,
+                          MultiResponseMessage,
+                          MultiResponseProbsMessage>();
 
     // Tensor Memory classes
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(_module, "TensorMemory")
@@ -231,11 +243,33 @@ PYBIND11_MODULE(messages, _module)
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
         .def_property_readonly("df", &MessageMetaInterfaceProxy::df_property, py::return_value_policy::move)
+        .def("get_data",
+             py::overload_cast<MessageMeta&>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move)
+        .def("get_data",
+             py::overload_cast<MessageMeta&, std::string>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_data",
+             py::overload_cast<MessageMeta&, std::vector<std::string>>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("get_data",
+             py::overload_cast<MessageMeta&, pybind11::none>(&MessageMetaInterfaceProxy::get_data),
+             py::return_value_policy::move,
+             py::arg("columns"))
+        .def("set_data", &MessageMetaInterfaceProxy::set_data, py::return_value_policy::move)
         .def("get_column_names", &MessageMetaInterfaceProxy::get_column_names)
         .def("copy_dataframe", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
         .def("mutable_dataframe", &MessageMetaInterfaceProxy::mutable_dataframe, py::return_value_policy::move)
         .def("has_sliceable_index", &MessageMetaInterfaceProxy::has_sliceable_index)
         .def("ensure_sliceable_index", &MessageMetaInterfaceProxy::ensure_sliceable_index)
+        .def("copy_ranges", &MessageMetaInterfaceProxy::copy_ranges, py::return_value_policy::move, py::arg("ranges"))
+        .def("get_slice",
+             &MessageMetaInterfaceProxy::get_slice,
+             py::return_value_policy::move,
+             py::arg("start"),
+             py::arg("stop"))
         .def_static("make_from_file", &MessageMetaInterfaceProxy::init_cpp);
 
     py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(_module, "MultiMessage")
@@ -368,26 +402,48 @@ PYBIND11_MODULE(messages, _module)
         .value("NONE", ControlMessageType::INFERENCE)
         .value("TRAINING", ControlMessageType::TRAINING);
 
-    // TODO(Devin): Circle back on return value policy choices
     py::class_<ControlMessage, std::shared_ptr<ControlMessage>>(_module, "ControlMessage")
         .def(py::init<>())
         .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)))
         .def(py::init(py::overload_cast<std::shared_ptr<ControlMessage>>(&ControlMessageProxy::create)))
-        .def("add_task", &ControlMessageProxy::add_task, py::arg("task_type"), py::arg("task"))
-        .def("config",
-             pybind11::overload_cast<ControlMessage&, py::dict&>(&ControlMessageProxy::config),
-             py::arg("config"))
-        .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
+        .def("add_task", &ControlMessage::add_task, py::arg("task_type"), py::arg("task"))
+        .def(
+            "config", py::overload_cast<const morpheus::utilities::json_t&>(&ControlMessage::config), py::arg("config"))
+        .def("config", py::overload_cast<>(&ControlMessage::config, py::const_))
         .def("copy", &ControlMessageProxy::copy)
-        .def("get_metadata", &ControlMessageProxy::get_metadata, py::arg("key") = py::none())
-        .def("get_tasks", &ControlMessageProxy::get_tasks)
+        .def("get_metadata",
+             &ControlMessageProxy::get_metadata,
+             py::arg("key")           = py::none(),
+             py::arg("default_value") = py::none())
+        .def("get_tasks", &ControlMessage::get_tasks)
+        .def("filter_timestamp",
+             py::overload_cast<ControlMessage&, const std::string&>(&ControlMessageProxy::filter_timestamp),
+             "Retrieve timestamps matching a regex filter within a given group.",
+             py::arg("regex_filter"))
+        .def("get_timestamp",
+             py::overload_cast<ControlMessage&, const std::string&, bool>(&ControlMessageProxy::get_timestamp),
+             "Retrieve the timestamp for a given group and key. Returns None if the timestamp does not exist and "
+             "fail_if_nonexist is False.",
+             py::arg("key"),
+             py::arg("fail_if_nonexist") = false)
+        .def("set_timestamp",
+             &ControlMessageProxy::set_timestamp,
+             "Set a timestamp for a given key and group.",
+             py::arg("key"),
+             py::arg("timestamp"))
         .def("has_metadata", &ControlMessage::has_metadata, py::arg("key"))
         .def("has_task", &ControlMessage::has_task, py::arg("task_type"))
         .def("list_metadata", &ControlMessageProxy::list_metadata)
-        .def("payload", pybind11::overload_cast<>(&ControlMessage::payload), py::return_value_policy::move)
+        .def("payload", pybind11::overload_cast<>(&ControlMessage::payload))
         .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload))
-        .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
-        .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
+        .def(
+            "payload",
+            pybind11::overload_cast<ControlMessage&, const py::object&>(&ControlMessageProxy::payload_from_python_meta),
+            py::arg("meta"))
+        .def("tensors", pybind11::overload_cast<>(&ControlMessage::tensors))
+        .def("tensors", pybind11::overload_cast<const std::shared_ptr<TensorMemory>&>(&ControlMessage::tensors))
+        .def("remove_task", &ControlMessage::remove_task, py::arg("task_type"))
+        .def("set_metadata", &ControlMessage::set_metadata, py::arg("key"), py::arg("value"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
         .def(
             "task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"));
@@ -404,6 +460,11 @@ PYBIND11_MODULE(messages, _module)
                     &LoaderRegistry::unregister_factory_fn,
                     py::arg("name"),
                     py::arg("throw_if_not_exists") = true);
+
+    py::class_<RawPacketMessage, std::shared_ptr<RawPacketMessage>>(_module, "RawPacketMessage")
+        .def_property_readonly("num", &RawPacketMessage::count)
+        .def_property_readonly("max_size", &RawPacketMessage::get_max_size)
+        .def_property_readonly("gpu_mem", &RawPacketMessage::is_gpu_mem);
 
     _module.attr("__version__") =
         MORPHEUS_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);

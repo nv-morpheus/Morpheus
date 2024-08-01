@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +32,7 @@ function(morpheus_configure_libbsd)
   if (bsd_ADDED)
     message(STATUS "libbsd was not installed and will be built from source")
 
-    find_package(bsd REQUIRED)
+    find_package(md REQUIRED)
 
     set(bsd_INSTALL_DIR ${bsd_BINARY_DIR}/install)
     file(MAKE_DIRECTORY ${bsd_INSTALL_DIR}/include)
@@ -45,8 +45,6 @@ function(morpheus_configure_libbsd)
     get_target_property(MD_LIBRARY md::md IMPORTED_LOCATION) # Add '-L' to LDFLAGS
 
     cmake_path(GET MD_LIBRARY PARENT_PATH MD_LINK_DIRECTORY)
-
-    message(STATUS "MD_LIBRARY: ${MD_LINK_DIRECTORY}")
 
     # Get the Compiler settings to forward onto autoconf
     set(COMPILER_SETTINGS
@@ -87,7 +85,7 @@ function(morpheus_configure_libbsd)
 
     # Install only the headers
     install(
-      DIRECTORY ${md_INSTALL_DIR}/include
+      DIRECTORY ${bsd_INSTALL_DIR}/include
       TYPE INCLUDE
     )
 
@@ -107,8 +105,6 @@ function(morpheus_configure_libbsd)
     )
 
     add_dependencies(bsd::bsd bsd)
-
-    message(STATUS "bsd_INSTALL_DIR: ${bsd_INSTALL_DIR}")
 
   endif()
 

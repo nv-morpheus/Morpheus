@@ -12,8 +12,7 @@
             "ms-python.isort",
             "ms-python.pylint",
             "ms-vscode.cmake-tools",
-            "stkb.rewrap",
-            "twxs.cmake"
+            "stkb.rewrap"
         ],
         // List of extensions recommended by VS Code that should not be recommended for users of this workspace.
         "unwantedRecommendations": [
@@ -83,7 +82,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -139,7 +138,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -201,7 +200,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -266,7 +265,7 @@
                 "program": "${workspaceFolder}/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -285,7 +284,7 @@
                 "name": "Python: Anomaly Detection Example",
                 "program": "${workspaceFolder}/examples/abp_pcap_detection/run.py",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -303,7 +302,7 @@
                 "module": "sphinx.cmd.build",
                 "name": "Python: Sphinx",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "MIMode": "gdb",
@@ -586,6 +585,34 @@
                 "type": "cppdbg"
             },
             {
+                "MIMode": "gdb",
+                "args": [
+                    // Uncomment to run a specific test
+                    // "--gtest_filter='TestLLMContext.PopSelectMultipleOutputs'"
+                ],
+                "cwd": "${workspaceFolder}",
+                "environment": [
+                    {
+                        "name": "GLOG_v",
+                        "value": "10"
+                    }
+                ],
+                "externalConsole": false,
+                "miDebuggerPath": "gdb",
+                "name": "Debug LLM C++ Tests",
+                "program": "${workspaceFolder}/build/morpheus/_lib/tests/test_llm.x",
+                "request": "launch",
+                "setupCommands": [
+                    {
+                        "description": "Enable pretty-printing for gdb",
+                        "ignoreFailures": true,
+                        "text": "-enable-pretty-printing"
+                    }
+                ],
+                "stopAtEntry": false,
+                "type": "cppdbg"
+            },
+            {
                 "args": [
                     "--input_file=validation.csv",
                     "--training_file=training.csv",
@@ -598,7 +625,7 @@
                 "name": "Python: GNN DGL inference",
                 "program": "${workspaceFolder}/examples/gnn_fraud_detection_pipeline/run.py",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             },
             {
                 "args": [
@@ -614,7 +641,7 @@
                 "name": "Python: GNN model training",
                 "program": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models/training.py",
                 "request": "launch",
-                "type": "python"
+                "type": "debugpy"
             }
         ]
     },
@@ -662,6 +689,7 @@
         "python.analysis.extraPaths": [
             "./examples/digital_fingerprinting/production/morpheus"
         ],
+        "python.analysis.inlayHints.pytestParameters": true,
         "python.testing.pytestArgs": [
             "-s",
             "tests"
@@ -669,6 +697,38 @@
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
         "rewrap.wrappingColumn": 120,
+        "testMate.cpp.debug.configTemplate": {
+            "args": "${argsArray}",
+            "cwd": "${cwd}",
+            "darwin": {
+                "MIMode": "lldb",
+                "type": "cppdbg"
+            },
+            "env": "${envObj}",
+            "environment": "${envObjArray}",
+            "name": "Debug Test Runner (${parentLabel} > ${label})",
+            "program": "${exec}",
+            "request": "launch",
+            "testMate.cpp.debug.setEnv": {
+                "GLOG_v": "10",
+                "GTEST_CATCH_EXCEPTIONS": "0", // Allow the debugger to catch exceptions
+                "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
+                "UCX_ERROR_SIGNALS": "" // Prevent UCX from capturing errors
+            },
+            "type": "lldb",
+            "win32": {
+                "type": "cppvsdbg"
+            }
+        },
+        "testMate.cpp.test.advancedExecutables": [
+            {
+                "env": {
+                    "MORPHEUS_ROOT": "${workspaceFolder}", // Ensure the MORPHEUS_ROOT is set
+                    "UCX_ERROR_SIGNALS": "" // Prevent UCX from capturing errors
+                },
+                "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}_*.x"
+            }
+        ],
         "yapf.args": [
             "--style=${workspaceFolder}/setup.cfg"
         ]

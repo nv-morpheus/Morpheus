@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +15,10 @@
  * limitations under the License.
  */
 
-#include "morpheus/stages/write_to_file.hpp"  // IWYU pragma: accosiated
+#include "morpheus/stages/write_to_file.hpp"  // IWYU pragma: associated
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/sink_properties.hpp"
-#include "mrc/node/source_properties.hpp"
 #include "mrc/segment/builder.hpp"
 #include "mrc/segment/object.hpp"
-#include "mrc/types.hpp"
 #include "pymrc/node.hpp"
 
 #include "morpheus/io/serializers.hpp"
@@ -55,15 +50,21 @@ WriteToFileStage::WriteToFileStage(
     switch (file_type)
     {
     case FileTypes::JSON: {
-        m_write_func = [this](auto&& PH1) { write_json(std::forward<decltype(PH1)>(PH1)); };
+        m_write_func = [this](auto&& PH1) {
+            write_json(std::forward<decltype(PH1)>(PH1));
+        };
         break;
     }
     case FileTypes::CSV: {
-        m_write_func = [this](auto&& PH1) { write_csv(std::forward<decltype(PH1)>(PH1)); };
+        m_write_func = [this](auto&& PH1) {
+            write_csv(std::forward<decltype(PH1)>(PH1));
+        };
         break;
     }
     case FileTypes::PARQUET: {
-        m_write_func = [this](auto&& PH1) { write_parquet(std::forward<decltype(PH1)>(PH1)); };
+        m_write_func = [this](auto&& PH1) {
+            write_parquet(std::forward<decltype(PH1)>(PH1));
+        };
         break;
     }
     case FileTypes::Auto:

@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,22 @@ limitations under the License.
 -->
 
 # Simple C++ Stage
-> **Note**: The code for this guide can be found in the `examples/developer_guide/3_simple_cpp_stage` directory of the Morpheus repository. To build the C++ examples, pass `-DMORPHEUS_BUILD_EXAMPLES=ON` to CMake when building Morpheus. Users building Morpheus with the provided `scripts/compile.sh` script can do do by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
-> ```bash
-> CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
+## Building the Example
+The code for this guide can be found in the `examples/developer_guide/3_simple_cpp_stage` directory of the Morpheus repository. There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to cmake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+```bash
+CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
+```
 
+The second method is to build the example as a standalone project. From the root of the Morpheus repo execute:
+```bash
+cd examples/developer_guide/3_simple_cpp_stage
+./compile.sh
+
+# Optionally install the package into the current python environment
+pip install ./
+```
+
+## Overview
 Morpheus offers the choice of writing pipeline stages in either Python or C++. For many use cases, a Python stage is perfectly fine. However, in the event that a Python stage becomes a bottleneck for the pipeline, then writing a C++ implementation for the stage becomes advantageous. The C++ implementations of Morpheus stages and messages utilize the [pybind11](https://pybind11.readthedocs.io/en/stable/index.html) library to provide Python bindings.
 
 So far we have been defining our stages in Python, the option of defining a C++ implementation is only available to stages implemented as classes. Many of the stages included with Morpheus have both a Python and a C++ implementation, and Morpheus will use the C++ implementations by default. You can explicitly disable the use of C++ stage implementations by calling `morpheus.config.CppConfig.set_should_use_cpp(False)`:
@@ -42,7 +54,7 @@ def supports_cpp_node(self):
     return True
 ```
 
-C++ message object declarations can be found in the header files that are located in the `morpheus/_lib/include/morpheus/messages` directory. For example, the `MessageMeta` class declaration is located in `morpheus/_lib/include/morpheus/messages/meta.hpp`. In code this would be included as:
+C++ message object declarations can be found in the header files that are located in the `morpheus/_lib/include/morpheus/messages` directory. For example, the `MessageMeta` class declaration is located in `morpheus/_lib/include/morpheus/messages/meta.hpp`. Since this code is outside of the morpheus directory it would be included as:
 
 ```cpp
 #include <morpheus/messages/meta.hpp>
@@ -77,6 +89,7 @@ While our Python implementation accepts messages of any type (in the form of Pyt
 To start with, we have our Morpheus and MRC-specific includes:
 
 ```cpp
+#include <morpheus/export.h>
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
 #include <mrc/segment/builder.hpp>      // for Segment Builder
 #include <mrc/segment/object.hpp>       // for Segment Object
@@ -88,12 +101,10 @@ We'll want to define our stage in its own namespace. In this case, we will name 
 ```cpp
 namespace morpheus_example {
 
-// pybind11 sets visibility to hidden by default; we want to export our symbols
-#pragma GCC visibility push(default)
-
 using namespace morpheus;
 
-class PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
+// pybind11 sets visibility to hidden by default; we want to export our symbols
+class MORPHEUS_EXPORT PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
@@ -107,7 +118,13 @@ class PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage
 };
 ```
 
-We explicitly set the visibility for the stage object in the namespace to default. This is due to a pybind11 requirement for module implementations to default symbol visibility to hidden (`-fvisibility=hidden`). More details about this can be found in the [pybind11 documentation](https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes).
+We explicitly set the visibility for the stage object to default by importing:
+```cpp
+#include <morpheus/export.h>
+```
+Then adding `MORPHEUS_EXPORT`, which is defined in `/build/autogenerated/include/morpheus/export.h` and is compiler agnostic, to the definition of the stage object.
+This is due to a pybind11 requirement for module implementations to default symbol visibility to hidden (`-fvisibility=hidden`). More details about this can be found in the [pybind11 documentation](https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes).
+Any object, struct, or function that is intended to be exported should have `MORPHEUS_EXPORT` included in the definition.
 
 For simplicity, we defined `base_t` as an alias for our base class type because the definition can be quite long. Our base class type also defines a few additional type aliases for us: `subscribe_fn_t`, `sink_type_t` and `source_type_t`. The `sink_type_t` and `source_type_t` aliases are shortcuts for the sink and source types that this stage will be reading and writing. In this case both the `sink_type_t` and `source_type_t` resolve to `std::shared_ptr<MultiMessage>`. `subscribe_fn_t` (read as "subscribe function type") is an alias for:
 
@@ -122,7 +139,7 @@ All Morpheus C++ stages receive an instance of an MRC Segment Builder and a name
 We will also define an interface proxy object to keep the class definition separated from the Python interface. This isn't strictly required, but it is a convention used internally by Morpheus. Our proxy object will define a static method named `init` which is responsible for constructing a `PassThruStage` instance and returning it wrapped in a `shared_ptr`. There are many common Python types that pybind11 [automatically converts](https://pybind11.readthedocs.io/en/latest/advanced/cast/overview.html#conversion-table) to their associated C++ types. The MRC `Builder` is a C++ object with Python bindings. However there are other instances such as checking for values of `None` where the casting from Python to C++ types is not automatic. The proxy interface object fulfills this need and is used to help insulate Python bindings from internal implementation details.
 
 ```cpp
-struct PassThruStageInterfaceProxy
+struct MORPHEUS_EXPORT PassThruStageInterfaceProxy
 {
     static std::shared_ptr<mrc::segment::Object<PassThruStage>> init(mrc::segment::Builder &builder,
                                                                      const std::string &name);
@@ -134,6 +151,7 @@ struct PassThruStageInterfaceProxy
 ```cpp
 #pragma once
 
+#include <morpheus/export.h>            // for exporting symbols
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
 #include <mrc/segment/builder.hpp>      // for Segment Builder
 #include <mrc/segment/object.hpp>       // for Segment Object
@@ -144,12 +162,10 @@ struct PassThruStageInterfaceProxy
 
 namespace morpheus_example {
 
-// pybind11 sets visibility to hidden by default; we want to export our symbols
-#pragma GCC visibility push(default)
-
 using namespace morpheus;
 
-class PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
+// pybind11 sets visibility to hidden by default; we want to export our symbols
+class MORPHEUS_EXPORT PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
@@ -162,13 +178,12 @@ class PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage
     subscribe_fn_t build_operator();
 };
 
-struct PassThruStageInterfaceProxy
+struct MORPHEUS_EXPORT PassThruStageInterfaceProxy
 {
     static std::shared_ptr<mrc::segment::Object<PassThruStage>> init(mrc::segment::Builder& builder,
                                                                      const std::string& name);
 };
 
-#pragma GCC visibility pop
 }  // namespace morpheus_example
 ```
 
@@ -275,7 +290,7 @@ The Python interface itself defines a Python module named `morpheus_example` and
 namespace py = pybind11;
 
 // Define the pybind11 module m.
-PYBIND11_MODULE(morpheus_example, m)
+PYBIND11_MODULE(pass_thru_cpp, m)
 {
     mrc::pymrc::import(m, "morpheus._lib.messages");
 
@@ -319,7 +334,7 @@ std::shared_ptr<mrc::segment::Object<PassThruStage>> PassThruStageInterfaceProxy
 namespace py = pybind11;
 
 // Define the pybind11 module m.
-PYBIND11_MODULE(morpheus_example, m)
+PYBIND11_MODULE(pass_thru_cpp, m)
 {
     mrc::pymrc::import(m, "morpheus._lib.messages");
 
@@ -353,10 +368,9 @@ As mentioned in the previous section, our `_build_single` method needs to be upd
 ```python
 def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
     if self._build_cpp_node() and issubclass(self._input_type, MultiMessage):
-        from _lib import morpheus_example as morpheus_example_cpp
+        from ._lib import pass_thru_cpp
 
-        # pylint: disable=c-extension-no-member
-        node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
+        node = pass_thru_cpp.PassThruStage(builder, self.unique_name)
     else:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
 
@@ -408,9 +422,9 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node() and issubclass(self._input_type, MultiMessage):
-            from _lib import morpheus_example as morpheus_example_cpp
+            from ._lib import pass_thru_cpp
 
-            node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
+            node = pass_thru_cpp.PassThruStage(builder, self.unique_name)
         else:
             node = builder.make_node(self.unique_name, ops.map(self.on_data))
 
@@ -420,10 +434,10 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
 
 ## Testing the Stage
 To test the updated stage we will build a simple pipeline using the  Morpheus command line tool. In order to illustrate the stage building a C++ node only when the input type is a `MultiMessage` we will insert the `pass-thru` stage in twice in the pipeline. In the first instance the input type will be `MessageMeta` and the stage will fallback to using a Python node, and in the second instance the input type will be a `MultiMessage` and the stage will build a C++ node.
-    
+
 ```bash
-PYTHONPATH="examples/developer_guide/3_simple_cpp_stage" \
-morpheus --log_level=debug --plugin "pass_thru" \
+PYTHONPATH="examples/developer_guide/3_simple_cpp_stage/src" \
+morpheus --log_level=debug --plugin "simple_cpp_stage.pass_thru" \
     run pipeline-other \
     from-file --filename=examples/data/email_with_addresses.jsonlines \
     pass-thru \
@@ -432,5 +446,3 @@ morpheus --log_level=debug --plugin "pass_thru" \
     pass-thru \
     monitor
 ```
-
-> **Note**: In the above example we set the `PYTHONPATH` environment variable this is to facilitate the relative import the stage performs of the `_lib` module.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +17,16 @@
 
 #include "morpheus/objects/memory_descriptor.hpp"
 
-#include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
+#include <rmm/cuda_stream_view.hpp>
 
 #include <utility>  // for move
 
-MemoryDescriptor::MemoryDescriptor(rmm::cuda_stream_view stream, rmm::mr::device_memory_resource* mem_resource) :
+namespace morpheus {
+
+MemoryDescriptor::MemoryDescriptor(rmm::cuda_stream_view stream,
+                                   cuda::mr::async_resource_ref<cuda::mr::device_accessible> mem_resource) :
   cuda_stream(std::move(stream)),
   memory_resource(mem_resource)
-{
-    if (memory_resource == nullptr)
-    {
-        memory_resource = rmm::mr::get_current_device_resource();
-    }
-}
+{}
+
+}  // namespace morpheus

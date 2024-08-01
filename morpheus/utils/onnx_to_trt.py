@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,50 +27,50 @@ except ImportError:
     raise
 
 
-def gen_engine(c: ConfigOnnxToTRT):
+def gen_engine(config: ConfigOnnxToTRT):
     """
     This class converts an Onnx model to a TRT model.
 
     Parameters
     ----------
-    c : `morpheus.config.ConfigOnnxToTRT`
-        Onnc to TRT generator configuration.
+    config : `morpheus.config.ConfigOnnxToTRT`
+        ONNX to TRT generator configuration.
 
     """
 
     # Local imports to avoid requiring TensorRT to generate the docs
 
-    TRT_LOGGER = trt.Logger()
+    trt_logger = trt.Logger()
 
-    input_model = c.input_model
+    input_model = config.input_model
 
-    print("Loading ONNX file: '{}'".format(input_model))
+    print("Loading ONNX file: '{input_model}'")
 
     # Otherwise we are creating a new model
-    EXPLICIT_BATCH = 1 << (int)(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+    explicit_branch = 1 << (int)(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
 
-    with trt.Builder(TRT_LOGGER) as builder, \
-        builder.create_network(EXPLICIT_BATCH) as network, \
-            trt.OnnxParser(network, TRT_LOGGER) as parser:
+    with trt.Builder(trt_logger) as builder, \
+        builder.create_network(explicit_branch) as network, \
+            trt.OnnxParser(network, trt_logger) as parser:
 
         with open(input_model, "rb") as model_file:
             if (not parser.parse(model_file.read())):
                 for error in range(parser.num_errors):
                     print(parser.get_error(error))
-                raise Exception("Count not parse Onnx file. See log.")
+                raise ValueError("Count not parse Onnx file. See log.")
 
         # Now we need to build and serialize the model
         with builder.create_builder_config() as builder_config:
 
-            builder_config.max_workspace_size = c.max_workspace_size * (1024 * 1024)
+            builder_config.max_workspace_size = config.max_workspace_size * (1024 * 1024)
             builder_config.set_flag(trt.BuilderFlag.FP16)
 
             # Create the optimization files
-            for min_batch, max_batch in c.batches:
+            for min_batch, max_batch in config.batches:
                 profile = builder.create_optimization_profile()
 
-                min_shape = (min_batch, c.seq_length)
-                shape = (max_batch, c.seq_length)
+                min_shape = (min_batch, config.seq_length)
+                shape = (max_batch, config.seq_length)
 
                 for i in range(network.num_inputs):
                     in_tensor = network.get_input(i)
@@ -83,10 +83,10 @@ def gen_engine(c: ConfigOnnxToTRT):
             engine = builder.build_engine(network, builder_config)
 
             # Now save a copy to prevent building next time
-            print("Writing engine to: {}".format(c.output_model))
+            print("Writing engine to: {config.output_model}")
             serialized_engine = engine.serialize()
 
-            with open(c.output_model, "wb") as f:
+            with open(config.output_model, "wb") as f:
                 f.write(serialized_engine)
 
             print("Complete!")

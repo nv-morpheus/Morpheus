@@ -19,12 +19,17 @@ import logging.config
 import logging.handlers
 import multiprocessing
 import os
+import re
+import warnings
+import weakref
 from enum import Enum
 
 import appdirs
 import click
 import mrc
 from tqdm import tqdm
+
+import morpheus
 
 LogLevels = Enum('LogLevels', logging._nameToLevel)
 
@@ -95,13 +100,14 @@ def _configure_from_log_file(log_config_file: str):
         logging.config.fileConfig(log_config_file)
 
 
-def _configure_from_log_level(log_level: int):
+def _configure_from_log_level(*extra_handlers: logging.Handler, log_level: int):
     """
     Default config with only option being the logging level. Outputs to both the console and a file. Sets up a logging
     producer/consumer that works well in multi-thread/process environments.
 
     Parameters
     ----------
+    *extra_handlers: List of additional handlers which will handle entries placed on the queue
     log_level : int
         Log level and above to report
     """
@@ -111,51 +117,85 @@ def _configure_from_log_level(log_level: int):
     # Get the root Morpheus logger
     morpheus_logger = logging.getLogger("morpheus")
 
-    # Set the level here
-    set_log_level(log_level=log_level)
+    # Prevent reconfiguration if called again
+    if (not getattr(morpheus_logger, "_configured_by_morpheus", False)):
+        setattr(morpheus_logger, "_configured_by_morpheus", True)
 
-    # Dont propagate upstream
-    morpheus_logger.propagate = False
-    morpheus_logging_queue = multiprocessing.Queue()
+        # Set the level here
+        set_log_level(log_level=log_level)
 
-    # This needs the be the only handler for morpheus logger
-    morpheus_queue_handler = logging.handlers.QueueHandler(morpheus_logging_queue)
+        # Dont propagate upstream
+        morpheus_logger.propagate = False
+        morpheus_logging_queue = multiprocessing.Queue()
 
-    # At this point, any morpheus logger will propagate upstream to the morpheus root and then be handled by the queue
-    # handler
-    morpheus_logger.addHandler(morpheus_queue_handler)
+        # This needs the be the only handler for morpheus logger
+        morpheus_queue_handler = logging.handlers.QueueHandler(morpheus_logging_queue)
 
-    log_file = os.path.join(appdirs.user_log_dir(appauthor="NVIDIA", appname="morpheus"), "morpheus.log")
+        # At this point, any morpheus logger will propagate upstream to the morpheus root and then be handled by the
+        # queue handler
+        morpheus_logger.addHandler(morpheus_queue_handler)
 
-    # Ensure the log directory exists
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        log_file = os.path.join(appdirs.user_log_dir(appauthor="NVIDIA", appname="morpheus"), "morpheus.log")
 
-    # Now we build all of the handlers for the queue listener
-    file_handler = logging.handlers.RotatingFileHandler(filename=log_file, backupCount=5, maxBytes=1000000)
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(
-        logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s {%(name)s, %(threadName)s}'))
+        # Ensure the log directory exists
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-    # Tqdm stream handler (avoids messing with progress bars)
-    console_handler = TqdmLoggingHandler()
+        # Now we build all of the handlers for the queue listener
+        file_handler = logging.handlers.RotatingFileHandler(filename=log_file, backupCount=5, maxBytes=1000000)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(
+            logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s {%(name)s, %(threadName)s}'))
 
-    # Build and run the queue listener to actually process queued messages
-    queue_listener = logging.handlers.QueueListener(morpheus_logging_queue,
-                                                    console_handler,
-                                                    file_handler,
-                                                    respect_handler_level=True)
-    queue_listener.start()
-    queue_listener._thread.name = "Logging Thread"
+        # Tqdm stream handler (avoids messing with progress bars)
+        console_handler = TqdmLoggingHandler()
 
-    # Register a function to kill the listener thread before shutting down. prevents error on intpreter close
-    def stop_queue_listener():
-        queue_listener.stop()
+        # Build and run the queue listener to actually process queued messages
+        queue_listener = logging.handlers.QueueListener(morpheus_logging_queue,
+                                                        console_handler,
+                                                        file_handler,
+                                                        *extra_handlers,
+                                                        respect_handler_level=True)
+        queue_listener.start()
+        queue_listener._thread.name = "Logging Thread"
 
-    import atexit
-    atexit.register(stop_queue_listener)
+        # Register a function to kill the listener thread when the queue_handler is removed.
+        weakref.finalize(morpheus_queue_handler, queue_listener.stop)
+
+        # Register a handler before shutting down to remove all log handlers, this ensures that the weakref.finalize
+        # handler we just defined is called at exit.
+        import atexit
+        atexit.register(reset_logging)
+    else:
+        raise RuntimeError("Logging has already been configured. Use `set_log_level` to change the log level or reset "
+                           "the logging system by calling `reset_logging`.")
 
 
-def configure_logging(log_level: int, log_config_file: str = None):
+def reset_logging(logger_name: str = "morpheus"):
+    """
+    Resets the Morpheus logging system. This will remove all handlers from the Morpheus logger and stop the queue
+    listener. This is useful for testing where the logging system needs to be reconfigured multiple times or
+    reconfigured with different settings.
+    """
+
+    morpheus_logger = logging.getLogger(logger_name)
+
+    for handler in morpheus_logger.handlers.copy():
+        # Copied from `logging.shutdown`.
+        try:
+            handler.acquire()
+            handler.flush()
+            handler.close()
+        except (OSError, ValueError):
+            pass
+        finally:
+            handler.release()
+        morpheus_logger.removeHandler(handler)
+
+    if hasattr(morpheus_logger, "_configured_by_morpheus"):
+        delattr(morpheus_logger, "_configured_by_morpheus")
+
+
+def configure_logging(*extra_handlers: logging.Handler, log_level: int = None, log_config_file: str = None):
     """
     Configures Morpheus logging in one of two ways. Either specifying a logging config file to load or a logging level
     which will use a default configuration. The default configuration outputs to both the console and a file. Sets up a
@@ -163,6 +203,7 @@ def configure_logging(log_level: int, log_config_file: str = None):
 
     Parameters
     ----------
+    *extra_handlers: List of handlers to add to existing default console and file handlers.
     log_level: int
         Specifies the log level and above to output. Must be one of the available levels in the `logging` module.
     log_config_file: str, optional (default = None):
@@ -180,7 +221,8 @@ def configure_logging(log_level: int, log_config_file: str = None):
         # Configure using log file
         _configure_from_log_file(log_config_file=log_config_file)
     else:
-        _configure_from_log_level(log_level=log_level)
+        assert log_level is not None, "log_level must be specified"
+        _configure_from_log_level(*extra_handlers, log_level=log_level)
 
 
 def set_log_level(log_level: int):
@@ -211,17 +253,22 @@ def set_log_level(log_level: int):
     return old_level
 
 
-def deprecated_stage_warning(logger, cls, name):
+def deprecated_stage_warning(logger, cls, name, reason: str = None):
     """Log a warning about a deprecated stage."""
-    logger.warning(("The '%s' stage ('%s') is no longer required to manage backpressure and has been deprecated. "
-                    "It has no effect and acts as a pass through stage."),
-                   cls.__name__,
-                   name)
+    message = f"The '{cls.__name__}' stage ('{name}') has been deprecated and will be removed in a future version."
+    if reason is not None:
+        message = " ".join((message, reason))
+    logger.warning(message)
 
 
-def deprecated_message_warning(logger, cls, new_cls):
+def deprecated_message_warning(cls, new_cls):
     """Log a warning about a deprecated message."""
-    logger.warning(
-        ("The '%s' message has been deprecated and will be removed in a future version. Please use '%s' instead."),
-        cls.__name__,
-        new_cls.__name__)
+    match = re.match(r"(\d+\.\d+)", morpheus.__version__)
+    if match is None:
+        version = "next version"
+    else:
+        version = "version " + match.group(1)
+
+    message = (f"The '{cls.__name__}' message has been deprecated and will be removed "
+               f"after {version} release. Please use '{new_cls.__name__}' instead.")
+    warnings.warn(message, DeprecationWarning)

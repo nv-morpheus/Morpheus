@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -221,22 +221,21 @@ In the above the `needed_columns` were provided to as an argument to the `stage`
 
 ## Predicting Fraudulent Emails with Accelerated Machine Learning
 
-Now we'll use the `RecipientFeaturesStage` that we just made in a real-world pipeline to detect fraudulent emails. The pipeline we will be building makes use of the `TritonInferenceStage` which is a pre-defined Morpheus stage designed to support the execution of Natural Language Processing (NLP) models via NVIDIA's [Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server). NVIDIA Triton Inference Server allows for GPU accelerated ML/DL and seamless co-location and execution of a wide variety of model frameworks. For our application, we will be using the `phishing-bert-onnx` model, which is included with Morpheus in the `models/triton-model-repo/` directory.
+Now we'll use the `RecipientFeaturesStage` that we just made in a real-world pipeline to detect fraudulent emails. The pipeline we will be building makes use of the `TritonInferenceStage` which is a pre-defined Morpheus stage designed to support the execution of Natural Language Processing (NLP) models via NVIDIA's [Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server). NVIDIA Triton Inference Server allows for GPU accelerated ML/DL and seamless co-location and execution of a wide variety of model frameworks. For our application, we will be using the `phishing-bert-onnx` model, which is included with Morpheus models Docker container as well as in the `models/triton-model-repo/phishing-bert-onnx` directory.
 
 It's important to note here that Triton is a service that is external to the Morpheus pipeline and often will not reside on the same machine(s) as the rest of the pipeline. The `TritonInferenceStage` will use HTTP and [gRPC](https://grpc.io/) network protocols to allow us to interact with the machine learning models that are hosted by the Triton server.
 
 ### Launching Triton
 
-Triton will need to be running while we execute our pipeline. For simplicity, we will launch it locally inside of a Docker container.
+Triton will need to be running while we execute our pipeline. For simplicity, we will be using the Morpheus models container which includes both Trtion and the Morpheus models.
 
 > **Note**: This step assumes you have both [Docker](https://docs.docker.com/engine/install/) and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#installation-guide) installed.
 
-From the root of the Morpheus project we will launch a Triton Docker container with the `models` directory mounted into the container:
+We will launch a Triton Docker container with:
 
 ```shell
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-  -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:23.06-py3 \
+  nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -381,7 +380,7 @@ From this information, we note that the expected dimensions of the model inputs 
 ### Defining our Pipeline
 For this pipeline we will have several configuration parameters such as the paths to the input and output files, we will be using the (click)[https://click.palletsprojects.com/] library to expose and parse these parameters as command line arguments. We will also expose the choice of using the class or function based stage implementation via the `--use_stage_function` command-line flag.
 
-> **Note**: For simplicity, we assume that the `MORPHEUS_ROOT` environment variable is set to the root of the Morpheus project repository. 
+> **Note**: For simplicity, we assume that the `MORPHEUS_ROOT` environment variable is set to the root of the Morpheus project repository.
 
 To start, we will need to instantiate and set a few attributes of the `Config` class. This object is used for configuration options that are global to the pipeline as a whole. We will provide this object to each stage along with stage-specific configuration parameters.
 
@@ -402,7 +401,7 @@ The `feature_length` property needs to match the dimensions of the model inputs,
 
 Ground truth classification labels are read from the `morpheus/data/labels_phishing.txt` file included in Morpheus.
 
-Now that our config object is populated, we move on to the pipeline itself. We will be using the same input file from the previous example. 
+Now that our config object is populated, we move on to the pipeline itself. We will be using the same input file from the previous example.
 
 Next, we will add our custom recipient features stage to the pipeline. We imported both implementations of the stage, allowing us to add the appropriate one based on the `use_stage_function` value provided by the command-line.
 

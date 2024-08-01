@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ SCRIPT_DIR=${SCRIPT_DIR:-"$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null 
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-"$(realpath ${SCRIPT_DIR}/../..)"}
 
 morpheus --log_level=DEBUG \
-    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+    run --pipeline_batch_size=1024 --model_max_batch_size=32 \
     pipeline-nlp --model_seq_length=256 \
     from-file --filename=${MORPHEUS_ROOT}/examples/data/pcap_dump.jsonlines \
     deserialize \

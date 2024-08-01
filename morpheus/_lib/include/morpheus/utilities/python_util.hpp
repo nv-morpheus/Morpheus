@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,8 @@
  */
 
 #pragma once
+
+#include "morpheus/export.h"
 
 #include <sys/types.h>
 
@@ -35,8 +37,8 @@ namespace morpheus::utilities {
  * @param category A Python warning message type such as `PyExc_DeprecationWarning`
  * @param stack_level If the warning should appear earlier up in the stack, set this to >1
  */
-void show_warning_message(const std::string& deprecation_message,
-                          PyObject* category  = nullptr,
-                          ssize_t stack_level = 1);
+MORPHEUS_EXPORT void show_warning_message(const std::string& deprecation_message,
+                                          PyObject* category  = nullptr,
+                                          ssize_t stack_level = 1);
 
 }  // namespace morpheus::utilities

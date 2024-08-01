@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "morpheus/export.h"
+#include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
@@ -34,7 +36,7 @@
 #include <vector>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
+
 namespace {
 /**
  * @brief Performs preallocation to the underlying dataframe. These functions ensure that the MutableTableInfo object
@@ -51,11 +53,18 @@ void preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
     table.insert_missing_columns(columns);
 }
 
+void preallocate(std::shared_ptr<morpheus::ControlMessage> msg,
+                 const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
+{
+    preallocate(msg->payload(), columns);
+}
+
 void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
                  const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
 {
     preallocate(msg->meta, columns);
 }
+
 }  // namespace
 
 /****** Component public implementations *******************/
@@ -65,7 +74,8 @@ void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
  * `PreallocateMultiMessageStage`
  */
 template <typename MessageT>
-class PreallocateStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
+class MORPHEUS_EXPORT PreallocateStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
 {
   public:
     using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>;
@@ -86,7 +96,7 @@ class PreallocateStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>
  * @brief Interface proxy, used to insulate python bindings.
  */
 template <typename MessageT>
-struct PreallocateStageInterfaceProxy
+struct MORPHEUS_EXPORT PreallocateStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a DeserializationStage, and return the result.
@@ -130,5 +140,5 @@ std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageT>>> PreallocateSta
 {
     return builder.construct_object<PreallocateStage<MessageT>>(name, needed_columns);
 }
-#pragma GCC visibility pop
+
 }  // namespace morpheus

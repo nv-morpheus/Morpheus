@@ -17,14 +17,8 @@ import json
 import logging
 import re
 import typing
-import warnings
 from datetime import datetime
 from functools import partial
-
-with warnings.catch_warnings():
-    # Ignore warning regarding tensorflow not being installed
-    warnings.filterwarnings("ignore", message=".*No module named 'tensorflow'", category=UserWarning)
-    import nvtabular as nvt
 
 import pandas as pd
 
@@ -54,7 +48,7 @@ def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame], input_s
 
     """
 
-    from morpheus.utils import schema_transforms
+    from morpheus.utils import schema_transforms  # pylint: disable=cyclic-import
     return schema_transforms.process_dataframe(df_in, input_schema)
 
 
@@ -387,7 +381,14 @@ class DateTimeColumn(RenameColumn):
             The processed column as a datetime Series.
         """
 
-        return pd.to_datetime(df[self.input_name], infer_datetime_format=True, utc=True).astype(self.get_pandas_dtype())
+        dt_series = pd.to_datetime(df[self.input_name], infer_datetime_format=True, utc=True)
+
+        dtype = self.get_pandas_dtype()
+        if dtype == 'datetime64[ns]':
+            # avoid deprecation warning about using .astype to convert from a tz-aware type to a tz-naive type
+            return dt_series.dt.tz_localize(None)
+
+        return dt_series.astype(dtype)
 
 
 @dataclasses.dataclass
@@ -741,7 +742,6 @@ class DataFrameInputSchema:
     input_columns: typing.Dict[str, str] = dataclasses.field(init=False, repr=False)
     output_columns: typing.List[tuple[str, str]] = dataclasses.field(init=False, repr=False)
 
-    nvt_workflow: nvt.Workflow = dataclasses.field(init=False, repr=False)
     prep_dataframe: typing.Callable[[pd.DataFrame], typing.List[str]] = dataclasses.field(init=False, repr=False)
 
     def __post_init__(self):
@@ -788,5 +788,3 @@ class DataFrameInputSchema:
                                       input_columns=self.input_columns,
                                       json_cols=self.json_columns,
                                       preserve_re=self.preserve_columns)
-
-        self.nvt_workflow = None

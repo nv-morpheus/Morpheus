@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ class ConfigGenerator:
         self._source_schema_str = pyobj2str(schema.source, encoding=encoding)
         self._preprocess_schema_str = pyobj2str(schema.preprocess, encoding=encoding)
         self._input_message_type = pyobj2str(MultiMessage, encoding)
+        self._start_time_str = self._dfp_arg_parser.time_fields.start_time.isoformat()
+        self._end_time_str = self._dfp_arg_parser.time_fields.end_time.isoformat()
 
     def get_module_conf(self):
         module_conf = {}
@@ -58,8 +60,8 @@ class ConfigGenerator:
             "cache_dir": self._dfp_arg_parser.cache_dir,
             "batching_options": {
                 "sampling_rate_s": self._dfp_arg_parser.sample_rate_s,
-                "start_time": self._dfp_arg_parser.time_fields.start_time,
-                "end_time": self._dfp_arg_parser.time_fields.end_time,
+                "start_time": self._start_time_str,
+                "end_time": self._end_time_str,
                 "iso_date_regex_pattern": iso_date_regex_pattern,
                 "parser_kwargs": {
                     "lines": False, "orient": "records"
@@ -82,7 +84,7 @@ class ConfigGenerator:
             "stream_aggregation_options": {
                 "aggregation_span": "1d",
                 "cache_to_disk": False,
-                "cache_mode": "streaming",
+                "cache_mode": "batch",
             },
             "preprocessing_options": {
                 "schema": {
@@ -112,8 +114,8 @@ class ConfigGenerator:
             "cache_dir": self._dfp_arg_parser.cache_dir,
             "batching_options": {
                 "sampling_rate_s": self._dfp_arg_parser.sample_rate_s,
-                "start_time": self._dfp_arg_parser.time_fields.start_time,
-                "end_time": self._dfp_arg_parser.time_fields.end_time,
+                "start_time": self._start_time_str,
+                "end_time": self._end_time_str,
                 "iso_date_regex_pattern": iso_date_regex_pattern,
                 "parser_kwargs": {
                     "lines": False, "orient": "records"
@@ -137,7 +139,7 @@ class ConfigGenerator:
             "stream_aggregation_options": {
                 "aggregation_span": "60d",
                 "cache_to_disk": False,
-                "cache_mode": "streaming",
+                "cache_mode": "aggregate",
                 "trigger_on_min_history": 300,
                 "trigger_on_min_increment": 300
             },
@@ -156,7 +158,7 @@ class ConfigGenerator:
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "conda_env": {
                     'channels': ['defaults', 'conda-forge'],
-                    'dependencies': ['python=3.8', 'pip'],
+                    'dependencies': ['python=3.10', 'pip'],
                     'pip': ['mlflow', 'dfencoder'],
                     'name': 'mlflow-env'
                 }

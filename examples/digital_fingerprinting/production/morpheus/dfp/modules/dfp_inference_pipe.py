@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 import logging
 
 import mrc
-from dfp.utils.module_ids import DFP_MONITOR
 
+from morpheus.modules.general.monitor import MonitorLoaderFactory
 from morpheus.utils.module_ids import FILTER_DETECTIONS
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
@@ -94,7 +94,8 @@ def dfp_inference_pipe(builder: mrc.Builder):
             - timestamp_column_name (str): Name of the timestamp column; Example: "timestamp"; Default: timestamp
 
         stream_aggregation_options:
-            - cache_mode (str): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
+            - cache_mode (str): Mode for managing user cache. Setting to `batch` flushes cache once trigger conditions
+              are met. Otherwise, continue to aggregate user's history.; Example: 'batch'; Default: 'batch'
             - trigger_on_min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
             - trigger_on_min_increment (int): Minimum increment from the last trained to new training event;
             Example: 0; Default: 0
@@ -164,7 +165,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
     #                    |
     #                    v
     # +-------------------------------------+
-    # |         dfp_monitor_module          |
+    # |            monitor_module           |
     # +-------------------------------------+
     #                    |
     #                    v
@@ -174,7 +175,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
     #                    |
     #                    v
     # +-------------------------------------+
-    # |         dfp_monitor_module          |
+    # |             monitor_module          |
     # +-------------------------------------+
     #                    |
     #                    v
@@ -199,7 +200,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
     #                    |
     #                    v
     # +-------------------------------------+
-    # |         dfp_monitor_module          |
+    # |            monitor_module           |
     # +-------------------------------------+
     #                   |
     #                   v
@@ -282,7 +283,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
     write_to_file_conf = merge_dictionaries(write_to_file_options, write_to_file_defaults)
 
     write_to_file_monitor_options = {"description": "Saved [inference_pipe]"}
-    write_to_file_monitor_module_conf = merge_dictionaries(write_to_file_monitor_options, monitor_options)
+    write_to_fm_conf = merge_dictionaries(write_to_file_monitor_options, monitor_options)
 
     # Load modules
     preproc_module = builder.load_module(DFP_PREPROC, "morpheus", "dfp_preproc", preproc_conf)
@@ -291,15 +292,16 @@ def dfp_inference_pipe(builder: mrc.Builder):
                                                     "dfp_rolling_window",
                                                     dfp_rolling_window_conf)
     dfp_data_prep_module = builder.load_module(DFP_DATA_PREP, "morpheus", "dfp_data_prep", dfp_data_prep_conf)
-    dfp_data_prep_monitor_module = builder.load_module(DFP_MONITOR,
-                                                       "morpheus",
-                                                       "dfp_inference_data_prep_monitor",
-                                                       data_prep_monitor_module_conf)
+
+    dfp_data_prep_loader = MonitorLoaderFactory.get_instance("dfp_inference_data_prep_monitor",
+                                                             module_config=data_prep_monitor_module_conf)
+
+    dfp_data_prep_monitor_module = dfp_data_prep_loader.load(builder=builder)
     dfp_inference_module = builder.load_module(DFP_INFERENCE, "morpheus", "dfp_inference", dfp_inference_conf)
-    dfp_inference_monitor_module = builder.load_module(DFP_MONITOR,
-                                                       "morpheus",
-                                                       "dfp_inference_monitor",
-                                                       inference_monitor_module_conf)
+
+    dfp_inference_monitor_loader = MonitorLoaderFactory.get_instance("dfp_inference_monitor",
+                                                                     module_config=inference_monitor_module_conf)
+    dfp_inference_monitor_module = dfp_inference_monitor_loader.load(builder=builder)
     filter_detections_module = builder.load_module(FILTER_DETECTIONS,
                                                    "morpheus",
                                                    "filter_detections",
@@ -310,10 +312,10 @@ def dfp_inference_pipe(builder: mrc.Builder):
                                                dfp_post_proc_conf)
     serialize_module = builder.load_module(SERIALIZE, "morpheus", "serialize", serialize_conf)
     write_to_file_module = builder.load_module(WRITE_TO_FILE, "morpheus", "write_to_file", write_to_file_conf)
-    dfp_write_to_file_monitor_module = builder.load_module(DFP_MONITOR,
-                                                           "morpheus",
-                                                           "dfp_inference_write_to_file",
-                                                           write_to_file_monitor_module_conf)
+
+    dfp_write_to_file_monitor_loader = MonitorLoaderFactory.get_instance("dfp_inference_write_to_file_monitor",
+                                                                         module_config=write_to_fm_conf)
+    dfp_write_to_file_monitor_module = dfp_write_to_file_monitor_loader.load(builder=builder)
 
     # Make an edge between the modules.
     builder.make_edge(preproc_module.output_port("output"), dfp_rolling_window_module.input_port("input"))

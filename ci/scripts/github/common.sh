@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,7 +61,30 @@ export SCCACHE_REGION="us-east-2"
 export SCCACHE_IDLE_TIMEOUT=32768
 #export SCCACHE_LOG=debug
 
-export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_CUDA_ARCHITECTURES=60;70;75;80 -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF -DMORPHEUS_PYTHON_BUILD_STUBS=ON -DMORPHEUS_USE_CCACHE=ON"
+# Set the build flags
+export BUILD_DIR=${BUILD_DIR:-build}
+
+_FLAGS=()
+_FLAGS+=("-B" "${BUILD_DIR}")
+_FLAGS+=("-G" "Ninja")
+_FLAGS+=("-DCMAKE_MESSAGE_CONTEXT_SHOW=ON")
+_FLAGS+=("-DMORPHEUS_CUDA_ARCHITECTURES=RAPIDS")
+_FLAGS+=("-DMORPHEUS_USE_CONDA=ON")
+_FLAGS+=("-DMORPHEUS_USE_CCACHE=ON")
+_FLAGS+=("-DMORPHEUS_PYTHON_INPLACE_BUILD=OFF")
+_FLAGS+=("-DMORPHEUS_PYTHON_BUILD_STUBS=ON")
+_FLAGS+=("-DMORPHEUS_BUILD_BENCHMARKS=ON")
+_FLAGS+=("-DMORPHEUS_BUILD_EXAMPLES=ON")
+_FLAGS+=("-DMORPHEUS_BUILD_TESTS=ON")
+if [[ "${LOCAL_CI}" == "" ]]; then
+    _FLAGS+=("-DCCACHE_PROGRAM_PATH=$(which sccache)")
+fi
+export CMAKE_BUILD_ALL_FEATURES="${_FLAGS[@]}"
+unset _FLAGS
+
+if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
+    export CMAKE_BUILD_ALL_FEATURES="${CMAKE_BUILD_ALL_FEATURES} -DMORPHEUS_SUPPORT_DOCA=ON"
+fi
 
 export FETCH_STATUS=0
 
@@ -71,10 +94,15 @@ function update_conda_env() {
     # Deactivate the environment first before updating
     conda deactivate
 
-    rapids-logger "Checking for updates to conda env"
 
-    # Update the packages
-    rapids-mamba-retry env update -n morpheus --prune -q --file "$1"
+    if [[ "${SKIP_CONDA_ENV_UPDATE}" == "" ]]; then
+        rapids-logger "Checking for updates to conda env"
+
+
+        # Update the packages
+        # use conda instead of mamba due to bug: https://github.com/mamba-org/mamba/issues/3059
+        rapids-conda-retry env update -n morpheus --prune -q --file "$1" --solver=libmamba
+    fi
 
     # Finally, reactivate
     conda activate morpheus
@@ -107,9 +135,11 @@ function fetch_base_branch_gh_api() {
 
 function fetch_base_branch_local() {
     rapids-logger "Retrieving base branch from git"
-    git remote remove upstream
-    git remote add upstream ${GIT_UPSTREAM_URL}
-    git fetch upstream --tags
+    if [[ "${USE_HOST_GIT}" == "0" ]]; then
+        git remote add upstream ${GIT_UPSTREAM_URL}
+        git fetch upstream --tags
+    fi
+
     source ${MORPHEUS_ROOT}/ci/scripts/common.sh
     export BASE_BRANCH=$(get_base_branch)
     export CHANGE_TARGET="upstream/${BASE_BRANCH}"
@@ -141,6 +171,13 @@ function log_toolchain() {
     cmake --version
     ninja --version
     sccache --version
+}
+
+function log_sccache_stats() {
+    if [[ "${LOCAL_CI}" == "" ]]; then
+        rapids-logger "sccache usage for morpheus build:"
+        sccache --show-stats
+    fi
 }
 
 function upload_artifact() {

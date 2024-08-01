@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
 
 @click.command()
 @click.option("--debug/--no-debug", default=False)
-@click.option('--use_cpp', default=False)
+@click.option('--use_cpp', default=True)
 @click.option(
     "--num_threads",
     default=os.cpu_count(),
