@@ -14,6 +14,7 @@
 
 import logging
 import typing
+from datetime import timedelta
 
 import mrc
 
@@ -27,6 +28,8 @@ from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
+MAX_PKT_RECEIVE = 512 * 16
+
 
 @register_stage("from-doca-convert", modes=[PipelineModes.NLP])
 class DocaConvertStage(PreallocatorMixin, SinglePortStage):
@@ -37,11 +40,32 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
+    max_batch_delay_sec : `float`
+        Maximum amount of time to wait, in seconds, for additional incoming packets prior to constructing a cuDF
+        DataFrame.
+    max_batch_size : `int`
+        Maximum number of packets to attempt to combine into a single cuDF DataFrame. Must be greater than or equal to
+        `MAX_PKT_RECEIVE`.
+    buffer_channel_size : `int`, optional
+        The size of the internal buffer to store incoming packet data. If `None`, the config's `edge_buffer_size` will
+        be used.
     """
 
-    def __init__(self, c: Config):
+    def __init__(self,
+                 c: Config,
+                 max_batch_delay_sec: float = 0.5,
+                 max_batch_size: int = MAX_PKT_RECEIVE * 5,
+                 buffer_channel_size: int = None):
 
         super().__init__(c)
+
+        self._max_batch_delay = timedelta(seconds=max_batch_delay_sec)
+        self._buffer_channel_size = buffer_channel_size or c.edge_buffer_size
+
+        if max_batch_size < MAX_PKT_RECEIVE:
+            raise RuntimeError(f"max_batch_size ({max_batch_size}) must be greater than or equal to {MAX_PKT_RECEIVE}")
+
+        self._max_batch_size = max_batch_size
 
         # Attempt to import the C++ stage on creation
         try:
@@ -53,8 +77,6 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
             raise NotImplementedError(("The Morpheus DOCA components could not be imported. "
                                        "Ensure the DOCA components have been built and installed. Error message: ") +
                                       ex.msg) from ex
-
-        self._max_concurrent = 5
 
     @property
     def name(self) -> str:
@@ -77,8 +99,12 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            node = self.doca_convert_class(builder, self.unique_name)
-            node.launch_options.pe_count = self._max_concurrent
+            node = self.doca_convert_class(builder,
+                                           self.unique_name,
+                                           max_batch_delay=self._max_batch_delay,
+                                           max_batch_size=self._max_batch_size,
+                                           buffer_channel_size=self._buffer_channel_size)
+
             builder.make_edge(input_node, node)
             return node
 

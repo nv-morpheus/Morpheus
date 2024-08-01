@@ -18,10 +18,10 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <string>
 #include <type_traits>
-#include <vector>
+
+namespace morpheus::doca {
 
 uint32_t const PACKETS_PER_THREAD   = 16;
 uint32_t const THREADS_PER_BLOCK    = 512;
@@ -66,3 +66,5 @@ struct packets_info
     int32_t* next_proto_id_out;
     uint32_t* timestamp_out;
 };
+
+}  // namespace morpheus::doca

@@ -78,7 +78,7 @@ We can see the GPU's PCIe address is `cf:00.0`, and we can infer from the above 
 In case of UDP traffic, the sample will launch a simple pipeline with the DOCA Source Stage followed by a Monitor Stage to report number of received packets.
 
 ```
-python3 ./examples/doca/run_udp_raw.py --nic_addr 17:00.1 --gpu_addr ca:00.0 --traffic_type udp
+python ./examples/doca/run_udp_raw.py --nic_addr 17:00.1 --gpu_addr ca:00.0
 ```
 UDP traffic can be easily sent with nping to the interface where Morpheus is listening:
 ```
@@ -118,7 +118,7 @@ DOCA GPUNetIO rate: 100000 pkts [00:12, 10963.39 pkts/s]
 As the DOCA Source stage output packets in the new RawMessage format that not all the Morpheus stages may support, there is an additional stage named DOCA Convert Stage which transform the data RawMessage to the Messagemeta format.
 
 ```
-python3 ./examples/doca/run_udp_convert.py --nic_addr 17:00.1 --gpu_addr ca:00.0 --traffic_type udp
+python ./examples/doca/run_udp_convert.py --nic_addr 17:00.1 --gpu_addr ca:00.0
 ```
 
 ## Doca Sensitive Information Detection example for TCP traffic
@@ -126,7 +126,7 @@ python3 ./examples/doca/run_udp_convert.py --nic_addr 17:00.1 --gpu_addr ca:00.0
 The DOCA example is similar to the Sensitive Information Detection (SID) example in that it uses the `sid-minibert` model in conjunction with the `TritonInferenceStage` to detect sensitive information. The difference is that the sensitive information we will be detecting is obtained from a live TCP packet stream provided by a `DocaSourceStage`.
 To run the example from the Morpheus root directory and capture all TCP network traffic from the given NIC, use the following command and replace the `nic_addr` and `gpu_addr` arguments with your NIC and GPU PCIe addresses.
 ```
-# python examples/doca/run_tcp.py --nic_addr cc:00.1 --gpu_addr cf:00.0 --traffic_type tcp
+# python examples/doca/run_tcp.py --nic_addr cc:00.1 --gpu_addr cf:00.0
 ```
 ```
 ====Registering Pipeline====
@@ -146,7 +146,7 @@ DOCA GPUNetIO rate: 0 pkts [00:03, ? pkts/s]====Registering Pipeline Complete!==
 ====Starting Pipeline====[00:02, ? pkts/s]
 ====Pipeline Started====0:02, ? pkts/s]
 ====Building Segment: linear_segment_0====
-Added source: <from-doca-0; DocaSourceStage(nic_pci_address=cc:00.1, gpu_pci_address=cf:00.0)>
+Added source: <from-doca-0; DocaSourceStage(nic_pci_address=cc:00.1, gpu_pci_address=cf:00.0, traffic_type=tcp)>
   └─> morpheus.MessageMeta
 Added stage: <monitor-1; MonitorStage(description=DOCA GPUNetIO rate, smoothing=0.05, unit=pkts, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
