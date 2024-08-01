@@ -55,7 +55,7 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
                  c: Config,
                  max_batch_delay_sec: float = 0.5,
                  max_batch_size: int = MAX_PKT_RECEIVE * 5,
-                 buffer_channel_size: int | None = None):
+                 buffer_channel_size: int = None):
 
         super().__init__(c)
 
