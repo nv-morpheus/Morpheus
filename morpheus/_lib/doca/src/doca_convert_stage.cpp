@@ -47,6 +47,7 @@
 #include <cstdint>
 #include <exception>  // for exception_ptr
 #include <memory>
+#include <stdexcept>  // for invalid_argument
 #include <string>
 #include <thread>
 #include <utility>
@@ -151,14 +152,18 @@ std::unique_ptr<cudf::column> make_ip_col(morpheus::doca::PacketDataBuffer& pack
 
 namespace morpheus {
 
-DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_batch_delay, std::size_t max_batch_size) :
+DocaConvertStage::DocaConvertStage(std::chrono::milliseconds max_batch_delay,
+                                   std::size_t max_batch_size,
+                                   std::size_t buffer_channel_size) :
   base_t(base_t::op_factory_from_sub_fn(build())),
   m_max_batch_delay{max_batch_delay},
   m_max_batch_size{max_batch_size},
-  m_buffer_channel{std::make_shared<mrc::BufferedChannel<doca::PacketDataBuffer>>(max_batch_size*2)}
+  m_buffer_channel{std::make_shared<mrc::BufferedChannel<doca::PacketDataBuffer>>(buffer_channel_size)}
 {
-    DCHECK(m_max_batch_size >= doca::MAX_PKT_RECEIVE)
-        << "max_batch_size must be larger than the maximum number of packets in a RawPacketMessage";
+    if (m_max_batch_size < doca::MAX_PKT_RECEIVE)
+    {
+        throw std::invalid_argument("max_batch_size is less than the maximum number of packets in a RawPacketMessage");
+    }
 
     cudaStreamCreateWithFlags(&m_stream, cudaStreamNonBlocking);
     m_stream_cpp = rmm::cuda_stream_view(m_stream);
@@ -249,7 +254,6 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
         ttl_header_bytes        = 0;
         ttl_payload_bytes       = 0;
         ttl_payload_sizes_bytes = 0;
-        poll_end                = std::chrono::high_resolution_clock::now() + m_max_batch_delay;
     };
 
     while (!m_buffer_channel->is_channel_closed())
@@ -265,6 +269,7 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
                 if (ttl_packets + packet_buffer.m_num_packets > m_max_batch_size)
                 {
                     combine_and_send();
+                    poll_end = std::chrono::high_resolution_clock::now() + m_max_batch_delay;
                 }
 
                 ttl_packets += packet_buffer.m_num_packets;
@@ -280,6 +285,8 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
         {
             combine_and_send();
         }
+
+        poll_end = std::chrono::high_resolution_clock::now() + m_max_batch_delay;
     }
 }
 
@@ -310,9 +317,10 @@ std::shared_ptr<mrc::segment::Object<DocaConvertStage>> DocaConvertStageInterfac
     mrc::segment::Builder& builder,
     std::string const& name,
     std::chrono::milliseconds max_batch_delay,
-    std::size_t max_batch_size)
+    std::size_t max_batch_size,
+    std::size_t buffer_channel_size)
 {
-    return builder.construct_object<DocaConvertStage>(name, max_batch_delay, max_batch_size);
+    return builder.construct_object<DocaConvertStage>(name, max_batch_delay, max_batch_size, buffer_channel_size);
 }
 
 }  // namespace morpheus

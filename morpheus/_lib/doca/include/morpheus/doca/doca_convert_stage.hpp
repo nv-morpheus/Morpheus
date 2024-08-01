@@ -66,7 +66,8 @@ class MORPHEUS_EXPORT DocaConvertStage
      * @param max_batch_size : Maximum number of packets to attempt to combine into a single cuDF DataFrame.
      */
     DocaConvertStage(std::chrono::milliseconds max_batch_delay = DefaultMaxBatchDelay,
-                     std::size_t max_batch_size                = doca::MAX_PKT_CONVERT);
+                     std::size_t max_batch_size                = doca::MAX_PKT_CONVERT,
+                     std::size_t buffer_channel_size           = 1024);
     ~DocaConvertStage() override;
 
   private:
@@ -105,7 +106,8 @@ struct MORPHEUS_EXPORT DocaConvertStageInterfaceProxy
         mrc::segment::Builder& builder,
         std::string const& name,
         std::chrono::milliseconds max_batch_delay = DefaultMaxBatchDelay,
-        std::size_t max_batch_size                = doca::MAX_PKT_CONVERT);
+        std::size_t max_batch_size                = doca::MAX_PKT_CONVERT,
+        std::size_t buffer_channel_size           = 1024);
 };
 
 }  // namespace morpheus

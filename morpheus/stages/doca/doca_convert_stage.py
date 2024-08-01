@@ -46,13 +46,20 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
     max_batch_size : `int`
         Maximum number of packets to attempt to combine into a single cuDF DataFrame. Must be greater than or equal to
         `MAX_PKT_RECEIVE`.
+    buffer_channel_size : `int`, optional
+        The size of the internal buffer to store incoming packet data. If `None`, the config's `edge_buffer_size` will
+        be used.
     """
 
-    def __init__(self, c: Config, max_batch_delay_sec: float = 0.5, max_batch_size: int = MAX_PKT_RECEIVE * 5):
+    def __init__(self, c: Config,
+                 max_batch_delay_sec: float = 0.5,
+                 max_batch_size: int = MAX_PKT_RECEIVE * 5,
+                 buffer_channel_size: int | None = None):
 
         super().__init__(c)
 
         self._max_batch_delay = timedelta(seconds=max_batch_delay_sec)
+        self._buffer_channel_size = buffer_channel_size or c.edge_buffer_size
 
         if max_batch_size < MAX_PKT_RECEIVE:
             raise RuntimeError(f"max_batch_size ({max_batch_size}) must be greater than or equal to {MAX_PKT_RECEIVE}")
@@ -94,7 +101,8 @@ class DocaConvertStage(PreallocatorMixin, SinglePortStage):
             node = self.doca_convert_class(builder,
                                            self.unique_name,
                                            max_batch_delay=self._max_batch_delay,
-                                           max_batch_size=self._max_batch_size)
+                                           max_batch_size=self._max_batch_size,
+                                           buffer_channel_size = self._buffer_channel_size)
 
             builder.make_edge(input_node, node)
             return node

@@ -55,7 +55,8 @@ PYBIND11_MODULE(doca, m)
              py::arg("builder"),
              py::arg("name"),
              py::arg("max_batch_delay") = DefaultMaxBatchDelay,
-             py::arg("max_batch_size")  = doca::MAX_PKT_CONVERT);
+             py::arg("max_batch_size")  = doca::MAX_PKT_CONVERT,
+             py::arg("buffer_channel_size") = 1024);
 }
 
 }  // namespace morpheus
