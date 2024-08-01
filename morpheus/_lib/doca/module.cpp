@@ -15,11 +15,14 @@
  * limitations under the License.
  */
 
-#include "morpheus/doca/doca_stages.hpp"
+#include "morpheus/doca/common.hpp"  // for MAX_PKT_CONVERT
+#include "morpheus/doca/doca_convert_stage.hpp"
+#include "morpheus/doca/doca_source_stage.hpp"
 
 #include <mrc/segment/builder.hpp>  // IWYU pragma: keep
 #include <mrc/segment/object.hpp>
 #include <pybind11/attr.h>
+#include <pybind11/chrono.h>    // IWYU pragma: keep
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pymrc/utils.hpp>
 
@@ -48,7 +51,12 @@ PYBIND11_MODULE(doca, m)
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<DocaConvertStage>>>(
         m, "DocaConvertStage", py::multiple_inheritance())
-        .def(py::init<>(&DocaConvertStageInterfaceProxy::init), py::arg("builder"), py::arg("name"));
+        .def(py::init<>(&DocaConvertStageInterfaceProxy::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("max_batch_delay")     = DefaultMaxBatchDelay,
+             py::arg("max_batch_size")      = doca::MAX_PKT_CONVERT,
+             py::arg("buffer_channel_size") = 1024);
 }
 
 }  // namespace morpheus

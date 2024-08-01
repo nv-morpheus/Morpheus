@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "cuda.h"
+#include "morpheus/doca/doca_source_stage.hpp"
 
 #include "morpheus/doca/common.hpp"
 #include "morpheus/doca/doca_context.hpp"
@@ -24,11 +24,11 @@
 #include "morpheus/doca/doca_rx_pipe.hpp"
 #include "morpheus/doca/doca_rx_queue.hpp"
 #include "morpheus/doca/doca_semaphore.hpp"
-#include "morpheus/doca/doca_stages.hpp"
 #include "morpheus/messages/raw_packet.hpp"
 #include "morpheus/utilities/error.hpp"
 
 #include <boost/fiber/context.hpp>
+#include <cuda.h>
 #include <cuda_runtime.h>
 #include <doca_gpunetio.h>
 #include <doca_types.h>
@@ -40,6 +40,7 @@
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
+#include <array>
 #include <cstdint>
 #include <ctime>
 #include <functional>
@@ -50,10 +51,12 @@
 #include <utility>
 #include <vector>
 
-#define debug_get_timestamp(ts) clock_gettime(CLOCK_REALTIME, (ts))
+#define DEBUG_GET_TIMESTAMP(ts) clock_gettime(CLOCK_REALTIME, (ts))
 #define ENABLE_TIMERS 0
 
 namespace morpheus {
+
+using namespace morpheus::doca;
 
 DocaSourceStage::DocaSourceStage(std::string const& nic_pci_address,
                                  std::string const& gpu_pci_address,
@@ -94,23 +97,25 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         CUcontext cuContext;
 
         cudaSetDevice(0);  // Need to rely on GPU 0
-        cudaFree(0);
+        cudaFree(0);       // NOLINT(modernize-use-nullptr)
         cuDeviceGet(&cuDevice, 0);
         cuCtxCreate(&cuContext, CU_CTX_SCHED_SPIN | CU_CTX_MAP_HOST, cuDevice);
         cuCtxPushCurrent(cuContext);
 
         struct packets_info* pkt_ptr;
-        int sem_idx[MAX_QUEUE] = {0};
-        cudaStream_t rstream   = nullptr;
-        int thread_idx         = mrc::runnable::Context::get_runtime_context().rank();
+        std::array<int, MAX_QUEUE> sem_idx;
+        sem_idx.fill(0);
+
+        cudaStream_t rstream = nullptr;
+        int thread_idx       = mrc::runnable::Context::get_runtime_context().rank();
 
         // Add per queue
         auto pkt_addr_unique = std::make_unique<morpheus::doca::DocaMem<uintptr_t>>(
-            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
         auto pkt_hdr_size_unique = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(
-            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
         auto pkt_pld_size_unique = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(
-            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
+            m_context, MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, DOCA_GPU_MEM_TYPE_GPU);
 
         if (thread_idx > 1)
         {
@@ -128,10 +133,13 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         {
             for (int idxs = 0; idxs < MAX_SEM_X_QUEUE; idxs++)
             {
-                pkt_ptr               = static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(idxs));
-                pkt_ptr->pkt_addr     = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
-                pkt_ptr->pkt_hdr_size = pkt_hdr_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
-                pkt_ptr->pkt_pld_size = pkt_pld_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs);
+                pkt_ptr           = static_cast<struct packets_info*>(m_semaphore[queue_idx]->get_info_cpu(idxs));
+                pkt_ptr->pkt_addr = pkt_addr_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) +
+                                    (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
+                pkt_ptr->pkt_hdr_size = pkt_hdr_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) +
+                                        (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
+                pkt_ptr->pkt_pld_size = pkt_pld_size_unique->gpu_ptr() + (MAX_PKT_RECEIVE * idxs) +
+                                        (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * queue_idx);
             }
         }
 
@@ -162,7 +170,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                                                   m_semaphore[1]->gpu_ptr(),
                                                   sem_idx[0],
                                                   sem_idx[1],
-                                                  (m_traffic_type == DOCA_TRAFFIC_TYPE_TCP) ? true : false,
+                                                  (m_traffic_type == DOCA_TRAFFIC_TYPE_TCP),
                                                   exit_condition->gpu_ptr(),
                                                   rstream);
             cudaStreamSynchronize(rstream);
