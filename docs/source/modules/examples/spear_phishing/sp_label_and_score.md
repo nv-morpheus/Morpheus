@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Spear Phishing Email Scoring Module
 
-Module ID: label_and_score
-Module Namespace: morpheus_spear_phishing
+Module ID: `label_and_score`
+Module Namespace: `morpheus_spear_phishing`
 
 This module defines a setup for spear-phishing email scoring.
 
@@ -26,8 +26,8 @@ This module defines a setup for spear-phishing email scoring.
 
 | Parameter          | Type | Description                           | Example Value             | Default Value |
 |--------------------|------|---------------------------------------|---------------------------|---------------|
-| `scoring_config`   | dictionary | The scoring configuration             | {"method": "probability"} | `None`        |
-| `raise_on_failure` | boolean | If true, raise exceptions on failures | false                     | `false`       |
+| `scoring_config`   | dictionary | The scoring configuration             | `{"method": "probability"}` | `None`        |
+| `raise_on_failure` | boolean | If true, raise exceptions on failures | `false`                     | `false`       |
 
 ### Example JSON Configuration
 

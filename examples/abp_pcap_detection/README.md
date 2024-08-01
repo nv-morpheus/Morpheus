@@ -51,7 +51,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 ```
 
 ## ABP Detection Pipeline
-Use Morpheus to run the Anomalous Behavior Profiling Detection Pipeline with the pcap data. A pipeline has been configured in `run.py` with several command line options:
+Use Morpheus to run the Anomalous Behavior Profiling Detection Pipeline with the PCAP data. A pipeline has been configured in `run.py` with several command line options:
 
 From the root of the Morpheus repo, run:
 ```bash
@@ -79,8 +79,8 @@ Options:
                                   [x>=1]
   --model_name TEXT               The name of the model that is deployed on
                                   Tritonserver.
-  --iterative                     Iterative mode will emit dataframes one at a
-                                  time. Otherwise a list of dataframes is
+  --iterative                     Iterative mode will emit DataFrames one at a
+                                  time. Otherwise a list of DataFrames is
                                   emitted. Iterative mode is good for
                                   interleaving source stages.
   --server_url TEXT               Tritonserver url.  [required]

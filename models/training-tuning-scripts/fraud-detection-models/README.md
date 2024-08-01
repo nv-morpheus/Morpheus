@@ -60,6 +60,6 @@ python training.py --training-data $DATASET/training-data/fraud-detection-traini
          --model_dir models\
          --model-type HinSAGE
 ```
-This results is a trained models of HeteroRGCN/HinSAGE (model.pt) and Gradient boosting tree (xgb.pt), hyperparmeters at the `model` directory.
+This results is a trained models of HeteroRGCN/HinSAGE (model.pt) and Gradient boosting tree (xgb.pt), hyperparameters at the `model` directory.
 
-Note the `model.py` used for both training & inference script is a symbolink for the `../../../examples/gnn_fraud_detection_pipeline/stages/model.py`.
+Note the `model.py` used for both training & inference script is a symbolic link for the `../../../examples/gnn_fraud_detection_pipeline/stages/model.py`.
