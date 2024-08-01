@@ -238,7 +238,7 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
     std::size_t ttl_payload_sizes_bytes = 0;
     auto poll_end                       = std::chrono::high_resolution_clock::now() + m_max_batch_delay;
 
-    auto combind_and_send = [&]() {
+    auto combine_and_send = [&]() {
         auto combined_data = concat_packet_buffers(
             ttl_packets, ttl_header_bytes, ttl_payload_bytes, ttl_payload_sizes_bytes, std::move(packets));
         send_buffered_data(output, std::move(combined_data));
@@ -264,7 +264,7 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
                 // check if we will go over the m_max_batch_size
                 if (ttl_packets + packet_buffer.m_num_packets > m_max_batch_size)
                 {
-                    combind_and_send();
+                    combine_and_send();
                 }
 
                 ttl_packets += packet_buffer.m_num_packets;
@@ -278,7 +278,7 @@ void DocaConvertStage::buffer_reader(rxcpp::subscriber<source_type_t>& output)
         // if we got here that means our buffer poll timed out without hitting the max batch size, send what we have
         if (!packets.empty())
         {
-            combind_and_send();
+            combine_and_send();
         }
     }
 }
