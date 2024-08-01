@@ -75,7 +75,7 @@ Continue with the setup steps below once the host system is installed, configure
 
 ### Set up NGC API Key and Install NGC Registry CLI
 
-First, you will need to set up your NGC API Key to access all the Morpheus components, using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1).
+First, you will need to set up your NGC API Key to access all the Morpheus components, using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/ngc/gpu-cloud/ngc-private-registry-user-guide/index.html#generating-personal-api-key).
 
 Once you've created your API key, create an environment variable containing your API key for use by the commands used further in this document:
 
@@ -83,7 +83,7 @@ Once you've created your API key, create an environment variable containing your
 export API_KEY="<NGC_API_KEY>"
 ```
 
-Next, install and configure the NGC Registry CLI on your system using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1).
+Next, install and configure the NGC Registry CLI on your system using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/ngc/gpu-cloud/ngc-private-registry-user-guide/index.html#generating-personal-api-key).
 
 ### Create Namespace for Morpheus
 
@@ -221,7 +221,7 @@ kubectl -n $NAMESPACE exec -it deploy/mlflow -- bash
 (mlflow) root@mlflow-6d98:/mlflow#
 ```
 
-`Important`: When (mlflow) is present, commands are directly within the container.
+`Important`: When `(mlflow)` is present, commands are directly within the container.
 
 First let's examine the syntax of the commands we will be using to communicate with the MLflow Triton plugin before we start deploying models.
 Publish models to MLflow server is in the form of:
@@ -427,9 +427,9 @@ helm install --set ngc.apiKey="$API_KEY" \
 
 ### Run AutoEncoder Digital Fingerprinting Pipeline
 The following AutoEncoder pipeline example shows how to train and validate the AutoEncoder model and write the inference results to a specified location. Digital fingerprinting has also been referred to as **HAMMAH (Human as Machine <> Machine as Human)**.
-These use cases are currently implemented to detect user behavior changes that indicate a change from a human to a machine or a machine to a human, thus leaving a "digital fingerprint". The model is an ensemble of an autoencoder and fast fourier transform reconstruction.
+These use cases are currently implemented to detect user behavior changes that indicate a change from a human to a machine or a machine to a human, thus leaving a "digital fingerprint." The model is an ensemble of an autoencoder and fast Fourier transform reconstruction.
 
-Inference and training based on a userid (`user123`). The model is trained once and inference is conducted on the supplied input entries in the example pipeline below. The `--train_data_glob` parameter must be removed for continuous training.
+Inference and training based on a user ID (`user123`). The model is trained once and inference is conducted on the supplied input entries in the example pipeline below. The `--train_data_glob` parameter must be removed for continuous training.
 
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
@@ -620,7 +620,7 @@ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer
 > **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
 
 ### Run FIL Anomalous Behavior Profiling Pipeline
-The following Anomalous Behavior Profiling pipeline examples use a pre-trained FIL model to ingest and analyze NVIDIA System Management Interface (nvidia-smi) logs, like the example below, as input sample data to identify crypto mining activity on GPU devices.
+The following Anomalous Behavior Profiling pipeline examples use a pre-trained FIL model to ingest and analyze NVIDIA System Management Interface (`nvidia-smi`) logs, like the example below, as input sample data to identify cryptocurrency mining activity on GPU devices.
 
 ```json
 {"nvidia_smi_log.gpu.pci.tx_util": "0 KB/s", "nvidia_smi_log.gpu.pci.rx_util": "0 KB/s", "nvidia_smi_log.gpu.fb_memory_usage.used": "3980 MiB", "nvidia_smi_log.gpu.fb_memory_usage.free": "12180 MiB", "nvidia_smi_log.gpu.bar1_memory_usage.total": "16384 MiB", "nvidia_smi_log.gpu.bar1_memory_usage.used": "11 MiB", "nvidia_smi_log.gpu.bar1_memory_usage.free": "16373 MiB", "nvidia_smi_log.gpu.utilization.gpu_util": "0 %", "nvidia_smi_log.gpu.utilization.memory_util": "0 %", "nvidia_smi_log.gpu.temperature.gpu_temp": "61 C", "nvidia_smi_log.gpu.temperature.gpu_temp_max_threshold": "90 C", "nvidia_smi_log.gpu.temperature.gpu_temp_slow_threshold": "87 C", "nvidia_smi_log.gpu.temperature.gpu_temp_max_gpu_threshold": "83 C", "nvidia_smi_log.gpu.temperature.memory_temp": "57 C", "nvidia_smi_log.gpu.temperature.gpu_temp_max_mem_threshold": "85 C", "nvidia_smi_log.gpu.power_readings.power_draw": "61.77 W", "nvidia_smi_log.gpu.clocks.graphics_clock": "1530 MHz", "nvidia_smi_log.gpu.clocks.sm_clock": "1530 MHz", "nvidia_smi_log.gpu.clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.clocks.video_clock": "1372 MHz", "nvidia_smi_log.gpu.applications_clocks.graphics_clock": "1312 MHz", "nvidia_smi_log.gpu.applications_clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.default_applications_clocks.graphics_clock": "1312 MHz", "nvidia_smi_log.gpu.default_applications_clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.max_clocks.graphics_clock": "1530 MHz", "nvidia_smi_log.gpu.max_clocks.sm_clock": "1530 MHz", "nvidia_smi_log.gpu.max_clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.max_clocks.video_clock": "1372 MHz", "nvidia_smi_log.gpu.max_customer_boost_clocks.graphics_clock": "1530 MHz", "nvidia_smi_log.gpu.processes.process_info.0.process_name": "python", "nvidia_smi_log.gpu.processes.process_info.1.process_name": "tritonserver", "hostname": "ip-10-100-8-98", "timestamp": 1615542360.9566503}
@@ -794,7 +794,7 @@ This section lists solutions to problems you might encounter with Morpheus or fr
 - Models Unloaded After Reboot
   - When the pod is restarted, K8s will not automatically load the models. Since models are deployed to *ai-engine* in explicit mode using MLflow, we'd have to manually deploy them again using the [Model Deployment](#model-deployment) process.
 - AI Engine CPU Only Mode
-  - After a server restart, the ai-engine pod on k8s can start up before the GPU operator infrastructure is available, making it "think" there is no driver installed (i.e., CPU -only mode).
+  - After a server restart, the ai-engine pod on k8s can start up before the GPU operator infrastructure is available, making it "think" there is no driver installed (that is, CPU -only mode).
 - Improve Pipeline Message Processing Rate
   - Below settings need to be considered
     - Provide the workflow with the optimal number of threads (`—num threads`), as having more or fewer threads can have an impact on pipeline performance.
@@ -804,6 +804,6 @@ This section lists solutions to problems you might encounter with Morpheus or fr
   ```console
   1649207839.253|COMMITFAIL|rdkafka#consumer-2| [thrd:main]: Offset commit (manual) failed for 1/1 partition(s) in join-state wait-unassign-call: Broker: Unknown member: topic[0]@112071(Broker: Unknown member)
   ```
-  - Problem: If the standalone kafka cluster is receiving significant message throughput from the producer, this error may happen.
+  - Problem: If the standalone Kafka cluster is receiving significant message throughput from the producer, this error may happen.
 
   - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.

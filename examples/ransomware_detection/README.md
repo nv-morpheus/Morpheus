@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Example Ransomware Detection Morpheus Pipeline for AppShield Data
+# Example Ransomware Detection Morpheus Pipeline for App Shield Data
 
 Example of a Morpheus Pipeline using Triton Inference server.
 
@@ -36,10 +36,6 @@ Example:
 
 ```bash
 docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
-```
-##### Setup Env Variable
-```bash
-export MORPHEUS_ROOT=$(pwd)
 ```
 
 ##### Start Triton Inference Server Container

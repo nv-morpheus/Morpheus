@@ -60,3 +60,6 @@ ${MORPHEUS_ROOT}/ci/scripts/version_checks.sh
 
 rapids-logger "Runing C++ style checks"
 ${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh
+
+rapids-logger "Runing Documentation checks"
+${MORPHEUS_ROOT}/ci/scripts/documentation_checks.sh

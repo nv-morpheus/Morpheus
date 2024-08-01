@@ -17,7 +17,7 @@ limitations under the License.
 
 # Simple C++ Stage
 ## Building the Example
-The code for this guide can be found in the `examples/developer_guide/3_simple_cpp_stage` directory of the Morpheus repository. There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to cmake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+The code for this guide can be found in the `examples/developer_guide/3_simple_cpp_stage` directory of the Morpheus repository. There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to CMake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
 ```bash
 CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
 ```
@@ -34,7 +34,7 @@ pip install ./
 ## Overview
 Morpheus offers the choice of writing pipeline stages in either Python or C++. For many use cases, a Python stage is perfectly fine. However, in the event that a Python stage becomes a bottleneck for the pipeline, then writing a C++ implementation for the stage becomes advantageous. The C++ implementations of Morpheus stages and messages utilize the [pybind11](https://pybind11.readthedocs.io/en/stable/index.html) library to provide Python bindings.
 
-So far we have been defining our stages in Python, the option of defining a C++ implementation is only available to stages implemented as classes. Many of the stages included with Morpheus have both a Python and a C++ implementation, and Morpheus will use the C++ implementations by default. You can explicitly disable the use of C++ stage implementations by calling `morpheus.config.CppConfig.set_should_use_cpp(False)`:
+We have been defining our stages in Python up to this point, the option of defining a C++ implementation is only available to stages implemented as classes. Many of the stages included with Morpheus have both a Python and a C++ implementation, and Morpheus will use the C++ implementations by default. You can explicitly disable the use of C++ stage implementations by calling `morpheus.config.CppConfig.set_should_use_cpp(False)`:
 
 ```python
 from morpheus.config import CppConfig
@@ -54,20 +54,20 @@ def supports_cpp_node(self):
     return True
 ```
 
-C++ message object declarations can be found in the header files that are located in the `morpheus/_lib/include/morpheus/messages` directory. For example, the `MessageMeta` class declaration is located in `morpheus/_lib/include/morpheus/messages/meta.hpp`. Since this code is outside of the morpheus directory it would be included as:
+C++ message object declarations can be found in the header files that are located in the `morpheus/_lib/include/morpheus/messages` directory. For example, the `MessageMeta` class declaration is located in `morpheus/_lib/include/morpheus/messages/meta.hpp`. Since this code is outside of the `morpheus` directory it would be included as:
 
 ```cpp
 #include <morpheus/messages/meta.hpp>
 ```
 
-Morpheus C++ source stages inherit from MRC's `PythonSource` class:
+Morpheus C++ source stages inherit from the `PythonSource` class from MRC:
 
 ```cpp
 template <typename OutputT, typename ContextT = mrc::runnable::Context>
 class PythonSource  : ...
 ```
 
-The `OutputT` type will be the datatype emitted by this stage. In contrast, general stages and sinks must inherit from MRC's `PythonNode` class, which specifies both receive and emit types:
+The `OutputT` type will be the datatype emitted by this stage. In contrast, general stages and sinks must inherit from the `PythonNode` class from MRC, which specifies both receive and emit types:
 
 ```cpp
 template <typename InputT, typename OutputT, typename ContextT = mrc::runnable::Context>
@@ -134,7 +134,7 @@ std::function<rxcpp::subscription(rxcpp::observable<InputT>, rxcpp::subscriber<O
 
 This means that an MRC subscribe function accepts an `rxcpp::observable` of type `InputT` and `rxcpp::subscriber` of type `OutputT` and returns a subscription. In our case, both `InputT` and `OutputT` are `std::shared_ptr<MultiMessage>`.
 
-All Morpheus C++ stages receive an instance of an MRC Segment Builder and a name (Typically this is the Python class' `unique_name` property) when constructed from Python. Note that C++ stages don't receive an instance of the Morpheus config. Therefore, if there are any attributes in the config needed by the C++ class, it is the responsibility of the Python class to extract them and pass them in as parameters to the C++ class.
+All Morpheus C++ stages receive an instance of an MRC Segment Builder and a name (Typically this is the Python class' `unique_name` property) when constructed from Python. Note that C++ stages don't receive an instance of the Morpheus `Config` object. Therefore, if there are any attributes in the `Config` needed by the C++ class, it is the responsibility of the Python class to extract them and pass them in as parameters to the C++ class.
 
 We will also define an interface proxy object to keep the class definition separated from the Python interface. This isn't strictly required, but it is a convention used internally by Morpheus. Our proxy object will define a static method named `init` which is responsible for constructing a `PassThruStage` instance and returning it wrapped in a `shared_ptr`. There are many common Python types that pybind11 [automatically converts](https://pybind11.readthedocs.io/en/latest/advanced/cast/overview.html#conversion-table) to their associated C++ types. The MRC `Builder` is a C++ object with Python bindings. However there are other instances such as checking for values of `None` where the casting from Python to C++ types is not automatic. The proxy interface object fulfills this need and is used to help insulate Python bindings from internal implementation details.
 
@@ -219,7 +219,7 @@ PassThruStage::PassThruStage() :
 {}
 ```
 
-However, this doesn't illustrate well how to customize a stage. So we will be using the long form signature for our examples.
+However, this doesn't illustrate well how to customize a stage. For this reason, we will be using the long form signature for our examples.
 
 The `build_operator` method defines an observer which is subscribed to our input `rxcpp::observable`. The observer consists of three functions that are typically lambdas:  `on_next`, `on_error`, and `on_completed`. Typically, these three functions call the associated methods on the output subscriber.
 
@@ -237,7 +237,7 @@ PassThruStage::subscribe_fn_t PassThruStage::build_operator()
 
 Note the use of `std::move` in the `on_next` function. In Morpheus, our messages often contain both large payloads as well as Python objects where performing a copy necessitates acquiring the Python [Global Interpreter Lock (GIL)](https://docs.python.org/3.10/glossary.html#term-global-interpreter-lock). In either case, unnecessary copies can become a performance bottleneck, and much care is taken to limit the number of copies required for data to move through the pipeline.
 
-There are situations in which a C++ stage does need to interact with Python, and therefore acquiring the GIL is a requirement. This is typically accomplished using pybind11's [gil_scoped_acquire](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) RAII class inside of a code block. Conversely there are situations in which we want to ensure that we are not holding the GIL and in these situations pybind11's [gil_scoped_release](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) class can be used.
+There are situations in which a C++ stage does need to interact with Python, and therefore acquiring the GIL is a requirement. This is typically accomplished using pybind11's [`gil_scoped_acquire`](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) RAII class inside of a code block. Conversely there are situations in which we want to ensure that we are not holding the GIL and in these situations pybind11's [`gil_scoped_release`](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) class can be used.
 
 For stages it is important to ensure that the GIL is released before calling the output's `on_next` method. Consider the following `on_next` lambda function:
 

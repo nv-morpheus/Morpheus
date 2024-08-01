@@ -30,7 +30,7 @@ More advanced users, or those who are interested in using the latest pre-release
 - Volta architecture GPU or better
 - [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-0-download-archive)
 - [Docker](https://docs.docker.com/get-docker/)
-- [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+- [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation)
 - [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `23.06` or higher
 
 > **Note about Docker:**
@@ -57,7 +57,7 @@ More advanced users, or those who are interested in using the latest pre-release
 > Users who want to ensure they are running with the latest bug fixes should use a release image tag (`YY.MM-runtime`). Users who need to deploy a specific version into production should use a point release image tag (`vYY.MM.00-runtime`).
 
 ### Starting the Morpheus Container
-1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) is installed.
+1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation) is installed.
 1. Start the container downloaded from the previous section:
 ```bash
 docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:24.10-runtime bash
@@ -67,7 +67,7 @@ Note about some of the flags above:
 | Flag | Description |
 | ---- | ----------- |
 | `--runtime=nvidia` | Choose the NVIDIA docker runtime, this enables access to the GPU inside the container. This flag isn't needed if the `nvidia` runtime is already set as the default runtime for Docker. |
-| `--gpus=all` | Specify which GPUs the container has access to.  Alternately, a specific GPU could be chosen with `--gpus=<gpu-id>` |
+| `--gpus=all` | Specify which GPUs the container has access to. Alternately, a specific GPU could be chosen with `--gpus=<gpu-id>` |
 | `--net=host` | Most of the Morpheus pipelines utilize [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver), which will be running in another container. For simplicity we will give the container access to the host system's network, production deployments may opt for an explicit network configuration. |
 | `-v /var/run/docker.sock:/var/run/docker.sock` | Enables access to the Docker socket file from within the running container, this allows launching other Docker containers from within the Morpheus container. This flag is required for launching Triton with access to the included Morpheus models, users with their own models can omit this. |
 
@@ -101,10 +101,10 @@ scripts/fetch_data.py fetch <dataset> [<dataset>...]
 ```
 
 At time of writing the defined datasets are:
-* all - Metaset includes all others
+* all - Meta-set includes all others
 * datasets - Input files needed for many of the examples
 * docs - Graphics needed for documentation
-* examples - Data needed by scripts in the `examples` subdir
+* examples - Data needed by scripts in the `examples` directory
 * models - Morpheus models (largest dataset)
 * tests - Data used by unittests
 * validation - Subset of the models dataset needed by some unittests
@@ -173,7 +173,7 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
 
 This will launch Triton using the default network ports (8000 for HTTP, 8001 for GRPC, and 8002 for metrics), loading all of the examples models in the Morpheus repo.
 
-Note: The above command is useful for testing out Morpheus, however it does load several models into GPU memory, which at time of writing consumes roughly 2GB of GPU memory. Production users should consider only loading the specific model(s) they plan on using with the `--model-control-mode=explicit` and `--load-model` flags. For example to launch Triton only loading the `abp-nvsmi-xgb` model:
+Note: The above command is useful for testing out Morpheus, however it does load several models into GPU memory, which at time of writing consumes roughly 2GB of GPU memory. Production users should consider only loading the specific models they plan on using with the `--model-control-mode=explicit` and `--load-model` flags. For example to launch Triton only loading the `abp-nvsmi-xgb` model:
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
   nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10  \
@@ -352,8 +352,8 @@ Commands:
   deserialize     Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
   dropna          Drop null data entries from a DataFrame.
   filter          Filter message by a classification threshold.
-  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a dataframe. It normalizes nested json messages and arranges them
-                  into a dataframe by snapshot and source.
+  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a DataFrame. It normalizes nested json messages and arranges them
+                  into a DataFrame by snapshot and source.
   from-file       Load messages from a file.
   from-kafka      Load messages from a Kafka cluster.
   inf-identity    Perform inference for testing that performs a no-op.
@@ -384,7 +384,7 @@ Commands:
   delay            (Deprecated) Delay results for a certain duration.
   filter           Filter message by a classification threshold.
   from-azure       Source stage is used to load Azure Active Directory messages.
-  from-cloudtrail  Load messages from a Cloudtrail directory.
+  from-cloudtrail  Load messages from a CloudTrail directory.
   from-duo         Source stage is used to load Duo Authentication messages.
   inf-pytorch      Perform inference with PyTorch.
   inf-triton       Perform inference with Triton Inference Server.

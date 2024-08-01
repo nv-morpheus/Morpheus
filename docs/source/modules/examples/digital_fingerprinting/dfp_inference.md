@@ -23,9 +23,9 @@ This module function performs the inference process.
 
 | Parameter             | Type   | Description                                          | Example Value           | Default Value   |
 |-----------------------|--------|------------------------------------------------------|-------------------------|-----------------|
-| model_name_formatter  | string | Formatter for model names                            | "user_{username}_model" | `[Required]`    |
-| fallback_username     | string | Fallback user to use if no model is found for a user | "generic_user"          | `generic_user`  |
-| timestamp_column_name | string | Name of the timestamp column                         | "timestamp"             | `timestamp`     |
+| `model_name_formatter`  | string | Formatter for model names                            | `"user_{username}_model"` | `[Required]`    |
+| `fallback_username`     | string | Fallback user to use if no model is found for a user | `"generic_user"`          | `"generic_user"`  |
+| `timestamp_column_name` | string | Name of the timestamp column                         | `"timestamp"`             | `"timestamp"`     |
 
 ### Example JSON Configuration
 
@@ -36,11 +36,3 @@ This module function performs the inference process.
   "timestamp_column_name": "timestamp"
 }
 ```
-
-### Default Settings
-
-| Property | Value |
-| -------- | ----- |
-| fallback_username   | generic_user |
-| model_name_formatter   | None  |
-| timestamp_column_name   | timestamp  |

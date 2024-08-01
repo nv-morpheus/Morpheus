@@ -106,7 +106,7 @@ queried in the same manner:
 AutoComplete
 ------------
 
-The Morpheus CLI supports bash, fish, zsh, and powershell autocompletion. To set up autocomplete, it must first be
+The Morpheus CLI supports bash, fish, zsh, and PowerShell autocompletion. To set up autocomplete, it must first be
 installed. Morpheus comes with a tool to assist with this:
 
 .. code-block:: console

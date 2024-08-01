@@ -63,7 +63,7 @@ To launch Triton with one of the models in `triton-model-repo`, this entire repo
 docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD:/models --name tritonserver nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
 ```
 
-### Load `abp-nvsmi-xgb` Model with FIL Backend Triton
+### Load `abp-nvsmi-xgb` Model with FIL Back-end Triton
 
 ```bash
 docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD:/models --name tritonserver triton_fil tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb

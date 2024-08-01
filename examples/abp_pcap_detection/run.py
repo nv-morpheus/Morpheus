@@ -83,7 +83,7 @@ EX_DATA_DIR = os.path.join(CUR_DIR, "../data")
     "--iterative",
     is_flag=True,
     default=False,
-    help=("Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. "
+    help=("Iterative mode will emit DataFrames one at a time. Otherwise a list of DataFrames is emitted. "
           "Iterative mode is good for interleaving source stages."),
 )
 @click.option("--server_url", required=True, help="Tritonserver url.", default="localhost:8000")

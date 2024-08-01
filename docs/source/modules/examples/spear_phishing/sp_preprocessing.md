@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Spear Phishing Inference Pipeline Preprocessing Module
 
-Module ID: inference_pipeline_preproc
-Module Namespace: morpheus_spear_phishing
+Module ID: `inference_pipeline_preproc`
+Module Namespace: `morpheus_spear_phishing`
 
 This module defines a pre-processing setup for the spear phishing inference pipeline.
 
@@ -26,8 +26,8 @@ This module defines a pre-processing setup for the spear phishing inference pipe
 
 | Parameter          | Type | Description                                       | Example Value | Default Value |
 |--------------------|------|---------------------------------------------------|---------------|---------------|
-| `attach_uuid`      | boolean | If true, attach a unique identifier to each input | true          | `false`       |
-| `raise_on_failure` | boolean | If true, raise exceptions on failures             | false         | `false`       |
+| `attach_uuid`      | boolean | If true, attach a unique identifier to each input | `true`          | `false`       |
+| `raise_on_failure` | boolean | If true, raise exceptions on failures             | `false`         | `false`       |
 
 ### Example JSON Configuration
 

@@ -29,7 +29,7 @@ These examples illustrate how to use Morpheus to build a binary sequence classif
 
 ## Background
 
-Like any other Linux based machine, DGX's generate a vast amount of logs. Analysts spend hours trying to identify the root causes of each failure. There could be infinitely many types of root causes of the failures. Some patterns might help to narrow it down; however, regular expressions can only help to identify previously known patterns. Moreover, this creates another manual task of maintaining a search script.
+Like any other Linux based machine, DGX systems generate a vast amount of logs. Analysts spend hours trying to identify the root causes of each failure. There could be infinitely many types of root causes of the failures. Some patterns might help to narrow it down; however, regular expressions can only help to identify previously known patterns. Moreover, this creates another manual task of maintaining a search script.
 
 In this example, we demonstrate how using Morpheus can accelerate the analysis of the enormous amount of logs using machine learning. Another benefit of analyzing in a probabilistic way is that we can pin down previously undetected root causes. To achieve this, we will fine-tune a pre-trained BERT[^1] model with a classification layer using HuggingFace library.
 
@@ -39,7 +39,7 @@ Once the model is capable of identifying even the new root causes, it can also b
 
 ### The Dataset
 
-The dataset comprises kern.log files from multiple DGX's. Each line inside has been labelled as either 0 for ordinary or 1 for root cause by a script that uses some known patterns. We will be especially interested in lines that are marked as ordinary in the test set but predicted as a root cause as they may be new types of root causes of failures.
+The dataset comprises kern.log files from multiple DGX systems. Each line inside has been labelled as either 0 for ordinary or 1 for root cause by a script that uses some known patterns. We will be especially interested in lines that are marked as ordinary in the test set but predicted as a root cause as they may be new types of root causes of failures.
 
 ## Pipeline Architecture
 
