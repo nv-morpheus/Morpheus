@@ -458,7 +458,7 @@ class Pipeline():
                 self.build()
             except Exception:
                 logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
-                return
+                raise
 
         await self._start()
 
