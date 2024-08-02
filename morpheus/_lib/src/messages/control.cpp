@@ -269,6 +269,12 @@ std::shared_ptr<ControlMessage> ControlMessageProxy::create(py::dict& config)
     return std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config));
 }
 
+std::shared_ptr<ControlMessage> ControlMessageProxy::create(const pybind11::object& meta, py::dict& config)
+{
+    return std::make_shared<ControlMessage>(MessageMetaInterfaceProxy::init_python_meta(meta),
+                                            mrc::pymrc::cast_from_pyobject(config));
+}
+
 std::shared_ptr<ControlMessage> ControlMessageProxy::create(std::shared_ptr<ControlMessage> other)
 {
     return std::make_shared<ControlMessage>(*other);
