@@ -26,6 +26,7 @@ import cudf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -103,7 +104,10 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                  request_timeout_secs: int = 30,
                  lines: bool = False,
                  stop_after: int = 0,
-                 payload_to_df_fn: typing.Callable[[str, bool], cudf.DataFrame] = None):
+                 payload_to_df_fn: typing.Callable[[str, bool], cudf.DataFrame] = None,
+                 message_type: type[MessageMeta] | type[ControlMessage] = MessageMeta,
+                 task_type: str = None,
+                 request_to_task_payload_fn: typing.Callable[[str], dict] = None):
         super().__init__(config)
         self._bind_address = bind_address
         self._port = port
@@ -123,6 +127,16 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         self._lines = lines
         self._stop_after = stop_after
         self._payload_to_df_fn = payload_to_df_fn
+        self._message_type = message_type
+        self._task_type = task_type
+        self._request_to_task_payload_fn = request_to_task_payload_fn
+
+        if (self._message_type is MessageMeta):
+            if (self._task_type is not None or self._request_to_task_payload_fn is not None):
+                raise ValueError("Cannot specify `task_type` or `request_to_task_payload_fn` for non-control messages.")
+        elif (self._message_type is not ControlMessage):
+            raise ValueError(f"Invalid message type: {self._message_type}")
+
         self._http_server = None
 
         # These are only used when C++ mode is disabled
@@ -147,7 +161,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         return True
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MessageMeta)
+        schema.output_schema.set_type(self._message_type)
 
     def _parse_payload(self, payload: str) -> HttpParseResponse:
         try:
@@ -252,7 +266,13 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
 
                 if df is not None:
                     num_records = len(df)
-                    yield MessageMeta(df)
+                    msg_meta = MessageMeta(df)
+                    if self._message_type is ControlMessage:
+                        out_msg = ControlMessage(self._task_type, self._request_to_task_payload_fn(df))
+                    else:
+                        out_msg = msg_meta
+
+                    yield out_msg
                     self._records_emitted += num_records
 
                     if self._stop_after > 0 and self._records_emitted >= self._stop_after:
@@ -260,22 +280,34 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node() and self._payload_to_df_fn is None:
+            http_server_kwargs = {
+                "bind_address": self._bind_address,
+                "port": self._port,
+                "endpoint": self._endpoint,
+                "method": self._method.value,
+                "live_endpoint": self._live_endpoint,
+                "live_method": self._live_method.value,
+                "ready_endpoint": self._ready_endpoint,
+                "ready_method": self._ready_method.value,
+                "accept_status": self._accept_status.value,
+                "sleep_time": self._sleep_time,
+                "queue_timeout": self._queue_timeout,
+                "max_queue_size": self._max_queue_size,
+                "num_server_threads": self._num_server_threads,
+                "max_payload_size": self._max_payload_size_bytes,
+                "request_timeout": self._request_timeout_secs,
+                "lines": self._lines,
+                "stop_after": self._stop_after
+            }
+
             import morpheus._lib.stages as _stages
-            node = _stages.HttpServerSourceStage(builder,
-                                                 self.unique_name,
-                                                 bind_address=self._bind_address,
-                                                 port=self._port,
-                                                 endpoint=self._endpoint,
-                                                 method=self._method.value,
-                                                 accept_status=self._accept_status.value,
-                                                 sleep_time=self._sleep_time,
-                                                 queue_timeout=self._queue_timeout,
-                                                 max_queue_size=self._max_queue_size,
-                                                 num_server_threads=self._num_server_threads,
-                                                 max_payload_size=self._max_payload_size_bytes,
-                                                 request_timeout=self._request_timeout_secs,
-                                                 lines=self._lines,
-                                                 stop_after=self._stop_after)
+            if self._message_type is ControlMessage:
+                http_server_kwargs["task_type"] = self._task_type
+                server_class = _stages.HttpServerControlMessageSourceStage
+            else:
+                server_class = _stages.HttpServerMessageMetaSourceStage
+
+            node = server_class(builder, self.unique_name, **http_server_kwargs)
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())
 
