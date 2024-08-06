@@ -206,17 +206,17 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
         }
     };
 
-    payload_parse_fn_t live_parser = [this, accept_status, lines](const std::string& payload) {
+    payload_parse_fn_t live_parser = [this](const std::string& unused) {
         if (!m_server->is_running())
         {
             std::string error_msg = "Source server is not running";
             return std::make_tuple(500u, "text/plain", error_msg, nullptr);
         }
 
-        return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
+        return std::make_tuple(200u, "text/plain", std::string(), nullptr);
     };
 
-    payload_parse_fn_t ready_parser = [this, accept_status, lines](const std::string& payload) {
+    payload_parse_fn_t ready_parser = [this](const std::string& unused) {
         if (!m_server->is_running())
         {
             std::string error_msg = "Source server is not running";
@@ -225,7 +225,7 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
 
         if (m_queue_cnt < m_max_queue_size)
         {
-            return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
+            return std::make_tuple(200u, "text/plain", std::string(), nullptr);
         }
 
         std::string error_msg = "HTTP payload queue is full or unavailable to accept new values";
