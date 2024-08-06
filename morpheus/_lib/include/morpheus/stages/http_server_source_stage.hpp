@@ -238,9 +238,9 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
     };
 
     std::vector<HttpEndpoint> endpoints;
-    endpoints.emplace_back(parser, endpoint, method);
-    endpoints.emplace_back(live_parser, live_endpoint, live_method);
-    endpoints.emplace_back(ready_parser, ready_endpoint, ready_method);
+    endpoints.emplace_back(parser, std::move(endpoint), std::move(method));
+    endpoints.emplace_back(live_parser, std::move(live_endpoint), std::move(live_method));
+    endpoints.emplace_back(ready_parser, std::move(ready_endpoint), std::move(ready_method));
 
     m_server = std::make_unique<HttpServer>(
         std::move(endpoints), std::move(bind_address), port, num_server_threads, max_payload_size, request_timeout);
