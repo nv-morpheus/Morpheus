@@ -29,7 +29,7 @@ namespace morpheus {
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
                          TensorIndex stop,
-                         cm_task_t* task,
+                         control_message_task_t* task,
                          std::shared_ptr<MultiMessage>& windowed_message)
 {
     DCHECK_EQ(task, nullptr) << "Task is not supported for MultiMessage";
@@ -40,7 +40,7 @@ void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
                          TensorIndex stop,
-                         cm_task_t* task,
+                         control_message_task_t* task,
                          std::shared_ptr<ControlMessage>& windowed_message)
 {
     auto slidced_meta = std::make_shared<SlicedMessageMeta>(incoming_message, start, stop);
@@ -68,12 +68,12 @@ std::shared_ptr<mrc::segment::Object<DeserializeStage<ControlMessage>>> Deserial
     const pybind11::object& task_type,
     const pybind11::object& task_payload)
 {
-    std::unique_ptr<cm_task_t> task{nullptr};
+    std::unique_ptr<control_message_task_t> task{nullptr};
 
     if (!task_type.is_none() && !task_payload.is_none())
     {
-        task = std::make_unique<cm_task_t>(pybind11::cast<std::string>(task_type),
-                                           mrc::pymrc::cast_from_pyobject(task_payload));
+        task = std::make_unique<control_message_task_t>(pybind11::cast<std::string>(task_type),
+                                                        mrc::pymrc::cast_from_pyobject(task_payload));
     }
 
     auto stage = builder.construct_object<DeserializeStage<ControlMessage>>(
