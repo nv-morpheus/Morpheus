@@ -152,7 +152,8 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
     CHECK(boost::beast::http::int_to_status(accept_status) != boost::beast::http::status::unknown)
         << "Invalid HTTP status code: " << accept_status;
 
-    payload_parse_fn_t parser = [this, accept_status, lines](const std::string& payload) {
+    using request_t             = boost::beast::http::request<boost::beast::http::string_body>;
+    request_handler_fn_t parser = [this, accept_status, lines](const request_t& request) {
         // This function is called from one of the HTTPServer's worker threads, avoid performing any additional work
         // here beyond what is strictly nessary to return a valid response to the client. We parse the payload here,
         // that way we can return an appropriate error message if the payload is invalid however we stop avoid
@@ -161,7 +162,8 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
         std::unique_ptr<cudf::io::table_with_metadata> table{nullptr};
         try
         {
-            cudf::io::source_info source{payload.c_str(), payload.size()};
+            std::string body{request.body()};
+            cudf::io::source_info source{body.c_str(), body.size()};
             auto options = cudf::io::json_reader_options::builder(source).lines(lines);
             table        = std::make_unique<cudf::io::table_with_metadata>(cudf::io::read_json(options.build()));
         } catch (const std::exception& e)
@@ -211,7 +213,7 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
         }
     };
 
-    payload_parse_fn_t live_parser = [this](const std::string& unused) {
+    request_handler_fn_t live_parser = [this](const request_t& request) {
         if (!m_server->is_running())
         {
             std::string error_msg = "Source server is not running";
@@ -221,7 +223,7 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
         return std::make_tuple(200u, "text/plain", std::string(), nullptr);
     };
 
-    payload_parse_fn_t ready_parser = [this](const std::string& unused) {
+    request_handler_fn_t ready_parser = [this](const request_t& request) {
         if (!m_server->is_running())
         {
             std::string error_msg = "Source server is not running";

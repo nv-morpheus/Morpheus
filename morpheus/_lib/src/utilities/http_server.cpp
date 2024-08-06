@@ -379,7 +379,7 @@ std::shared_ptr<HttpEndpoint> HttpEndpointInterfaceProxy::init(pybind11::functio
                                std::move(cb_fn));
     };
 
-    return std::make_shared<HttpEndpoint>(std::move(payload_parse_fn), url, method);
+    return std::make_shared<HttpEndpoint>(std::move(payload_parse_fn), std::move(url), method);
 }
 
 /****** HttpServerInterfaceProxy *************************/
@@ -458,12 +458,12 @@ HttpEndpoint::HttpEndpoint(std::shared_ptr<request_handler_fn_t>&& request_handl
     }
 }
 
-HttpEndpoint::HttpEndpoint(request_handler_fn_t request_handler_fn, std::string url, std::string method) :
+HttpEndpoint::HttpEndpoint(request_handler_fn_t request_handler_fn, std::string&& url, const std::string& method) :
   HttpEndpoint{
       std::move(std::make_shared<request_handler_fn_t>(std::move(request_handler_fn))), nullptr, std::move(url), method}
 {}
 
-HttpEndpoint::HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url, std::string method) :
+HttpEndpoint::HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string&& url, const std::string& method) :
   HttpEndpoint{
       nullptr, std::move(std::make_shared<payload_parse_fn_t>(std::move(payload_parse_fn))), std::move(url), method}
 {}
