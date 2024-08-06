@@ -47,13 +47,15 @@
 #include <string>     // for string & to_string
 #include <thread>     // for std::this_thread::sleep_for
 #include <tuple>      // for make_tuple
-#include <utility>    // for std::move
+#include <utility>    // for std::move & pair
 #include <vector>     // for vector
 // IWYU thinks we're using thread::operator<<
 // IWYU pragma: no_include <thread>
 
 namespace morpheus {
-using table_t         = std::unique_ptr<cudf::io::table_with_metadata>;
+using table_with_http_fields_t = std::pair<cudf::io::table_with_metadata, morpheus::utilities::json_t>;
+using table_t                  = std::unique_ptr<table_with_http_fields_t>;
+
 using request_queue_t = boost::fibers::buffered_channel<table_t>;
 
 class SourceStageStopAfter : public std::exception
@@ -159,13 +161,23 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
         // that way we can return an appropriate error message if the payload is invalid however we stop avoid
         // constructing a MessageMeta object since that would require grabbing the Python GIL, instead we push the
         // libcudf table to the queue and let the subscriber handle the conversion to MessageMeta.
-        std::unique_ptr<cudf::io::table_with_metadata> table{nullptr};
+        table_t table{nullptr};
+
+        std::cerr << "Received live request" << std::endl;
+        for (const auto& field : request)
+        {
+            std::cerr << "\t" << field.name_string() << ": " << field.value() << std::endl;
+        }
+        std::cerr << "\n\n" << std::endl;
+
         try
         {
             std::string body{request.body()};
             cudf::io::source_info source{body.c_str(), body.size()};
-            auto options = cudf::io::json_reader_options::builder(source).lines(lines);
-            table        = std::make_unique<cudf::io::table_with_metadata>(cudf::io::read_json(options.build()));
+            auto options    = cudf::io::json_reader_options::builder(source).lines(lines);
+            auto cudf_table = cudf::io::read_json(options.build());
+            morpheus::utilities::json_t http_fields{};
+            table = std::make_unique<table_with_http_fields_t>(std::move(cudf_table), std::move(http_fields));
         } catch (const std::exception& e)
         {
             std::string error_msg = "Error occurred converting HTTP payload to Dataframe";
@@ -289,7 +301,7 @@ void HttpServerSourceStage<OutputT>::source_generator(
             DCHECK_NOTNULL(table_ptr);
             try
             {
-                auto message     = MessageMeta::create_from_cpp(std::move(*table_ptr), 0);
+                auto message     = MessageMeta::create_from_cpp(std::move(table_ptr->first), 0);
                 auto num_records = message->count();
 
                 // When OutputT is MessageMeta, we just swap the pointers
