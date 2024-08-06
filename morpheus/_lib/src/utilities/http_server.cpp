@@ -132,7 +132,7 @@ class Session : public std::enable_shared_from_this<Session>
                 std::tuple<unsigned, std::string, std::string, morpheus::on_complete_cb_fn_t> parse_status;
                 if (endpoint.m_requet_handler != nullptr)
                 {
-                    parse_status = (*endpoint.m_requet_handler)(request);
+                    parse_status = (*endpoint.m_requet_handler)(m_stream.socket().remote_endpoint(), request);
                 }
                 else
                 {

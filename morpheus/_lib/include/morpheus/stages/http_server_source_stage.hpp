@@ -154,8 +154,8 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
     CHECK(boost::beast::http::int_to_status(accept_status) != boost::beast::http::status::unknown)
         << "Invalid HTTP status code: " << accept_status;
 
-    using request_t             = boost::beast::http::request<boost::beast::http::string_body>;
-    request_handler_fn_t parser = [this, accept_status, lines](const request_t& request) {
+    request_handler_fn_t parser = [this, accept_status, lines](const tcp_endpoint_t& tcp_endpoint,
+                                                               const request_t& request) {
         // This function is called from one of the HTTPServer's worker threads, avoid performing any additional work
         // here beyond what is strictly nessary to return a valid response to the client. We parse the payload here,
         // that way we can return an appropriate error message if the payload is invalid however we stop avoid
@@ -163,20 +163,29 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
         // libcudf table to the queue and let the subscriber handle the conversion to MessageMeta.
         table_t table{nullptr};
 
-        std::cerr << "Received live request" << std::endl;
-        for (const auto& field : request)
-        {
-            std::cerr << "\t" << field.name_string() << ": " << field.value() << std::endl;
-        }
-        std::cerr << "\n\n" << std::endl;
-
         try
         {
             std::string body{request.body()};
             cudf::io::source_info source{body.c_str(), body.size()};
             auto options    = cudf::io::json_reader_options::builder(source).lines(lines);
             auto cudf_table = cudf::io::read_json(options.build());
-            morpheus::utilities::json_t http_fields{};
+
+            // method, endpoint and accept_status should always match the constructor arguments of the source, but we
+            // include them with the metadata in the event of a multi-source stage
+            morpheus::utilities::json_t http_fields{
+                {"method", request.method_string()},
+                {"endpoint", request.target()},
+                {"remote_address", tcp_endpoint.address().to_string()},
+                {"remote_port", tcp_endpoint.port()},
+                // this request this might not be accepted, but in that event this won't be emitted
+                {"accept_status", accept_status},
+            };
+
+            for (const auto& field : request)
+            {
+                http_fields[field.name_string()] = field.value();
+            }
+
             table = std::make_unique<table_with_http_fields_t>(std::move(cudf_table), std::move(http_fields));
         } catch (const std::exception& e)
         {
@@ -225,7 +234,7 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
         }
     };
 
-    request_handler_fn_t live_parser = [this](const request_t& request) {
+    request_handler_fn_t live_parser = [this](const tcp_endpoint_t& tcp_endpoint, const request_t& request) {
         if (!m_server->is_running())
         {
             std::string error_msg = "Source server is not running";
@@ -235,7 +244,7 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
         return std::make_tuple(200u, "text/plain", std::string(), nullptr);
     };
 
-    request_handler_fn_t ready_parser = [this](const request_t& request) {
+    request_handler_fn_t ready_parser = [this](const tcp_endpoint_t& tcp_endpoint, const request_t& request) {
         if (!m_server->is_running())
         {
             std::string error_msg = "Source server is not running";
@@ -301,6 +310,7 @@ void HttpServerSourceStage<OutputT>::source_generator(
             DCHECK_NOTNULL(table_ptr);
             try
             {
+                auto http_fields = table_ptr->second;
                 auto message     = MessageMeta::create_from_cpp(std::move(table_ptr->first), 0);
                 auto num_records = message->count();
 

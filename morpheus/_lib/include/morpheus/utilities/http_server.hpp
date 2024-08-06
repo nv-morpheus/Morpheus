@@ -69,10 +69,12 @@ using parse_status_t = std::tuple<unsigned /*http status code*/,
  * Refer to https://www.boost.org/doc/libs/1_74_0/libs/system/doc/html/system.html#ref_class_error_code for more
  * information regarding `boost::system::error_code`.
  */
-using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* post body */)>;
+using payload_parse_fn_t = std::function<parse_status_t(const std::string& body)>;
 
+using tcp_endpoint_t = boost::asio::ip::tcp::endpoint;  // Note this is different than the http endpoint
+using request_t      = boost::beast::http::request<boost::beast::http::string_body>;
 using request_handler_fn_t =
-    std::function<parse_status_t(const boost::beast::http::request<boost::beast::http::string_body>& request)>;
+    std::function<parse_status_t(const tcp_endpoint_t& tcp_endpoint, const request_t& request)>;
 
 constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
 
