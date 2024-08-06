@@ -63,10 +63,12 @@ class SourceStageStopAfter : public std::exception
 
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          control_message_task_t* task,
+                         morpheus::utilities::json_t&& http_fields,
                          std::shared_ptr<MessageMeta>& out_message);
 
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          control_message_task_t* task,
+                         morpheus::utilities::json_t&& http_fields,
                          std::shared_ptr<ControlMessage>& out_message);
 
 /****** HttpServerSourceStage *************************************/
@@ -310,13 +312,12 @@ void HttpServerSourceStage<OutputT>::source_generator(
             DCHECK_NOTNULL(table_ptr);
             try
             {
-                auto http_fields = table_ptr->second;
                 auto message     = MessageMeta::create_from_cpp(std::move(table_ptr->first), 0);
                 auto num_records = message->count();
 
                 // When OutputT is MessageMeta, we just swap the pointers
                 std::shared_ptr<OutputT> out_message{nullptr};
-                make_output_message(message, m_task.get(), out_message);
+                make_output_message(message, m_task.get(), std::move(table_ptr->second), out_message);
 
                 subscriber.on_next(std::move(out_message));
                 m_records_emitted += num_records;

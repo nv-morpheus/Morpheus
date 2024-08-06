@@ -37,6 +37,7 @@ namespace morpheus {
 
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          control_message_task_t* task,
+                         morpheus::utilities::json_t&& http_fields,
                          std::shared_ptr<MessageMeta>& out_message)
 {
     DCHECK_EQ(task, nullptr) << "Tasks are not supported for MessageMeta";
@@ -45,10 +46,11 @@ void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
 
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          control_message_task_t* task,
+                         morpheus::utilities::json_t&& http_fields,
                          std::shared_ptr<ControlMessage>& out_message)
 {
     // TODO fill in metadata
-    utilities::json_t cm_config = {{"metadata", utilities::json_t::object()}};
+    utilities::json_t cm_config = {{"metadata", {"http_fields", http_fields}}};
     auto cm_msg                 = std::make_shared<ControlMessage>(incoming_message, cm_config);
     if (task)
     {
