@@ -153,6 +153,11 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
         << "Invalid HTTP status code: " << accept_status;
 
     payload_parse_fn_t parser = [this, accept_status, lines](const std::string& payload) {
+        // This function is called from one of the HTTPServer's worker threads, avoid performing any additional work
+        // here beyond what is strictly nessary to return a valid response to the client. We parse the payload here,
+        // that way we can return an appropriate error message if the payload is invalid however we stop avoid
+        // constructing a MessageMeta object since that would require grabbing the Python GIL, instead we push the
+        // libcudf table to the queue and let the subscriber handle the conversion to MessageMeta.
         std::unique_ptr<cudf::io::table_with_metadata> table{nullptr};
         try
         {
