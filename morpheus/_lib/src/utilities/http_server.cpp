@@ -35,15 +35,14 @@
 #include <boost/beast/core/flat_buffer.hpp>   // for flat_buffer
 #include <boost/beast/core/rate_policy.hpp>
 #include <boost/beast/core/tcp_stream.hpp>  // for tcp_stream
-#include <boost/beast/http.hpp>             // for read_async, request, response, verb, write_async
+#include <boost/beast/http.hpp>             // for read_async, response, write_async
 #include <boost/beast/http/error.hpp>       // for error, error::end_of_stream
 #include <boost/beast/http/field.hpp>       // for field, field::content_type
 #include <boost/beast/http/fields.hpp>
-#include <boost/beast/http/message.hpp>      // for message, response, request
-#include <boost/beast/http/parser.hpp>       // for request_parser, parser
-#include <boost/beast/http/status.hpp>       // for status, status::not_found
-#include <boost/beast/http/string_body.hpp>  // for string_body, basic_string_body, basic_string_body<>::value_type
-#include <boost/beast/http/verb.hpp>         // for verb, operator<<, verb::unknown
+#include <boost/beast/http/message.hpp>  // for message, response, request
+#include <boost/beast/http/parser.hpp>   // for request_parser, parser
+#include <boost/beast/http/status.hpp>   // for status, status::not_found
+#include <boost/beast/http/verb.hpp>     // for verb, operator<<, verb::unknown
 #include <boost/core/detail/string_view.hpp>
 #include <glog/logging.h>  // for CHECK and LOG
 #include <pybind11/gil.h>
@@ -122,7 +121,7 @@ class Session : public std::enable_shared_from_this<Session>
     void handle_request(http::request<http::string_body>&& request)
     {
         DLOG(INFO) << "Received request: " << request.method() << " : " << request.target();
-        m_response = std::make_unique<http::response<http::string_body>>();
+        m_response         = std::make_unique<http::response<http::string_body>>();
         bool valid_request = false;
 
         for (const auto& endpoint : m_endpoints)
@@ -130,8 +129,16 @@ class Session : public std::enable_shared_from_this<Session>
             if (request.target() == endpoint.m_url && request.method() == endpoint.m_method)
             {
                 valid_request = true;
-                std::string body{request.body()};
-                auto parse_status = (*endpoint.m_parser)(body);
+                std::tuple<unsigned, std::string, std::string, morpheus::on_complete_cb_fn_t> parse_status;
+                if (endpoint.m_requet_handler != nullptr)
+                {
+                    parse_status = (*endpoint.m_requet_handler)(request);
+                }
+                else
+                {
+                    std::string body{request.body()};
+                    parse_status = (*endpoint.m_parser)(body);
+                }
 
                 m_response->result(std::get<0>(parse_status));
                 m_response->set(http::field::content_type, std::get<1>(parse_status));
@@ -425,11 +432,21 @@ void HttpServerInterfaceProxy::exit(HttpServer& self,
     self.stop();
 }
 
-HttpEndpoint::HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url, std::string method) :
-  m_parser{std::make_shared<payload_parse_fn_t>(std::move(payload_parse_fn))},
+HttpEndpoint::HttpEndpoint(std::shared_ptr<request_handler_fn_t>&& request_handler_fn,
+                           std::shared_ptr<payload_parse_fn_t>&& payload_parse_fn,
+                           std::string&& url,
+                           const std::string& method) :
+  m_requet_handler{std::move(request_handler_fn)},
+  m_parser{std::move(payload_parse_fn)},
   m_url{std::move(url)},
   m_method{http::string_to_verb(method)}
 {
+    DCHECK(m_requet_handler != nullptr || m_parser != nullptr)
+        << "Either request_handler_fn or payload_parse_fn must be provided";
+
+    DCHECK(m_requet_handler == nullptr || m_parser == nullptr)
+        << "Only one of request_handler_fn or payload_parse_fn can be provided";
+
     if (m_method == http::verb::unknown)
     {
         throw std::runtime_error("Invalid method: " + method);
@@ -440,6 +457,16 @@ HttpEndpoint::HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url,
         m_url.insert(m_url.begin(), '/');
     }
 }
+
+HttpEndpoint::HttpEndpoint(request_handler_fn_t request_handler_fn, std::string url, std::string method) :
+  HttpEndpoint{
+      std::move(std::make_shared<request_handler_fn_t>(std::move(request_handler_fn))), nullptr, std::move(url), method}
+{}
+
+HttpEndpoint::HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url, std::string method) :
+  HttpEndpoint{
+      nullptr, std::move(std::make_shared<payload_parse_fn_t>(std::move(payload_parse_fn))), std::move(url), method}
+{}
 
 Listener::Listener(net::io_context& io_context,
                    const std::string& bind_address,

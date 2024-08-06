@@ -19,10 +19,12 @@
 
 #include "morpheus/export.h"  // for exporting symbols
 
-#include <boost/asio/io_context.hpp>   // for io_context
-#include <boost/asio/ip/tcp.hpp>       // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
-#include <boost/beast/core/error.hpp>  // for error_code
-#include <boost/beast/http/verb.hpp>   // for verb
+#include <boost/asio/io_context.hpp>         // for io_context
+#include <boost/asio/ip/tcp.hpp>             // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
+#include <boost/beast/core/error.hpp>        // for error_code
+#include <boost/beast/http/message.hpp>      // for request
+#include <boost/beast/http/string_body.hpp>  // for string_body
+#include <boost/beast/http/verb.hpp>         // for verb
 #include <boost/system/detail/error_code.hpp>
 #include <pybind11/pytypes.h>  // for pybind11::function
 
@@ -69,6 +71,9 @@ using parse_status_t = std::tuple<unsigned /*http status code*/,
  */
 using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* post body */)>;
 
+using request_handler_fn_t =
+    std::function<parse_status_t(const boost::beast::http::request<boost::beast::http::string_body>& request)>;
+
 constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
 
 /**
@@ -78,11 +83,19 @@ constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
  */
 struct MORPHEUS_EXPORT HttpEndpoint
 {
+    HttpEndpoint(request_handler_fn_t request_handler_fn, std::string url, std::string method);
     HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url, std::string method);
 
+    std::shared_ptr<request_handler_fn_t> m_requet_handler;
     std::shared_ptr<payload_parse_fn_t> m_parser;
     std::string m_url;
     boost::beast::http::verb m_method;
+
+  private:
+    HttpEndpoint(std::shared_ptr<request_handler_fn_t>&& request_handler_fn,
+                 std::shared_ptr<payload_parse_fn_t>&& payload_parse_fn,
+                 std::string&& url,
+                 const std::string& method);
 };
 
 /**
