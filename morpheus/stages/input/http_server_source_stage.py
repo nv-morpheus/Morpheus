@@ -42,7 +42,8 @@ SUPPORTED_METHODS = (HTTPMethod.POST, HTTPMethod.PUT)
 HEALTH_SUPPORTED_METHODS = (HTTPMethod.GET, HTTPMethod.POST)
 
 
-@register_stage("from-http")
+# TODO: allow these to be string values
+@register_stage("from-http", ignore_args=["message_type", "task_type", "task_payload"])
 class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
