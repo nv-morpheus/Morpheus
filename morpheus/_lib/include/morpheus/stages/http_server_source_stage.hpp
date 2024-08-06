@@ -21,6 +21,7 @@
 #include "morpheus/messages/control.hpp"       // for ControlMessage
 #include "morpheus/messages/meta.hpp"          // for MessageMeta
 #include "morpheus/utilities/http_server.hpp"  // for HttpServer
+#include "morpheus/utilities/json_types.hpp"   // for control_message_task_t
 
 #include <boost/beast/http/status.hpp>        // for int_to_status, status
 #include <boost/fiber/buffered_channel.hpp>   // for buffered_channel
@@ -59,11 +60,11 @@ class SourceStageStopAfter : public std::exception
 {};
 
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
-                         std::string* task_type,
+                         control_message_task_t* task,
                          std::shared_ptr<MessageMeta>& out_message);
 
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
-                         std::string* task_type,
+                         control_message_task_t* task,
                          std::shared_ptr<ControlMessage>& out_message);
 
 /****** HttpServerSourceStage *************************************/
@@ -81,24 +82,24 @@ class MORPHEUS_EXPORT HttpServerSourceStage : public mrc::pymrc::PythonSource<st
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
-    HttpServerSourceStage(std::string bind_address               = "127.0.0.1",
-                          unsigned short port                    = 8080,
-                          std::string endpoint                   = "/message",
-                          std::string live_endpoint              = "/live",
-                          std::string ready_endpoint             = "/ready",
-                          std::string method                     = "POST",
-                          std::string live_method                = "GET",
-                          std::string ready_method               = "GET",
-                          unsigned accept_status                 = 201,
-                          float sleep_time                       = 0.1f,
-                          long queue_timeout                     = 5,
-                          std::size_t max_queue_size             = 1024,
-                          unsigned short num_server_threads      = 1,
-                          std::size_t max_payload_size           = DefaultMaxPayloadSize,
-                          std::chrono::seconds request_timeout   = std::chrono::seconds(30),
-                          bool lines                             = false,
-                          std::size_t stop_after                 = 0,
-                          std::unique_ptr<std::string> task_type = nullptr);
+    HttpServerSourceStage(std::string bind_address                     = "127.0.0.1",
+                          unsigned short port                          = 8080,
+                          std::string endpoint                         = "/message",
+                          std::string live_endpoint                    = "/live",
+                          std::string ready_endpoint                   = "/ready",
+                          std::string method                           = "POST",
+                          std::string live_method                      = "GET",
+                          std::string ready_method                     = "GET",
+                          unsigned accept_status                       = 201,
+                          float sleep_time                             = 0.1f,
+                          long queue_timeout                           = 5,
+                          std::size_t max_queue_size                   = 1024,
+                          unsigned short num_server_threads            = 1,
+                          std::size_t max_payload_size                 = DefaultMaxPayloadSize,
+                          std::chrono::seconds request_timeout         = std::chrono::seconds(30),
+                          bool lines                                   = false,
+                          std::size_t stop_after                       = 0,
+                          std::unique_ptr<control_message_task_t> task = nullptr);
     ~HttpServerSourceStage() override
     {
         close();
@@ -118,7 +119,7 @@ class MORPHEUS_EXPORT HttpServerSourceStage : public mrc::pymrc::PythonSource<st
     std::size_t m_max_queue_size;
     std::size_t m_stop_after;
     std::size_t m_records_emitted{0};
-    std::unique_ptr<std::string> m_task_type{nullptr};
+    std::unique_ptr<control_message_task_t> m_task{nullptr};
 };
 
 template <typename OutputT>
@@ -139,14 +140,14 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
                                                       std::chrono::seconds request_timeout,
                                                       bool lines,
                                                       std::size_t stop_after,
-                                                      std::unique_ptr<std::string> task_type) :
+                                                      std::unique_ptr<control_message_task_t> task) :
   base_t(build()),
   m_max_queue_size{max_queue_size},
   m_sleep_time{std::chrono::milliseconds(static_cast<long int>(sleep_time))},
   m_queue_timeout{queue_timeout},
   m_queue{max_queue_size},
   m_stop_after{stop_after},
-  m_task_type{std::move(task_type)}
+  m_task{std::move(task)}
 {
     CHECK(boost::beast::http::int_to_status(accept_status) != boost::beast::http::status::unknown)
         << "Invalid HTTP status code: " << accept_status;
@@ -286,7 +287,7 @@ void HttpServerSourceStage<OutputT>::source_generator(
 
                 // When OutputT is MessageMeta, we just swap the pointers
                 std::shared_ptr<OutputT> out_message{nullptr};
-                make_output_message(message, m_task_type.get(), out_message);
+                make_output_message(message, m_task.get(), out_message);
 
                 subscriber.on_next(std::move(out_message));
                 m_records_emitted += num_records;
@@ -382,7 +383,8 @@ struct MORPHEUS_EXPORT HttpServerSourceStageInterfaceProxy
         int64_t request_timeout,
         bool lines,
         std::size_t stop_after,
-        const pybind11::object& task_type);
+        const pybind11::object& task_type,
+        const pybind11::object& task_payload);
 };
 /** @} */  // end of group
 }  // namespace morpheus

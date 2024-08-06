@@ -79,6 +79,12 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         expect each request to be a JSON object per line.
     stop_after : int, default 0
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
+    task_type : str, default = None
+        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
+        is set to `ControlMessage`. If not `None`, `task_payload` must also be specified.
+    task_payload : dict, default = None
+        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
+        is set to `ControlMessage`. If not `None`, `task_type` must also be specified.
     payload_to_df_fn : callable, default None
         A callable that takes the HTTP payload string as the first argument and the `lines` parameter is passed in as
         the second argument and returns a cudf.DataFrame. When supplied, the C++ implementation of this stage is
@@ -107,6 +113,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                  payload_to_df_fn: typing.Callable[[str, bool], cudf.DataFrame] = None,
                  message_type: type[MessageMeta] | type[ControlMessage] = MessageMeta,
                  task_type: str = None,
+                 task_payload: dict = None,
                  request_to_task_payload_fn: typing.Callable[[str], dict] = None):
         super().__init__(config)
         self._bind_address = bind_address
@@ -129,12 +136,16 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         self._payload_to_df_fn = payload_to_df_fn
         self._message_type = message_type
         self._task_type = task_type
+        self._task_payload = task_payload
         self._request_to_task_payload_fn = request_to_task_payload_fn
 
-        if (self._message_type is MessageMeta):
-            if (self._task_type is not None or self._request_to_task_payload_fn is not None):
-                raise ValueError("Cannot specify `task_type` or `request_to_task_payload_fn` for non-control messages.")
-        elif (self._message_type is not ControlMessage):
+        if (self._message_type is ControlMessage):
+            if ((self._task_type is None) != (self._task_payload is None)):
+                raise ValueError("Both `task_type` and `task_payload` must be specified if either is specified.")
+        elif (self._message_type is MessageMeta):
+            if (self._task_type is not None or self._task_payload is not None):
+                raise ValueError("Cannot specify `task_type` or `task_payload` for non-control messages.")
+        else:
             raise ValueError(f"Invalid message type: {self._message_type}")
 
         self._http_server = None
@@ -302,7 +313,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
 
             import morpheus._lib.stages as _stages
             if self._message_type is ControlMessage:
-                http_server_kwargs["task_type"] = self._task_type
+                http_server_kwargs.update({"task_type": self._task_type, "task_payload": self._task_payload})
                 server_class = _stages.HttpServerControlMessageSourceStage
             else:
                 server_class = _stages.HttpServerMessageMetaSourceStage

@@ -36,20 +36,24 @@
 namespace morpheus {
 
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
-                         std::string* task_type,
+                         control_message_task_t* task,
                          std::shared_ptr<MessageMeta>& out_message)
 {
-    DCHECK_EQ(task_type, nullptr) << "Tasks are not supported for MessageMeta";
+    DCHECK_EQ(task, nullptr) << "Tasks are not supported for MessageMeta";
     out_message.swap(incoming_message);
 }
 
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
-                         std::string* task_type,
+                         control_message_task_t* task,
                          std::shared_ptr<ControlMessage>& out_message)
 {
-    // TODO fill in task data
+    // TODO fill in metadata
     utilities::json_t cm_config = {{"metadata", utilities::json_t::object()}};
     auto cm_msg                 = std::make_shared<ControlMessage>(incoming_message, cm_config);
+    if (task)
+    {
+        cm_msg->add_task(task->first, task->second);
+    }
     out_message.swap(cm_msg);
 }
 
@@ -116,13 +120,15 @@ HttpServerSourceStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
                                              int64_t request_timeout,
                                              bool lines,
                                              std::size_t stop_after,
-                                             const pybind11::object& task_type)
+                                             const pybind11::object& task_type,
+                                             const pybind11::object& task_payload)
 {
-    std::unique_ptr<std::string> task_type_ptr{nullptr};
+    std::unique_ptr<control_message_task_t> task{nullptr};
 
-    if (!task_type.is_none())
+    if (!task_type.is_none() && !task_payload.is_none())
     {
-        task_type_ptr = std::make_unique<std::string>(pybind11::cast<std::string>(task_type));
+        task = std::make_unique<control_message_task_t>(pybind11::cast<std::string>(task_type),
+                                                        mrc::pymrc::cast_from_pyobject(task_payload));
     }
 
     return builder.construct_object<HttpServerSourceStage<ControlMessage>>(name,
@@ -143,6 +149,6 @@ HttpServerSourceStageInterfaceProxy::init_cm(mrc::segment::Builder& builder,
                                                                            std::chrono::seconds(request_timeout),
                                                                            lines,
                                                                            stop_after,
-                                                                           std::move(task_type_ptr));
+                                                                           std::move(task));
 }
 }  // namespace morpheus

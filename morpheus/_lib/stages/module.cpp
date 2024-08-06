@@ -374,7 +374,8 @@ PYBIND11_MODULE(stages, _module)
              py::arg("request_timeout")    = 30,
              py::arg("lines")              = false,
              py::arg("stop_after")         = 0,
-             py::arg("task_type")          = py::none());
+             py::arg("task_type")          = py::none(),
+             py::arg("task_payload")       = py::none());
 
     py::class_<mrc::segment::Object<SerializeStageMM>,
                mrc::segment::ObjectProperties,
