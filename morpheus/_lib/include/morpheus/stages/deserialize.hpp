@@ -22,6 +22,7 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/types.hpp"                  // for TensorIndex
+#include "morpheus/utilities/json_types.hpp"   // for control_message_task_t
 #include "morpheus/utilities/python_util.hpp"  // for show_warning_message
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 
@@ -49,8 +50,6 @@ namespace morpheus {
  * @{
  * @file
  */
-
-using control_message_task_t = std::pair<std::string, nlohmann::json>;
 
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
