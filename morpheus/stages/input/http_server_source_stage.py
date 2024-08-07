@@ -87,7 +87,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         A callable that takes the HTTP payload string as the first argument and the `lines` parameter is passed in as
         the second argument and returns a cudf.DataFrame. When supplied, the C++ implementation of this stage is
         disabled, and the Python impl is used.
-    message_type : type[`morpheus.messages.MessageMeta`] or type[`morpheus.messages.ControlMessage`], default `MessageMeta`
+    message_type : `type[MessageMeta]` or `type[ControlMessage]`, default `type[MessageMeta]`
         The type of message to emit.
     task_type : str, default = None
         If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
@@ -142,7 +142,6 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         self._message_type = message_type
         self._task_type = task_type
         self._task_payload = task_payload
-        self._request_to_task_payload_fn = request_to_task_payload_fn
 
         if (self._message_type is ControlMessage):
             if ((self._task_type is None) != (self._task_payload is None)):
