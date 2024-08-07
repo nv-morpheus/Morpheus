@@ -83,16 +83,18 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         expect each request to be a JSON object per line.
     stop_after : int, default 0
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
+    payload_to_df_fn : callable, default None
+        A callable that takes the HTTP payload string as the first argument and the `lines` parameter is passed in as
+        the second argument and returns a cudf.DataFrame. When supplied, the C++ implementation of this stage is
+        disabled, and the Python impl is used.
+    message_type : type[`morpheus.messages.MessageMeta`] or type[`morpheus.messages.ControlMessage`], default `MessageMeta`
+        The type of message to emit.
     task_type : str, default = None
         If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
         is set to `ControlMessage`. If not `None`, `task_payload` must also be specified.
     task_payload : dict, default = None
         If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
         is set to `ControlMessage`. If not `None`, `task_type` must also be specified.
-    payload_to_df_fn : callable, default None
-        A callable that takes the HTTP payload string as the first argument and the `lines` parameter is passed in as
-        the second argument and returns a cudf.DataFrame. When supplied, the C++ implementation of this stage is
-        disabled, and the Python impl is used.
     """
 
     def __init__(self,
@@ -117,8 +119,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                  payload_to_df_fn: typing.Callable[[str, bool], cudf.DataFrame] = None,
                  message_type: type[MessageMeta] | type[ControlMessage] = MessageMeta,
                  task_type: str = None,
-                 task_payload: dict = None,
-                 request_to_task_payload_fn: typing.Callable[[str], dict] = None):
+                 task_payload: dict = None):
         super().__init__(config)
         self._bind_address = bind_address
         self._port = port
