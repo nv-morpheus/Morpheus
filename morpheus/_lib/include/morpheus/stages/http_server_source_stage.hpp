@@ -310,6 +310,8 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
             table = std::make_unique<table_with_http_fields_t>(std::move(cudf_table), std::move(http_fields));
         } catch (const std::exception& e)
         {
+            // We want to log the exception locally, but we don't want to include the exception message in the response
+            // since that may leak sensitive information
             std::string error_msg = "Error occurred converting HTTP payload to Dataframe";
             LOG(ERROR) << error_msg << ": " << e.what();
             return std::make_tuple(400u, "text/plain", error_msg, nullptr);
@@ -323,7 +325,7 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
 
             if (queue_status == boost::fibers::channel_op_status::success)
             {
-                m_queue_cnt++;
+                ++m_queue_cnt;
                 return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
             }
 
@@ -349,6 +351,7 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
             return std::make_tuple(503u, "text/plain", std::move(error_msg), nullptr);
         } catch (const std::exception& e)
         {
+            // Refer above comment about not including exception messages in the response
             std::string error_msg = "Error occurred while pushing payload to queue";
             LOG(ERROR) << error_msg << ": " << e.what();
             return std::make_tuple(500u, "text/plain", error_msg, nullptr);
@@ -426,8 +429,8 @@ void HttpServerSourceStage<OutputT>::source_generator(
         auto queue_status = m_queue.try_pop(table_ptr);
         if (queue_status == boost::fibers::channel_op_status::success)
         {
+            --m_queue_cnt;
             // NOLINTNEXTLINE(clang-diagnostic-unused-value)
-            m_queue_cnt--;
             DCHECK_NOTNULL(table_ptr);
             try
             {
