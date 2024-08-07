@@ -45,7 +45,6 @@
 #include <sstream>    // needed by GLOG
 #include <stdexcept>  // for std::runtime_error
 #include <string>     // for string & to_string
-#include <thread>     // for std::this_thread::sleep_for
 #include <tuple>      // for make_tuple
 #include <utility>    // for std::move & pair
 #include <vector>     // for vector
@@ -61,6 +60,7 @@ using request_queue_t = boost::fibers::buffered_channel<table_t>;
 class SourceStageStopAfter : public std::exception
 {};
 
+// Per type overloads for producing the output message
 void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          control_message_task_t* task,
                          morpheus::utilities::json_t&& http_fields,
@@ -86,6 +86,30 @@ class MORPHEUS_EXPORT HttpServerSourceStage : public mrc::pymrc::PythonSource<st
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
+    /**
+     * @brief Constructor for the HttpServerSourceStage
+     *
+     * @param bind_address The IP address to bind the server to
+     * @param port The TCP port to bind the server to
+     * @param endpoint The endpoint to listen for messages on
+     * @param live_endpoint The endpoint to check if the server is running
+     * @param ready_endpoint The endpoint to check if the server is ready to accept messages
+     * @param method The HTTP method to accept requests on the `endpoint`
+     * @param live_method The HTTP method to accept requests on the `live_endpoint`
+     * @param ready_method The HTTP method accept requests on the `ready_endpoint`
+     * @param accept_status The HTTP status code to return when a message is accepted
+     * @param sleep_time The time to sleep when the queue is empty
+     * @param queue_timeout The time to wait for the queue to accept a message
+     * @param max_queue_size The maximum number of messages to queue prior to blocking incoming requests
+     * @param num_server_threads The number of threads to run the server on
+     * @param max_payload_size The maximum size of the payload
+     * @param request_timeout The time to wait for a request to complete
+     * @param lines If `false`, the HTTP server will expect each request to be a JSON array of objects. If `true`, the
+     * HTTP server will expect each request to be a JSON object per line.
+     * @param stop_after The number of records to emit before stopping. Useful for testing, disabled if `0`.
+     * @param task When `OutputT=ControlMessage`, optional task to be added to all outgoing messagess, triggers an
+     * assertion error for all other types.
+     */
     HttpServerSourceStage(std::string bind_address                     = "127.0.0.1",
                           unsigned short port                          = 8080,
                           std::string endpoint                         = "/message",
@@ -132,6 +156,30 @@ class MORPHEUS_EXPORT HttpServerSourceStage : public mrc::pymrc::PythonSource<st
  */
 struct MORPHEUS_EXPORT HttpServerSourceStageInterfaceProxy
 {
+    /**
+     * @brief Create and initialize a HttpServerSourceStage that emits MessageMeta's, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param bind_address The IP address to bind the server to
+     * @param port The TCP port to bind the server to
+     * @param endpoint The endpoint to listen for messages on
+     * @param live_endpoint The endpoint to check if the server is running
+     * @param ready_endpoint The endpoint to check if the server is ready to accept messages
+     * @param method The HTTP method to accept requests on the `endpoint`
+     * @param live_method The HTTP method to accept requests on the `live_endpoint`
+     * @param ready_method The HTTP method accept requests on the `ready_endpoint`
+     * @param accept_status The HTTP status code to return when a message is accepted
+     * @param sleep_time The time to sleep when the queue is empty
+     * @param queue_timeout The time to wait for the queue to accept a message
+     * @param max_queue_size The maximum number of messages to queue prior to blocking incoming requests
+     * @param num_server_threads The number of threads to run the server on
+     * @param max_payload_size The maximum size of the payload
+     * @param request_timeout The time to wait for a request to complete
+     * @param lines If `False`, the HTTP server will expect each request to be a JSON array of objects. If `True`, the
+     * HTTP server will expect each request to be a JSON object per line.
+     * @param stop_after The number of records to emit before stopping. Useful for testing, disabled if `0`.
+     */
     static std::shared_ptr<mrc::segment::Object<HttpServerSourceStage<MessageMeta>>> init_meta(
         mrc::segment::Builder& builder,
         const std::string& name,
@@ -153,6 +201,34 @@ struct MORPHEUS_EXPORT HttpServerSourceStageInterfaceProxy
         bool lines,
         std::size_t stop_after);
 
+    /**
+     * @brief Create and initialize a HttpServerSourceStage that emits ControlMessage's, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param bind_address The IP address to bind the server to
+     * @param port The TCP port to bind the server to
+     * @param endpoint The endpoint to listen for messages on
+     * @param live_endpoint The endpoint to check if the server is running
+     * @param ready_endpoint The endpoint to check if the server is ready to accept messages
+     * @param method The HTTP method to accept requests on the `endpoint`
+     * @param live_method The HTTP method to accept requests on the `live_endpoint`
+     * @param ready_method The HTTP method accept requests on the `ready_endpoint`
+     * @param accept_status The HTTP status code to return when a message is accepted
+     * @param sleep_time The time to sleep when the queue is empty
+     * @param queue_timeout The time to wait for the queue to accept a message
+     * @param max_queue_size The maximum number of messages to queue prior to blocking incoming requests
+     * @param num_server_threads The number of threads to run the server on
+     * @param max_payload_size The maximum size of the payload
+     * @param request_timeout The time to wait for a request to complete
+     * @param lines If `False`, the HTTP server will expect each request to be a JSON array of objects. If `True`, the
+     * HTTP server will expect each request to be a JSON object per line.
+     * @param stop_after The number of records to emit before stopping. Useful for testing, disabled if `0`.
+     * @param task_type Optional task type to be added to all outgoing messages. When not `None`, then `task_payload`
+     * must also be not `None`, and vice versa.
+     * @param task_payload Optional json object describing the task to be added to all outgoing messages. When not
+     * `None`, then `task_type` must also be not `None`, and vice versa.
+     */
     static std::shared_ptr<mrc::segment::Object<HttpServerSourceStage<ControlMessage>>> init_cm(
         mrc::segment::Builder& builder,
         const std::string& name,

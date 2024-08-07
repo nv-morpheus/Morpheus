@@ -79,8 +79,8 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
     request_timeout_secs : int, default 30
         The maximum amount of time in seconds for any given request.
     lines : bool, default False
-        If False, the HTTP server will expect each request to be a JSON array of objects. If True, the HTTP server will
-        expect each request to be a JSON object per line.
+        If `False`, the HTTP server will expect each request to be a JSON array of objects. If `True`, the HTTP server
+        will expect each request to be a JSON object per line.
     stop_after : int, default 0
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     payload_to_df_fn : callable, default None
