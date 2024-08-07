@@ -41,6 +41,9 @@ logger = logging.getLogger(__name__)
 SUPPORTED_METHODS = (HTTPMethod.POST, HTTPMethod.PUT)
 HEALTH_SUPPORTED_METHODS = (HTTPMethod.GET, HTTPMethod.POST)
 
+if typing.TYPE_CHECKING:
+    from morpheus.common import FiberQueue
+
 
 # TODO: allow these to be string values
 @register_stage("from-http", ignore_args=["message_type", "task_type", "task_payload"])
@@ -152,7 +155,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         self._http_server = None
 
         # These are only used when C++ mode is disabled
-        self._queue = None
+        self._queue: "FiberQueue" = None
         self._queue_size = 0
         self._processing = False
         self._records_emitted = 0
