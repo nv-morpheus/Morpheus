@@ -40,6 +40,7 @@ def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,
 @pytest.mark.parametrize("endpoints", [("/t1", "/t2", "/t3"), ("test/", "123/", "a1d/"), ("/a", "/a/b", "/a/b/c/d")])
 @pytest.mark.parametrize("port", [8088, 9090])
 @pytest.mark.parametrize("method", ["GET", "POST", "PUT"])
+@pytest.mark.parametrize("include_headers", [True, False])
 @pytest.mark.parametrize("use_callback", [True, False])
 @pytest.mark.parametrize("use_context_mgr", [True, False])
 @pytest.mark.parametrize("num_threads", [1, 2, min(8, os.cpu_count())])
@@ -54,6 +55,7 @@ def test_simple_request(port: int,
                         status: HTTPStatus,
                         content_type: str,
                         content: str,
+                        include_headers: bool,
                         use_callback: bool,
                         use_context_mgr: bool,
                         num_threads: int):
@@ -74,16 +76,38 @@ def test_simple_request(port: int,
 
     server = None
 
-    def check_server(url) -> None:
+    def check_server(url: str, endpoint: str) -> None:
         assert server.is_running()
 
-        response = requests.request(method=method, url=url, data=payload, timeout=5.0)
+        response = requests.request(method=method, url=url, data=payload, timeout=5.0, headers={"unit": "test"})
 
         assert response.status_code == status.value
         assert response.headers["Content-Type"] == content_type
         assert response.text == content
 
-        parse_fn.assert_called_once_with(payload)
+        if include_headers:
+            expected_endpoint = endpoint
+            if not expected_endpoint.startswith("/"):
+                expected_endpoint = f"/{expected_endpoint}"
+
+            # Subset of headers that we want to check for
+            expected_headers = {
+                'Host': f'127.0.0.1:{port}',
+                'endpoint': expected_endpoint,
+                'method': method,
+                'remote_address': '127.0.0.1',
+                'unit': 'test'
+            }
+            parse_fn.assert_called_once()
+            assert parse_fn.call_args[0][0] == payload
+
+            actual_headers = parse_fn.call_args[0][1]
+            for (key, value) in expected_headers.items():
+                assert actual_headers[key] == value
+
+        else:
+            parse_fn.assert_called_once_with(payload)
+
         parse_fn.reset_mock()
 
         if use_callback:
@@ -104,21 +128,22 @@ def test_simple_request(port: int,
 
     for endpoint in endpoints:
         urls.append(make_url(port, endpoint))
-        http_endpoints.append(HttpEndpoint(py_parse_fn=parse_fn, url=endpoint, method=method))
+        http_endpoints.append(
+            HttpEndpoint(py_parse_fn=parse_fn, url=endpoint, method=method, include_headers=include_headers))
 
     if use_context_mgr:
         with HttpServer(endpoints=http_endpoints, port=port, num_threads=num_threads) as server:
             assert server.is_running()
-            for url in urls:
-                check_server(url)
+            for (i, url) in enumerate(urls):
+                check_server(url, endpoints[i])
 
     else:
         server = HttpServer(endpoints=http_endpoints, port=port, num_threads=num_threads)
         assert not server.is_running()
         server.start()
 
-        for url in urls:
-            check_server(url)
+        for (i, url) in enumerate(urls):
+            check_server(url, endpoints[i])
 
         server.stop()
 
