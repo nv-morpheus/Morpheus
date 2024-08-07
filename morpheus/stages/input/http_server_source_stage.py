@@ -18,6 +18,7 @@ import os
 import queue
 import time
 import typing
+from enum import Enum
 from http import HTTPStatus
 
 import mrc
@@ -36,17 +37,22 @@ from morpheus.utils.http_utils import HttpParseResponse
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.producer_consumer_queue import Closed
 
+if typing.TYPE_CHECKING:
+    from morpheus.common import FiberQueue
+
 logger = logging.getLogger(__name__)
 
 SUPPORTED_METHODS = (HTTPMethod.POST, HTTPMethod.PUT)
 HEALTH_SUPPORTED_METHODS = (HTTPMethod.GET, HTTPMethod.POST)
 
-if typing.TYPE_CHECKING:
-    from morpheus.common import FiberQueue
+
+class SupportedMessageTypes(Enum):
+    """Supported output message types"""
+    MESSAGE_META = "MessageMeta"
+    CONTROL_MESSAGE = "ControlMessage"
 
 
-# TODO: allow these to be string values
-@register_stage("from-http", ignore_args=["message_type", "task_type", "task_payload"])
+@register_stage("from-http", ignore_args=["task_type", "task_payload"])
 class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
@@ -87,14 +93,14 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         A callable that takes the HTTP payload string as the first argument and the `lines` parameter is passed in as
         the second argument and returns a cudf.DataFrame. When supplied, the C++ implementation of this stage is
         disabled, and the Python impl is used.
-    message_type : `type[MessageMeta]` or `type[ControlMessage]`, default `type[MessageMeta]`
+    message_type : `SupportedMessageTypes`, case_sensitive = False
         The type of message to emit.
     task_type : str, default = None
         If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
-        is set to `ControlMessage`. If not `None`, `task_payload` must also be specified.
+        is set to `CONTROL_MESSAGE`. If not `None`, `task_payload` must also be specified.
     task_payload : dict, default = None
         If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
-        is set to `ControlMessage`. If not `None`, `task_type` must also be specified.
+        is set to `CONTROL_MESSAGE`. If not `None`, `task_type` must also be specified.
     """
 
     def __init__(self,
@@ -117,7 +123,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                  lines: bool = False,
                  stop_after: int = 0,
                  payload_to_df_fn: typing.Callable[[str, bool], cudf.DataFrame] = None,
-                 message_type: type[MessageMeta] | type[ControlMessage] = MessageMeta,
+                 message_type: SupportedMessageTypes = SupportedMessageTypes.MESSAGE_META,
                  task_type: str = None,
                  task_payload: dict = None):
         super().__init__(config)
@@ -143,10 +149,10 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         self._task_type = task_type
         self._task_payload = task_payload
 
-        if (self._message_type is ControlMessage):
+        if (self._message_type is SupportedMessageTypes.CONTROL_MESSAGE):
             if ((self._task_type is None) != (self._task_payload is None)):
                 raise ValueError("Both `task_type` and `task_payload` must be specified if either is specified.")
-        elif (self._message_type is MessageMeta):
+        elif (self._message_type is SupportedMessageTypes.MESSAGE_META):
             if (self._task_type is not None or self._task_payload is not None):
                 raise ValueError("Cannot specify `task_type` or `task_payload` for non-control messages.")
         else:
@@ -176,7 +182,10 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         return True
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(self._message_type)
+        if (self._message_type is SupportedMessageTypes.CONTROL_MESSAGE):
+            schema.output_schema.set_type(ControlMessage)
+        else:
+            schema.output_schema.set_type(MessageMeta)
 
     def _parse_payload(self, payload: str, headers: dict = None) -> HttpParseResponse:
         try:
@@ -251,7 +260,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         msg = HttpEndpoint(self._parse_payload,
                            self._endpoint,
                            self._method.name,
-                           include_headers=(self._message_type is ControlMessage))
+                           include_headers=(self._message_type is SupportedMessageTypes.CONTROL_MESSAGE))
         live = HttpEndpoint(self._liveliness_check, self._live_endpoint, self._live_method.name, include_headers=False)
         ready = HttpEndpoint(self._readiness_check,
                              self._ready_endpoint,
@@ -289,7 +298,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                 if df is not None:
                     num_records = len(df)
                     msg_meta = MessageMeta(df)
-                    if self._message_type is ControlMessage:
+                    if self._message_type is SupportedMessageTypes.CONTROL_MESSAGE:
                         out_msg = ControlMessage(msg_meta, {"metadata": {"http_fields": headers}})
                         if self._task_type is not None:
                             out_msg.add_task(self._task_type, self._task_payload)
@@ -325,7 +334,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
             }
 
             import morpheus._lib.stages as _stages
-            if self._message_type is ControlMessage:
+            if self._message_type is SupportedMessageTypes.CONTROL_MESSAGE:
                 http_server_kwargs.update({"task_type": self._task_type, "task_payload": self._task_payload})
                 server_class = _stages.HttpServerControlMessageSourceStage
             else:
