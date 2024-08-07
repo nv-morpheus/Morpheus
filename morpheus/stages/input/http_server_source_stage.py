@@ -280,7 +280,9 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                     num_records = len(df)
                     msg_meta = MessageMeta(df)
                     if self._message_type is ControlMessage:
-                        out_msg = ControlMessage(self._task_type, self._request_to_task_payload_fn(df))
+                        out_msg = ControlMessage(msg_meta, {"metadata": {}})
+                        if self._task_type is not None:
+                            out_msg.add_task(self._task_type, self._task_payload)
                     else:
                         out_msg = msg_meta
 
