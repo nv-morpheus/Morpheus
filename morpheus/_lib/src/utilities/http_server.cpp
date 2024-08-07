@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-// TODO(dagardner): add /health & /info endpoints
-
 #include "morpheus/utilities/http_server.hpp"
 
 #include <boost/asio.hpp>  // for dispatch, make_address
