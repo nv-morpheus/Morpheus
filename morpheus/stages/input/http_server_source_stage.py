@@ -252,7 +252,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                                  content_type=MimeTypes.TEXT.value,
                                  body=err_msg)
 
-    def _generate_frames(self) -> typing.Iterator[MessageMeta]:
+    def _generate_frames(self) -> typing.Iterator[ControlMessage | MessageMeta]:
         from morpheus.common import FiberQueue
         from morpheus.common import HttpEndpoint
         from morpheus.common import HttpServer
