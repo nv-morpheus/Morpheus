@@ -126,6 +126,57 @@ class MORPHEUS_EXPORT HttpServerSourceStage : public mrc::pymrc::PythonSource<st
     std::unique_ptr<control_message_task_t> m_task{nullptr};
 };
 
+/****** HttpServerSourceStageInterfaceProxy***********************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct MORPHEUS_EXPORT HttpServerSourceStageInterfaceProxy
+{
+    static std::shared_ptr<mrc::segment::Object<HttpServerSourceStage<MessageMeta>>> init_meta(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        std::string bind_address,
+        unsigned short port,
+        std::string endpoint,
+        std::string live_endpoint,
+        std::string ready_endpoint,
+        std::string method,
+        std::string live_method,
+        std::string ready_method,
+        unsigned accept_status,
+        float sleep_time,
+        long queue_timeout,
+        std::size_t max_queue_size,
+        unsigned short num_server_threads,
+        std::size_t max_payload_size,
+        int64_t request_timeout,
+        bool lines,
+        std::size_t stop_after);
+
+    static std::shared_ptr<mrc::segment::Object<HttpServerSourceStage<ControlMessage>>> init_cm(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        std::string bind_address,
+        unsigned short port,
+        std::string endpoint,
+        std::string live_endpoint,
+        std::string ready_endpoint,
+        std::string method,
+        std::string live_method,
+        std::string ready_method,
+        unsigned accept_status,
+        float sleep_time,
+        long queue_timeout,
+        std::size_t max_queue_size,
+        unsigned short num_server_threads,
+        std::size_t max_payload_size,
+        int64_t request_timeout,
+        bool lines,
+        std::size_t stop_after,
+        const pybind11::object& task_type,
+        const pybind11::object& task_payload);
+};
+
 template <typename OutputT>
 HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
                                                       unsigned short port,
@@ -366,55 +417,5 @@ void HttpServerSourceStage<OutputT>::close()
     m_queue.close();
 }
 
-/****** HttpServerSourceStageInterfaceProxy***********************/
-/**
- * @brief Interface proxy, used to insulate python bindings.
- */
-struct MORPHEUS_EXPORT HttpServerSourceStageInterfaceProxy
-{
-    static std::shared_ptr<mrc::segment::Object<HttpServerSourceStage<MessageMeta>>> init_meta(
-        mrc::segment::Builder& builder,
-        const std::string& name,
-        std::string bind_address,
-        unsigned short port,
-        std::string endpoint,
-        std::string live_endpoint,
-        std::string ready_endpoint,
-        std::string method,
-        std::string live_method,
-        std::string ready_method,
-        unsigned accept_status,
-        float sleep_time,
-        long queue_timeout,
-        std::size_t max_queue_size,
-        unsigned short num_server_threads,
-        std::size_t max_payload_size,
-        int64_t request_timeout,
-        bool lines,
-        std::size_t stop_after);
-
-    static std::shared_ptr<mrc::segment::Object<HttpServerSourceStage<ControlMessage>>> init_cm(
-        mrc::segment::Builder& builder,
-        const std::string& name,
-        std::string bind_address,
-        unsigned short port,
-        std::string endpoint,
-        std::string live_endpoint,
-        std::string ready_endpoint,
-        std::string method,
-        std::string live_method,
-        std::string ready_method,
-        unsigned accept_status,
-        float sleep_time,
-        long queue_timeout,
-        std::size_t max_queue_size,
-        unsigned short num_server_threads,
-        std::size_t max_payload_size,
-        int64_t request_timeout,
-        bool lines,
-        std::size_t stop_after,
-        const pybind11::object& task_type,
-        const pybind11::object& task_payload);
-};
 /** @} */  // end of group
 }  // namespace morpheus
