@@ -19,8 +19,6 @@
 
 #include "morpheus/utilities/http_server.hpp"
 
-#include "pymrc/utilities/function_wrappers.hpp"  // for PyFuncWrapper
-
 #include <boost/asio.hpp>  // for dispatch, make_address
 #include <boost/asio/any_io_executor.hpp>
 #include <boost/asio/basic_socket_acceptor.hpp>  // for basic_socket_acceptor<>::executor_type
@@ -48,6 +46,8 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
 #include <pybind11/pytypes.h>
+#include <pymrc/utilities/function_wrappers.hpp>  // for PyFuncWrapper
+#include <pymrc/utils.hpp>                        // for cast_from_json
 
 #include <exception>  // for exception
 #include <memory>
@@ -380,8 +380,8 @@ std::shared_ptr<HttpEndpoint> HttpEndpointInterfaceProxy::init(pybind11::functio
         pybind11::tuple py_result;
         if (include_headers)
         {
-            auto py_headers = py::cast<py::object>(py::cast(*headers));
-            py_result       = wrapped_parse_fn.operator()<py::tuple, py::str, py::dict>(py_payload, py_headers);
+            py::dict py_headers = mrc::pymrc::cast_from_json(*headers);
+            py_result           = wrapped_parse_fn.operator()<py::tuple, py::str, py::dict>(py_payload, py_headers);
         }
         else
         {

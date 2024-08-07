@@ -178,7 +178,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(self._message_type)
 
-    def _parse_payload(self, payload: str) -> HttpParseResponse:
+    def _parse_payload(self, payload: str, headers: dict = None) -> HttpParseResponse:
         try:
             if self._payload_to_df_fn is not None:
                 df = self._payload_to_df_fn(payload, self._lines)
@@ -194,7 +194,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                                      body=err_msg)
 
         try:
-            self._queue.put(df, block=True, timeout=self._queue_timeout)
+            self._queue.put((df, headers), block=True, timeout=self._queue_timeout)
             self._queue_size += 1
             return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
 
@@ -248,9 +248,15 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         from morpheus.common import HttpEndpoint
         from morpheus.common import HttpServer
 
-        msg = HttpEndpoint(self._parse_payload, self._endpoint, self._method.name)
-        live = HttpEndpoint(self._liveliness_check, self._live_endpoint, self._live_method.name)
-        ready = HttpEndpoint(self._readiness_check, self._ready_endpoint, self._ready_method.name)
+        msg = HttpEndpoint(self._parse_payload,
+                           self._endpoint,
+                           self._method.name,
+                           include_headers=(self._message_type is ControlMessage))
+        live = HttpEndpoint(self._liveliness_check, self._live_endpoint, self._live_method.name, include_headers=False)
+        ready = HttpEndpoint(self._readiness_check,
+                             self._ready_endpoint,
+                             self._ready_method.name,
+                             include_headers=False)
         with (FiberQueue(self._max_queue_size) as self._queue,
               HttpServer(endpoints=[msg, live, ready],
                          bind_address=self._bind_address,
@@ -265,9 +271,10 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                 # Read as many messages as we can from the queue if it's empty check to see if we should be shutting
                 # down. It is important that any messages we received that are in the queue are processed before we
                 # shutdown since we already returned an OK response to the client.
-                df = None
+                df: cudf.DataFrame = None
+                headers: dict = None
                 try:
-                    df = self._queue.get()
+                    (df, headers) = self._queue.get()
                     self._queue_size -= 1
                 except queue.Empty:
                     if (not self._http_server.is_running()):
@@ -283,7 +290,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                     num_records = len(df)
                     msg_meta = MessageMeta(df)
                     if self._message_type is ControlMessage:
-                        out_msg = ControlMessage(msg_meta, {"metadata": {}})
+                        out_msg = ControlMessage(msg_meta, {"metadata": {"http_fields": headers}})
                         if self._task_type is not None:
                             out_msg.add_task(self._task_type, self._task_payload)
                     else:
