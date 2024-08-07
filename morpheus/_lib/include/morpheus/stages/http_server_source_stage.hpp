@@ -26,13 +26,14 @@
 #include <boost/beast/http/status.hpp>        // for int_to_status, status
 #include <boost/fiber/buffered_channel.hpp>   // for buffered_channel
 #include <boost/fiber/channel_op_status.hpp>  // for channel_op_status
-#include <boost/fiber/context.hpp>            // for context
 #include <boost/fiber/operations.hpp>         // for sleep_for
 #include <cudf/io/json.hpp>                   // for json_reader_options & read_json
 #include <cudf/io/types.hpp>                  // for table_with_metadata
 #include <glog/logging.h>                     // for CHECK & LOG
 #include <mrc/segment/builder.hpp>            // for segment::Builder
 #include <mrc/segment/object.hpp>             // for segment::Object
+#include <nlohmann/json.hpp>                  // for json
+#include <pybind11/pytypes.h>                 // for pybind11::object
 #include <pymrc/node.hpp>                     // for PythonSource
 #include <rxcpp/rx.hpp>                       // for subscriber
 
@@ -50,6 +51,8 @@
 #include <vector>     // for vector
 // IWYU thinks we're using thread::operator<<
 // IWYU pragma: no_include <thread>
+// IWYU thinks we need the http.hpp header for int_to_status, but it's defined in status.hpp
+// IWYU pragma: no_include <boost/beast/http.hpp>
 
 namespace morpheus {
 using table_with_http_fields_t = std::pair<cudf::io::table_with_metadata, morpheus::utilities::json_t>;

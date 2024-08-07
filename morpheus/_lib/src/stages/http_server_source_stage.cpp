@@ -17,21 +17,8 @@
 
 #include "morpheus/stages/http_server_source_stage.hpp"
 
-#include <boost/beast/http/status.hpp>        // for int_to_status, status
-#include <boost/fiber/channel_op_status.hpp>  // for channel_op_status
-#include <boost/fiber/operations.hpp>         // for sleep_for
-#include <cudf/io/json.hpp>                   // for json_reader_options & read_json
-#include <glog/logging.h>                     // for CHECK & LOG
-
-#include <exception>  // for std::exception
-#include <sstream>    // needed by GLOG
-#include <stdexcept>  // for std::runtime_error
-#include <thread>     // for std::this_thread::sleep_for
-#include <tuple>      // for make_tuple
-#include <utility>    // for std::move
-#include <vector>     // for vector
-// IWYU thinks we need more boost headers than we need as int_to_status is defined in status.hpp
-// IWYU pragma: no_include <boost/beast/http.hpp>
+#include <pybind11/pybind11.h>  // for cast
+#include <pymrc/utils.hpp>      // for cast_from_pyobject
 
 namespace morpheus {
 

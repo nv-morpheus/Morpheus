@@ -22,7 +22,8 @@
 #include <boost/asio/basic_socket_acceptor.hpp>  // for basic_socket_acceptor<>::executor_type
 #include <boost/asio/basic_stream_socket.hpp>    // for basic_stream_socket
 #include <boost/asio/dispatch.hpp>
-#include <boost/asio/ip/tcp.hpp>       // for acceptor, endpoint, socket,
+#include <boost/asio/ip/address.hpp>  // for address
+#include <boost/asio/ip/tcp.hpp>      // for acceptor, endpoint, socket,
 #include <boost/asio/socket_base.hpp>  // for socket_base::reuse_address, socket_base, socket_base::max_listen_connections
 #include <boost/asio/strand.hpp>       // for strand, make_strand, operator==
 #include <boost/beast/core.hpp>        // for bind_front_handler, error_code, flat_buffer, tcp_stream
@@ -40,7 +41,8 @@
 #include <boost/beast/http/status.hpp>   // for status, status::not_found
 #include <boost/beast/http/verb.hpp>     // for verb, operator<<, verb::unknown
 #include <boost/core/detail/string_view.hpp>
-#include <glog/logging.h>  // for CHECK and LOG
+#include <glog/logging.h>     // for CHECK and LOG
+#include <nlohmann/json.hpp>  // for basic_json, json_ref
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
 #include <pybind11/pytypes.h>
@@ -53,6 +55,7 @@
 #include <stdexcept>    // for runtime_error, length_error
 #include <type_traits>  // indirectly used by pybind11 casting
 #include <utility>      // for move
+// IWYU pragma: no_include <boost/intrusive/detail/list_iterator.hpp>
 
 // loosely based on the following examples:
 // https://www.boost.org/doc/libs/1_74_0/libs/beast/example/http/server/async/http_server_async.cpp
