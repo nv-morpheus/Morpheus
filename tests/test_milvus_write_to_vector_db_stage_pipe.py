@@ -20,11 +20,8 @@ import pytest
 
 import cudf
 
-from _utils.stages.conv_msg import ConvMsg
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages.multi_message import MultiMessage
-from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.modules import to_control_message  # noqa: F401 # pylint: disable=unused-import
 from morpheus.pipeline import LinearPipeline
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
@@ -32,7 +29,6 @@ from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
 
@@ -131,51 +127,3 @@ def test_write_to_vector_db_stage_from_cm_pipe(milvus_server_uri: str,
         assert response["accum_count"] == expected_num_output_rows
 
     assert response["err_count"] == 0
-
-
-@pytest.mark.milvus
-@pytest.mark.use_python
-@pytest.mark.parametrize("is_multiresponse_message", [True, False])
-def test_write_to_vector_db_stage_from_mm_pipe(milvus_server_uri: str,
-                                               idx_part_collection_config: dict,
-                                               config: Config,
-                                               is_multiresponse_message: bool):
-    collection_name = "test_stage_mm_insert_collection"
-
-    df = get_test_df(num_input_rows=10)
-
-    milvus_service = MilvusVectorDBService(uri=milvus_server_uri)
-
-    # Make sure to drop any existing collection from previous runs.
-    milvus_service.drop(collection_name)
-
-    resource_kwargs = {"partition_name": "age_partition"}
-
-    # Update resource kwargs with collection configuration
-    resource_kwargs.update(idx_part_collection_config)
-
-    pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [df]))
-    pipe.add_stage(DeserializeStage(config))
-    if is_multiresponse_message:
-        pipe.add_stage(ConvMsg(config, df, empty_probs=True))
-    # Instantiate stage with service instance and insert options.
-    pipe.add_stage(
-        WriteToVectorDBStage(config,
-                             resource_name=collection_name,
-                             service=milvus_service,
-                             recreate=True,
-                             resource_kwargs=resource_kwargs))
-
-    sink_stage = pipe.add_stage(InMemorySinkStage(config))
-    pipe.run()
-
-    messages = sink_stage.get_messages()
-
-    assert len(messages) == 1
-    if is_multiresponse_message:
-        assert isinstance(messages[0], MultiResponseMessage)
-    else:
-        assert isinstance(messages[0], MultiMessage)
-
-    assert len(messages[0].get_meta()) == 10

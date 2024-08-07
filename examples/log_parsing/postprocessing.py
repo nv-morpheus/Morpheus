@@ -27,8 +27,8 @@ import cudf
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -77,18 +77,17 @@ class LogParsingPostProcessingStage(SinglePortStage):
         return False
 
     def accepted_types(self) -> typing.Tuple:
-        return (MultiResponseMessage, )
+        return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def _postprocess(self, x: MultiResponseMessage):
-
-        infer_pdf = pd.DataFrame(x.get_tensor('seq_ids').get()).astype(int)
+    def _postprocess(self, msg: ControlMessage):
+        infer_pdf = pd.DataFrame(msg.tensors().get_tensor('seq_ids').get()).astype(int)
         infer_pdf.columns = ["doc", "start", "stop"]
-        infer_pdf["confidences"] = x.get_tensor('confidences').tolist()
-        infer_pdf["labels"] = x.get_tensor('labels').tolist()
-        infer_pdf["token_ids"] = x.get_tensor('input_ids').tolist()
+        infer_pdf["confidences"] = msg.tensors().get_tensor('confidences').tolist()
+        infer_pdf["labels"] = msg.tensors().get_tensor('labels').tolist()
+        infer_pdf["token_ids"] = msg.tensors().get_tensor('input_ids').tolist()
 
         infer_pdf["confidences"] = infer_pdf.apply(lambda row: row["confidences"][row["start"]:row["stop"]], axis=1)
 

@@ -31,7 +31,6 @@ from morpheus.common import typeid_to_numpy_str
 from morpheus.config import CppConfig
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import pretty_print_type_name
 
@@ -46,7 +45,7 @@ class PreallocatorMixin(ABC):
 
     The exceptions would be non-source stages like DFP's `DFPFileToDataFrameStage` which are not sources but are
     constructing new Dataframe instances, and `LinearBoundaryIngressStage` which is potentially emitting other message
-    types such as MultiMessages and it's various derived messages but it would still be the first stage in the given
+    types such as ControlMessage but it would still be the first stage in the given
     segment emitting the message.
     """
 
@@ -83,10 +82,6 @@ class PreallocatorMixin(ABC):
 
         return msg
 
-    def _preallocate_multi(self, msg: MultiMessage) -> MultiMessage:
-        self._preallocate_meta(msg.meta)
-        return msg
-
     def _preallocate_control(self, msg: ControlMessage) -> ControlMessage:
         self._preallocate_meta(msg.payload())
         return msg
@@ -105,7 +100,7 @@ class PreallocatorMixin(ABC):
         if len(self._needed_columns) > 0:
             node_name = f"{self.unique_name}-preallocate"
 
-            if issubclass(out_type, (ControlMessage, MessageMeta, MultiMessage)):
+            if issubclass(out_type, (ControlMessage, MessageMeta)):
                 # Intentionally not using `_build_cpp_node` because `LinearBoundaryIngressStage` lacks a C++ impl
                 if CppConfig.get_should_use_cpp() and self._all_types_supported_in_cpp():
                     import morpheus._lib.stages as _stages
@@ -115,14 +110,14 @@ class PreallocatorMixin(ABC):
                     elif issubclass(out_type, MessageMeta):
                         node = _stages.PreallocateMessageMetaStage(builder, node_name, needed_columns)
                     else:
-                        node = _stages.PreallocateMultiMessageStage(builder, node_name, needed_columns)
+                        raise RuntimeError(f"Unsupported output type {pretty_type}")
                 else:
                     if issubclass(out_type, ControlMessage):
                         node = builder.make_node(node_name, ops.map(self._preallocate_control))
                     elif issubclass(out_type, MessageMeta):
                         node = builder.make_node(node_name, ops.map(self._preallocate_meta))
                     else:
-                        node = builder.make_node(node_name, ops.map(self._preallocate_multi))
+                        raise RuntimeError(f"Unsupported output type {pretty_type}")
             elif issubclass(out_type, (cudf.DataFrame, pd.DataFrame)):
                 node = builder.make_node(node_name, ops.map(self._preallocate_df))
             else:

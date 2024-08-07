@@ -19,7 +19,7 @@ import cupy as cp
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import ControlMessage
 from morpheus.messages import TensorMemory
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
@@ -44,18 +44,17 @@ class _IdentityInferenceWorker(InferenceWorker):
         self._max_batch_size = c.model_max_batch_size
         self._seq_length = c.feature_length
 
-    def calc_output_dims(self, x: MultiInferenceMessage) -> typing.Tuple:
-        return (x.count, self._seq_length)
+    def calc_output_dims(self, msg: ControlMessage) -> typing.Tuple:
+        return (msg.tensors().count, self._seq_length)
 
-    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: ControlMessage, callback: typing.Callable[[TensorMemory], None]):
 
-        def tmp(batch: MultiInferenceMessage, f):
-
-            f(
-                TensorMemory(
-                    count=batch.count,
-                    tensors={'probs': cp.zeros((batch.count, self._seq_length), dtype=cp.float32)},
-                ))
+        def tmp(batch: ControlMessage, f):
+            count = batch.tensors().count
+            f(TensorMemory(
+                count=count,
+                tensors={'probs': cp.zeros((count, self._seq_length), dtype=cp.float32)},
+            ))
 
         # Call directly instead of enqueing
         tmp(batch, callback)

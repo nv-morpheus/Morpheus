@@ -32,10 +32,6 @@ from morpheus.cli.utils import get_package_relative_file
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
-from morpheus.messages import InferenceMemoryNLP
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiInferenceNLPMessage
-from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 from morpheus.utils.cudf_subword_helper import tokenize_text_series
 
@@ -141,14 +137,14 @@ class PreprocessNLPStage(PreprocessBaseStage):
         return True
 
     @staticmethod
-    def pre_process_batch(message: typing.Union[MultiMessage, ControlMessage],
+    def pre_process_batch(message: ControlMessage,
                           vocab_hash_file: str,
                           do_lower_case: bool,
                           seq_len: int,
                           stride: int,
                           truncation: bool,
                           add_special_tokens: bool,
-                          column: str) -> typing.Union[MultiInferenceNLPMessage, ControlMessage]:
+                          column: str) -> ControlMessage:
         """
         For NLP category use cases, this function performs pre-processing.
 
@@ -156,41 +152,9 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
         Returns
         -------
-        `morpheus.pipeline.messages.MultiInferenceNLPMessage`
-            NLP inference message.
+        `morpheus.messages.ControlMessage`
 
         """
-        if isinstance(message, ControlMessage):
-            return PreprocessNLPStage.process_control_message(message,
-                                                              vocab_hash_file,
-                                                              do_lower_case,
-                                                              seq_len,
-                                                              stride,
-                                                              truncation,
-                                                              add_special_tokens,
-                                                              column)
-        if isinstance(message, MultiMessage):
-            return PreprocessNLPStage.process_multi_message(message,
-                                                            vocab_hash_file,
-                                                            do_lower_case,
-                                                            seq_len,
-                                                            stride,
-                                                            truncation,
-                                                            add_special_tokens,
-                                                            column)
-
-        raise TypeError("Unsupported message type")
-
-    @staticmethod
-    def process_control_message(message: ControlMessage,
-                                vocab_hash_file: str,
-                                do_lower_case: bool,
-                                seq_len: int,
-                                stride: int,
-                                truncation: bool,
-                                add_special_tokens: bool,
-                                column: str) -> ControlMessage:
-
         with message.payload().mutable_dataframe() as mdf:
             text_series = cudf.Series(mdf[column])
 
@@ -216,43 +180,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
         message.set_metadata("inference_memory_params", {"inference_type": "nlp"})
         return message
 
-    @staticmethod
-    def process_multi_message(message: MultiMessage,
-                              vocab_hash_file: str,
-                              do_lower_case: bool,
-                              seq_len: int,
-                              stride: int,
-                              truncation: bool,
-                              add_special_tokens: bool,
-                              column: str) -> MultiInferenceNLPMessage:
-        # Existing logic for MultiMessage
-        text_ser = cudf.Series(message.get_meta(column))
-
-        tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
-                                         do_lower_case=do_lower_case,
-                                         text_ser=text_ser,
-                                         seq_len=seq_len,
-                                         stride=stride,
-                                         truncation=truncation,
-                                         add_special_tokens=add_special_tokens)
-        del text_ser
-
-        seg_ids = tokenized.segment_ids
-        seg_ids[:, 0] = seg_ids[:, 0] + message.mess_offset
-
-        memory = InferenceMemoryNLP(count=tokenized.input_ids.shape[0],
-                                    input_ids=tokenized.input_ids,
-                                    input_mask=tokenized.input_mask,
-                                    seq_ids=seg_ids)
-
-        infer_message = MultiInferenceNLPMessage.from_message(message, memory=memory)
-
-        return infer_message
-
-    def _get_preprocess_fn(
-        self
-    ) -> typing.Callable[[typing.Union[MultiMessage, ControlMessage]],
-                         typing.Union[MultiInferenceMessage, ControlMessage]]:
+    def _get_preprocess_fn(self) -> typing.Callable[[ControlMessage], ControlMessage]:
         return partial(PreprocessNLPStage.pre_process_batch,
                        vocab_hash_file=self._vocab_hash_file,
                        do_lower_case=self._do_lower_case,
@@ -263,23 +191,12 @@ class PreprocessNLPStage(PreprocessBaseStage):
                        column=self._column)
 
     def _get_preprocess_node(self, builder: mrc.Builder):
-        if (self._use_control_message):
-            return _stages.PreprocessNLPControlMessageStage(builder,
-                                                            self.unique_name,
-                                                            self._vocab_hash_file,
-                                                            self._seq_length,
-                                                            self._truncation,
-                                                            self._do_lower_case,
-                                                            self._add_special_tokens,
-                                                            self._stride,
-                                                            self._column)
-
-        return _stages.PreprocessNLPMultiMessageStage(builder,
-                                                      self.unique_name,
-                                                      self._vocab_hash_file,
-                                                      self._seq_length,
-                                                      self._truncation,
-                                                      self._do_lower_case,
-                                                      self._add_special_tokens,
-                                                      self._stride,
-                                                      self._column)
+        return _stages.PreprocessNLPStage(builder,
+                                          self.unique_name,
+                                          self._vocab_hash_file,
+                                          self._seq_length,
+                                          self._truncation,
+                                          self._do_lower_case,
+                                          self._add_special_tokens,
+                                          self._stride,
+                                          self._column)

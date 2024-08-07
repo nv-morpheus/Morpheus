@@ -26,7 +26,7 @@ from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import AppShieldMessageMeta
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 
 
@@ -56,7 +56,7 @@ class TestCreateFeaturesRWStage:
                                       n_workers=n_workers,
                                       threads_per_worker=threads_per_worker)
 
-        assert isinstance(stage, MultiMessageStage)
+        assert isinstance(stage, ControlMessageStage)
         assert stage._client is mock_dask_client
         scheduler_info = stage._client.scheduler_info()
         for worker in scheduler_info['workers'].values():

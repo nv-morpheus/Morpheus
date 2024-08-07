@@ -26,7 +26,6 @@ import cudf
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 
@@ -64,7 +63,6 @@ def test_constructor(config: Config):
     assert stage._add_special_tokens is False
 
     accepted_union = typing.Union[stage.accepted_types()]
-    assert typing_utils.issubtype(MultiMessage, accepted_union)
     assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
@@ -94,72 +92,3 @@ def test_process_control_message(mock_tokenize_text_series, config: Config):
     assert cp.array_equal(output_cm.tensors().get_tensor("input_ids"), mock_tokenized.input_ids)
     assert cp.array_equal(output_cm.tensors().get_tensor("input_mask"), mock_tokenized.input_mask)
     assert cp.array_equal(output_cm.tensors().get_tensor("seq_ids"), mock_tokenized.segment_ids)
-
-
-@patch("morpheus.stages.preprocess.preprocess_nlp_stage.tokenize_text_series")
-def test_process_multi_message(mock_tokenize_text_series, config: Config):
-    mock_tokenized = Mock()
-    mock_tokenized.input_ids = cp.array([[1, 2], [1, 2]])
-    mock_tokenized.input_mask = cp.array([[3, 4], [3, 4]])
-    mock_tokenized.segment_ids = cp.array([[0, 0], [1, 1]])
-    mock_tokenize_text_series.return_value = mock_tokenized
-
-    stage = PreprocessNLPStage(config)
-    df = cudf.DataFrame({"data": ["a", "b", "c"]})
-    meta = MessageMeta(df)
-    mess_offset = 0
-    input_multi_message = MultiMessage(meta=meta, mess_offset=mess_offset, mess_count=2)
-
-    output_infer_message = stage.pre_process_batch(input_multi_message,
-                                                   stage._vocab_hash_file,
-                                                   stage._do_lower_case,
-                                                   stage._seq_length,
-                                                   stage._stride,
-                                                   stage._truncation,
-                                                   stage._add_special_tokens,
-                                                   stage._column)
-    assert cp.array_equal(output_infer_message.input_ids, mock_tokenized.input_ids)
-    assert cp.array_equal(output_infer_message.input_mask, mock_tokenized.input_mask)
-    mock_tokenized.segment_ids[:, 0] = mock_tokenized.segment_ids[:, 0] + mess_offset
-    assert cp.array_equal(output_infer_message.seq_ids, mock_tokenized.segment_ids)
-
-
-@patch("morpheus.stages.preprocess.preprocess_nlp_stage.tokenize_text_series")
-def test_process_control_message_and_multi_message(mock_tokenize_text_series, config: Config):
-    mock_tokenized = Mock()
-    mock_tokenized.input_ids = cp.array([[1, 2], [1, 2]])
-    mock_tokenized.input_mask = cp.array([[3, 4], [3, 4]])
-    mock_tokenized.segment_ids = cp.array([[0, 0], [1, 1]])
-    mock_tokenize_text_series.return_value = mock_tokenized
-
-    stage = PreprocessNLPStage(config)
-    df = cudf.DataFrame({"data": ["a", "b", "c"]})
-    meta = MessageMeta(df)
-    input_control_message = ControlMessage()
-    input_control_message.payload(meta)
-
-    mess_offset = 0
-    input_multi_message = MultiMessage(meta=meta, mess_offset=mess_offset, mess_count=2)
-
-    output_control_message = stage.pre_process_batch(input_control_message,
-                                                     stage._vocab_hash_file,
-                                                     stage._do_lower_case,
-                                                     stage._seq_length,
-                                                     stage._stride,
-                                                     stage._truncation,
-                                                     stage._add_special_tokens,
-                                                     stage._column)
-
-    output_infer_message = stage.pre_process_batch(input_multi_message,
-                                                   stage._vocab_hash_file,
-                                                   stage._do_lower_case,
-                                                   stage._seq_length,
-                                                   stage._stride,
-                                                   stage._truncation,
-                                                   stage._add_special_tokens,
-                                                   stage._column)
-
-    # Check if each tensor in the control message is equal to the corresponding tensor in the inference message
-    for tensor_key in output_control_message.tensors().tensor_names:
-        assert cp.array_equal(output_control_message.tensors().get_tensor(tensor_key),
-                              getattr(output_infer_message, tensor_key))

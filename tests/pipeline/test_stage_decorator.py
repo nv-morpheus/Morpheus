@@ -28,7 +28,6 @@ from _utils import assert_results
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.stage_decorator import ComputeSchemaType
 from morpheus.pipeline.stage_decorator import PreAllocatedWrappedFunctionStage
@@ -59,9 +58,8 @@ def _mk_compute_schema_fn(return_type: type) -> ComputeSchemaType:
 @pytest.mark.use_python
 @pytest.mark.parametrize("generator_type",
                          [None, typing.Iterator, typing.Generator, collections.abc.Iterator, collections.abc.Generator])
-@pytest.mark.parametrize("return_type, is_prealloc",
-                         [(pd.DataFrame, True), (cudf.DataFrame, True), (MessageMeta, True), (MultiMessage, True),
-                          (float, False)])
+@pytest.mark.parametrize("return_type, is_prealloc", [(pd.DataFrame, True), (cudf.DataFrame, True), (MessageMeta, True),
+                                                      (float, False)])
 def test_wrapped_function_source_stage_constructor(config: Config,
                                                    generator_type: type,
                                                    return_type: type,
@@ -111,9 +109,8 @@ def test_wrapped_function_source_stage_not_generator_error(config: Config, src_c
 @pytest.mark.use_python
 @pytest.mark.parametrize("generator_type",
                          [None, typing.Iterator, typing.Generator, collections.abc.Iterator, collections.abc.Generator])
-@pytest.mark.parametrize("return_type, is_prealloc",
-                         [(pd.DataFrame, True), (cudf.DataFrame, True), (MessageMeta, True), (MultiMessage, True),
-                          (float, False)])
+@pytest.mark.parametrize("return_type, is_prealloc", [(pd.DataFrame, True), (cudf.DataFrame, True), (MessageMeta, True),
+                                                      (float, False)])
 def test_source_decorator(config: Config, generator_type: type, return_type: type, is_prealloc: bool):
     return_annotation = _get_annotation(return_type, generator_type)
 

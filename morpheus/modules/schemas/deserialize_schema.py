@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class DeserializeSchema(BaseModel):
     ensure_sliceable_index: bool = True
-    message_type: str = "MultiMessage"
+    message_type: str = "ControlMessage"
     task_type: Optional[str] = None
     task_payload: Optional[Dict[Any, Any]] = None
     batch_size: int = 1024

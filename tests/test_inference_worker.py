@@ -14,11 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import mock
-
+import cupy as cp
 import pytest
 
+import cudf
+
+import morpheus._lib.messages as _messages
 from _utils.inference_worker import IW
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.stages.inference import inference_stage
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
@@ -43,34 +47,20 @@ def test_build_output_message():
     queue = ProducerConsumerQueue()
     worker = IW(queue)
 
-    mock_message = mock.MagicMock()
-    mock_message.meta = mock.MagicMock()
-    mock_message.meta.count = 20
-    mock_message.mess_offset = 11
-    mock_message.mess_count = 2
-    mock_message.memory = mock.MagicMock()
-    mock_message.memory.count = 30
-    mock_message.count = 10
-    mock_message.offset = 12
+    num_records = 10
+    msg = ControlMessage()
+    # input_df = pd.DataFrame(data={'v': (i * 2 for i in range(num_records))})
+    df = cudf.DataFrame({
+        'v': [0, 2, 4, 6, 8, 10, 12, 14, 16, 18], 'score_test': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    })
+    msg.payload(MessageMeta(df))
 
-    response = worker.build_output_message(mock_message)
-    assert response.count == 2
-    assert response.mess_offset == 11
-    assert response.mess_count == 2
-    assert response.offset == 0
+    input__0 = cp.array([[0.], [2.], [4.], [6.], [8.], [10.], [12.], [14.], [16.], [18.]])
+    seq_ids = cp.array([[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0], [4, 0, 0], [5, 0, 0], [6, 0, 0], [7, 0, 0],
+                        [8, 0, 0], [9, 0, 0]])
+    msg.tensors(_messages.TensorMemory(count=num_records, tensors={'input__0': input__0, 'seq_ids': seq_ids}))
 
-    mock_message = mock.MagicMock()
-    mock_message.meta = mock.MagicMock()
-    mock_message.meta.count = 20
-    mock_message.mess_offset = 11
-    mock_message.mess_count = 2
-    mock_message.memory = mock.MagicMock()
-    mock_message.memory.count = 30
-    mock_message.count = 2
-    mock_message.offset = 12
+    output_message = worker.build_output_message(msg)
 
-    response = worker.build_output_message(mock_message)
-    assert response.count == 2
-    assert response.mess_offset == 11
-    assert response.mess_count == 2
-    assert response.offset == 0
+    assert (output_message.payload().df.equals(df))
+    assert (cp.array_equal(output_message.tensors().get_tensor('probs'), cp.zeros((10, 2))))

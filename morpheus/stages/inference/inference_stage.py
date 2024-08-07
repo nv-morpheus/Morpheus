@@ -21,20 +21,11 @@ import cupy as cp
 import mrc
 from mrc.core import operators as ops
 
-import cudf
-
-# pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import MessageMeta as CppMessageMeta
+import morpheus._lib.messages as _messages
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import InferenceMemoryNLP
-from morpheus.messages import MessageMeta
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiInferenceNLPMessage
-from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
@@ -73,39 +64,39 @@ class InferenceWorker:
 
         pass
 
-    def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseMessage:
+    def build_output_message(self, msg: ControlMessage) -> ControlMessage:
         """
         Create initial inference response message with result values initialized to zero. Results will be
         set in message as each inference mini-batch is processed.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiInferenceMessage`
-            Batch of inference messages.
+        msg : `morpheus.messages.ControlMessage`
+            Batch of ControlMessage.
 
         Returns
         -------
-        `morpheus.pipeline.messages.MultiResponseMessage`
+        `morpheus.messages.ControlMessage`
             Response message with probabilities calculated from inference results.
         """
+        dims = self.calc_output_dims(msg)
+        output_dims = (msg.payload().count, *dims[1:])
 
-        dims = self.calc_output_dims(x)
-        output_dims = (x.mess_count, *dims[1:])
-
-        memory = TensorMemory(count=output_dims[0], tensors={'probs': cp.zeros(output_dims)})
-
-        output_message = MultiResponseMessage.from_message(x, memory=memory)
+        memory = _messages.TensorMemory(count=output_dims[0], tensors={'probs': cp.zeros(output_dims)})
+        output_message = ControlMessage(msg)
+        output_message.payload(msg.payload())
+        output_message.tensors(memory)
 
         return output_message
 
     @abstractmethod
-    def calc_output_dims(self, x: MultiInferenceMessage) -> typing.Tuple:
+    def calc_output_dims(self, msg: ControlMessage) -> typing.Tuple:
         """
         Calculates the dimensions of the inference output message data given an input message.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiInferenceMessage`
+        msg : `morpheus.messages.ControlMessage`
             Pipeline inference input batch before splitting into smaller inference batches.
 
         Returns
@@ -116,7 +107,7 @@ class InferenceWorker:
         pass
 
     @abstractmethod
-    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: ControlMessage, callback: typing.Callable[[TensorMemory], None]):
         """
         Main inference processing function. This function will be called once for each mini-batch. Once the inference is
         complete, the `cb` parameter should be used to set the response value. The callback can be called
@@ -124,7 +115,7 @@ class InferenceWorker:
 
         Parameters
         ----------
-        batch : `morpheus.pipeline.messages.MultiInferenceMessage`
+        batch : `morpheus.messages.ControlMessage`
             Mini-batch of inference messages.
         callback : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
             Callback to set the values for the inference response.
@@ -133,7 +124,7 @@ class InferenceWorker:
         pass
 
 
-class InferenceStage(MultiMessageStage):
+class InferenceStage(ControlMessageStage):
     """
     This class serves as the base for any inference stage. Inference stages operate differently than other
     stages due to the fact that they operate in a separate thread and have their own batch size which is
@@ -149,7 +140,7 @@ class InferenceStage(MultiMessageStage):
     Inference stages that derive from this class need to implement the `_get_inference_worker` method which
     returns an implementation of the `InferenceWorker` class. Your `InferenceWorker` class must implement the
     `process` and `calc_output_dims` methods. The `process` methods is where you provide implementation details
-    on how to perform inference with the `MultiInferenceMessage` batch. The worker uses the `calc_output_dims` to
+    on how to perform inference with the `ControlMessage` batch. The worker uses the `calc_output_dims` to
     calculate the output dimensions of the pipeline batch that inference batch results are appended to.
 
     To add a C++ implementation for processing inference requests, you must implement the `_get_cpp_inference_node`
@@ -191,13 +182,10 @@ class InferenceStage(MultiMessageStage):
         typing.Tuple
             Tuple of input types.
         """
-        return (MultiInferenceMessage, ControlMessage)
+        return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):
-        if schema.input_type == ControlMessage:
-            schema.output_schema.set_type(ControlMessage)
-        else:
-            schema.output_schema.set_type(MultiResponseMessage)
+        schema.output_schema.set_type(ControlMessage)
 
     def supports_cpp_node(self):
         # Default to False unless derived classes override this value
@@ -236,26 +224,10 @@ class InferenceStage(MultiMessageStage):
 
             outstanding_requests = 0
 
-            def on_next(message: typing.Union[MultiInferenceMessage, ControlMessage]):
+            def on_next(message: ControlMessage):
                 nonlocal outstanding_requests
-                _message = None
-                if (isinstance(message, ControlMessage)):
-                    _message = message
-                    tensors = message.tensors()
-                    memory_params: dict = message.get_metadata("inference_memory_params")
-                    inference_type: str = memory_params["inference_type"]
-
-                    if (inference_type == "nlp"):
-                        memory = InferenceMemoryNLP(count=tensors.count, **tensors.get_tensors())
-                        meta_message = MessageMeta(df=message.payload().df)
-                        multi_message = MultiMessage(meta=meta_message)
-
-                        message = MultiInferenceNLPMessage.from_message(multi_message, memory=memory)
-                    else:
-                        raise ValueError(f"Unsupported inference type for ControlMessage: {inference_type}")
 
                 batches = self._split_batches(message, self._max_batch_size)
-
                 output_message = worker.build_output_message(message)
 
                 fut_list = []
@@ -279,20 +251,6 @@ class InferenceStage(MultiMessageStage):
 
                 for f in fut_list:
                     f.result()
-
-                # TODO(Devin): This is a hack to support ControlMessage side channel.
-                if (isinstance(_message, ControlMessage)):
-                    _df = cudf.DataFrame(output_message.get_meta())
-                    if (_df is not None and not _df.empty):
-                        _message_meta = CppMessageMeta(df=_df)
-                        _message.payload(_message_meta)
-
-                        response_tensors = output_message.tensors
-                        cm_tensors = _message.tensors()
-                        for (name, tensor) in response_tensors.items():
-                            cm_tensors.set_tensor(name, tensor)
-
-                    output_message = _message
 
                 return output_message
 
@@ -337,11 +295,10 @@ class InferenceStage(MultiMessageStage):
         return await super().join()
 
     @staticmethod
-    def _split_batches(x: MultiInferenceMessage, max_batch_size: int) -> typing.List[MultiInferenceMessage]:
-
+    def _split_batches(msg: ControlMessage, max_batch_size: int) -> typing.List[ControlMessage]:
         out_batches = []
 
-        id_array = cp.concatenate([cp.array([-1]), x.get_input("seq_ids")[:, 0], cp.array([-1])])
+        id_array = cp.concatenate([cp.array([-1]), msg.tensors().get_tensor("seq_ids")[:, 0], cp.array([-1])])
 
         diff_ids = cp.where(id_array[1:] != id_array[:-1])[0]
 
@@ -366,34 +323,44 @@ class InferenceStage(MultiMessageStage):
         out_resp = []
 
         for start, stop in out_batches:
-            out_resp.append(x.get_slice(start, stop))
+            out_msg = ControlMessage(msg)
+
+            out_msg.payload(msg.payload().get_slice(start, stop))
+
+            out_msg_tensors = _messages.TensorMemory(count=stop - start, tensors={})
+            for (name, tensor) in msg.tensors().get_tensors().items():
+                out_msg_tensors.set_tensor(name, tensor[start:stop])
+            out_msg.tensors(out_msg_tensors)
+
+            out_resp.append(out_msg)
 
         assert len(out_resp) > 0
 
         return out_resp
 
     @staticmethod
-    def _convert_one_response(output: MultiResponseMessage, inf: MultiInferenceMessage, res: TensorMemory):
+    def _convert_one_response(output: ControlMessage, inf: ControlMessage, res: TensorMemory):
         # Make sure we have a continuous list
         # assert inf.mess_offset == saved_offset + saved_count
-        memory = output.memory
 
-        probs = memory.get_tensor(output.probs_tensor_name)
-        resp_probs = res.get_tensor(output.probs_tensor_name)
+        memory = output.tensors()
 
-        seq_ids = inf.get_id_tensor()
+        probs = memory.get_tensor("probs")
+        resp_probs = res.get_tensor("probs")
 
-        seq_offset = seq_ids[0, 0].item() - output.mess_offset
-        seq_count = (seq_ids[-1, 0].item() + 1 - seq_offset) - output.mess_offset
+        seq_ids = inf.tensors().get_tensor("seq_ids")
+
+        seq_offset = seq_ids[0, 0].item()
+        seq_count = seq_ids[-1, 0].item() + 1 - seq_offset
 
         # Two scenarios:
-        if (inf.mess_count == inf.count):
+        if (inf.payload().count == inf.tensors().count):
             assert seq_count == res.count
 
             # In message and out message have same count. Just use probs as is
             probs[seq_offset:seq_offset + seq_count, :] = resp_probs
         else:
-            assert inf.count == res.count
+            assert inf.tensors().count == res.count
 
             mess_ids = seq_ids[:, 0].get().tolist()
 
@@ -401,4 +368,8 @@ class InferenceStage(MultiMessageStage):
             for i, idx in enumerate(mess_ids):
                 probs[idx, :] = cp.maximum(probs[idx, :], resp_probs[i, :])
 
-        return MultiResponseMessage.from_message(inf, memory=memory, offset=seq_offset, count=seq_count)
+        msg = ControlMessage(inf)
+        msg.payload(inf.payload())
+        msg.tensors(memory)
+
+        return msg

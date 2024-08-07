@@ -25,7 +25,6 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -120,20 +119,17 @@ class MLFlowDriftStage(PassThruTypeMixin, SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiResponseMessage`, ControlMessage]
+        typing.Tuple[`morpheus.messages.ControlMessage`]
             Accepted input types.
 
         """
-        return (MultiResponseMessage, ControlMessage)
+        return (ControlMessage, )
 
     def supports_cpp_node(self):
         return False
 
-    def _calc_drift(self, x: MultiResponseMessage | ControlMessage):
-        if isinstance(x, MultiResponseMessage):
-            probs_tensor = x.get_probs_tensor()
-        elif isinstance(x, ControlMessage):
-            probs_tensor = x.tensors().get_tensor("probs")
+    def _calc_drift(self, msg: ControlMessage):
+        probs_tensor = msg.tensors().get_tensor("probs")
 
         # All probs in a batch will be calculated
         shifted = cp.abs(probs_tensor - 0.5) + 0.5
@@ -142,10 +138,7 @@ class MLFlowDriftStage(PassThruTypeMixin, SinglePortStage):
         for label in range(len(self._labels), shifted.shape[1]):
             self._labels.append(str(label))
 
-        if isinstance(x, MultiResponseMessage):
-            count = x.count
-        elif isinstance(x, ControlMessage):
-            count = x.payload().count
+        count = msg.tensors().count
 
         for i in list(range(0, count, self._batch_size)):
             start = i
@@ -159,7 +152,7 @@ class MLFlowDriftStage(PassThruTypeMixin, SinglePortStage):
 
             mlflow.log_metrics(metrics)
 
-        return x
+        return msg
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 

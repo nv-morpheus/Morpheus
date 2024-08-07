@@ -20,7 +20,7 @@ from mrc.core import operators as ops
 import cudf
 
 from morpheus.common import typeid_to_numpy_str
-from morpheus.messages import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -42,13 +42,13 @@ class CheckPreAlloc(PassThruTypeMixin, SinglePortStage):
         return "check-prealloc"
 
     def accepted_types(self):
-        return (MultiMessage, )
+        return (ControlMessage, )
 
     def supports_cpp_node(self):
         return False
 
-    def _check_prealloc(self, msg: MultiMessage):
-        df = msg.get_meta()
+    def _check_prealloc(self, msg: ControlMessage):
+        df = msg.payload().df
         for label in self._class_labels:
             assert label in df.columns
             assert df[label].dtype == self._expected_type
