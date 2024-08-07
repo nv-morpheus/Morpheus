@@ -29,15 +29,17 @@ from _utils import make_url
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.io.serializers import df_to_stream_json
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.stages.input.http_server_source_stage import HttpServerSourceStage
+from morpheus.stages.input.http_server_source_stage import SupportedMessageTypes
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
 
 
 class GetNext(threading.Thread):
 
-    def __init__(self, msg_queue: queue.Queue, generator: typing.Iterator[MessageMeta]):
+    def __init__(self, msg_queue: queue.Queue, generator: typing.Iterator[ControlMessage | MessageMeta]):
         threading.Thread.__init__(self)
         self._generator = generator
         self._msg_queue = msg_queue
@@ -59,9 +61,14 @@ class GetNext(threading.Thread):
 
 @pytest.mark.slow
 @pytest.mark.use_python
+@pytest.mark.parametrize("message_type", SupportedMessageTypes)
 @pytest.mark.parametrize("lines", [False, True], ids=["json", "lines"])
 @pytest.mark.parametrize("use_payload_to_df_fn", [False, True], ids=["no_payload_to_df_fn", "payload_to_df_fn"])
-def test_generate_frames(config: Config, dataset_pandas: DatasetManager, lines: bool, use_payload_to_df_fn: bool):
+def test_generate_frames(config: Config,
+                         dataset_pandas: DatasetManager,
+                         lines: bool,
+                         use_payload_to_df_fn: bool,
+                         message_type: SupportedMessageTypes):
     # The _generate_frames() method is only used when C++ mode is disabled
     endpoint = '/test'
     port = 8088
@@ -93,7 +100,8 @@ def test_generate_frames(config: Config, dataset_pandas: DatasetManager, lines: 
                                   method=method,
                                   accept_status=accept_status,
                                   lines=lines,
-                                  payload_to_df_fn=payload_to_df_fn)
+                                  payload_to_df_fn=payload_to_df_fn,
+                                  message_type=message_type)
 
     generate_frames = stage._generate_frames()
     msg_queue = queue.SimpleQueue()
@@ -135,7 +143,25 @@ def test_generate_frames(config: Config, dataset_pandas: DatasetManager, lines: 
     else:
         expected_df = df
 
-    dataset_pandas.assert_compare_df(expected_df, result_msg.df)
+    if message_type == SupportedMessageTypes.CONTROL_MESSAGE:
+        expected_class = ControlMessage
+        actual_df = result_msg.payload().df
+
+        # Subset of headers that we want to check for
+        expected_headers = {
+            'Host': f'127.0.0.1:{port}',
+            'endpoint': expected_endpoint,
+            'method': method,
+            'accept_status': accept_status,
+            'remote_address': '127.0.0.1',
+            'unit': 'test'
+        }
+    else:
+        expected_class = MessageMeta
+        actual_df = result_msg.df
+
+    assert isinstance(result_msg, expected_class)
+    dataset_pandas.assert_compare_df(expected_df, actual_df)
 
 
 @pytest.mark.parametrize("invalid_method", [HTTPMethod.GET, HTTPMethod.PATCH])

@@ -302,11 +302,7 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
             auto options    = cudf::io::json_reader_options::builder(source).lines(lines);
             auto cudf_table = cudf::io::read_json(options.build());
 
-            // method, endpoint and accept_status should always match the constructor arguments of the source, but we
-            // include them with the metadata in the event of a multi-source stage
-            auto http_fields             = request_headers_to_json(tcp_endpoint, request);
-            http_fields["accept_status"] = accept_status;
-
+            auto http_fields = request_headers_to_json(tcp_endpoint, request);
             table = std::make_unique<table_with_http_fields_t>(std::move(cudf_table), std::move(http_fields));
         } catch (const std::exception& e)
         {

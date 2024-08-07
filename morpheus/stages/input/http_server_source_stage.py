@@ -233,7 +233,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                                      content_type=MimeTypes.TEXT.value,
                                      body=err_msg)
 
-        return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
+        return HttpParseResponse(status_code=HTTPStatus.OK.value, content_type=MimeTypes.TEXT.value, body="")
 
     def _readiness_check(self, _: str) -> HttpParseResponse:
         if not self._http_server.is_running():
@@ -244,7 +244,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                                      body=err_msg)
 
         if self._queue_size < self._max_queue_size:
-            return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
+            return HttpParseResponse(status_code=HTTPStatus.OK.value, content_type=MimeTypes.TEXT.value, body="")
 
         err_msg = "HTTP payload queue is full or unavailable to accept new values"
         logger.error(err_msg)
