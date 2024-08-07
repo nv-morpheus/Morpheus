@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include "morpheus/export.h"  // for exporting symbols
+#include "morpheus/export.h"                  // for exporting symbols
+#include "morpheus/utilities/json_types.hpp"  // for json_t
 
 #include <boost/asio/io_context.hpp>         // for io_context
 #include <boost/asio/ip/tcp.hpp>             // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
@@ -77,6 +78,8 @@ using request_handler_fn_t =
     std::function<parse_status_t(const tcp_endpoint_t& tcp_endpoint, const request_t& request)>;
 
 constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
+
+utilities::json_t request_headers_to_json(const tcp_endpoint_t& tcp_endpoint, const request_t& request);
 
 /**
  * @brief A struct that encapsulates the http endpoint attributes
@@ -186,7 +189,10 @@ class MORPHEUS_EXPORT HttpServer
  */
 struct MORPHEUS_EXPORT HttpEndpointInterfaceProxy
 {
-    static std::shared_ptr<HttpEndpoint> init(pybind11::function py_parse_fn, std::string m_url, std::string m_method);
+    static std::shared_ptr<HttpEndpoint> init(pybind11::function py_parse_fn,
+                                              std::string m_url,
+                                              std::string m_method,
+                                              bool include_headers = false);
 };
 
 /****** HttpServerInterfaceProxy *************************/

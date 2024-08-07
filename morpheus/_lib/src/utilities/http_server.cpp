@@ -49,7 +49,8 @@
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
 #include <pybind11/pytypes.h>
 
-#include <exception>    // for exception
+#include <exception>  // for exception
+#include <memory>
 #include <ostream>      // needed for glog
 #include <stdexcept>    // for runtime_error, length_error
 #include <type_traits>  // indirectly used by pybind11 casting
@@ -340,19 +341,53 @@ HttpServer::~HttpServer()
     }
 }
 
+utilities::json_t request_headers_to_json(const tcp_endpoint_t& tcp_endpoint, const request_t& request)
+{
+    morpheus::utilities::json_t headers{{"method", request.method_string()},
+                                        {"endpoint", request.target()},
+                                        {"remote_address", tcp_endpoint.address().to_string()},
+                                        {"remote_port", tcp_endpoint.port()}};
+
+    for (const auto& field : request)
+    {
+        headers[field.name_string()] = field.value();
+    }
+
+    return headers;
+}
+
 /****** HttpEndpointInterfaceProxy *************************/
 using mrc::pymrc::PyFuncWrapper;
 namespace py = pybind11;
 
 std::shared_ptr<HttpEndpoint> HttpEndpointInterfaceProxy::init(pybind11::function py_parse_fn,
                                                                std::string url,
-                                                               std::string method)
+                                                               std::string method,
+                                                               bool include_headers)
 {
-    auto wrapped_parse_fn               = PyFuncWrapper(std::move(py_parse_fn));
-    payload_parse_fn_t payload_parse_fn = [wrapped_parse_fn = std::move(wrapped_parse_fn)](const std::string& payload) {
+    auto wrapped_parse_fn                   = PyFuncWrapper(std::move(py_parse_fn));
+    request_handler_fn_t request_handler_fn = [include_headers, wrapped_parse_fn = std::move(wrapped_parse_fn)](
+                                                  const tcp_endpoint_t& tcp_endpoint, const request_t& request) {
+        std::string body{request.body()};
+        std::unique_ptr<utilities::json_t> headers{nullptr};
+        if (include_headers)
+        {
+            headers = std::make_unique<utilities::json_t>(std::move(request_headers_to_json(tcp_endpoint, request)));
+        }
+
         py::gil_scoped_acquire gil;
-        auto py_payload = py::str(payload);
-        auto py_result  = wrapped_parse_fn.operator()<py::tuple, py::str>(py_payload);
+        auto py_payload = py::str(body);
+        pybind11::tuple py_result;
+        if (include_headers)
+        {
+            auto py_headers = py::cast<py::object>(py::cast(*headers));
+            py_result       = wrapped_parse_fn.operator()<py::tuple, py::str, py::dict>(py_payload, py_headers);
+        }
+        else
+        {
+            py_result = wrapped_parse_fn.operator()<py::tuple, py::str>(py_payload);
+        }
+
         on_complete_cb_fn_t cb_fn{nullptr};
         if (!py_result[3].is_none())
         {
@@ -379,7 +414,7 @@ std::shared_ptr<HttpEndpoint> HttpEndpointInterfaceProxy::init(pybind11::functio
                                std::move(cb_fn));
     };
 
-    return std::make_shared<HttpEndpoint>(std::move(payload_parse_fn), std::move(url), method);
+    return std::make_shared<HttpEndpoint>(std::move(request_handler_fn), std::move(url), method);
 }
 
 /****** HttpServerInterfaceProxy *************************/

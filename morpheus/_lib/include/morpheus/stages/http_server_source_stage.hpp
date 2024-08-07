@@ -21,7 +21,7 @@
 #include "morpheus/messages/control.hpp"       // for ControlMessage
 #include "morpheus/messages/meta.hpp"          // for MessageMeta
 #include "morpheus/utilities/http_server.hpp"  // for HttpServer
-#include "morpheus/utilities/json_types.hpp"   // for control_message_task_t
+#include "morpheus/utilities/json_types.hpp"   // for control_message_task_t & json_t
 
 #include <boost/beast/http/status.hpp>        // for int_to_status, status
 #include <boost/fiber/buffered_channel.hpp>   // for buffered_channel
@@ -225,19 +225,8 @@ HttpServerSourceStage<OutputT>::HttpServerSourceStage(std::string bind_address,
 
             // method, endpoint and accept_status should always match the constructor arguments of the source, but we
             // include them with the metadata in the event of a multi-source stage
-            morpheus::utilities::json_t http_fields{
-                {"method", request.method_string()},
-                {"endpoint", request.target()},
-                {"remote_address", tcp_endpoint.address().to_string()},
-                {"remote_port", tcp_endpoint.port()},
-                // this request this might not be accepted, but in that event this won't be emitted
-                {"accept_status", accept_status},
-            };
-
-            for (const auto& field : request)
-            {
-                http_fields[field.name_string()] = field.value();
-            }
+            auto http_fields             = request_headers_to_json(tcp_endpoint, request);
+            http_fields["accept_status"] = accept_status;
 
             table = std::make_unique<table_with_http_fields_t>(std::move(cudf_table), std::move(http_fields));
         } catch (const std::exception& e)

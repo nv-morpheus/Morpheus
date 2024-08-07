@@ -35,6 +35,7 @@
 #include <mrc/utils/string_utils.hpp>
 #include <nlohmann/json.hpp>
 #include <pybind11/attr.h>
+#include <pybind11/cast.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>  // for return_value_policy::reference
 // for pathlib.Path -> std::filesystem::path conversions
@@ -153,7 +154,11 @@ PYBIND11_MODULE(common, _module)
         .value("DATAFRAME", FilterSource::DATAFRAME);
 
     py::class_<HttpEndpoint, std::shared_ptr<HttpEndpoint>>(_module, "HttpEndpoint")
-        .def(py::init<>(&HttpEndpointInterfaceProxy::init), py::arg("py_parse_fn"), py::arg("url"), py::arg("method"));
+        .def(py::init<>(&HttpEndpointInterfaceProxy::init),
+             py::arg("py_parse_fn"),
+             py::arg("url"),
+             py::arg("method"),
+             py::arg("include_headers") = false);
 
     py::class_<HttpServer, std::shared_ptr<HttpServer>>(_module, "HttpServer")
         .def(py::init<>(&HttpServerInterfaceProxy::init),
