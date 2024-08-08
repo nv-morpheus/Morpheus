@@ -33,7 +33,6 @@ All objects related to building and running a pipeline.
 # isort: off
 
 from morpheus.pipeline.boundary_stage_mixin import BoundaryStageMixin
-from morpheus.pipeline.configurable_output_source import ConfigurableOutputSource
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.stage_schema import PortSchema
 from morpheus.pipeline.stage_schema import StageSchema
@@ -45,5 +44,6 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.source_stage import SourceStage
 from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.configurable_output_source import ConfigurableOutputSource
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.pipeline.linear_pipeline import LinearPipeline
