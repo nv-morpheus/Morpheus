@@ -38,6 +38,7 @@ from morpheus.utils.producer_consumer_queue import Closed
 
 if typing.TYPE_CHECKING:
     from morpheus.common import FiberQueue
+    from morpheus.common import HttpServer
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +140,7 @@ class HttpServerSourceStage(PreallocatorMixin, ConfigurableOutputSource):
         self._stop_after = stop_after
         self._payload_to_df_fn = payload_to_df_fn
 
-        self._http_server = None
+        self._http_server: "HttpServer" = None
 
         # These are only used when C++ mode is disabled
         self._queue: "FiberQueue" = None
