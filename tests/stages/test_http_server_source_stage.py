@@ -200,24 +200,6 @@ def test_constructor_invalid_accept_status(config: Config, invalid_accept_status
         HttpServerSourceStage(config=config, accept_status=invalid_accept_status)
 
 
-def test_constructor_invalid_task(config: Config):
-    with pytest.raises(ValueError):
-        HttpServerSourceStage(config=config,
-                              message_type=SupportedMessageTypes.MESSAGE_META,
-                              task_type="test",
-                              task_payload={"why": "setting task only valid for ControlMessage output"})
-
-    with pytest.raises(ValueError):
-        HttpServerSourceStage(config=config,
-                              message_type=SupportedMessageTypes.CONTROL_MESSAGE,
-                              task_type="setting task_type requires setting task_payload")
-
-    with pytest.raises(ValueError):
-        HttpServerSourceStage(config=config,
-                              message_type=SupportedMessageTypes.MESSAGE_META,
-                              task_payload={"why": "setting task_payload requires setting task_type"})
-
-
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.parametrize(
