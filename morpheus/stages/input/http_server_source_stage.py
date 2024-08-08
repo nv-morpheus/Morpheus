@@ -243,7 +243,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
 
             self._processing = True
             self._http_server = http_server
-            while self._processing and not self._stop_requested:
+            while self._processing:
                 # Read as many messages as we can from the queue if it's empty check to see if we should be shutting
                 # down. It is important that any messages we received that are in the queue are processed before we
                 # shutdown since we already returned an OK response to the client.
@@ -252,7 +252,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                     df = self._queue.get()
                     self._queue_size -= 1
                 except queue.Empty:
-                    if (not self._http_server.is_running()):
+                    if (not self._http_server.is_running() or self._stop_requested):
                         self._processing = False
                     else:
                         logger.debug("Queue empty, sleeping ...")
