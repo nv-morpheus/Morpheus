@@ -18,7 +18,6 @@ import os
 import queue
 import time
 import typing
-from enum import Enum
 from http import HTTPStatus
 
 import mrc
