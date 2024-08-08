@@ -51,6 +51,13 @@ ControlMessage::ControlMessage(const morpheus::utilities::json_t& _config) :
     config(_config);
 }
 
+ControlMessage::ControlMessage(const std::shared_ptr<MessageMeta>& _payload,
+                               const morpheus::utilities::json_t& config) :
+  ControlMessage(config)
+{
+    payload(_payload);
+}
+
 ControlMessage::ControlMessage(const ControlMessage& other)
 {
     m_config = other.m_config;
@@ -260,6 +267,12 @@ void ControlMessage::task_type(ControlMessageType type)
 std::shared_ptr<ControlMessage> ControlMessageProxy::create(py::dict& config)
 {
     return std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config));
+}
+
+std::shared_ptr<ControlMessage> ControlMessageProxy::create(const pybind11::object& meta, py::dict& config)
+{
+    return std::make_shared<ControlMessage>(MessageMetaInterfaceProxy::init_python_meta(meta),
+                                            mrc::pymrc::cast_from_pyobject(config));
 }
 
 std::shared_ptr<ControlMessage> ControlMessageProxy::create(std::shared_ptr<ControlMessage> other)

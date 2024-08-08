@@ -21,7 +21,10 @@ from _utils import TEST_DIRS
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
+from morpheus.pipeline.configurable_output_source import SupportedMessageTypes
 from morpheus.stages.input.http_client_source_stage import HttpClientSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
@@ -30,11 +33,21 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("lines", [False, True], ids=["json", "lines"])
 @pytest.mark.parametrize("use_payload_to_df_fn", [False, True], ids=["no_payload_to_df_fn", "payload_to_df_fn"])
+@pytest.mark.parametrize("message_type, task_type, task_payload",
+                         [(SupportedMessageTypes.MESSAGE_META, None, None),
+                          (SupportedMessageTypes.CONTROL_MESSAGE, None, None),
+                          (SupportedMessageTypes.CONTROL_MESSAGE, "test", {
+                              "pay": "load"
+                          })],
+                         ids=["message_meta", "control_message_no_task", "control_message_with_task"])
 def test_http_client_source_stage_pipe(config: Config,
                                        dataset: DatasetManager,
                                        mock_rest_server: str,
                                        lines: bool,
-                                       use_payload_to_df_fn: bool):
+                                       use_payload_to_df_fn: bool,
+                                       message_type: SupportedMessageTypes,
+                                       task_type: str | None,
+                                       task_payload: dict | None):
     """
     Test the HttpClientSourceStage against a mock REST server which will return JSON data which can be deserialized
     into a DataFrame.
@@ -78,11 +91,42 @@ def test_http_client_source_stage_pipe(config: Config,
                               max_retries=1,
                               lines=lines,
                               stop_after=num_records,
-                              payload_to_df_fn=payload_to_df_fn))
+                              payload_to_df_fn=payload_to_df_fn,
+                              message_type=message_type,
+                              task_type=task_type,
+                              task_payload=task_payload))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
-    assert_results(comp_stage.get_results())
+    assert_results(comp_stage.get_results(clear=False))
+
+    messages = comp_stage.get_messages()
+    assert len(messages) == 1
+
+    recv_msg = messages[0]
+    if message_type == SupportedMessageTypes.MESSAGE_META:
+        assert isinstance(recv_msg, MessageMeta)
+    else:
+        assert isinstance(recv_msg, ControlMessage)
+        if task_type is not None:
+            expected_tasks = {task_type: [task_payload]}
+        else:
+            expected_tasks = {}
+
+        assert recv_msg.get_tasks() == expected_tasks
+
+        if lines:
+            # This is the content type specified in `tests/mock_rest_server/mocks/api/v1/data-lines/GET.mock`
+            expected_content_type = "text/plain;charset=UTF-8"
+        else:
+            expected_content_type = "application/json"
+
+        # Subset of headers that we want to check for
+        expected_headers = {'url': url, 'method': 'GET', 'Content-Type': expected_content_type}
+
+        actual_headers = recv_msg.get_metadata()['http_fields']
+        for (key, value) in expected_headers.items():
+            assert actual_headers[key] == value
 
 
 @pytest.mark.slow
