@@ -62,14 +62,22 @@ class GetNext(threading.Thread):
 
 @pytest.mark.slow
 @pytest.mark.use_python
-@pytest.mark.parametrize("message_type", SupportedMessageTypes)
+@pytest.mark.parametrize("message_type, task_type, task_payload",
+                         [(SupportedMessageTypes.MESSAGE_META, None, None),
+                          (SupportedMessageTypes.CONTROL_MESSAGE, None, None),
+                          (SupportedMessageTypes.CONTROL_MESSAGE, "test", {
+                              "pay": "load"
+                          })],
+                         ids=["message_meta", "control_message_no_task", "control_message_with_task"])
 @pytest.mark.parametrize("lines", [False, True], ids=["json", "lines"])
 @pytest.mark.parametrize("use_payload_to_df_fn", [False, True], ids=["no_payload_to_df_fn", "payload_to_df_fn"])
 def test_generate_frames(config: Config,
                          dataset_pandas: DatasetManager,
                          lines: bool,
                          use_payload_to_df_fn: bool,
-                         message_type: SupportedMessageTypes):
+                         message_type: SupportedMessageTypes,
+                         task_type: str | None,
+                         task_payload: dict | None):
     # The _generate_frames() method is only used when C++ mode is disabled
     endpoint = '/test'
     port = 8088
@@ -102,7 +110,9 @@ def test_generate_frames(config: Config,
                                   accept_status=accept_status,
                                   lines=lines,
                                   payload_to_df_fn=payload_to_df_fn,
-                                  message_type=message_type)
+                                  message_type=message_type,
+                                  task_type=task_type,
+                                  task_payload=task_payload)
 
     generate_frames = stage._generate_frames()
     msg_queue = queue.SimpleQueue()
@@ -157,6 +167,13 @@ def test_generate_frames(config: Config,
     dataset_pandas.assert_compare_df(expected_df, actual_df)
 
     if message_type == SupportedMessageTypes.CONTROL_MESSAGE:
+        if task_type is not None:
+            expected_tasks = {task_type: [task_payload]}
+        else:
+            expected_tasks = {}
+
+        assert result_msg.get_tasks() == expected_tasks
+
         # Subset of headers that we want to check for
         expected_headers = {
             'Host': f'127.0.0.1:{port}',
@@ -181,6 +198,24 @@ def test_constructor_invalid_method(config: Config, invalid_method: HTTPMethod):
 def test_constructor_invalid_accept_status(config: Config, invalid_accept_status: HTTPStatus):
     with pytest.raises(ValueError):
         HttpServerSourceStage(config=config, accept_status=invalid_accept_status)
+
+
+def test_constructor_invalid_task(config: Config):
+    with pytest.raises(ValueError):
+        HttpServerSourceStage(config=config,
+                              message_type=SupportedMessageTypes.MESSAGE_META,
+                              task_type="test",
+                              task_payload={"why": "setting task only valid for ControlMessage output"})
+
+    with pytest.raises(ValueError):
+        HttpServerSourceStage(config=config,
+                              message_type=SupportedMessageTypes.CONTROL_MESSAGE,
+                              task_type="setting task_type requires setting task_payload")
+
+    with pytest.raises(ValueError):
+        HttpServerSourceStage(config=config,
+                              message_type=SupportedMessageTypes.MESSAGE_META,
+                              task_payload={"why": "setting task_payload requires setting task_type"})
 
 
 @pytest.mark.slow
