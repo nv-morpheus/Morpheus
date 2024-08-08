@@ -28,22 +28,16 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.configurable_output_source import ConfigurableOutputSource
+from morpheus.pipeline.configurable_output_source import SupportedMessageTypes
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
-from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils import http_utils
 
 logger = logging.getLogger(__name__)
 
 
-class SupportedMessageTypes(Enum):
-    """Supported output message types"""
-    MESSAGE_META = "MessageMeta"
-    CONTROL_MESSAGE = "ControlMessage"
-
-
 @register_stage("from-http-client", ignore_args=["query_params", "headers", "**request_kwargs"])
-class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
+class HttpClientSourceStage(PreallocatorMixin, ConfigurableOutputSource):
     """
     Source stage that polls a remote HTTP server for incoming data.
 
@@ -122,7 +116,7 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  task_type: str = None,
                  task_payload: dict = None,
                  **request_kwargs):
-        super().__init__(config)
+        super().__init__(config, message_type=message_type, task_type=task_type, task_payload=task_payload)
         self._url = http_utils.prepare_url(url)
 
         if callable(query_params):
@@ -161,19 +155,6 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
         self._payload_to_df_fn = payload_to_df_fn
         self._requst_kwargs = request_kwargs
 
-        self._message_type = message_type
-        self._task_type = task_type
-        self._task_payload = task_payload
-
-        if (self._message_type is SupportedMessageTypes.CONTROL_MESSAGE):
-            if ((self._task_type is None) != (self._task_payload is None)):
-                raise ValueError("Both `task_type` and `task_payload` must be specified if either is specified.")
-        elif (self._message_type is SupportedMessageTypes.MESSAGE_META):
-            if (self._task_type is not None or self._task_payload is not None):
-                raise ValueError("Cannot specify `task_type` or `task_payload` for non-control messages.")
-        else:
-            raise ValueError(f"Invalid message type: {self._message_type}")
-
     @property
     def name(self) -> str:
         """Unique name of the stage"""
@@ -182,14 +163,6 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         """Indicates whether or not this stage supports a C++ implementation"""
         return False
-
-    def compute_schema(self, schema: StageSchema):
-        if (self._message_type is SupportedMessageTypes.CONTROL_MESSAGE):
-            print("Setting control message")
-            schema.output_schema.set_type(ControlMessage)
-        else:
-            print("Setting meta")
-            schema.output_schema.set_type(MessageMeta)
 
     def _parse_response(self, response: requests.Response) -> typing.Union[cudf.DataFrame, None]:
         """
