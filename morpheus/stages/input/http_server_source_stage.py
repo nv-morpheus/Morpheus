@@ -122,6 +122,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         self._request_timeout_secs = request_timeout_secs
         self._lines = lines
         self._stop_after = stop_after
+        self._stop_requested = False
         self._payload_to_df_fn = payload_to_df_fn
         self._http_server = None
 
@@ -148,6 +149,16 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
+
+    def stop(self):
+        """
+        Performs cleanup steps when pipeline is stopped.
+        """
+        logger.debug("Stopping HttpServerSourceStage")
+        # Indicate we need to stop
+        self._stop_requested = True
+
+        return super().stop()
 
     def _parse_payload(self, payload: str) -> HttpParseResponse:
         try:
@@ -232,7 +243,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
 
             self._processing = True
             self._http_server = http_server
-            while self._processing:
+            while self._processing and not self._stop_requested:
                 # Read as many messages as we can from the queue if it's empty check to see if we should be shutting
                 # down. It is important that any messages we received that are in the queue are processed before we
                 # shutdown since we already returned an OK response to the client.
