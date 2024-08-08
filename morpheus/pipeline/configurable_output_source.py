@@ -34,7 +34,7 @@ class ConfigurableOutputSource(_pipeline.SingleOutputSource):
     ----------
     config : `morpheus.config.Config`
         Pipeline configuration instance.
-    message_type : `SupportedMessageTypes`, case_sensitive = False
+    message_type : `SupportedMessageTypes`
         The type of message to emit.
     task_type : str, default = None
         If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
