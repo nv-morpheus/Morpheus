@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+"""Base class for single output source stages which support both `MessageMeta` and `ControlMessage` as output types."""
 from enum import Enum
 
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
@@ -28,7 +28,7 @@ class SupportedMessageTypes(Enum):
 
 class ConfigurableOutputSource(_pipeline.SingleOutputSource):
     """
-    Base class single output source stages which support both `MessageMeta` and `ControlMessage` as output types.
+    Base class for single output source stages which support both `MessageMeta` and `ControlMessage` as output types.
 
     Parameters
     ----------
