@@ -14,11 +14,10 @@
 
 from enum import Enum
 
+import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stage_schema import StageSchema
 
 
 class SupportedMessageTypes(Enum):
@@ -27,7 +26,7 @@ class SupportedMessageTypes(Enum):
     CONTROL_MESSAGE = "ControlMessage"
 
 
-class ConfigurableOutputSource(SingleOutputSource):
+class ConfigurableOutputSource(_pipeline.SingleOutputSource):
     """
     Base class single output source stages which support both MessageMeta and ControlMessage as output types.
 
@@ -65,7 +64,7 @@ class ConfigurableOutputSource(SingleOutputSource):
         else:
             raise ValueError(f"Invalid message type: {self._message_type}")
 
-    def compute_schema(self, schema: StageSchema):
+    def compute_schema(self, schema: _pipeline.StageSchema):
         if (self._message_type is SupportedMessageTypes.CONTROL_MESSAGE):
             schema.output_schema.set_type(ControlMessage)
         else:

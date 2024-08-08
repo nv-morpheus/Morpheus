@@ -17,7 +17,7 @@ All objects related to building and running a pipeline.
 
 # Note: The pipeline module is unique in that we re-export all of the classes and functions from the submodules. To
 # avoid circular imports, we must import the classes in a specific order. And in each submodule, we should never import
-# the from pipeline submodules. Instead, we should import from the parent module as a namespace packag and then use the
+# the from pipeline submodules. Instead, we should import from the parent module as a namespace package and then use the
 # fully qualified name to access the classes. For example, in morpheus/pipeline/stage.py:
 # Do not do this:
 # ```
@@ -33,6 +33,7 @@ All objects related to building and running a pipeline.
 # isort: off
 
 from morpheus.pipeline.boundary_stage_mixin import BoundaryStageMixin
+from morpheus.pipeline.configurable_output_source import ConfigurableOutputSource
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.stage_schema import PortSchema
 from morpheus.pipeline.stage_schema import StageSchema

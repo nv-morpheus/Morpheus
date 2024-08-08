@@ -28,9 +28,9 @@ from morpheus.io.serializers import df_to_stream_json
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
+from morpheus.pipeline.configurable_output_source import SupportedMessageTypes
 from morpheus.pipeline.pipeline import PipelineState
 from morpheus.stages.input.http_server_source_stage import HttpServerSourceStage
-from morpheus.stages.input.http_server_source_stage import SupportedMessageTypes
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
