@@ -28,7 +28,7 @@ class SupportedMessageTypes(Enum):
 
 class ConfigurableOutputSource(_pipeline.SingleOutputSource):
     """
-    Base class single output source stages which support both MessageMeta and ControlMessage as output types.
+    Base class single output source stages which support both `MessageMeta` and `ControlMessage` as output types.
 
     Parameters
     ----------
