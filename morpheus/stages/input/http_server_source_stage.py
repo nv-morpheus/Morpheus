@@ -157,6 +157,8 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         logger.debug("Stopping HttpServerSourceStage")
         # Indicate we need to stop
         self._stop_requested = True
+        if self._http_server is not None:
+            self._http_server.stop()
 
         return super().stop()
 
