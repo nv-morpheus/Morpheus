@@ -20,6 +20,7 @@ from http import HTTPStatus
 from io import StringIO
 from unittest import mock
 
+import pandas as pd
 import pytest
 import requests
 import requests.adapters
@@ -76,7 +77,7 @@ def test_generate_frames(config: Config,
     accept_status = HTTPStatus.OK
     url = make_url(port, endpoint)
 
-    df = dataset_pandas['filter_probs.csv']
+    df: pd.DataFrame = dataset_pandas['filter_probs.csv']
 
     if lines:
         content_type = MimeTypes.TEXT.value
@@ -128,7 +129,9 @@ def test_generate_frames(config: Config,
                                data=payload,
                                timeout=10,
                                allow_redirects=False,
-                               headers={"Content-Type": content_type})
+                               headers={
+                                   "Content-Type": content_type, "unit": "test"
+                               })
 
     result_msg = msg_queue.get(timeout=5.0)
     get_next_thread.join()
@@ -146,22 +149,26 @@ def test_generate_frames(config: Config,
     if message_type == SupportedMessageTypes.CONTROL_MESSAGE:
         expected_class = ControlMessage
         actual_df = result_msg.payload().df
-
-        # Subset of headers that we want to check for
-        expected_headers = {
-            'Host': f'127.0.0.1:{port}',
-            'endpoint': expected_endpoint,
-            'method': method,
-            'accept_status': accept_status,
-            'remote_address': '127.0.0.1',
-            'unit': 'test'
-        }
     else:
         expected_class = MessageMeta
         actual_df = result_msg.df
 
     assert isinstance(result_msg, expected_class)
     dataset_pandas.assert_compare_df(expected_df, actual_df)
+
+    if message_type == SupportedMessageTypes.CONTROL_MESSAGE:
+        # Subset of headers that we want to check for
+        expected_headers = {
+            'Host': f'127.0.0.1:{port}',
+            'endpoint': endpoint,
+            'method': method.value,
+            'remote_address': '127.0.0.1',
+            'unit': 'test'
+        }
+
+        actual_headers = result_msg.get_metadata()['http_fields']
+        for (key, value) in expected_headers.items():
+            assert actual_headers[key] == value
 
 
 @pytest.mark.parametrize("invalid_method", [HTTPMethod.GET, HTTPMethod.PATCH])
