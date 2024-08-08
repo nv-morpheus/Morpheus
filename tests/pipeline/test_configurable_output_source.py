@@ -77,3 +77,8 @@ def test_constructor_error_task_payload_without_task_type(config: Config):
         ConfigurableOutputSourceImpl(config=config,
                                      message_type=SupportedMessageTypes.MESSAGE_META,
                                      task_payload={"why": "setting task_payload requires setting task_type"})
+
+
+def test_constructor_error_invalid_type(config: Config):
+    with pytest.raises(ValueError):
+        ConfigurableOutputSourceImpl(config=config, message_type="invalid message type")
