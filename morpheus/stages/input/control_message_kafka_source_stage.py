@@ -147,7 +147,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             consumer.commit(message=msg, asynchronous=self._async_commits)
 
         if self._stop_after > 0 and self._records_emitted >= self._stop_after:
-            self._stop_requested = True
+            self.request_stop()
 
         return control_messages
 
@@ -159,7 +159,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
             do_sleep = False
 
-            while not self._stop_requested:
+            while not self.is_stop_requested():
 
                 msg = consumer.poll(timeout=1.0)
                 if msg is None:
@@ -177,7 +177,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
                     else:
                         raise ck.KafkaException(msg_error)
 
-                if do_sleep and not self._stop_requested:
+                if do_sleep and not self.is_stop_requested():
                     time.sleep(self._poll_interval)
 
         finally:

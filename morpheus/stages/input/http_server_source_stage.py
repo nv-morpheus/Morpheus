@@ -122,7 +122,6 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         self._request_timeout_secs = request_timeout_secs
         self._lines = lines
         self._stop_after = stop_after
-        self._stop_requested = False
         self._payload_to_df_fn = payload_to_df_fn
         self._http_server = None
 
@@ -253,7 +252,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                     df = self._queue.get()
                     self._queue_size -= 1
                 except queue.Empty:
-                    if (not self._http_server.is_running() or self._stop_requested):
+                    if (not self._http_server.is_running() or self.is_stop_requested()):
                         self._processing = False
                     else:
                         logger.debug("Queue empty, sleeping ...")

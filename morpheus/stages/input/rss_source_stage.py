@@ -69,8 +69,6 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                  request_timeout: float = 2.0,
                  strip_markup: bool = False):
         super().__init__(c)
-        self._stop_requested = False
-
         if (batch_size is None):
             batch_size = c.pipeline_batch_size
 

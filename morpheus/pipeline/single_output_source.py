@@ -86,6 +86,23 @@ class SingleOutputSource(_pipeline.SourceStage):
         """
 
         # Indicate we need to stop
-        self._stop_requested = True
+        self.request_stop()
 
         return super().stop()
+
+    def request_stop(self):
+        """
+        Request the source to stop processing data.
+        """
+        self._stop_requested = True
+
+    def is_stop_requested(self) -> bool:
+        """
+        Returns `True` if a stop has been requested.
+
+        Returns
+        -------
+        bool:
+            True if a stop has been requested, False otherwise.
+        """
+        return self._stop_requested
