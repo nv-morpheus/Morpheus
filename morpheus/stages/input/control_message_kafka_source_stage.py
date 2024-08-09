@@ -110,9 +110,6 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         self._async_commits = async_commits
         self._client = None
 
-        # Flag to indicate whether we should stop
-        self._stop_requested = False
-
         self._poll_interval = pd.Timedelta(poll_interval).total_seconds()
         self._started = False
 
