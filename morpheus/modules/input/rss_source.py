@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import time
 
 import mrc
 from pydantic import ValidationError
