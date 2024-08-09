@@ -18,8 +18,8 @@ import mrc
 
 from morpheus.cli import register_stage
 from morpheus.config import Config
+from morpheus.controllers.rss_controller import RSSController
 from morpheus.messages import MessageMeta
-from morpheus.modules.input.rss_source import RSSSourceLoaderFactory
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
@@ -72,28 +72,17 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         if (batch_size is None):
             batch_size = c.pipeline_batch_size
 
-        if (stop_after > 0):
-            if (run_indefinitely):
-                raise ValueError("Cannot set both `stop_after` and `run_indefinitely` to True.")
-
-            run_indefinitely = False
-
-        self._module_config = {
-            "rss_source": {
-                "feed_input": feed_input,
-                "interval_sec": interval_secs,
-                "stop_after_rec": stop_after,
-                "run_indefinitely": run_indefinitely,
-                "batch_size": batch_size,
-                "enable_cache": enable_cache,
-                "cache_dir": cache_dir,
-                "cooldown_interval_sec": cooldown_interval,
-                "request_timeout_sec": request_timeout,
-                "strip_markup": strip_markup
-            }
-        }
-
-        self._module_loader = RSSSourceLoaderFactory.get_instance("rss_source_stage", self._module_config)
+        self._controller = RSSController(feed_input=feed_input,
+                                         batch_size=batch_size,
+                                         run_indefinitely=run_indefinitely,
+                                         enable_cache=enable_cache,
+                                         cache_dir=cache_dir,
+                                         cooldown_interval=cooldown_interval,
+                                         request_timeout=request_timeout,
+                                         strip_markup=strip_markup,
+                                         stop_after=stop_after,
+                                         interval_secs=interval_secs,
+                                         should_stop_fn=self.is_stop_requested)
 
     @property
     def name(self) -> str:
@@ -106,8 +95,5 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         schema.output_schema.set_type(MessageMeta)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        module = self._module_loader.load(builder=builder)
-
-        mod_out_node = module.output_port("output")
-
-        return mod_out_node
+        source = builder.make_source(self.unique_name, self._controller.feed_generator)
+        return source

@@ -19,7 +19,6 @@ import mrc
 from pydantic import ValidationError
 
 from morpheus.controllers.rss_controller import RSSController
-from morpheus.messages import MessageMeta
 from morpheus.modules.schemas.rss_source_schema import RSSSourceSchema
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
@@ -57,6 +56,7 @@ def _rss_source(builder: mrc.Builder):
 
     module_config = builder.get_current_module_config()
     rss_config = module_config.get("rss_source", {})
+
     try:
         validated_config = RSSSourceSchema(**rss_config)
     except ValidationError as e:
@@ -74,50 +74,10 @@ def _rss_source(builder: mrc.Builder):
                                cache_dir=validated_config.cache_dir,
                                cooldown_interval=validated_config.cooldown_interval_sec,
                                request_timeout=validated_config.request_timeout_sec,
-                               strip_markup=validated_config.strip_markup)
+                               strip_markup=validated_config.strip_markup,
+                               stop_after=validated_config.stop_after_rec,
+                               interval_secs=validated_config.interval_sec)
 
-    stop_requested = False
-
-    def fetch_feeds() -> MessageMeta:
-        """
-        Fetch RSS feed entries and yield as MessageMeta object.
-        """
-        nonlocal stop_requested
-        records_emitted = 0
-
-        while (not stop_requested):
-            try:
-                for df in controller.fetch_dataframes():
-                    df_size = len(df)
-
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.info("Received %d new entries...", df_size)
-                        logger.info("Emitted %d records so far.", records_emitted)
-
-                    yield MessageMeta(df=df)
-
-                    records_emitted += df_size
-
-                    if (0 < validated_config.stop_after_rec <= records_emitted):
-                        stop_requested = True
-                        logger.info("Stop limit reached... preparing to halt the source.")
-                        break
-
-            except Exception as exc:
-                if not controller.run_indefinitely:
-                    logger.error("Failed either in the process of fetching or processing entries: %s.", exc)
-                    raise
-                logger.error("Failed either in the process of fetching or processing entries: %s.", exc)
-
-            if not controller.run_indefinitely:
-                stop_requested = True
-                continue
-
-            logger.info("Waiting for %d seconds before fetching again...", validated_config.interval_sec)
-            time.sleep(validated_config.interval_sec)
-
-        logger.info("RSS source exhausted, stopping.")
-
-    node = builder.make_source("fetch_feeds", fetch_feeds)
+    node = builder.make_source("fetch_feeds", controller.feed_generator)
 
     builder.register_module_output("output", node)
