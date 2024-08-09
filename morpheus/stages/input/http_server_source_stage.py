@@ -249,7 +249,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                 # shutdown since we already returned an OK response to the client.
                 df = None
                 try:
-                    df = self._queue.get()
+                    df = self._queue.get(block=False)
                     self._queue_size -= 1
                 except queue.Empty:
                     if (not self._http_server.is_running() or self.is_stop_requested()):
