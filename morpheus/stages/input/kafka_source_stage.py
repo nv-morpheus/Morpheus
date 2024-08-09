@@ -184,7 +184,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
             batch = []
 
-            while self.is_stop_requested():
+            while not self.is_stop_requested():
                 do_process_batch = False
                 do_sleep = False
 
