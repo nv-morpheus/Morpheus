@@ -481,25 +481,22 @@ Previously, our stage connected to the RabbitMQ server in the constructor. This 
 
 ```python
 def __init__(self,
-             config: Config,
-             host: str,
-             exchange: str,
-             exchange_type: str = 'fanout',
-             queue_name: str = '',
-             poll_interval: str = '100millis'):
+                config: Config,
+                host: str,
+                exchange: str,
+                exchange_type: str = 'fanout',
+                queue_name: str = '',
+                poll_interval: str = '100millis'):
     super().__init__(config)
     self._host = host
     self._exchange = exchange
     self._exchange_type = exchange_type
     self._queue_name = queue_name
 
-    self._connection = None
+    self._connection: pika.BlockingConnection = None
     self._channel = None
 
     self._poll_interval = pd.Timedelta(poll_interval)
-
-    # Flag to indicate whether or not we should stop
-    self._stop_requested = False
 ```
 ```python
 def connect(self):
