@@ -19,6 +19,8 @@ from collections.abc import Callable
 from collections.abc import Iterable
 from dataclasses import asdict
 from dataclasses import dataclass
+from datetime import datetime
+from datetime import timedelta
 from urllib.parse import urlparse
 
 import requests
@@ -137,6 +139,7 @@ class RSSController:
         self._stop_after = stop_after
         self._run_indefinitely = run_indefinitely
         self._interval_secs = interval_secs
+        self._interval_td = timedelta(seconds=self._interval_secs)
 
         self._enable_cache = enable_cache
 
@@ -442,6 +445,8 @@ class RSSController:
                 continue
 
             logger.info("Waiting for %d seconds before fetching again...", self._interval_secs)
-            time.sleep(self._interval_secs)
+            sleep_until = datetime.now() + self._interval_td
+            while (datetime.now() < sleep_until and not self._should_stop_fn()):
+                time.sleep(1)
 
         logger.info("RSS source exhausted, stopping.")
