@@ -40,6 +40,10 @@ class SingleOutputSource(_pipeline.SourceStage):
 
         self._create_ports(0, 1)
 
+        # Flag to indicate if we need to stop, subclasses should check this value periodically, typically at the start
+        # of a polling loop
+        self._stop_requested = False
+
     # pylint: disable=unused-argument
     def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
         return out_node
@@ -74,3 +78,14 @@ class SingleOutputSource(_pipeline.SourceStage):
         logger.info("Added source: %s\n  └─> %s", self, pretty_print_type_name(self.output_ports[0].output_type))
 
         return [ret_val]
+
+    def stop(self):
+        """
+        This method is invoked by the pipeline whenever there is an unexpected shutdown.
+        Subclasses should override this method to perform any necessary cleanup operations.
+        """
+
+        # Indicate we need to stop
+        self._stop_requested = True
+
+        return super().stop()

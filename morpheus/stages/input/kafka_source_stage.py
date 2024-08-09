@@ -144,16 +144,6 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def stop(self):
-        """
-        Performs cleanup steps when pipeline is stopped.
-        """
-
-        # Indicate we need to stop
-        self._stop_requested = True
-
-        return super().stop()
-
     def _process_batch(self, consumer, batch):
         message_meta = None
         if len(batch):

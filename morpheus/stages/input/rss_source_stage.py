@@ -101,13 +101,6 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     def name(self) -> str:
         return "from-rss"
 
-    def stop(self):
-        """
-        Stop the RSS source stage.
-        """
-        self._stop_requested = True
-        return super().stop()
-
     def supports_cpp_node(self):
         return False
 
