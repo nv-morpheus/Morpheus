@@ -17,7 +17,8 @@ import typing
 
 import pandas as pd
 
-import cudf
+if typing.TYPE_CHECKING:
+    import cudf
 
-DataFrameType = typing.Union[pd.DataFrame, cudf.DataFrame]
-SeriesType = typing.Union[pd.Series, cudf.Series]
+DataFrameType = typing.Union[pd.DataFrame, "cudf.DataFrame"]
+SeriesType = typing.Union[pd.Series, "cudf.Series"]
