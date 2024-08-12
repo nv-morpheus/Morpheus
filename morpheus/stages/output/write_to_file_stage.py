@@ -18,17 +18,19 @@ import typing
 import mrc
 import mrc.core.operators as ops
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import FileTypes
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.controllers.write_to_file_controller import WriteToFileController
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-@register_stage("to-file", rename_options={"include_index_col": "--include-index-col"})
+@register_stage("to-file",
+                rename_options={"include_index_col": "--include-index-col"},
+                execute_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
 class WriteToFileStage(PassThruTypeMixin, SinglePortStage):
     """
     Write all messages to a file.
@@ -92,6 +94,7 @@ class WriteToFileStage(PassThruTypeMixin, SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         # Sink to file
         if (self._build_cpp_node()):
+            import morpheus._lib.stages as _stages
             to_file_node = _stages.WriteToFileStage(builder,
                                                     self.unique_name,
                                                     self._controller.output_file,
