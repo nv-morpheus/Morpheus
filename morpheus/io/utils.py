@@ -15,10 +15,12 @@
 """IO utilities."""
 
 import logging
+import typing
 
 import pandas as pd
 
-import cudf
+if typing.TYPE_CHECKING:
+    import cudf
 
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import SeriesType
@@ -44,7 +46,7 @@ def filter_null_data(x: DataFrameType, column_name: str = "data") -> DataFrameTy
     return x[~x[column_name].isna()]
 
 
-def cudf_string_cols_exceed_max_bytes(df: cudf.DataFrame, column_max_bytes: dict[str, int]) -> bool:
+def cudf_string_cols_exceed_max_bytes(df: "cudf.DataFrame", column_max_bytes: dict[str, int]) -> bool:
     """
     Checks a cudf DataFrame for string columns that exceed a maximum number of bytes and thus need to be truncated by
     calling `truncate_string_cols_by_bytes`.
@@ -64,6 +66,7 @@ def cudf_string_cols_exceed_max_bytes(df: cudf.DataFrame, column_max_bytes: dict
     bool
         True if truncation is needed, False otherwise.
     """
+    import cudf
     if not isinstance(df, cudf.DataFrame):
         raise ValueError("Expected cudf DataFrame")
 
@@ -101,7 +104,7 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
     """
 
     performed_truncation = False
-    is_cudf = isinstance(df, cudf.DataFrame)
+    is_cudf = not isinstance(df, pd.DataFrame)
 
     for (col, max_bytes) in column_max_bytes.items():
         series: SeriesType = df[col]
@@ -124,6 +127,7 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
             decoded_series = truncated_series.str.decode(encoding='utf-8', errors='ignore')
 
             if is_cudf:
+                import cudf
                 df[col] = cudf.Series.from_pandas(decoded_series)
             else:
                 df[col] = decoded_series

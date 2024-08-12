@@ -19,8 +19,6 @@ from io import BytesIO
 from io import IOBase
 from io import StringIO
 
-import cudf
-
 from morpheus.common import FileTypes
 from morpheus.common import determine_file_type
 from morpheus.common import write_df_to_file as write_df_to_file_cpp
@@ -203,9 +201,11 @@ def write_df_to_file(df: DataFrameType, file_name: str, file_type: FileTypes = F
         Additional arguments forwarded to the underlying serialization function. Where the underlying serialization
         function is one of `write_df_to_file_cpp`, `df_to_stream_csv`, or `df_to_stream_json`.
     """
-    if (CppConfig.get_should_use_cpp() and isinstance(df, cudf.DataFrame)):
-        # Use the C++ implementation
-        write_df_to_file_cpp(df=df, filename=file_name, file_type=file_type, **kwargs)
+    if (CppConfig.get_should_use_cpp()):
+        import cudf
+        if (isinstance(df, cudf.DataFrame)):
+            # Use the C++ implementation
+            return write_df_to_file_cpp(df=df, filename=file_name, file_type=file_type, **kwargs)
 
     mode = file_type
 

@@ -17,9 +17,11 @@
 import io
 import typing
 
+import numpy as np
 import pandas as pd
 
-import cudf
+if typing.TYPE_CHECKING:
+    import cudf
 
 from morpheus.common import FileTypes
 from morpheus.common import determine_file_type
@@ -60,16 +62,20 @@ def _read_file_to_df_py(*,
     # Update with any args set by the user. User values overwrite defaults
     kwargs.update(parser_kwargs)
 
-    df_class = cudf if df_type == "cudf" else pd
+    if df_type == "cudf":
+        import cudf
+        df_class = cudf
+    else:
+        df_class = pd
 
     df = None
     if (mode == FileTypes.JSON):
         df = df_class.read_json(file_name, **kwargs)
 
     elif (mode == FileTypes.CSV):
-        df: pd.DataFrame = df_class.read_csv(file_name, **kwargs)
+        df: DataFrameType = df_class.read_csv(file_name, **kwargs)
 
-        if (len(df.columns) > 1 and df.columns[0] == "Unnamed: 0" and df.iloc[:, 0].dtype == cudf.dtype(int)):
+        if (len(df.columns) > 1 and df.columns[0] == "Unnamed: 0" and df.iloc[:, 0].dtype == np.dtype(int)):
             df.set_index("Unnamed: 0", drop=True, inplace=True)
             df.index.name = ""
             df.sort_index(inplace=True)
