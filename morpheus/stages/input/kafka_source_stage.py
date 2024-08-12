@@ -24,7 +24,6 @@ import pandas as pd
 
 import cudf
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -239,6 +238,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if (self._build_cpp_node()):
+            import morpheus._lib.stages as _stages
             source = _stages.KafkaSourceStage(builder,
                                               self.unique_name,
                                               self._max_batch_size,

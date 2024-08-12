@@ -28,7 +28,6 @@ import tritonclient.grpc as tritonclient
 from tritonclient.utils import InferenceServerException
 from tritonclient.utils import triton_to_np_dtype
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -782,6 +781,7 @@ class TritonInferenceStage(InferenceStage):
                                      needs_logits=self._needs_logits)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        import morpheus._lib.stages as _stages
         if self._schema.input_type == ControlMessage:
             return _stages.InferenceClientStageCM(builder,
                                                   self.unique_name,

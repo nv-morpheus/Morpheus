@@ -24,7 +24,6 @@ import pandas as pd
 import cudf
 
 import morpheus._lib.messages as _messages
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -172,6 +171,7 @@ class PreprocessFILStage(PreprocessBaseStage):
         return partial(PreprocessFILStage.pre_process_batch, fea_len=self._fea_length, fea_cols=self.features)
 
     def _get_preprocess_node(self, builder: mrc.Builder):
+        import morpheus._lib.stages as _stages
         if (self._use_control_message):
             return _stages.PreprocessFILControlMessageStage(builder, self.unique_name, self.features)
 

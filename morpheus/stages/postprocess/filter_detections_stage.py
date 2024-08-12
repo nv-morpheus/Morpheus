@@ -18,7 +18,6 @@ import typing
 import mrc
 from mrc.core import operators as ops
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import FilterSource
 from morpheus.config import Config
@@ -118,6 +117,7 @@ class FilterDetectionsStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node():
+            import morpheus._lib.stages as _stages
             if (self._schema.input_type == ControlMessage):
                 node = _stages.FilterDetectionsControlMessageStage(builder,
                                                                    self.unique_name,

@@ -25,7 +25,6 @@ import numpy as np
 import cudf
 
 import morpheus._lib.messages as _messages
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_package_relative_file
@@ -263,6 +262,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
                        column=self._column)
 
     def _get_preprocess_node(self, builder: mrc.Builder):
+        import morpheus._lib.stages as _stages
         if (self._use_control_message):
             return _stages.PreprocessNLPControlMessageStage(builder,
                                                             self.unique_name,

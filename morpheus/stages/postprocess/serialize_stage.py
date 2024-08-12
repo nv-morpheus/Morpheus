@@ -19,7 +19,6 @@ from functools import partial
 import mrc
 from mrc.core import operators as ops
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.controllers.serialize_controller import SerializeController
@@ -92,6 +91,7 @@ class SerializeStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if (self._build_cpp_node()):
+            import morpheus._lib.stages as _stages
             if (self._schema.input_type == ControlMessage):
                 node = _stages.SerializeControlMessageStage(builder,
                                                             self.unique_name,
