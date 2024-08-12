@@ -21,9 +21,6 @@ import mrc
 import numpy as np
 import pandas as pd
 
-import cudf
-
-import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -52,6 +49,12 @@ class PreprocessFILStage(PreprocessBaseStage):
     def __init__(self, c: Config):
         super().__init__(c)
 
+        import morpheus._lib.messages as _messages
+        self._lib_messages = _messages
+
+        import cudf
+        self._cudf = cudf
+
         self._fea_length = c.feature_length
         self.features = c.fil.feature_columns
 
@@ -65,8 +68,7 @@ class PreprocessFILStage(PreprocessBaseStage):
     def supports_cpp_node(self):
         return True
 
-    @staticmethod
-    def pre_process_batch(x: typing.Union[MultiMessage, ControlMessage], fea_len: int,
+    def pre_process_batch(self, x: typing.Union[MultiMessage, ControlMessage], fea_len: int,
                           fea_cols: typing.List[str]) -> typing.Union[MultiMessage, ControlMessage]:
         """
         For FIL category usecases, this function performs pre-processing.
@@ -87,16 +89,15 @@ class PreprocessFILStage(PreprocessBaseStage):
 
         """
         if isinstance(x, ControlMessage):
-            return PreprocessFILStage.process_control_message(x, fea_len, fea_cols)
+            return self.process_control_message(x, fea_len, fea_cols)
         if isinstance(x, MultiMessage):
-            return PreprocessFILStage.process_multi_message(x, fea_len, fea_cols)
+            return self.process_multi_message(x, fea_len, fea_cols)
         raise TypeError(f"Unsupported message type: {type(x)}")
 
-    @staticmethod
-    def process_control_message(x: ControlMessage, fea_len: int, fea_cols: typing.List[str]) -> ControlMessage:
+    def process_control_message(self, x: ControlMessage, fea_len: int, fea_cols: typing.List[str]) -> ControlMessage:
 
         try:
-            df: cudf.DataFrame = x.payload().get_data(fea_cols)
+            df: self._cudf.DataFrame = x.payload().get_data(fea_cols)
         except KeyError:
             logger.exception("Requested feature columns does not exist in the dataframe.", exc_info=True)
             raise
@@ -112,7 +113,7 @@ class PreprocessFILStage(PreprocessBaseStage):
                 df[col] = df[col].astype("float32")
 
         if (isinstance(df, pd.DataFrame)):
-            df = cudf.from_pandas(df)
+            df = self._cudf.from_pandas(df)
 
         # Convert the dataframe to cupy the same way cuml does
         data = cp.asarray(df.to_cupy())
@@ -124,11 +125,11 @@ class PreprocessFILStage(PreprocessBaseStage):
         seg_ids[:, 2] = fea_len - 1
 
         # We need the C++ impl of TensorMemory until #1646 is resolved
-        x.tensors(_messages.TensorMemory(count=count, tensors={"input__0": data, "seq_ids": seg_ids}))
+        x.tensors(self._lib_messages.TensorMemory(count=count, tensors={"input__0": data, "seq_ids": seg_ids}))
         return x
 
-    @staticmethod
-    def process_multi_message(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
+    def process_multi_message(self, x: MultiMessage, fea_len: int,
+                              fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
         try:
             df = x.get_meta(fea_cols)
         except KeyError:
@@ -146,7 +147,7 @@ class PreprocessFILStage(PreprocessBaseStage):
                 df[col] = df[col].astype("float32")
 
         if (isinstance(df, pd.DataFrame)):
-            df = cudf.from_pandas(df)
+            df = self._cudf.from_pandas(df)
 
         # Convert the dataframe to cupy the same way cuml does
         data = cp.asarray(df.to_cupy())
@@ -168,7 +169,7 @@ class PreprocessFILStage(PreprocessBaseStage):
         self
     ) -> typing.Callable[[typing.Union[MultiMessage, ControlMessage]],
                          typing.Union[MultiInferenceMessage, ControlMessage]]:
-        return partial(PreprocessFILStage.pre_process_batch, fea_len=self._fea_length, fea_cols=self.features)
+        return partial(self.pre_process_batch, fea_len=self._fea_length, fea_cols=self.features)
 
     def _get_preprocess_node(self, builder: mrc.Builder):
         import morpheus._lib.stages as _stages

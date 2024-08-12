@@ -22,9 +22,6 @@ import cupy as cp
 import mrc
 import numpy as np
 
-import cudf
-
-import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_package_relative_file
@@ -116,6 +113,12 @@ class PreprocessNLPStage(PreprocessBaseStage):
                  column: str = "data"):
         super().__init__(c)
 
+        import morpheus._lib.messages as _messages
+        self._lib_messages = _messages
+
+        import cudf
+        self._cudf = cudf
+
         self._column = column
         self._seq_length = c.feature_length
         self._vocab_hash_file = get_package_relative_file(vocab_hash_file)
@@ -139,8 +142,8 @@ class PreprocessNLPStage(PreprocessBaseStage):
     def supports_cpp_node(self):
         return True
 
-    @staticmethod
-    def pre_process_batch(message: typing.Union[MultiMessage, ControlMessage],
+    def pre_process_batch(self,
+                          message: typing.Union[MultiMessage, ControlMessage],
                           vocab_hash_file: str,
                           do_lower_case: bool,
                           seq_len: int,
@@ -160,28 +163,28 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
         """
         if isinstance(message, ControlMessage):
-            return PreprocessNLPStage.process_control_message(message,
-                                                              vocab_hash_file,
-                                                              do_lower_case,
-                                                              seq_len,
-                                                              stride,
-                                                              truncation,
-                                                              add_special_tokens,
-                                                              column)
+            return self.process_control_message(message,
+                                                vocab_hash_file,
+                                                do_lower_case,
+                                                seq_len,
+                                                stride,
+                                                truncation,
+                                                add_special_tokens,
+                                                column)
         if isinstance(message, MultiMessage):
-            return PreprocessNLPStage.process_multi_message(message,
-                                                            vocab_hash_file,
-                                                            do_lower_case,
-                                                            seq_len,
-                                                            stride,
-                                                            truncation,
-                                                            add_special_tokens,
-                                                            column)
+            return self.process_multi_message(message,
+                                              vocab_hash_file,
+                                              do_lower_case,
+                                              seq_len,
+                                              stride,
+                                              truncation,
+                                              add_special_tokens,
+                                              column)
 
         raise TypeError("Unsupported message type")
 
-    @staticmethod
-    def process_control_message(message: ControlMessage,
+    def process_control_message(self,
+                                message: ControlMessage,
                                 vocab_hash_file: str,
                                 do_lower_case: bool,
                                 seq_len: int,
@@ -191,7 +194,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
                                 column: str) -> ControlMessage:
 
         with message.payload().mutable_dataframe() as mdf:
-            text_series = cudf.Series(mdf[column])
+            text_series = self._cudf.Series(mdf[column])
 
         tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
                                          do_lower_case=do_lower_case,
@@ -205,18 +208,18 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
         # We need the C++ impl of TensorMemory until #1646 is resolved
         message.tensors(
-            _messages.TensorMemory(count=tokenized.input_ids.shape[0],
-                                   tensors={
-                                       "input_ids": tokenized.input_ids,
-                                       "input_mask": tokenized.input_mask,
-                                       "seq_ids": tokenized.segment_ids
-                                   }))
+            self._lib_messages.TensorMemory(count=tokenized.input_ids.shape[0],
+                                            tensors={
+                                                "input_ids": tokenized.input_ids,
+                                                "input_mask": tokenized.input_mask,
+                                                "seq_ids": tokenized.segment_ids
+                                            }))
 
         message.set_metadata("inference_memory_params", {"inference_type": "nlp"})
         return message
 
-    @staticmethod
-    def process_multi_message(message: MultiMessage,
+    def process_multi_message(self,
+                              message: MultiMessage,
                               vocab_hash_file: str,
                               do_lower_case: bool,
                               seq_len: int,
@@ -225,7 +228,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
                               add_special_tokens: bool,
                               column: str) -> MultiInferenceNLPMessage:
         # Existing logic for MultiMessage
-        text_ser = cudf.Series(message.get_meta(column))
+        text_ser = self._cudf.Series(message.get_meta(column))
 
         tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
                                          do_lower_case=do_lower_case,
@@ -252,7 +255,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
         self
     ) -> typing.Callable[[typing.Union[MultiMessage, ControlMessage]],
                          typing.Union[MultiInferenceMessage, ControlMessage]]:
-        return partial(PreprocessNLPStage.pre_process_batch,
+        return partial(self..pre_process_batch,
                        vocab_hash_file=self._vocab_hash_file,
                        do_lower_case=self._do_lower_case,
                        stride=self._stride,

@@ -21,10 +21,6 @@ import cupy as cp
 import mrc
 from mrc.core import operators as ops
 
-import cudf
-
-# pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import InferenceMemoryNLP
@@ -167,6 +163,9 @@ class InferenceStage(MultiMessageStage):
     def __init__(self, c: Config):
         super().__init__(c)
 
+        import cudf
+        self._cudf = cudf
+
         self._fea_length = c.feature_length
 
         self._thread_count = c.num_threads
@@ -280,11 +279,10 @@ class InferenceStage(MultiMessageStage):
                 for f in fut_list:
                     f.result()
 
-                # TODO(Devin): This is a hack to support ControlMessage side channel.
                 if (isinstance(_message, ControlMessage)):
-                    _df = cudf.DataFrame(output_message.get_meta())
+                    _df = self._cudf.DataFrame(output_message.get_meta())
                     if (_df is not None and not _df.empty):
-                        _message_meta = CppMessageMeta(df=_df)
+                        _message_meta = MessageMeta(df=_df)
                         _message.payload(_message_meta)
 
                         response_tensors = output_message.tensors

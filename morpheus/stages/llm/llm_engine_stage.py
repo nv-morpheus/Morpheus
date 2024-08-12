@@ -17,7 +17,6 @@ import typing
 
 import mrc
 
-import morpheus._lib.llm as _llm
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.messages import ControlMessage
@@ -66,7 +65,7 @@ class LLMEngineStage(PassThruTypeMixin, SinglePortStage):
         return True
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-
+        import morpheus._lib.llm as _llm
         node = _llm.LLMEngineStage(builder, self.unique_name, self._engine)
         node.launch_options.pe_count = 1
 
