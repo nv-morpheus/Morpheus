@@ -34,6 +34,7 @@ from morpheus.cli.utils import is_enum
 from morpheus.cli.utils import parse_enum
 from morpheus.cli.utils import prepare_command
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.utils.type_utils import _DecoratorType
 from morpheus.utils.type_utils import get_full_qualname
@@ -248,6 +249,7 @@ def compute_option_name(stage_arg_name: str, rename_options: typing.Dict[str, st
 
 def register_stage(command_name: str = None,
                    modes: typing.Sequence[PipelineModes] = None,
+                   execute_modes: tuple[ExecutionMode] = (ExecutionMode.GPU, ),
                    ignore_args: typing.List[str] = None,
                    command_args: dict = None,
                    option_args: typing.Dict[str, dict] = None,
