@@ -19,11 +19,10 @@ import typing
 
 import mrc
 
-# pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.cli import register_stage
 from morpheus.common import FileTypes
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
@@ -99,6 +98,11 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         self._iterative = iterative
         self._repeat_count = repeat
 
+        if c.execution_mode is ExecutionMode.GPU:
+            self._df_type = "cudf"
+        else:
+            self._df_type = "pandas"
+
     @property
     def name(self) -> str:
         """Return the name of the stage"""
@@ -140,14 +144,11 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
             filter_nulls=self._filter_null,
             filter_null_columns=self._filter_null_columns,
             parser_kwargs=self._parser_kwargs,
-            df_type="cudf",
+            df_type=self._df_type,
         )
 
         for i in range(self._repeat_count):
-            if (self._build_cpp_node()):
-                x = CppMessageMeta(df)
-            else:
-                x = MessageMeta(df)
+            x = MessageMeta(df)
 
             # If we are looping, copy the object. Do this before we push the object in case it changes
             if (i + 1 < self._repeat_count):
