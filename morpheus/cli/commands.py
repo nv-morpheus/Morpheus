@@ -292,6 +292,7 @@ def install(**kwargs):
 @click.option('--use_cpu_only',
               default=False,
               type=bool,
+              is_flag=True,
               help=("Whether or not to run in CPU only mode, setting this to True will disable C++ mode."))
 @click.option('--manual_seed',
               default=None,
