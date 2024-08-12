@@ -38,6 +38,7 @@ from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
 from morpheus.config import ConfigOnnxToTRT
 from morpheus.config import CppConfig
+from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.utils.logger import configure_logging
 
@@ -288,6 +289,10 @@ def install(**kwargs):
               type=bool,
               help=("Whether or not to use C++ node and message types or to prefer python. "
                     "Only use as a last resort if bugs are encountered"))
+@click.option('--use_cpu_only',
+              default=False,
+              type=bool,
+              help=("Whether or not to run in CPU only mode, setting this to True will disable C++ mode."))
 @click.option('--manual_seed',
               default=None,
               type=click.IntRange(min=1),
@@ -297,7 +302,19 @@ def install(**kwargs):
 def run(ctx: click.Context, **kwargs):
     """Run subcommand, used for running a pipeline"""
     # Since the option isnt the same name as `should_use_cpp` anymore, manually set the value here.
-    CppConfig.set_should_use_cpp(kwargs.pop("use_cpp", CppConfig.get_should_use_cpp()))
+
+    use_cpu_only = kwargs.pop("use_cpu_only")
+    use_cpu = kwargs.pop("use_cpp")
+    if use_cpu_only:
+        if use_cpu:
+            logger.warning("use_cpu_only is set to True, disabling C++ mode")
+
+        CppConfig.set_should_use_cpp(False)
+    else:
+        CppConfig.set_should_use_cpp(use_cpu)
+
+    config = get_config_from_ctx(ctx)
+    config.execution_mode = ExecutionMode.CPU if use_cpu_only else ExecutionMode.GPU
 
     manual_seed_val = kwargs.pop("manual_seed", None)
     if manual_seed_val is not None:
