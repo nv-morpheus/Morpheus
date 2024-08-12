@@ -140,6 +140,11 @@ class PipelineModes(str, Enum):
     AE = "AE"
 
 
+class ExecutionMode(str, Enum):
+    GPU = "GPU"
+    CPU = "CPU"
+
+
 class CppConfig:
     """
     Allows setting whether C++ implementations should be used for Morpheus stages and messages. Defaults to True,
@@ -200,6 +205,9 @@ class Config(ConfigBase):
         File corresponding to this Config.
     """
 
+    # TODO: Store this as __execution_mode or move it to the CppConfig class
+    execution_mode: ExecutionMode = ExecutionMode.GPU
+
     # Whether in Debug mode.
     debug: bool = False
     log_level: int = logging.WARN
@@ -219,6 +227,10 @@ class Config(ConfigBase):
 
     ae: ConfigAutoEncoder = dataclasses.field(default=None)
     fil: ConfigFIL = dataclasses.field(default=None)
+
+    def __post_init__(self):
+        if self.execution_mode is ExecutionMode.CPU:
+            CppConfig.set_should_use_cpp(False)
 
     def save(self, filename: str):
         """
