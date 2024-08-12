@@ -20,6 +20,7 @@ import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
@@ -33,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 @register_stage("deserialize",
                 modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
+                execute_modes=(ExecutionMode.CPU, ExecutionMode.GPU),
                 ignore_args=["message_type", "task_type", "task_payload"])
 class DeserializeStage(MultiMessageStage):
     """
@@ -88,16 +90,6 @@ class DeserializeStage(MultiMessageStage):
         else:
             raise ValueError(f"Invalid message type: {self._message_type}")
 
-        self._module_config = {
-            "ensure_sliceable_index": self._ensure_sliceable_index,
-            "message_type": "MultiMessage" if self._message_type is MultiMessage else "ControlMessage",
-            "task_type": self._task_type,
-            "task_payload": self._task_payload,
-            "batch_size": self._batch_size,
-            "max_concurrency": self._max_concurrent,
-            "should_log_timestamp": self._should_log_timestamps
-        }
-
     @property
     def name(self) -> str:
         return "deserialize"
@@ -134,8 +126,18 @@ class DeserializeStage(MultiMessageStage):
 
             builder.make_edge(input_node, out_node)
         else:
+            module_config = {
+                "ensure_sliceable_index": self._ensure_sliceable_index,
+                "message_type": "MultiMessage" if self._message_type is MultiMessage else "ControlMessage",
+                "task_type": self._task_type,
+                "task_payload": self._task_payload,
+                "batch_size": self._batch_size,
+                "max_concurrency": self._max_concurrent,
+                "should_log_timestamp": self._should_log_timestamps
+            }
+
             module_loader = DeserializeLoaderFactory.get_instance(module_name=f"deserialize_{self.unique_name}",
-                                                                  module_config=self._module_config)
+                                                                  module_config=module_config)
 
             module = module_loader.load(builder=builder)
 
