@@ -47,7 +47,7 @@ cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL}
 log_sccache_stats
 
 rapids-logger "Installing Morpheus"
-pip install ./
+pip install ./python/morpheus
 
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
