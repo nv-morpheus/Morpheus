@@ -48,7 +48,7 @@ TEST_F(TestPreprocessNLP, TestProcessControlMessageAndMultiMessage)
     auto test_data_dir               = test::get_morpheus_root() / "tests/tests_data";
     std::filesystem::path input_file = test_data_dir / "countries_sample.csv";
 
-    auto test_vocab_hash_file_dir         = test::get_morpheus_root() / "morpheus/data";
+    auto test_vocab_hash_file_dir         = test::get_morpheus_root() / "python/morpheus/morpheus/data";
     std::filesystem::path vocab_hash_file = test_vocab_hash_file_dir / "bert-base-cased-hash.txt";
 
     // Create a dataframe from a file
