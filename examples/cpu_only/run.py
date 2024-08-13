@@ -28,6 +28,8 @@ from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.stage_decorator import stage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -92,6 +94,9 @@ def run_pipeline(log_level: int, use_python: bool, use_cpu_only: bool, in_file: 
         return msg
 
     pipeline.add_stage(print_msg(config))
+
+    pipeline.add_stage(DeserializeStage(config))
+    pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=out_file, overwrite=True))
     pipeline.build()
 
