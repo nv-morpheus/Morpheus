@@ -21,20 +21,22 @@ from http import HTTPStatus
 import mrc
 import requests
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils import http_utils
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-http-client", ignore_args=["query_params", "headers", "**request_kwargs"])
+@register_stage("from-http-client",
+                execute_modes=(ExecutionMode.CPU, ExecutionMode.GPU),
+                ignore_args=["query_params", "headers", "**request_kwargs"])
 class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that polls a remote HTTP server for incoming data.
@@ -82,7 +84,8 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     payload_to_df_fn : callable, default None
         A callable that takes the HTTP payload bytes as the first argument and the `lines` parameter is passed in as
-        the second argument and returns a cudf.DataFrame. If unset cudf.read_json is used.
+        the second argument and returns a DataFrame. If unset `cudf.read_json` is used in GPU mode and
+        `pandas.read_json` in CPU mode.
     **request_kwargs : dict
         Additional arguments to pass to the `requests.request` function.
     """
@@ -101,7 +104,7 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  max_retries: int = 10,
                  lines: bool = False,
                  stop_after: int = 0,
-                 payload_to_df_fn: typing.Callable[[bytes, bool], cudf.DataFrame] = None,
+                 payload_to_df_fn: typing.Callable[[bytes, bool], DataFrameType] = None,
                  **request_kwargs):
         super().__init__(config)
         self._url = http_utils.prepare_url(url)
@@ -139,8 +142,17 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._stop_after = stop_after
         self._lines = lines
-        self._payload_to_df_fn = payload_to_df_fn
         self._requst_kwargs = request_kwargs
+
+        if payload_to_df_fn is None:
+            if config.execution_mode == ExecutionMode.GPU:
+                import cudf
+                self._payload_to_df_fn = cudf.read_json
+            else:
+                import pandas
+                self._payload_to_df_fn = pandas.read_json
+        else:
+            self._payload_to_df_fn = payload_to_df_fn
 
     @property
     def name(self) -> str:
@@ -154,16 +166,13 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def _parse_response(self, response: requests.Response) -> typing.Union[cudf.DataFrame, None]:
+    def _parse_response(self, response: requests.Response) -> typing.Union[DataFrameType, None]:
         """
         Returns a DataFrame parsed from the response payload. If the response payload is empty, then `None` is returned.
         """
         payload = response.content
 
-        if self._payload_to_df_fn is not None:
-            return self._payload_to_df_fn(payload, self._lines)
-
-        return cudf.read_json(payload, lines=self._lines, engine='cudf')
+        return self._payload_to_df_fn(payload, self._lines)
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         # Running counter of the number of messages emitted by this source

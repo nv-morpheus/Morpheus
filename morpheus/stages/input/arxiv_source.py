@@ -20,10 +20,9 @@ import mrc
 import mrc.core.operators as ops
 import pandas as pd
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -40,7 +39,7 @@ IMPORT_ERROR_MESSAGE = (
     "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
 
 
-@register_stage("from-arxiv")
+@register_stage("from-arxiv", execute_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
 class ArxivSource(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that downloads PDFs from arxiv and converts them to dataframes.
@@ -98,6 +97,10 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         self._total_chunks = 0
         self._stop_requested = False
         self._cache_dir = cache_dir
+
+        if c.execution_mode is ExecutionMode.GPU:
+            import cudf
+            self._cudf = cudf
 
     @property
     def name(self) -> str:
@@ -196,4 +199,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
         df.rename(columns=map_cols, inplace=True)
 
-        return MessageMeta(cudf.from_pandas(df))
+        if self._config.execution_mode is ExecutionMode.GPU:
+            df = self._cudf.from_pandas(df)
+
+        return MessageMeta(df)

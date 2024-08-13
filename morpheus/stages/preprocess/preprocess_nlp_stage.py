@@ -255,7 +255,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
         self
     ) -> typing.Callable[[typing.Union[MultiMessage, ControlMessage]],
                          typing.Union[MultiInferenceMessage, ControlMessage]]:
-        return partial(self..pre_process_batch,
+        return partial(self.pre_process_batch,
                        vocab_hash_file=self._vocab_hash_file,
                        do_lower_case=self._do_lower_case,
                        stride=self._stride,

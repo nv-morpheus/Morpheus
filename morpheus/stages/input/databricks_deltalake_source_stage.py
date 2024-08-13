@@ -16,10 +16,9 @@ import logging
 
 import mrc
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -38,7 +37,7 @@ except ImportError as import_exc:
     IMPORT_EXCEPTION = import_exc
 
 
-@register_stage("from-databricks-deltalake")
+@register_stage("from-databricks-deltalake", execute_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
 class DataBricksDeltaLakeSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage used to load messages from a DeltaLake table.
@@ -77,6 +76,10 @@ class DataBricksDeltaLakeSourceStage(PreallocatorMixin, SingleOutputSource):
         self.items_per_page = items_per_page
         self.offset = 0
 
+        if config.execution_mode is ExecutionMode.GPU:
+            import cudf
+            self._cudf = cudf
+
     @property
     def name(self) -> str:
         return "from-databricks-deltalake"
@@ -104,7 +107,14 @@ class DataBricksDeltaLakeSourceStage(PreallocatorMixin, SingleOutputSource):
                              str(self.offset),
                              str(self.offset + self.items_per_page + 1))
                 self.offset += self.items_per_page + 1
-                yield MessageMeta(df=cudf.from_pandas(df.toPandas().drop(["_id"], axis=1)))
+
+                df = df.toPandas().drop(["_id"], axis=1)
+
+                if self._config.execution_mode is ExecutionMode.GPU:
+                    df = self._cudf.from_pandas(df)
+
+                yield MessageMeta(df=df)
+
         except Exception as e:
             logger.error(
                 "Error occurred while reading data from \
