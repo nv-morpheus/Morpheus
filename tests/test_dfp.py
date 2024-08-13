@@ -20,9 +20,9 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-
 from _utils import TEST_DIRS
 from _utils import calc_error_val
+
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes

@@ -19,11 +19,11 @@ from unittest import mock
 
 import cupy as cp
 import pytest
+from _utils.inference_worker import IW
 
 import cudf
 
 import morpheus._lib.messages as _messages
-from _utils.inference_worker import IW
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.inference.inference_stage import InferenceStage

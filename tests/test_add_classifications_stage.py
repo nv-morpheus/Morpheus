@@ -19,10 +19,10 @@ import typing
 import cupy as cp
 import pytest
 import typing_utils
+from _utils.dataset_manager import DatasetManager
 
 import cudf
 
-from _utils.dataset_manager import DatasetManager
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.config import Config

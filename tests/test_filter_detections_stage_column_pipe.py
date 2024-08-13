@@ -15,9 +15,9 @@
 # limitations under the License.
 
 import pytest
-
 from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
+
 from morpheus.common import FilterSource
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage

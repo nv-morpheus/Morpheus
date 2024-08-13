@@ -20,11 +20,11 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-
 from _utils import TEST_DIRS
 from _utils import calc_error_val
 from _utils import compare_class_to_scores
 from _utils import mk_async_infer
+
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes

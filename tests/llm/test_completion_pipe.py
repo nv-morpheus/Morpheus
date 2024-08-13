@@ -17,12 +17,12 @@ import logging
 from unittest import mock
 
 import pytest
-
-import cudf
-
 from _utils import assert_results
 from _utils.environment import set_env
 from _utils.llm import mk_mock_openai_response
+
+import cudf
+
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode

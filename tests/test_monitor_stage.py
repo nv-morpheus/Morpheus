@@ -24,11 +24,11 @@ from unittest import mock
 
 import fsspec
 import pytest
+from _utils import TEST_DIRS
+from _utils.stages.record_thread_id_stage import RecordThreadIdStage
 
 import cudf
 
-from _utils import TEST_DIRS
-from _utils.stages.record_thread_id_stage import RecordThreadIdStage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta

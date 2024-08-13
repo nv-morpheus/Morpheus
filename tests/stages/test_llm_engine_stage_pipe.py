@@ -17,10 +17,10 @@
 import os
 
 import pytest
-
 from _utils import TEST_DIRS
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
+
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode

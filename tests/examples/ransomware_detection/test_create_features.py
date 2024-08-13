@@ -20,9 +20,9 @@ import typing
 from unittest import mock
 
 import pytest
-
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
+
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import AppShieldMessageMeta

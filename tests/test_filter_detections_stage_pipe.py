@@ -18,12 +18,12 @@ import typing
 
 import pandas as pd
 import pytest
-
-import cudf
-
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from _utils.stages.conv_msg import ConvMsg
+
+import cudf
+
 from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.messages import ControlMessage

@@ -17,10 +17,10 @@
 import numpy as np
 import pandas as pd
 import pytest
-
 from _utils import assert_results
 from _utils.stages.check_pre_alloc import CheckPreAlloc
 from _utils.stages.conv_msg import ConvMsg
+
 from morpheus.common import TypeId
 from morpheus.common import typeid_to_numpy_str
 from morpheus.messages import ControlMessage

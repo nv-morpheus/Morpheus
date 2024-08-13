@@ -19,11 +19,11 @@ import typing
 import cupy as cp
 import pytest
 import typing_utils
+from _utils.dataset_manager import DatasetManager
 
 import cudf
 
 import morpheus._lib.messages as _messages
-from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta

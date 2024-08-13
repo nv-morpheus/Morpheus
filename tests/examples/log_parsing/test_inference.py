@@ -21,9 +21,9 @@ from unittest import mock
 import cupy as cp
 import numpy as np
 import pytest
+from _utils import TEST_DIRS
 
 import morpheus._lib.messages as _messages
-from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta

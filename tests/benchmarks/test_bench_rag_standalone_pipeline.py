@@ -20,12 +20,12 @@ import types
 import typing
 
 import pytest
-
-import cudf
-
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from _utils.milvus import populate_milvus
+
+import cudf
+
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
