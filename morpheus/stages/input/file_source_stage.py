@@ -101,8 +101,10 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         self._repeat_count = repeat
 
         if c.execution_mode is ExecutionMode.GPU:
+            print("GPU MODE Using cudf")
             self._df_type = "cudf"
         else:
+            print("CPU MODE Using pandas")
             self._df_type = "pandas"
 
     @property

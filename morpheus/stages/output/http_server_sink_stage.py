@@ -25,11 +25,11 @@ import mrc
 import pandas as pd
 from mrc.core import operators as ops
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.io import serializers
+from morpheus.io.utils import get_df_pkg
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -41,7 +41,9 @@ from morpheus.utils.type_aliases import DataFrameType
 logger = logging.getLogger(__name__)
 
 
-@register_stage("to-http-server", ignore_args=["df_serializer_fn"])
+@register_stage("to-http-server",
+                execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU),
+                ignore_args=["df_serializer_fn"])
 class HttpServerSinkStage(PassThruTypeMixin, SinglePortStage):
     """
     Sink stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
@@ -115,6 +117,8 @@ class HttpServerSinkStage(PassThruTypeMixin, SinglePortStage):
             self._content_type = MimeTypes.JSON.value
 
         self._df_serializer_fn = df_serializer_fn or self._default_df_serializer
+
+        self._df_pkg = get_df_pkg(config)
 
         # FiberQueue doesn't have a way to check the size, nor does it have a way to check if it's empty without
         # attempting to perform a read. We'll keep track of the size ourselves.
@@ -201,10 +205,10 @@ class HttpServerSinkStage(PassThruTypeMixin, SinglePortStage):
                                      body=err_msg)
 
         if (len(data_frames) > 0):
-            df = data_frames[0]
             if len(data_frames) > 1:
-                cat_fn = pd.concat if isinstance(df, pd.DataFrame) else cudf.concat
-                df = cat_fn(data_frames)
+                df = self._df_pkg.concat(data_frames)
+            else:
+                df = data_frames[0]
 
             return HttpParseResponse(status_code=HTTPStatus.OK.value,
                                      content_type=self._content_type,

@@ -18,9 +18,8 @@ import typing
 
 import mrc
 import mrc.core.operators as ops
+import pandas as pd
 import yaml
-
-import cudf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -110,7 +109,7 @@ class WriteToElasticsearchStage(PassThruTypeMixin, SinglePortStage):
             self._controller.refresh_client()
 
             df = meta.copy_dataframe()
-            if isinstance(df, cudf.DataFrame):
+            if not isinstance(df, pd.DataFrame):
                 df = df.to_pandas()
                 logger.debug("Converted cudf of size: %s to pandas dataframe.", len(df))
 

@@ -144,15 +144,7 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
         self._lines = lines
         self._requst_kwargs = request_kwargs
 
-        if payload_to_df_fn is None:
-            if config.execution_mode == ExecutionMode.GPU:
-                import cudf
-                self._payload_to_df_fn = cudf.read_json
-            else:
-                import pandas
-                self._payload_to_df_fn = pandas.read_json
-        else:
-            self._payload_to_df_fn = payload_to_df_fn
+        self._payload_to_df_fn = payload_to_df_fn or self._get_default_payload_to_df_fn(config)
 
     @property
     def name(self) -> str:
@@ -162,9 +154,6 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         """Indicates whether or not this stage supports a C++ implementation"""
         return False
-
-    def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MessageMeta)
 
     def _parse_response(self, response: requests.Response) -> typing.Union[DataFrameType, None]:
         """

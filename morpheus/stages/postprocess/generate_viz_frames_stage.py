@@ -27,17 +27,17 @@ import pyarrow as pa
 import websockets.legacy.server
 from websockets.server import serve
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.io.utils import get_df_class
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.producer_consumer_queue import AsyncIOProducerConsumerQueue
 from morpheus.utils.producer_consumer_queue import Closed
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +81,8 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
         self._loop: asyncio.AbstractEventLoop = None
         self._server_task: asyncio.Task = None
         self._server_close_event: asyncio.Event = None
+
+        self._df_class: type[DataFrameType] = get_df_class(c)
 
     @property
     def name(self) -> str:
@@ -146,7 +148,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
             except Exception:
                 return y
 
-        if isinstance(df, cudf.DataFrame):
+        if not isinstance(df, pd.DataFrame):
             df = df.to_pandas()
 
         df["data"] = df["data"].apply(indent_data)
@@ -291,7 +293,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
                 elif isinstance(x, ControlMessage):
                     df = x.payload().get_data(columns)
 
-                out_df = cudf.DataFrame()
+                out_df = self._df_class()
 
                 out_df["dt"] = (df["timestamp"] - time0).astype(np.int32)
                 out_df["src"] = df["src_ip"].str.ip_to_int().astype(np.int32)

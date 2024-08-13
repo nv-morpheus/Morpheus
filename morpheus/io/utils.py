@@ -14,7 +14,9 @@
 # limitations under the License.
 """IO utilities."""
 
+import functools
 import logging
+import types
 import typing
 
 import pandas as pd
@@ -22,6 +24,8 @@ import pandas as pd
 if typing.TYPE_CHECKING:
     import cudf
 
+from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import SeriesType
 
@@ -133,3 +137,35 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
                 df[col] = decoded_series
 
     return performed_truncation
+
+
+def get_df_pkg(config: Config) -> types.ModuleType:
+    """
+    Return the appropriate DataFrame package based on the execution mode.
+    """
+    if config.execution_mode is ExecutionMode.GPU:
+        import cudf
+        return cudf
+    else:
+        return pd
+
+
+def get_df_class(config: Config) -> type[DataFrameType]:
+    """
+    Return the appropriate DataFrame class based on the execution mode.
+    """
+    df_pkg = get_df_pkg(config)
+    return df_pkg.DataFrame
+
+
+def get_json_reader(config: Config) -> typing.Callable[..., DataFrameType]:
+    """
+    Return the appropriate JSON reader based on the execution mode.
+    """
+    if config.execution_mode is ExecutionMode.GPU:
+        import cudf
+        reader = functools.partial(cudf.read_json, engine='cudf')
+    else:
+        reader = pd.read_json
+
+    return reader

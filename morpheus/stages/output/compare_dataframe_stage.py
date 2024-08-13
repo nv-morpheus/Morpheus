@@ -21,8 +21,6 @@ import typing
 
 import pandas as pd
 
-import cudf
-
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
@@ -74,8 +72,6 @@ class CompareDataFrameStage(InMemorySinkStage):
 
         if isinstance(compare_df, str):
             compare_df = read_file_to_df(compare_df, df_type='pandas')
-        elif isinstance(compare_df, cudf.DataFrame):
-            compare_df = compare_df.to_pandas()
         elif isinstance(compare_df, list):
             tmp_dfs = []
             for item in compare_df:
@@ -83,6 +79,9 @@ class CompareDataFrameStage(InMemorySinkStage):
                 tmp_dfs.append(tmp_df)
             compare_df = pd.concat(tmp_dfs)
             compare_df.reset_index(inplace=True, drop=True)
+        elif not isinstance(compare_df, pd.DataFrame):
+            # assume it is a cudf DataFrame
+            compare_df = compare_df.to_pandas()
 
         self._compare_df = compare_df
 
