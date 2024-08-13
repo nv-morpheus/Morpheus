@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024, NVIDIA CORPORATION.
+# Copyright (c) 2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import typing
 import click
 
 from morpheus.cli.utils import get_log_levels
+from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import ExecutionMode
@@ -28,7 +29,6 @@ from morpheus.pipeline.stage_decorator import stage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.utils.logger import configure_logging
-from morpheus.cli.utils import parse_log_level
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
