@@ -35,7 +35,6 @@ from morpheus.utils.column_info import DateTimeColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
-from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.schema_transforms import process_dataframe
 
 
@@ -58,68 +57,6 @@ def azure_ad_logs_cdf_fixture(_azure_ad_logs_pdf: pd.DataFrame):
     # cudf.from_pandas essentially does a deep copy, so we can use this to ensure that the source pandas df is not
     # modified
     yield cudf.from_pandas(_azure_ad_logs_pdf)
-
-
-@pytest.mark.use_python
-def test_dataframe_input_schema_with_json_cols(azure_ad_logs_cdf: cudf.DataFrame):
-    raw_data_columns = [
-        'time',
-        'resourceId',
-        'operationName',
-        'operationVersion',
-        'category',
-        'tenantId',
-        'resultType',
-        'resultSignature',
-        'resultDescription',
-        'durationMs',
-        'callerIpAddress',
-        'correlationId',
-        'identity',
-        'Level',
-        'location',
-        'properties'
-    ]
-
-    assert len(azure_ad_logs_cdf.columns) == 16
-    assert list(azure_ad_logs_cdf.columns) == raw_data_columns
-
-    column_info = [
-        DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),
-        RenameColumn(name="userId", dtype='str', input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype='str', input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype='str'),
-        RenameColumn(name="clientAppUsed", dtype='str', input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype='str', input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype='str', input_name="properties.deviceDetail.displayName"),
-        RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype='str',
-                     input_name="properties.deviceDetail.operatingSystem"),
-        StringCatColumn(name="location",
-                        dtype='str',
-                        input_columns=[
-                            "properties.location.city",
-                            "properties.location.countryOrRegion",
-                        ],
-                        sep=", "),
-        RenameColumn(name="statusfailureReason", dtype='str', input_name="properties.status.failureReason"),
-    ]
-
-    schema = DataFrameInputSchema(json_columns=["properties"], column_info=column_info)
-
-    df_processed_schema = process_dataframe(azure_ad_logs_cdf, schema)
-    processed_df_cols = df_processed_schema.columns
-
-    assert len(azure_ad_logs_cdf) == len(df_processed_schema)
-    assert len(processed_df_cols) == len(column_info)
-    assert "timestamp" in processed_df_cols
-    assert "userId" in processed_df_cols
-    assert "time" not in processed_df_cols
-    assert "properties.userPrincipalName" not in processed_df_cols
-
-    nvt_workflow = create_and_attach_nvt_workflow(schema)
-    df_processed_workflow = process_dataframe(azure_ad_logs_cdf, nvt_workflow)
-    assert df_processed_schema.equals(df_processed_workflow)
 
 
 @pytest.mark.use_python

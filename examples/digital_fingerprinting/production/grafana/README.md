@@ -20,7 +20,7 @@ This example builds on the [Azure DFP pipeline example](../production/README.md)
 
 ## Grafana Configuration
 
-The data sources and dashboards in this example are managed using config files. [Grafana's provisioning system](https://grafana.com/docs/grafana/latest/administration/provisioning/) then uses these files to add the data sources and dashboards to Grafana upon startup.
+The data sources and dashboards in this example are managed using configuration files. [Grafana's provisioning system](https://grafana.com/docs/grafana/latest/administration/provisioning/) then uses these files to add the data sources and dashboards to Grafana upon startup.
 
 ### Data Sources
 
@@ -38,7 +38,7 @@ The [CSV data source plugin](https://grafana.com/grafana/plugins/marcusolsson-cs
 
 Please note that the use of the CSV plugin is for demonstration purposes only. Grafana includes support for many data sources more suitable for production deployments. See [here](https://grafana.com/docs/grafana/latest/datasources/) for more information.
 
-#### Updates to grafana.ini
+#### Updates to `grafana.ini`
 
 The following is added to the default `grafana.ini` to enable local mode for CSV data source plugin. This allows the CSV data source plugin to access files on local file system.
 
@@ -111,7 +111,7 @@ Click on `DFP Logs` in the `General` folder. You may need to expand the `General
 
 <img src="./img/dfp_logs_dashboard.png">
 
-This dashboard was provisioned using config files but can also be manually created with the following steps:
+This dashboard was provisioned using configuration files but can also be manually created with the following steps:
 1. Click `Dashboards` in the left-side menu.
 2. Click `New` and select `New Dashboard`.
 3. On the empty dashboard, click `+ Add visualization`.
@@ -146,9 +146,9 @@ python run.py --log_level DEBUG --train_users generic --start_time "2022-08-01" 
 
 <img src="./img/dfp_error_alert_setup.png">
 
-12. Finally, click `Save rule and exit` at top right of the page. 
+12. Finally, click `Save rule and exit` at top right of the page.
 
-By default, all alerts will be sent through the `grafana-default-email` contact point. You can add email addresses to this contact point by clicking on `Contact points` under `Alerting` in the left-side menu. You would also have to configure SMTP in the `[smtp]` section of your `grafana.ini`. More information about about Grafana Alerting contact points can found [here](https://grafana.com/docs/grafana/latest/alerting/fundamentals/contact-points/).
+By default, all alerts will be sent through the `grafana-default-email` contact point. You can add email addresses to this contact point by clicking on `Contact points` under `Alerting` in the left-side menu. You would also have to configure SMTP in the `[smtp]` section of your `grafana.ini`. More information about Grafana Alerting contact points can found [here](https://grafana.com/docs/grafana/latest/alerting/fundamentals/contact-points/).
 
 ## Run Azure DFP Inference:
 

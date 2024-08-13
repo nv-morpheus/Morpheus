@@ -29,7 +29,7 @@ Ensure the environment is set up by following [Getting Started with Morpheus](./
   * [Agents](../../examples/llm/agents/README.md)
   * [Completion](../../examples/llm/completion/README.md)
   * [VDB Upload](../../examples/llm/vdb_upload/README.md)
-  * [Retreival Augmented Generation (RAG)](../../examples/llm/rag/README.md)
+  * [Retrieval Augmented Generation (RAG)](../../examples/llm/rag/README.md)
 
 
 ## Environments

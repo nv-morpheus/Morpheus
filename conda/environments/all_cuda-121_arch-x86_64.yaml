@@ -71,7 +71,6 @@ dependencies:
 - nodejs=18.*
 - numexpr
 - numpydoc=1.5
-- nvtabular=23.08.00
 - onnx=1.15
 - openai=1.13
 - papermill=2.4.0
@@ -111,6 +110,9 @@ dependencies:
 - transformers=4.36.2
 - tritonclient=2.34
 - typing_utils=0.1
+- vale-styles-microsoft
+- vale-styles-write-good
+- vale=3.7
 - versioneer
 - versioneer-518
 - watchdog=3.0

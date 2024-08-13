@@ -19,7 +19,7 @@ export SCRIPT_DIR=${SCRIPT_DIR:-"$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /de
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-"$(realpath ${SCRIPT_DIR}/../..)"}
 
 export PY_ROOT="${MORPHEUS_ROOT}"
-export PY_CFG="${PY_ROOT}/setup.cfg"
+export PY_CFG="${PY_ROOT}/python/morpheus/setup.cfg"
 export PY_DIRS="${PY_ROOT} ci/scripts"
 
 # Determine the commits to compare against. If running in CI, these will be set. Otherwise, diff with main

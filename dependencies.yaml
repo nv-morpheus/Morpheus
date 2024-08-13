@@ -284,6 +284,9 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - pylint=3.0.3
+          - vale=3.7
+          - vale-styles-microsoft
+          - vale-styles-write-good
           - versioneer
           - yapf=0.40.1
 
@@ -334,7 +337,6 @@ dependencies:
           - mrc=24.10
           - networkx=2.8.8
           - numpydoc=1.5
-          - nvtabular=23.08.00
           - pydantic
           # - python ##
           - python-confluent-kafka>=1.9.2,<1.10.0a0

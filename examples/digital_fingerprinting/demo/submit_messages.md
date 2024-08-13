@@ -28,7 +28,7 @@ The UI will look like a dynamic form with various buttons and input fields that 
 By clicking on the `Add Control Message` button adds a new control message to the form. Each control message has a type selector and three buttons, one to add metadata properties, to add task and the other to remove control message.
 
 ![DFP Add Control Message](./images/dfp_add_control_message.png)
-- `Type`: A user may select a control message of either the `streaming` or `payload` kind. In the backend digital fingerprinting workflow handles the message in accordance with the type provided.
+- `Type`: A user may select a control message of either the `streaming` or `payload` kind. The DFP pipeline handles the message in accordance with the type provided.
 - `Add Metadata`: button adds a new metadata section to the control message. Each metadata section has a key selector, a data type selector, a value input field, and a `Remove` button.
 - `Add Task`: button adds a new task section to the control message. Each task section has a type selector, a `Properties` section, and a `Remove` button.
   - `Add Property`: button inside the `Properties` section adds a new property to the task. Each property has a key input field, a data type selector, a value input field, and a `Remove` button.

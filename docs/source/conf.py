@@ -64,7 +64,7 @@ author = 'NVIDIA'
 # built documents.
 
 # Load the _version file according to https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
-spec = importlib.util.spec_from_file_location("_version", "../../morpheus/_version.py")
+spec = importlib.util.spec_from_file_location("_version", "../../python/morpheus/morpheus/_version.py")
 module = importlib.util.module_from_spec(spec)
 sys.modules["_version"] = module
 spec.loader.exec_module(module)
@@ -135,7 +135,7 @@ exhale_args = {
         FILE_PATTERNS = *.c *.cc *.cpp *.h *.hpp *.cu *.cuh *.md
         HAVE_DOT = YES
         HIDE_UNDOC_MEMBERS = NO
-        INPUT = ../../morpheus/_lib
+        INPUT = ../../python/morpheus/morpheus/_lib
         INTERACTIVE_SVG = YES
         SOURCE_BROWSER = YES
         ENABLE_PREPROCESSING = YES
@@ -173,9 +173,7 @@ autodoc_mock_imports = [
     "datacompy",
     "langchain",
     "langchain_core",
-    "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
-    "nvtabular",
     "pandas",
     "pydantic",
     "pymilvus",
@@ -191,6 +189,17 @@ suppress_warnings = [
 # Config numpydoc
 numpydoc_show_inherited_class_members = True
 numpydoc_class_members_toctree = False
+
+# Config linkcheck
+# Ignore localhost and url prefix fragments
+# Ignore openai.com links, as these always report a 403 when requested by the linkcheck agent
+linkcheck_ignore = [
+    r'http://localhost:\d+/',
+    r'https://localhost:\d+/',
+    r'^http://$',
+    r'^https://$',
+    r'https://(platform\.)?openai.com',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

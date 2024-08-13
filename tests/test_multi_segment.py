@@ -36,7 +36,6 @@ def test_linear_boundary_stages(config, filter_probs_df):
     assert_results(comp_stage.get_results())
 
 
-@pytest.mark.skip(reason="Skipping due to MRC issue #360")
 @pytest.mark.use_cudf
 def test_multi_segment_bad_data_type(config, filter_probs_df):
     with pytest.raises(RuntimeError):
