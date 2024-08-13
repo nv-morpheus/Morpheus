@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("from-http-client",
-                execute_modes=(ExecutionMode.CPU, ExecutionMode.GPU),
+                execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU),
                 ignore_args=["query_params", "headers", "**request_kwargs"])
 class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
     """

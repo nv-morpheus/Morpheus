@@ -37,7 +37,7 @@ except ImportError as import_exc:
     IMPORT_EXCEPTION = import_exc
 
 
-@register_stage("from-databricks-deltalake", execute_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
+@register_stage("from-databricks-deltalake", execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
 class DataBricksDeltaLakeSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage used to load messages from a DeltaLake table.

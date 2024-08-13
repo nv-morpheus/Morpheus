@@ -39,7 +39,7 @@ IMPORT_ERROR_MESSAGE = (
     "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
 
 
-@register_stage("from-arxiv", execute_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
+@register_stage("from-arxiv", execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
 class ArxivSource(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that downloads PDFs from arxiv and converts them to dataframes.

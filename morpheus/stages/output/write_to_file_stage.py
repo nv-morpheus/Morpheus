@@ -30,7 +30,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 
 @register_stage("to-file",
                 rename_options={"include_index_col": "--include-index-col"},
-                execute_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
+                execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
 class WriteToFileStage(PassThruTypeMixin, SinglePortStage):
     """
     Write all messages to a file.

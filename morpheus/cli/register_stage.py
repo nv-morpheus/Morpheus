@@ -249,7 +249,7 @@ def compute_option_name(stage_arg_name: str, rename_options: typing.Dict[str, st
 
 def register_stage(command_name: str = None,
                    modes: typing.Sequence[PipelineModes] = None,
-                   execute_modes: tuple[ExecutionMode] = (ExecutionMode.GPU, ),
+                   execution_modes: tuple[ExecutionMode] = (ExecutionMode.GPU, ),
                    ignore_args: typing.List[str] = None,
                    command_args: dict = None,
                    option_args: typing.Dict[str, dict] = None,
