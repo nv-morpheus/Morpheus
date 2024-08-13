@@ -13,9 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-list(APPEND CMAKE_MESSAGE_CONTEXT "python")
+list(APPEND CMAKE_MESSAGE_CONTEXT "morpheus_llm")
 
-add_subdirectory(morpheus)
-add_subdirectory(morpheus_llm)
+# Save the root of the python for relative paths
+set(MORPHEUS_PY_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+add_subdirectory(_lib)
+
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

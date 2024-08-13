@@ -1,5 +1,5 @@
 # =============================================================================
-# Copyright (c) 2023-2024, NVIDIA CORPORATION.
+# Copyright (c) 2020-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -11,26 +11,22 @@
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
 # =============================================================================
+list(APPEND CMAKE_MESSAGE_CONTEXT "_lib")
 
-list(APPEND CMAKE_MESSAGE_CONTEXT "llm")
+########### morpheus-llm ###########
 
-set(MODULE_SOURCE_FILES
-   src/py_llm_engine.cpp
-   src/py_llm_lambda_node.cpp
-   src/py_llm_node_base.cpp
-   src/py_llm_node.cpp
-   src/py_llm_task_handler.cpp
-)
+#----------lib_morpheus_llm---------
+include(cmake/libmorpheus_llm.cmake)
 
-# Add the module file
-list(APPEND MODULE_SOURCE_FILES module.cpp)
+########### py_morpheus ########
+# Set the default link targets to avoid repeating this
+morpheus_utils_python_package_set_default_link_targets(morpheus_llm)
 
-# Create the python module
-morpheus_add_pybind11_module(llm
-   INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
-   SOURCE_FILES ${MODULE_SOURCE_FILES}
-   LINK_TARGETS morpheus_llm
-   CURRENT_DIR_IS_MODULE
-)
+#----------morpheus._lib.llm---------
+add_subdirectory(llm)
+
+if (MORPHEUS_BUILD_TESTS)
+  add_subdirectory(tests)
+endif()
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

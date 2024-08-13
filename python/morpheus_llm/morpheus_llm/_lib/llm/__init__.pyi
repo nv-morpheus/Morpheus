@@ -6,7 +6,7 @@
 
         """
 from __future__ import annotations
-import morpheus._lib.llm
+import morpheus_llm._lib.llm
 import typing
 import morpheus._lib.messages
 import mrc.core.coro
