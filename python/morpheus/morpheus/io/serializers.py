@@ -206,6 +206,7 @@ def write_df_to_file(df: DataFrameType, file_name: str, file_type: FileTypes = F
     if (CppConfig.get_should_use_cpp() and isinstance(df, cudf.DataFrame)):
         # Use the C++ implementation
         write_df_to_file_cpp(df=df, filename=file_name, file_type=file_type, **kwargs)
+        return
 
     mode = file_type
 
