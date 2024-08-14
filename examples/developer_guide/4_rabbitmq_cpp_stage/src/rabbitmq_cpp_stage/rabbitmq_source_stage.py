@@ -67,13 +67,10 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
         self._exchange_type = exchange_type
         self._queue_name = queue_name
 
-        self._connection = None
+        self._connection: pika.BlockingConnection = None
         self._channel = None
 
         self._poll_interval = pd.Timedelta(poll_interval)
-
-        # Flag to indicate whether or not we should stop
-        self._stop_requested = False
 
     @property
     def name(self) -> str:
@@ -117,7 +114,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def source_generator(self):
         try:
-            while not self._stop_requested:
+            while not self.is_stop_requested():
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:

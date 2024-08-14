@@ -106,7 +106,8 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
                                          sort_glob=sort_glob,
                                          recursive=recursive,
                                          queue_max_size=queue_max_size,
-                                         batch_timeout=batch_timeout)
+                                         batch_timeout=batch_timeout,
+                                         should_stop_fn=self.is_stop_requested)
 
     @property
     def input_count(self) -> int:
