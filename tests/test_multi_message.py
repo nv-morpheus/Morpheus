@@ -24,10 +24,10 @@ import cupy as cp
 import numpy as np
 import pandas as pd
 import pytest
-from _utils.dataset_manager import DatasetManager
 
 import cudf
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs

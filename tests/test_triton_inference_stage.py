@@ -20,11 +20,11 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-from _utils import assert_results
-from _utils import mk_async_infer
 
 import cudf
 
+from _utils import assert_results
+from _utils import mk_async_infer
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes

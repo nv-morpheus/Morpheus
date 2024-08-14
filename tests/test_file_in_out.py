@@ -21,10 +21,10 @@ import typing
 
 import numpy as np
 import pytest
+
 from _utils import TEST_DIRS
 from _utils import assert_path_exists
 from _utils.dataset_manager import DatasetManager
-
 from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.config import CppConfig

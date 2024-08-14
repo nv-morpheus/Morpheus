@@ -18,9 +18,9 @@ import typing
 
 import pandas as pd
 import pytest
+
 from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
-
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline

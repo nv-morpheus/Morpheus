@@ -18,7 +18,6 @@ import re
 from unittest import mock
 
 import pytest
-from _utils import assert_results
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent
 from langchain.agents import load_tools
@@ -28,6 +27,7 @@ from langchain_community.utilities import serpapi
 
 import cudf
 
+from _utils import assert_results
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode

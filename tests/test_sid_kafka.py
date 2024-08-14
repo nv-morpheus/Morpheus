@@ -22,11 +22,11 @@ from unittest import mock
 import numpy as np
 import pandas
 import pytest
+
 from _utils import TEST_DIRS
 from _utils import mk_async_infer
 from _utils.dataset_manager import DatasetManager
 from _utils.kafka import KafkaTopics
-
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.io.utils import filter_null_data

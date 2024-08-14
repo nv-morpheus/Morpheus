@@ -19,14 +19,14 @@ import types
 from unittest import mock
 
 import pytest
+
+import cudf
+
 from _utils import TEST_DIRS
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from _utils.llm import mk_mock_openai_response
 from _utils.milvus import populate_milvus
-
-import cudf
-
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine

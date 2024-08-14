@@ -21,10 +21,10 @@ from unittest import mock
 
 import pandas as pd
 import pytest
-from _utils import assert_results
 
 import cudf
 
+from _utils import assert_results
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MessageMeta

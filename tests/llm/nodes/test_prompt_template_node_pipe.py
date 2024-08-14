@@ -14,10 +14,10 @@
 # limitations under the License.
 
 import pytest
-from _utils import assert_results
 
 import cudf
 
+from _utils import assert_results
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
