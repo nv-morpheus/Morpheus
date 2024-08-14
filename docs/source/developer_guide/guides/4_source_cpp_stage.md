@@ -481,12 +481,12 @@ Previously, our stage connected to the RabbitMQ server in the constructor. This 
 
 ```python
 def __init__(self,
-                config: Config,
-                host: str,
-                exchange: str,
-                exchange_type: str = 'fanout',
-                queue_name: str = '',
-                poll_interval: str = '100millis'):
+             config: Config,
+             host: str,
+             exchange: str,
+             exchange_type: str = 'fanout',
+             queue_name: str = '',
+             poll_interval: str = '100millis'):
     super().__init__(config)
     self._host = host
     self._exchange = exchange
