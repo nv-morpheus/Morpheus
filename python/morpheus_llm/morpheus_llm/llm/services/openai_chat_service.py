@@ -22,8 +22,8 @@ from textwrap import dedent
 
 import appdirs
 
-from morpheus.llm.services.llm_service import LLMClient
-from morpheus.llm.services.llm_service import LLMService
+from morpheus_llm.llm.services.llm_service import LLMClient
+from morpheus_llm.llm.services.llm_service import LLMService
 from morpheus.utils.env_config_value import EnvConfigValue
 
 logger = logging.getLogger(__name__)

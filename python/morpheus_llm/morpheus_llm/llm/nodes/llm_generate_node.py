@@ -14,9 +14,9 @@
 
 import logging
 
-from morpheus.llm import LLMContext
-from morpheus.llm import LLMNodeBase
-from morpheus.llm.services.llm_service import LLMClient
+from morpheus_llm.llm import LLMContext
+from morpheus_llm.llm import LLMNodeBase
+from morpheus_llm.llm.services.llm_service import LLMClient
 
 logger = logging.getLogger(__name__)
 

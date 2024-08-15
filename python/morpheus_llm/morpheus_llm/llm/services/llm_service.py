@@ -19,8 +19,8 @@ from abc import ABC
 from abc import abstractmethod
 
 if typing.TYPE_CHECKING:
-    from morpheus.llm.services.nemo_llm_service import NeMoLLMService
-    from morpheus.llm.services.openai_chat_service import OpenAIChatService
+    from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService
+    from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
 
 logger = logging.getLogger(__name__)
 

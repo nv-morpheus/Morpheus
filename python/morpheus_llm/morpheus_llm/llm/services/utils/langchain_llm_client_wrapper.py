@@ -18,7 +18,7 @@ from langchain_core.callbacks import AsyncCallbackManagerForLLMRun
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 
-from morpheus.llm.services.llm_service import LLMClient
+from morpheus_llm.llm.services.llm_service import LLMClient
 
 
 class LangchainLLMClientWrapper(LLM):

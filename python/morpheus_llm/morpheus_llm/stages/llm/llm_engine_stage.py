@@ -17,9 +17,9 @@ import typing
 
 import mrc
 
-import morpheus._lib.llm as _llm
+import morpheus_llm._lib.llm as _llm
 from morpheus.config import Config
-from morpheus.llm import LLMEngine
+from morpheus_llm.llm import LLMEngine
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage

@@ -17,8 +17,8 @@ import logging
 import string
 import typing
 
-from morpheus.llm import LLMContext
-from morpheus.llm import LLMNodeBase
+from morpheus_llm.llm import LLMContext
+from morpheus_llm.llm import LLMNodeBase
 
 logger = logging.getLogger(__name__)
 

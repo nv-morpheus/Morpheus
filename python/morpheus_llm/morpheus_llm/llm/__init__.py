@@ -15,15 +15,15 @@
 All objects related to using LLMs in Morpheus
 """
 
-from morpheus._lib.llm import InputMap
-from morpheus._lib.llm import LLMContext
-from morpheus._lib.llm import LLMEngine
-from morpheus._lib.llm import LLMLambdaNode
-from morpheus._lib.llm import LLMNode
-from morpheus._lib.llm import LLMNodeBase
-from morpheus._lib.llm import LLMNodeRunner
-from morpheus._lib.llm import LLMTask
-from morpheus._lib.llm import LLMTaskHandler
+from morpheus_llm._lib.llm import (InputMap,
+                                   LLMContext,
+                                   LLMEngine,
+                                   LLMLambdaNode,
+                                   LLMNode,
+                                   LLMNodeBase,
+                                   LLMNodeRunner,
+                                   LLMTask,
+                                   LLMTaskHandler)
 
 __all__ = [
     "InputMap",
