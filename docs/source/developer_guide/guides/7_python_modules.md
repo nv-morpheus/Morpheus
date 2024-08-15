@@ -21,9 +21,9 @@ limitations under the License.
 
 Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are built on top of MRC pipelines, which are comprised of collections of nodes and edges called segments (think sub-graphs), which can in turn be connected by ingress/egress ports. In many common cases, an MRC pipeline will consist of only a single segment. While Morpheus stages are the primary building blocks of Morpheus pipelines, Morpheus modules can be thought of as a way to define basic units of work, which can in turn be composed and (re)used to build more complex stages. Modules can be written in Python or C++.
 
-## The Passthrough Module
+## The Pass-through Module
 
-The `passthrough` module is a simple module that takes a single input port and a single output port. It simply passes it forward, in much the same way that the example stage defined in the [Simple Python Stage](./1_simple_python_stage.md) does; however, it only defines the actual unit of work, and must then be loaded either as its own Morpheus stage, or within the context of another stage in order to be used.
+The pass-through module is a simple module that takes a single input port and a single output port. It simply passes it forward, in much the same way that the example stage defined in the [Simple Python Stage](./1_simple_python_stage.md) does; however, it only defines the actual unit of work, and must then be loaded either as its own Morpheus stage, or within the context of another stage in order to be used.
 
 ### Module Definition and Registration
 

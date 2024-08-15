@@ -46,7 +46,7 @@ In this example, we will be using Morpheus' provided NLP SI Detection model. Thi
 
 ### The Dataset
 
-The dataset that this workflow was designed to process is PCAP, or Packet Capture data, that is serialized into a JSON format. Several different applications are capable of capurting this type of network traffic. Each packet contains information about the source, destination, timestamp, and body of the packet, among other things. For example, below is a single packet that is from a HTTP POST request to cumulusnetworks.com:
+The dataset that this workflow was designed to process is PCAP, or Packet Capture data, that is serialized into a JSON format. Several different applications are capable of capturing this type of network traffic. Each packet contains information about the source, destination, timestamp, and body of the packet, among other things. For example, below is a single packet that is from a HTTP POST request to cumulusnetworks.com:
 
 ```json
 {
@@ -85,10 +85,8 @@ This example utilizes the Triton Inference Server to perform inference. The neur
 From the Morpheus repo root directory, run the following to launch Triton and load the `sid-minibert` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
 ```
-
-Where `23.06-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (refer to [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
 
 This will launch Triton and only load the `sid-minibert-onnx` model. This model has been configured with a max batch size of 32, and to use dynamic batching for increased performance.
 
@@ -199,16 +197,16 @@ Inference Rate[Complete]: 93085inf [00:07, 12673.63inf/s]
 ```
 
 The output file `detections.jsonlines` will contain the original PCAP messages with the following additional fields added:
-* address
-* bank_acct
-* credit_card
-* email
-* govt_id
-* name
-* password
-* phone_num
-* secret_keys
-* user
+* `address`
+* `bank_acct`
+* `credit_card`
+* `email`
+* `govt_id`
+* `name`
+* `password`
+* `phone_num`
+* `secret_keys`
+* `user`
 
 The value for these fields will be a `1` indicating a detection or a `0` indicating no detection. An example row with a detection is:
 ```json

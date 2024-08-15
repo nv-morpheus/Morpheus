@@ -15,13 +15,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-Creates a local conda channel using docker-compose and nginx. Can be helpful when testing new conda packages
+Creates a local Conda channel using Docker Compose and nginx. Can be helpful when testing new Conda packages
 
 To Use:
-1. Ensure `docker-compose` is installed
-2. Set the location of the conda-bld folder to host as a conda channel to the variable `$CONDA_REPO_DIR`
-   1. i.e. `export CONDA_REPO_DIR=$CONDA_PREFIX/conda-bld`
-3. Launch docker-compose
+1. Ensure Docker Compose is installed
+2. Set the location of the `conda-bld` folder to host as a Conda channel to the variable `$CONDA_REPO_DIR`
+   1. For example, `export CONDA_REPO_DIR=$CONDA_PREFIX/conda-bld`
+3. Launch Docker Compose
    1. `docker compose up -d`
-4. Install conda packages using the local channel
+4. Install Conda packages using the local channel
    1. `conda install -c http://localhost:8080 <my_package>`

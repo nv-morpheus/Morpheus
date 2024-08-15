@@ -19,17 +19,17 @@
 ### Set up Triton Inference Server
 
 ##### Pull Triton Inference Server Docker Image
-Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tritonserver) suitable for your environment.
+Pull Morpheus Models Docker image from NGC.
 
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:23.06-py3
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
 ```
 
 ##### Start Triton Inference Server container
 ```bash
-docker run --gpus=all --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx --load-model all-MiniLM-L6-v2
+docker run --gpus=all --rm -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx --load-model all-MiniLM-L6-v2
 ```
 
 ##### Verify Model Deployments
@@ -108,7 +108,7 @@ pytest -s --run_benchmark --run_milvus --benchmark-enable --benchmark-warmup=on 
 
 The `-s` option allows outputs of pipeline execution to be displayed so you can ensure there are no errors while running your benchmarks.
 
-The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflow(s) once before starting measurements. This is because the models deployed to Triton are configured to convert from ONNX to TensorRT on first use. Since the conversion can take a considerable amount of time, we don't want to include it in the measurements. The `--run_milvus` flag enables benchmarks which require the Milvus database.
+The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflows once before starting measurements. This is because the models deployed to Triton are configured to convert from ONNX to TensorRT on first use. Since the conversion can take a considerable amount of time, we don't want to include it in the measurements. The `--run_milvus` flag enables benchmarks which require the Milvus database.
 
 #### Running with an existing Milvus database
 
@@ -158,7 +158,7 @@ with `000N` where N is incremented for every run. For example, the report file n
 
 A hook to `pytest-benchmark` was developed to add the following information to the JSON report:
 
-GPU(s) used by Morpheus. For example:
+GPUs used by Morpheus. For example:
 ```
 "gpu_0": {
     "id": 0,
@@ -171,24 +171,24 @@ GPU(s) used by Morpheus. For example:
 }
 ```
 
-Morpheus config for each workflow:
-- num_threads
-- pipeline_batch_size
-- model_max_batch_size
-- feature_length
-- edge_buffer_size
+Morpheus configuration for each workflow:
+- `num_threads`
+- `pipeline_batch_size`
+- `model_max_batch_size`
+- `feature_length`
+- `edge_buffer_size`
 
 Additional benchmark stats for each workflow:
-- input_lines
-- min_throughput_lines
-- max_throughput_lines
-- mean_throughput_lines
-- median_throughput_lines
-- input_bytes
-- min_throughput_bytes
-- max_throughput_bytes
-- mean_throughput_bytes
-- median_throughput_bytes
+- `input_lines`
+- `min_throughput_lines`
+- `max_throughput_lines`
+- `mean_throughput_lines`
+- `median_throughput_lines`
+- `input_bytes`
+- `min_throughput_bytes`
+- `max_throughput_bytes`
+- `mean_throughput_bytes`
+- `median_throughput_bytes`
 
 
 ### Production DFP E2E Benchmarks

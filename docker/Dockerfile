@@ -21,6 +21,10 @@
 # [base] -> [conda_env] -> [base_extended] -> [runtime_conda_create] -> [runtime]
 #                               \
 #                         [conda_env_dev] -> [development] -> [development_pydbg]
+#                               \
+#                         [build_docs]
+#                               \
+#                         [git_clone]
 #
 #  base: Contains all system packages common across all environments
 #  conda_env: Create morpheus conda environment and set it as the new base
@@ -35,6 +39,9 @@
 #    source directory.
 #  development_pydbg: Development + debug build of cpython and various GDB
 #    debugging macros.
+#  build_docs: Build the Morpheus documentation
+#  git_clone: Clone the Morpheus repository to ensure we do not unintentionally
+#    copy local build artifacts
 # ========================================================================= #
 
 # Args used in FROM commands must come first
@@ -220,6 +227,35 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     cd ${MORPHEUS_ROOT_HOST} &&\
     MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld ./ci/conda/recipes/run_conda_build.sh morpheus
 
+# ============ Stage: build_docs ============
+# Now build the morpheus docs
+FROM conda_env_dev as build_docs
+
+ARG MORPHEUS_ROOT_HOST
+
+# Copy the source
+COPY . ./
+
+RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
+    --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
+    --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    source activate morpheus &&\
+    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus \
+        -c local \
+        -c conda-forge \
+        -c huggingface \
+        -c rapidsai \
+        -c rapidsai-nightly \
+        -c nvidia \
+        -c nvidia/label/dev \
+        -c pytorch \
+        -c defaults \
+        morpheus && \
+    # Change to the morpheus directory and build the docs
+    cd ${MORPHEUS_ROOT_HOST} &&\
+    CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_DOCS=ON -DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_CUDA_ARCHITECTURES=RAPIDS"\
+         ./scripts/compile.sh --target morpheus_docs
+
 # ============ Stage: runtime_conda_create ============
 # Setup conda for the runtime environment
 FROM base_extended as runtime_conda_create
@@ -251,6 +287,21 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file \
         conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml
 
+# ============ Stage: git_clone ============
+# Perform a clone of the git repository this ensures that when we copy files from the source repository, we aren't
+# unintentionally including build artifacts or other files that shouldn't be in the final image
+FROM conda_env_dev as git_clone
+
+ARG MORPHEUS_ROOT_HOST
+
+# Source the morpheus env to pick up the git-lfs package
+RUN --mount=type=bind,source=${MORPHEUS_ROOT_HOST},target=/opt/host_repo \
+    source activate morpheus &&\
+    git clone file:///opt/host_repo /tmp/morpheus_repo &&\
+    cd /tmp/morpheus_repo &&\
+    git lfs install &&\
+    /tmp/morpheus_repo/scripts/fetch_data.py fetch datasets examples
+
 # ============ Stage: runtime ============
 # Setup container for runtime environment
 FROM runtime_conda_create as runtime
@@ -258,14 +309,14 @@ FROM runtime_conda_create as runtime
 ARG MORPHEUS_ROOT_HOST
 
 # Only copy specific files/folders over that are necessary for runtime
-COPY "${MORPHEUS_ROOT_HOST}/conda/environments/*.yaml" "./conda/environments/"
-COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
-COPY "${MORPHEUS_ROOT_HOST}/docs" "./docs"
-COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
-COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
-COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
-COPY "${MORPHEUS_ROOT_HOST}/*.md" "./"
-COPY "${MORPHEUS_ROOT_HOST}/LICENSE" "./"
+COPY --from=git_clone "/tmp/morpheus_repo/conda/environments/*.yaml" "./conda/environments/"
+COPY --from=git_clone "/tmp/morpheus_repo/docker" "./docker"
+COPY --from=build_docs "/workspace/build/docs/html" "./docs"
+COPY --from=git_clone "/tmp/morpheus_repo/examples" "./examples"
+COPY --from=git_clone "/tmp/morpheus_repo/models/datasets" "./models/datasets"
+COPY --from=git_clone "/tmp/morpheus_repo/scripts" "./scripts"
+COPY --from=git_clone "/tmp/morpheus_repo/*.md" "./"
+COPY --from=git_clone "/tmp/morpheus_repo/LICENSE" "./"
 
 RUN /opt/conda/bin/conda clean -afy && \
     # Ensure the conda-bld directory is indexed even if empty

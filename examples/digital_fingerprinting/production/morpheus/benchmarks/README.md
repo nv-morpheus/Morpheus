@@ -43,7 +43,7 @@ Now install Morpheus:
 pip install -e /workspace
 ```
 
-Install additonal required dependencies:
+Install additional required dependencies:
 ```bash
 mamba env update \
   -n ${CONDA_DEFAULT_ENV} \
@@ -101,15 +101,15 @@ To ensure the [file_to_df_loader.py](../../../../../morpheus/loaders/file_to_df_
 export MORPHEUS_FILE_DOWNLOAD_TYPE=dask
 ```
 
-Benchmarks for an individual workflow can be run from `examples/digital_fingerprinting/production/morpheus` in your dev container:
+Benchmarks for an individual workflow can be run from `examples/digital_fingerprinting/production/morpheus` in your container:
 
 ```
-
 pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave benchmarks/test_bench_e2e_dfp_pipeline.py::<test-workflow>
 ```
+
 The `-s` option allows outputs of pipeline execution to be displayed so you can ensure there are no errors while running your benchmarks.
 
-The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflow(s) once before starting measurements. This is because, if it does not already exist, the preprocessed data is cached during the initial run.
+The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflows once before starting measurements. This is because, if it does not already exist, the preprocessed data is cached during the initial run.
 
 `<test-workflow>` is the name of the test to run benchmarks on. This can be one of the following:
 - `test_dfp_modules_azure_payload_inference_e2e`
@@ -143,7 +143,7 @@ To run E2E benchmarks on all workflows:
 pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave benchmarks/test_bench_e2e_dfp_pipeline.py
 ```
 
-Here are the benchmark comparisons for individual tests. When the control message type is "payload", the rolling window stage is bypassed, whereas when it is "streaming", the windows are created with historical data.
+Here are the benchmark comparisons for individual tests. When the control message type is `payload`, the rolling window stage is bypassed, whereas when it is `streaming`, the windows are created with historical data.
 
 #### Training (Azure):
 ```
@@ -228,7 +228,7 @@ with `000N` where N is incremented for every run. For example, the report file n
 
 A hook to `pytest-benchmark` was developed to add the following information to the JSON report:
 
-GPU(s) used by Morpheus. For example:
+GPUs used by Morpheus. For example:
 ```
 "gpu_0": {
     "id": 0,
@@ -241,25 +241,25 @@ GPU(s) used by Morpheus. For example:
 }
 ```
 
-Morpheus config for each workflow:
-- num_threads
-- pipeline_batch_size
-- edge_buffer_size
-- start_time
-- duration
-- userid_column_name
-- timestamp_column_name
-- source
-- use_cpp
+Morpheus configuration for each workflow:
+- `num_threads`
+- `pipeline_batch_size`
+- `edge_buffer_size`
+- `start_time`
+- `duration`
+- `userid_column_name`
+- `timestamp_column_name`
+- `source`
+- `use_cpp`
 
 Additional benchmark stats for each workflow:
-- input_lines
-- min_throughput_lines
-- max_throughput_lines
-- mean_throughput_lines
-- median_throughput_lines
-- input_bytes
-- min_throughput_bytes
-- max_throughput_bytes
-- mean_throughput_bytes
-- median_throughput_bytes
+- `input_lines`
+- `min_throughput_lines`
+- `max_throughput_lines`
+- `mean_throughput_lines`
+- `median_throughput_lines`
+- `input_bytes`
+- `min_throughput_bytes`
+- `max_throughput_bytes`
+- `mean_throughput_bytes`
+- `median_throughput_bytes`

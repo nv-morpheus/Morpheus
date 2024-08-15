@@ -55,7 +55,7 @@ $ nvidia-smi dmon
 
 Each line in the output represents the GPU metrics at a single point in time. As the tool progresses the GPU begins to be utilized and the SM% and Mem% values increase as memory is loaded into the GPU and computations are performed. The model we will be using can ingest this information and determine whether or not the GPU is mining cryptocurrencies without needing additional information from the host machine.
 
-In this example we will be using the `examples/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents a new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
+In this example we will be using the `examples/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents a new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF DataFrames. This will all be handled by Morpheus.
 
 #### Generating your own dataset
 
@@ -86,12 +86,12 @@ This example utilizes the Triton Inference Server to perform inference.
 
 Pull the Docker image for Triton:
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:23.06-py3
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
 ```
 
-From the Morpheus repo root directory, run the following to launch Triton and load the `abp-nvsmi-xgb` XGBoost model:
+Run the following to launch Triton and load the `abp-nvsmi-xgb` XGBoost model:
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
 ```
 
 This will launch Triton and only load the `abp-nvsmi-xgb` model. This model has been configured with a max batch size of 32768, and to use dynamic batching for increased performance.

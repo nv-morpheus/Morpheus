@@ -286,6 +286,9 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - pylint=3.0.3
+          - vale=3.7
+          - vale-styles-microsoft
+          - vale-styles-write-good
           - versioneer
           - yapf=0.40.1
 

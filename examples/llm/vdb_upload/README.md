@@ -30,8 +30,8 @@ limitations under the License.
         - [Milvus Service](#milvus-service)
         - [Triton Service](#triton-service)
     - [Running the Morpheus Pipeline](#running-the-morpheus-pipeline)
-    - [Options for vdb_upload Command](#options-for-vdb_upload-command)
-    - [Exporting and Deploying a Different Model from Huggingface](#exporting-and-deploying-a-different-model-from-huggingface)
+    - [Options for `vdb_upload` Command](#options-for-vdb_upload-command)
+    - [Exporting and Deploying a Different Model from Hugging Face](#exporting-and-deploying-a-different-model-from-hugging-face)
 
 ## Supported Environments
 All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-124_arch-x86_64.yaml` or `conda/environments/examples_cuda-124_arch-x86_64.yaml` environment files.
@@ -71,7 +71,7 @@ tasks:
 ### Embedding Model
 
 - The pipeline can accommodate various embedding models that transform text into vectors of floating-point numbers.
-  Several models from Huggingface, such as `paraphrase-multilingual-mpnet-base-v2`, `e5-large-v2`,
+  Several models from Hugging Face, such as `paraphrase-multilingual-mpnet-base-v2`, `e5-large-v2`,
   and `all-mpnet-base-v2`, have been evaluated for compatibility.
 
 - For the purposes of this demonstration, the model `all-MiniLM-L6-v2` is employed. This model is included via LFS
@@ -97,12 +97,10 @@ The pipeline is composed of three primary components:
    the feeds, perform preliminary data cleaning, and standardize the format for subsequent steps.
 
 2. **Embedding Generator**: This is the heart of the pipeline, which takes the preprocessed text chunks and computes
-   their embeddings. Leveraging the model `all-MiniLM-L6-v2` from Huggingface, the text data is transformed into
+   their embeddings. Leveraging the model `all-MiniLM-L6-v2` from Hugging Face, the text data is transformed into
    embeddings with a dimension of 384.
 
-3. **Vector Database Uploader**: Post embedding generation, this module takes the embeddings alongside their associated
-   metadata and pushes them to a Vector Database (VDB). For our implementation, Milvus, a GPU-accelerated vector
-   database, has been chosen.
+3. **Vector Database Uploader**: Post embedding generation, this module takes the embeddings alongside their associated metadata and pushes them to a Vector Database (VDB). For our implementation, Milvus, a GPU-accelerated vector database, has been chosen.
 
 ### Rationale Behind Design Decisions
 
@@ -125,10 +123,10 @@ Before running the pipeline, we need to ensure that the following services are r
 
 #### Ensure LFS files are downloaded
 
-To retrieve models from LFS run the following:
+To retrieve datasets from LFS run the following:
 
 ```bash
-./scripts/fetch_data.py fetch models
+./scripts/fetch_data.py fetch datasets
 ```
 
 #### Milvus Service
@@ -140,12 +138,12 @@ To retrieve models from LFS run the following:
 
 - Pull the Docker image for Triton:
   ```bash
-  docker pull nvcr.io/nvidia/tritonserver:23.06-py3
+  docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
   ```
 
-- From the Morpheus repo root directory, run the following to launch Triton and load the `all-MiniLM-L6-v2` model:
+- Run the following to launch Triton and load the `all-MiniLM-L6-v2` model:
   ```bash
-  docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model all-MiniLM-L6-v2
+  docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model all-MiniLM-L6-v2
   ```
 
   This will launch Triton and only load the `all-MiniLM-L6-v2` model. Once Triton has loaded the model, the following
@@ -161,7 +159,7 @@ To retrieve models from LFS run the following:
 ### Running the Morpheus Pipeline
 
 The top-level entry point for each of the LLM example pipelines is examples/llm/main.py. This script accepts a set of
-options and a pipeline to run. For the purposes of this document, we'll focus on the vdb_upload pipeline option, which
+options and a pipeline to run. For the purposes of this document, we'll focus on the `vdb_upload` pipeline option, which
 incorporates various functionalities like handling RSS and filesystem sources, embedding configurations, and vector
 database (VDB) settings.
 
@@ -241,13 +239,13 @@ The `vdb_upload` command has its own set of options and commands:
 - `langchain`
 - `pipeline`
 
-### Exporting and Deploying a Different Model from Huggingface
+### Exporting and Deploying a Different Model from Hugging Face
 
-If you're looking to incorporate a different embedding model from Huggingface into the pipeline, follow the steps below
+If you're looking to incorporate a different embedding model from Hugging Face into the pipeline, follow the steps below
 using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an example:
 
 1. **Identify the Desired Model**:
-    - Head over to the [Huggingface Model Hub](https://huggingface.co/models) and search for the model you want. For
+    - Head over to the [Hugging Face Model Hub](https://huggingface.co/models) and search for the model you want. For
       this example, we are looking at `e5-large-v2`.
 
 2. **Run the Pipeline Call with the Chosen Model**:
@@ -263,7 +261,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
       ```text
       requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url:
       ```
-      This typically means the model name you provided does not match the one available on Huggingface. Double-check
+      This typically means the model name you provided does not match the one available on Hugging Face. Double-check
       the model name and try again.
 
 4. **Confirm Successful Model Export**:
@@ -279,7 +277,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
     - Reload the docker container, specifying that we also need to load paraphrase-multilingual-mpnet-base-v2
     ```bash
     docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-     -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver \
+     nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver \
      --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit  --load-model \
      all-MiniLM-L6-v2 --load-model sentence-transformers/paraphrase-multilingual-mpnet-base-v2
     ```
@@ -314,11 +312,9 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
      sentence-transformers/paraphrase-multilingual-mpnet-base-v2
     ```
 
-### Running the Langchain Pipeline (Optional)
+### Running the LangChain Pipeline (Optional)
 
-- Optional guide for running the Langchain pipeline, if applicable.## Developer Docs
-
-- A link to the developer documentation where the README.md is also linked.
+- Optional guide for running the LangChain pipeline, if applicable.
 
 > **Note**: This pipeline will, by default, run continuously repeatedly polling the configured RSS sources. To run for a
 > fixed number of iterations, add the `--stop_after=N` flag.

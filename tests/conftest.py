@@ -1044,6 +1044,18 @@ def string_collection_config_fixture():
     yield load_json_file(filename="service/milvus_string_collection_conf.json")
 
 
+@pytest.fixture(scope="session", name="bert_cased_hash")
+def bert_cased_hash_fixture():
+    from _utils import TEST_DIRS
+    yield os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-hash.txt')
+
+
+@pytest.fixture(scope="session", name="bert_cased_vocab")
+def bert_cased_vocab_fixture():
+    from _utils import TEST_DIRS
+    yield os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-vocab.txt')
+
+
 @pytest.fixture(name="nemollm", scope='session')
 def nemollm_fixture(fail_missing: bool):
     """

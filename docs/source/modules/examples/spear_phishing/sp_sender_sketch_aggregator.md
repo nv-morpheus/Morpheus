@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Spear Phishing Sender Sketch Aggregator Module
 
-Module ID: sender_sketch_aggregator
-Module Namespace: morpheus_spear_phishing
+Module ID: `sender_sketch_aggregator`
+Module Namespace: `morpheus_spear_phishing`
 
 This module aggregates sender sketches in the spear phishing detection pipeline.
 
@@ -26,14 +26,14 @@ This module aggregates sender sketches in the spear phishing detection pipeline.
 
 | Parameter              | Type       | Description                                | Example Value | Default Value |
 |------------------------|------------|--------------------------------------------|---------------|---------------|
-| `sender_sketch_config` | dictionary | The configuration for the sender sketches. | See Below     | `None`        |
+| `sender_sketch_config` | dictionary | The configuration for the sender sketches. | Refer Below    | `None`        |
 
 ### `sender_sketch_config`
 
 | Key                | Type  | Description                              | Example Value          | Default Value |
 |--------------------|-------|------------------------------------------|------------------------|---------------|
-| `sender_sketches`  | array | The list of sender sketches to aggregate | ["sketch1", "sketch2"] | `[]`          |
-| `raise_on_failure` | boolean  | If true, raise exceptions on failures    | false                  | `false`       |
+| `sender_sketches`  | array | The list of sender sketches to aggregate | `["sketch1", "sketch2"]` | `[]`          |
+| `raise_on_failure` | boolean  | If true, raise exceptions on failures    | `false`                  | `false`       |
 
 ### Example JSON Configuration
 

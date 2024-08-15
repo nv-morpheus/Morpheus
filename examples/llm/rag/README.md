@@ -34,7 +34,7 @@ All environments require additional Conda packages which can be installed with e
 
 The purpose of this example is to illustrate how a user could build a Retrieval Augmented Generation pipeline
 integrating informational feeds and an LLM service into a Morpheus pipeline. This example builds on the previous
-example [completionpipeline](../completion/README.md), by adding the ability to augment LLM queries with context
+[Completion Pipeline](../completion/README.md) example, by adding the ability to augment LLM queries with context
 information from a knowledge base. Appending this context helps improve the responses from the LLM by providing
 additional background contextual and factual information which the LLM can pull from for its response.
 
@@ -79,17 +79,15 @@ were incorporated:
 
 The standalone Morpheus pipeline is built using the following components:
 
-- An InMemorySourceStage to hold the LLM queries in a DataFrame.
-    - We supply a fixed set of questions in a `source_df` which are then processed by the LLMEngineStage
-- A DeserializationStage to convert the MessageMeta objects into ControlMessages needed by the LLMEngine.
-    - New functionality was added to the DeserializeStage to support ControlMessages and add a default task to each
-      message.
-- A LLMEngineStage then wraps the core LLMEngine functionality.
-    - An ExtracterNode pulls the questions out of the DataFrame.
-    - A RAGNode performs the retrieval and adds the context to the query using the supplied template and executes the
-      LLM.
-    - Finally, the responses are put back into the ControlMessage using a SimpleTaskHandler.
-- The pipeline concludes with an InMemorySink stage to store the results.
+- An `InMemorySourceStage` to hold the LLM queries in a DataFrame.
+    - We supply a fixed set of questions in a `source_df` which are then processed by the `LLMEngineStage`
+- A `DeserializationStage` to convert `MessageMeta` objects into `ControlMessage` objects as needed by the `LLMEngine`.
+    - New functionality was added to the `DeserializeStage` to support `ControlMessage`s and add a default task to each message.
+- An `LLMEngineStage` then wraps the core `LLMEngine` functionality.
+    - An `ExtracterNode` pulls the questions out of the DataFrame.
+    - A `RAGNode` performs the retrieval and adds the context to the query using the supplied template and executes the LLM.
+    - Finally, the responses are put back into the `ControlMessage` using a `SimpleTaskHandler`.
+- The pipeline concludes with an `InMemorySink` stage to store the results.
 
 > **Note:** For this to function correctly, the VDB upload pipeline must have been run previously.
 
@@ -100,10 +98,10 @@ Before running the pipeline, we need obtain service API keys for the following s
 
 ### Ensure that LFS files are downloaded
 
-To retrieve models from LFS run the following:
+To retrieve datasets from LFS run the following:
 
 ```bash
-./scripts/fetch_data.py fetch models
+./scripts/fetch_data.py fetch datasets
 ```
 
 ### Obtain an OpenAI API or NGC API Key
@@ -135,7 +133,7 @@ pipeline option of `rag`:
 
 ### Run example (Standalone Pipeline):
 
-**Using NGC Nemo LLMs**
+**Using NGC NeMo LLMs**
 
 ```bash
 export NGC_API_KEY=[YOUR_KEY_HERE]

@@ -58,7 +58,11 @@ def run_pipeline(nic_addr, gpu_addr):
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'udp'))
     pipeline.add_stage(
-        MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts', determine_count_fn=count_raw_packets))
+        MonitorStage(config,
+                     description="DOCA GPUNetIO rate",
+                     unit='pkts',
+                     determine_count_fn=count_raw_packets,
+                     delayed_start=True))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()

@@ -82,7 +82,40 @@ def build_milvus_service(embedding_size):
     help="GPU PCI Address",
     required=True,
 )
-def run_pipeline(nic_addr, gpu_addr):
+@click.option(
+    "--triton_server_url",
+    type=str,
+    default="localhost:8001",
+    show_default=True,
+    help="Triton server URL.",
+)
+@click.option(
+    "--embedding_model_name",
+    required=True,
+    default='all-MiniLM-L6-v2',
+    show_default=True,
+    help="The name of the model that is deployed on Triton server",
+)
+@click.option(
+    "--vector_db_uri",
+    type=str,
+    default="http://localhost:19530",
+    show_default=True,
+    help="URI for connecting to Vector Database server.",
+)
+@click.option(
+    "--vector_db_resource_name",
+    type=str,
+    default="vdb_doca",
+    show_default=True,
+    help="The identifier of the resource on which operations are to be performed in the vector database.",
+)
+def run_pipeline(nic_addr: str,
+                 gpu_addr: str,
+                 triton_server_url: str,
+                 embedding_model_name: str,
+                 vector_db_uri: str,
+                 vector_db_resource_name: str):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 
@@ -110,18 +143,18 @@ def run_pipeline(nic_addr, gpu_addr):
     pipeline.add_stage(
         TritonInferenceStage(config,
                              force_convert_inputs=True,
-                             model_name="all-MiniLM-L6-v2",
-                             server_url="localhost:8001",
+                             model_name=embedding_model_name,
+                             server_url=triton_server_url,
                              use_shared_memory=True))
     pipeline.add_stage(MonitorStage(config, description="Embedding rate", unit='pkts'))
 
     pipeline.add_stage(
         WriteToVectorDBStage(config,
-                             resource_name="vdb_doca",
+                             resource_name=vector_db_resource_name,
                              batch_size=16896,
                              recreate=True,
                              service="milvus",
-                             uri="http://localhost:19530",
+                             uri=vector_db_uri,
                              resource_schemas={"vdb_doca": build_milvus_service(384)}))
     pipeline.add_stage(MonitorStage(config, description="Upload rate", unit='docs'))
 
