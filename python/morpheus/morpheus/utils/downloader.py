@@ -102,25 +102,12 @@ class Downloader:
             if Downloader._dask_cluster is None:
                 import dask
                 import dask.distributed
-<<<<<<< HEAD:morpheus/utils/downloader.py
-                import dask_cuda.utils
-=======
->>>>>>> 5fdbcb91d717e4eabb74ab3f5392861b30c8c4fc:python/morpheus/morpheus/utils/downloader.py
 
                 logger.debug("Creating dask cluster...")
 
                 Downloader._dask_cluster = dask.distributed.LocalCluster(start=True,
                                                                          processes=self.download_method
                                                                          != "dask_thread")
-<<<<<<< HEAD:morpheus/utils/downloader.py
-
-                # n_workers = dask_cuda.utils.get_n_gpus()
-                # threads_per_worker = mp.cpu_count() // n_workers
-
-                # Downloader._dask_cluster = dask_cuda.LocalCUDACluster(n_workers=n_workers,
-                #                                                       threads_per_worker=threads_per_worker)
-=======
->>>>>>> 5fdbcb91d717e4eabb74ab3f5392861b30c8c4fc:python/morpheus/morpheus/utils/downloader.py
 
                 logger.debug("Creating dask cluster... Done. Dashboard: %s", Downloader._dask_cluster.dashboard_link)
 
