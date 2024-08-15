@@ -185,7 +185,7 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
         request_args.update(self._requst_kwargs)
 
-        while (self._stop_after == 0 or num_records_emitted < self._stop_after):
+        while (not self.is_stop_requested() and (self._stop_after == 0 or num_records_emitted < self._stop_after)):
             if self._query_params_fn is not None:
                 request_args['params'] = self._query_params_fn()
 

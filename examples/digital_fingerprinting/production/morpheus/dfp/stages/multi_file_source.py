@@ -128,7 +128,7 @@ class MultiFileSource(SingleOutputSource):
         curr_time = time.monotonic()
         next_update_epoch = curr_time
 
-        while (True):
+        while (not self.is_stop_requested()):
             # Before doing any work, find the next update epoch after the current time
             while (next_update_epoch <= curr_time):
                 # Only ever add `self._watch_interval` to next_update_epoch so all updates are at repeating intervals
