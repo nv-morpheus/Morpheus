@@ -9,15 +9,15 @@ channels:
 - nvidia/label/dev
 - pytorch
 dependencies:
-- cuml=24.08.*
+- cuml=24.06.*
 - jupyterlab
 - matplotlib
 - onnx
 - pandas
-- python=3.11
+- python=3.10
 - scikit-learn=1.3.2
 - seaborn
 - seqeval=1.2.2
 - transformers=4.36.2
 - xgboost
-name: model-utils_cuda-124_arch-x86_64
+name: model-utils_cuda-125_arch-x86_64

@@ -266,8 +266,26 @@ def test_set_meta_issue_286(filter_probs_df: cudf.DataFrame, use_series: bool):
     if use_series:
         values = cudf.Series(values)
 
+    import cupy
+
+    # hey = values[5:10].to_cupy()
+
     mm1.set_meta('letters', values[0:5])
     mm2.set_meta('letters', values[5:10])
+
+
+# def test_something(filter_probs_df: cudf.DataFrame):
+
+#     values = list(string.ascii_letters)
+
+#     values = 
+
+#     import cupy
+
+#     cupy.asarray(cudf.Series(list(string.ascii_letters)))
+
+#     # mm1.set_meta('letters', values[0:5])
+#     # mm2.set_meta('letters', values[5:10])
 
 
 def _test_copy_ranges(df: typing.Union[cudf.DataFrame, pd.DataFrame]):

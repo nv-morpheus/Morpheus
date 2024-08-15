@@ -19,7 +19,7 @@ files:
   all:
     output: conda
     matrix:
-      cuda: ["12.4"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -45,7 +45,7 @@ files:
   dev:
     output: conda
     matrix:
-      cuda: ["12.4"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -67,7 +67,7 @@ files:
   build:
     output: none
     matrix:
-      cuda: ["12.4"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -87,7 +87,7 @@ files:
   test:
     output: none
     matrix:
-      cuda: ["12.4"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -108,7 +108,7 @@ files:
   docs:
     output: none
     matrix:
-      cuda: ["12.4"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -131,7 +131,7 @@ files:
   runtime:
     output: conda
     matrix:
-      cuda: ["12.4"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - cudatoolkit
@@ -145,7 +145,7 @@ files:
   examples:
     output: conda
     matrix:
-      cuda: ["12.4"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - cve-mitigation
@@ -161,7 +161,7 @@ files:
   model-utils:
     output: conda
     matrix:
-      cuda: ["12.4"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - model-training-tuning
@@ -189,33 +189,35 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - python=3.11
+          - python=3.10
 
   cudatoolkit:
     specific:
       - output_types: [conda]
         matrices:
           - matrix:
-              cuda: "12.4"
+              cuda: "12.5"
             packages:
-              - cuda-cudart=12.4
-              - cuda-nvrtc=12.4
-              - cuda-nvtx=12.4
-              - cuda-version=12.4
+              - cuda-cudart=12.5
+              - cuda-nvrtc=12.5
+              - cuda-nvtx=12.5
+              - cuda-version=12.5
 
   cudatoolkit-dev:
     specific:
       - output_types: [conda]
         matrices:
           - matrix:
-              cuda: "12.4"
+              cuda: "12.5"
             packages:
-              - cuda-cudart-dev=12.4
-              - cuda-nvml-dev=12.4
-              - cuda-nvrtc-dev=12.4
-              - cuda-nvtx-dev=12.4
-              - cuda-tools=12.4
-              - cuda-version=12.4
+              - cuda-cudart-dev=12.5
+              - cuda-nvml-dev=12.5
+              - cuda-nvrtc-dev=12.5
+              - cuda-nvtx-dev=12.5
+              # - cuda-tools=12.5
+              - cuda-version=12.5
+              - libcufft-dev # required by matx
+              - cuda-sanitizer-api
 
 
 
@@ -226,7 +228,7 @@ dependencies:
       - output_types: [conda]
         packages:
           # Compilers
-          - cuda-nvcc=12.4
+          - cuda-nvcc=12.5
           - cxx-compiler
           - gcc_linux-64=11.2
           - gxx_linux-64=11.2
@@ -235,8 +237,8 @@ dependencies:
           - automake=1.16.5 # Needed for DOCA build
           - ccache
           - cmake=3.27
-          - cuda-cudart-dev=12.4
-          - cuda-version=12.4
+          - cuda-cudart-dev=12.5
+          - cuda-version=12.5
           - libtool # Needed for DOCA build
           - ninja=1.11
           - pkg-config=0.29 # for mrc cmake
@@ -249,10 +251,10 @@ dependencies:
       - output_types: [conda]
         packages:
           # Include: cudatoolkit-dev
-          - cudf=24.08
+          - cudf=24.06
           - cython=3.0
           - glog>=0.7.1,<0.8
-          - libcudf=24.08
+          - libcudf=24.06
           - librdkafka>=1.9.2,<1.10.0a0
           - mrc=24.10
           - nlohmann_json=3.11
@@ -319,8 +321,8 @@ dependencies:
           - appdirs
           - beautifulsoup4=4.12
           - click>=8
-          # - cuda-version=12.4 ##
-          - cudf=24.08
+          # - cuda-version=12.5 ##
+          - cudf=24.06
           - cupy # Version determined from cudf
           - datacompy=0.10
           - dill=0.3.7
@@ -338,10 +340,10 @@ dependencies:
           # - python ##
           - python-confluent-kafka>=1.9.2,<1.10.0a0
           - python-graphviz
-          - pytorch-cuda
-          - pytorch=*=*cuda*
+          # - pytorch-cuda
+          # - pytorch=*=*cuda*
           - pluggy=1.3
-          - rapids-dask-dependency=24.08 # provides dask and distributed
+          - rapids-dask-dependency=24.06 # provides dask and distributed
           - requests
           - requests-cache=1.1
           - scikit-learn=1.3.2
@@ -353,10 +355,12 @@ dependencies:
           - websockets
           - pip
           - pip:
+            - --extra-index-url https://download.pytorch.org/whl/cu124
             - databricks-cli < 0.100
             - databricks-connect
             - milvus==2.3.5 # update to match pymilvus when available
             - pymilvus==2.3.6
+            - torch==2.4.0+cu124
 
   test_python_morpheus:
     common:
@@ -387,7 +391,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - &cuml cuml=24.08.*
+          - &cuml cuml=24.06.*
           - pip
           - pip:
             - --find-links https://data.dgl.ai/wheels/cu121/repo.html

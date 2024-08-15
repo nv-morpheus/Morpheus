@@ -12,11 +12,11 @@ dependencies:
 - appdirs
 - beautifulsoup4=4.12
 - click>=8
-- cuda-cudart=12.4
-- cuda-nvrtc=12.4
-- cuda-nvtx=12.4
-- cuda-version=12.4
-- cudf=24.08
+- cuda-cudart=12.5
+- cuda-nvrtc=12.5
+- cuda-nvtx=12.5
+- cuda-version=12.5
+- cudf=24.06
 - cupy
 - datacompy=0.10
 - dill=0.3.7
@@ -35,10 +35,8 @@ dependencies:
 - pydantic
 - python-confluent-kafka>=1.9.2,<1.10.0a0
 - python-graphviz
-- python=3.11
-- pytorch-cuda
-- pytorch=*=*cuda*
-- rapids-dask-dependency=24.08
+- python=3.10
+- rapids-dask-dependency=24.06
 - requests
 - requests-cache=1.1
 - scikit-learn=1.3.2
@@ -49,8 +47,10 @@ dependencies:
 - watchdog=3.0
 - websockets
 - pip:
+  - --extra-index-url https://download.pytorch.org/whl/cu124
   - databricks-cli < 0.100
   - databricks-connect
   - milvus==2.3.5
   - pymilvus==2.3.6
-name: runtime_cuda-124_arch-x86_64
+  - torch==2.4.0+cu124
+name: runtime_cuda-125_arch-x86_64
