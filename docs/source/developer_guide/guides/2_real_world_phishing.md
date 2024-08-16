@@ -761,20 +761,20 @@ def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
     return builder.make_source(self.unique_name, self.source_generator)
 ```
 
-The `source_generator` method is where most of the RabbitMQ-specific code exists. When we have a message that we wish to emit into the pipeline, we simply `yield` it.
+The `source_generator` method is where most of the RabbitMQ-specific code exists. When we have a message that we wish to emit into the pipeline, we simply `yield` it. We continue this process until the `is_stop_requested()` method returns `True`.
 
 ```python
 def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
     try:
-        while not self._stop_requested:
-            (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
+        while not self.is_stop_requested():
+            (method_frame, _, body) = self._channel.basic_get(self._queue_name)
             if method_frame is not None:
                 try:
                     buffer = StringIO(body.decode("utf-8"))
                     df = cudf.io.read_json(buffer, orient='records', lines=True)
                     yield MessageMeta(df=df)
                 except Exception as ex:
-                    logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
+                    logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
                 finally:
                     self._channel.basic_ack(method_frame.delivery_tag)
             else:
@@ -824,11 +824,11 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
         Hostname or IP of the RabbitMQ server.
     exchange : str
         Name of the RabbitMQ exchange to connect to.
-    exchange_type : str
+    exchange_type : str, optional
         RabbitMQ exchange type; defaults to `fanout`.
-    queue_name : str
+    queue_name : str, optional
         Name of the queue to listen to. If left blank, RabbitMQ will generate a random queue name bound to the exchange.
-    poll_interval : str
+    poll_interval : str, optional
         Amount of time  between polling RabbitMQ for new messages
     """
 
@@ -854,9 +854,6 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._poll_interval = pd.Timedelta(poll_interval)
 
-        # Flag to indicate whether or not we should stop
-        self._stop_requested = False
-
     @property
     def name(self) -> str:
         return "from-rabbitmq"
@@ -867,18 +864,12 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def stop(self):
-        # Indicate we need to stop
-        self._stop_requested = True
-
-        return super().stop()
-
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self.source_generator)
 
     def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
         try:
-            while not self._stop_requested:
+            while not self.is_stop_requested():
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
