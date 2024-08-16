@@ -42,7 +42,7 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
    done
 
    if [[ "${SKIP_ISORT}" == "" ]]; then
-      ISORT_OUTPUT=`python3 -m isort --settings-file ${PY_CFG} --filter-files --check-only  ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
+      ISORT_OUTPUT=`python3 -m isort --settings-file ${PROJ_TOML} --filter-files --check-only  ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
       ISORT_RETVAL=$?
    fi
 
