@@ -23,10 +23,16 @@ from http import HTTPStatus
 import mrc
 
 from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config, ExecutionMode
+from morpheus.config import Config
+from morpheus.config import ExecutionMode
+from morpheus.io.utils import get_json_reader
 from morpheus.messages import MessageMeta
-from morpheus.stages.input.http_source_stage_base import HttpSourceStageBase
-from morpheus.utils.http_utils import HTTPMethod, HttpParseResponse, MimeTypes
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
+from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.utils.http_utils import HTTPMethod
+from morpheus.utils.http_utils import HttpParseResponse
+from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.producer_consumer_queue import Closed
 from morpheus.utils.type_aliases import DataFrameType
 
@@ -37,7 +43,7 @@ HEALTH_SUPPORTED_METHODS = (HTTPMethod.GET, HTTPMethod.POST)
 
 
 @register_stage("from-http", execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
-class HttpServerSourceStage(HttpSourceStageBase):
+class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
 
@@ -143,6 +149,9 @@ class HttpServerSourceStage(HttpSourceStageBase):
         """Indicates whether this stage supports C++ nodes."""
         return True
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
     def stop(self):
         """
         Performs cleanup steps when pipeline is stopped.
@@ -215,7 +224,9 @@ class HttpServerSourceStage(HttpSourceStageBase):
                                  body=err_msg)
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
-        from morpheus.common import FiberQueue, HttpEndpoint, HttpServer
+        from morpheus.common import FiberQueue
+        from morpheus.common import HttpEndpoint
+        from morpheus.common import HttpServer
 
         msg = HttpEndpoint(self._parse_payload, self._endpoint, self._method.name)
         live = HttpEndpoint(self._liveliness_check, self._live_endpoint, self._live_method.name)
@@ -276,7 +287,8 @@ class HttpServerSourceStage(HttpSourceStageBase):
                                                  stop_after=self._stop_after)
         else:
             if self._payload_to_df_fn is None:
-                self._payload_to_df_fn = self._get_default_payload_to_df_fn(self._config)
+                reader = get_json_reader(self._config)
+                self._payload_to_df_fn = lambda payload, lines: reader(payload, lines=lines)
 
             node = builder.make_source(self.unique_name, self._generate_frames())
 
