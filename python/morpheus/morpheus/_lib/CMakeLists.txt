@@ -33,6 +33,8 @@ morpheus_add_cython_library(
       cudf_helpers_target
 )
 
+set_property(GLOBAL PROPERTY cudf_helpers_target_property "${cudf_helpers_target}")
+
 execute_process(
   COMMAND "${Python_EXECUTABLE}" -c "import pyarrow; print(pyarrow.get_include())"
   OUTPUT_VARIABLE PYARROW_INCLUDE_DIR

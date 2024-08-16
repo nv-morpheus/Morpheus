@@ -41,6 +41,21 @@ target_link_libraries(morpheus_llm
 
 )
 
+# Add the include directories of the cudf_helpers_project since we dont want to link directly to it
+get_property(cudf_helpers_target GLOBAL PROPERTY cudf_helpers_target_property)
+get_target_property(cudf_helpers_include ${cudf_helpers_target} INTERFACE_INCLUDE_DIRECTORIES)
+
+target_include_directories(morpheus
+  PRIVATE
+     ${cudf_helpers_include}
+)
+
+# Also add a dependency to the target so that the headers are generated before the target is built
+add_dependencies(morpheus_llm ${cudf_helpers_target})
+
+# Morpheus has to built before morpheus llm
+add_dependencies(morpheus_llm morpheus)
+
 # fixme: find another way to include morpheus headers
 target_include_directories(morpheus_llm
   PUBLIC
