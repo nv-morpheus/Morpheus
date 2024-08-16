@@ -35,7 +35,7 @@ class LLMEngineStage(PassThruTypeMixin, SinglePortStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    engine : `morpheus.llm.LLMEngine`
+    engine : `morpheus_llm.llm.LLMEngine`
         LLM engine instance to execute.
    """
 

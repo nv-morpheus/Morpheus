@@ -1,6 +1,6 @@
 """
         -----------------------
-        .. currentmodule:: morpheus.llm
+        .. currentmodule:: morpheus_llm.llm
         .. autosummary::
            :toctree: _generate
 

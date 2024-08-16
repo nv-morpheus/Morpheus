@@ -62,7 +62,7 @@ PYBIND11_MODULE(llm, _module)
 {
     _module.doc() = R"pbdoc(
         -----------------------
-        .. currentmodule:: morpheus.llm
+        .. currentmodule:: morpheus_llm.llm
         .. autosummary::
            :toctree: _generate
 

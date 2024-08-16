@@ -203,7 +203,7 @@ class LLMService(ABC):
         else:
             llm_or_chat = "llm"
 
-        module_name = f"morpheus.llm.services.{service_type.lower()}_{llm_or_chat}_service"
+        module_name = f"morpheus_llm.llm.services.{service_type.lower()}_{llm_or_chat}_service"
         module = importlib.import_module(module_name)
 
         # Get all of the classes in the module to find the correct service class
