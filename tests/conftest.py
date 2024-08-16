@@ -30,14 +30,12 @@ from unittest import mock
 
 import pytest
 import requests
+
 from _utils import import_or_skip
-from _utils.kafka import \
-    kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
-from _utils.kafka import \
-    kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
-from _utils.kafka import \
-    kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
 from _utils.kafka import _init_pytest_kafka
+from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
 
 # Don't let pylint complain about pytest fixtures
 # pylint: disable=redefined-outer-name,unused-argument
@@ -45,12 +43,9 @@ from _utils.kafka import _init_pytest_kafka
 (PYTEST_KAFKA_AVAIL, PYTEST_KAFKA_ERROR) = _init_pytest_kafka()
 if PYTEST_KAFKA_AVAIL:
     # Pull out the fixtures into this namespace
-    from _utils.kafka import \
-        _kafka_consumer  # noqa: F401  pylint:disable=unused-import
-    from _utils.kafka import \
-        kafka_server  # noqa: F401  pylint:disable=unused-import
-    from _utils.kafka import \
-        zookeeper_proc  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import _kafka_consumer  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import kafka_server  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import zookeeper_proc  # noqa: F401  pylint:disable=unused-import
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -255,7 +250,8 @@ def config_only_cpp():
     `@pytest.mark.usefixtures("config_only_cpp")`
     """
 
-    from morpheus.config import Config, CppConfig
+    from morpheus.config import Config
+    from morpheus.config import CppConfig
 
     CppConfig.set_should_use_cpp(True)
 
@@ -269,7 +265,8 @@ def config_no_cpp():
     `@pytest.mark.usefixtures("config_no_cpp")`
     """
 
-    from morpheus.config import Config, CppConfig
+    from morpheus.config import Config
+    from morpheus.config import CppConfig
 
     CppConfig.set_should_use_cpp(False)
 
@@ -507,7 +504,8 @@ def reset_plugin_manger():
 
 @pytest.fixture(scope="function")
 def reset_global_stage_registry():
-    from morpheus.cli.stage_registry import GlobalStageRegistry, StageRegistry
+    from morpheus.cli.stage_registry import GlobalStageRegistry
+    from morpheus.cli.stage_registry import StageRegistry
     GlobalStageRegistry._global_registry = StageRegistry()
     yield
 
