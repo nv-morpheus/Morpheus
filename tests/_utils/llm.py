@@ -16,11 +16,11 @@ import asyncio
 import typing
 from unittest import mock
 
-from morpheus.llm import InputMap
-from morpheus.llm import LLMContext
-from morpheus.llm import LLMNodeBase
-from morpheus.llm import LLMTask
-from morpheus.llm import LLMTaskHandler
+from morpheus_llm.llm import InputMap
+from morpheus_llm.llm import LLMContext
+from morpheus_llm.llm import LLMNodeBase
+from morpheus_llm.llm import LLMTask
+from morpheus_llm.llm import LLMTaskHandler
 from morpheus.messages import ControlMessage
 
 

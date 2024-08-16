@@ -20,12 +20,12 @@ import collections
 import cudf
 
 from _utils.dataset_manager import DatasetManager
-from morpheus.llm import LLMContext
-from morpheus.llm import LLMEngine
-from morpheus.llm import LLMLambdaNode
-from morpheus.llm import LLMNode
-from morpheus.llm import LLMNodeBase
-from morpheus.llm import LLMTaskHandler
+from morpheus_llm.llm import LLMContext
+from morpheus_llm.llm import LLMEngine
+from morpheus_llm.llm import LLMLambdaNode
+from morpheus_llm.llm import LLMNode
+from morpheus_llm.llm import LLMNodeBase
+from morpheus_llm.llm import LLMTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 

@@ -16,8 +16,8 @@
 import cudf
 
 from _utils.llm import execute_node
-from morpheus.llm import LLMNodeBase
-from morpheus.llm.nodes.extracter_node import ExtracterNode
+from morpheus_llm.llm import LLMNodeBase
+from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 
