@@ -19,8 +19,7 @@ import signal
 import sys
 import threading
 import typing
-from collections import OrderedDict
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from enum import Enum
 from functools import partial
 
@@ -29,9 +28,7 @@ import networkx
 from tqdm import tqdm
 
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
-from morpheus.config import Config
-from morpheus.config import CppConfig
-from morpheus.config import ExecutionMode
+from morpheus.config import Config, CppConfig, ExecutionMode
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
@@ -62,7 +59,7 @@ class Pipeline():
     """
 
     def __init__(self, config: Config):
-        if config.execution_mode is ExecutionMode.CPU and CppConfig.get_should_use_cpp():
+        if config.execution_mode == ExecutionMode.CPU and CppConfig.get_should_use_cpp():
             raise RuntimeError("C++ mode requires GPU execution mode.")
 
         self._mutex = threading.RLock()

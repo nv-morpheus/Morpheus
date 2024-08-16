@@ -17,8 +17,7 @@ import logging
 import mrc
 
 from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config
-from morpheus.config import ExecutionMode
+from morpheus.config import Config, ExecutionMode
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -76,7 +75,7 @@ class DataBricksDeltaLakeSourceStage(PreallocatorMixin, SingleOutputSource):
         self.items_per_page = items_per_page
         self.offset = 0
 
-        if config.execution_mode is ExecutionMode.GPU:
+        if config.execution_mode == ExecutionMode.GPU:
             import cudf
             self._cudf = cudf
 
@@ -110,7 +109,7 @@ class DataBricksDeltaLakeSourceStage(PreallocatorMixin, SingleOutputSource):
 
                 df = df.toPandas().drop(["_id"], axis=1)
 
-                if self._config.execution_mode is ExecutionMode.GPU:
+                if self._config.execution_mode == ExecutionMode.GPU:
                     df = self._cudf.from_pandas(df)
 
                 yield MessageMeta(df=df)

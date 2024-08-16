@@ -21,8 +21,7 @@ import mrc.core.operators as ops
 import pandas as pd
 
 from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config
-from morpheus.config import ExecutionMode
+from morpheus.config import Config, ExecutionMode
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -97,7 +96,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         self._total_chunks = 0
         self._cache_dir = cache_dir
 
-        if c.execution_mode is ExecutionMode.GPU:
+        if c.execution_mode == ExecutionMode.GPU:
             import cudf
             self._cudf = cudf
 
@@ -198,7 +197,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
         df.rename(columns=map_cols, inplace=True)
 
-        if self._config.execution_mode is ExecutionMode.GPU:
+        if self._config.execution_mode == ExecutionMode.GPU:
             df = self._cudf.from_pandas(df)
 
         return MessageMeta(df)

@@ -229,7 +229,7 @@ class Config(ConfigBase):
     fil: ConfigFIL = dataclasses.field(default=None)
 
     def __post_init__(self):
-        if self.execution_mode is ExecutionMode.CPU:
+        if self.execution_mode == ExecutionMode.CPU:
             CppConfig.set_should_use_cpp(False)
 
     def save(self, filename: str):

@@ -24,10 +24,8 @@ import pandas as pd
 if typing.TYPE_CHECKING:
     import cudf
 
-from morpheus.config import Config
-from morpheus.config import ExecutionMode
-from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_aliases import SeriesType
+from morpheus.config import Config, ExecutionMode
+from morpheus.utils.type_aliases import DataFrameType, SeriesType
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +141,7 @@ def get_df_pkg(config: Config) -> types.ModuleType:
     """
     Return the appropriate DataFrame package based on the execution mode.
     """
-    if config.execution_mode is ExecutionMode.GPU:
+    if config.execution_mode == ExecutionMode.GPU:
         import cudf
         return cudf
     else:
@@ -162,7 +160,7 @@ def get_json_reader(config: Config) -> typing.Callable[..., DataFrameType]:
     """
     Return the appropriate JSON reader based on the execution mode.
     """
-    if config.execution_mode is ExecutionMode.GPU:
+    if config.execution_mode == ExecutionMode.GPU:
         import cudf
         reader = functools.partial(cudf.read_json, engine='cudf')
     else:

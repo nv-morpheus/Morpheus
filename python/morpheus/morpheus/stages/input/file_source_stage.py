@@ -21,9 +21,7 @@ import mrc
 
 from morpheus.cli import register_stage
 from morpheus.common import FileTypes
-from morpheus.config import Config
-from morpheus.config import ExecutionMode
-from morpheus.config import PipelineModes
+from morpheus.config import Config, ExecutionMode, PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
@@ -100,7 +98,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         self._iterative = iterative
         self._repeat_count = repeat
 
-        if c.execution_mode is ExecutionMode.GPU:
+        if c.execution_mode == ExecutionMode.GPU:
             print("GPU MODE Using cudf")
             self._df_type = "cudf"
         else:
