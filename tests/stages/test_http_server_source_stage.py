@@ -95,6 +95,9 @@ def test_generate_frames(config: Config, dataset_pandas: DatasetManager, lines: 
                                   lines=lines,
                                   payload_to_df_fn=payload_to_df_fn)
 
+    if not use_payload_to_df_fn:
+        stage._set_default_payload_to_df_fn()
+
     generate_frames = stage._generate_frames()
     msg_queue = queue.SimpleQueue()
 

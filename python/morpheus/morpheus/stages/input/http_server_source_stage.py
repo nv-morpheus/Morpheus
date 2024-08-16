@@ -267,6 +267,10 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                     if self._stop_after > 0 and self._records_emitted >= self._stop_after:
                         self._processing = False
 
+    def _set_default_payload_to_df_fn(self):
+        reader = get_json_reader(self._config)
+        self._payload_to_df_fn = lambda payload, lines: reader(payload, lines=lines)
+
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node() and self._payload_to_df_fn is None:
             import morpheus._lib.stages as _stages
@@ -287,8 +291,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                                                  stop_after=self._stop_after)
         else:
             if self._payload_to_df_fn is None:
-                reader = get_json_reader(self._config)
-                self._payload_to_df_fn = lambda payload, lines: reader(payload, lines=lines)
+                self._set_default_payload_to_df_fn()
 
             node = builder.make_source(self.unique_name, self._generate_frames())
 
