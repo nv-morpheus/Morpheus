@@ -46,10 +46,11 @@ def test_create(service_name: str, expected_cls: type, env_values: dict[str, str
     assert isinstance(service, expected_cls)
 
 
-@pytest.mark.parametrize("service_name, class_name",
-                         [("nemo", "morpheus.llm.services.nemo_llm_service.NeMoLLMService"),
-                          ("openai", "morpheus.llm.services.openai_chat_service.OpenAIChatService"),
-                          ("nvfoundation", "morpheus.llm.services.nvfoundation_llm_service.NVFoundationLLMService")])
+@pytest.mark.parametrize(
+    "service_name, class_name",
+    [("nemo", "morpheus_llm.llm.services.nemo_llm_service.NeMoLLMService"),
+     ("openai", "morpheus_llm.llm.services.openai_chat_service.OpenAIChatService"),
+     ("nvfoundation", "morpheus_llm.llm.services.nvfoundation_llm_service.NVFoundationLLMService")])
 def test_create_mocked(service_name: str, class_name: str):
     with mock.patch(class_name) as mock_cls:
         mock_instance = mock.MagicMock()
