@@ -19,7 +19,6 @@ from abc import ABC
 from unittest import mock
 
 import pytest
-
 from morpheus_llm.llm.services.llm_service import LLMClient
 from morpheus_llm.llm.services.llm_service import LLMService
 from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService

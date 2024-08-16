@@ -14,12 +14,12 @@
 # limitations under the License.
 
 import pytest
+from morpheus_llm.llm import LLMNodeBase
+from morpheus_llm.llm.nodes.extracter_node import ManualExtracterNode
 
 import cudf
 
 from _utils.llm import execute_node
-from morpheus_llm.llm import LLMNodeBase
-from morpheus_llm.llm.nodes.extracter_node import ManualExtracterNode
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 

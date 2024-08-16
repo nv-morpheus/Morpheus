@@ -16,10 +16,10 @@ import logging
 
 import pymilvus
 from langchain.embeddings import HuggingFaceEmbeddings  # pylint: disable=no-name-in-module
-
 from morpheus_llm.llm.services.llm_service import LLMService
 from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
+
 from morpheus.service.vdb.milvus_client import DATA_TYPE_MAP
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.service.vdb.utils import VectorDBServiceFactory

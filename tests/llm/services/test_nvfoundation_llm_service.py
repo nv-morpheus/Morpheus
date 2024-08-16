@@ -20,7 +20,6 @@ import pytest
 from langchain_core.messages import ChatMessage
 from langchain_core.outputs import ChatGeneration
 from langchain_core.outputs import LLMResult
-
 from morpheus_llm.llm.services.nvfoundation_llm_service import NVFoundationLLMClient
 from morpheus_llm.llm.services.nvfoundation_llm_service import NVFoundationLLMService
 
