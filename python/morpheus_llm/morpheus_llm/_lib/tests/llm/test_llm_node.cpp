@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "../test_utils/common.hpp"  // IWYU pragma: associated
+#include "morpheus/_lib/tests/test_utils/common.hpp"  // IWYU pragma: associated
 
 #include "morpheus/llm/llm_context.hpp"  // for LLMContext
 #include "morpheus/llm/llm_lambda_node.hpp"

@@ -19,27 +19,6 @@ find_package(pybind11 REQUIRED)
 
 include(GoogleTest)
 
-# Cuda Test
-add_executable(test_cuda
-  test_cuda.cu
-)
-
-target_link_libraries(test_cuda
-  PRIVATE
-    GTest::gtest
-    GTest::gtest_main
-    matx::matx
-)
-
-gtest_discover_tests(test_cuda)
-
-set_target_properties(test_cuda
-  PROPERTIES
-    INSTALL_RPATH "$ORIGIN/.."
-    CUDA_STANDARD 17
-    CUDA_STANDARD_REQUIRED ON
-)
-
 # Morpheus LLM Tests
 function(add_morpheus_llm_test)
   set(options)
@@ -48,7 +27,6 @@ function(add_morpheus_llm_test)
   cmake_parse_arguments(
 	  MORPHEUS_LLM_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
   )
-
   add_executable(test_${MORPHEUS_LLM_TEST_NAME}
 	  ${MORPHEUS_LLM_TEST_FILES}
   )
@@ -57,10 +35,12 @@ function(add_morpheus_llm_test)
     PRIVATE
       GTest::gtest_main
       morpheus_test_utilities
+      morpheus_llm
       pybind11::embed
       TritonClient::httpclient_static
   )
 
+  target_include_directories(test_${MORPHEUS_LLM_TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/python/morpheus/)
   gtest_discover_tests(test_${MORPHEUS_LLM_TEST_NAME})
 
   set_target_properties(test_${MORPHEUS_LLM_TEST_NAME}
