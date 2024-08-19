@@ -52,6 +52,12 @@ target_include_directories(morpheus
 
 # Also add a dependency to the target so that the headers are generated before the target is built
 add_dependencies(morpheus_llm ${cudf_helpers_target})
+message("add_dependencies morpheus_llm ${cudf_helpers_target}")
+
+# Add a dependency on the morpheus cpython libraries
+get_property(py_morpheus_target GLOBAL PROPERTY py_morpheus_target_property)
+add_dependencies(morpheus_llm ${py_morpheus_target})
+message("add_dependencies morpheus_llm ${py_morpheus_target}")
 
 # Morpheus has to built before morpheus llm
 add_dependencies(morpheus_llm morpheus)
