@@ -23,6 +23,7 @@ from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import ExecutionMode
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.stage_decorator import stage
@@ -95,7 +96,20 @@ def run_pipeline(log_level: int, use_python: bool, use_cpu_only: bool, in_file: 
 
     pipeline.add_stage(print_msg(config))
 
-    pipeline.add_stage(DeserializeStage(config))
+    # TODO: Remove if PR #1803 is merged first
+    pipeline.add_stage(DeserializeStage(config, message_type=ControlMessage))
+
+    @stage
+    def calculate_totals(msg: ControlMessage, *, total_column_name: str = "total") -> ControlMessage:
+        meta = msg.payload()
+
+        with meta.mutable_dataframe() as df:
+            print(f"Received a ControlMessage with a dataframe of type {type(df)}")
+            df[total_column_name] = df.select_dtypes(include="number").sum(axis=1)
+
+        return msg
+
+    pipeline.add_stage(calculate_totals(config))
     pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=out_file, overwrite=True))
     pipeline.build()
