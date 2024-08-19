@@ -19,12 +19,13 @@
 
 #include "morpheus/messages/meta.hpp"  // for MessageMeta, MessageMetaInterfaceProxy
 
-#include <glog/logging.h>       // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
-#include <nlohmann/json.hpp>    // for basic_json, json_ref, iter_impl, operator<<
-#include <pybind11/chrono.h>    // IWYU pragma: keep
-#include <pybind11/pybind11.h>  // for cast, object::cast
-#include <pybind11/pytypes.h>   // for object, none, dict, isinstance, list, str, value_error, generic_item
-#include <pymrc/utils.hpp>      // for cast_from_pyobject
+#include <boost/algorithm/string/case_conv.hpp>  // for to_lower_copy
+#include <glog/logging.h>                        // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
+#include <nlohmann/json.hpp>                     // for basic_json, json_ref, iter_impl, operator<<
+#include <pybind11/chrono.h>                     // IWYU pragma: keep
+#include <pybind11/pybind11.h>                   // for cast, object::cast
+#include <pybind11/pytypes.h>  // for object, none, dict, isinstance, list, str, value_error, generic_item
+#include <pymrc/utils.hpp>     // for cast_from_pyobject
 
 #include <optional>   // for optional, nullopt
 #include <ostream>    // for basic_ostream, operator<<
@@ -40,6 +41,7 @@ namespace morpheus {
 const std::string ControlMessage::s_config_schema = R"()";
 
 std::map<std::string, ControlMessageType> ControlMessage::s_task_type_map{{"inference", ControlMessageType::INFERENCE},
+                                                                          {"none", ControlMessageType::NONE},
                                                                           {"training", ControlMessageType::TRAINING}};
 
 ControlMessage::ControlMessage() : m_config({{"metadata", morpheus::utilities::json_t::object()}}), m_tasks({}) {}
@@ -65,16 +67,16 @@ const morpheus::utilities::json_t& ControlMessage::config() const
 void ControlMessage::add_task(const std::string& task_type, const morpheus::utilities::json_t& task)
 {
     VLOG(20) << "Adding task of type " << task_type << " to control message" << task.dump(4);
-    auto _task_type = s_task_type_map.contains(task_type) ? s_task_type_map[task_type] : ControlMessageType::NONE;
-
-    if (this->task_type() == ControlMessageType::NONE)
-    {
-        this->task_type(_task_type);
-    }
+    auto _task_type = to_task_type(task_type, false);
 
     if (_task_type != ControlMessageType::NONE and this->task_type() != _task_type)
     {
         throw std::runtime_error("Cannot add inference and training tasks to the same control message");
+    }
+
+    if (this->task_type() == ControlMessageType::NONE)
+    {
+        this->task_type(_task_type);
     }
 
     m_tasks[task_type].push_back(task);
@@ -197,14 +199,7 @@ void ControlMessage::config(const morpheus::utilities::json_t& config)
 {
     if (config.contains("type"))
     {
-        auto task_type = config.at("type");
-        auto _task_type =
-            s_task_type_map.contains(task_type) ? s_task_type_map.at(task_type) : ControlMessageType::NONE;
-
-        if (this->task_type() == ControlMessageType::NONE)
-        {
-            this->task_type(_task_type);
-        }
+        this->task_type(to_task_type(config.at("type").get<std::string>(), true));
     }
 
     if (config.contains("tasks"))
@@ -254,6 +249,22 @@ ControlMessageType ControlMessage::task_type()
 void ControlMessage::task_type(ControlMessageType type)
 {
     m_cm_type = type;
+}
+
+ControlMessageType ControlMessage::to_task_type(const std::string& task_type, bool throw_on_error) const
+{
+    auto lower_task_type = boost::to_lower_copy(task_type);
+    if (ControlMessage::s_task_type_map.contains(lower_task_type))
+    {
+        return ControlMessage::s_task_type_map.at(lower_task_type);
+    }
+
+    if (throw_on_error)
+    {
+        throw std::runtime_error("Invalid task type: " + task_type);
+    }
+
+    return ControlMessageType::NONE;
 }
 
 /*** Proxy Implementations ***/
