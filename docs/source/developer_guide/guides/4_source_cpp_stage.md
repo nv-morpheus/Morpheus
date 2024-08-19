@@ -493,13 +493,10 @@ def __init__(self,
     self._exchange_type = exchange_type
     self._queue_name = queue_name
 
-    self._connection = None
+    self._connection: pika.BlockingConnection = None
     self._channel = None
 
     self._poll_interval = pd.Timedelta(poll_interval)
-
-    # Flag to indicate whether or not we should stop
-    self._stop_requested = False
 ```
 ```python
 def connect(self):

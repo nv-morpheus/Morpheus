@@ -96,7 +96,6 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         self._total_pdfs = 0
         self._total_pages = 0
         self._total_chunks = 0
-        self._stop_requested = False
         self._cache_dir = cache_dir
 
     @property
@@ -142,7 +141,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         )
 
         for x in search_results.results():
-            if self._stop_requested:
+            if self.is_stop_requested():
                 break
 
             full_path = os.path.join(self._cache_dir, x._get_default_filename())
@@ -175,7 +174,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
                 logger.debug("Processing %s/%s: %s", len(documents), self._total_pages, pdf_path)
                 if self._total_pages > self._max_pages:
-                    self._stop_requested = True
+                    self.request_stop()
 
                 return documents
             except PdfStreamError:

@@ -125,9 +125,6 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         self._async_commits = async_commits
         self._client = None
 
-        # Flag to indicate whether or not we should stop
-        self._stop_requested = False
-
         self._poll_interval = pd.Timedelta(poll_interval).total_seconds()
         self._started = False
 
@@ -143,16 +140,6 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
-
-    def stop(self):
-        """
-        Performs cleanup steps when pipeline is stopped.
-        """
-
-        # Indicate we need to stop
-        self._stop_requested = True
-
-        return super().stop()
 
     def _process_batch(self, consumer, batch):
         message_meta = None
@@ -183,7 +170,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
                 self._num_messages += 1
 
                 if self._stop_after > 0 and self._records_emitted >= self._stop_after:
-                    self._stop_requested = True
+                    self.request_stop()
 
             batch.clear()
 
@@ -197,7 +184,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
             batch = []
 
-            while not self._stop_requested:
+            while not self.is_stop_requested():
                 do_process_batch = False
                 do_sleep = False
 
@@ -224,7 +211,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
                     if message_meta is not None:
                         yield message_meta
 
-                if do_sleep and not self._stop_requested:
+                if do_sleep and not self.is_stop_requested():
                     time.sleep(self._poll_interval)
 
             message_meta = self._process_batch(consumer, batch)

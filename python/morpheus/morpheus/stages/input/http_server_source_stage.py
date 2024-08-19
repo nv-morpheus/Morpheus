@@ -149,6 +149,17 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
+    def stop(self):
+        """
+        Performs cleanup steps when pipeline is stopped.
+        """
+        logger.debug("Stopping HttpServerSourceStage")
+        # Indicate we need to stop
+        if self._http_server is not None:
+            self._http_server.stop()
+
+        return super().stop()
+
     def _parse_payload(self, payload: str) -> HttpParseResponse:
         try:
             if self._payload_to_df_fn is not None:
@@ -238,10 +249,10 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                 # shutdown since we already returned an OK response to the client.
                 df = None
                 try:
-                    df = self._queue.get()
+                    df = self._queue.get(block=False)
                     self._queue_size -= 1
                 except queue.Empty:
-                    if (not self._http_server.is_running()):
+                    if (not self._http_server.is_running() or self.is_stop_requested()):
                         self._processing = False
                     else:
                         logger.debug("Queue empty, sleeping ...")

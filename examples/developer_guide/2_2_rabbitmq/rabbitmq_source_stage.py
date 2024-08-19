@@ -77,9 +77,6 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._poll_interval = pd.Timedelta(poll_interval)
 
-        # Flag to indicate whether or not we should stop
-        self._stop_requested = False
-
     @property
     def name(self) -> str:
         return "from-rabbitmq"
@@ -90,18 +87,12 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def stop(self):
-        # Indicate we need to stop
-        self._stop_requested = True
-
-        return super().stop()
-
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self.source_generator)
 
     def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
         try:
-            while not self._stop_requested:
+            while not self.is_stop_requested():
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
