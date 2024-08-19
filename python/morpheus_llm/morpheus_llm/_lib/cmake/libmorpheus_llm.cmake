@@ -59,9 +59,6 @@ get_property(py_morpheus_target GLOBAL PROPERTY py_morpheus_target_property)
 add_dependencies(morpheus_llm ${py_morpheus_target})
 message("add_dependencies morpheus_llm ${py_morpheus_target}")
 
-# Morpheus has to built before morpheus llm
-add_dependencies(morpheus_llm morpheus)
-
 # fixme: find another way to include morpheus headers
 target_include_directories(morpheus_llm
   PUBLIC
