@@ -16,7 +16,7 @@
 list(APPEND CMAKE_MESSAGE_CONTEXT "morpheus_llm")
 
 # Save the root of the python for relative paths
-set(MORPHEUS_PY_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
+set(MORPHEUS_LLM_PY_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_subdirectory(_lib)
 

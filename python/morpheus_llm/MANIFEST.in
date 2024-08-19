@@ -1,1 +1,2 @@
-recursive-include morpheus *.cpython*.so py.typed *.pyi
+include morpheus_llm/_version.py
+recursive-include morpheus_llm *.cpython*.so py.typed *.pyi

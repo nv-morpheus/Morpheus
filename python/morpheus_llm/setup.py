@@ -37,7 +37,7 @@ setup(
     ],
     author="NVIDIA Corporation",
     include_package_data=True,
-    packages=find_packages(include=["morpheus*"], exclude=['tests']),
+    packages=find_packages(exclude=['tests']),
     install_requires=[],
     license="Apache",
     python_requires='>=3.10, <4',
