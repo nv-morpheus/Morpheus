@@ -11,6 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=wrong-import-position
+
+import sys
+
+sys.path.append("../morpheus")
+
 from . import llm
 
 __all__ = [
