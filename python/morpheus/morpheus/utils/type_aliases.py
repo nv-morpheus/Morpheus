@@ -15,10 +15,10 @@
 
 import typing
 
-import pandas as pd
-
 if typing.TYPE_CHECKING:
+    import pandas
+
     import cudf
 
-DataFrameType = typing.Union[pd.DataFrame, "cudf.DataFrame"]
-SeriesType = typing.Union[pd.Series, "cudf.Series"]
+DataFrameType = typing.Union["pandas.DataFrame", "cudf.DataFrame"]
+SeriesType = typing.Union["pandas.Series", "cudf.Series"]
