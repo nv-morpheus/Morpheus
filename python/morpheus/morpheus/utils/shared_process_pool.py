@@ -1,11 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import logging
-import multiprocessing as mp
 import math
+import multiprocessing as mp
 import os
 import queue
-from concurrent.futures import Future
-from threading import Lock, Semaphore
 import time
+from concurrent.futures import Future
+from threading import Lock
+from threading import Semaphore
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +48,16 @@ class SharedProcessPool:
                 logger.debug("SharedProcessPool instance already exists.")
 
         return cls._instance
+
+    def __init__(self):
+        # Declare the attributes here to avoid W0201: attribute-defined-outside-init
+        self._total_max_workers = None
+        self._context = None
+        self._total_usage = 0.0
+        self._stage_usage = {}
+        self._task_queues = {}
+        self._stage_semaphores = {}
+        self._processes = []
 
     def _initialize(self, total_max_workers):
         """
@@ -70,8 +96,7 @@ class SharedProcessPool:
                     semaphore.release()
                     continue
 
-
-                if task is None: # Stop signal
+                if task is None:  # Stop signal
                     semaphore.release()
                     return
 
