@@ -21,13 +21,13 @@ import typing
 
 import pandas as pd
 
-if typing.TYPE_CHECKING:
-    import cudf
-
 from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import SeriesType
+
+if typing.TYPE_CHECKING:
+    import cudf
 
 logger = logging.getLogger(__name__)
 
@@ -146,8 +146,8 @@ def get_df_pkg(config: Config) -> types.ModuleType:
     if config.execution_mode == ExecutionMode.GPU:
         import cudf
         return cudf
-    else:
-        return pd
+
+    return pd
 
 
 def get_df_class(config: Config) -> type[DataFrameType]:
