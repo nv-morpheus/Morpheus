@@ -16,7 +16,10 @@
 
 import json
 import os
+from dataclasses import FrozenInstanceError
 from unittest import mock
+
+import pytest
 
 import morpheus
 import morpheus.config
@@ -104,3 +107,47 @@ def test_to_string(config):
     conf_str = config.to_string()
     assert isinstance(conf_str, str)
     assert isinstance(json.loads(conf_str), dict)
+
+
+def test_frozen(config: morpheus.config.Config):
+    assert not config.frozen
+
+    # Ensure that it is safe to call freeze() multiple times
+    for _ in range(2):
+        config.freeze()
+        assert config.frozen
+
+
+@pytest.mark.parametrize('use_attr', [False, True])
+def test_frozen_immutible(config: morpheus.config.Config, use_attr: bool):
+    """
+    Test for the freeze functionality.
+
+    There are currently two ways to bypass the freeze functionality:
+    1. By accessing the __dict__ attribute of the Config object.
+    2. Modifying any of the mutable objects in the Config object (ex: `config.class_labels.append('new_label')`).
+    """
+    assert not config.frozen
+
+    # ensure that we can set some attributes
+    config.feature_length = 45
+
+    # freeze the config, freezing the config via the attribute or method should have the same effect, the only
+    # difference is that it is safe to call freeze() multiple times, while setting the attribute will raise an exception
+    # just like attempting to set any other attribute on a frozen object
+    if use_attr:
+        config.frozen = True
+    else:
+        config.freeze()
+
+    assert config.frozen
+
+    with pytest.raises(FrozenInstanceError):
+        config.feature_length = 100
+
+    # ensure setattr also raises an exception
+    with pytest.raises(FrozenInstanceError):
+        setattr(config, 'feature_length', 100)
+
+    # ensure the config still has the original value
+    assert config.feature_length == 45
