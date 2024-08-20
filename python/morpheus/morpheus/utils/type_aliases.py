@@ -16,9 +16,14 @@
 import typing
 
 if typing.TYPE_CHECKING:
+    import cupy
+    import numpy
     import pandas
 
     import cudf
 
 DataFrameType = typing.Union["pandas.DataFrame", "cudf.DataFrame"]
 SeriesType = typing.Union["pandas.Series", "cudf.Series"]
+
+NDArrayType = typing.Union["numpy.ndarray", "cupy.ndarray"]
+TensorMapType = dict[str, NDArrayType]
