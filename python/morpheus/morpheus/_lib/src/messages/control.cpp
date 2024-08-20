@@ -69,14 +69,17 @@ void ControlMessage::add_task(const std::string& task_type, const morpheus::util
     VLOG(20) << "Adding task of type " << task_type << " to control message" << task.dump(4);
     auto _task_type = to_task_type(task_type, false);
 
-    if (_task_type != ControlMessageType::NONE and this->task_type() != _task_type)
+    if (_task_type != ControlMessageType::NONE)
     {
-        throw std::runtime_error("Cannot add inference and training tasks to the same control message");
-    }
-
-    if (this->task_type() == ControlMessageType::NONE)
-    {
-        this->task_type(_task_type);
+        auto current_task_type = this->task_type();
+        if (current_task_type == ControlMessageType::NONE)
+        {
+            this->task_type(_task_type);
+        }
+        else if (current_task_type != _task_type)
+        {
+            throw std::runtime_error("Cannot mix different types of tasks on the same control message");
+        }
     }
 
     m_tasks[task_type].push_back(task);
