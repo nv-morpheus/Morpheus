@@ -15,11 +15,10 @@
 
 import dataclasses
 
-import cupy as cp
-
 import morpheus._lib.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
 from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.utils.type_aliases import NDArrayType
 
 
 @dataclasses.dataclass(init=False)
@@ -50,7 +49,7 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
         """
         return self.get_tensor(name)
 
-    def set_input(self, name: str, tensor: cp.ndarray):
+    def set_input(self, name: str, tensor: NDArrayType):
         """
         Update the input tensor identified by `name`. Alias for `InferenceMemory.set_tensor`
 
@@ -81,14 +80,14 @@ class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
 
     """
-    input_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
-                                                               InferenceMemory.set_input)
-    input_mask: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
+    input_ids: dataclasses.InitVar[NDArrayType] = DataClassProp(InferenceMemory._get_tensor_prop,
                                                                 InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
-                                                             InferenceMemory.set_input)
+    input_mask: dataclasses.InitVar[NDArrayType] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                                 InferenceMemory.set_input)
+    seq_ids: dataclasses.InitVar[NDArrayType] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                              InferenceMemory.set_input)
 
-    def __init__(self, *, count: int, input_ids: cp.ndarray, input_mask: cp.ndarray, seq_ids: cp.ndarray):
+    def __init__(self, *, count: int, input_ids: NDArrayType, input_mask: NDArrayType, seq_ids: NDArrayType):
         super().__init__(count=count, tensors={'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids})
 
 
@@ -107,12 +106,12 @@ class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
 
     """
-    input__0: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
+    input__0: dataclasses.InitVar[NDArrayType] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                               InferenceMemory.set_input)
+    seq_ids: dataclasses.InitVar[NDArrayType] = DataClassProp(InferenceMemory._get_tensor_prop,
                                                               InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
-                                                             InferenceMemory.set_input)
 
-    def __init__(self, *, count: int, input__0: cp.ndarray, seq_ids: cp.ndarray):
+    def __init__(self, *, count: int, input__0: NDArrayType, seq_ids: NDArrayType):
         super().__init__(count=count, tensors={'input__0': input__0, 'seq_ids': seq_ids})
 
 
@@ -130,9 +129,9 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
     """
 
-    input: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop, InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
-                                                             InferenceMemory.set_input)
+    input: dataclasses.InitVar[NDArrayType] = DataClassProp(InferenceMemory._get_tensor_prop, InferenceMemory.set_input)
+    seq_ids: dataclasses.InitVar[NDArrayType] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                              InferenceMemory.set_input)
 
-    def __init__(self, *, count: int, inputs: cp.ndarray, seq_ids: cp.ndarray):
+    def __init__(self, *, count: int, inputs: NDArrayType, seq_ids: NDArrayType):
         super().__init__(count=count, tensors={'input': inputs, 'seq_ids': seq_ids})
