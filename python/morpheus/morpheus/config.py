@@ -204,8 +204,6 @@ class Config(ConfigBase):
     log_config_file : str
         File corresponding to this Config.
     """
-
-    # TODO: Store this as __execution_mode or move it to the CppConfig class
     execution_mode: ExecutionMode = ExecutionMode.GPU
 
     # Whether in Debug mode.
