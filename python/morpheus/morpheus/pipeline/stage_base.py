@@ -27,6 +27,7 @@ import mrc
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
 from morpheus.config import CppConfig
+from morpheus.config import ExecutionMode
 from morpheus.utils.atomic_integer import AtomicInteger
 from morpheus.utils.type_utils import _DecoratorType
 
@@ -285,6 +286,19 @@ class StageBase(ABC, collections.abc.Hashable):
         # return False
         pass
 
+    def supported_execution_modes(self) -> tuple[ExecutionMode]:
+        """
+        Returns a tuple of supported execution modes of this stage. By default this returns `(ExecutionMode.GPU,)`.
+        Subclasses can override this method to specify different execution modes.
+
+        For most stages the values will be static, and this can be accomplished by making use of either the
+        `CpuOnlyMixin` or `GpuAndCpuMixin` mixins.
+
+        However, complex stages may choose to make this decision at runtime, in which case this method should be
+        overridden. directly within the stage class.
+        """
+        return (ExecutionMode.GPU, )
+
     def _build_cpp_node(self):
         """
         Specifies whether to build a C++ node. Only should be called during the build phase.
@@ -347,6 +361,12 @@ class StageBase(ABC, collections.abc.Hashable):
     def _pre_build(self, do_propagate: bool = True):
         assert not self.is_built, "build called prior to _pre_build"
         assert not self.is_pre_built, "Can only pre-build stages once!"
+
+        # Check the execution mode
+        if (self._config.execution_mode not in self.supported_execution_modes()):
+            raise ValueError(f"Stage {self.name} does not support execution mode {self._config.execution_mode}")
+
+        # Perform schema validation
         schema = _pipeline.StageSchema(self)
         self._pre_compute_schema(schema)
         self.compute_schema(schema)
