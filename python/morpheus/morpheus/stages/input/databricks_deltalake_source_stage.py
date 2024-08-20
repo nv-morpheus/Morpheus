@@ -17,7 +17,8 @@ import logging
 import mrc
 
 from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config, ExecutionMode
+from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource

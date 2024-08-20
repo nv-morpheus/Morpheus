@@ -67,9 +67,9 @@ class ControlMessage(MessageBase, cpp_class=_messages.ControlMessage):
                     try:
                         cm_type = get_enum_members(ControlMessageType)[cm_type]
                     except KeyError as exc:
+                        enum_names = ", ".join(get_enum_keys(ControlMessageType))
                         raise ValueError(
-                            f"Invalid ControlMessageType: {cm_type}, supported types: {get_enum_keys(ControlMessageType)}"
-                        ) from exc
+                            f"Invalid ControlMessageType: {cm_type}, supported types: {enum_names}") from exc
 
                 self._type = cm_type
 

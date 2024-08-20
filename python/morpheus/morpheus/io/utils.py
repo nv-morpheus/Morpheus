@@ -24,8 +24,10 @@ import pandas as pd
 if typing.TYPE_CHECKING:
     import cudf
 
-from morpheus.config import Config, ExecutionMode
-from morpheus.utils.type_aliases import DataFrameType, SeriesType
+from morpheus.config import Config
+from morpheus.config import ExecutionMode
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import SeriesType
 
 logger = logging.getLogger(__name__)
 

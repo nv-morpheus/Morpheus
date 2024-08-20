@@ -20,9 +20,6 @@ import typing
 import numpy as np
 import pandas as pd
 
-if typing.TYPE_CHECKING:
-    import cudf
-
 from morpheus.common import FileTypes
 from morpheus.common import determine_file_type
 from morpheus.common import read_file_to_df as read_file_to_df_cpp

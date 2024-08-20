@@ -22,7 +22,6 @@ from http import HTTPStatus
 from io import StringIO
 
 import mrc
-import pandas as pd
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage

@@ -19,7 +19,8 @@ import signal
 import sys
 import threading
 import typing
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
+from collections import defaultdict
 from enum import Enum
 from functools import partial
 
@@ -28,7 +29,9 @@ import networkx
 from tqdm import tqdm
 
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
-from morpheus.config import Config, CppConfig, ExecutionMode
+from morpheus.config import Config
+from morpheus.config import CppConfig
+from morpheus.config import ExecutionMode
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)

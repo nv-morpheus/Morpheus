@@ -21,7 +21,9 @@ import mrc
 
 from morpheus.cli import register_stage
 from morpheus.common import FileTypes
-from morpheus.config import Config, ExecutionMode, PipelineModes
+from morpheus.config import Config
+from morpheus.config import ExecutionMode
+from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin

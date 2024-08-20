@@ -15,9 +15,12 @@
 """DataFrame serializers."""
 
 import typing
-from io import BytesIO, IOBase, StringIO
+from io import BytesIO
+from io import IOBase
+from io import StringIO
 
-from morpheus.common import FileTypes, determine_file_type
+from morpheus.common import FileTypes
+from morpheus.common import determine_file_type
 from morpheus.common import write_df_to_file as write_df_to_file_cpp
 from morpheus.config import CppConfig
 from morpheus.utils.type_aliases import DataFrameType
