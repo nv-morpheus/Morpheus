@@ -40,6 +40,8 @@ class ControlMessage(MessageBase, cpp_class=_messages.ControlMessage):
     def __init__(self, config: dict = None):
         super().__init__()
 
+        self._config: dict = {"metadata": {}}
+
         self._payload: MessageMeta = None
         self._tensors: TensorMemory = None
 
@@ -71,6 +73,24 @@ class ControlMessage(MessageBase, cpp_class=_messages.ControlMessage):
             self._config = {"metadata": config.get("metadata", {}).copy()}
 
         return self._config
+
+    def copy(self) -> "ControlMessage":
+        config = self._config.copy()
+        config["type"] = self.task_type().name
+
+        tasks = []
+        for (task_type, task_queue) in self.get_tasks().items():
+            for task in task_queue:
+                tasks.append({"type": task_type, "properties": task})
+
+        config["tasks"] = tasks
+
+        new_cm = ControlMessage(config)
+        new_cm._payload = self._payload
+        new_cm._tensors = self._tensors
+        new_cm._timestamps = self._timestamps.copy()
+
+        return new_cm
 
     def has_task(self, task_type: str) -> bool:
         """
