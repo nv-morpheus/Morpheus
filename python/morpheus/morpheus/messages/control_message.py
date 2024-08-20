@@ -170,17 +170,25 @@ class ControlMessage(MessageBase, cpp_class=_messages.ControlMessage):
 
         return {key: value for key, value in self._timestamps.items() if re_obj.match(key)}
 
-    @classmethod
-    def _copy_impl(cls, src: "ControlMessage", dst: "ControlMessage" = None) -> "ControlMessage":
-        config = src.config().copy()
-        config["type"] = src.task_type().name
+    def _export_config(self) -> dict:
+        # Unfortunately there is no parity between the `config` object that the constructor accepts and the value
+        # returned by the `config` method. This method returns a config object that can be used to create a new instance
+        # with the same task type and tasks.
+        config = self.config().copy()
+        config["type"] = self.task_type().name
 
         tasks = []
-        for (task_type, task_queue) in src.get_tasks().items():
+        for (task_type, task_queue) in self.get_tasks().items():
             for task in task_queue:
                 tasks.append({"type": task_type, "properties": task})
 
         config["tasks"] = tasks
+
+        return config
+
+    @classmethod
+    def _copy_impl(cls, src: "ControlMessage", dst: "ControlMessage" = None) -> "ControlMessage":
+        config = src._export_config()
 
         if dst is None:
             dst = cls()

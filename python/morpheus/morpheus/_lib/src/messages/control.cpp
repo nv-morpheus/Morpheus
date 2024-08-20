@@ -17,7 +17,8 @@
 
 #include "morpheus/messages/control.hpp"
 
-#include "morpheus/messages/meta.hpp"  // for MessageMeta, MessageMetaInterfaceProxy
+#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory, TensorMemoryInterfaceProxy
+#include "morpheus/messages/meta.hpp"                  // for MessageMeta, MessageMetaInterfaceProxy
 
 #include <boost/algorithm/string/case_conv.hpp>  // for to_lower_copy
 #include <glog/logging.h>                        // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
@@ -25,6 +26,7 @@
 #include <pybind11/chrono.h>                     // IWYU pragma: keep
 #include <pybind11/pybind11.h>                   // for cast, object::cast
 #include <pybind11/pytypes.h>  // for object, none, dict, isinstance, list, str, value_error, generic_item
+#include <pybind11/stl.h>      // for casting to std::map
 #include <pymrc/utils.hpp>     // for cast_from_pyobject
 
 #include <optional>   // for optional, nullopt
@@ -271,9 +273,47 @@ ControlMessageType ControlMessage::to_task_type(const std::string& task_type, bo
 }
 
 /*** Proxy Implementations ***/
-std::shared_ptr<ControlMessage> ControlMessageProxy::create(py::dict& config)
+std::shared_ptr<ControlMessage> ControlMessageProxy::create(py::object& config_or_message)
 {
-    return std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config));
+    if (config_or_message.is_none())
+    {
+        return std::make_shared<ControlMessage>();
+    }
+
+    if (py::isinstance<py::dict>(config_or_message))
+    {
+        return std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config_or_message));
+    }
+
+    // Assume we received a Python instance of the ControlMessage object
+    py::dict config = config_or_message.attr("_export_config")();
+    auto cm         = std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config));
+
+    auto py_meta = config_or_message.attr("payload")();
+    if (!py_meta.is_none())
+    {
+        cm->payload(MessageMetaInterfaceProxy::init_python_meta(py_meta));
+    }
+
+    auto py_tensors = config_or_message.attr("tensors")();
+    if (!py_tensors.is_none())
+    {
+        auto count          = py_tensors.attr("count").cast<TensorIndex>();
+        auto py_tensors_map = py_tensors.attr("get_tensors")();
+        cm->tensors(TensorMemoryInterfaceProxy::init(count, py_tensors_map));
+    }
+
+    auto py_timestamps = config_or_message.attr("_timestamps");
+    if (!py_timestamps.is_none())
+    {
+        auto timestamps_map = py_timestamps.cast<std::map<std::string, time_point_t>>();
+        for (const auto& t : timestamps_map)
+        {
+            cm->set_timestamp(t.first, t.second);
+        }
+    }
+
+    return cm;
 }
 
 std::shared_ptr<ControlMessage> ControlMessageProxy::create(std::shared_ptr<ControlMessage> other)

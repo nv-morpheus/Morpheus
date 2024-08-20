@@ -404,7 +404,7 @@ PYBIND11_MODULE(messages, _module)
 
     py::class_<ControlMessage, std::shared_ptr<ControlMessage>>(_module, "ControlMessage")
         .def(py::init<>())
-        .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)))
+        .def(py::init(py::overload_cast<py::object&>(&ControlMessageProxy::create)))
         .def(py::init(py::overload_cast<std::shared_ptr<ControlMessage>>(&ControlMessageProxy::create)))
         .def("add_task", &ControlMessage::add_task, py::arg("task_type"), py::arg("task"))
         .def(

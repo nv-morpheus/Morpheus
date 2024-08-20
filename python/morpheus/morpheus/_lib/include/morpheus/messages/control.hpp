@@ -261,11 +261,13 @@ class MORPHEUS_EXPORT ControlMessage
 struct MORPHEUS_EXPORT ControlMessageProxy
 {
     /**
-     * @brief Creates a new ControlMessage instance from a configuration dictionary.
-     * @param config A pybind11::dict representing the configuration for the ControlMessage.
+     * @brief Creates a new ControlMessage instance from either a Python instance of a ControlMessage or a configuration
+     * dictionary.
+     * @param config_or_message Either a Python instance of a ControlMessage or a dict representing the configuration
+     * for the ControlMessage.
      * @return A shared_ptr to a newly created ControlMessage instance.
      */
-    static std::shared_ptr<ControlMessage> create(pybind11::dict& config);
+    static std::shared_ptr<ControlMessage> create(pybind11::object& config_or_message);
 
     /**
      * @brief Creates a new ControlMessage instance as a copy of an existing one.
