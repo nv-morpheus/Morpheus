@@ -12,12 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import logging
+import types
 import typing
 
 import mrc
+from mrc.core import operators as ops
 
 from morpheus.config import Config
+from morpheus.config import CppConfig
 from morpheus.llm import LLMEngine
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
@@ -64,10 +68,27 @@ class LLMEngineStage(PassThruTypeMixin, SinglePortStage):
         """Indicates whether this stage supports a C++ node."""
         return True
 
+    def _cast_control_message(self, message: ControlMessage, *, cpp_messages_lib: types.ModuleType) -> ControlMessage:
+        """
+        LLMEngineStage does not contain a Python implementation, however it is capable of running in Python/cpu-only
+        mode. This method is needed to cast the Python ControlMessage to a C++ ControlMessage.
+
+        This is different than casting from the Python bindings for the C++ ControlMessage to a C++ ControlMessage.
+        """
+        return cpp_messages_lib.ControlMessage(message)
+
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         import morpheus._lib.llm as _llm
         node = _llm.LLMEngineStage(builder, self.unique_name, self._engine)
         node.launch_options.pe_count = 1
+
+        if not CppConfig.get_should_use_cpp():
+            import morpheus._lib.messages as _messages
+            cast_fn = functools.partial(self._cast_control_message, cpp_messages_lib=_messages)
+            pre_node = builder.make_node(f"{self.unique_name}-pre-cast", ops.map(cast_fn))
+            builder.make_edge(input_node, pre_node)
+
+            input_node = pre_node
 
         builder.make_edge(input_node, node)
 
