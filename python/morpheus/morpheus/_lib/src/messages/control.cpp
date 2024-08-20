@@ -285,7 +285,8 @@ std::shared_ptr<ControlMessage> ControlMessageProxy::create(py::object& config_o
         return std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config_or_message));
     }
 
-    // Assume we received a Python instance of the ControlMessage object
+    // Assume we received an instance of the Python impl of ControlMessage object, as a Python bound instance of the C++
+    // impl of the ControlMessage class would have invoked the shared_ptr<ControlMessage> overload of the create method
     py::dict config = config_or_message.attr("_export_config")();
     auto cm         = std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config));
 
