@@ -62,6 +62,7 @@ class Pipeline():
     """
 
     def __init__(self, config: Config):
+        config.freeze()
         if config.execution_mode == ExecutionMode.CPU and CppConfig.get_should_use_cpp():
             raise RuntimeError("C++ mode requires GPU execution mode.")
 

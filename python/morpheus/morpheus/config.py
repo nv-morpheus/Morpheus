@@ -227,10 +227,28 @@ class Config(ConfigBase):
 
     ae: ConfigAutoEncoder = dataclasses.field(default=None)
     fil: ConfigFIL = dataclasses.field(default=None)
+    frozen: bool = False
 
     def __post_init__(self):
         if self.execution_mode == ExecutionMode.CPU:
             CppConfig.set_should_use_cpp(False)
+
+    def freeze(self):
+        """
+        Freeze the Config object, making it immutable. This method will be invoked when the config object is passed to
+        a pipeline or stage for the first time.
+
+        Calling `freeze` on a frozen instance will not have any effect.
+        """
+        if not self.frozen:
+            self.frozen = True
+
+    def __setattr__(self, name, value):
+        # Since __frozen is defined in the __post_init__, the attribute won't exist in the __init__ method.
+        if self.frozen:
+            raise dataclasses.FrozenInstanceError("Cannot modify frozen Config object.")
+
+        super().__setattr__(name, value)
 
     def save(self, filename: str):
         """

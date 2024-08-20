@@ -85,6 +85,7 @@ class StageBase(ABC, collections.abc.Hashable):
 
     def __init__(self, config: Config):
         # Save the config
+        config.freeze()
         self._config = config
 
         self._id = StageBase.__ID_COUNTER.get_and_inc()
