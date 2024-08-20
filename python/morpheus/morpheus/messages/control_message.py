@@ -47,32 +47,30 @@ class ControlMessage(MessageBase, cpp_class=_messages.ControlMessage):
         self._timestamps: dict[str, datetime] = {}
         self._type: ControlMessageType = ControlMessageType.NONE
 
-        self.config: dict = config
+        self.config(config)
 
-    @property
-    def config(self) -> dict:
+    def config(self, config: dict = None) -> dict:
+        if config is not None:
+            cm_type: str | ControlMessageType = config.get("type")
+            if cm_type is not None:
+                if isinstance(cm_type, str):
+                    try:
+                        cm_type = get_enum_members(ControlMessageType)[cm_type]
+                    except KeyError as exc:
+                        raise ValueError(
+                            f"Invalid ControlMessageType: {cm_type}, supported types: {get_enum_keys(ControlMessageType)}"
+                        ) from exc
+
+                self._type = cm_type
+
+            tasks = config.get("tasks")
+            if tasks is not None:
+                for task in tasks:
+                    self.add_task(task["type"], task["properties"])
+
+            self._config = {"metadata": config.get("metadata", {}).copy()}
+
         return self._config
-
-    @config.setter
-    def config(self, config: dict):
-        cm_type: str | ControlMessageType = config.get("type")
-        if cm_type is not None:
-            if isinstance(cm_type, str):
-                try:
-                    cm_type = get_enum_members(ControlMessageType)[cm_type]
-                except KeyError as exc:
-                    raise ValueError(
-                        f"Invalid ControlMessageType: {cm_type}, supported types: {get_enum_keys(ControlMessageType)}"
-                    ) from exc
-
-            self._type = cm_type
-
-        tasks = config.get("tasks")
-        if tasks is not None:
-            for task in tasks:
-                self.add_task(task["type"], task["properties"])
-
-        self._config = {"metadata": config.get("metadata", {}).copy()}
 
     def has_task(self, task_type: str) -> bool:
         """
@@ -124,27 +122,23 @@ class ControlMessage(MessageBase, cpp_class=_messages.ControlMessage):
     def list_metadata(self) -> list[str]:
         return sorted(self._config["metadata"].keys())
 
-    def payload(self) -> MessageMeta | None:
+    def payload(self, payload: MessageMeta = None) -> MessageMeta | None:
+        if payload is not None:
+            self._payload = payload
+
         return self._payload
 
-    def set_payload(self, payload: MessageMeta):
-        self._payload = payload
+    def tensors(self, tensors: TensorMemory = None) -> TensorMemory | None:
+        if tensors is not None:
+            self._tensors = tensors
 
-    @property
-    def tensors(self) -> TensorMemory | None:
         return self._tensors
 
-    @tensors.setter
-    def tensors(self, tensors: TensorMemory):
-        self._tensors = tensors
+    def task_type(self, new_task_type: ControlMessageType = None) -> ControlMessageType:
+        if new_task_type is not None:
+            self._type = new_task_type
 
-    @property
-    def task_type(self) -> ControlMessageType:
         return self._type
-
-    @task_type.setter
-    def task_type(self, task_type: ControlMessageType):
-        self._type = task_type
 
     def set_timestamp(self, key: str, timestamp: datetime):
         self._timestamps[key] = timestamp
