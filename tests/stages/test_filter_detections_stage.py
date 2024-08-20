@@ -17,11 +17,11 @@
 import cupy as cp
 import pytest
 
-import morpheus._lib.messages as _messages
 from morpheus.common import FilterSource
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
+from morpheus.messages import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 
@@ -37,7 +37,7 @@ def _make_control_message(df, probs):
     df_ = df[0:len(probs)]
     cm = ControlMessage()
     cm.payload(MessageMeta(df_))
-    cm.tensors(_messages.TensorMemory(count=len(df_), tensors={'probs': probs}))
+    cm.tensors(TensorMemory(count=len(df_), tensors={'probs': probs}))
 
     return cm
 
