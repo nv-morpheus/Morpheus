@@ -127,17 +127,21 @@ class ControlMessage(MessageBase, cpp_class=_messages.ControlMessage):
     def has_metadata(self, key: str) -> bool:
         return key in self._config["metadata"]
 
-    def get_metadata(self, key: str = None, fail_on_nonexist: bool = False) -> typing.Any | None:
+    def get_metadata(self, key: str = None, default_value: typing.Any = None) -> typing.Any:
+        """
+        Return a given piece of metadata, if `key` is `None` return the entire metadata dictionary.
+        If `key` is not found, `default_value` is returned.
+
+        :param key: The key of the metadata to retrieve, or None for all metadata
+        :param default_value: The value to return if the key is not found, ignored if `key` is None
+        :return: The value of the metadata key, or the entire metadata dictionary if `key` is None
+        """
+
         # Not using `get` since `None` is a valid value
         if key is None:
             return self._config["metadata"]
 
-        try:
-            return self._config["metadata"][key]
-        except KeyError:
-            if fail_on_nonexist:
-                raise
-            return None
+        return self._config["metadata"].get(key, default_value)
 
     def list_metadata(self) -> list[str]:
         return sorted(self._config["metadata"].keys())
@@ -171,12 +175,7 @@ class ControlMessage(MessageBase, cpp_class=_messages.ControlMessage):
                 raise
             return None
 
-    def filter_timestamp(self, regex_filter: str | re.Pattern) -> dict[str, datetime]:
-        if isinstance(regex_filter, str):
-            re_obj = re.compile(regex_filter)
-        elif isinstance(regex_filter, re.Pattern):
-            re_obj = regex_filter
-        else:
-            raise ValueError("regex_filter must be a string or a compiled regex object")
+    def filter_timestamp(self, regex_filter: str) -> dict[str, datetime]:
+        re_obj = re.compile(regex_filter)
 
         return {key: value for key, value in self._timestamps.items() if re_obj.match(key)}
