@@ -366,7 +366,9 @@ class _UserTimeSeries:
             if isinstance(x, MultiResponseMessage):
                 new_timedata = x.get_meta([self._timestamp_col])
             elif isinstance(x, ControlMessage):
-                new_timedata = x.payload().get_data([self._timestamp_col]).to_pandas()
+                new_timedata = x.payload().get_data([self._timestamp_col])
+                if not isinstance(new_timedata, pd.DataFrame):
+                    new_timedata = new_timedata.to_pandas()
 
             # Save this message event times in the event list. Ensure the values are always sorted
             self._timeseries_data = pd.concat([self._timeseries_data, new_timedata]).sort_index()
