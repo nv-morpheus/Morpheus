@@ -212,10 +212,7 @@ def pytest_runtest_teardown(item, nextitem):
     reset_logging(logger_name=None)  # Reset the root logger as well
 
 
-# This fixture will be used by all tests.
-@pytest.fixture(scope="function", autouse=True)
-def _set_use_cpp(request: pytest.FixtureRequest):
-
+def _get_use_cpp(request: pytest.FixtureRequest) -> bool:
     do_use_cpp: bool = True
 
     # Check for the param if this was indirectly set
@@ -232,6 +229,14 @@ def _set_use_cpp(request: pytest.FixtureRequest):
 
         # This will default to True or follow use_cpp
         do_use_cpp = not use_python
+
+    return do_use_cpp
+
+
+# This fixture will be used by all tests.
+@pytest.fixture(scope="function", autouse=True)
+def _set_use_cpp(request: pytest.FixtureRequest):
+    do_use_cpp = _get_use_cpp(request)
 
     from morpheus.config import CppConfig
 
@@ -272,10 +277,13 @@ def config_no_cpp():
 
     from morpheus.config import Config
     from morpheus.config import CppConfig
+    from morpheus.config import ExecutionMode
 
     CppConfig.set_should_use_cpp(False)
+    config = Config()
+    config.execution_mode = ExecutionMode.CPU
 
-    yield Config()
+    yield config
 
 
 @pytest.fixture(scope="function")
@@ -317,8 +325,12 @@ def config(use_cpp: bool):
     """
 
     from morpheus.config import Config
+    from morpheus.config import ExecutionMode
+    config = Config()
+    if not use_cpp:
+        config.execution_mode = ExecutionMode.CPU
 
-    yield Config()
+    yield config
 
 
 @pytest.fixture(scope="function")
