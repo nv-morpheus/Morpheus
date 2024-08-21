@@ -12,60 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import base64
-import json
 import logging
-import typing
-from functools import partial
 
-import cupy as cp
 import mrc
-import numpy as np
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import ControlMessage
-from morpheus.messages import InferenceMemoryNLP
-from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiInferenceNLPMessage
-from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
-from morpheus.utils.cudf_subword_helper import tokenize_text_series
 
 logger = logging.getLogger(__name__)
-
-
-def cupyarray_to_base64(cupy_array):
-    array_bytes = cupy_array.get().tobytes()
-    array_shape = cupy_array.shape
-    array_dtype = str(cupy_array.dtype)
-
-    # Create a dictionary to store bytes, shape, and dtype
-    encoded_dict = {'bytes': base64.b64encode(array_bytes).decode("utf-8"), 'shape': array_shape, 'dtype': array_dtype}
-
-    # Convert dictionary to JSON string for storage
-    return json.dumps(encoded_dict)
-
-
-def base64_to_cupyarray(base64_str):
-    # Convert JSON string back to dictionary
-    encoded_dict = json.loads(base64_str)
-
-    # Extract bytes, shape, and dtype
-    array_bytes = base64.b64decode(encoded_dict['bytes'])
-    array_shape = tuple(encoded_dict['shape'])
-    array_dtype = encoded_dict['dtype']
-
-    # Convert bytes back to a NumPy array and reshape
-    np_array = np.frombuffer(array_bytes, dtype=array_dtype).reshape(array_shape)
-
-    # Convert NumPy array to CuPy array
-    cp_array = cp.array(np_array)
-
-    return cp_array
 
 
 @register_stage(
@@ -113,12 +72,6 @@ class PreprocessNLPStage(PreprocessBaseStage):
                  column: str = "data"):
         super().__init__(c)
 
-        import morpheus._lib.messages as _messages
-        self._lib_messages = _messages
-
-        import cudf
-        self._cudf = cudf
-
         self._column = column
         self._seq_length = c.feature_length
         self._vocab_hash_file = get_package_relative_file(vocab_hash_file)
@@ -134,6 +87,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
         self._truncation = truncation
         self._do_lower_case = do_lower_case
         self._add_special_tokens = add_special_tokens
+        self._fallback_output_type = MultiInferenceNLPMessage
 
     @property
     def name(self) -> str:
@@ -141,128 +95,6 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
     def supports_cpp_node(self):
         return True
-
-    def pre_process_batch(self,
-                          message: typing.Union[MultiMessage, ControlMessage],
-                          vocab_hash_file: str,
-                          do_lower_case: bool,
-                          seq_len: int,
-                          stride: int,
-                          truncation: bool,
-                          add_special_tokens: bool,
-                          column: str) -> typing.Union[MultiInferenceNLPMessage, ControlMessage]:
-        """
-        For NLP category use cases, this function performs pre-processing.
-
-        [parameters are the same as the original function]
-
-        Returns
-        -------
-        `morpheus.pipeline.messages.MultiInferenceNLPMessage`
-            NLP inference message.
-
-        """
-        if isinstance(message, ControlMessage):
-            return self.process_control_message(message,
-                                                vocab_hash_file,
-                                                do_lower_case,
-                                                seq_len,
-                                                stride,
-                                                truncation,
-                                                add_special_tokens,
-                                                column)
-        if isinstance(message, MultiMessage):
-            return self.process_multi_message(message,
-                                              vocab_hash_file,
-                                              do_lower_case,
-                                              seq_len,
-                                              stride,
-                                              truncation,
-                                              add_special_tokens,
-                                              column)
-
-        raise TypeError("Unsupported message type")
-
-    def process_control_message(self,
-                                message: ControlMessage,
-                                vocab_hash_file: str,
-                                do_lower_case: bool,
-                                seq_len: int,
-                                stride: int,
-                                truncation: bool,
-                                add_special_tokens: bool,
-                                column: str) -> ControlMessage:
-
-        with message.payload().mutable_dataframe() as mdf:
-            text_series = self._cudf.Series(mdf[column])
-
-        tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
-                                         do_lower_case=do_lower_case,
-                                         text_ser=text_series,
-                                         seq_len=seq_len,
-                                         stride=stride,
-                                         truncation=truncation,
-                                         add_special_tokens=add_special_tokens)
-
-        del text_series
-
-        # We need the C++ impl of TensorMemory until #1646 is resolved
-        message.tensors(
-            self._lib_messages.TensorMemory(count=tokenized.input_ids.shape[0],
-                                            tensors={
-                                                "input_ids": tokenized.input_ids,
-                                                "input_mask": tokenized.input_mask,
-                                                "seq_ids": tokenized.segment_ids
-                                            }))
-
-        message.set_metadata("inference_memory_params", {"inference_type": "nlp"})
-        return message
-
-    def process_multi_message(self,
-                              message: MultiMessage,
-                              vocab_hash_file: str,
-                              do_lower_case: bool,
-                              seq_len: int,
-                              stride: int,
-                              truncation: bool,
-                              add_special_tokens: bool,
-                              column: str) -> MultiInferenceNLPMessage:
-        # Existing logic for MultiMessage
-        text_ser = self._cudf.Series(message.get_meta(column))
-
-        tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
-                                         do_lower_case=do_lower_case,
-                                         text_ser=text_ser,
-                                         seq_len=seq_len,
-                                         stride=stride,
-                                         truncation=truncation,
-                                         add_special_tokens=add_special_tokens)
-        del text_ser
-
-        seg_ids = tokenized.segment_ids
-        seg_ids[:, 0] = seg_ids[:, 0] + message.mess_offset
-
-        memory = InferenceMemoryNLP(count=tokenized.input_ids.shape[0],
-                                    input_ids=tokenized.input_ids,
-                                    input_mask=tokenized.input_mask,
-                                    seq_ids=seg_ids)
-
-        infer_message = MultiInferenceNLPMessage.from_message(message, memory=memory)
-
-        return infer_message
-
-    def _get_preprocess_fn(
-        self
-    ) -> typing.Callable[[typing.Union[MultiMessage, ControlMessage]],
-                         typing.Union[MultiInferenceMessage, ControlMessage]]:
-        return partial(self.pre_process_batch,
-                       vocab_hash_file=self._vocab_hash_file,
-                       do_lower_case=self._do_lower_case,
-                       stride=self._stride,
-                       seq_len=self._seq_length,
-                       truncation=self._truncation,
-                       add_special_tokens=self._add_special_tokens,
-                       column=self._column)
 
     def _get_preprocess_node(self, builder: mrc.Builder):
         import morpheus._lib.stages as _stages
