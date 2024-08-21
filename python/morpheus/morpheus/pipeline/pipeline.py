@@ -63,8 +63,15 @@ class Pipeline():
 
     def __init__(self, config: Config):
         config.freeze()
+
+        # Ensure we have a valid configuration
         if config.execution_mode == ExecutionMode.CPU and CppConfig.get_should_use_cpp():
-            raise RuntimeError("C++ mode requires GPU execution mode.")
+            logger.warning("CPU execution mode requires disabling C++ execution.")
+            CppConfig.set_should_use_cpp(False)
+
+        elif config.execution_mode == ExecutionMode.GPU and not CppConfig.get_should_use_cpp():
+            logger.warning("GPU mode requires C++ execution mode.")
+            CppConfig.set_should_use_cpp(True)
 
         self._mutex = threading.RLock()
 
