@@ -24,8 +24,6 @@ import mrc
 import pandas as pd
 from pydantic import BaseModel
 
-import cudf
-
 from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
@@ -190,9 +188,9 @@ period_to_strptime = {
 }
 
 
-def to_period_approximation(data_df: DataFrameType, period: str):
+def to_period_approximation(data_df: DataFrameType, period: str) -> DataFrameType:
     """
-    This function converts a cudf dataframe to a period approximation.
+    This function converts a dataframe to a period approximation.
 
     Parameters
     ----------
@@ -203,7 +201,7 @@ def to_period_approximation(data_df: DataFrameType, period: str):
 
     Returns
     -------
-    cudf.DataFrame
+    DataFrame
         Period approximation of the input cudf/pandas dataframe.
     """
 
@@ -216,8 +214,13 @@ def to_period_approximation(data_df: DataFrameType, period: str):
 
     strptime_format = period_to_strptime[period]
 
-    df_mod = cudf if isinstance(data_df, cudf.DataFrame) else pd
-    data_df["period"] = df_mod.to_datetime(data_df["ts"].dt.strftime(strptime_format) + '-1',
+    if isinstance(data_df, pd.DataFrame):
+        df_pkg = pd
+    else:
+        import cudf
+        df_pkg = cudf
+
+    data_df["period"] = df_pkg.to_datetime(data_df["ts"].dt.strftime(strptime_format) + '-1',
                                            format=f"{strptime_format}-%w")
 
     return data_df

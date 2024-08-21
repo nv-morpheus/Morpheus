@@ -16,8 +16,6 @@ import typing
 
 import pandas as pd
 
-import cudf
-
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageBase
 from morpheus.messages import MultiMessage
@@ -46,7 +44,7 @@ def concat_dataframes(messages: typing.List[MessageBase]) -> pd.DataFrame:
         else:
             df = x.df
 
-        if isinstance(df, cudf.DataFrame):
+        if not isinstance(df, pd.DataFrame):
             df = df.to_pandas()
 
         all_meta.append(df)

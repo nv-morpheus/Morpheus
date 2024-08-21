@@ -17,9 +17,11 @@ import typing
 
 import pandas as pd
 
-import cudf
-
 from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.type_aliases import DataFrameType
+
+if typing.TYPE_CHECKING:
+    import cudf
 
 logger = logging.getLogger(__name__)
 
@@ -34,16 +36,16 @@ def process_dataframe(
 
 @typing.overload
 def process_dataframe(
-    df_in: cudf.DataFrame,
+    df_in: "cudf.DataFrame",
     input_schema: DataFrameInputSchema,
-) -> cudf.DataFrame:
+) -> "cudf.DataFrame":
     ...
 
 
 def process_dataframe(
-    df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
+    df_in: DataFrameType,
     input_schema: DataFrameInputSchema,
-) -> typing.Union[pd.DataFrame, cudf.DataFrame]:
+) -> DataFrameType:
     """
     Applies column transformations to the input dataframe as defined by the `input_schema`.
 
@@ -73,7 +75,7 @@ def process_dataframe(
     output_df = pd.DataFrame()
 
     convert_to_cudf = False
-    if (isinstance(df_in, cudf.DataFrame)):
+    if (not isinstance(df_in, pd.DataFrame)):
         df_in = df_in.to_pandas()
         convert_to_cudf = True
 
@@ -95,6 +97,7 @@ def process_dataframe(
         output_df[match_columns] = df_in[match_columns]
 
     if (convert_to_cudf):
+        import cudf
         return cudf.from_pandas(output_df)
 
     return output_df
