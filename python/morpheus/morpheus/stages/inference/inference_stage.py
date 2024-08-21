@@ -163,6 +163,7 @@ class InferenceStage(MultiMessageStage):
     def __init__(self, c: Config):
         super().__init__(c)
 
+        # GPU only stage, assuming all messages are cuDF/CuPy based
         import cudf
         self._cudf = cudf
 
