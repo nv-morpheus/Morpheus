@@ -19,14 +19,14 @@ from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-@register_stage("dropna", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
-class DropNullStage(PassThruTypeMixin, SinglePortStage):
+@register_stage("dropna")
+class DropNullStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     """
     Drop null data entries from a DataFrame.
 
@@ -69,9 +69,9 @@ class DropNullStage(PassThruTypeMixin, SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        def on_next(x: MessageMeta):
-
-            y = MessageMeta(x.df[~x.df[self._column].isna()])
+        def on_next(msg: MessageMeta):
+            df = msg.copy_dataframe()
+            y = MessageMeta(df[~df[self._column].isna()])
 
             return y
 
