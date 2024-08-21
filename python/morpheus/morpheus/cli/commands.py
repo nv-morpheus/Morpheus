@@ -537,9 +537,11 @@ def pipeline_ae(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     config.mode = PipelineModes.AE
 
+    # TODO: Need to determine if we can enable C++ for AE pipelines, or if we can get this working in CPUY mode
     if CppConfig.get_should_use_cpp():
         logger.warning("C++ is disabled for AutoEncoder pipelines at this time.")
         CppConfig.set_should_use_cpp(False)
+        config.execution_mode = ExecutionMode.CPU
 
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = kwargs["userid_column_name"]
