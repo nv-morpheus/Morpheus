@@ -218,8 +218,8 @@ class TestCLI:
         assert config.num_threads == 12
 
         assert isinstance(config.ae, ConfigAutoEncoder)
-        config.ae.userid_column_name = "user_col"
-        config.ae.userid_filter = "user321"
+        assert config.ae.userid_column_name == "user_col"
+        assert config.ae.userid_filter == "user321"
 
         expected_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
         assert config.ae.feature_columns == expected_columns
