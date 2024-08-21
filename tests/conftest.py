@@ -183,8 +183,13 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
 
         use_cpp = item.get_closest_marker("use_cpp")
         use_pandas = item.get_closest_marker("use_pandas")
+        use_cudf = item.get_closest_marker("use_cudf")
+        use_python = item.get_closest_marker("use_python")
 
         if (use_cpp and use_pandas):
+            return False
+
+        if (use_cudf and use_python):
             return False
 
         return True
@@ -896,8 +901,8 @@ def dataset(df_type: typing.Literal['cudf', 'pandas']):
     A test that requests this fixture will parameterize on the type of DataFrame returned by the DatasetManager.
     If a test requests both this fixture and the `use_cpp` fixture, or indirectly via the `config` fixture, then
     the test will parameterize over both df_type:[cudf, pandas] and use_cpp[True, False]. However it will remove the
-    df_type=pandas & use_cpp=True combinations as this will cause an unsupported usage of Pandas dataframes with the
-    C++ implementation of message classes.
+    df_type=pandas & use_cpp=True and df_type=cudf & use_cpp=False combinations as this will cause an unsupported usage
+    of Pandas dataframes with the C++ implementation of message classes, and cuDF with CPU-only implementations.
 
     This behavior can also be overridden by using the `use_cudf`, `use_pandas`, `use_cpp` or `use_pandas` marks ex:
     ```
@@ -905,13 +910,15 @@ def dataset(df_type: typing.Literal['cudf', 'pandas']):
     @pytest.mark.use_cpp
     def test something(dataset: DatasetManager):
     ...
-    # This test will run once for each dataframe type, with C++ disabled both times
+    # This test will run once for with pandas and C++ disabled
     @pytest.mark.use_python
-    import sysdf dataframes both times
+    def test something(dataset: DatasetManager):
+    ...
+    # This test will run once with C++ mode enabled, using cudf dataframes
     @pytest.mark.use_cudf
     def test something(use_cpp: bool, dataset: DatasetManager):
     ...
-    # This test will run only once
+    # This test creates an incompatible combination and will raise a RuntimeError without being executed
     @pytest.mark.use_cudf
     @pytest.mark.use_python
     def test something(dataset: DatasetManager):
