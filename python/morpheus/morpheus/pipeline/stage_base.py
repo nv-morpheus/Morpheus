@@ -84,12 +84,6 @@ class StageBase(ABC, collections.abc.Hashable):
     _schema: _pipeline.StageSchema
 
     def __init__(self, config: Config):
-        # Check the execution mode
-        if (config.execution_mode not in self.supported_execution_modes()):
-            supported_modes = ", ".join(str(x) for x in self.supported_execution_modes())
-            raise RuntimeError(f"Unsupported execution mode {config.execution_mode} for stage {self.name}, "
-                               f"supported exexution modes are {supported_modes}")
-
         # Save the config
         config.freeze()
         self._config = config
@@ -371,7 +365,9 @@ class StageBase(ABC, collections.abc.Hashable):
 
         # Check the execution mode
         if (self._config.execution_mode not in self.supported_execution_modes()):
-            raise ValueError(f"Stage {self.name} does not support execution mode {self._config.execution_mode}")
+            supported_modes = ", ".join(str(x) for x in self.supported_execution_modes())
+            raise RuntimeError(f"Unsupported execution mode {self._config.execution_mode} for stage {self.name}, "
+                               f"supported exexution modes are {supported_modes}")
 
         # Perform schema validation
         schema = _pipeline.StageSchema(self)

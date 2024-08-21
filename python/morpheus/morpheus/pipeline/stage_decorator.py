@@ -27,6 +27,7 @@ import cudf
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.common import TypeId
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 
@@ -94,7 +95,13 @@ class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
         Function to use for computing the schema of the stage.
     """
 
-    def __init__(self, config: Config, *, name: str, gen_fn: GeneratorType, compute_schema_fn: ComputeSchemaType):
+    def __init__(self,
+                 config: Config,
+                 *,
+                 name: str,
+                 gen_fn: GeneratorType,
+                 compute_schema_fn: ComputeSchemaType,
+                 execution_modes: tuple[ExecutionMode] = (ExecutionMode.GPU, )):
         super().__init__(config)
         # collections.abc.Generator is a subclass of collections.abc.Iterator
         if not inspect.isgeneratorfunction(gen_fn):
@@ -103,6 +110,7 @@ class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
         self._name = name
         self._gen_fn = gen_fn
         self._compute_schema_fn = compute_schema_fn
+        self._supported_execution_modes = execution_modes
 
     @property
     def name(self) -> str:
@@ -113,6 +121,12 @@ class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
 
     def compute_schema(self, schema: _pipeline.StageSchema):
         self._compute_schema_fn(schema)
+
+    def supported_execution_modes(self) -> tuple[ExecutionMode]:
+        """
+        Returns a tuple of supported execution modes of this stage.
+        """
+        return self._supported_execution_modes
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self._gen_fn)
@@ -143,7 +157,8 @@ def source(
     gen_fn: GeneratorType = None,
     *,
     name: str = None,
-    compute_schema_fn: ComputeSchemaType = None
+    compute_schema_fn: ComputeSchemaType = None,
+    execution_modes: tuple[ExecutionMode] = (ExecutionMode.GPU, )
 ) -> typing.Callable[typing.Concatenate[Config, _P], WrappedFunctionSourceStage]:
     """
     Decorator for wrapping a function as a source stage. The function must be a generator method, and provide a
@@ -167,7 +182,10 @@ def source(
     >>> pipe.set_source(source_gen(config, dataframes=[df]))
     """
     if gen_fn is None:
-        return functools.partial(source, name=name, compute_schema_fn=compute_schema_fn)
+        return functools.partial(source,
+                                 name=name,
+                                 compute_schema_fn=compute_schema_fn,
+                                 execution_modes=execution_modes)
 
     # Use wraps to ensure user's don't lose their function name and docstrinsgs, however we do want to override the
     # annotations to reflect that the returned function requires a config and returns a stage
@@ -208,12 +226,14 @@ def source(
             return PreAllocatedWrappedFunctionStage(config=config,
                                                     name=name,
                                                     gen_fn=bound_gen_fn,
-                                                    compute_schema_fn=compute_schema_fn)
+                                                    compute_schema_fn=compute_schema_fn,
+                                                    execution_modes=execution_modes)
 
         return WrappedFunctionSourceStage(config=config,
                                           name=name,
                                           gen_fn=bound_gen_fn,
-                                          compute_schema_fn=compute_schema_fn)
+                                          compute_schema_fn=compute_schema_fn,
+                                          execution_modes=execution_modes)
 
     return wrapper
 
@@ -242,16 +262,15 @@ class WrappedFunctionStage(_pipeline.SinglePortStage):
         by the `PreAllocatedWrappedFunctionStage` to ensure the DataFrame has the needed columns allocated.
     """
 
-    def __init__(
-        self,
-        config: Config,
-        *,
-        name: str = None,
-        on_data_fn: typing.Callable,
-        accept_type: type,
-        compute_schema_fn: ComputeSchemaType,
-        needed_columns: dict[str, TypeId] = None,
-    ):
+    def __init__(self,
+                 config: Config,
+                 *,
+                 name: str = None,
+                 on_data_fn: typing.Callable,
+                 accept_type: type,
+                 compute_schema_fn: ComputeSchemaType,
+                 needed_columns: dict[str, TypeId] = None,
+                 execution_modes: tuple[ExecutionMode] = (ExecutionMode.GPU, )):
         super().__init__(config)
         self._name = name
         self._on_data_fn = on_data_fn
@@ -260,6 +279,8 @@ class WrappedFunctionStage(_pipeline.SinglePortStage):
 
         if needed_columns is not None:
             self._needed_columns.update(needed_columns)
+
+        self._supported_execution_modes = execution_modes
 
     @property
     def name(self) -> str:
@@ -274,6 +295,12 @@ class WrappedFunctionStage(_pipeline.SinglePortStage):
     def compute_schema(self, schema: _pipeline.StageSchema):
         self._compute_schema_fn(schema)
 
+    def supported_execution_modes(self) -> tuple[ExecutionMode]:
+        """
+        Returns a tuple of supported execution modes of this stage.
+        """
+        return self._supported_execution_modes
+
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._on_data_fn))
         builder.make_edge(input_node, node)
@@ -284,12 +311,15 @@ class WrappedFunctionStage(_pipeline.SinglePortStage):
 DecoratedStageType = typing.Callable[typing.Concatenate[Config, _P], WrappedFunctionStage]
 
 
-def stage(on_data_fn: typing.Callable[typing.Concatenate[_InputT, _P], _OutputT] = None,
-          *,
-          name: str = None,
-          accept_type: type = None,
-          compute_schema_fn: ComputeSchemaType = None,
-          needed_columns: dict[str, TypeId] = None) -> DecoratedStageType:
+def stage(
+    on_data_fn: typing.Callable[typing.Concatenate[_InputT, _P], _OutputT] = None,
+    *,
+    name: str = None,
+    accept_type: type = None,
+    compute_schema_fn: ComputeSchemaType = None,
+    needed_columns: dict[str, TypeId] = None,
+    execution_modes: tuple[ExecutionMode] = (ExecutionMode.GPU, )
+) -> DecoratedStageType:
     """
     Decorator for wrapping a function as a stage. The function must receive at least one argument, the first argument
     must be the incoming message, and must return a value.
@@ -325,7 +355,8 @@ def stage(on_data_fn: typing.Callable[typing.Concatenate[_InputT, _P], _OutputT]
                                  name=name,
                                  accept_type=accept_type,
                                  compute_schema_fn=compute_schema_fn,
-                                 needed_columns=needed_columns)
+                                 needed_columns=needed_columns,
+                                 execution_modes=execution_modes)
 
     # Use wraps to ensure user's don't lose their function name and docstrinsgs, however we do want to override the
     # annotations to reflect that the returned function requires a config and returns a stage
@@ -376,6 +407,7 @@ def stage(on_data_fn: typing.Callable[typing.Concatenate[_InputT, _P], _OutputT]
                                     on_data_fn=bound_on_data_fn,
                                     accept_type=accept_type,
                                     compute_schema_fn=compute_schema_fn,
-                                    needed_columns=needed_columns)
+                                    needed_columns=needed_columns,
+                                    execution_modes=execution_modes)
 
     return wrapper
