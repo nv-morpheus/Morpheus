@@ -57,8 +57,14 @@ ControlMessage::ControlMessage(const morpheus::utilities::json_t& _config) :
 
 ControlMessage::ControlMessage(const ControlMessage& other)
 {
+    m_cm_type = other.m_cm_type;
+    m_payload = other.m_payload;
+    m_tensors = other.m_tensors;
+
     m_config = other.m_config;
     m_tasks  = other.m_tasks;
+
+    m_timestamps = other.m_timestamps;
 }
 
 const morpheus::utilities::json_t& ControlMessage::config() const
