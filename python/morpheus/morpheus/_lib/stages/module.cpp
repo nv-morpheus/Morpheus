@@ -67,9 +67,6 @@ PYBIND11_MODULE(stages, _module)
 
         )pbdoc";
 
-    // Load the cudf helpers
-    CudfHelper::load();
-
     // Make sure to load mrc.core.segment to get ObjectProperties
     mrc::pymrc::import(_module, "mrc.core.segment");
 

@@ -143,6 +143,10 @@ PYBIND11_MODULE(common, _module)
                 py::arg("filename"),
                 py::arg("file_type") = FileTypes::Auto);
 
+    _module.def("load_cudf_helper", [] {
+        CudfHelper::load();
+    });
+
     py::enum_<FilterSource>(
         _module, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")
         .value("Auto", FilterSource::Auto)

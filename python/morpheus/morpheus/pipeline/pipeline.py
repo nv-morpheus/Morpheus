@@ -303,6 +303,9 @@ class Pipeline():
         assert self._state == PipelineState.INITIALIZED, "Pipeline can only be built once!"
         assert len(self._sources) > 0, "Pipeline must have a source stage"
 
+        from morpheus._lib import common as _common
+        _common.load_cudf_helper()
+
         self._pre_build()
 
         logger.info("====Registering Pipeline====")
