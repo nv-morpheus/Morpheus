@@ -22,6 +22,7 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageBase
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -42,9 +43,11 @@ class PreprocessBaseStage(MultiMessageStage):
     def __init__(self, c: Config):
         super().__init__(c)
 
-        self._preprocess_fn = None
         self._should_log_timestamps = True
         self._use_control_message = False
+
+        # only used when not using control message
+        self._fallback_output_type: type[MessageBase] = None
 
     def accepted_types(self) -> typing.Tuple:
         """
@@ -61,33 +64,32 @@ class PreprocessBaseStage(MultiMessageStage):
         if (schema.input_type == ControlMessage):
             self._use_control_message = True
             out_type = ControlMessage
-            self._preprocess_fn = self._get_preprocess_fn()
         else:
             self._use_control_message = False
-            self._preprocess_fn = self._get_preprocess_fn()
-            preproc_sig = inspect.signature(self._preprocess_fn)
-            # If the innerfunction returns a type annotation, update the output type
-            if (preproc_sig.return_annotation
-                    and typing_utils.issubtype(preproc_sig.return_annotation, MultiInferenceMessage)):
-                out_type = preproc_sig.return_annotation
+            out_type = self._fallback_output_type
 
         schema.output_schema.set_type(out_type)
 
-    @abstractmethod
-    def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
-        pass
+    def _get_preprocess_fn(
+            self) -> typing.Callable[[ControlMessage | MultiMessage], ControlMessage | MultiInferenceMessage]:
+        """
+        This method should be implemented by any subclasses with a Python implementation.
+        """
+        raise NotImplementedError("No Python implementation provided by this stage")
 
-    @abstractmethod
     def _get_preprocess_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        pass
+        """
+        This method should be implemented by any subclasses with a C++ implementation.
+        """
+        raise NotImplementedError("No Python implementation provided by this stage")
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        assert self._preprocess_fn is not None, "Preprocess function not set"
         if self._build_cpp_node():
             node = self._get_preprocess_node(builder)
             node.launch_options.pe_count = self._config.num_threads
         else:
-            node = builder.make_node(self.unique_name, ops.map(self._preprocess_fn))
+            preprocess_fn = self._get_preprocess_fn()
+            node = builder.make_node(self.unique_name, ops.map(preprocess_fn))
 
         builder.make_edge(input_node, node)
 
