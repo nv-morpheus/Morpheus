@@ -17,15 +17,14 @@ import dataclasses
 import inspect
 import typing
 
-import cupy as cp
 import numpy as np
-import pandas as pd
-
-import cudf
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageData
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import NDArrayType
+from morpheus.utils.type_aliases import SeriesType
 
 # Needed to provide the return type of `@classmethod`
 Self = typing.TypeVar("Self", bound="MultiMessage")
@@ -167,15 +166,15 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         return self.meta.get_column_names()
 
     @typing.overload
-    def get_meta(self) -> cudf.DataFrame:
+    def get_meta(self) -> DataFrameType:
         ...
 
     @typing.overload
-    def get_meta(self, columns: str) -> cudf.Series:
+    def get_meta(self, columns: str) -> SeriesType:
         ...
 
     @typing.overload
-    def get_meta(self, columns: typing.List[str]) -> cudf.DataFrame:
+    def get_meta(self, columns: typing.List[str]) -> DataFrameType:
         ...
 
     def get_meta(self, columns: typing.Union[None, str, typing.List[str]] = None):
@@ -245,10 +244,6 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             # First try to set the values on just our slice if the columns exist
             row_indexer, column_indexer = self._get_indexers(df, columns=columns)
 
-            # Check if the value is a cupy array and we have a pandas dataframe, convert to numpy
-            if (isinstance(value, cp.ndarray) and isinstance(df, pd.DataFrame)):
-                value = value.get()
-
             # Check to see if we are adding a column. If so, we need to use df.loc instead of df.iloc
             if (-1 not in column_indexer):
 
@@ -267,38 +262,11 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
                 # Columns should never be empty if we get here
                 assert columns is not None
 
-                # cudf is really bad at adding new columns
-                if (isinstance(df, cudf.DataFrame)):
+                # Need to determine the boolean mask to use indexes with df.loc
+                row_mask = self._ranges_to_mask(df, [(self.mess_offset, self.mess_offset + self.mess_count)])
 
-                    # TODO(morpheus#1487): This logic no longer works in CUDF 24.04.
-                    # We should find a way to reinable the no-dropped-index path as
-                    # that should be more performant than dropping the index.
-                    # # saved_index = None
-
-                    # # # Check to see if we can use slices
-                    # # if (not (df.index.is_unique and
-                    # #          (df.index.is_monotonic_increasing or df.index.is_monotonic_decreasing))):
-                    # #     # Save the index and reset
-                    # #     saved_index = df.index
-                    # #     df.reset_index(drop=True, inplace=True)
-
-                    # # # Perform the update via slices
-                    # # df.loc[df.index[row_indexer], columns] = value
-
-                    # # # Reset the index if we changed it
-                    # # if (saved_index is not None):
-                    # #     df.set_index(saved_index, inplace=True)
-
-                    saved_index = df.index
-                    df.reset_index(drop=True, inplace=True)
-                    df.loc[df.index[row_indexer], columns] = value
-                    df.set_index(saved_index, inplace=True)
-                else:
-                    # Need to determine the boolean mask to use indexes with df.loc
-                    row_mask = self._ranges_to_mask(df, [(self.mess_offset, self.mess_offset + self.mess_count)])
-
-                    # Now set the slice
-                    df.loc[row_mask, columns] = value
+                # Now set the slice
+                df.loc[row_mask, columns] = value
 
     def get_slice(self, start, stop):
         """
@@ -325,21 +293,14 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         return self.from_message(self, meta=self.meta, mess_offset=offset, mess_count=count)
 
     def _ranges_to_mask(self, df, ranges):
-        if isinstance(df, cudf.DataFrame):
-            zeros_fn = cp.zeros
-        else:
-            zeros_fn = np.zeros
-
-        mask = zeros_fn(len(df), bool)
+        mask = np.zeros(len(df), bool)
 
         for range_ in ranges:
             mask[range_[0]:range_[1]] = True
 
         return mask
 
-    def copy_meta_ranges(self,
-                         ranges: typing.List[typing.Tuple[int, int]],
-                         mask: typing.Union[None, cp.ndarray, np.ndarray] = None):
+    def copy_meta_ranges(self, ranges: typing.List[typing.Tuple[int, int]], mask: NDArrayType = None):
         """
         Perform a copy of the underlying dataframe for the given `ranges` of rows.
 
