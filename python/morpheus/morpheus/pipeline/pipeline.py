@@ -103,6 +103,8 @@ class Pipeline():
         # Future that allows post_start to propagate exceptions back to pipeline
         self._post_start_future: asyncio.Future = None
 
+        self._execution_mode = config.execution_mode
+
     @property
     def state(self) -> PipelineState:
         return self._state
@@ -303,8 +305,10 @@ class Pipeline():
         assert self._state == PipelineState.INITIALIZED, "Pipeline can only be built once!"
         assert len(self._sources) > 0, "Pipeline must have a source stage"
 
-        from morpheus._lib import common as _common
-        _common.load_cudf_helper()
+        if (self._execution_mode == ExecutionMode.GPU):
+            # Load the cudf helper
+            from morpheus._lib import common as _common
+            _common.load_cudf_helper()
 
         self._pre_build()
 
