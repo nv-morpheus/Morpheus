@@ -134,10 +134,7 @@ PYBIND11_MODULE(messages, _module)
 
         )pbdoc";
 
-    // Load the cudf helpers
-    CudfHelper::load();
-
-    mrc::pymrc::import(_module, "cupy");
+    mrc::pymrc::import(_module, "cupy");  // It should be safe to import cupy in CPU only mode
     mrc::pymrc::import(_module, "morpheus._lib.common");
 
     // Required for SegmentObject

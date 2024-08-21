@@ -1,4 +1,4 @@
-    /*
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -57,9 +57,6 @@ PYBIND11_MODULE(common, _module)
         .. autosummary::
            :toctree: _generate
         )pbdoc";
-
-    // Load the cudf helpers
-    CudfHelper::load();
 
     LoaderRegistry::register_factory_fn(
         "file",
