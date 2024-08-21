@@ -68,9 +68,6 @@ PYBIND11_MODULE(llm, _module)
 
         )pbdoc";
 
-    // Load the cudf helpers
-    CudfHelper::load();
-
     // Import the mrc coro module
     mrc::pymrc::import(_module, "mrc.core.coro");
 
