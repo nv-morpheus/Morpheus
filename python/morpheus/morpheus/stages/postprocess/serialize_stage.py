@@ -26,6 +26,7 @@ from morpheus.controllers.serialize_controller import SerializeController
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("serialize", execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
-class SerializeStage(SinglePortStage):
+class SerializeStage(GpuAndCpuMixin, SinglePortStage):
     """
     Includes & excludes columns from messages.
 

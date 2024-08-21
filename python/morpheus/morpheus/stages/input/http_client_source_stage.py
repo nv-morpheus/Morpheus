@@ -26,6 +26,7 @@ from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.io.utils import get_json_reader
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
@@ -38,7 +39,7 @@ logger = logging.getLogger(__name__)
 @register_stage("from-http-client",
                 execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU),
                 ignore_args=["query_params", "headers", "**request_kwargs"])
-class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
+class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Source stage that polls a remote HTTP server for incoming data.
 

@@ -84,6 +84,12 @@ class StageBase(ABC, collections.abc.Hashable):
     _schema: _pipeline.StageSchema
 
     def __init__(self, config: Config):
+        # Check the execution mode
+        if (config.execution_mode not in self.supported_execution_modes()):
+            supported_modes = ", ".join(str(x) for x in self.supported_execution_modes())
+            raise RuntimeError(f"Unsupported execution mode {config.execution_mode} for stage {self.name}, "
+                               f"supported exexution modes are {supported_modes}")
+
         # Save the config
         config.freeze()
         self._config = config

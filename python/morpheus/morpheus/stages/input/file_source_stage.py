@@ -26,6 +26,7 @@ from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
@@ -36,7 +37,7 @@ logger = logging.getLogger(__name__)
 @register_stage("from-file",
                 modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
                 execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
-class FileSourceStage(PreallocatorMixin, SingleOutputSource):
+class FileSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Load messages from a file.
 

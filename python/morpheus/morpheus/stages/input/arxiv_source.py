@@ -24,6 +24,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
@@ -40,7 +41,7 @@ IMPORT_ERROR_MESSAGE = (
 
 
 @register_stage("from-arxiv", execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
-class ArxivSource(PreallocatorMixin, SingleOutputSource):
+class ArxivSource(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Source stage that downloads PDFs from arxiv and converts them to dataframes.
 

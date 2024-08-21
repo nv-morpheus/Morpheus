@@ -24,6 +24,7 @@ from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.controllers.write_to_file_controller import WriteToFileController
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -31,7 +32,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 @register_stage("to-file",
                 rename_options={"include_index_col": "--include-index-col"},
                 execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
-class WriteToFileStage(PassThruTypeMixin, SinglePortStage):
+class WriteToFileStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     """
     Write all messages to a file.
 

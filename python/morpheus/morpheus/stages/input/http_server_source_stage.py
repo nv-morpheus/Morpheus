@@ -27,6 +27,7 @@ from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.io.utils import get_json_reader
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
@@ -43,7 +44,7 @@ HEALTH_SUPPORTED_METHODS = (HTTPMethod.GET, HTTPMethod.POST)
 
 
 @register_stage("from-http", execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
-class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
+class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Source stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
 

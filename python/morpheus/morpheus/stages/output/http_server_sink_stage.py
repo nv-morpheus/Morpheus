@@ -30,6 +30,7 @@ from morpheus.config import ExecutionMode
 from morpheus.io import serializers
 from morpheus.io.utils import get_df_pkg
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.http_utils import HTTPMethod
@@ -43,7 +44,7 @@ logger = logging.getLogger(__name__)
 @register_stage("to-http-server",
                 execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU),
                 ignore_args=["df_serializer_fn"])
-class HttpServerSinkStage(PassThruTypeMixin, SinglePortStage):
+class HttpServerSinkStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     """
     Sink stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
 

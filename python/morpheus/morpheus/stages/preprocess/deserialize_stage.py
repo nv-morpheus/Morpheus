@@ -26,6 +26,7 @@ from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -36,7 +37,7 @@ logger = logging.getLogger(__name__)
                 modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
                 execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU),
                 ignore_args=["message_type", "task_type", "task_payload"])
-class DeserializeStage(MultiMessageStage):
+class DeserializeStage(GpuAndCpuMixin, MultiMessageStage):
     """
     Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
 

@@ -20,6 +20,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
@@ -38,7 +39,7 @@ except ImportError as import_exc:
 
 
 @register_stage("from-databricks-deltalake", execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
-class DataBricksDeltaLakeSourceStage(PreallocatorMixin, SingleOutputSource):
+class DataBricksDeltaLakeSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Source stage used to load messages from a DeltaLake table.
 
