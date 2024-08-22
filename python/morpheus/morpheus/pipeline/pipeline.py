@@ -29,6 +29,7 @@ import networkx
 from tqdm import tqdm
 
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
+from morpheus.common import load_cudf_helper
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import ExecutionMode
@@ -307,8 +308,7 @@ class Pipeline():
 
         if (self._execution_mode == ExecutionMode.GPU):
             # Load the cudf helper
-            from morpheus._lib import common as _common
-            _common.load_cudf_helper()
+            load_cudf_helper()
 
         self._pre_build()
 
