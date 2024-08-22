@@ -17,10 +17,10 @@ import typing
 from unittest import mock
 
 import pytest
-from morpheus_llm.llm import LLMNodeBase
-from morpheus_llm.llm.nodes.rag_node import RAGNode
 
 from _utils.llm import execute_node
+from morpheus_llm.llm import LLMNodeBase
+from morpheus_llm.llm.nodes.rag_node import RAGNode
 
 
 @pytest.mark.parametrize("embedding", [None, mock.AsyncMock()])

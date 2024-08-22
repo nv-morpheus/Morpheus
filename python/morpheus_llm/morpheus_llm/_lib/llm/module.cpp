@@ -19,9 +19,6 @@
 #include "./include/py_llm_node.hpp"
 #include "./include/py_llm_node_base.hpp"
 #include "./include/py_llm_task_handler.hpp"
-#include "py_llm_engine_stage.hpp"
-#include "py_llm_lambda_node.hpp"
-
 #include "morpheus_llm/llm/input_map.hpp"
 #include "morpheus_llm/llm/llm_context.hpp"
 #include "morpheus_llm/llm/llm_engine.hpp"
@@ -30,8 +27,11 @@
 #include "morpheus_llm/llm/llm_node_runner.hpp"
 #include "morpheus_llm/llm/llm_task.hpp"
 #include "morpheus_llm/llm/llm_task_handler.hpp"
-#include "morpheus/messages/control.hpp"    // IWYU pragma: keep
-#include "morpheus/pybind11/input_map.hpp"  // IWYU pragma: keep
+#include "morpheus_llm/pybind11/input_map.hpp"  // IWYU pragma: keep
+#include "py_llm_engine_stage.hpp"
+#include "py_llm_lambda_node.hpp"
+
+#include "morpheus/messages/control.hpp"  // IWYU pragma: keep
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/version.hpp"
 

@@ -14,9 +14,9 @@
 # limitations under the License.
 
 import pytest
-from morpheus_llm.llm.nodes.prompt_template_node import PromptTemplateNode
 
 from _utils.llm import execute_node
+from morpheus_llm.llm.nodes.prompt_template_node import PromptTemplateNode
 
 MULTI_LINE_JINJA_TEMPLATE = """Testing a loop:
 {% for lv in list_values -%}Title: {{ lv.title }}, Summary: {{ lv.summary }}

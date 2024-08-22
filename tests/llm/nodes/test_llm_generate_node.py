@@ -15,10 +15,9 @@
 
 from unittest import mock
 
+from _utils.llm import execute_node
 from morpheus_llm.llm import LLMNodeBase
 from morpheus_llm.llm.nodes.llm_generate_node import LLMGenerateNode
-
-from _utils.llm import execute_node
 
 
 def test_constructor(mock_llm_client: mock.MagicMock):

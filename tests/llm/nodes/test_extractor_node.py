@@ -13,14 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from morpheus_llm.llm import LLMNodeBase
-from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
-
 import cudf
 
 from _utils.llm import execute_node
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus_llm.llm import LLMNodeBase
+from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
 
 
 def test_constructor():

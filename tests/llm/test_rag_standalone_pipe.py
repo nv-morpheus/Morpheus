@@ -19,11 +19,6 @@ import types
 from unittest import mock
 
 import pytest
-from morpheus_llm.llm import LLMEngine
-from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
-from morpheus_llm.llm.nodes.rag_node import RAGNode
-from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
-from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
 import cudf
 
@@ -39,6 +34,11 @@ from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus_llm.llm import LLMEngine
+from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
+from morpheus_llm.llm.nodes.rag_node import RAGNode
+from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
+from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
 EMBEDDING_SIZE = 384
 QUESTION = "What are some new attacks discovered in the cyber security industry?"

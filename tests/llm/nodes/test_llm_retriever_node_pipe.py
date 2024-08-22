@@ -16,11 +16,6 @@
 from unittest import mock
 
 import pytest
-from morpheus_llm.llm import LLMEngine
-from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
-from morpheus_llm.llm.nodes.retriever_node import RetrieverNode
-from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
-from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
 import cudf
 
@@ -32,6 +27,11 @@ from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus_llm.llm import LLMEngine
+from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
+from morpheus_llm.llm.nodes.retriever_node import RetrieverNode
+from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
+from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
 
 @pytest.fixture(scope="module", name="milvus_service")

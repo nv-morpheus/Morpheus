@@ -17,9 +17,8 @@
 
 #include "py_llm_engine.hpp"
 
-#include "py_llm_task_handler.hpp"
-
 #include "morpheus_llm/llm/llm_task_handler.hpp"  // for LLMTaskHandler
+#include "py_llm_task_handler.hpp"
 
 #include <pybind11/pybind11.h>
 

@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-#include "morpheus/_lib/tests/test_utils/common.hpp"  // IWYU pragma: associated
-
 #include "morpheus_llm/llm/input_map.hpp"
 #include "morpheus_llm/llm/llm_context.hpp"  // for LLMContext
 #include "morpheus_llm/llm/llm_task.hpp"
 #include "morpheus_llm/llm/llm_task_handler.hpp"
 #include "morpheus_llm/llm/llm_task_handler_runner.hpp"
-#include "morpheus/messages/control.hpp"  // for ControlMessage
+
+#include "morpheus/_lib/tests/test_utils/common.hpp"  // IWYU pragma: associated
+#include "morpheus/messages/control.hpp"              // for ControlMessage
 #include "morpheus/types.hpp"
 
 #include <gtest/gtest.h>

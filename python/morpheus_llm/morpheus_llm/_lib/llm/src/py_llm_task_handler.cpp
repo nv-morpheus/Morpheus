@@ -17,7 +17,8 @@
 
 #include "py_llm_task_handler.hpp"
 
-#include "morpheus_llm/llm/llm_context.hpp"   // IWYU pragma: keep
+#include "morpheus_llm/llm/llm_context.hpp"  // IWYU pragma: keep
+
 #include "morpheus/messages/control.hpp"  // IWYU pragma: keep
 
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep

@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-#include "morpheus/_lib/tests/test_utils/common.hpp"  // IWYU pragma: associated
-
 #include "morpheus_llm/llm/input_map.hpp"
 #include "morpheus_llm/llm/utils.hpp"
+
+#include "morpheus/_lib/tests/test_utils/common.hpp"  // IWYU pragma: associated
 #include "morpheus/types.hpp"
 
 #include <gtest/gtest.h>

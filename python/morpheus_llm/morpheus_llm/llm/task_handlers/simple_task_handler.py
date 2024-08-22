@@ -14,10 +14,9 @@
 
 import logging
 
+from morpheus.messages import ControlMessage
 from morpheus_llm.llm import LLMContext
 from morpheus_llm.llm import LLMTaskHandler
-
-from morpheus.messages import ControlMessage
 
 logger = logging.getLogger(__name__)
 
