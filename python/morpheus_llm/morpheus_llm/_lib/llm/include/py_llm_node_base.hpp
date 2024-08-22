@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/llm/fwd.hpp"
+#include "morpheus_llm/llm/fwd.hpp"
 #include "morpheus/types.hpp"
 
 #include <memory>
@@ -25,9 +25,9 @@
 #include <vector>
 
 // We include these in the cpp file to avoid putting everything in the header
-// IWYU pragma: no_include "morpheus/llm/llm_engine.hpp"
-// IWYU pragma: no_include "morpheus/llm/llm_node.hpp"
-// IWYU pragma: no_include "morpheus/llm/llm_node_base.hpp"
+// IWYU pragma: no_include "morpheus_llm/llm/llm_engine.hpp"
+// IWYU pragma: no_include "morpheus_llm/llm/llm_node.hpp"
+// IWYU pragma: no_include "morpheus_llm/llm/llm_node_base.hpp"
 
 namespace morpheus::llm {
 

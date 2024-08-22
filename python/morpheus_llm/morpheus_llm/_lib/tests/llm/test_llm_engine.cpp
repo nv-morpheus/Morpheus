@@ -17,10 +17,10 @@
 
 #include "morpheus/_lib/tests/test_utils/common.hpp"  // IWYU pragma: associated
 
-#include "morpheus/llm/llm_context.hpp"
-#include "morpheus/llm/llm_engine.hpp"
-#include "morpheus/llm/llm_lambda_node.hpp"
-#include "morpheus/llm/llm_task.hpp"
+#include "morpheus_llm/llm/llm_context.hpp"
+#include "morpheus_llm/llm/llm_engine.hpp"
+#include "morpheus_llm/llm/llm_lambda_node.hpp"
+#include "morpheus_llm/llm/llm_task.hpp"
 #include "morpheus/types.hpp"
 
 #include <gtest/gtest.h>
@@ -34,7 +34,7 @@
 #include <coroutine>
 #include <cstdint>
 #include <memory>
-// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
+// IWYU pragma: no_include "morpheus_llm/llm/fwd.hpp"
 
 using namespace morpheus;
 using namespace morpheus::test;

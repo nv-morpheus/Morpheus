@@ -17,7 +17,7 @@
 
 #include "morpheus/_lib/tests/test_utils/common.hpp" // IWYU pragma: associated
 
-#include "morpheus/llm/llm_task.hpp"
+#include "morpheus_llm/llm/llm_task.hpp"
 
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>

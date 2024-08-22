@@ -19,9 +19,9 @@
 #include "py_llm_node.hpp"
 
 #include "morpheus/export.h"
-#include "morpheus/llm/input_map.hpp"
-#include "morpheus/llm/llm_engine.hpp"
-#include "morpheus/llm/llm_task_handler.hpp"
+#include "morpheus_llm/llm/input_map.hpp"
+#include "morpheus_llm/llm/llm_engine.hpp"
+#include "morpheus_llm/llm/llm_task_handler.hpp"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/types.hpp"
 

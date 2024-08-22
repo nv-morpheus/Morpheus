@@ -19,8 +19,8 @@
 
 #include "pymrc/coro.hpp"
 
-#include "morpheus/llm/llm_context.hpp"  // for LLMContext
-#include "morpheus/llm/llm_node_base.hpp"
+#include "morpheus_llm/llm/llm_context.hpp"  // for LLMContext
+#include "morpheus_llm/llm/llm_node_base.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>           // for DCHECK_EQ

@@ -17,10 +17,10 @@
 
 #include "py_llm_node_base.hpp"
 
-#include "morpheus/llm/llm_context.hpp"  // IWYU pragma: keep
-#include "morpheus/llm/llm_engine.hpp"
-#include "morpheus/llm/llm_node.hpp"
-#include "morpheus/llm/llm_node_base.hpp"
+#include "morpheus_llm/llm/llm_context.hpp"  // IWYU pragma: keep
+#include "morpheus_llm/llm/llm_engine.hpp"
+#include "morpheus_llm/llm/llm_node.hpp"
+#include "morpheus_llm/llm/llm_node_base.hpp"
 
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>

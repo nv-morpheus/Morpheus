@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/export.h"
-#include "morpheus/llm/fwd.hpp"
+#include "morpheus_llm/llm/fwd.hpp"
 
 #include <memory>
 #include <string>

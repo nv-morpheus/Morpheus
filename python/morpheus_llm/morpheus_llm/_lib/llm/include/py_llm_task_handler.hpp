@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "morpheus/llm/fwd.hpp"
-#include "morpheus/llm/llm_task_handler.hpp"
+#include "morpheus_llm/llm/fwd.hpp"
+#include "morpheus_llm/llm/llm_task_handler.hpp"
 #include "morpheus/types.hpp"
 
 #include <memory>

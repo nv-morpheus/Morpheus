@@ -17,11 +17,11 @@
 
 #include "morpheus/_lib/tests/test_utils/common.hpp"  // IWYU pragma: associated
 
-#include "morpheus/llm/input_map.hpp"
-#include "morpheus/llm/llm_context.hpp"  // for LLMContext
-#include "morpheus/llm/llm_task.hpp"
-#include "morpheus/llm/llm_task_handler.hpp"
-#include "morpheus/llm/llm_task_handler_runner.hpp"
+#include "morpheus_llm/llm/input_map.hpp"
+#include "morpheus_llm/llm/llm_context.hpp"  // for LLMContext
+#include "morpheus_llm/llm/llm_task.hpp"
+#include "morpheus_llm/llm/llm_task_handler.hpp"
+#include "morpheus_llm/llm/llm_task_handler_runner.hpp"
 #include "morpheus/messages/control.hpp"  // for ControlMessage
 #include "morpheus/types.hpp"
 
@@ -35,7 +35,7 @@
 #include <memory>
 #include <optional>  // for optional
 #include <string>
-// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
+// IWYU pragma: no_include "morpheus_llm/llm/fwd.hpp"
 
 using namespace morpheus;
 using namespace morpheus::test;

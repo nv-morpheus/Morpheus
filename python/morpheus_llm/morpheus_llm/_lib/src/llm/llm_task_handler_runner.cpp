@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include "morpheus/llm/llm_task_handler_runner.hpp"
+#include "morpheus_llm/llm/llm_task_handler_runner.hpp"
 
-#include "morpheus/llm/llm_context.hpp"
+#include "morpheus_llm/llm/llm_context.hpp"
 
 #include <glog/logging.h>
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep

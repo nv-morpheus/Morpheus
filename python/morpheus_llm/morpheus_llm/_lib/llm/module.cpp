@@ -22,14 +22,14 @@
 #include "py_llm_engine_stage.hpp"
 #include "py_llm_lambda_node.hpp"
 
-#include "morpheus/llm/input_map.hpp"
-#include "morpheus/llm/llm_context.hpp"
-#include "morpheus/llm/llm_engine.hpp"
-#include "morpheus/llm/llm_node.hpp"
-#include "morpheus/llm/llm_node_base.hpp"
-#include "morpheus/llm/llm_node_runner.hpp"
-#include "morpheus/llm/llm_task.hpp"
-#include "morpheus/llm/llm_task_handler.hpp"
+#include "morpheus_llm/llm/input_map.hpp"
+#include "morpheus_llm/llm/llm_context.hpp"
+#include "morpheus_llm/llm/llm_engine.hpp"
+#include "morpheus_llm/llm/llm_node.hpp"
+#include "morpheus_llm/llm/llm_node_base.hpp"
+#include "morpheus_llm/llm/llm_node_runner.hpp"
+#include "morpheus_llm/llm/llm_task.hpp"
+#include "morpheus_llm/llm/llm_task_handler.hpp"
 #include "morpheus/messages/control.hpp"    // IWYU pragma: keep
 #include "morpheus/pybind11/input_map.hpp"  // IWYU pragma: keep
 #include "morpheus/utilities/cudf_util.hpp"
@@ -51,7 +51,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-// IWYU pragma: no_include "morpheus/llm/fwd.hpp"
+// IWYU pragma: no_include "morpheus_llm/llm/fwd.hpp"
 // IWYU pragma: no_include <pybind11/attr.h>
 // IWYU pragma: no_include <pybind11/pytypes.h>
 

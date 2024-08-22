@@ -18,9 +18,9 @@
 #pragma once
 
 #include "morpheus/export.h"
-#include "morpheus/llm/fwd.hpp"
-#include "morpheus/llm/input_map.hpp"
-#include "morpheus/llm/llm_node_base.hpp"
+#include "morpheus_llm/llm/fwd.hpp"
+#include "morpheus_llm/llm/input_map.hpp"
+#include "morpheus_llm/llm/llm_node_base.hpp"
 #include "morpheus/types.hpp"
 
 #include <cstddef>

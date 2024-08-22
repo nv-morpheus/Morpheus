@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "morpheus/llm/fwd.hpp"  // for LLMContext
-#include "morpheus/llm/llm_node_base.hpp"
+#include "morpheus_llm/llm/fwd.hpp"  // for LLMContext
+#include "morpheus_llm/llm/llm_node_base.hpp"
 #include "morpheus/types.hpp"
 
 #include <pybind11/pytypes.h>

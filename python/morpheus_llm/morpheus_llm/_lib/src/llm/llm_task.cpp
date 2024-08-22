@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "morpheus/llm/llm_task.hpp"
+#include "morpheus_llm/llm/llm_task.hpp"
 
 #include <utility>
 

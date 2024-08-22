@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include "morpheus/llm/input_map.hpp"
+#include "morpheus_llm/llm/input_map.hpp"
 
-#include "morpheus/llm/llm_node_runner.hpp"
+#include "morpheus_llm/llm/llm_node_runner.hpp"
 
 #include <glog/logging.h>
 

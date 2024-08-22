@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-#include "morpheus/llm/llm_node.hpp"
+#include "morpheus_llm/llm/llm_node.hpp"
 
-#include "morpheus/llm/llm_context.hpp"
-#include "morpheus/llm/llm_node_runner.hpp"
-#include "morpheus/llm/utils.hpp"
+#include "morpheus_llm/llm/llm_context.hpp"
+#include "morpheus_llm/llm/llm_node_runner.hpp"
+#include "morpheus_llm/llm/utils.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep

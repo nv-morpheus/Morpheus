@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/export.h"
-#include "morpheus/llm/input_map.hpp"
+#include "morpheus_llm/llm/input_map.hpp"
 
 #include <string>
 #include <string_view>
