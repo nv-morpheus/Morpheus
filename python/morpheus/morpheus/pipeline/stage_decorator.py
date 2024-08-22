@@ -22,8 +22,6 @@ import mrc
 import pandas as pd
 from mrc.core import operators as ops
 
-import cudf
-
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.common import TypeId
 from morpheus.config import Config
@@ -220,8 +218,13 @@ def source(
 
         bound_gen_fn = functools.partial(gen_fn, **kwargs)
 
+        pre_allocation_output_types = [pd.DataFrame, MessageMeta, MultiMessage]
+        if config.execution_mode == ExecutionMode.GPU:
+            import cudf
+            pre_allocation_output_types.append(cudf.DataFrame)
+
         # If the return type supports pre-allocation we use the pre-allocating source
-        if return_type in (pd.DataFrame, cudf.DataFrame, MessageMeta, MultiMessage):
+        if return_type in pre_allocation_output_types:
 
             return PreAllocatedWrappedFunctionStage(config=config,
                                                     name=name,
