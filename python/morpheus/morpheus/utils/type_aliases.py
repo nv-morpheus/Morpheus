@@ -22,6 +22,7 @@ if typing.TYPE_CHECKING:
 
     import cudf
 
+DataFrameTypeStr = typing.Literal["cudf", "pandas"]
 DataFrameType = typing.Union["pandas.DataFrame", "cudf.DataFrame"]
 SeriesType = typing.Union["pandas.Series", "cudf.Series"]
 
