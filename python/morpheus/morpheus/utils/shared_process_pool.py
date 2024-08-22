@@ -19,18 +19,39 @@ import multiprocessing as mp
 import os
 import queue
 import time
-from concurrent.futures import Future
 from threading import Lock
-from threading import Semaphore
 
+# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+class SerializableFuture:
+
+    def __init__(self, manager):
+        self._result = manager.Value("i", None)
+        self._exception = manager.Value("i", None)
+        self._done = manager.Event()
+
+    def set_result(self, result):
+        self._result.value = result
+        self._done.set()
+
+    def set_exception(self, exception):
+        self._exception.value = exception
+        self._done.set()
+
+    def result(self):
+        self._done.wait()
+        if self._exception.value is not None:
+            raise self._exception.value
+        return self._result.value
 
 
 class SharedProcessPool:
 
     _instance = None
     _lock = Lock()
-    _total_workers = 0
+    _shutdown = False
 
     def __new__(cls):
         """
@@ -40,7 +61,7 @@ class SharedProcessPool:
         with cls._lock:
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
-                max_workers = math.floor(max(1, len(os.sched_getaffinity(0)) * 0.4))
+                max_workers = math.floor(max(1, len(os.sched_getaffinity(0)) * 0.5))
                 cls._instance._initialize(max_workers)
                 logger.debug("SharedProcessPool has been initialized with %s workers.", max_workers)
 
@@ -49,42 +70,33 @@ class SharedProcessPool:
 
         return cls._instance
 
-    def __init__(self):
-        # Declare the attributes here to avoid W0201: attribute-defined-outside-init
-        self._total_max_workers = None
-        self._context = None
-        self._total_usage = 0.0
-        self._stage_usage = {}
-        self._task_queues = {}
-        self._stage_semaphores = {}
-        self._processes = []
-
     def _initialize(self, total_max_workers):
         """
         Initialize a concurrent.futures.ProcessPoolExecutor instance.
         """
-
         self._total_max_workers = total_max_workers
         self._context = mp.get_context("fork")
+        self._manager = self._context.Manager()
         self._total_usage = 0.0  # the percentage of processes that's currently in use
         self._stage_usage = {}  # maintain the percentage of processes used by each stage
-        self._task_queues = {}  # maintain a separate task queue for each stage
-        self._stage_semaphores = {}  # maintain a semaphore for each stage
+        self._task_queues = self._manager.dict()  # maintain a separate task queue for each stage
+        self._stage_semaphores = self._manager.dict()  # maintain a semaphore for each stage
         self._processes = []
 
         for i in range(total_max_workers):
-            process = self._context.Process(target=self._worker)
+            process = self._context.Process(target=self._worker, args=(self._task_queues, self._stage_semaphores))
             process.start()
             self._processes.append(process)
             logger.debug("Process %s/%s has been started.", i + 1, total_max_workers)
 
-    def _worker(self):
+    @staticmethod
+    def _worker(task_queues, stage_semaphores):
         logger.debug("Worker process %s has been started.", os.getpid())
 
         while True:
             # iterate over every semaphore
-            for stage_name, task_queue in self._task_queues.items():
-                semaphore = self._stage_semaphores[stage_name]
+            for stage_name, task_queue in task_queues.items():
+                semaphore = stage_semaphores[stage_name]
 
                 if not semaphore.acquire(blocking=False):
                     # Stage has reached the limitation of processes
@@ -92,7 +104,7 @@ class SharedProcessPool:
 
                 try:
                     task = task_queue.get_nowait()
-                except queue.Empty():
+                except queue.Empty:
                     semaphore.release()
                     continue
 
@@ -115,8 +127,8 @@ class SharedProcessPool:
         """
         Submit a task to the corresponding task queue of the stage.
         """
-        future = Future()
-        task = (process_fn, args, {}, future)
+        future = SerializableFuture(self._context.Manager())
+        task = (process_fn, args, future)
         self._task_queues[stage_name].put(task)
 
         return future
@@ -137,10 +149,13 @@ class SharedProcessPool:
         self._total_usage = new_total_usage
 
         allowed_processes_num = max(1, int(self._total_max_workers * percentage))
-        self._stage_semaphores[stage_name] = Semaphore(allowed_processes_num)
+        self._stage_semaphores[stage_name] = self._manager.Semaphore(allowed_processes_num)
 
         if stage_name not in self._task_queues:
-            self._task_queues[stage_name] = self._context.Queue()
+            self._task_queues[stage_name] = self._manager.Queue()
+
+        logger.debug("stage_usage: %s", self._stage_usage)
+        logger.debug("stage semaphores: %s", allowed_processes_num)
 
     def shutdown(self):
 
@@ -153,7 +168,10 @@ class SharedProcessPool:
             p.join()
             logger.debug("Process %s/%s has been terminated.", i + 1, self._total_max_workers)
 
+        self._manager.shutdown()
+        self._shutdown = True
         logger.debug("Process pool has been terminated.")
 
     def __del__(self):
-        self.shutdown()
+        if not self._shutdown:
+            self.shutdown()
