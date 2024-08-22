@@ -28,7 +28,6 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.io import serializers
-from morpheus.io.utils import get_df_pkg
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
@@ -37,6 +36,7 @@ from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import HttpParseResponse
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import get_df_pkg
 
 logger = logging.getLogger(__name__)
 

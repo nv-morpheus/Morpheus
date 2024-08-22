@@ -139,25 +139,6 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
     return performed_truncation
 
 
-def get_df_pkg(config: Config) -> types.ModuleType:
-    """
-    Return the appropriate DataFrame package based on the execution mode.
-    """
-    if config.execution_mode == ExecutionMode.GPU:
-        import cudf
-        return cudf
-
-    return pd
-
-
-def get_df_class(config: Config) -> type[DataFrameType]:
-    """
-    Return the appropriate DataFrame class based on the execution mode.
-    """
-    df_pkg = get_df_pkg(config)
-    return df_pkg.DataFrame
-
-
 def get_json_reader(config: Config) -> typing.Callable[..., DataFrameType]:
     """
     Return the appropriate JSON reader based on the execution mode.

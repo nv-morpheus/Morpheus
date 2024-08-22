@@ -17,6 +17,13 @@ import types
 import typing
 from collections import defaultdict
 
+import pandas as pd
+
+from morpheus.config import Config
+from morpheus.config import ExecutionMode
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import SeriesType
+
 # pylint: disable=invalid-name
 T_co = typing.TypeVar("T_co", covariant=True)
 
@@ -162,3 +169,29 @@ def get_full_qualname(klass: type) -> str:
     if module == '__builtin__':
         return klass.__qualname__
     return module + '.' + klass.__qualname__
+
+
+def get_df_pkg(config: Config) -> types.ModuleType:
+    """
+    Return the appropriate DataFrame package based on the execution mode.
+    """
+    if config.execution_mode == ExecutionMode.GPU:
+        import cudf
+        return cudf
+
+    return pd
+
+
+def get_df_class(config: Config) -> type[DataFrameType]:
+    """
+    Return the appropriate DataFrame class based on the execution mode.
+    """
+    df_pkg = get_df_pkg(config)
+    return df_pkg.DataFrame
+
+
+def is_cudf_type(obj: typing.Any) -> bool:
+    """
+    Check if a given object (DataFrame, Series, RangeIndex etc...) is a cuDF type.
+    """
+    return "cudf" in str(type(obj))
