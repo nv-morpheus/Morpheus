@@ -25,8 +25,10 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 
+#include <atomic>   // for atomic
 #include <cstdlib>  // for getenv
 #include <memory>
+#include <mutex>
 #include <ostream>  // Needed for logging
 #include <utility>  // for move
 /*
@@ -36,19 +38,37 @@
  */
 #include "cudf_helpers_api.h"
 
+namespace {
+/*
+ * We want to prevent calling import_morpheus___lib__cudf_helpers() concurrently which is the purpose of the mutex.
+ * Although it is safe to call import_morpheus___lib__cudf_helpers() multiple times, we would still like to avoid it
+ * along with the call to std::getenv(), the atomic bool provides a cheap way to check if the library has been loaded.
+ */
+std::atomic<bool> g_cudf_helpers_loaded = false;
+std::mutex g_cudf_helpers_load_mutex;
+}  // namespace
+
 namespace morpheus {
 
 void CudfHelper::load()
 {
-    // Avoid loading cudf_helpers if we are in a sphinx build
-    if (std::getenv("MORPHEUS_IN_SPHINX_BUILD") == nullptr)
+    if (!g_cudf_helpers_loaded)
     {
-        if (import_morpheus___lib__cudf_helpers() != 0)
+        // Avoid loading cudf_helpers if we are in a sphinx build
+        if (std::getenv("MORPHEUS_IN_SPHINX_BUILD") == nullptr)
         {
-            pybind11::error_already_set ex;
+            std::lock_guard<std::mutex> guard(g_cudf_helpers_load_mutex);
+            if (import_morpheus___lib__cudf_helpers() != 0)
+            {
+                pybind11::error_already_set ex;
 
-            LOG(ERROR) << "Could not load cudf_helpers library: " << ex.what();
-            throw ex;
+                LOG(ERROR) << "Could not load cudf_helpers library: " << ex.what();
+                throw ex;
+            }
+            else
+            {
+                g_cudf_helpers_loaded = true;
+            }
         }
     }
 }
