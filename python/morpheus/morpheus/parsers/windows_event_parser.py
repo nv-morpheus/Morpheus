@@ -16,10 +16,11 @@ import logging
 import os
 import typing
 
-import cudf
-
 import morpheus
 from morpheus.parsers.event_parser import EventParser
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import SeriesType
+from morpheus.utils.type_utils import get_df_pkg_from_obj
 
 log = logging.getLogger(__name__)
 
@@ -41,17 +42,17 @@ class WindowsEventParser(EventParser):
         self._event_regex = self._load_regex_yaml(regex_filepath)
         EventParser.__init__(self, self.get_columns(), self.EVENT_NAME)
 
-    def parse(self, text: cudf.Series) -> cudf.Series:
+    def parse(self, text: SeriesType) -> DataFrameType:
         """Parses the Windows raw event.
 
         Parameters
         ----------
-        text : cudf.Series
+        text : SeriesType
             Raw event log text to be parsed
 
         Returns
         -------
-        cudf.DataFrame
+        DataFrameType
             Parsed logs dataframe
         """
         # Clean raw data to be consistent.
@@ -65,23 +66,25 @@ class WindowsEventParser(EventParser):
                 temp = self.parse_raw_event(input_chunk, self._event_regex[eventcode])
                 if not temp.empty:
                     output_chunks.append(temp)
-        parsed_dataframe = cudf.concat(output_chunks)
+
+        df_pkg = get_df_pkg_from_obj(text)
+        parsed_dataframe = df_pkg.concat(output_chunks)
         # Replace null values with empty.
         parsed_dataframe = parsed_dataframe.fillna("")
         return parsed_dataframe
 
-    def clean_raw_data(self, text: cudf.Series) -> cudf.Series:
+    def clean_raw_data(self, text: SeriesType) -> SeriesType:
         """
         Lower casing and replacing escape characters.
 
         Parameters
         ----------
-        text : cudf.Series
+        text : SeriesType
             Raw event log text to be clean
 
         Returns
         -------
-        cudf.Series
+        SeriesType
             Clean raw event log text
         """
         text = (text.str.lower().str.replace("\\\\t", "").str.replace("\\\\r", "").str.replace("\\\\n", "|"))

@@ -241,3 +241,14 @@ def is_cudf_type(obj: typing.Any) -> bool:
     Check if a given object (DataFrame, Series, RangeIndex etc...) is a cuDF type.
     """
     return "cudf" in str(type(obj))
+
+
+def get_df_pkg_from_obj(obj: typing.Any) -> types.ModuleType:
+    """
+    Return the appropriate DataFrame package based on the DataFrame object.
+    """
+    if is_cudf_type(obj):
+        import cudf
+        return cudf
+
+    return pd
