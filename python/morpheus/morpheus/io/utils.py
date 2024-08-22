@@ -16,7 +16,6 @@
 
 import functools
 import logging
-import types
 import typing
 
 import pandas as pd
@@ -25,6 +24,7 @@ from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import SeriesType
+from morpheus.utils.type_utils import is_cudf_type
 
 if typing.TYPE_CHECKING:
     import cudf
@@ -108,7 +108,7 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
     """
 
     performed_truncation = False
-    is_cudf = not isinstance(df, pd.DataFrame)
+    is_cudf = is_cudf_type(df)
 
     for (col, max_bytes) in column_max_bytes.items():
         series: SeriesType = df[col]
