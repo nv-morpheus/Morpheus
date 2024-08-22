@@ -21,7 +21,9 @@ import queue
 import time
 from threading import Lock
 
-# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# pylint: disable=W0201
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -77,23 +79,32 @@ class SharedProcessPool:
         self._total_max_workers = total_max_workers
         self._context = mp.get_context("fork")
         self._manager = self._context.Manager()
-        self._total_usage = 0.0  # the percentage of processes that's currently in use
-        self._stage_usage = {}  # maintain the percentage of processes used by each stage
-        self._task_queues = self._manager.dict()  # maintain a separate task queue for each stage
-        self._stage_semaphores = self._manager.dict()  # maintain a semaphore for each stage
+        self._total_usage = 0.0
+        self._stage_usage = {}
+        self._task_queues = self._manager.dict()
+        self._stage_semaphores = self._manager.dict()
         self._processes = []
 
+        # TODO: Test the performance of reading the shared variable in each worker loop and try some alternatives
+        self._shutdown_in_progress = self._manager.Value("b", False)
+
         for i in range(total_max_workers):
-            process = self._context.Process(target=self._worker, args=(self._task_queues, self._stage_semaphores))
+            process = self._context.Process(target=self._worker,
+                                            args=(self._task_queues, self._stage_semaphores,
+                                                  self._shutdown_in_progress))
             process.start()
             self._processes.append(process)
             logger.debug("Process %s/%s has been started.", i + 1, total_max_workers)
 
     @staticmethod
-    def _worker(task_queues, stage_semaphores):
+    def _worker(task_queues, stage_semaphores, shutdown_in_progress):
         logger.debug("Worker process %s has been started.", os.getpid())
 
         while True:
+            if shutdown_in_progress.value:
+                logger.debug("Worker process %s has been terminated.", os.getpid())
+                return
+
             # iterate over every semaphore
             for stage_name, task_queue in task_queues.items():
                 semaphore = stage_semaphores[stage_name]
@@ -108,9 +119,9 @@ class SharedProcessPool:
                     semaphore.release()
                     continue
 
-                if task is None:  # Stop signal
-                    semaphore.release()
-                    return
+                # if task is None:  # Stop signal
+                #     semaphore.release()
+                #     return
 
                 process_fn, args, future = task
                 try:
@@ -121,7 +132,7 @@ class SharedProcessPool:
 
                 semaphore.release()
 
-                time.sleep(0.1)  # avoid busy-waiting
+                time.sleep(0.1)  # Avoid busy-waiting
 
     def submit_task(self, stage_name, process_fn, *args):
         """
@@ -158,19 +169,20 @@ class SharedProcessPool:
         logger.debug("stage semaphores: %s", allowed_processes_num)
 
     def shutdown(self):
+        if not self._shutdown:
+            self._shutdown_in_progress.value = True
+            # for stage_name, task_queue in self._task_queues.items():
+            #     for _ in range(self._total_max_workers):
+            #         task_queue.put(None)
+            #     logger.debug("Task queue for stage %s has been cleared.", stage_name)
 
-        for stage_name, task_queue in self._task_queues.items():
-            for _ in range(self._total_max_workers):
-                task_queue.put(None)
-            logger.debug("Task queue for stage %s has been cleared.", stage_name)
+            for i, p in enumerate(self._processes):
+                p.join()
+                logger.debug("Process %s/%s has been terminated.", i + 1, self._total_max_workers)
 
-        for i, p in enumerate(self._processes):
-            p.join()
-            logger.debug("Process %s/%s has been terminated.", i + 1, self._total_max_workers)
-
-        self._manager.shutdown()
-        self._shutdown = True
-        logger.debug("Process pool has been terminated.")
+            self._manager.shutdown()
+            self._shutdown = True
+            logger.debug("Process pool has been terminated.")
 
     def __del__(self):
         if not self._shutdown:
