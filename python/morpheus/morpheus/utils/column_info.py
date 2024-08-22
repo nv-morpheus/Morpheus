@@ -471,8 +471,6 @@ class StringCatColumn(ColumnInfo):
 
         first_col = df[self.input_columns[0]]
 
-        print(df)
-
         return first_col.str.cat(others=df[self.input_columns[1:]].astype(str), sep=self.sep)
 
 
