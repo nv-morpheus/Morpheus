@@ -25,8 +25,13 @@ import time
 import types
 import typing
 import warnings
+import sys
 from pathlib import Path
 from unittest import mock
+
+import sys
+if "/home/coder" in sys.path:
+    sys.path.remove("/home/coder")
 
 import pytest
 import requests
