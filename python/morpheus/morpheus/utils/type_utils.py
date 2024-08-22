@@ -22,7 +22,7 @@ import pandas as pd
 from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_aliases import SeriesType
+from morpheus.utils.type_aliases import DataFrameTypeStr
 
 # pylint: disable=invalid-name
 T_co = typing.TypeVar("T_co", covariant=True)
@@ -169,6 +169,17 @@ def get_full_qualname(klass: type) -> str:
     if module == '__builtin__':
         return klass.__qualname__
     return module + '.' + klass.__qualname__
+
+
+def df_type_str_to_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
+    """
+    Return the appropriate DataFrame package based on the DataFrame type string.
+    """
+    if df_type_str == "cudf":
+        import cudf
+        return cudf
+
+    return pd
 
 
 def get_df_pkg(config: Config) -> types.ModuleType:
