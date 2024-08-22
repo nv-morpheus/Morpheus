@@ -23,12 +23,13 @@ from datetime import datetime
 from datetime import timedelta
 from urllib.parse import urlparse
 
+import pandas as pd
 import requests
 import requests_cache
 
-import cudf
-
 from morpheus.messages import MessageMeta
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import DataFrameTypeStr
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +105,8 @@ class RSSController:
                  strip_markup: bool = False,
                  stop_after: int = 0,
                  interval_secs: float = 600,
-                 should_stop_fn: Callable[[], bool] = None):
+                 should_stop_fn: Callable[[], bool] = None,
+                 df_type: DataFrameTypeStr = "cudf"):
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
@@ -140,6 +142,7 @@ class RSSController:
         self._run_indefinitely = run_indefinitely
         self._interval_secs = interval_secs
         self._interval_td = timedelta(seconds=self._interval_secs)
+        self._df_type = df_type
 
         self._enable_cache = enable_cache
 

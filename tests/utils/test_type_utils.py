@@ -14,37 +14,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
 import typing
-from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
 
 import cudf
 
-from morpheus.config import Config
 from morpheus.config import ExecutionMode
+from morpheus.utils.type_aliases import DataFrameTypeStr
+from morpheus.utils.type_utils import df_type_str_to_exec_mode
+from morpheus.utils.type_utils import df_type_str_to_pkg
 from morpheus.utils.type_utils import get_df_class
 from morpheus.utils.type_utils import get_df_pkg
 from morpheus.utils.type_utils import is_cudf_type
 
 
-def test_get_df_class(config: Config):
-    if config.execution_mode == ExecutionMode.GPU:
-        expected = cudf.DataFrame
-    else:
-        expected = pd.DataFrame
-
-    assert get_df_class(config) is expected
+@pytest.mark.parametrize("mode, expected",
+                         [(ExecutionMode.GPU, cudf.DataFrame), (ExecutionMode.CPU, pd.DataFrame),
+                          ("cudf", cudf.DataFrame), ("pandas", pd.DataFrame)])
+def test_get_df_class(mode: typing.Union[ExecutionMode, DataFrameTypeStr], expected: types.ModuleType):
+    assert get_df_class(mode) is expected
 
 
-def test_get_df_pkg(config: Config):
-    if config.execution_mode == ExecutionMode.GPU:
-        expected = cudf
-    else:
-        expected = pd
-
-    assert get_df_pkg(config) is expected
+@pytest.mark.parametrize("mode, expected", [(ExecutionMode.GPU, cudf), (ExecutionMode.CPU, pd), ("cudf", cudf),
+                                            ("pandas", pd)])
+def test_get_df_pkg(mode: typing.Union[ExecutionMode, DataFrameTypeStr], expected: types.ModuleType):
+    assert get_df_pkg(mode) is expected
 
 
 @pytest.mark.parametrize(
@@ -78,3 +75,26 @@ def test_get_df_pkg(config: Config):
 )
 def test_is_cudf_type(obj: typing.Any, expected: bool):
     assert is_cudf_type(obj) == expected
+
+
+@pytest.mark.parametrize("df_type_str, expected", [("cudf", cudf), ("pandas", pd)], ids=["cudf", "pandas"])
+def test_df_type_str_to_pkg(df_type_str: DataFrameTypeStr, expected: types.ModuleType):
+    assert df_type_str_to_pkg(df_type_str) is expected
+
+
+@pytest.mark.parametrize("invalid_type_str", ["invalid", "cuDF", "Pandas"])
+def test_df_type_str_to_pkg_invalid(invalid_type_str: typing.Any):
+    with pytest.raises(ValueError, match="Invalid DataFrame type string"):
+        df_type_str_to_pkg(invalid_type_str)
+
+
+@pytest.mark.parametrize("df_type_str, expected", [("cudf", ExecutionMode.GPU), ("pandas", ExecutionMode.CPU)],
+                         ids=["cudf", "pandas"])
+def test_df_type_str_to_exec_mode(df_type_str: DataFrameTypeStr, expected: ExecutionMode):
+    assert df_type_str_to_exec_mode(df_type_str) == expected
+
+
+@pytest.mark.parametrize("invalid_type_str", ["invalid", "cuDF", "Pandas"])
+def test_df_type_str_to_exec_mode_invalid(invalid_type_str: typing.Any):
+    with pytest.raises(ValueError, match="Invalid DataFrame type string"):
+        df_type_str_to_exec_mode(invalid_type_str)

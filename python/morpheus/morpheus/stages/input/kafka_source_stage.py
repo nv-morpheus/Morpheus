@@ -244,7 +244,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             # multiple threads
             source.launch_options.pe_count = self._max_concurrent
         else:
-            self._json_reader = get_json_reader(self._config)
+            self._json_reader = get_json_reader(self._config.execution_mode)
             source = builder.make_source(self.unique_name, self._source_generator)
 
         return source

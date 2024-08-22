@@ -118,7 +118,7 @@ class HttpServerSinkStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
 
         self._df_serializer_fn = df_serializer_fn or self._default_df_serializer
 
-        self._df_pkg = get_df_pkg(config)
+        self._df_pkg = get_df_pkg(config.execution_mode)
 
         # FiberQueue doesn't have a way to check the size, nor does it have a way to check if it's empty without
         # attempting to perform a read. We'll keep track of the size ourselves.

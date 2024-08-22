@@ -149,7 +149,7 @@ class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
         if payload_to_df_fn is not None:
             self._payload_to_df_fn = payload_to_df_fn
         else:
-            reader = get_json_reader(self._config)
+            reader = get_json_reader(self._config.execution_mode)
             self._payload_to_df_fn = lambda payload, lines: reader(payload, lines=lines)
 
     @property

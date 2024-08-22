@@ -269,7 +269,7 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
                         self._processing = False
 
     def _set_default_payload_to_df_fn(self):
-        reader = get_json_reader(self._config)
+        reader = get_json_reader(self._config.execution_mode)
         self._payload_to_df_fn = lambda payload, lines: reader(payload, lines=lines)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:

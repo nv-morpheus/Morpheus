@@ -82,7 +82,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
         self._server_task: asyncio.Task = None
         self._server_close_event: asyncio.Event = None
 
-        self._df_class: type[DataFrameType] = get_df_class(c)
+        self._df_class: type[DataFrameType] = get_df_class(c.execution_mode)
 
     @property
     def name(self) -> str:

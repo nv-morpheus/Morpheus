@@ -19,7 +19,6 @@ from collections import defaultdict
 
 import pandas as pd
 
-from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import DataFrameTypeStr
@@ -171,6 +170,19 @@ def get_full_qualname(klass: type) -> str:
     return module + '.' + klass.__qualname__
 
 
+def df_type_str_to_exec_mode(df_type_str: DataFrameTypeStr) -> ExecutionMode:
+    """
+    Return the appropriate execution mode based on the DataFrame type string.
+    """
+    if df_type_str == "cudf":
+        return ExecutionMode.GPU
+    elif df_type_str == "pandas":
+        return ExecutionMode.CPU
+
+    valid_values = ", ".join(typing.get_args(DataFrameTypeStr))
+    raise ValueError(f"Invalid DataFrame type string: {df_type_str}, valid values are: {valid_values}")
+
+
 def df_type_str_to_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
     """
     Return the appropriate DataFrame package based on the DataFrame type string.
@@ -178,26 +190,42 @@ def df_type_str_to_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
     if df_type_str == "cudf":
         import cudf
         return cudf
+    elif df_type_str == "pandas":
+        return pd
 
-    return pd
+    valid_values = ", ".join(typing.get_args(DataFrameTypeStr))
+    raise ValueError(f"Invalid DataFrame type string: {df_type_str}, valid values are: {valid_values}")
 
 
-def get_df_pkg(config: Config) -> types.ModuleType:
+@typing.overload
+def get_df_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
+    ...
+
+
+def get_df_pkg(execution_mode: ExecutionMode) -> types.ModuleType:
     """
     Return the appropriate DataFrame package based on the execution mode.
     """
-    if config.execution_mode == ExecutionMode.GPU:
+    if not isinstance(execution_mode, ExecutionMode):
+        execution_mode = df_type_str_to_exec_mode(execution_mode)
+
+    if execution_mode == ExecutionMode.GPU:
         import cudf
         return cudf
 
     return pd
 
 
-def get_df_class(config: Config) -> type[DataFrameType]:
+@typing.overload
+def get_df_class(df_type_str: DataFrameTypeStr) -> type[DataFrameType]:
+    ...
+
+
+def get_df_class(execution_mode: ExecutionMode) -> type[DataFrameType]:
     """
     Return the appropriate DataFrame class based on the execution mode.
     """
-    df_pkg = get_df_pkg(config)
+    df_pkg = get_df_pkg(execution_mode)
     return df_pkg.DataFrame
 
 

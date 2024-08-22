@@ -20,10 +20,11 @@ import typing
 
 import pandas as pd
 
-from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import DataFrameTypeStr
 from morpheus.utils.type_aliases import SeriesType
+from morpheus.utils.type_utils import df_type_str_to_exec_mode
 from morpheus.utils.type_utils import is_cudf_type
 
 if typing.TYPE_CHECKING:
@@ -139,11 +140,19 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
     return performed_truncation
 
 
-def get_json_reader(config: Config) -> typing.Callable[..., DataFrameType]:
+@typing.overload
+def get_json_reader(df_type_str: DataFrameTypeStr) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+def get_json_reader(execution_mode: ExecutionMode) -> typing.Callable[..., DataFrameType]:
     """
     Return the appropriate JSON reader based on the execution mode.
     """
-    if config.execution_mode == ExecutionMode.GPU:
+    if not isinstance(execution_mode, ExecutionMode):
+        execution_mode = df_type_str_to_exec_mode(execution_mode)
+
+    if (execution_mode == ExecutionMode.GPU):
         import cudf
         reader = functools.partial(cudf.read_json, engine='cudf')
     else:
