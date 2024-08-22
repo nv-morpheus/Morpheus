@@ -183,6 +183,13 @@ def df_type_str_to_exec_mode(df_type_str: DataFrameTypeStr) -> ExecutionMode:
     raise ValueError(f"Invalid DataFrame type string: {df_type_str}, valid values are: {valid_values}")
 
 
+def exec_mode_to_df_type_str(execution_mode: ExecutionMode) -> DataFrameTypeStr:
+    if execution_mode == ExecutionMode.GPU:
+        return "cudf"
+
+    return "pandas"
+
+
 def df_type_str_to_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
     """
     Return the appropriate DataFrame package based on the DataFrame type string.

@@ -26,6 +26,7 @@ from morpheus.config import ExecutionMode
 from morpheus.utils.type_aliases import DataFrameTypeStr
 from morpheus.utils.type_utils import df_type_str_to_exec_mode
 from morpheus.utils.type_utils import df_type_str_to_pkg
+from morpheus.utils.type_utils import exec_mode_to_df_type_str
 from morpheus.utils.type_utils import get_df_class
 from morpheus.utils.type_utils import get_df_pkg
 from morpheus.utils.type_utils import is_cudf_type
@@ -98,3 +99,9 @@ def test_df_type_str_to_exec_mode(df_type_str: DataFrameTypeStr, expected: Execu
 def test_df_type_str_to_exec_mode_invalid(invalid_type_str: typing.Any):
     with pytest.raises(ValueError, match="Invalid DataFrame type string"):
         df_type_str_to_exec_mode(invalid_type_str)
+
+
+@pytest.mark.parametrize("exec_mode, expected", [(ExecutionMode.GPU, "cudf"), (ExecutionMode.CPU, "pandas")],
+                         ids=["GPU", "CPU"])
+def test_exec_mode_to_df_type_str(exec_mode: ExecutionMode, expected: DataFrameTypeStr):
+    assert exec_mode_to_df_type_str(exec_mode) == expected
