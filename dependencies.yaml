@@ -364,6 +364,7 @@ dependencies:
       - output_types: [conda]
         packages:
           - &nodejs nodejs=18.*
+          - &pypdfium2 pypdfium2=4.30
           - pytest-asyncio
           - pytest-benchmark=4.0
           - pytest-cov
@@ -409,6 +410,7 @@ dependencies:
           - onnx=1.15
           - openai=1.13
           - pypdf=3.17.4
+          - *pypdfium2
           - *python-docx
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
           - sentence-transformers=2.7
