@@ -31,8 +31,8 @@ from langchain_core.tools import BaseTool
 from _utils.llm import execute_node
 from _utils.llm import mk_mock_langchain_tool
 from _utils.llm import mk_mock_openai_response
-from morpheus.llm import LLMNodeBase
-from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
+from morpheus_llm.llm import LLMNodeBase
+from morpheus_llm.llm.nodes.langchain_agent_node import LangChainAgentNode
 
 
 def test_constructor(mock_agent_executor: mock.MagicMock):
