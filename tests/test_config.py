@@ -17,6 +17,7 @@
 import json
 import os
 from unittest import mock
+
 import pytest
 
 import morpheus
@@ -106,11 +107,13 @@ def test_to_string(config):
     assert isinstance(conf_str, str)
     assert isinstance(json.loads(conf_str), dict)
 
+
 def test_warning_model_batch_size_less_than_pipeline_batch_size():
     config = morpheus.config.Config()
     config.pipeline_batch_size = 256
     with pytest.warns():
         config.model_max_batch_size = 257
+
 
 def test_warning_pipeline_batch_size_less_than_model_batch_size():
     config = morpheus.config.Config()
