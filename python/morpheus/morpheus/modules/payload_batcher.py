@@ -19,8 +19,6 @@ import warnings
 import mrc
 from mrc.core import operators as ops
 
-import cudf
-
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.utils.control_message_utils import cm_default_failure_context_manager
@@ -28,6 +26,9 @@ from morpheus.utils.control_message_utils import cm_skip_processing_if_failed
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import PAYLOAD_BATCHER
 from morpheus.utils.module_utils import register_module
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import get_df_pkg_from_obj
+from morpheus.utils.type_utils import is_cudf_type
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +104,7 @@ def payload_batcher(builder: mrc.Builder):
 
     @cm_skip_processing_if_failed
     @cm_default_failure_context_manager(raise_on_failure=raise_on_failure)
-    def on_next(control_message: ControlMessage) -> typing.List[ControlMessage]:
+    def on_next(control_message: ControlMessage) -> list[ControlMessage]:
         nonlocal disable_max_batch_size
 
         message_meta = control_message.payload()
@@ -119,7 +120,7 @@ def payload_batcher(builder: mrc.Builder):
 
         return control_messages
 
-    def _batch_dataframe(df: cudf.DataFrame) -> typing.List[cudf.DataFrame]:
+    def _batch_dataframe(df: DataFrameType) -> list[DataFrameType]:
         nonlocal max_batch_size
 
         dfm_length = len(df)
@@ -131,7 +132,7 @@ def payload_batcher(builder: mrc.Builder):
             dfs = [df.iloc[i * max_batch_size:(i + 1) * max_batch_size] for i in range(num_batches)]
         return dfs
 
-    def _batch_dataframe_by_group(df: cudf.DataFrame) -> typing.List[cudf.DataFrame]:
+    def _batch_dataframe_by_group(df: DataFrameType) -> list[DataFrameType]:
         nonlocal max_batch_size
         nonlocal group_by_columns
         nonlocal timestamp_column_name
@@ -143,9 +144,14 @@ def payload_batcher(builder: mrc.Builder):
         if has_timestamp_column:
 
             # Apply timestamp pattern and group by the formatted timestamp column
-            df[period_column] = cudf.to_datetime(df[timestamp_column_name], format=timestamp_pattern)
-            # Period object conversion is not supported in cudf
-            df[period_column] = df[period_column].to_pandas().dt.to_period(period).astype('str')
+            df_pkg = get_df_pkg_from_obj(df)
+            period_series = df_pkg.to_datetime(df[timestamp_column_name], format=timestamp_pattern)
+
+            if is_cudf_type(df):
+                # Period object conversion is not supported in cudf
+                period_series = period_series.to_pandas()
+
+            df[period_column] = period_series.dt.to_period(period).astype('str')
 
         if len(group_by_columns) == 1:
             # Avoid warning from cudf regardning an upcoming change of behavior when applying a groupby to a single
