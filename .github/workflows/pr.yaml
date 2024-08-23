@@ -43,6 +43,14 @@ permissions:
 
 jobs:
 
+  pr-builder:
+    needs:
+      - prepare
+      - checks
+      - ci_pipe
+    secrets: inherit
+    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.02
+
   prepare:
     # Executes the get-pr-info action to determine if the PR has the skip-ci label, if the action fails we assume the
     # PR does not have the label
@@ -91,13 +99,3 @@ jobs:
       test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-240614
     secrets:
       NGC_API_KEY: ${{ secrets.NGC_API_KEY }}
-
-  pr-builder:
-    # Always run this step even if others are skipped or cancelled
-    if: '!cancelled()'
-    needs:
-      - prepare
-      - checks
-      - ci_pipe
-    secrets: inherit
-    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.02
