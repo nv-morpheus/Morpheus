@@ -31,9 +31,8 @@ from mlflow.types import Schema
 from mlflow.types.utils import _infer_pandas_column
 from mlflow.types.utils import _infer_schema
 
-import cudf
-
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.utils.type_utils import is_cudf_type
 
 if typing.TYPE_CHECKING:
     from morpheus.models.dfencoder import AutoEncoder
@@ -270,7 +269,7 @@ class MLFlowModelWriterController:
                 # prepare_df to show the actual inputs to the model (any extra are discarded)
                 input_df = message.get_meta().iloc[0:1]
 
-                if isinstance(input_df, cudf.DataFrame):
+                if is_cudf_type(input_df):
                     input_df = input_df.to_pandas()
 
                 prepared_df = model.prepare_df(input_df)
