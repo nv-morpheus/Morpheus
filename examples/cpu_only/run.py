@@ -121,7 +121,7 @@ def run_pipeline(log_level: int, use_python: bool, use_cpu_only: bool, in_file: 
 
     pipeline.run()
 
-    known_gpu_packages = ['cudf', 'cupy']
+    known_gpu_packages = ['cudf', 'cuml', 'cupy', 'tensorrt', 'torch']
     known_gpu_packages_loaded = [pkg in sys.modules.keys() for pkg in known_gpu_packages]
 
     if any(known_gpu_packages_loaded):
