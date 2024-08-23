@@ -22,8 +22,6 @@ import mrc
 from mrc.core import operators as ops
 from pydantic import ValidationError
 
-import cudf
-
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
@@ -35,6 +33,8 @@ from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import WRITE_TO_VECTOR_DB
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import get_df_pkg_from_obj
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ def preprocess_vdb_resources(service, recreate: bool, resource_schemas: dict):
 class AccumulationStats:
     msg_count: int
     last_insert_time: float
-    data: list[cudf.DataFrame]
+    data: list[DataFrameType]
 
 
 @register_module(WRITE_TO_VECTOR_DB, MORPHEUS_MODULE_NAMESPACE)
@@ -143,15 +143,18 @@ def _write_to_vector_db(builder: mrc.Builder):
     def on_completed():
         final_df_references = []
 
-        # Pushing remaining messages
-        for key, accum_stats in accumulator_dict.items():
-            try:
-                if accum_stats.data:
-                    merged_df = cudf.concat(accum_stats.data)
-                    service.insert_dataframe(name=key, df=merged_df)
-                    final_df_references.append(accum_stats.data)
-            except Exception as e:
-                logger.error("Unable to upload dataframe entries to vector database: %s", e)
+        if len(accumulator_dict):
+            df_pkg = get_df_pkg_from_obj(next(iter(accumulator_dict.values())))
+
+            # Pushing remaining messages
+            for key, accum_stats in accumulator_dict.items():
+                try:
+                    if accum_stats.data:
+                        merged_df = df_pkg.concat(accum_stats.data)
+                        service.insert_dataframe(name=key, df=merged_df)
+                        final_df_references.append(accum_stats.data)
+                except Exception as e:
+                    logger.error("Unable to upload dataframe entries to vector database: %s", e)
         # Close vector database service connection
         service.close()
 
@@ -183,9 +186,6 @@ def _write_to_vector_db(builder: mrc.Builder):
             df, msg_resource_target = extract_df(msg)
 
             if df is not None and not df.empty:
-                if (not isinstance(df, cudf.DataFrame)):
-                    df = cudf.DataFrame(df)
-
                 df_size = len(df)
                 current_time = time.time()
 
@@ -210,7 +210,8 @@ def _write_to_vector_db(builder: mrc.Builder):
                                                                (current_time - accum_stats.last_insert_time)
                                                                >= write_time_interval):
                         if accum_stats.data:
-                            merged_df = cudf.concat(accum_stats.data)
+                            df_pkg = get_df_pkg_from_obj(accum_stats.data)
+                            merged_df = df_pkg.concat(accum_stats.data)
 
                             # pylint: disable=not-a-mapping
                             service.insert_dataframe(name=key, df=merged_df, **resource_kwargs)
