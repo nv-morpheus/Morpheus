@@ -96,6 +96,10 @@ class SharedProcessPool:
             self._processes.append(process)
             logger.debug("Process %s/%s has been started.", i + 1, total_max_workers)
 
+    @property
+    def total_max_workers(self):
+        return self._total_max_workers
+    
     @staticmethod
     def _worker(task_queues, stage_semaphores, shutdown_in_progress):
         logger.debug("Worker process %s has been started.", os.getpid())
