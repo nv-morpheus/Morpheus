@@ -34,7 +34,9 @@ from mlflow.types.utils import _infer_schema
 import cudf
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.models.dfencoder import AutoEncoder
+
+if typing.TYPE_CHECKING:
+    from morpheus.models.dfencoder import AutoEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -220,7 +222,7 @@ class MLFlowModelWriterController:
 
         user = message.meta.user_id
 
-        model: AutoEncoder = message.model
+        model: "AutoEncoder" = message.model
 
         model_path = "dfencoder"
         reg_model_name = self.user_id_to_model(user_id=user)
