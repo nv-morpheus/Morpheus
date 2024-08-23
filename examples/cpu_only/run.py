@@ -14,6 +14,7 @@
 
 import logging
 import pathlib
+import sys
 import typing
 
 import click
@@ -84,7 +85,7 @@ def run_pipeline(log_level: int, use_python: bool, use_cpu_only: bool, in_file: 
 
     pipeline.set_source(FileSourceStage(config, filename=in_file))
 
-    @stage
+    @stage(execution_modes=(execution_mode, ))
     def print_msg(msg: typing.Any) -> typing.Any:
         log_msg = [f"Receive a message of type {type(msg)}"]
         if isinstance(msg, MessageMeta):
@@ -99,7 +100,7 @@ def run_pipeline(log_level: int, use_python: bool, use_cpu_only: bool, in_file: 
     # TODO: Remove if PR #1803 is merged first
     pipeline.add_stage(DeserializeStage(config, message_type=ControlMessage))
 
-    @stage
+    @stage(execution_modes=(execution_mode, ))
     def calculate_totals(msg: ControlMessage, *, total_column_name: str = "total") -> ControlMessage:
         meta = msg.payload()
 
@@ -119,6 +120,20 @@ def run_pipeline(log_level: int, use_python: bool, use_cpu_only: bool, in_file: 
                 config.execution_mode)
 
     pipeline.run()
+
+    known_gpu_packages = ['cudf', 'cupy']
+    known_gpu_packages_loaded = [pkg in sys.modules.keys() for pkg in known_gpu_packages]
+
+    if any(known_gpu_packages_loaded):
+        for (i, pkg) in enumerate(known_gpu_packages):
+            if known_gpu_packages_loaded[i]:
+                msg = f"{pkg} is loaded"
+                if use_cpu_only:
+                    logger.error(msg)
+                else:
+                    logger.info(msg)
+    else:
+        logger.infp("No GPU packages loaded")
 
 
 if __name__ == "__main__":
