@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import wraps
 from typing import Dict
+import pypdfium2 as libpdfium
 from typing import List
 
 import fsspec
