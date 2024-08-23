@@ -171,7 +171,15 @@ def _converter_error_handler(func: typing.Callable) -> typing.Callable:
 
 @_converter_error_handler
 def _pdf_to_text_converter(input_info: ConverterInputInfo) -> str:
-    raise NotImplementedError("PDF to text conversion is not implemented.")
+    text = ""
+    pdf_document = libpdfium.PdfDocument(pdf_stream)
+    for page_idx in range(len(pdf_document)):
+        page = doc.get_page(page_idx)
+        textpage = page.get_textpage()
+        page_text = textpage.get_text_bounded()
+        text += page_text
+        
+    return text
 
 
 @_converter_error_handler
