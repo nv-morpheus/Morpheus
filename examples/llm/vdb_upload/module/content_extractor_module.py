@@ -22,7 +22,6 @@ from functools import wraps
 from typing import Dict
 from typing import List
 
-import fitz
 import fsspec
 import mrc
 import mrc.core.operators as ops
@@ -171,12 +170,7 @@ def _converter_error_handler(func: typing.Callable) -> typing.Callable:
 
 @_converter_error_handler
 def _pdf_to_text_converter(input_info: ConverterInputInfo) -> str:
-    text = ""
-    pdf_document = fitz.open(stream=input_info.io_bytes, filetype="pdf")
-    for page_num in range(pdf_document.page_count):
-        page = pdf_document[page_num]
-        text += page.get_text()
-    return text
+    raise NotImplementedError("PDF to text conversion is not implemented.")
 
 
 @_converter_error_handler

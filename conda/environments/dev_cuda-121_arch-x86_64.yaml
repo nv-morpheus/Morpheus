@@ -98,7 +98,6 @@ dependencies:
 - yapf=0.40.1
 - zlib=1.2.13
 - pip:
-  - PyMuPDF==1.23.*
   - databricks-cli < 0.100
   - databricks-connect
   - milvus==2.3.5
