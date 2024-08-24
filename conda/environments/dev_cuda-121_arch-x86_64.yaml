@@ -66,6 +66,7 @@ dependencies:
 - pybind11-stubgen=0.10.5
 - pydantic
 - pylint=3.0.3
+- pypdfium2=4.30
 - pytest-asyncio
 - pytest-benchmark=4.0
 - pytest-cov
@@ -100,7 +101,6 @@ dependencies:
 - yapf=0.40.1
 - zlib=1.2.13
 - pip:
-  - PyMuPDF==1.23.*
   - databricks-cli < 0.100
   - databricks-connect
   - milvus==2.3.5

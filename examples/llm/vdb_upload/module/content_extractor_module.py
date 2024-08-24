@@ -22,11 +22,11 @@ from functools import wraps
 from typing import Dict
 from typing import List
 
-import fitz
 import fsspec
 import mrc
 import mrc.core.operators as ops
 import pandas as pd
+import pypdfium2 as libpdfium
 from docx import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
@@ -172,10 +172,13 @@ def _converter_error_handler(func: typing.Callable) -> typing.Callable:
 @_converter_error_handler
 def _pdf_to_text_converter(input_info: ConverterInputInfo) -> str:
     text = ""
-    pdf_document = fitz.open(stream=input_info.io_bytes, filetype="pdf")
-    for page_num in range(pdf_document.page_count):
-        page = pdf_document[page_num]
-        text += page.get_text()
+    pdf_document = libpdfium.PdfDocument(input_info.io_bytes)
+    for page_idx in range(len(pdf_document)):
+        page = pdf_document.get_page(page_idx)
+        textpage = page.get_textpage()
+        page_text = textpage.get_text_bounded()
+        text += page_text
+
     return text
 
 
