@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 import typing
 
 from morpheus.pipeline.stage_schema import StageSchema
@@ -12,12 +12,22 @@ InputT = typing.TypeVar('InputT')
 OutputT = typing.TypeVar('OutputT')
 
 
-class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT]):
+class MultiProcessingBaseStage(SinglePortStage, ABC, typing.Generic[InputT, OutputT]):
 
-    def __init__(self, *, c: Config, process_pool_usage: float):
+    def __init__(self, *, c: Config, process_pool_usage: float, max_in_flight_messages: int = None):
         super().__init__(c=c)
 
         self._process_pool_usage = process_pool_usage
+        self._shared_process_pool = SharedProcessPool()
+        self._shared_process_pool.set_usage(self.name, self._process_pool_usage)
+
+        if max_in_flight_messages is None:
+            # set the multiplier to 1.5 to keep the workers busy
+            self._max_in_flight_messages = int(self._shared_process_pool.total_max_workers * 1.5)
+        else:
+            self._max_in_flight_messages = max_in_flight_messages
+
+        # self._max_in_flight_messages = 1
 
     @property
     def name(self) -> str:
@@ -27,11 +37,24 @@ class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT])
         return (InputT, )
 
     def compute_schema(self, schema: StageSchema):
-        return super().compute_schema(schema)
+        for (port_idx, port_schema) in enumerate(schema.input_schemas):
+            schema.output_schemas[port_idx].set_type(port_schema.get_type())
 
     @abstractmethod
     def _on_data(self, data: InputT) -> OutputT:
         pass
+
+    def supports_cpp_node(self):
+        return False
+
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.name, ops.map(self._on_data))
+        node.launch_options.pe_count = self._max_in_flight_messages
+
+        builder.make_edge(input_node, node)
+
+        return node
+
 
 
 class MultiProcessingStage(MultiProcessingBaseStage[InputT, OutputT]):
@@ -42,16 +65,9 @@ class MultiProcessingStage(MultiProcessingBaseStage[InputT, OutputT]):
                  process_pool_usage: float,
                  process_fn: typing.Callable[[InputT], OutputT],
                  max_in_flight_messages: int = None):
-        super().__init__(c=c, process_pool_usage=process_pool_usage)
+        super().__init__(c=c, process_pool_usage=process_pool_usage, max_in_flight_messages=max_in_flight_messages)
 
         self._process_fn = process_fn
-        self._shared_process_pool = SharedProcessPool()
-        self._shared_process_pool.set_usage(self.name, self._process_pool_usage)
-        if max_in_flight_messages is None:
-            # set the multiplier to 1.5 to keep the workers busy
-            self._max_in_flight_messages = self._shared_process_pool.total_max_workers * 1.5
-        else:
-            self._max_in_flight_messages = max_in_flight_messages
 
     @property
     def name(self) -> str:
@@ -68,14 +84,6 @@ class MultiProcessingStage(MultiProcessingBaseStage[InputT, OutputT]):
     def create(*, c: Config, process_fn: typing.Callable[[InputT], OutputT], process_pool_usage: float):
 
         return MultiProcessingStage[InputT, OutputT](c=c, process_pool_usage=process_pool_usage, process_fn=process_fn)
-
-    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        node = builder.make_node(self.name, ops.map(self._on_data))
-        node.lanuch_options.pe_count = self._max_in_flight_messages
-
-        builder.make_edge(input_node, node)
-
-        return node
 
 
 # pipe = LinearPipeline(config)
