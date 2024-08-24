@@ -14,6 +14,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+
+# Morpheus 24.06.01 (23 Aug 2024)
+
+## 🛠️ Improvements
+- Replace pdf parsing libs ([#1861](https://github.com/nv-morpheus/Morpheus/pull/1861)) [@dagardner-nv](https://github.com/dagardner-nv)
+
 # Morpheus 24.06.00 (03 Jul 2024)
 ## 🚨 Breaking Changes
 
