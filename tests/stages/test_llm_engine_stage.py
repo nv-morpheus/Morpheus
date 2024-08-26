@@ -17,10 +17,10 @@
 from unittest import mock
 
 from morpheus.config import Config
-from morpheus.llm import LLMEngine
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
+from morpheus_llm.llm import LLMEngine
+from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
 
 def test_constructor(config: Config):

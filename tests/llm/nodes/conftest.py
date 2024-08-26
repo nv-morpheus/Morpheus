@@ -20,7 +20,7 @@ import pytest
 
 @pytest.fixture(name="mock_llm_client")
 def mock_llm_client_fixture():
-    from morpheus.llm.services.llm_service import LLMClient
+    from morpheus_llm.llm.services.llm_service import LLMClient
     mock_client = mock.MagicMock(LLMClient)
     mock_client.return_value = mock_client
     mock_client.get_input_names.return_value = ["prompt"]

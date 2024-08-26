@@ -366,6 +366,7 @@ dependencies:
       - output_types: [conda]
         packages:
           - &nodejs nodejs=18.*
+          - &pypdfium2 pypdfium2=4.30
           - pytest-asyncio
           - pytest-benchmark=4.0
           - pytest-cov
@@ -373,7 +374,6 @@ dependencies:
           - &python-docx python-docx==1.1.0
           - pip
           - pip:
-              - &PyMuPDF PyMuPDF==1.23.*
               - pytest-kafka==0.6.0
 
   example-dfp-prod:
@@ -412,6 +412,7 @@ dependencies:
           - onnx=1.15
           - openai=1.13
           - pypdf=3.17.4
+          - *pypdfium2
           - *python-docx
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
           - sentence-transformers=2.7
@@ -422,7 +423,6 @@ dependencies:
             - faiss-gpu==1.7.*
             - google-search-results==2.4
             - nemollm==0.3.5
-            - *PyMuPDF
 
   model-training-tuning:
     common:
