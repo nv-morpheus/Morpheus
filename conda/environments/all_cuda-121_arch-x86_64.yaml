@@ -17,6 +17,7 @@ dependencies:
 - benchmark=1.8.3
 - boto3
 - breathe=4.35.0
+- c-ares=1.32
 - ccache
 - clangdev=16
 - click>=8
