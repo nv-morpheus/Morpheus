@@ -29,13 +29,17 @@ repos:
         rev: 6.1.0
         hooks:
               - id: flake8
-                args: ["--config=./python/morpheus/setup.cfg"]
+                entry: pflake8
+                additional_dependencies: [pyproject-flake8]
+                # args: ["--config=./python/morpheus/setup.cfg"]
+                args: ["--config=./pyproject.toml"]
                 files: ^python/
       - repo: https://github.com/google/yapf
         rev: v0.40.2
         hooks:
               - id: yapf
-                args: ["--style", "./python/morpheus/setup.cfg"]
+                # args: ["--style", "./python/morpheus/setup.cfg"]
+                args: ["--style", "./pyproject.toml"]
                 files: ^python/
 
 default_language_version:

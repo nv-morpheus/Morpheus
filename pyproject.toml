@@ -45,13 +45,6 @@ addopts = "--benchmark-disable"
 
 asyncio_mode = "auto"
 
-[tool.yapfignore]
-ignore_patterns = [
-  "**/*.pyx",
-  "**/*.pxd",
-  "**/_version.py",
-]
-
 [tool.mypy]
 # Allow None for argument default values
 implicit_optional = true
@@ -753,3 +746,24 @@ skip= [
     "models",
     "thirdparty"
 ]
+
+[tool.flake8]
+filename=[
+  "*.py",
+  "*.pyx",
+  "*.pxd"
+]
+
+[tool.yapfignore]
+ignore_patterns = [
+  "**/*.pyx",
+  "**/*.pxd",
+  "**/_version.py"
+]
+
+[tool.yapf]
+based_on_style="pep8"
+column_limit=120
+split_all_top_level_comma_separated_values=true
+join_multiple_lines=true
+indent_dictionary_value=true
