@@ -233,6 +233,7 @@ dependencies:
 
           # Non-Compiler Dependencies
           - automake=1.16.5 # Needed for DOCA build
+          - c-ares=1.32 # 1.33 causes an undefined symbol error
           - ccache
           - cmake=3.27
           - cuda-cudart-dev=12.1
