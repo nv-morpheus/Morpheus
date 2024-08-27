@@ -33,7 +33,7 @@ from morpheus.pipeline.stage_schema import StageSchema
 logger = logging.getLogger(__name__)
 
 
-@register_stage("serialize", execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
+@register_stage("serialize")
 class SerializeStage(GpuAndCpuMixin, SinglePortStage):
     """
     Includes & excludes columns from messages.

@@ -36,9 +36,7 @@ from morpheus.utils.type_aliases import DataFrameType
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-http-client",
-                execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU),
-                ignore_args=["query_params", "headers", "**request_kwargs"])
+@register_stage("from-http-client", ignore_args=["query_params", "headers", "**request_kwargs"])
 class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Source stage that polls a remote HTTP server for incoming data.

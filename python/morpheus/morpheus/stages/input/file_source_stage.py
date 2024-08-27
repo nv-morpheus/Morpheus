@@ -34,9 +34,7 @@ from morpheus.pipeline.stage_schema import StageSchema
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-file",
-                modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
-                execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
+@register_stage("from-file", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class FileSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Load messages from a file.

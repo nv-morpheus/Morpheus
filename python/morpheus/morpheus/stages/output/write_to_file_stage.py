@@ -29,9 +29,7 @@ from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-@register_stage("to-file",
-                rename_options={"include_index_col": "--include-index-col"},
-                execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
+@register_stage("to-file", rename_options={"include_index_col": "--include-index-col"})
 class WriteToFileStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     """
     Write all messages to a file.

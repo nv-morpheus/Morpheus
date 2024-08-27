@@ -35,7 +35,6 @@ logger = logging.getLogger(__name__)
 
 @register_stage("deserialize",
                 modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
-                execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU),
                 ignore_args=["message_type", "task_type", "task_payload"])
 class DeserializeStage(GpuAndCpuMixin, MultiMessageStage):
     """

@@ -41,9 +41,7 @@ from morpheus.utils.type_utils import get_df_pkg
 logger = logging.getLogger(__name__)
 
 
-@register_stage("to-http-server",
-                execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU),
-                ignore_args=["df_serializer_fn"])
+@register_stage("to-http-server", ignore_args=["df_serializer_fn"])
 class HttpServerSinkStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     """
     Sink stage that starts an HTTP server and listens for incoming requests on a specified endpoint.

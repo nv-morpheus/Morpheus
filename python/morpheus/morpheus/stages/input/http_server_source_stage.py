@@ -43,7 +43,7 @@ SUPPORTED_METHODS = (HTTPMethod.POST, HTTPMethod.PUT)
 HEALTH_SUPPORTED_METHODS = (HTTPMethod.GET, HTTPMethod.POST)
 
 
-@register_stage("from-http", execution_modes=(ExecutionMode.CPU, ExecutionMode.GPU))
+@register_stage("from-http")
 class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Source stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
