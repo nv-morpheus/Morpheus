@@ -15,9 +15,9 @@
 # limitations under the License.
 
 import json
+import logging
 import os
 from unittest import mock
-import logging
 
 import pytest
 
