@@ -312,7 +312,7 @@ def df_type(request: pytest.FixtureRequest):
 
 
 @pytest.fixture(scope="function")
-def config(use_cpp: bool):
+def config():
     """
     For new pytest style tests, get the config by using this fixture. It will setup the config based on the marks set on
     the object. If no marks are added to the test, it will be parameterized for both C++ and python. For example,
@@ -325,10 +325,7 @@ def config(use_cpp: bool):
     """
 
     from morpheus.config import Config
-    from morpheus.config import ExecutionMode
     config = Config()
-    if not use_cpp:
-        config.execution_mode = ExecutionMode.CPU
 
     yield config
 
