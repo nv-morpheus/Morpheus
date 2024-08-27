@@ -33,6 +33,8 @@ morpheus_add_cython_library(
       cudf_helpers_target
 )
 
+set_property(GLOBAL PROPERTY cudf_helpers_target_property "${cudf_helpers_target}")
+
 execute_process(
   COMMAND "${Python_EXECUTABLE}" -c "import pyarrow; print(pyarrow.get_include())"
   OUTPUT_VARIABLE PYARROW_INCLUDE_DIR
@@ -72,18 +74,19 @@ morpheus_utils_python_package_set_default_link_targets(morpheus)
 
 # #----------morpheus._lib.common---------
 morpheus_add_pybind11_module(common SOURCE_FILES common/module.cpp)
+set_property(GLOBAL APPEND PROPERTY py_morpheus_target_property morpheus._lib.common)
 
 #----------morpheus._lib.stages---------
 morpheus_add_pybind11_module(stages SOURCE_FILES stages/module.cpp)
-
-#----------morpheus._lib.llm---------
-add_subdirectory(llm)
+set_property(GLOBAL APPEND PROPERTY py_morpheus_target_property morpheus._lib.stages)
 
 #----------morpheus._lib.messages---------
 morpheus_add_pybind11_module(messages SOURCE_FILES messages/module.cpp)
+set_property(GLOBAL APPEND PROPERTY py_morpheus_target_property morpheus._lib.messages)
 
 #----------morpheus._lib.modules---------
 morpheus_add_pybind11_module(modules SOURCE_FILES modules/module.cpp)
+set_property(GLOBAL APPEND PROPERTY py_morpheus_target_property morpheus._lib.modules)
 
 #----------morpheus._lib.doca---------
 if(MORPHEUS_SUPPORT_DOCA)
