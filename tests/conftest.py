@@ -102,7 +102,6 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     This function will add parameterizations for the `config` fixture depending on what types of config the test
     supports
     """
-
     # === use_cpp Parameterize ===
     use_cpp = metafunc.definition.get_closest_marker("use_cpp") is not None
     use_python = metafunc.definition.get_closest_marker("use_python") is not None
@@ -126,6 +125,9 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     elif (use_cpp and use_python):
         # Need to parameterize since we have multiple
         _set_use_cpp_params.extend([use_cpp_param, use_python_param])
+    elif (not use_cpp and not use_python):
+        # If neither are set, default to cpp
+        _set_use_cpp_params.append(use_cpp_param)
 
     if (len(_set_use_cpp_params) > 0):
         metafunc.parametrize("_set_use_cpp", _set_use_cpp_params, indirect=True)
