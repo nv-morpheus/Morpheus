@@ -23,6 +23,7 @@ from functools import partial
 import pandas as pd
 
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import is_cudf_type
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -640,10 +641,9 @@ def _json_flatten(df_input: DataFrameType,
 
     # Check if we even have any JSON columns to flatten
     if (not df_input.columns.intersection(json_cols).empty):
-        convert_to_cudf = False
+        is_cudf = is_cudf_type(df_input)
 
-        if (not isinstance(df_input, pd.DataFrame)):
-            convert_to_cudf = True
+        if (is_cudf):
             df_input = df_input.to_pandas()
 
         json_normalized = []
@@ -672,7 +672,7 @@ def _json_flatten(df_input: DataFrameType,
         # Combine the original DataFrame with the normalized JSON columns
         df_input = pd.concat([df_input[columns_to_keep]] + json_normalized, axis=1)
 
-        if (convert_to_cudf):
+        if (is_cudf):
             import cudf
             df_input = cudf.from_pandas(df_input).reset_index(drop=True)
 

@@ -27,6 +27,7 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils import compare_df as compare_df_module
 from morpheus.utils import concat_df
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import is_cudf_type
 
 
 class CompareDataFrameStage(InMemorySinkStage):
@@ -79,8 +80,7 @@ class CompareDataFrameStage(InMemorySinkStage):
                 tmp_dfs.append(tmp_df)
             compare_df = pd.concat(tmp_dfs)
             compare_df.reset_index(inplace=True, drop=True)
-        elif not isinstance(compare_df, pd.DataFrame):
-            # assume it is a cudf DataFrame
+        elif is_cudf_type(compare_df):
             compare_df = compare_df.to_pandas()
 
         self._compare_df = compare_df

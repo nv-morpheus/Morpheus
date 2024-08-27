@@ -19,6 +19,7 @@ import pandas as pd
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageBase
 from morpheus.messages import MultiMessage
+from morpheus.utils.type_utils import is_cudf_type
 
 
 def concat_dataframes(messages: typing.List[MessageBase]) -> pd.DataFrame:
@@ -44,7 +45,7 @@ def concat_dataframes(messages: typing.List[MessageBase]) -> pd.DataFrame:
         else:
             df = x.df
 
-        if not isinstance(df, pd.DataFrame):
+        if is_cudf_type(df):
             df = df.to_pandas()
 
         all_meta.append(df)

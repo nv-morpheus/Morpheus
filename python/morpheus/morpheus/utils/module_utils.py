@@ -25,6 +25,7 @@ import pandas as pd
 from pydantic import BaseModel
 
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import get_df_pkg_from_obj
 
 logger = logging.getLogger(__name__)
 
@@ -214,12 +215,7 @@ def to_period_approximation(data_df: DataFrameType, period: str) -> DataFrameTyp
 
     strptime_format = period_to_strptime[period]
 
-    if isinstance(data_df, pd.DataFrame):
-        df_pkg = pd
-    else:
-        import cudf
-        df_pkg = cudf
-
+    df_pkg = get_df_pkg_from_obj(data_df)
     data_df["period"] = df_pkg.to_datetime(data_df["ts"].dt.strftime(strptime_format) + '-1',
                                            format=f"{strptime_format}-%w")
 

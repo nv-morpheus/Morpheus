@@ -19,6 +19,7 @@ import pandas as pd
 
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import is_cudf_type
 
 if typing.TYPE_CHECKING:
     import cudf
@@ -74,10 +75,9 @@ def process_dataframe(
 
     output_df = pd.DataFrame()
 
-    convert_to_cudf = False
-    if (not isinstance(df_in, pd.DataFrame)):
+    is_cudf = is_cudf_type(df_in)
+    if (is_cudf):
         df_in = df_in.to_pandas()
-        convert_to_cudf = True
 
     # Iterate over the column info
     for ci in input_schema.column_info:
@@ -96,7 +96,7 @@ def process_dataframe(
 
         output_df[match_columns] = df_in[match_columns]
 
-    if (convert_to_cudf):
+    if (is_cudf):
         import cudf
         return cudf.from_pandas(output_df)
 
