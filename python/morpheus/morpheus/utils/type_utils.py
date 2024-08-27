@@ -252,3 +252,11 @@ def get_df_pkg_from_obj(obj: typing.Any) -> types.ModuleType:
         return cudf
 
     return pd
+
+
+def is_dataframe(obj: typing.Any) -> bool:
+    """
+    Check if a given object is a pandas or cudf DataFrame.
+    """
+    df_pkg = get_df_pkg_from_obj(obj)
+    return isinstance(obj, df_pkg.DataFrame)
