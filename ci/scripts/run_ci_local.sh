@@ -23,7 +23,7 @@ case "$1" in
     "all" )
         STAGES=("checks" "build" "docs" "test" "conda")
         ;;
-    "checks" | "build" | "docs" | "test" | "conda" | "bash" )
+    "checks" | "build" | "docs" | "test" | "conda" | "conda_core" | "bash" )
         STAGES=("$1")
         ;;
     * )
