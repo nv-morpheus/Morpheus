@@ -15,7 +15,6 @@
 import logging
 import typing
 
-import cupy as cp
 import numpy as np
 import typing_utils
 
@@ -23,6 +22,7 @@ from morpheus.common import FilterSource
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
+from morpheus.utils.type_aliases import NDArrayType
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ class FilterDetectionsController:
         """
         return self._field_name
 
-    def _find_detections(self, x: MultiMessage | ControlMessage) -> typing.Union[cp.ndarray, np.ndarray]:
+    def _find_detections(self, x: MultiMessage | ControlMessage) -> NDArrayType:
         # Determine the filter source
         if isinstance(x, MultiMessage):
             if self._filter_source == FilterSource.TENSOR:
@@ -80,11 +80,6 @@ class FilterDetectionsController:
             else:
                 filter_source = x.payload().get_data(self._field_name).values
 
-        if (isinstance(filter_source, np.ndarray)):
-            array_mod = np
-        else:
-            array_mod = cp
-
         # Get per row detections
         detections = (filter_source > self._threshold)
 
@@ -92,9 +87,9 @@ class FilterDetectionsController:
             detections = detections.any(axis=1)
 
         # Surround in False to ensure we get an even number of pairs
-        detections = array_mod.concatenate([array_mod.array([False]), detections, array_mod.array([False])])
+        detections = np.concatenate([np.array([False]), detections, np.array([False])])
 
-        return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
+        return np.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
     def filter_copy(self, x: MultiMessage | ControlMessage) -> MultiMessage | ControlMessage:
         """
