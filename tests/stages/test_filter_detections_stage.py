@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import cupy as cp
+import numpy as np
 import pytest
 
 from morpheus.common import FilterSource
@@ -52,11 +53,11 @@ def test_constructor(config):
     assert len(accepted_types) > 0
 
 
-@pytest.mark.use_cudf
+@pytest.mark.use_pandas
 def test_filter_copy(config, filter_probs_df):
     fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
 
-    probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
+    probs = np.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
     mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
     mock_control_message = _make_control_message(filter_probs_df, probs)
 
@@ -67,7 +68,7 @@ def test_filter_copy(config, filter_probs_df):
     assert output_control_message is None
 
     # Only one row has a value above the threshold
-    probs = cp.array([
+    probs = np.array([
         [0.2, 0.4, 0.3],
         [0.1, 0.5, 0.8],
         [0.2, 0.4, 0.3],
@@ -75,14 +76,15 @@ def test_filter_copy(config, filter_probs_df):
 
     mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
     output_multi_response_message = fds._controller.filter_copy(mock_multi_response_message)
-    assert output_multi_response_message.get_meta().to_cupy().tolist() == filter_probs_df.loc[1:1, :].to_cupy().tolist()
+    assert output_multi_response_message.get_meta().to_numpy().tolist() == filter_probs_df.loc[
+        1:1, :].to_numpy().tolist()
     mock_control_message = _make_control_message(filter_probs_df, probs)
     output_control_message = fds._controller.filter_copy(mock_control_message)
-    assert output_control_message.payload().get_data().to_cupy().tolist() == output_multi_response_message.get_meta(
-    ).to_cupy().tolist()
+    assert output_control_message.payload().get_data().to_numpy().tolist() == output_multi_response_message.get_meta(
+    ).to_numpy().tolist()
 
     # Two adjacent rows have a value above the threashold
-    probs = cp.array([
+    probs = np.array([
         [0.2, 0.4, 0.3],
         [0.1, 0.2, 0.3],
         [0.1, 0.5, 0.8],
@@ -92,14 +94,15 @@ def test_filter_copy(config, filter_probs_df):
 
     mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
     output_multi_response_message = fds._controller.filter_copy(mock_multi_response_message)
-    assert output_multi_response_message.get_meta().to_cupy().tolist() == filter_probs_df.loc[2:3, :].to_cupy().tolist()
+    assert output_multi_response_message.get_meta().to_numpy().tolist() == filter_probs_df.loc[
+        2:3, :].to_numpy().tolist()
     mock_control_message = _make_control_message(filter_probs_df, probs)
     output_control_message = fds._controller.filter_copy(mock_control_message)
-    assert output_control_message.payload().get_data().to_cupy().tolist() == output_multi_response_message.get_meta(
-    ).to_cupy().tolist()
+    assert output_control_message.payload().get_data().to_numpy().tolist() == output_multi_response_message.get_meta(
+    ).to_numpy().tolist()
 
     # Two non-adjacent rows have a value above the threashold
-    probs = cp.array([
+    probs = np.array([
         [0.2, 0.4, 0.3],
         [0.1, 0.2, 0.3],
         [0.1, 0.5, 0.8],
@@ -108,18 +111,18 @@ def test_filter_copy(config, filter_probs_df):
         [0.2, 0.4, 0.3],
     ])
 
-    mask = cp.zeros(len(filter_probs_df), dtype=cp.bool_)
+    mask = np.zeros(len(filter_probs_df), dtype=np.bool_)
     mask[2] = True
     mask[4] = True
 
     mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
     output_multi_response_message = fds._controller.filter_copy(mock_multi_response_message)
-    assert output_multi_response_message.get_meta().to_cupy().tolist() == filter_probs_df.loc[
-        mask, :].to_cupy().tolist()
+    assert output_multi_response_message.get_meta().to_numpy().tolist() == filter_probs_df.loc[
+        mask, :].to_numpy().tolist()
     mock_control_message = _make_control_message(filter_probs_df, probs)
     output_control_message = fds._controller.filter_copy(mock_control_message)
-    assert output_control_message.payload().get_data().to_cupy().tolist() == output_multi_response_message.get_meta(
-    ).to_cupy().tolist()
+    assert output_control_message.payload().get_data().to_numpy().tolist() == output_multi_response_message.get_meta(
+    ).to_numpy().tolist()
 
 
 @pytest.mark.use_cudf
