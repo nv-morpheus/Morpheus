@@ -7,12 +7,6 @@
         """
 from __future__ import annotations
 
-<<<<<<< HEAD:python/morpheus/morpheus/_lib/llm/__init__.pyi
-
-=======
-import morpheus_llm._lib.llm
-
->>>>>>> 37ccbc37e2e39ca32cee421868de068b724c92fa:python/morpheus_llm/morpheus_llm/_lib/llm/__init__.pyi
 import typing
 
 import mrc.core.coro
