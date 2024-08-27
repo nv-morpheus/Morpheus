@@ -16,6 +16,8 @@
 import dataclasses
 import logging
 
+import pandas as pd
+
 import morpheus._lib.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
 from morpheus.messages.memory.tensor_memory import TensorMemory
@@ -44,7 +46,7 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
 
         Returns
         -------
-        cupy.ndarray
+        NDArrayType
             Tensors corresponding to name.
 
         Raises
@@ -63,8 +65,8 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
         ----------
         name : str
             Key used to do lookup in tensors dict of the container.
-        tensor : cupy.ndarray
-            Tensor as a CuPy array.
+        tensor : NDArrayType
+            Tensor as either a CuPy or NumPy array.
 
         Raises
         ------
@@ -81,7 +83,7 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
 
     Parameters
     ----------
-    probs : cupy.ndarray
+    probs : NDArrayType
         Probabilities tensor
     """
     probs: dataclasses.InitVar[NDArrayType] = DataClassProp(ResponseMemory._get_tensor_prop, ResponseMemory.set_output)
@@ -97,7 +99,7 @@ class ResponseMemoryAE(ResponseMemory, cpp_class=None):
 
     Parameters
     ----------
-    probs : cupy.ndarray
+    probs : NDArrayType
         Probabilities tensor
 
     user_id : str
@@ -108,8 +110,8 @@ class ResponseMemoryAE(ResponseMemory, cpp_class=None):
         containing the loss z-score along with `max_abs_z` and `mean_abs_z` columns
     """
     probs: dataclasses.InitVar[NDArrayType] = DataClassProp(ResponseMemory._get_tensor_prop, ResponseMemory.set_output)
-    user_id = ""
-    explain_df = None
+    user_id: str = ""
+    explain_df: pd.DataFrame = None
 
     def __init__(self, *, count: int, probs: NDArrayType):
         super().__init__(count=count, tensors={'probs': probs})

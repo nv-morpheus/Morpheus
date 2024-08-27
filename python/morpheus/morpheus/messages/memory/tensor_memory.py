@@ -28,13 +28,13 @@ from morpheus.utils.type_aliases import TensorMapType
 class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
     """
     This is a base container class for data that will be used for inference stages. This class is designed to
-    hold generic tensor data in cupy arrays.
+    hold generic tensor data in either CuPy or NumPy arrays.
 
     Parameters
     ----------
     count : int
         Length of each tensor contained in `tensors`.
-    tensors : typing.Dict[str, cupy.ndarray]
+    tensors : TensorMapType
         Collection of tensors uniquely identified by a name.
 
     """
@@ -109,7 +109,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         Parameters
         ----------
-        tensors : typing.Dict[str, cupy.ndarray]
+        tensors : TensorMapType
             Collection of tensors uniquely identified by a name.
         """
         self._check_tensors(tensors)
@@ -126,7 +126,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         Returns
         -------
-        cupy.ndarray
+        NDArrayType
             Tensor.
 
         Raises
@@ -147,7 +147,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         Returns
         -------
-        cupy.ndarray
+        NDArrayType
             Tensor.
 
         Raises
@@ -168,8 +168,8 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         ----------
         name : str
             Tensor key name.
-        tensor : cupy.ndarray
-            Tensor as a CuPy array.
+        tensor : NDArrayType
+            Tensor as either a CuPy or NumPy array.
 
         Raises
         ------

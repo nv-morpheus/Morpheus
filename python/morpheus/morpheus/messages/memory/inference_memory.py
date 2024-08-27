@@ -25,7 +25,7 @@ from morpheus.utils.type_aliases import NDArrayType
 class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
     """
     This is a base container class for data that will be used for inference stages. This class is designed to
-    hold generic tensor data in cupy arrays.
+    hold generic tensor data in either CuPy or NumPy arrays.
     """
 
     def get_input(self, name: str):
@@ -39,7 +39,7 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
 
         Returns
         -------
-        cupy.ndarray
+        NDArrayType
             Inputs corresponding to name.
 
         Raises
@@ -57,8 +57,8 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
         ----------
         name : str
             Key used to do lookup in inputs dict of the container.
-        tensor : cupy.ndarray
-            Tensor as a CuPy array.
+        tensor : NDArrayType
+            Tensor as either CuPy or NumPy array.
         """
         self.set_tensor(name, tensor)
 
@@ -71,11 +71,11 @@ class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP
 
     Parameters
     ----------
-    input_ids : cupy.ndarray
+    input_ids : NDArrayType
         The token-ids for each string padded with 0s to max_length.
-    input_mask : cupy.ndarray
+    input_mask : NDArrayType
         The mask for token-ids result where corresponding positions identify valid token-id values.
-    seq_ids : cupy.ndarray
+    seq_ids : NDArrayType
         Ids used to index from an inference input to a message. Necessary since there can be more inference
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
 
@@ -99,9 +99,9 @@ class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL
 
     Parameters
     ----------
-    input__0 : cupy.ndarray
+    input__0 : NDArrayType
         Inference input.
-    seq_ids : cupy.ndarray
+    seq_ids : NDArrayType
         Ids used to index from an inference input to a message. Necessary since there can be more inference
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
 
@@ -122,9 +122,9 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
 
     Parameters
     ----------
-    inputs : cupy.ndarray
+    inputs : NDArrayType
         Inference input.
-    seq_ids : cupy.ndarray
+    seq_ids : NDArrayType
         Ids used to index from an inference input to a message. Necessary since there can be more inference
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
     """
