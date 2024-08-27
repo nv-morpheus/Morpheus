@@ -28,6 +28,8 @@ from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.stage_decorator import stage
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
@@ -85,6 +87,10 @@ def run_pipeline(log_level: int, use_python: bool, use_cpu_only: bool, in_file: 
 
     pipeline.set_source(FileSourceStage(config, filename=in_file))
 
+    pipeline.add_stage(MonitorStage(config, description="source"))
+
+    pipeline.add_stage(TriggerStage(config))
+
     @stage(execution_modes=(execution_mode, ))
     def print_msg(msg: typing.Any) -> typing.Any:
         log_msg = [f"Receive a message of type {type(msg)}"]
@@ -99,6 +105,8 @@ def run_pipeline(log_level: int, use_python: bool, use_cpu_only: bool, in_file: 
 
     # TODO: Remove if PR #1803 is merged first
     pipeline.add_stage(DeserializeStage(config, message_type=ControlMessage))
+
+    pipeline.add_stage(MonitorStage(config, description="deserialize"))
 
     @stage(execution_modes=(execution_mode, ))
     def calculate_totals(msg: ControlMessage, *, total_column_name: str = "total") -> ControlMessage:

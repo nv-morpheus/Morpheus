@@ -19,15 +19,17 @@ from functools import reduce
 import fsspec
 from tqdm import tqdm
 
-import cudf
-
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.utils.logger import LogLevels
 from morpheus.utils.monitor_utils import MorpheusTqdm
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import is_dataframe
 
 logger = logging.getLogger(__name__)
+
+SupportedTypes = typing.Union[DataFrameType, MultiMessage, MessageMeta, ControlMessage, typing.List]
 
 
 class MonitorController:
@@ -126,19 +128,19 @@ class MonitorController:
         """
         self._progress.refresh()
 
-    def progress_sink(self, x: typing.Union[cudf.DataFrame, MultiMessage, MessageMeta, ControlMessage, typing.List]):
+    def progress_sink(self, x: SupportedTypes):
         """
         Receives a message and determines the count of the message.
         The progress bar is displayed and the progress is updated.
 
         Parameters
         ----------
-        x: typing.Union[cudf.DataFrame, MultiMessage, MessageMeta, ControlMessage, typing.List]
+        x: SupportedTypes
             Message that determines the count of the message
 
         Returns
         -------
-        x: typing.Union[cudf.DataFrame, MultiMessage, MessageMeta, ControlMessage, typing.List]
+        x: SupportedTypes
 
         """
 
@@ -159,14 +161,14 @@ class MonitorController:
 
         return x
 
-    def auto_count_fn(self, x: typing.Union[cudf.DataFrame, MultiMessage, MessageMeta, ControlMessage, typing.List]):
+    def auto_count_fn(self, x: SupportedTypes):
         """
         This is a helper function that is used to determine the count of messages received by the
         monitor.
 
         Parameters
         ----------
-        x: typing.Union[cudf.DataFrame, MultiMessage, MessageMeta, ControlMessage, typing.List]
+        x: SupportedTypes
             Message that determines the count of the message
 
         Returns
@@ -184,7 +186,7 @@ class MonitorController:
         if (isinstance(x, list) and len(x) == 0):
             return None
 
-        if (isinstance(x, cudf.DataFrame)):
+        if (is_dataframe(x)):
             return lambda y: len(y.index)
 
         if (isinstance(x, MultiMessage)):
