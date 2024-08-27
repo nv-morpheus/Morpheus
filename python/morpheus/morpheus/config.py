@@ -240,10 +240,8 @@ class Config(ConfigBase):
 
     def _validate_config(self):
         if self._pipeline_batch_size < self._model_max_batch_size:
-            logging.warning(
-                "Config has `pipeline_batch_size < model_max_batch_size` which effectively limits "
-                "`model_max_batch_size`. This may reduce performance."
-            )
+            logging.warning("Config has `pipeline_batch_size < model_max_batch_size` which effectively limits "
+                            "`model_max_batch_size`. This may reduce performance.")
 
     def save(self, filename: str):
         """
