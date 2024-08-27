@@ -20,7 +20,7 @@ from unittest import mock
 import pytest
 
 from _utils.llm import mk_mock_openai_response
-from morpheus.llm.services.openai_chat_service import OpenAIChatService
+from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
 
 
 @pytest.fixture(name="set_default_openai_api_key", autouse=True, scope="function")
