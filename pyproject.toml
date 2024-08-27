@@ -763,7 +763,7 @@ exclude=[
    "cpp",
    "docs",
    "models/",
-   "morpheus/models/dfencoder/*.py",
+   "python/morpheus/morpheus/models/dfencoder/*.py",
    "thirdparty"
 ]
 max-line-length=120
