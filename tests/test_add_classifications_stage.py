@@ -16,17 +16,15 @@
 
 import typing
 
-import cupy as cp
+import numpy as np
+import pandas as pd
 import pytest
 import typing_utils
 
-import cudf
-
 from _utils.dataset_manager import DatasetManager
-# pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import TensorMemory
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_response_message import MultiResponseMessage
@@ -70,8 +68,8 @@ def test_add_labels_with_multi_response_message_and_contgrol_message():
 
     threshold = 0.6
 
-    df = cudf.DataFrame([0, 1], columns=["dummy"])
-    probs_array = cp.array([[0.1, 0.6, 0.8], [0.3, 0.61, 0.9]])
+    df = pd.DataFrame([0, 1], columns=["dummy"])
+    probs_array = np.array([[0.1, 0.6, 0.8], [0.3, 0.61, 0.9]])
     probs_array_bool = probs_array > threshold
 
     mrm = MultiResponseMessage(meta=MessageMeta(df), memory=TensorMemory(count=2, tensors={"probs": probs_array}))
@@ -84,7 +82,7 @@ def test_add_labels_with_multi_response_message_and_contgrol_message():
 
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(CppTensorMemory(count=2, tensors={"probs": probs_array}))
+    cm.tensors(TensorMemory(count=2, tensors={"probs": probs_array}))
 
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=threshold)
 
@@ -122,7 +120,7 @@ def test_add_labels_with_multi_response_message_and_contgrol_message():
 
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(CppTensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
+    cm.tensors(TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
 
     with pytest.raises(RuntimeError):
         AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=threshold)
