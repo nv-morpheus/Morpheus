@@ -17,6 +17,7 @@ import types
 import typing
 from collections import defaultdict
 
+import numpy as np
 import pandas as pd
 
 from morpheus.config import ExecutionMode
@@ -221,6 +222,18 @@ def get_df_pkg(execution_mode: ExecutionMode) -> types.ModuleType:
         return cudf
 
     return pd
+
+
+def get_array_pkg(execution_mode: ExecutionMode) -> types.ModuleType:
+    """
+    Return the appropriate array package (CuPy for GPU, NumPy for CPU) based on the execution mode.
+    """
+
+    if execution_mode == ExecutionMode.GPU:
+        import cupy
+        return cupy
+
+    return np
 
 
 @typing.overload
