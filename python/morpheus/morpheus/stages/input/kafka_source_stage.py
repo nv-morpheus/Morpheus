@@ -28,6 +28,7 @@ from morpheus.config import PipelineModes
 from morpheus.config import auto_determine_bootstrap
 from morpheus.io.utils import get_json_reader
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
@@ -44,7 +45,7 @@ class AutoOffsetReset(Enum):
 
 
 @register_stage("from-kafka", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
-class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
+class KafkaSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource):
     """
     Load messages from a Kafka cluster.
 
