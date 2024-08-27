@@ -719,3 +719,37 @@ ignored-argument-names = "_.*|^ignored_|^unused_"
 # List of qualified module names which can have objects that can redefine
 # builtins.
 redefining-builtins-modules = ["six.moves", "past.builtins", "future.builtins", "builtins", "io"]
+
+
+# ===== isort Config =====
+[tool.isort]
+line_length=120
+multi_line_output=3
+include_trailing_comma=true
+force_grid_wrap=0
+combine_as_imports=true
+order_by_type=true
+force_single_line=true
+src_paths = ["python", "tests"]
+known_dask = ["dask", "distributed", "dask_cuda"]
+known_rapids = ["nvstrings", "nvcategory", "nvtext", "cudf", "cuml", "cugraph", "dask_cudf"]
+known_first_party = ["morpheus", "_utils"]
+default_section = "THIRDPARTY"
+sections= ["FUTURE", "STDLIB", "THIRDPARTY", "DASK", "RAPIDS", "FIRSTPARTY", "LOCALFOLDER"]
+skip= [
+    "__init__.py",
+    # Skip _version.py as it is auto-generated
+    "_version.py",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".tmp",
+    ".tox",
+    ".venv",
+    "buck-out",
+    "build",
+    "dist",
+    "models",
+    "thirdparty"
+]

@@ -17,4 +17,8 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "python")
 
 add_subdirectory(morpheus)
 
+if (MORPHEUS_BUILD_MORPHEUS_LLM)
+add_subdirectory(morpheus_llm)
+endif()
+
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
