@@ -22,7 +22,6 @@ import mrc
 from morpheus.cli import register_stage
 from morpheus.common import FileTypes
 from morpheus.config import Config
-from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
@@ -30,6 +29,7 @@ from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.utils.type_utils import exec_mode_to_df_type_str
 
 logger = logging.getLogger(__name__)
 
@@ -99,12 +99,7 @@ class FileSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
         self._iterative = iterative
         self._repeat_count = repeat
 
-        if c.execution_mode == ExecutionMode.GPU:
-            print("GPU MODE Using cudf")
-            self._df_type = "cudf"
-        else:
-            print("CPU MODE Using pandas")
-            self._df_type = "pandas"
+        self._df_type = exec_mode_to_df_type_str(c.execution_mode)
 
     @property
     def name(self) -> str:

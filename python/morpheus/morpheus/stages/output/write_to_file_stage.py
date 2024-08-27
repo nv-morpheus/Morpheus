@@ -21,7 +21,6 @@ import mrc.core.operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import FileTypes
 from morpheus.config import Config
-from morpheus.config import ExecutionMode
 from morpheus.controllers.write_to_file_controller import WriteToFileController
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin

@@ -177,7 +177,7 @@ def df_type_str_to_exec_mode(df_type_str: DataFrameTypeStr) -> ExecutionMode:
     """
     if df_type_str == "cudf":
         return ExecutionMode.GPU
-    elif df_type_str == "pandas":
+    if df_type_str == "pandas":
         return ExecutionMode.CPU
 
     valid_values = ", ".join(typing.get_args(DataFrameTypeStr))
@@ -198,7 +198,7 @@ def df_type_str_to_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
     if df_type_str == "cudf":
         import cudf
         return cudf
-    elif df_type_str == "pandas":
+    if df_type_str == "pandas":
         return pd
 
     valid_values = ", ".join(typing.get_args(DataFrameTypeStr))

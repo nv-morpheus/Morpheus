@@ -20,7 +20,6 @@ import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta

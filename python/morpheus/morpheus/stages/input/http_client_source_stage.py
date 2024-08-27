@@ -23,7 +23,6 @@ import requests
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.config import ExecutionMode
 from morpheus.io.utils import get_json_reader
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin

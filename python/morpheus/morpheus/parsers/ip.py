@@ -348,12 +348,12 @@ def _mask_kernel(idx, out1, out2, out3, out4, kwarg1):
         out4[i] = int(kwarg1) % 256
 
 
-def _mask_pandas(df_cols: tuple[int], mask: int, series_name: str) -> pd.Series:
-    outputs = [int(mask / 16777216) % 256, int(mask / 65536) % 256, int(mask / 256) % 256, int(mask) % 256]
+def _mask_pandas(df_cols: tuple[int], mask_: int, series_name: str) -> pd.Series:
+    outputs = [int(mask_ / 16777216) % 256, int(mask_ / 65536) % 256, int(mask_ / 256) % 256, int(mask_) % 256]
     return pd.Series([df_cols.idx, ".".join(map(str, outputs))], index=["idx", series_name])
 
 
-def _compute_mask_impl(ips: SeriesType, mask: int, series_name: str) -> SeriesType:
+def _compute_mask_impl(ips: SeriesType, mask_: int, series_name: str) -> SeriesType:
     df_pkg = get_df_pkg_from_obj(ips)
     if is_cudf_type(ips):
         df = df_pkg.DataFrame()
@@ -364,7 +364,7 @@ def _compute_mask_impl(ips: SeriesType, mask: int, series_name: str) -> SeriesTy
             outcols={
                 "out1": np.int64, "out2": np.int64, "out3": np.int64, "out4": np.int64
             },
-            kwargs={"kwarg1": mask},
+            kwargs={"kwarg1": mask_},
         )
 
         out1 = x["out1"].astype(str)
@@ -374,7 +374,7 @@ def _compute_mask_impl(ips: SeriesType, mask: int, series_name: str) -> SeriesTy
         df[series_name] = out1.str.cat(out2, sep=".").str.cat(out3, sep=".").str.cat(out4, sep=".")
     else:
         df = df_pkg.DataFrame({"idx": ips.index})
-        df = df.apply(_mask_pandas, axis=1, args=(mask, series_name))
+        df = df.apply(_mask_pandas, axis=1, args=(mask_, series_name))
 
     return df[series_name]
 

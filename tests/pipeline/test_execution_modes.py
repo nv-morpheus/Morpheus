@@ -90,8 +90,8 @@ def test_execution_mode_mixins(stage_cls: type[ConvMsg], expected_modes: set):
     else:
         config.execution_mode = ExecutionMode.GPU
 
-    stage = stage_cls(config)
-    assert set(stage.supported_execution_modes()) == expected_modes
+    stage_ = stage_cls(config)
+    assert set(stage_.supported_execution_modes()) == expected_modes
 
 
 @pytest.mark.parametrize("stage_cls, execution_mode",
@@ -110,5 +110,5 @@ def test_unsupported_mode_error(stage_cls: type[ConvMsg], execution_mode: Execut
     config.execution_mode = execution_mode
 
     with pytest.raises(RuntimeError, match="Unsupported execution mode"):
-        stage = stage_cls(config)
-        stage._pre_build(do_propagate=False)
+        stage_ = stage_cls(config)
+        stage_._pre_build(do_propagate=False)

@@ -26,7 +26,6 @@ from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.config import ExecutionMode
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin

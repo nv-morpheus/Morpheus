@@ -78,7 +78,7 @@ class LLMEngineStage(PassThruTypeMixin, SinglePortStage):
         return cpp_messages_lib.ControlMessage(message)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        import morpheus._lib.llm as _llm
+        import morpheus_llm._lib.llm as _llm
         node = _llm.LLMEngineStage(builder, self.unique_name, self._engine)
         node.launch_options.pe_count = 1
 

@@ -18,7 +18,6 @@ import io
 import typing
 
 import numpy as np
-import pandas as pd
 
 from morpheus.common import FileTypes
 from morpheus.common import determine_file_type

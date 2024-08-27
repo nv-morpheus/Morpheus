@@ -21,7 +21,6 @@ from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.config import ExecutionMode
 from morpheus.controllers.serialize_controller import SerializeController
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
