@@ -1,12 +1,29 @@
-from abc import ABC, abstractmethod
-import typing
+# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.utils.shared_process_pool import SharedProcessPool
-from morpheus.config import Config
-from morpheus.pipeline.single_port_stage import SinglePortStage
+import typing
+from abc import ABC
+from abc import abstractmethod
+
 import mrc
 import mrc.core.operators as ops
+
+from morpheus.config import Config
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.utils.shared_process_pool import SharedProcessPool
 
 InputT = typing.TypeVar('InputT')
 OutputT = typing.TypeVar('OutputT')
@@ -56,7 +73,6 @@ class MultiProcessingBaseStage(SinglePortStage, ABC, typing.Generic[InputT, Outp
         return node
 
 
-
 class MultiProcessingStage(MultiProcessingBaseStage[InputT, OutputT]):
 
     def __init__(self,
@@ -84,33 +100,3 @@ class MultiProcessingStage(MultiProcessingBaseStage[InputT, OutputT]):
     def create(*, c: Config, process_fn: typing.Callable[[InputT], OutputT], process_pool_usage: float):
 
         return MultiProcessingStage[InputT, OutputT](c=c, process_pool_usage=process_pool_usage, process_fn=process_fn)
-
-
-# pipe = LinearPipeline(config)
-
-# # ...add other stages...
-
-# # You can derive from the base class if you need to use self inside the process function
-# class MyCustomMultiProcessStage(MultiProcessStage[ControlMessage, ControlMessage]):
-
-#     def __init__(self, *, c: Config, process_pool_usage: float, add_column_name: str):
-#         super().__init__(self, c=c, process_pool_usage=process_pool_usage)
-
-#         self._add_column_name = add_column_name
-
-#     def _on_data(self, data: ControlMessage) -> ControlMessage:
-
-#         with data.payload().mutable_dataframe() as df:
-# 		df[self._add_column_name] = "hello"
-
-#         return data
-
-# # Add an instance of the custom stage
-# pipe.add_stage(MyCustomMultiProcessStage(c=config, process_pool_usage, add_column_name="NewCol")
-
-# # If you just want to supply a function pointer
-# def print_process_id(message):
-#     print(os.pid())
-#     return message
-
-# pipe.add_stage(MultiProcessingStage.create(c=config, process_fn=print_process_id))
