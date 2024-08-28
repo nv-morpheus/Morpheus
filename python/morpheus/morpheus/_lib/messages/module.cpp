@@ -45,6 +45,7 @@
 #include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
 #include <mrc/edge/edge_connector.hpp>
 #include <nlohmann/json.hpp>      // for basic_json
+#include <pybind11/detail/common.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -442,6 +443,13 @@ PYBIND11_MODULE(messages, _module)
             py::arg("meta"))
         .def("tensors", pybind11::overload_cast<>(&ControlMessage::tensors))
         .def("tensors", pybind11::overload_cast<const std::shared_ptr<TensorMemory>&>(&ControlMessage::tensors))
+        .def("tensors", pybind11::overload_cast<ControlMessage&, const py::object&>(&ControlMessageProxy::set_tensors_from_python),
+             py::arg("tensors"))
+        .def("tensors",
+             pybind11::overload_cast<ControlMessage&, TensorIndex, py::object&>(
+                 &ControlMessageProxy::set_tensors_from_python),
+             py::arg("count"),
+             py::arg("tensors"))
         .def("remove_task", &ControlMessage::remove_task, py::arg("task_type"))
         .def("set_metadata", &ControlMessage::set_metadata, py::arg("key"), py::arg("value"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))

@@ -70,7 +70,7 @@ def test_add_labels():
 
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(_messages.TensorMemory(count=2, tensors={"probs": probs_array}))
+    cm.tensors(TensorMemory(count=2, tensors={"probs": probs_array}))
 
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=None)
 
@@ -81,7 +81,7 @@ def test_add_labels():
     # Too small of a probs array
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(_messages.TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
+    cm.tensors(count=2, tensors={"probs": probs_array[:, 0:-1]})
 
     with pytest.raises(RuntimeError):
         AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=None)
