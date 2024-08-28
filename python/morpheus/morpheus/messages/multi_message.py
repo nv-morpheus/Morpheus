@@ -291,16 +291,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
                     saved_index = df.index
                     df.reset_index(drop=True, inplace=True)
-
-                    # TODO: when value is strings, make all values empty strings
-                    from cudf.api.types import is_string_dtype
-
-                    if is_string_dtype(cudf.Series(value)):
-                        df[columns] = ""
-                        df[columns].iloc[row_indexer] = value
-                    else:
-                        df.loc[df.index[row_indexer], columns] = value
-
+                    df.loc[df.index[row_indexer], columns] = value
                     df.set_index(saved_index, inplace=True)
                 else:
                     # Need to determine the boolean mask to use indexes with df.loc
