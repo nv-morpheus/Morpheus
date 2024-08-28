@@ -29,4 +29,4 @@ python:
   - 3.10
 
 rapids_version:
-  - 24.06
+  - 24.10
