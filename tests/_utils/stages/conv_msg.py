@@ -22,7 +22,6 @@ from mrc.core import operators as ops
 
 import cudf
 
-import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
@@ -106,7 +105,7 @@ class ConvMsg(SinglePortStage):
             probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
 
         if (isinstance(message, ControlMessage)):
-            message.tensors(_messages.TensorMemory(count=len(probs), tensors={'probs': probs}))
+            message.tensors(count=len(probs), tensors={'probs': probs})
             return message
 
         memory = ResponseMemory(count=len(probs), tensors={'probs': probs})

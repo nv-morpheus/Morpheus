@@ -428,6 +428,15 @@ struct MORPHEUS_EXPORT ControlMessageProxy
     static void payload_from_python_meta(ControlMessage& self, const pybind11::object& meta);
 
     /**
+     * @brief Set the tensors from python object
+     *
+     * @param self Reference to the underlying ControlMessage object.
+     * @param count Lenght of each array in `tensors`.
+     * @param tensors Python tensors to be set in the ControlMessage.
+     */
+    static void set_tensors_from_python(ControlMessage& self, TensorIndex count, pybind11::object& tensors);
+
+    /**
      * @brief Sets a timestamp for a given key.
      * @param self Reference to the underlying ControlMessage object.
      * @param key The key associated with the timestamp.

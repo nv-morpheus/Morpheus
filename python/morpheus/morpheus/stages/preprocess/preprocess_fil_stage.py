@@ -23,7 +23,6 @@ import pandas as pd
 
 import cudf
 
-import morpheus._lib.messages as _messages
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -124,8 +123,7 @@ class PreprocessFILStage(PreprocessBaseStage):
         seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
         seg_ids[:, 2] = fea_len - 1
 
-        # We need the C++ impl of TensorMemory until #1646 is resolved
-        x.tensors(_messages.TensorMemory(count=count, tensors={"input__0": data, "seq_ids": seg_ids}))
+        x.tensors(count=count, tensors={"input__0": data, "seq_ids": seg_ids})
         return x
 
     @staticmethod

@@ -81,7 +81,8 @@ def test_add_labels_with_multi_response_message_and_control_message():
 
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(_messages.TensorMemory(count=2, tensors={"probs": probs_array}))
+    tensor_memory = TensorMemory(count=2, tensors={"probs": probs_array})
+    cm.tensors(tensor_memory.count, tensor_memory.get_tensors())
 
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=None)
 
@@ -119,7 +120,7 @@ def test_add_labels_with_multi_response_message_and_control_message():
 
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(_messages.TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
+    cm.tensors(count=2, tensors={"probs": probs_array[:, 0:-1]})
 
     with pytest.raises(RuntimeError):
         AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=None)

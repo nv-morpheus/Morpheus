@@ -40,7 +40,7 @@ def _make_control_message(df, probs):
     df_ = df[0:len(probs)]
     cm = ControlMessage()
     cm.payload(MessageMeta(df_))
-    cm.tensors(_messages.TensorMemory(count=len(df_), tensors={'probs': probs}))
+    cm.tensors(count=len(df_), tensors={'probs': probs})
 
     return cm
 
