@@ -358,6 +358,13 @@ void ControlMessageProxy::payload_from_python_meta(ControlMessage& self, const p
     self.payload(MessageMetaInterfaceProxy::init_python_meta(meta));
 }
 
+void ControlMessageProxy::set_tensors_from_python(ControlMessage& self, const pybind11::object& tensor_memory)
+{
+    TensorIndex count = tensor_memory.attr("count").cast<TensorIndex>();
+    pybind11::object tensors = tensor_memory.attr("get_tensors")();
+    self.tensors(TensorMemoryInterfaceProxy::init(count, tensors));
+}
+
 void ControlMessageProxy::set_tensors_from_python(ControlMessage& self, TensorIndex count, pybind11::object& tensors)
 {
     self.tensors(TensorMemoryInterfaceProxy::init(count, tensors));

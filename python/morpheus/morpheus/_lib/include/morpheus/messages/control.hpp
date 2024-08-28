@@ -428,6 +428,12 @@ struct MORPHEUS_EXPORT ControlMessageProxy
     static void payload_from_python_meta(ControlMessage& self, const pybind11::object& meta);
 
     /**
+     * @brief Set the tensors given a Python instance of TensorMemory
+     * @param tensor_memory the Python instance of TensorMemory
+     */
+    static void set_tensors_from_python(ControlMessage& self, const pybind11::object& tensor_memory);
+
+    /**
      * @brief Set the tensors from python object
      *
      * @param self Reference to the underlying ControlMessage object.

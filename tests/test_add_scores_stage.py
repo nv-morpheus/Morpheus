@@ -81,8 +81,7 @@ def test_add_labels_with_multi_response_message_and_control_message():
 
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    tensor_memory = TensorMemory(count=2, tensors={"probs": probs_array})
-    cm.tensors(tensor_memory.count, tensor_memory.get_tensors())
+    cm.tensors(TensorMemory(count=2, tensors={"probs": probs_array}))
 
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=None)
 
