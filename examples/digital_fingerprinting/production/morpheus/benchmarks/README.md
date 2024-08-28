@@ -47,7 +47,7 @@ Install additional required dependencies:
 ```bash
 mamba env update \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./conda/environments/examples_cuda-124_arch-x86_64.yaml
+  --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
 ```
 
 
