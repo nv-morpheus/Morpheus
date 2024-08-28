@@ -73,6 +73,9 @@ PYBIND11_MODULE(stages, _module)
     // Make sure to load mrc.core.segment to get ObjectProperties
     mrc::pymrc::import(_module, "mrc.core.segment");
 
+    // Import the mrc coro module
+    mrc::pymrc::import(_module, "mrc.core.coro");
+
     mrc::pymrc::from_import(_module, "morpheus._lib.common", "FilterSource");
 
     py::class_<mrc::segment::Object<AddClassificationsStageMM>,

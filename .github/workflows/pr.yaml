@@ -43,6 +43,14 @@ permissions:
 
 jobs:
 
+  pr-builder:
+    needs:
+      - prepare
+      - checks
+      - ci_pipe
+    secrets: inherit
+    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.02
+
   prepare:
     # Executes the get-pr-info action to determine if the PR has the skip-ci label, if the action fails we assume the
     # PR does not have the label

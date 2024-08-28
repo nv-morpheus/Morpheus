@@ -126,7 +126,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
    ```bash
    ./docker/run_container_dev.sh
    ```
-   1. The container tag follows the same rules as `build_container_dev.sh` and will default to the current `YYMMDD`. Specify the desired tag with `DOCKER_IMAGE_TAG`. i.e. `DOCKER_IMAGE_TAG=my_tag ./docker/run_container_dev.sh`
+   1. The container tag follows the same rules as `build_container_dev.sh` and will default to the current `YYMMDD`. Specify the desired tag with `DOCKER_IMAGE_TAG`. For example, `DOCKER_IMAGE_TAG=my_tag ./docker/run_container_dev.sh`
    2. This will automatically mount the current working directory to `/workspace`.
    3. Some of the validation tests require launching the Morpheus models Docker container within the Morpheus container. To enable this you will need to grant the Morpheus container access to your host OS's Docker socket file with:
       ```bash
@@ -198,6 +198,7 @@ git submodule update --init --recursive
 1. Install Morpheus
    ```bash
    pip install -e ${MORPHEUS_ROOT}/python/morpheus
+   pip install -e ${MORPHEUS_ROOT}/python/morpheus_llm
    ```
    Once Morpheus has been built, it can be installed into the current virtual environment.
 1. Test the build (Note: some tests will be skipped)\

@@ -17,6 +17,7 @@ dependencies:
 - benchmark=1.8.3
 - boto3
 - breathe=4.35.0
+- c-ares=1.32
 - ccache
 - clangdev=16
 - click>=8
@@ -84,6 +85,7 @@ dependencies:
 - pydantic
 - pylint=3.0.3
 - pypdf=3.17.4
+- pypdfium2=4.30
 - pytest-asyncio
 - pytest-benchmark=4.0
 - pytest-cov
@@ -122,7 +124,6 @@ dependencies:
   - --extra-index-url https://download.pytorch.org/whl/cu124
   - --find-links https://data.dgl.ai/wheels-test/repo.html
   - --find-links https://data.dgl.ai/wheels/cu121/repo.html
-  - PyMuPDF==1.23.*
   - databricks-cli < 0.100
   - databricks-connect
   - dgl==2.0.0

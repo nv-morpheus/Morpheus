@@ -17,11 +17,11 @@ import pytest
 
 from _utils.dataset_manager import DatasetManager
 from _utils.llm import execute_task_handler
-from morpheus.llm import LLMTaskHandler
-from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus_llm.llm import LLMTaskHandler
+from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 
 
 def test_constructor():
