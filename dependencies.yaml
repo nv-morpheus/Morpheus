@@ -261,6 +261,7 @@ dependencies:
           - mrc=24.10
           - nlohmann_json=3.11
           - pybind11-stubgen=0.10.5
+          - pylibcudf=24.10
           - rapidjson=1.1.0
           - rdma-core>=48 # Needed for DOCA.
           - scikit-build=0.17.6

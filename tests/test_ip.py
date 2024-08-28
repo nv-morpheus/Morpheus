@@ -19,13 +19,14 @@ from morpheus.parsers import ip
 
 def test_ip_to_int():
     input_df = cudf.Series(["5.79.97.178", "94.130.74.45"])
-    expected = cudf.Series([89088434, 1585596973])
+    expected = cudf.Series([89088434, 1585596973], dtype=cudf.api.types.dtype("uint32"))
     actual = ip.ip_to_int(input_df)
+    assert cudf.Series([89088434,1585596973],dtype=cudf.api.types.dtype("uint32")).equals(cudf.Series([89088434,1585596973],dtype=cudf.api.types.dtype("uint32")))
     assert actual.equals(expected)
 
 
 def test_int_to_ip():
-    input_df = cudf.Series([89088434, 1585596973])
+    input_df = cudf.Series([89088434, 1585596973], dtype=cudf.api.types.dtype("uint32"))
     expected = cudf.Series(["5.79.97.178", "94.130.74.45"])
     actual = ip.int_to_ip(input_df)
     assert actual.equals(expected)

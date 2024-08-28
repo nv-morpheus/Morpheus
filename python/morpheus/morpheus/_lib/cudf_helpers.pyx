@@ -21,11 +21,11 @@ from libcpp.utility cimport move
 from libcpp.vector cimport vector
 
 from cudf._lib.column cimport Column
-from cudf._lib.pylibcudf.libcudf.io.types cimport column_name_info
-from cudf._lib.pylibcudf.libcudf.io.types cimport table_metadata
-from cudf._lib.pylibcudf.libcudf.io.types cimport table_with_metadata
-from cudf._lib.pylibcudf.libcudf.table.table_view cimport table_view
-from cudf._lib.pylibcudf.libcudf.types cimport size_type
+from pylibcudf.libcudf.io.types cimport column_name_info
+from pylibcudf.libcudf.io.types cimport table_metadata
+from pylibcudf.libcudf.io.types cimport table_with_metadata
+from pylibcudf.libcudf.table.table_view cimport table_view
+from pylibcudf.libcudf.types cimport size_type
 from cudf._lib.utils cimport data_from_unique_ptr
 from cudf._lib.utils cimport table_view_from_table
 

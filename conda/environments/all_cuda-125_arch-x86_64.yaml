@@ -83,6 +83,7 @@ dependencies:
 - pre-commit
 - pybind11-stubgen=0.10.5
 - pydantic
+- pylibcudf=24.10
 - pylint=3.0.3
 - pypdf=3.17.4
 - pypdfium2=4.30

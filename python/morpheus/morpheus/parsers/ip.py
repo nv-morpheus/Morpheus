@@ -41,7 +41,7 @@ def ip_to_int(values):
     1    167772161
     dtype: int64
     """
-    return cudf.Series(values.str.ip2int())
+    return values.str.ip2int()
 
 
 def int_to_ip(values):
@@ -68,7 +68,7 @@ def int_to_ip(values):
     1    10.0.0.1
     dtype: object
     """
-    return cudf.Series(values._column.int2ip())
+    return cudf.Series._from_column(values._column.int2ip())
 
 
 def is_ip(ips: str):
