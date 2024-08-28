@@ -24,8 +24,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import cudf
-
 from _utils import TEST_DIRS
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import ColumnInfo
@@ -50,13 +48,6 @@ def _azure_ad_logs_pdf_fixture():
 @pytest.fixture(name="azure_ad_logs_pdf", scope="function")
 def azure_ad_logs_pdf_fixture(_azure_ad_logs_pdf: pd.DataFrame):
     yield _azure_ad_logs_pdf.copy(deep=True)
-
-
-@pytest.fixture(name="azure_ad_logs_cdf", scope="function")
-def azure_ad_logs_cdf_fixture(_azure_ad_logs_pdf: pd.DataFrame):
-    # cudf.from_pandas essentially does a deep copy, so we can use this to ensure that the source pandas df is not
-    # modified
-    yield cudf.from_pandas(_azure_ad_logs_pdf)
 
 
 @pytest.mark.use_python
