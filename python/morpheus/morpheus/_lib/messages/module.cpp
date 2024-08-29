@@ -37,6 +37,7 @@
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/pybind11/json.hpp"  // IWYU pragma: keep
+#include "morpheus/types.hpp"          // for TensorIndex
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/json_types.hpp"  // for json_t
 #include "morpheus/utilities/string_util.hpp"
@@ -45,7 +46,6 @@
 #include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
 #include <mrc/edge/edge_connector.hpp>
 #include <nlohmann/json.hpp>      // for basic_json
-#include <pybind11/detail/common.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -443,7 +443,8 @@ PYBIND11_MODULE(messages, _module)
             py::arg("meta"))
         .def("tensors", pybind11::overload_cast<>(&ControlMessage::tensors))
         .def("tensors", pybind11::overload_cast<const std::shared_ptr<TensorMemory>&>(&ControlMessage::tensors))
-        .def("tensors", pybind11::overload_cast<ControlMessage&, const py::object&>(&ControlMessageProxy::set_tensors_from_python),
+        .def("tensors",
+             pybind11::overload_cast<ControlMessage&, const py::object&>(&ControlMessageProxy::set_tensors_from_python),
              py::arg("tensors"))
         .def("tensors",
              pybind11::overload_cast<ControlMessage&, TensorIndex, py::object&>(
