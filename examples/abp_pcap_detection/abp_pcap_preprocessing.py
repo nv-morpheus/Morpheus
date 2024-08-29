@@ -21,12 +21,12 @@ import numpy as np
 
 import cudf
 
-from morpheus.messages import InferenceMemoryFIL
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
+from morpheus.messages import InferenceMemoryFIL
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 

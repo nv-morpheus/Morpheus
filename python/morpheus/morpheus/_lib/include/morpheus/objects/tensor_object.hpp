@@ -253,7 +253,12 @@ struct TensorObject final
     {
         // Replace any -1 values
         std::replace_if(
-            min_dims.begin(), min_dims.end(), [](auto x) { return x < 0; }, 0);
+            min_dims.begin(),
+            min_dims.end(),
+            [](auto x) {
+                return x < 0;
+            },
+            0);
         std::transform(
             max_dims.begin(), max_dims.end(), this->get_shape().begin(), max_dims.begin(), [](auto d, auto s) {
                 return d < 0 ? s : d;
