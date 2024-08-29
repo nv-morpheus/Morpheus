@@ -37,6 +37,7 @@ files:
       - example-llms
       - python
       - runtime
+      - runtime-pip
       - test_python_morpheus
 
   # Common dependencies for developing with Morpheus.
@@ -59,6 +60,7 @@ files:
       - docs
       - python
       - runtime
+      - runtime-pip
       - test_python_morpheus
 
   # Dependencies that are needed to build Morpheus.
@@ -79,6 +81,7 @@ files:
       - development
       - python
       - runtime
+      - runtime-pip
       - test_python_morpheus
 
   # Dependencies that are needed to run Morpheus tests.
@@ -100,6 +103,7 @@ files:
       - example-llms
       - python
       - runtime
+      - runtime-pip
       - test_python_morpheus
 
   # Dependencies that are needed to generate the Morpheus documentation.
@@ -123,6 +127,7 @@ files:
       - example-llms
       - python
       - runtime
+      - runtime-pip
 
   # Only the dependencies that are needed to run core Morpheus. This is the smallest set of dependencies needed to run
   # a Morpheus pipeline.
@@ -136,6 +141,17 @@ files:
     includes:
       - cudatoolkit
       - cve-mitigation
+      - python
+      - runtime
+      - runtime-pip
+
+  morpheus_core:
+    output: conda
+    matrix:
+      cuda: ["12.1"]
+      arch: [x86_64]
+    includes:
+      - cudatoolkit
       - python
       - runtime
 
@@ -154,6 +170,7 @@ files:
       - example-llms
       - python
       - runtime
+      - runtime-pip
 
   # Dependencies which are needed to run the model generation scripts in the `models` directory.
   # Includes: none
@@ -313,6 +330,7 @@ dependencies:
   # Runtime dependencies for Morpheus. Included in nearly all output files so dependencies should
   # be added only if it is needed to run the core Morpheus library.
   # This should be synced with `run` in ci/conda/recipes/morpheus/meta.yaml
+  # skip pip packages
   runtime:
     common:
       - output_types: [conda]
@@ -356,6 +374,11 @@ dependencies:
           - watchdog=3.0
           - websockets
           - pip
+
+  runtime-pip:
+    common:
+      - output_types: [conda]
+        packages:
           - pip:
             - databricks-cli < 0.100
             - databricks-connect
