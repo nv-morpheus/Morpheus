@@ -778,6 +778,9 @@ def configure_tests_logging(pytestconfig: pytest.Config):
         if (trace_module is not None and trace_module.find("pydevd") != -1):
             log_level = logging.DEBUG
 
+    if os.environ.get("GLOG_v") is not None:
+        log_level = logging.DEBUG
+
     config_log_level = pytestconfig.getoption("log_level")
 
     # Overwrite the logging level if specified
