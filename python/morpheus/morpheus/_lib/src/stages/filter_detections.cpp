@@ -45,7 +45,7 @@
 #include <cstdint>     // for uint8_t
 #include <exception>   // for exception_ptr
 #include <functional>  // for function
-#include <memory>      // for shared_ptr, __shared_ptr_access, make_shared
+#include <memory>      // for shared_ptr, make_shared
 #include <ostream>     // for operator<<, basic_ostream
 #include <string>      // for char_traits, string
 #include <utility>     // for move, pair

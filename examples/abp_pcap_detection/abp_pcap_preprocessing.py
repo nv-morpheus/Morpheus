@@ -21,7 +21,7 @@ import numpy as np
 
 import cudf
 
-import morpheus._lib.messages as _messages
+from morpheus.messages.memory import InferenceMemoryFIL
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
@@ -184,7 +184,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         seq_ids[:, 2] = fea_len - 1
 
         # Create the inference memory. Keep in mind count here could be > than input count
-        memory = _messages.InferenceMemoryFIL(count=count, input__0=data, seq_ids=seq_ids)
+        memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seq_ids)
 
         infer_message = ControlMessage(msg)
         infer_message.payload(meta)

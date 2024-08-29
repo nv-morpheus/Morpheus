@@ -87,12 +87,18 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
                 // Loop over the MessageMeta and create sub-batches
                 for (TensorIndex i = 0; i < incoming_message->count(); i += this->m_batch_size)
                 {
-                    std::shared_ptr<ControlMessage> windowed_message{nullptr};
-                    make_output_message(incoming_message,
-                                        i,
-                                        std::min(i + this->m_batch_size, incoming_message->count()),
-                                        m_task.get(),
-                                        windowed_message);
+                    std::shared_ptr<ControlMessage> windowed_message = std::make_shared<ControlMessage>();
+
+                    auto sliced_meta = std::make_shared<SlicedMessageMeta>(
+                        incoming_message, i, std::min(i + this->m_batch_size, incoming_message->count()));
+                    windowed_message->payload(sliced_meta);
+
+                    auto task = m_task.get();
+                    if (task)
+                    {
+                        windowed_message->add_task(task->first, task->second);
+                    }
+
                     output.on_next(std::move(windowed_message));
                 }
             },

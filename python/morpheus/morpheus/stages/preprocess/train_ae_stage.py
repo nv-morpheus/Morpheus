@@ -28,7 +28,6 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import UserMessageMeta
-from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
@@ -235,7 +234,7 @@ class TrainAEStage(ControlMessageStage):
 
         return model, train_scores_mean, train_scores_std
 
-    def _train_model(self, x: UserMessageMeta) -> typing.List[MultiAEMessage] | typing.List[ControlMessage]:
+    def _train_model(self, x: UserMessageMeta) -> list[ControlMessage]:
 
         if (x.user_id not in self._user_models):
             self._user_models[x.user_id] = _UserModelManager(self._config,

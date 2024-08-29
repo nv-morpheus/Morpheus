@@ -50,8 +50,8 @@ class ControlMessageStage(_pipeline.SinglePortStage):
 
     def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        # Check if we are debug and should log timestamps. Disable for C++ nodes
-        if (self._config.debug and self._should_log_timestamps and not self._build_cpp_node()):
+        # Check if we are debug and should log timestamps.
+        if (self._config.debug and self._should_log_timestamps):
             # Cache the name property. Removes dependency on self in callback
             cached_name = self.name
 

@@ -42,7 +42,7 @@
 #include <cstdint>     // for uint8_t
 #include <filesystem>  // for operator/, path
 #include <map>         // for map
-#include <memory>      // for allocator, make_shared, __shared_ptr_access, shared_ptr
+#include <memory>      // for allocator, make_shared, shared_ptr
 #include <string>      // for string
 #include <utility>     // for move
 #include <vector>      // for vector

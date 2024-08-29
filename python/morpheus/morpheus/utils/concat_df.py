@@ -21,13 +21,13 @@ import cudf
 from morpheus.messages import ControlMessage
 
 
-def concat_dataframes(messages: typing.Union[typing.List[ControlMessage], typing.List[cudf.DataFrame]]) -> pd.DataFrame:
+def concat_dataframes(messages: list[ControlMessage] | list[cudf.DataFrame]) -> pd.DataFrame:
     """
     Concatinate the DataFrame associated with the collected messages into a single Pandas DataFrame.
 
     Parameters
     ----------
-    messages : typing.Union[typing.List[ControlMessage], typing.List[cudf.DataFrame]]
+    messages : list[ControlMessage] | list[cudf.DataFrame]
         Messages containing DataFrames to concat.
 
     Returns

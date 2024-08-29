@@ -115,7 +115,7 @@ class FilterDetectionsController:
         msg.payload(meta.copy_ranges(true_pairs))
         return msg
 
-    def filter_slice(self, msg: ControlMessage) -> typing.List[ControlMessage]:
+    def filter_slice(self, msg: ControlMessage) -> list[ControlMessage]:
         """
         This function uses a threshold value to filter the messages.
 
@@ -126,7 +126,7 @@ class FilterDetectionsController:
 
         Returns
         -------
-        typing.List[`morpheus.messages.ControlMessage`]
+        listist[`morpheus.messages.ControlMessage`]
             List of filtered messages.
 
         """

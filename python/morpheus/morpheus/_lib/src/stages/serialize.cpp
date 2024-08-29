@@ -24,7 +24,7 @@
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 
 #include <exception>  // for exception_ptr
-#include <memory>     // for shared_ptr, __shared_ptr_access, make_shared
+#include <memory>     // for shared_ptr, make_shared
 #include <string>     // for string
 #include <utility>    // for move
 

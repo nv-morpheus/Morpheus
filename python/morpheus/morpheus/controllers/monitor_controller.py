@@ -125,7 +125,7 @@ class MonitorController:
         """
         self._progress.refresh()
 
-    def progress_sink(self, msg: typing.Union[cudf.DataFrame, MessageMeta, ControlMessage, typing.List]):
+    def progress_sink(self, msg: cudf.DataFrame | MessageMeta | ControlMessage | list):
         """
         Receives a message and determines the count of the message.
         The progress bar is displayed and the progress is updated.
@@ -137,7 +137,7 @@ class MonitorController:
 
         Returns
         -------
-        msg: typing.Union[cudf.DataFrame, MessageMeta, ControlMessage, typing.List]
+        msg: cudf.DataFrame | MessageMeta | ControlMessage | list
 
         """
 
