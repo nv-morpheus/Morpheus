@@ -360,7 +360,7 @@ void ControlMessageProxy::payload_from_python_meta(ControlMessage& self, const p
 
 void ControlMessageProxy::set_tensors_from_python(ControlMessage& self, const pybind11::object& tensor_memory)
 {
-    TensorIndex count        = tensor_memory.attr("count").cast<TensorIndex>();
+    auto count               = tensor_memory.attr("count").cast<TensorIndex>();
     pybind11::object tensors = tensor_memory.attr("get_tensors")();
     self.tensors(TensorMemoryInterfaceProxy::init(count, tensors));
 }
