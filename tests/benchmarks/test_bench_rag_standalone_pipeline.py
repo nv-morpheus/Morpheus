@@ -28,7 +28,6 @@ from _utils.dataset_manager import DatasetManager
 from _utils.milvus import populate_milvus
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage

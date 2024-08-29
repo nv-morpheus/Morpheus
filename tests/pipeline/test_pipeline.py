@@ -27,7 +27,6 @@ from _utils.stages.multi_port_pass_thru import MultiPortPassThruStage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline import Pipeline
 from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryEgressStage
@@ -226,7 +225,7 @@ def test_add_edge_input_port_errors(config: Config, num_inputs: int):
         pipe.add_edge(start_stage.output_ports[0], end_stage)
 
 
-@pytest.mark.parametrize("data_type", [int, float, str, MessageMeta, ControlMessage, MultiMessage])
+@pytest.mark.parametrize("data_type", [int, float, str, MessageMeta, ControlMessage])
 def test_add_segment_edge(config: Config, data_type: type):
     pipe = Pipeline(config)
 

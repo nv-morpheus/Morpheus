@@ -30,7 +30,6 @@ from langchain.utilities import serpapi
 import cudf
 
 from morpheus.config import Config
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage

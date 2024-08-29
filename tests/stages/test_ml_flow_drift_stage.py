@@ -21,7 +21,6 @@ import cupy as cp
 import pytest
 import typing_utils
 
-import morpheus._lib.messages as _messages
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.ml_flow_drift_stage import MLFlowDriftStage

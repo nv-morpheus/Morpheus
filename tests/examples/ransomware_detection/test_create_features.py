@@ -24,7 +24,6 @@ import pytest
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
-from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
@@ -174,7 +173,7 @@ class TestCreateFeaturesRWStage:
 
         prev_loc = 0
         for (i, _multi_message) in enumerate(multi_messages):
-            assert isinstance(_multi_message, MultiMessage)
+            assert isinstance(_multi_message)
             pid = pids[i]
             (_multi_message.get_meta(['pid_process']) == pid).all()
             assert _multi_message.mess_offset == prev_loc

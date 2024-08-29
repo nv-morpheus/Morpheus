@@ -18,7 +18,6 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
@@ -114,8 +113,7 @@ def standalone(num_threads,
 
     pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=repeat_count))
 
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=completion_task))
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 

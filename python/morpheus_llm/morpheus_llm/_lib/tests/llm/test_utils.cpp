@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "morpheus_llm/llm/fwd.hpp"  // for morpheus
 #include "morpheus_llm/llm/input_map.hpp"
 #include "morpheus_llm/llm/utils.hpp"
 

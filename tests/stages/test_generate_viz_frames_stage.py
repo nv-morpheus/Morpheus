@@ -21,7 +21,6 @@ import typing_utils
 
 import cudf
 
-import morpheus._lib.messages as _messages
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
