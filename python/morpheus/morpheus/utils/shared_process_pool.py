@@ -48,6 +48,9 @@ class SerializableFuture:
             raise self._exception.value
         return self._result.value
 
+    def done(self):
+        return self._done.is_set()
+
 
 class SharedProcessPool:
 
@@ -85,7 +88,6 @@ class SharedProcessPool:
         self._stage_semaphores = self._manager.dict()
         self._processes = []
 
-        # TODO: Test the performance of reading the shared variable in each worker loop and try some alternatives
         self._shutdown_in_progress = self._manager.Value("b", False)
 
         for i in range(total_max_workers):
@@ -123,13 +125,14 @@ class SharedProcessPool:
                     semaphore.release()
                     continue
 
-                # if task is None:  # Stop signal
-                #     semaphore.release()
-                #     return
+                if task is None:
+                    logger.warning("Worker process %s received a None task.", os.getpid())
+                    semaphore.release()
+                    continue
 
-                process_fn, args, future = task
+                process_fn, args, kwargs, future = task
                 try:
-                    result = process_fn(*args)
+                    result = process_fn(*args, **kwargs)
                     future.set_result(result)
                 except Exception as e:
                     future.set_exception(e)
@@ -138,12 +141,12 @@ class SharedProcessPool:
 
                 time.sleep(0.1)  # Avoid busy-waiting
 
-    def submit_task(self, stage_name, process_fn, *args):
+    def submit_task(self, stage_name, process_fn, *args, **kwargs):
         """
         Submit a task to the corresponding task queue of the stage.
         """
         future = SerializableFuture(self._context.Manager())
-        task = (process_fn, args, future)
+        task = (process_fn, args, kwargs, future)
         self._task_queues[stage_name].put(task)
 
         return future
@@ -152,7 +155,7 @@ class SharedProcessPool:
         """
         Set the maximum percentage of processes that can be used by each stage.
         """
-        if not 0 < percentage <= 1:
+        if not 0 <= percentage <= 1:
             raise ValueError("Percentage must be between 0 and 1.")
 
         new_total_usage = self._total_usage - self._stage_usage.get(stage_name, 0.0) + percentage
@@ -175,10 +178,6 @@ class SharedProcessPool:
     def shutdown(self):
         if not self._shutdown:
             self._shutdown_in_progress.value = True
-            # for stage_name, task_queue in self._task_queues.items():
-            #     for _ in range(self._total_max_workers):
-            #         task_queue.put(None)
-            #     logger.debug("Task queue for stage %s has been cleared.", stage_name)
 
             for i, p in enumerate(self._processes):
                 p.join()
