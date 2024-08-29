@@ -21,7 +21,7 @@ import numpy as np
 
 import cudf
 
-from morpheus.messages.memory import InferenceMemoryFIL
+from morpheus.messages import InferenceMemoryFIL
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
