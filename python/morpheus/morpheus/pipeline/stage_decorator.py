@@ -207,7 +207,7 @@ def source(
             first_param = next(param_iter)
             if first_param.annotation is mrc.Subscriber:
                 accepts_subscriber = True
-        except StopIteration as e:
+        except StopIteration:
             pass
 
         # We need to unpack generator and iterator return types to get the actual type of the yielded type.
