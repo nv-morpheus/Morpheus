@@ -6,14 +6,11 @@
 
         """
 from __future__ import annotations
-
-import typing
-
-import cupy
-import mrc.core.node
-
-import morpheus._lib.common
 import morpheus._lib.messages
+import typing
+import cupy
+import morpheus._lib.common
+import mrc.core.node
 
 __all__ = [
     "ControlMessage",

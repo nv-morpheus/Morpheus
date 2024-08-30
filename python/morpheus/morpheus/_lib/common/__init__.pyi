@@ -5,11 +5,9 @@
            :toctree: _generate
         """
 from __future__ import annotations
-
-import os
-import typing
-
 import morpheus._lib.common
+import typing
+import os
 
 __all__ = [
     "FiberQueue",
