@@ -58,6 +58,9 @@ def _validate_keyword_arguments(fn_name: str,
     # If we have any keyword arguments with a default value that we did not receive an explicit value for, we need
     # to bind it, otherwise it will trigger an error when MRC.
     for param in param_iter:
+        if param.annotation is mrc.Subscriber:
+            continue
+
         if param.default is not signature.empty and param.name not in kwargs:
             kwargs[param.name] = param.default
 
@@ -92,9 +95,17 @@ class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
         Generator function to use as the source of messages.
     compute_schema_fn : `ComputeSchemaType`
         Function to use for computing the schema of the stage.
+    accepts_subscriber: `bool`
+        Indicate that the `gen_fn` function accepts a reference to the subscriber object.
     """
 
-    def __init__(self, config: Config, *, name: str, gen_fn: GeneratorType, compute_schema_fn: ComputeSchemaType):
+    def __init__(self,
+                 config: Config,
+                 *,
+                 name: str,
+                 gen_fn: GeneratorType,
+                 compute_schema_fn: ComputeSchemaType,
+                 accepts_subscriber: bool = False):
         super().__init__(config)
         # collections.abc.Generator is a subclass of collections.abc.Iterator
         if not inspect.isgeneratorfunction(gen_fn):
@@ -103,6 +114,7 @@ class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
         self._name = name
         self._gen_fn = gen_fn
         self._compute_schema_fn = compute_schema_fn
+        self._accepts_subscriber = accepts_subscriber
 
     @property
     def name(self) -> str:
@@ -115,7 +127,10 @@ class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
         self._compute_schema_fn(schema)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return builder.make_source(self.unique_name, self._gen_fn)
+        if self._accepts_subscriber:
+            return builder.make_subscriber_source(self.unique_name, self._gen_fn)
+        else:
+            return builder.make_source(self.unique_name, self._gen_fn)
 
 
 class PreAllocatedWrappedFunctionStage(_pipeline.PreallocatorMixin, WrappedFunctionSourceStage):
@@ -136,6 +151,8 @@ class PreAllocatedWrappedFunctionStage(_pipeline.PreallocatorMixin, WrappedFunct
         Generator function to use as the source of messages.
     compute_schema_fn : `ComputeSchemaType`
         Function to use for computing the schema of the stage.
+    accepts_subscriber: `bool`
+        Indicate that the `gen_fn` function accepts a reference to the subscriber object.
     """
 
 
@@ -184,6 +201,17 @@ def source(
         if return_type is signature.empty:
             raise ValueError("Source functions must specify a return type annotation")
 
+        # Try and determine if the method expects a reference to a subscriber object
+        accepts_subscriber = False
+        param_iter = iter(signature.parameters.values())
+
+        try:
+            first_param = next(param_iter)
+            if first_param.annotation is mrc.Subscriber:
+                accepts_subscriber = True
+        except StopIteration as e:
+            pass
+
         # We need to unpack generator and iterator return types to get the actual type of the yielded type.
         # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
         # typing.GenericAlias, however when someone uses typing.Generator or typing.Iterator the return type is an
@@ -208,12 +236,14 @@ def source(
             return PreAllocatedWrappedFunctionStage(config=config,
                                                     name=name,
                                                     gen_fn=bound_gen_fn,
-                                                    compute_schema_fn=compute_schema_fn)
+                                                    compute_schema_fn=compute_schema_fn,
+                                                    accepts_subscriber=accepts_subscriber)
 
         return WrappedFunctionSourceStage(config=config,
                                           name=name,
                                           gen_fn=bound_gen_fn,
-                                          compute_schema_fn=compute_schema_fn)
+                                          compute_schema_fn=compute_schema_fn,
+                                          accepts_subscriber=accepts_subscriber)
 
     return wrapper
 
