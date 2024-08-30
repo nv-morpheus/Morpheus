@@ -6,13 +6,16 @@
 
         """
 from __future__ import annotations
-import morpheus._lib.stages
+
+import os
 import typing
-from morpheus._lib.common import FilterSource
-import morpheus._lib.common
+
 import mrc.core.coro
 import mrc.core.segment
-import os
+
+import morpheus._lib.common
+import morpheus._lib.stages
+from morpheus._lib.common import FilterSource
 
 __all__ = [
     "AddClassificationsControlMessageStage",
