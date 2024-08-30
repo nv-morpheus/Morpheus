@@ -68,6 +68,7 @@ class DerivedMultiProcessingStage(MultiProcessingBaseStage[ControlMessage, Contr
 def test_stage_pipe(config: Config, dataset_pandas: DatasetManager):
 
     config.num_threads = os.cpu_count()
+    
     input_df = dataset_pandas["filter_probs.csv"]
     add_column_name = "new_column"
     expected_df = input_df.copy()

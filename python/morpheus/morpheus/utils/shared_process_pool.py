@@ -21,9 +21,6 @@ import queue
 import time
 from threading import Lock
 
-# pylint: disable=W0201
-
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -52,6 +49,7 @@ class SerializableFuture:
         return self._done.is_set()
 
 
+# pylint: disable=W0201
 class SharedProcessPool:
 
     _instance = None

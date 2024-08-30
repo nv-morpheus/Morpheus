@@ -24,14 +24,15 @@ import pytest
 
 from morpheus.utils.shared_process_pool import SharedProcessPool
 
-# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(name="shared_process_pool")
 def shared_process_pool_fixture():
     pool = SharedProcessPool()
-    atexit.register(pool.shutdown) # make sure to shutdown the pool before the test exits
+    _reset_shared_process_pool(pool)
+
+    atexit.register(pool.shutdown)  # make sure to shutdown the pool before the test exits
 
     return pool
 
@@ -59,6 +60,16 @@ def _unserializable_function():
 
 def _arbitrary_function(*args, **kwargs):
     return args, kwargs
+
+
+# SharedProcessPool is a singleton, need to reset before each test
+def _reset_shared_process_pool(pool: SharedProcessPool):
+    for stage in pool._stage_usage:
+        pool._stage_usage[stage] = 0.0
+        pool._stage_semaphores[stage] = pool._manager.Semaphore(1)
+        pool._task_queues[stage] = pool._manager.Queue()
+
+    pool._total_usage = 0.0
 
 
 def _test_worker(pool, stage_name, task_size, num_tasks):
@@ -149,12 +160,6 @@ def test_unserializable_arg(shared_process_pool):
 def test_multiple_stages(shared_process_pool):
     pool = shared_process_pool
 
-    pool.set_usage("test_stage", 0.0) # Remove usage of test_stage in previous tests
-
-    pool.set_usage("test_stage_1", 0.1)
-    pool.set_usage("test_stage_2", 0.3)
-    pool.set_usage("test_stage_3", 0.6)
-
     task_size = 3000
     task_num = 30
     tasks = [("test_stage_1", task_size, task_num), ("test_stage_2", task_size, task_num),
@@ -176,12 +181,6 @@ def test_multiple_stages(shared_process_pool):
 def test_invalid_stage_usage(shared_process_pool):
     pool = shared_process_pool
 
-    # Remove usage of test_stage in previous tests
-    pool.set_usage("test_stage", 0.0)
-    pool.set_usage("test_stage_1", 0.0)
-    pool.set_usage("test_stage_2", 0.0)
-    pool.set_usage("test_stage_3", 0.0)
-
     with pytest.raises(ValueError):
         pool.set_usage("test_stage", 1.1)
 
@@ -202,12 +201,6 @@ def test_invalid_stage_usage(shared_process_pool):
 
 def test_task_completion_before_shutdown(shared_process_pool):
     pool = shared_process_pool
-
-    # Remove usage of test_stage in previous tests
-    pool.set_usage("test_stage", 0.0)
-    pool.set_usage("test_stage_1", 0.0)
-    pool.set_usage("test_stage_2", 0.0)
-    pool.set_usage("test_stage_3", 0.0)
 
     pool.set_usage("test_stage_1", 0.1)
     pool.set_usage("test_stage_2", 0.3)

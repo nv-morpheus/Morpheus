@@ -57,12 +57,12 @@ class MultiProcessingBaseStage(SinglePortStage, ABC, typing.Generic[InputT, Outp
         for (port_idx, port_schema) in enumerate(schema.input_schemas):
             schema.output_schemas[port_idx].set_type(port_schema.get_type())
 
+    def supports_cpp_node(self):
+        return False
+
     @abstractmethod
     def _on_data(self, data: InputT) -> OutputT:
         pass
-
-    def supports_cpp_node(self):
-        return False
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.name, ops.map(self._on_data))
