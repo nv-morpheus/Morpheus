@@ -58,8 +58,6 @@ def _validate_keyword_arguments(fn_name: str,
     # If we have any keyword arguments with a default value that we did not receive an explicit value for, we need
     # to bind it, otherwise it will trigger an error when MRC.
     for param in param_iter:
-        if param.annotation is mrc.Subscriber:
-            continue
 
         if param.default is not signature.empty and param.name not in kwargs:
             kwargs[param.name] = param.default
@@ -226,7 +224,7 @@ def source(
 
             compute_schema_fn = compute_schema_fn_inner
 
-        _validate_keyword_arguments(name, signature, kwargs, param_iter=iter(signature.parameters.values()))
+        _validate_keyword_arguments(name, signature, kwargs, param_iter=param_iter)
 
         bound_gen_fn = functools.partial(gen_fn, **kwargs)
 
