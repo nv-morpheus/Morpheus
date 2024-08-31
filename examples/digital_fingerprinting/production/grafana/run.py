@@ -245,7 +245,7 @@ def run_pipeline(train_users,
 
     CppConfig.set_should_use_cpp(False)
 
-    config.num_threads = os.cpu_count()
+    config.num_threads = len(os.sched_getaffinity(0))
 
     config.ae = ConfigAutoEncoder()
 
