@@ -95,7 +95,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
                                                           self._poll_interval.to_pytimedelta())
         else:
             self.connect()
-            node = builder.make_source(self.unique_name, self.source_generator)
+            node = builder.make_subscriber_source(self.unique_name, self.source_generator)
 
         return node
 
@@ -112,9 +112,9 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._channel.queue_bind(exchange=self._exchange, queue=self._queue_name)
 
-    def source_generator(self):
+    def source_generator(self, subscriber: mrc.Subscriber):
         try:
-            while not self.is_stop_requested():
+            while not self.is_stop_requested() and subscriber.is_subscribed():
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
