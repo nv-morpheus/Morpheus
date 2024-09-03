@@ -204,6 +204,8 @@ def source(
         accepts_subscriber = fn_receives_subscriber(signature)
 
         param_iter = iter(signature.parameters.values())
+        if accepts_subscriber:
+            next(param_iter)  # advance the iterator past the subscriber
 
         # We need to unpack generator and iterator return types to get the actual type of the yielded type.
         # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
