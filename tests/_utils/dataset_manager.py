@@ -192,7 +192,7 @@ class DatasetManager:
         return cls.replace_index(df, replace_dict)
 
     @staticmethod
-    def _value_as_pandas(val: typing.Union[pd.DataFrame, cdf.DataFrame, cdf.Series], assert_is_pandas=True):
+    def _value_as_pandas(val: typing.Union[pd.DataFrame, pd.Series, cdf.DataFrame, cdf.Series], assert_is_pandas=True):
         if (isinstance(val, (cdf.DataFrame, cdf.Series))):
             return val.to_pandas()
 
@@ -200,6 +200,16 @@ class DatasetManager:
             assert isinstance(val, (pd.DataFrame, pd.Series)), type(val)
 
         return val
+
+    @classmethod
+    def _value_as_pandas_df(cls,
+                            val: typing.Union[pd.DataFrame, pd.Series, cdf.DataFrame, cdf.Series],
+                            assert_is_pandas=True):
+        pval = cls._value_as_pandas(val)
+        if isinstance(pval, pd.Series):
+            pval = pval.to_frame()
+
+        return pval
 
     @classmethod
     def df_equal(cls, df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame], val_to_check: typing.Any):
@@ -242,7 +252,7 @@ class DatasetManager:
         with warnings.catch_warnings():
             # Ignore performance warnings from pandas triggered by the comparison
             warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
-            return compare_df.compare_df(cls._value_as_pandas(dfa), cls._value_as_pandas(dfb), **compare_args)
+            return compare_df.compare_df(cls._value_as_pandas_df(dfa), cls._value_as_pandas_df(dfb), **compare_args)
 
     @classmethod
     def assert_compare_df(cls,
