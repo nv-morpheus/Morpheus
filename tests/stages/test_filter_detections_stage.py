@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cupy as cp
 import numpy as np
 import pytest
 
@@ -125,7 +124,7 @@ def test_filter_copy(config, filter_probs_df):
     ).to_numpy().tolist()
 
 
-@pytest.mark.use_cudf
+@pytest.mark.use_pandas
 @pytest.mark.parametrize('do_copy', [True, False])
 @pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])
 @pytest.mark.parametrize('field_name', ['v1', 'v2', 'v3', 'v4'])
@@ -135,25 +134,24 @@ def test_filter_column(config, filter_probs_df, do_copy, threshold, field_name):
                                 copy=do_copy,
                                 filter_source=FilterSource.DATAFRAME,
                                 field_name=field_name)
-    expected_df = filter_probs_df.to_pandas()
-    expected_df = expected_df[expected_df[field_name] > threshold]
+    expected_df = filter_probs_df[filter_probs_df[field_name] > threshold]
 
-    probs = cp.zeros([len(filter_probs_df), 3], 'float')
+    probs = np.zeros([len(filter_probs_df), 3], 'float')
     mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
     # All values are at or below the threshold
     output_multi_response_message = fds._controller.filter_copy(mock_multi_response_message)
-    assert output_multi_response_message.get_meta().to_cupy().tolist() == expected_df.to_numpy().tolist()
+    assert output_multi_response_message.get_meta().to_numpy().tolist() == expected_df.to_numpy().tolist()
     mock_control_message = _make_control_message(filter_probs_df, probs)
     output_control_message = fds._controller.filter_copy(mock_control_message)
-    assert output_control_message.payload().get_data().to_cupy().tolist() == output_multi_response_message.get_meta(
-    ).to_cupy().tolist()
+    assert output_control_message.payload().get_data().to_numpy().tolist() == output_multi_response_message.get_meta(
+    ).to_numpy().tolist()
 
 
-@pytest.mark.use_cudf
+@pytest.mark.use_pandas
 def test_filter_slice(config, filter_probs_df):
     fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
 
-    probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
+    probs = np.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
     mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
 
     # All values are at or below the threshold
@@ -164,7 +162,7 @@ def test_filter_slice(config, filter_probs_df):
     assert len(output_control_message) == len(output_multi_response_messages)
 
     # Only one row has a value above the threshold
-    probs = cp.array([
+    probs = np.array([
         [0.2, 0.4, 0.3],
         [0.1, 0.5, 0.8],
         [0.2, 0.4, 0.3],
@@ -174,17 +172,17 @@ def test_filter_slice(config, filter_probs_df):
 
     output_multi_response_messages = fds._controller.filter_slice(mock_multi_response_message)
     assert len(output_multi_response_messages) == 1
-    assert output_multi_response_messages[0].get_meta().to_cupy().tolist() == filter_probs_df.loc[
-        1:1, :].to_cupy().tolist()
+    assert output_multi_response_messages[0].get_meta().to_numpy().tolist() == filter_probs_df.loc[
+        1:1, :].to_numpy().tolist()
 
     mock_control_message = _make_control_message(filter_probs_df, probs)
     output_control_message = fds._controller.filter_slice(mock_control_message)
     assert len(output_control_message) == len(output_multi_response_messages)
-    assert output_control_message[0].payload().get_data().to_cupy().tolist(
-    ) == output_multi_response_messages[0].get_meta().to_cupy().tolist()
+    assert output_control_message[0].payload().get_data().to_numpy().tolist(
+    ) == output_multi_response_messages[0].get_meta().to_numpy().tolist()
 
     # Two adjacent rows have a value above the threashold
-    probs = cp.array([
+    probs = np.array([
         [0.2, 0.4, 0.3],
         [0.1, 0.2, 0.3],
         [0.1, 0.5, 0.8],
@@ -198,17 +196,17 @@ def test_filter_slice(config, filter_probs_df):
     assert len(output_multi_response_messages) == 1
     assert output_multi_response_messages[0].offset == 2
     assert output_multi_response_messages[0].count == 2
-    assert output_multi_response_messages[0].get_meta().to_cupy().tolist() == filter_probs_df.loc[
-        2:3, :].to_cupy().tolist()
+    assert output_multi_response_messages[0].get_meta().to_numpy().tolist() == filter_probs_df.loc[
+        2:3, :].to_numpy().tolist()
 
     mock_control_message = _make_control_message(filter_probs_df, probs)
     output_control_message = fds._controller.filter_slice(mock_control_message)
     assert len(output_control_message) == len(output_multi_response_messages)
-    assert output_control_message[0].payload().get_data().to_cupy().tolist(
-    ) == output_multi_response_messages[0].get_meta().to_cupy().tolist()
+    assert output_control_message[0].payload().get_data().to_numpy().tolist(
+    ) == output_multi_response_messages[0].get_meta().to_numpy().tolist()
 
     # Two non-adjacent rows have a value above the threashold
-    probs = cp.array([
+    probs = np.array([
         [0.2, 0.4, 0.3],
         [0.1, 0.2, 0.3],
         [0.1, 0.5, 0.8],
@@ -230,8 +228,8 @@ def test_filter_slice(config, filter_probs_df):
     assert multi_response_msg2.offset == 4
     assert multi_response_msg2.count == 1
 
-    assert multi_response_msg1.get_meta().to_cupy().tolist() == filter_probs_df.loc[2:2, :].to_cupy().tolist()
-    assert multi_response_msg2.get_meta().to_cupy().tolist() == filter_probs_df.loc[4:4, :].to_cupy().tolist()
+    assert multi_response_msg1.get_meta().to_numpy().tolist() == filter_probs_df.loc[2:2, :].to_numpy().tolist()
+    assert multi_response_msg2.get_meta().to_numpy().tolist() == filter_probs_df.loc[4:4, :].to_numpy().tolist()
 
     mock_control_message = _make_control_message(filter_probs_df, probs)
     output_control_message = fds._controller.filter_slice(mock_control_message)
@@ -240,5 +238,5 @@ def test_filter_slice(config, filter_probs_df):
     assert control_msg1.payload().count == multi_response_msg1.count
     assert control_msg2.payload().count == multi_response_msg2.count
 
-    assert control_msg1.payload().get_data().to_cupy().tolist() == multi_response_msg1.get_meta().to_cupy().tolist()
-    assert control_msg2.payload().get_data().to_cupy().tolist() == multi_response_msg2.get_meta().to_cupy().tolist()
+    assert control_msg1.payload().get_data().to_numpy().tolist() == multi_response_msg1.get_meta().to_numpy().tolist()
+    assert control_msg2.payload().get_data().to_numpy().tolist() == multi_response_msg2.get_meta().to_numpy().tolist()
