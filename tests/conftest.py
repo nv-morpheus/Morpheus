@@ -788,6 +788,9 @@ def configure_tests_logging(pytestconfig: pytest.Config):
         if (trace_module is not None and trace_module.find("pydevd") != -1):
             log_level = logging.DEBUG
 
+    if os.environ.get("GLOG_v") is not None:
+        log_level = logging.DEBUG
+
     config_log_level = pytestconfig.getoption("log_level")
 
     # Overwrite the logging level if specified
@@ -1125,3 +1128,10 @@ def mock_nemollm_fixture():
         mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}
 
         yield mock_nemollm
+
+
+@pytest.fixture(name="load_cudf_helper", scope="session", autouse=True)
+def load_cudf_helper_fixture():
+    if os.environ.get("MORPHEUS_CPU_ONLY") is None:
+        from morpheus.common import load_cudf_helper
+        load_cudf_helper()
