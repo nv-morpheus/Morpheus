@@ -23,6 +23,7 @@ import cudf
 
 import morpheus._lib.messages as _messages
 import morpheus.config
+import morpheus.utils.type_utils
 from morpheus import messages
 from morpheus.messages.memory import inference_memory
 from morpheus.messages.memory import response_memory
@@ -172,7 +173,7 @@ def test_constructor_cpp():
     check_all_messages(morpheus.config.CppConfig.get_should_use_cpp(), False)
 
 
-@pytest.mark.reload_modules(morpheus.config)
+@pytest.mark.reload_modules([morpheus.config, morpheus.utils.type_utils])
 @pytest.mark.usefixtures("reload_modules", "restore_environ")
 def test_constructor_env():
     # Set the NO_CPP flag which should disable C++ regardless
