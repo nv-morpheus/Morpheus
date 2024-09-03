@@ -28,10 +28,9 @@ valid_feed_input = os.path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml")
 invalid_feed_input = os.path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xm")
 
 
-@pytest.mark.use_python
 def test_support_cpp_node(config):
     url_feed_input = "https://fake.nvidia.com/rss/HomePage.xml"
-    rss_source_stage = RSSSourceStage(config, feed_input=url_feed_input)
+    rss_source_stage = RSSSourceStage(config, feed_input=[url_feed_input])
 
     assert rss_source_stage.supports_cpp_node() is False
 
