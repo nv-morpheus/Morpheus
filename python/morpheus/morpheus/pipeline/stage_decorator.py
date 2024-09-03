@@ -29,6 +29,7 @@ from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
+from morpheus.utils.stage_utils import fn_receives_subscriber
 
 logger = logging.getLogger(__name__)
 
@@ -200,19 +201,9 @@ def source(
             raise ValueError("Source functions must specify a return type annotation")
 
         # Try and determine if the method expects a reference to a subscriber object
-        accepts_subscriber = False
+        accepts_subscriber = fn_receives_subscriber(signature)
+
         param_iter = iter(signature.parameters.values())
-
-        try:
-            first_param = next(param_iter)
-            if first_param.annotation is mrc.Subscriber:
-                accepts_subscriber = True
-        except StopIteration:
-            pass
-
-        if not accepts_subscriber:
-            # we didn't find a subscriber in the first argument rewind the iterator
-            param_iter = iter(signature.parameters.values())
 
         # We need to unpack generator and iterator return types to get the actual type of the yielded type.
         # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of

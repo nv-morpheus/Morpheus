@@ -14,6 +14,8 @@
 
 import typing
 
+import mrc
+
 import cudf
 
 from morpheus.config import Config
