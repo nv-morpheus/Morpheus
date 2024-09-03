@@ -77,6 +77,6 @@ def _rss_source(builder: mrc.Builder):
                                stop_after=validated_config.stop_after_rec,
                                interval_secs=validated_config.interval_sec)
 
-    node = builder.make_source("fetch_feeds", controller.feed_generator)
+    node = builder.make_subscriber_source("fetch_feeds", controller.feed_generator)
 
     builder.register_module_output("output", node)
