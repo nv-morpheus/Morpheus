@@ -42,9 +42,12 @@ class InMemorySourceStage(PreallocatorMixin, InMemoryDataGenStage):
         self._dataframes = dataframes
         self._repeat_count = repeat
 
-        def _generate_frames() -> typing.Iterator[MessageMeta]:
+        def _generate_frames(subscriber: mrc.Subscriber) -> typing.Iterator[MessageMeta]:
             for i in range(self._repeat_count):
                 for k, df in enumerate(self._dataframes):
+                    if not subscriber.is_subscribed():
+                        break
+
                     x = MessageMeta(df)
 
                     # If we are looping, copy the object. Do this before we push the object in case it changes

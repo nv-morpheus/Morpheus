@@ -35,7 +35,7 @@ class InMemoryDataGenStage(SingleOutputSource):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    data_source : Callable[[], Iterable[Any]]
+    data_source : Callable[[mrc.Subscriber], Iterable[Any]]
         An iterable or a generator function that yields data to be processed by the pipeline.
     output_data_type : Type
         The data type of the objects that the data_source yields.
@@ -57,9 +57,9 @@ class InMemoryDataGenStage(SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def _generate_data(self) -> Iterable[Any]:
+    def _generate_data(self, subscriber: mrc.Subscriber) -> Iterable[Any]:
         # Directly use the data source as it's already an iterable
-        return self._data_source()
+        return self._data_source(subscriber=subscriber)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return builder.make_source(self.unique_name, self._generate_data())
+        return builder.make_subscriber_source(self.unique_name, self._generate_data)

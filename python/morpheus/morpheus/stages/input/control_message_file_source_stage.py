@@ -56,7 +56,7 @@ class ControlMessageFileSourceStage(SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
-    def _create_control_message(self) -> ControlMessage:
+    def _create_control_message(self, subscriber: mrc.Subscriber) -> ControlMessage:
 
         openfiles: fsspec.core.OpenFiles = fsspec.open_files(self._filenames)
 
@@ -66,6 +66,9 @@ class ControlMessageFileSourceStage(SingleOutputSource):
 
         # TODO(Devin): Support multiple tasks in a single file
         for openfile in openfiles:
+            if not subscriber.is_subscribed():
+                break
+
             with openfile as f:
                 message_configs = json.load(f)
                 for message_config in message_configs.get("inputs", []):
@@ -73,4 +76,4 @@ class ControlMessageFileSourceStage(SingleOutputSource):
                     yield message_control
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return builder.make_source(self.unique_name, self._create_control_message())
+        return builder.make_subscriber_source(self.unique_name, self._create_control_message)

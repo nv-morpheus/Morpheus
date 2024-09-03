@@ -104,7 +104,7 @@ class DirectoryWatcher():
         """
 
         # The first source just produces filenames
-        return builder.make_source(name, self._generate_via_polling())
+        return builder.make_subscriber_source(name, self._generate_via_polling)
 
     def _get_filename_queue(self) -> FiberQueue:
         """
@@ -153,14 +153,14 @@ class DirectoryWatcher():
 
         return f_queue
 
-    def _generate_via_polling(self):
+    def _generate_via_polling(self, subscriber: mrc.Subscriber):
 
         # Its a bit ugly, but utilize a filber queue to yield the thread. This will be improved in the future
         file_queue = FiberQueue(self._queue_max_size)
 
         snapshot = EmptyDirectorySnapshot()
 
-        while (not self._should_stop_fn()):
+        while (not self._should_stop_fn() and subscriber.is_subscribed()):
 
             # Get a new snapshot
             new_snapshot = DirectorySnapshot(self._dir_to_watch, recursive=self._recursive)
