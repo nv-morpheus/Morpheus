@@ -38,7 +38,8 @@ def fn_receives_subscriber(fn_or_signature: inspect.Signature | typing.Callable)
 
     try:
         first_param = next(param_iter)
-        if first_param.annotation is mrc.Subscriber or first_param.annotation == "mrc.Subscriber":
+        if (first_param.annotation is mrc.Subscriber or first_param.annotation == "mrc.Subscriber"
+                or first_param.annotation == "Subscriber"):
             return True
     except StopIteration:
         pass
