@@ -112,7 +112,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
-        download_pages = builder.make_source(self.unique_name + "-download", self._generate_frames())
+        download_pages = builder.make_subscriber_source(self.unique_name + "-download", self._generate_frames)
         process_pages = builder.make_node(self.unique_name + "-process", ops.map(self._process_pages))
         process_pages.launch_options.pe_count = 6
 
@@ -125,7 +125,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
         return splitting_pages
 
-    def _generate_frames(self):
+    def _generate_frames(self, subscriber: mrc.Subscriber):
         os.makedirs(self._cache_dir, exist_ok=True)
 
         try:
@@ -141,7 +141,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         )
 
         for x in search_results.results():
-            if self.is_stop_requested():
+            if self.is_stop_requested() or not subscriber.is_subscribed():
                 break
 
             full_path = os.path.join(self._cache_dir, x._get_default_filename())

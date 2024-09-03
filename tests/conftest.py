@@ -1116,3 +1116,13 @@ def mock_nemollm_fixture():
         mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}
 
         yield mock_nemollm
+
+
+@pytest.fixture(name="mock_subscriber")
+def mock_subscriber_fixture():
+    """
+    Returns a mock object whic like mrc.Subscriber has a is_subscribed method
+    """
+    ms = mock.MagicMock()
+    ms.is_subscribed.return_value = True
+    return ms
