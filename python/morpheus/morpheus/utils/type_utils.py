@@ -206,16 +206,23 @@ def df_type_str_to_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
 
 
 @typing.overload
-def get_df_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
+def get_df_pkg(selector: DataFrameTypeStr) -> types.ModuleType:
     ...
 
 
-def get_df_pkg(execution_mode: ExecutionMode) -> types.ModuleType:
+@typing.overload
+def get_df_pkg(selector: ExecutionMode) -> types.ModuleType:
+    ...
+
+
+def get_df_pkg(selector: ExecutionMode | DataFrameTypeStr) -> types.ModuleType:
     """
     Return the appropriate DataFrame package based on the execution mode.
     """
-    if not isinstance(execution_mode, ExecutionMode):
-        execution_mode = df_type_str_to_exec_mode(execution_mode)
+    if not isinstance(selector, ExecutionMode):
+        execution_mode = df_type_str_to_exec_mode(selector)
+    else:
+        execution_mode = selector
 
     if execution_mode == ExecutionMode.GPU:
         import cudf
