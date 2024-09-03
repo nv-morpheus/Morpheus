@@ -15,34 +15,47 @@
 # limitations under the License.
 
 import os
-from unittest import mock
 
 import pytest
 
 from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
 @pytest.mark.use_python
+@pytest.mark.parametrize("use_deserialize", [False, True])
 @pytest.mark.parametrize("flush", [False, True])
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
-def test_file_rw_pipe(tmp_path: str, config: Config, output_type: str, flush: bool):
+def test_file_rw_pipe(tmp_path: str,
+                      config: Config,
+                      dataset: DatasetManager,
+                      output_type: str,
+                      flush: bool,
+                      use_deserialize: bool):
     """
     Test the flush functionality of the WriteToFileStage.
     """
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, f'results.{output_type}')
 
-    # This currently works because the FileSourceStage doesn't use the builtin open function, but WriteToFileStage does
-    mock_open = mock.mock_open()
-    with mock.patch('builtins.open', mock_open):
-        pipe = LinearPipeline(config)
-        pipe.set_source(FileSourceStage(config, filename=input_file))
-        pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False, flush=flush))
-        pipe.run()
+    pipe = LinearPipeline(config)
+    pipe.set_source(FileSourceStage(config, filename=input_file))
 
-    assert not os.path.exists(out_file)
-    assert mock_open().flush.called == flush
+    if use_deserialize:
+        pipe.add_stage(DeserializeStage(config))
+        pipe.add_stage(SerializeStage(config))
+
+    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False, flush=flush))
+    pipe.run()
+
+    assert os.path.exists(out_file)
+
+    expected_df = dataset['filter_probs.csv']
+    actual_df = dataset.get_df(out_file, no_cache=True)
+    dataset.assert_compare_df(expected_df, actual_df)
