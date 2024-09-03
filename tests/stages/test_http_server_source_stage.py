@@ -61,7 +61,11 @@ class GetNext(threading.Thread):
 @pytest.mark.use_python
 @pytest.mark.parametrize("lines", [False, True], ids=["json", "lines"])
 @pytest.mark.parametrize("use_payload_to_df_fn", [False, True], ids=["no_payload_to_df_fn", "payload_to_df_fn"])
-def test_generate_frames(config: Config, dataset_pandas: DatasetManager, lines: bool, use_payload_to_df_fn: bool):
+def test_generate_frames(config: Config,
+                         mock_subscriber: mock.MagicMock,
+                         dataset_pandas: DatasetManager,
+                         lines: bool,
+                         use_payload_to_df_fn: bool):
     # The _generate_frames() method is only used when C++ mode is disabled
     endpoint = '/test'
     port = 8088
@@ -95,7 +99,7 @@ def test_generate_frames(config: Config, dataset_pandas: DatasetManager, lines: 
                                   lines=lines,
                                   payload_to_df_fn=payload_to_df_fn)
 
-    generate_frames = stage._generate_frames()
+    generate_frames = stage._generate_frames(mock_subscriber)
     msg_queue = queue.SimpleQueue()
 
     get_next_thread = GetNext(msg_queue, generate_frames)
@@ -157,7 +161,7 @@ def test_constructor_invalid_accept_status(config: Config, invalid_accept_status
     [False, pytest.param(True, marks=pytest.mark.skip(reason="https://github.com/rapidsai/cudf/issues/15820"))],
     ids=["json", "lines"])
 @pytest.mark.parametrize("use_payload_to_df_fn", [False, True], ids=["no_payload_to_df_fn", "payload_to_df_fn"])
-def test_parse_errors(config: Config, lines: bool, use_payload_to_df_fn: bool):
+def test_parse_errors(config: Config, mock_subscriber: mock.MagicMock, lines: bool, use_payload_to_df_fn: bool):
     expected_status = HTTPStatus.BAD_REQUEST
 
     endpoint = '/test'
@@ -186,7 +190,7 @@ def test_parse_errors(config: Config, lines: bool, use_payload_to_df_fn: bool):
                                   lines=lines,
                                   payload_to_df_fn=payload_to_df_fn)
 
-    generate_frames = stage._generate_frames()
+    generate_frames = stage._generate_frames(mock_subscriber)
     msg_queue = queue.SimpleQueue()
 
     get_next_thread = GetNext(msg_queue, generate_frames)
