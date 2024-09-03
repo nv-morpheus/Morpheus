@@ -731,6 +731,7 @@ default_section = "THIRDPARTY"
 sections= ["FUTURE", "STDLIB", "THIRDPARTY", "DASK", "RAPIDS", "FIRSTPARTY", "LOCALFOLDER"]
 skip= [
     "__init__.py",
+    "__init__.pyi",
     # Skip _version.py as it is auto-generated
     "_version.py",
     ".eggs",
