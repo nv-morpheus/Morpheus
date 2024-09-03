@@ -329,7 +329,7 @@ def test_cast_python_to_cpp(dataset: DatasetManager):
     """
     Test that we can cast a python MessageMeta to a C++ MessageMeta
     """
-    df = dataset["test_dataframe.jsonlines"]
+    df = dataset["filter_probs.csv"]
 
     py_meta = MessageMeta(df)
     assert isinstance(py_meta, MessageMeta)
@@ -348,7 +348,7 @@ def test_cast_cpp_to_python(dataset: DatasetManager):
     """
     Test that we can cast a a C++ MessageMeta to a python MessageMeta
     """
-    df = dataset["test_dataframe.jsonlines"]
+    df = dataset["filter_probs.csv"]
     cpp_meta = MessageMetaCpp(df)
 
     py_meta = MessageMeta(cpp_meta)
