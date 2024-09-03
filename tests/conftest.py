@@ -169,17 +169,11 @@ def pytest_runtest_setup(item):
 
 def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config, items: typing.List[pytest.Item]):
     """
-    To support old unittest style tests, try to determine the mark from the name
+    Remove tests that are incompatible with the current configuration.
     """
 
     if config.getoption("--run_kafka") and not PYTEST_KAFKA_AVAIL:
         raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {PYTEST_KAFKA_ERROR}")
-
-    for item in items:
-        if "no_cpp" in item.nodeid and item.get_closest_marker("use_python") is None:
-            item.add_marker(pytest.mark.use_python(added_in="collection_modifyitems"))
-        elif "cpp" in item.nodeid and item.get_closest_marker("use_cpp") is None:
-            item.add_marker(pytest.mark.use_cpp(added_in="collection_modifyitems"))
 
     def should_filter_test(item: pytest.Item):
 
