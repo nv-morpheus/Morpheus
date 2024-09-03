@@ -40,7 +40,7 @@ def error_source(subscriber: mrc.Subscriber, *, raise_error: bool = False) -> co
 @stage
 def error_stage(i: int, *, raise_error: bool = False) -> int:
     if raise_error:
-        raise RuntimeError(f"Test error in stage")
+        raise RuntimeError("Test error in stage")
 
     return i
 
