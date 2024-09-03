@@ -29,6 +29,21 @@ def fn_receives_subscriber(fn_or_signature: typing.Callable) -> bool:
 
 
 def fn_receives_subscriber(fn_or_signature: inspect.Signature | typing.Callable) -> bool:
+    """
+    Inspects a function's signature to determine if the function expects a `mrc.Subscriber` as it's first argument.
+    This requires the type-hint to be set to either `mrc.Subscriber` or a string hint of `"mrc.Subscriber"` or
+    `"Subscriber"`
+
+    Parameters
+    ----------
+    fn_or_signature : `inspect.Signature` | `typing.Callable`
+        Function or signature of a function to be checked
+
+    Returns
+    -------
+    bool
+        True if the signature indicates the first argument to be a `mrc.Subscriber`.
+    """
     if isinstance(fn_or_signature, inspect.Signature):
         signature = fn_or_signature
     else:
