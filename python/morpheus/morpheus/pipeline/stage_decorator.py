@@ -210,6 +210,10 @@ def source(
         except StopIteration:
             pass
 
+        if not accepts_subscriber:
+            # we didn't find a subscriber in the first argument rewind the iterator
+            param_iter = iter(signature.parameters.values())
+
         # We need to unpack generator and iterator return types to get the actual type of the yielded type.
         # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
         # typing.GenericAlias, however when someone uses typing.Generator or typing.Iterator the return type is an
