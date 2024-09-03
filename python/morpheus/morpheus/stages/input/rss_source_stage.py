@@ -90,7 +90,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     def name(self) -> str:
         return "from-rss"
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
     def compute_schema(self, schema: StageSchema):
