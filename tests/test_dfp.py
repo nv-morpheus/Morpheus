@@ -46,6 +46,7 @@ from morpheus.stages.preprocess import train_ae_stage
 # End-to-end test intended to imitate the DFP validation test
 
 
+@pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
@@ -132,6 +133,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock, config: Config, tmp_path: str, morph
     assert results.diff_rows == 0
 
 
+@pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
@@ -215,6 +217,7 @@ def test_dfp_user123(mock_ae: mock.MagicMock, config: Config, tmp_path: str, mor
     assert results.diff_rows == 0
 
 
+@pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])

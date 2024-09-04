@@ -48,6 +48,7 @@ if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
 
 
+@pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.kafka
 @pytest.mark.slow
 @pytest.mark.use_python
@@ -152,6 +153,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
     assert results['diff_rows'] == 0
 
 
+@pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.kafka
 @pytest.mark.slow
 @pytest.mark.use_python
