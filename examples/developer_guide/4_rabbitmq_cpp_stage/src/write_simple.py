@@ -32,7 +32,7 @@ def run_pipeline():
     input_file = os.path.join(root_dir, 'examples/data/email.jsonlines')
 
     config = Config()
-    config.num_threads = os.cpu_count()
+    config.num_threads = len(os.sched_getaffinity(0))
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
