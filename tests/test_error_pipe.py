@@ -16,7 +16,6 @@
 
 import logging
 
-import pandas as pd
 import pytest
 
 from _utils.stages.error_raiser import ErrorRaiserStage
@@ -26,11 +25,12 @@ from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+from morpheus.utils.type_aliases import DataFrameType
 
 
 @pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("exception_cls", [RuntimeError, ValueError, NotImplementedError])
-def test_stage_raises_exception(config: Config, filter_probs_df: pd.DataFrame, exception_cls: type[Exception]):
+def test_stage_raises_exception(config: Config, filter_probs_df: DataFrameType, exception_cls: type[Exception]):
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     error_raiser_stage = pipe.add_stage(ErrorRaiserStage(config, exception_cls=exception_cls))
