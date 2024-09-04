@@ -28,6 +28,7 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("exception_cls", [RuntimeError, ValueError, NotImplementedError])
 def test_stage_raises_exception(config: Config, filter_probs_df: pd.DataFrame, exception_cls: type[Exception]):
     pipe = LinearPipeline(config)
@@ -43,8 +44,7 @@ def test_stage_raises_exception(config: Config, filter_probs_df: pd.DataFrame, e
     assert len(sink_stage.get_messages()) == 0
 
 
-# TODO should work in both GPU and CPU
-@pytest.mark.cpu_mode
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("delayed_start", [False, True])
 def test_monitor_not_impl(config: Config, delayed_start: bool):
 
