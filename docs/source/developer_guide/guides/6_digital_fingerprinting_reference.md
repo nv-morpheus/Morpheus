@@ -41,7 +41,7 @@ from morpheus.cli.utils import load_labels_file
 CppConfig.set_should_use_cpp(False)
 
 config = Config()
-config.num_threads = os.cpu_count()
+config.num_threads = len(os.sched_getaffinity(0))
 config.ae = ConfigAutoEncoder()
 config.ae.feature_columns = load_labels_file(get_package_relative_file("data/columns_ae_azure.txt"))
 ```
