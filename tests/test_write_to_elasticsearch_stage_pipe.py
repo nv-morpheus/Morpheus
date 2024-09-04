@@ -47,7 +47,6 @@ def connection_conf_file_fixture(tmp_path):
     yield connection_conf_file
 
 
-@pytest.mark.use_python
 @pytest.mark.parametrize("conf_file, exception", [("connection_conf.yaml", FileNotFoundError), (None, Exception)])
 def test_constructor_invalid_conf_file(config: Config,
                                        conf_file: str,
@@ -56,7 +55,6 @@ def test_constructor_invalid_conf_file(config: Config,
         WriteToElasticsearchStage(config, index="t_index", connection_conf_file=conf_file)
 
 
-@pytest.mark.use_python
 @patch("morpheus.controllers.elasticsearch_controller.Elasticsearch")
 def test_constructor_with_custom_func(config: Config, connection_conf_file: str):
     expected_connection_kwargs = {
@@ -73,7 +71,6 @@ def test_constructor_with_custom_func(config: Config, connection_conf_file: str)
     assert stage._controller._connection_kwargs == expected_connection_kwargs
 
 
-@pytest.mark.use_python
 @patch("morpheus.stages.output.write_to_elasticsearch_stage.ElasticsearchController")
 def test_write_to_elasticsearch_stage_pipe(mock_controller: typing.Any,
                                            connection_conf_file: str,

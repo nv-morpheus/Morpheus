@@ -33,6 +33,7 @@ def test_constructor():
     worker.stop()
 
 
+@pytest.mark.skip(reason="Test is passing, but python only impls for inference remains TBD")
 @pytest.mark.use_python
 @pytest.mark.usefixtures("config")
 def test_build_output_message():

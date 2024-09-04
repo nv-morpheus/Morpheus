@@ -50,7 +50,6 @@ def azure_ad_logs_pdf_fixture(_azure_ad_logs_pdf: pd.DataFrame):
     yield _azure_ad_logs_pdf.copy(deep=True)
 
 
-@pytest.mark.use_python
 def test_dataframe_input_schema_without_json_cols(azure_ad_logs_pdf: pd.DataFrame):
     assert len(azure_ad_logs_pdf.columns) == 16
 
@@ -97,7 +96,6 @@ def test_dataframe_input_schema_without_json_cols(azure_ad_logs_pdf: pd.DataFram
         process_dataframe(azure_ad_logs_pdf, schema2)
 
 
-@pytest.mark.use_python
 def test_string_cat_column():
     cities = pd.Series([
         "New York",
@@ -144,7 +142,6 @@ def test_string_cat_column():
         string_cat_col_with_int._process_column(df)
 
 
-@pytest.mark.use_python
 def test_string_join_column():
     cities = pd.Series([
         "Boston",
@@ -163,7 +160,6 @@ def test_string_join_column():
     assert actual.equals(expected)
 
 
-@pytest.mark.use_python
 def test_column_info():
     cities = pd.Series([
         "Boston",
@@ -181,7 +177,6 @@ def test_column_info():
     assert string_join_col.name == "city"
 
 
-@pytest.mark.use_python
 def test_date_column():
     time_series = pd.Series([
         "2022-08-29T21:21:41.645157Z",
@@ -200,7 +195,6 @@ def test_date_column():
     assert datetime_series.dtype == np.dtype("datetime64[ns]")
 
 
-@pytest.mark.use_python
 def test_rename_column():
     time_series = pd.Series([
         "2022-08-29T21:21:41.645157Z",
@@ -223,7 +217,6 @@ def convert_to_upper(df, column_name: str):
     return df[column_name].str.upper()
 
 
-@pytest.mark.use_python
 def test_custom_column():
     cities = pd.Series([
         "New York",
@@ -244,7 +237,6 @@ def test_custom_column():
     assert actutal.equals(expected)
 
 
-@pytest.mark.use_python
 def test_type_cast():
     """
     Test reproduces issue reported in #922

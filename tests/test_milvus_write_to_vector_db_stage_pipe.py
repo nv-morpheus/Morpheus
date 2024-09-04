@@ -134,7 +134,7 @@ def test_write_to_vector_db_stage_from_cm_pipe(milvus_server_uri: str,
 
 
 @pytest.mark.milvus
-@pytest.mark.use_python
+@pytest.mark.use_cpp
 @pytest.mark.parametrize("is_multiresponse_message", [True, False])
 def test_write_to_vector_db_stage_from_mm_pipe(milvus_server_uri: str,
                                                idx_part_collection_config: dict,

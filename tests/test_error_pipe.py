@@ -43,6 +43,7 @@ def test_stage_raises_exception(config: Config, filter_probs_df: pd.DataFrame, e
     assert len(sink_stage.get_messages()) == 0
 
 
+# TODO should work in both GPU and CPU
 @pytest.mark.use_python
 @pytest.mark.parametrize("delayed_start", [False, True])
 def test_monitor_not_impl(config: Config, delayed_start: bool):

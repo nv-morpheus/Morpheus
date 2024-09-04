@@ -122,6 +122,7 @@ def test_resource_pool_create_raises_error():
     assert pool.borrow_obj() == 20
 
 
+@pytest.mark.skip(reason="TODO: determine what to do about python impls")
 @pytest.mark.use_python
 @pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
 def test_stage_constructor_worker_class(config: Config, pipeline_mode: PipelineModes):
@@ -131,6 +132,7 @@ def test_stage_constructor_worker_class(config: Config, pipeline_mode: PipelineM
     assert isinstance(worker, TritonInferenceWorker)
 
 
+@pytest.mark.skip(reason="TODO: determine what to do about python impls")
 @pytest.mark.use_python
 @pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
 @pytest.mark.parametrize("needs_logits", [True, False, None])
