@@ -121,7 +121,7 @@ def test_split_batches():
 
 
 @pytest.mark.skip(reason="Test is passing, but python only impls for inference remains TBD")
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_convert_one_response():
     # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
     # pylint: disable=no-member

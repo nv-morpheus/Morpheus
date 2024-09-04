@@ -51,7 +51,7 @@ if (typing.TYPE_CHECKING):
 @pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.kafka
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.reload_modules([commands, preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules", "loglevel_debug")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
@@ -156,7 +156,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
 @pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.kafka
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules", "loglevel_debug")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')

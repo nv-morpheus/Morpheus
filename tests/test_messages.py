@@ -168,6 +168,6 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     )
 
 
-@pytest.mark.usefixtures("use_cpp")
+@pytest.mark.usefixtures("gpu_mode")
 def test_constructor_cpp():
     check_all_messages(morpheus.config.CppConfig.get_should_use_cpp(), False)

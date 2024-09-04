@@ -51,7 +51,7 @@ MODEL_MAX_BATCH_SIZE = 1024
 
 
 @pytest.mark.slow
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.usefixtures("launch_mock_triton")
 @pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
 def test_abp_cpp(config: Config, tmp_path: str, message_type: type, morpheus_log_level: int):
@@ -101,7 +101,7 @@ def test_abp_cpp(config: Config, tmp_path: str, message_type: type, morpheus_log
 
 
 @pytest.mark.slow
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.usefixtures("launch_mock_triton")
 @pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
 def test_abp_multi_segment_cpp(config, tmp_path, message_type):

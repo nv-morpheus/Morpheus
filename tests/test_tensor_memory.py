@@ -88,7 +88,7 @@ def test_tensor_memory(config: Config):
 
 
 @pytest.mark.skip(reason="TODO: determine what to do about AE pipelines")
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_inference_memory_ae(config: Config):
     test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
     count = test_data.shape[0]
@@ -158,7 +158,7 @@ def check_response_memory_probs_and_ae(cls: type):
 
 
 @pytest.mark.skip(reason="TODO: determine what to do about AE pipelines")
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_response_memory_ae(config: Config, filter_probs_df: DataFrameType):
     mem = check_response_memory_probs_and_ae(ResponseMemoryAE)
 

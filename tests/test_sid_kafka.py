@@ -51,7 +51,7 @@ MODEL_MAX_BATCH_SIZE = 32
 
 @pytest.mark.kafka
 @pytest.mark.slow
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.usefixtures("launch_mock_triton")
 def test_minibert_cpp(dataset_pandas: DatasetManager,
                       config: Config,

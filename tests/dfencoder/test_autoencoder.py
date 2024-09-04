@@ -37,7 +37,7 @@ from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
 from morpheus.models.dfencoder.dataloader import FileSystemDataset
 
 # Only pandas and Python is supported
-pytestmark = [pytest.mark.use_pandas, pytest.mark.use_python]
+pytestmark = [pytest.mark.use_pandas, pytest.mark.cpu_mode]
 
 BIN_COLS = ['ts_anomaly']
 

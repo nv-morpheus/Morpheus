@@ -102,35 +102,35 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     This function will add parameterizations for the `config` fixture depending on what types of config the test
     supports
     """
-    # === use_cpp Parameterize ===
-    use_cpp = metafunc.definition.get_closest_marker("use_cpp") is not None
-    use_python = metafunc.definition.get_closest_marker("use_python") is not None
+    # === gpu_mode Parameterize ===
+    gpu_mode = metafunc.definition.get_closest_marker("gpu_mode") is not None
+    cpu_mode = metafunc.definition.get_closest_marker("cpu_mode") is not None
 
-    use_cpp_param = pytest.param(True, marks=pytest.mark.use_cpp(added_by="generate_tests"), id="use_cpp")
-    use_python_param = pytest.param(False, marks=pytest.mark.use_python(added_by="generate_tests"), id="use_python")
+    gpu_mode_param = pytest.param(True, marks=pytest.mark.gpu_mode(added_by="generate_tests"), id="gpu_mode")
+    cpu_mode_param = pytest.param(False, marks=pytest.mark.cpu_mode(added_by="generate_tests"), id="cpu_mode")
 
-    _set_use_cpp_params = []
+    _set_gpu_mode_params = []
 
-    if ("use_cpp" in metafunc.fixturenames):
+    if ("gpu_mode" in metafunc.fixturenames):
         # Need to add some params since the fixture was requested
 
-        # Add cpp unless use_cpp == True and use_python == False
-        if not (use_python and not use_cpp):
-            _set_use_cpp_params.append(use_cpp_param)
+        # Add cpp unless gpu_mode == True and cpu_mode == False
+        if not (cpu_mode and not gpu_mode):
+            _set_gpu_mode_params.append(gpu_mode_param)
 
-        # Add python unless use_cpp == False and use_python == True
-        if not (not use_python and use_cpp):
-            _set_use_cpp_params.append(use_python_param)
+        # Add python unless gpu_mode == False and cpu_mode == True
+        if not (not cpu_mode and gpu_mode):
+            _set_gpu_mode_params.append(cpu_mode_param)
 
-    elif (use_cpp and use_python):
+    elif (gpu_mode and cpu_mode):
         # Need to parameterize since we have multiple
-        _set_use_cpp_params.extend([use_cpp_param, use_python_param])
-    elif (not use_cpp and not use_python):
+        _set_gpu_mode_params.extend([gpu_mode_param, cpu_mode_param])
+    elif (not gpu_mode and not cpu_mode):
         # If neither are set, default to cpp
-        _set_use_cpp_params.append(use_cpp_param)
+        _set_gpu_mode_params.append(gpu_mode_param)
 
-    if (len(_set_use_cpp_params) > 0):
-        metafunc.parametrize("_set_use_cpp", _set_use_cpp_params, indirect=True)
+    if (len(_set_gpu_mode_params) > 0):
+        metafunc.parametrize("_set_gpu_mode", _set_gpu_mode_params, indirect=True)
 
     # === df_type Parameterize ===
     if ("df_type" in metafunc.fixturenames):
@@ -177,15 +177,15 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
 
     def should_filter_test(item: pytest.Item):
 
-        use_cpp = item.get_closest_marker("use_cpp")
+        gpu_mode = item.get_closest_marker("gpu_mode")
         use_pandas = item.get_closest_marker("use_pandas")
         use_cudf = item.get_closest_marker("use_cudf")
-        use_python = item.get_closest_marker("use_python")
+        cpu_mode = item.get_closest_marker("cpu_mode")
 
-        if (use_cpp and use_pandas):
+        if (gpu_mode and use_pandas):
             return False
 
-        if (use_cudf and use_python):
+        if (use_cudf and cpu_mode):
             return False
 
         return True
@@ -208,45 +208,45 @@ def pytest_runtest_teardown(item, nextitem):
     reset_logging(logger_name=None)  # Reset the root logger as well
 
 
-def _get_use_cpp(request: pytest.FixtureRequest) -> bool:
-    do_use_cpp: bool = True
+def _get_gpu_mode(request: pytest.FixtureRequest) -> bool:
+    do_gpu_mode: bool = True
 
     # Check for the param if this was indirectly set
     if (hasattr(request, "param") and isinstance(request.param, bool)):
-        do_use_cpp = request.param
+        do_gpu_mode = request.param
     else:
         # If not, check for the marker and use that
-        use_cpp = request.node.get_closest_marker("use_cpp") is not None
-        use_python = request.node.get_closest_marker("use_python") is not None
+        gpu_mode = request.node.get_closest_marker("gpu_mode") is not None
+        cpu_mode = request.node.get_closest_marker("cpu_mode") is not None
 
-        if (use_cpp and use_python):
-            raise RuntimeError(f"Both markers (use_cpp and use_python) were added to function {request.node.nodeid}. "
+        if (gpu_mode and cpu_mode):
+            raise RuntimeError(f"Both markers (gpu_mode and cpu_mode) were added to function {request.node.nodeid}. "
                                "Remove markers to support both.")
 
-        # This will default to True or follow use_cpp
-        do_use_cpp = not use_python
+        # This will default to True or follow gpu_mode
+        do_gpu_mode = not cpu_mode
 
-    return do_use_cpp
+    return do_gpu_mode
 
 
 # This fixture will be used by all tests.
 @pytest.fixture(scope="function", autouse=True)
-def _set_use_cpp(request: pytest.FixtureRequest):
-    do_use_cpp = _get_use_cpp(request)
+def _set_gpu_mode(request: pytest.FixtureRequest):
+    do_gpu_mode = _get_gpu_mode(request)
 
     from morpheus.config import CppConfig
 
-    CppConfig.set_should_use_cpp(do_use_cpp)
+    CppConfig.set_should_use_cpp(do_gpu_mode)
 
-    yield do_use_cpp
+    yield do_gpu_mode
 
 
 # This fixture will be used by all tests.
 @pytest.fixture(scope="function")
-def use_cpp(_set_use_cpp: bool):
+def gpu_mode(_set_gpu_mode: bool):
 
     # Just return the set value
-    yield _set_use_cpp
+    yield _set_gpu_mode
 
 
 @pytest.fixture(scope="function")
@@ -298,7 +298,7 @@ def df_type(request: pytest.FixtureRequest):
         use_cudf = request.node.get_closest_marker("use_cudf") is not None
 
         if (use_pandas and use_cudf):
-            raise RuntimeError(f"Both markers (use_cpp and use_python) were added to function {request.node.nodeid}. "
+            raise RuntimeError(f"Both markers (gpu_mode and cpu_mode) were added to function {request.node.nodeid}. "
                                "Remove markers to support both.")
 
         # This will default to "cudf" or follow use_pandas
@@ -314,7 +314,7 @@ def config():
     the object. If no marks are added to the test, it will be parameterized for both C++ and python. For example,
 
     ```
-    @pytest.mark.use_python
+    @pytest.mark.cpu_mode
     def my_python_test(config: Config):
         ...
     ```
@@ -907,33 +907,33 @@ def dataset(df_type: typing.Literal['cudf', 'pandas']):
     ```
 
     A test that requests this fixture will parameterize on the type of DataFrame returned by the DatasetManager.
-    If a test requests both this fixture and the `use_cpp` fixture, or indirectly via the `config` fixture, then
-    the test will parameterize over both df_type:[cudf, pandas] and use_cpp[True, False]. However it will remove the
-    df_type=pandas & use_cpp=True and df_type=cudf & use_cpp=False combinations as this will cause an unsupported usage
+    If a test requests both this fixture and the `gpu_mode` fixture, or indirectly via the `config` fixture, then
+    the test will parameterize over both df_type:[cudf, pandas] and gpu_mode[True, False]. However it will remove the
+    df_type=pandas & gpu_mode=True and df_type=cudf & gpu_mode=False combinations as this will cause an unsupported usage
     of Pandas dataframes with the C++ implementation of message classes, and cuDF with CPU-only implementations.
 
-    This behavior can also be overridden by using the `use_cudf`, `use_pandas`, `use_cpp` or `use_pandas` marks ex:
+    This behavior can also be overridden by using the `use_cudf`, `use_pandas`, `gpu_mode` or `use_pandas` marks ex:
     ```
     # This test will only run once with C++ enabled and cudf dataframes
-    @pytest.mark.use_cpp
+    @pytest.mark.gpu_mode
     def test something(dataset: DatasetManager):
     ...
     # This test will run once for with pandas and C++ disabled
-    @pytest.mark.use_python
+    @pytest.mark.cpu_mode
     def test something(dataset: DatasetManager):
     ...
     # This test will run once with C++ mode enabled, using cudf dataframes
     @pytest.mark.use_cudf
-    def test something(use_cpp: bool, dataset: DatasetManager):
+    def test something(gpu_mode: bool, dataset: DatasetManager):
     ...
     # This test creates an incompatible combination and will raise a RuntimeError without being executed
     @pytest.mark.use_cudf
-    @pytest.mark.use_python
+    @pytest.mark.cpu_mode
     def test something(dataset: DatasetManager):
     ...
     # This test creates an incompatible combination and will raise a RuntimeError without being executed
     @pytest.mark.use_pandas
-    @pytest.mark.use_cpp
+    @pytest.mark.gpu_mode
     def test something(dataset: DatasetManager):
     ```
 
@@ -955,7 +955,7 @@ def dataset_pandas():
     In addition to this, users can use this fixture to explicitly request a cudf Dataframe as well, allowing for a test
     that looks like:
     ```
-    @pytest.mark.use_cpp
+    @pytest.mark.gpu_mode
     def test_something(dataset_pandas: DatasetManager):
         input_df = dataset_pandas.cudf["filter_probs.csv"] # Feed our source stage a cudf DF
 
@@ -983,12 +983,12 @@ def dataset_cudf():
 
 
 @pytest.fixture(scope="function")
-def filter_probs_df(dataset, use_cpp: bool):
+def filter_probs_df(dataset, gpu_mode: bool):
     """
     Shortcut fixture for loading the filter_probs.csv dataset.
 
     Unless your test uses the `use_pandas` or `use_cudf` marks this fixture will parametarize over the two dataframe
-    types. Similarly unless your test uses the `use_cpp` or `use_python` marks this fixture will also parametarize over
+    types. Similarly unless your test uses the `gpu_mode` or `cpu_mode` marks this fixture will also parametarize over
     that as well, while excluding the combination of C++ execution and Pandas dataframes.
     """
     yield dataset["filter_probs.csv"]

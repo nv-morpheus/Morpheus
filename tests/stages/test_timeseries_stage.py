@@ -68,7 +68,7 @@ def test_constructor(config):
 
 
 @pytest.mark.use_cudf
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_call_timeseries_user(config):
     stage = TimeSeriesStage(config)
 

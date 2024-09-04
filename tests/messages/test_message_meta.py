@@ -37,7 +37,7 @@ def fixture_index_type(request: pytest.FixtureRequest) -> typing.Literal["normal
 
 @pytest.fixture(name="df", scope="function")
 def fixture_df(
-    use_cpp: bool,  # pylint: disable=unused-argument
+    gpu_mode: bool,  # pylint: disable=unused-argument
     dataset: DatasetManager,
     index_type: typing.Literal['normal', 'skip', 'dup', 'down',
                                'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
@@ -296,7 +296,7 @@ def test_update_dataframe(df: DataFrameType):
     assert meta.get_data()[col_new_int_name].isin(col_new_int).all()  # pylint: disable=unsubscriptable-object
 
 
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 def test_pandas_df_cpp(dataset_pandas: DatasetManager):
     """
     Test for issue #821, calling the `df` property returns an empty cudf dataframe.
@@ -324,7 +324,7 @@ def test_cast(config: Config, dataset: DatasetManager):  # pylint: disable=unuse
 
 
 @pytest.mark.use_pandas
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_cast_python_to_cpp(dataset: DatasetManager):
     """
     Test that we can cast a python MessageMeta to a C++ MessageMeta
@@ -343,7 +343,7 @@ def test_cast_python_to_cpp(dataset: DatasetManager):
 
 
 @pytest.mark.use_pandas
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_cast_cpp_to_python(dataset: DatasetManager):
     """
     Test that we can cast a a C++ MessageMeta to a python MessageMeta

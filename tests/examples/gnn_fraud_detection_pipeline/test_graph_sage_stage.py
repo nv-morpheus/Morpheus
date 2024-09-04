@@ -26,7 +26,7 @@ from morpheus.messages import MultiMessage
 # pylint: disable=no-name-in-module
 @pytest.mark.xfail(reason="TODO: Need to determine what to do with GPU pipelines which only run in Python mode")
 @pytest.mark.usefixtures("manual_seed")
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 class TestGraphSageStage:
 
     def test_constructor(self, config: Config, model_dir: str):

@@ -110,7 +110,7 @@ def test_file_read_json(config: Config):
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.usefixtures("chdir_tmpdir")
 def test_to_file_no_path(tmp_path: pathlib.Path, config: Config):
     """
@@ -196,7 +196,7 @@ def test_file_rw_index_pipe(tmp_path: pathlib.Path, config: Config, input_file: 
                              "include_header": True
                          }), (os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines"), {})],
                          ids=["CSV", "CSV_ID", "JSON"])
-@pytest.mark.usefixtures("use_cpp")
+@pytest.mark.usefixtures("gpu_mode")
 def test_file_roundtrip(tmp_path: pathlib.Path, input_file: str, extra_kwargs: dict[str, typing.Any]):
 
     # Output file should be same type as input

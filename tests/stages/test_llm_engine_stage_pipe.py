@@ -41,7 +41,7 @@ def _build_engine() -> LLMEngine:
 
 
 @pytest.mark.use_cudf
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_pipeline(config: Config, dataset_cudf: DatasetManager):
     test_data = os.path.join(TEST_DIRS.validation_data_dir, 'root-cause-validation-data-input.jsonlines')
     input_df = dataset_cudf[test_data]

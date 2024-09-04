@@ -48,7 +48,7 @@ from morpheus.stages.preprocess import train_ae_stage
 
 @pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
@@ -135,7 +135,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock, config: Config, tmp_path: str, morph
 
 @pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
@@ -219,7 +219,7 @@ def test_dfp_user123(mock_ae: mock.MagicMock, config: Config, tmp_path: str, mor
 
 @pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')

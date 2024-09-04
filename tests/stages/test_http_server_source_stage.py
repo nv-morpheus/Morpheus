@@ -58,7 +58,7 @@ class GetNext(threading.Thread):
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.parametrize("lines", [False, True], ids=["json", "lines"])
 @pytest.mark.parametrize("use_payload_to_df_fn", [False, True], ids=["no_payload_to_df_fn", "payload_to_df_fn"])
 def test_generate_frames(config: Config, dataset_pandas: DatasetManager, lines: bool, use_payload_to_df_fn: bool):
@@ -154,7 +154,7 @@ def test_constructor_invalid_accept_status(config: Config, invalid_accept_status
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.parametrize(
     "lines",
     [False, pytest.param(True, marks=pytest.mark.skip(reason="https://github.com/rapidsai/cudf/issues/15820"))],

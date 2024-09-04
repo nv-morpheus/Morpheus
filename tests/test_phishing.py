@@ -43,7 +43,7 @@ MODEL_MAX_BATCH_SIZE = 32
 
 
 @pytest.mark.slow
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.usefixtures("launch_mock_triton")
 def test_email_cpp(config: Config, tmp_path: str, morpheus_log_level: int):
     config.mode = PipelineModes.NLP

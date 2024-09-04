@@ -25,7 +25,7 @@ from morpheus.messages import MultiMessage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 
 
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_fixed_columns(config):
     df1 = cudf.DataFrame()
     df1['apples'] = range(0, 4)

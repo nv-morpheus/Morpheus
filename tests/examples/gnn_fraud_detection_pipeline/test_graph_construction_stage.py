@@ -28,7 +28,7 @@ from morpheus.messages import MultiMessage
 # pylint: disable=no-name-in-module
 
 
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 class TestGraphConstructionStage:
 
     def test_constructor(self, config: Config, training_file: str):

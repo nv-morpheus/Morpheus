@@ -32,7 +32,7 @@ from morpheus.stages.postprocess.add_classifications_stage import AddClassificat
 
 
 @pytest.fixture(name="config")
-def config_fixture(config: Config, use_cpp: bool):  # pylint: disable=unused-argument
+def config_fixture(config: Config, gpu_mode: bool):  # pylint: disable=unused-argument
     config.class_labels = ['frogs', 'lizards', 'toads']
     yield config
 
@@ -61,7 +61,7 @@ def test_constructor_errors(config: Config):
         AddClassificationsStage(config, labels=['missing'])
 
 
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_add_labels_with_multi_response_message_and_contgrol_message():
 
     class_labels = {0: "frogs", 1: "lizards", 2: "toads"}

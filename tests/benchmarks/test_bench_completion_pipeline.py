@@ -76,7 +76,7 @@ def _run_pipeline(config: Config,
 
 
 @pytest.mark.use_cudf
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.benchmark
 @pytest.mark.usefixtures("mock_nemollm", "mock_chat_completion")
 @pytest.mark.parametrize("llm_service_cls", [NeMoLLMService, OpenAIChatService])

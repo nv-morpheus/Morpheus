@@ -47,7 +47,7 @@ from morpheus.messages.multi_tensor_message import MultiTensorMessage
 from morpheus.utils import logger as morpheus_logger
 
 
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_missing_explicit_init():
 
     with pytest.raises(ValueError, match="improperly configured"):
@@ -149,11 +149,11 @@ def test_get_meta(filter_probs_df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     _test_get_meta(filter_probs_df)
 
 
-# Ignore unused arguments warnigns due to using the `use_cpp` fixture
+# Ignore unused arguments warnigns due to using the `gpu_mode` fixture
 # pylint:disable=unused-argument
 
 
-@pytest.mark.usefixtures("use_cpp")
+@pytest.mark.usefixtures("gpu_mode")
 def test_get_meta_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
@@ -163,7 +163,7 @@ def test_get_meta_dup_index(dataset: DatasetManager):
     _test_get_meta(df)
 
 
-@pytest.mark.usefixtures("use_cpp")
+@pytest.mark.usefixtures("gpu_mode")
 def test_set_meta(dataset: DatasetManager):
     df_saved = dataset.pandas["filter_probs.csv"]
 
@@ -238,12 +238,12 @@ def _test_set_meta_new_column(df: typing.Union[cudf.DataFrame, pd.DataFrame], df
     DatasetManager.assert_df_equal(multi.get_meta(["v2", "new_column2"]), val_to_set)
 
 
-@pytest.mark.usefixtures("use_cpp")
+@pytest.mark.usefixtures("gpu_mode")
 def test_set_meta_new_column(dataset: DatasetManager):
     _test_set_meta_new_column(dataset["filter_probs.csv"], dataset.default_df_type)
 
 
-@pytest.mark.usefixtures("use_cpp")
+@pytest.mark.usefixtures("gpu_mode")
 def test_set_meta_new_column_dup_index(dataset: DatasetManager):
     # Duplicate some indices before creating the meta
     df = dataset.replace_index(dataset["filter_probs.csv"], replace_ids={3: 4, 5: 4})
@@ -311,7 +311,7 @@ def test_copy_ranges(filter_probs_df: typing.Union[cudf.DataFrame, pd.DataFrame]
     _test_copy_ranges(filter_probs_df)
 
 
-@pytest.mark.usefixtures("use_cpp")
+@pytest.mark.usefixtures("gpu_mode")
 def test_copy_ranges_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
@@ -435,7 +435,7 @@ def test_get_slice_values(filter_probs_df: cudf.DataFrame):
     _test_get_slice_values(filter_probs_df)
 
 
-@pytest.mark.usefixtures("use_cpp")
+@pytest.mark.usefixtures("gpu_mode")
 def test_get_slice_values_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
@@ -716,7 +716,7 @@ def test_tensor_constructor(filter_probs_df: cudf.DataFrame):
                                       memory=TensorMemory(count=mess_len, tensors={"id_tensor": invalid_id_tensor}))
 
 
-@pytest.mark.usefixtures("use_cpp")
+@pytest.mark.usefixtures("gpu_mode")
 def test_tensor_slicing(dataset: DatasetManager):
 
     # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
@@ -805,8 +805,8 @@ def test_tensor_slicing(dataset: DatasetManager):
     dataset.assert_df_equal(double_slice.get_meta(), single_slice.get_meta())
 
 
-@pytest.mark.usefixtures("use_cpp")
-@pytest.mark.use_python
+@pytest.mark.usefixtures("gpu_mode")
+@pytest.mark.cpu_mode
 def test_deprecation_message(filter_probs_df: cudf.DataFrame, caplog):
 
     meta = MessageMeta(filter_probs_df)

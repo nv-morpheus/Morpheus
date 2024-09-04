@@ -28,7 +28,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.parametrize("use_deserialize", [False, True])
 @pytest.mark.parametrize("flush", [False, True])
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])

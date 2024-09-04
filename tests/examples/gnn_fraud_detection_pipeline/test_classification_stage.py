@@ -25,7 +25,7 @@ from morpheus.messages import MessageMeta
 
 
 @pytest.mark.xfail(reason="TODO: Need to determine what to do with GPU pipelines which only run in Python mode")
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 class TestClassificationStage:
 
     def test_constructor(self, config: Config, xgb_model: str, cuml: types.ModuleType):

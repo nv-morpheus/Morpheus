@@ -30,7 +30,7 @@ from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 
 
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 class TestCreateFeaturesRWStage:
     # pylint: disable=no-name-in-module
 

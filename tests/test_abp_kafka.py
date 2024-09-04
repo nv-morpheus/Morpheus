@@ -54,7 +54,7 @@ MODEL_MAX_BATCH_SIZE = 1024
 
 @pytest.mark.kafka
 @pytest.mark.slow
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.usefixtures("launch_mock_triton")
 def test_abp_cpp(config: Config,
                  dataset_pandas: DatasetManager,

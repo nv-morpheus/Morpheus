@@ -88,7 +88,7 @@ def generate_random_string(length: int) -> str:
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("data_len, num_rows_per_file, batch_size",
                          [(40, 5, 2), (51, 3, 1), (150, 10, 5), (500, 3, 2), (1000, 5, 3), (50, 10, 2), (100, 20, 3),

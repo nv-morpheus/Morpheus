@@ -48,7 +48,7 @@ def get_test_df(num_input_rows):
 
 
 @pytest.mark.milvus
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize("use_instance, num_input_rows, expected_num_output_rows, resource_kwargs, recreate",
                          [(True, 5, 5, {
                              "partition_name": "age_partition"
@@ -134,7 +134,7 @@ def test_write_to_vector_db_stage_from_cm_pipe(milvus_server_uri: str,
 
 
 @pytest.mark.milvus
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize("is_multiresponse_message", [True, False])
 def test_write_to_vector_db_stage_from_mm_pipe(milvus_server_uri: str,
                                                idx_part_collection_config: dict,

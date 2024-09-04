@@ -28,7 +28,7 @@ module_config = {
 }
 
 
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_constructor(config):
 
     mod_stage = LinearModulesStage(config, module_config, input_port_name="test_in", output_port_name="test_out")
@@ -44,7 +44,7 @@ def test_constructor(config):
     pytest.raises(NotImplementedError, mod_stage._get_cpp_module_node, None)
 
 
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_build_single_before_module_registration(config):
 
     mock_node = mock.MagicMock()
@@ -70,7 +70,7 @@ def register_test_module():
     registry.register_module("TestSimpleModule", "test_morpheus_modules", mrc_version, module_init_fn)
 
 
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_build_single_after_module_registration(config):
 
     register_test_module()

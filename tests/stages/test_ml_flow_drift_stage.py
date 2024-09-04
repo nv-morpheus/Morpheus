@@ -56,7 +56,7 @@ def test_constructor(config):
 
 
 @pytest.mark.use_cudf
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 def test_calc_drift(config, filter_probs_df):
     with patch("morpheus.stages.postprocess.ml_flow_drift_stage.mlflow.start_run"):
         labels = ["a", "b", "c"]
