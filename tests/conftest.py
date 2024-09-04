@@ -966,7 +966,7 @@ def dataset_cudf():
 
 
 @pytest.fixture(scope="function")
-def filter_probs_df(dataset, gpu_mode: bool):
+def filter_probs_df(dataset):
     """
     Shortcut fixture for loading the filter_probs.csv dataset.
 
