@@ -271,7 +271,7 @@ def _get_execution_mode(request: pytest.FixtureRequest) -> "ExecutionMode":
     return ExecutionMode.CPU
 
 
-@pytest.fixture(name="execution_mode", scope="function")
+@pytest.fixture(name="execution_mode", scope="function", autouse=True)
 def execution_mode_fixture(request: pytest.FixtureRequest):
     exec_mode = _get_execution_mode(request)
     yield exec_mode
