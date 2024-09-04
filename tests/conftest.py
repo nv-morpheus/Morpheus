@@ -37,6 +37,9 @@ from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:di
 from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
 from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
 
+if typing.TYPE_CHECKING:
+    from morpheus.config import ExecutionMode
+
 # Don't let pylint complain about pytest fixtures
 # pylint: disable=redefined-outer-name,unused-argument
 
@@ -102,35 +105,12 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     This function will add parameterizations for the `config` fixture depending on what types of config the test
     supports
     """
-    # === gpu_mode Parameterize ===
-    gpu_mode = metafunc.definition.get_closest_marker("gpu_mode") is not None
-    cpu_mode = metafunc.definition.get_closest_marker("cpu_mode") is not None
 
-    gpu_mode_param = pytest.param(True, marks=pytest.mark.gpu_mode(added_by="generate_tests"), id="gpu_mode")
-    cpu_mode_param = pytest.param(False, marks=pytest.mark.cpu_mode(added_by="generate_tests"), id="cpu_mode")
-
-    _set_gpu_mode_params = []
-
-    if ("gpu_mode" in metafunc.fixturenames):
-        # Need to add some params since the fixture was requested
-
-        # Add cpp unless gpu_mode == True and cpu_mode == False
-        if not (cpu_mode and not gpu_mode):
-            _set_gpu_mode_params.append(gpu_mode_param)
-
-        # Add python unless gpu_mode == False and cpu_mode == True
-        if not (not cpu_mode and gpu_mode):
-            _set_gpu_mode_params.append(cpu_mode_param)
-
-    elif (gpu_mode and cpu_mode):
-        # Need to parameterize since we have multiple
-        _set_gpu_mode_params.extend([gpu_mode_param, cpu_mode_param])
-    elif (not gpu_mode and not cpu_mode):
-        # If neither are set, default to cpp
-        _set_gpu_mode_params.append(gpu_mode_param)
-
-    if (len(_set_gpu_mode_params) > 0):
-        metafunc.parametrize("_set_gpu_mode", _set_gpu_mode_params, indirect=True)
+    # A test can request a fixture by placing it in the function arguments, or with a mark
+    if ("gpu_and_cpu_mode" in metafunc.fixturenames or metafunc.definition.get_closest_marker("gpu_and_cpu_mode")):
+        gpu_mode_param = pytest.param(True, marks=pytest.mark.gpu_mode(added_by="generate_tests"), id="gpu_mode")
+        cpu_mode_param = pytest.param(False, marks=pytest.mark.cpu_mode(added_by="generate_tests"), id="cpu_mode")
+        metafunc.parametrize("execution_mode", [gpu_mode_param, cpu_mode_param], indirect=True)
 
     # === df_type Parameterize ===
     if ("df_type" in metafunc.fixturenames):
@@ -208,47 +188,6 @@ def pytest_runtest_teardown(item, nextitem):
     reset_logging(logger_name=None)  # Reset the root logger as well
 
 
-def _get_gpu_mode(request: pytest.FixtureRequest) -> bool:
-    do_gpu_mode: bool = True
-
-    # Check for the param if this was indirectly set
-    if (hasattr(request, "param") and isinstance(request.param, bool)):
-        do_gpu_mode = request.param
-    else:
-        # If not, check for the marker and use that
-        gpu_mode = request.node.get_closest_marker("gpu_mode") is not None
-        cpu_mode = request.node.get_closest_marker("cpu_mode") is not None
-
-        if (gpu_mode and cpu_mode):
-            raise RuntimeError(f"Both markers (gpu_mode and cpu_mode) were added to function {request.node.nodeid}. "
-                               "Remove markers to support both.")
-
-        # This will default to True or follow gpu_mode
-        do_gpu_mode = not cpu_mode
-
-    return do_gpu_mode
-
-
-# This fixture will be used by all tests.
-@pytest.fixture(scope="function", autouse=True)
-def _set_gpu_mode(request: pytest.FixtureRequest):
-    do_gpu_mode = _get_gpu_mode(request)
-
-    from morpheus.config import CppConfig
-
-    CppConfig.set_should_use_cpp(do_gpu_mode)
-
-    yield do_gpu_mode
-
-
-# This fixture will be used by all tests.
-@pytest.fixture(scope="function")
-def gpu_mode(_set_gpu_mode: bool):
-
-    # Just return the set value
-    yield _set_gpu_mode
-
-
 @pytest.fixture(scope="function")
 def config_only_cpp():
     """
@@ -307,8 +246,51 @@ def df_type(request: pytest.FixtureRequest):
     yield df_type_str
 
 
+def _get_execution_mode(request: pytest.FixtureRequest) -> "ExecutionMode":
+    do_gpu_mode: bool = True
+
+    # Check for the param if this was indirectly set
+    if (hasattr(request, "param") and isinstance(request.param, bool)):
+        do_gpu_mode = request.param
+    else:
+        # If not, check for the marker and use that
+        gpu_mode = request.node.get_closest_marker("gpu_mode") is not None
+        cpu_mode = request.node.get_closest_marker("cpu_mode") is not None
+
+        if (gpu_mode and cpu_mode):
+            raise RuntimeError(f"Both markers (gpu_mode and cpu_mode) were added to function {request.node.nodeid}. "
+                               "Use the gpu_and_cpu_mode marker to test both.")
+
+        # This will default to True or follow gpu_mode
+        do_gpu_mode = not cpu_mode
+
+    from morpheus.config import ExecutionMode
+    if do_gpu_mode:
+        return ExecutionMode.GPU
+
+    return ExecutionMode.CPU
+
+
+@pytest.fixture(name="execution_mode", scope="function")
+def execution_mode_fixture(request: pytest.FixtureRequest):
+    exec_mode = _get_execution_mode(request)
+    yield exec_mode
+
+
+# This fixture will be used by all tests.
+@pytest.fixture(scope="function", autouse=True)
+def _set_use_cpp(request: pytest.FixtureRequest):
+    execution_mode = _get_execution_mode(request)
+    from morpheus.config import CppConfig
+
+    do_use_cpp: bool = (execution_mode.value == "GPU")
+    CppConfig.set_should_use_cpp(do_use_cpp)
+
+    yield do_use_cpp
+
+
 @pytest.fixture(scope="function")
-def config():
+def config(execution_mode: "ExecutionMode"):
     """
     For new pytest style tests, get the config by using this fixture. It will setup the config based on the marks set on
     the object. If no marks are added to the test, it will be parameterized for both C++ and python. For example,
@@ -322,6 +304,7 @@ def config():
 
     from morpheus.config import Config
     config = Config()
+    config.execution_mode = execution_mode
 
     yield config
 

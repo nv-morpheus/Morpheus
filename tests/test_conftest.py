@@ -21,11 +21,31 @@ import pytest
 import cudf
 
 from _utils.dataset_manager import DatasetManager
+from morpheus.config import Config
 from morpheus.config import CppConfig
+from morpheus.config import ExecutionMode
 
 
-@pytest.fixture(name="cpp_from_marker", scope="function")
-def cpp_from_marker_fixture(request: pytest.FixtureRequest) -> bool:
+def exec_mode_to_cpp_mode(exec_mode: ExecutionMode) -> bool:
+    return exec_mode == ExecutionMode.GPU
+
+
+@pytest.fixture(name="exec_mode_from_marker", scope="function")
+def exec_mode_from_marker_fixture(request: pytest.FixtureRequest) -> ExecutionMode:
+
+    gpu_mode = len([x for x in request.node.iter_markers("gpu_mode") if "added_by" in x.kwargs]) > 0
+    cpu_mode = len([x for x in request.node.iter_markers("cpu_mode") if "added_by" in x.kwargs]) > 0
+
+    assert gpu_mode != cpu_mode
+
+    if gpu_mode:
+        return ExecutionMode.GPU
+
+    return ExecutionMode.CPU
+
+
+@pytest.fixture(name="cpp_mode_from_marker", scope="function")
+def cpp_mode_from_marker_fixture(request: pytest.FixtureRequest) -> bool:
 
     gpu_mode = len([x for x in request.node.iter_markers("gpu_mode") if "added_by" in x.kwargs]) > 0
     cpu_mode = len([x for x in request.node.iter_markers("cpu_mode") if "added_by" in x.kwargs]) > 0
@@ -127,12 +147,6 @@ def test_mark_cpu_mode():
     assert not CppConfig.get_should_use_cpp()
 
 
-@pytest.mark.gpu_mode
-@pytest.mark.cpu_mode
-def test_mark_both(cpp_from_marker: bool):
-    assert CppConfig.get_should_use_cpp() == cpp_from_marker
-
-
 # === Marks and Config ===
 @pytest.mark.gpu_mode
 @pytest.mark.usefixtures("config")
@@ -141,44 +155,37 @@ def test_mark_and_config_gpu_mode():
 
 
 @pytest.mark.cpu_mode
-@pytest.mark.usefixtures("config")
-def test_mark_and_config_cpu_mode():
+def test_mark_and_config_cpu_mode(config: Config):
     assert not CppConfig.get_should_use_cpp()
+    assert config.execution_mode == ExecutionMode.CPU
 
 
-@pytest.mark.gpu_mode
-@pytest.mark.cpu_mode
-@pytest.mark.usefixtures("config")
-def test_mark_and_config_both(cpp_from_marker: bool):
-    assert CppConfig.get_should_use_cpp() == cpp_from_marker
+@pytest.mark.gpu_and_cpu_mode
+def test_gpu_and_cpu_mode(config: Config, exec_mode_from_marker: ExecutionMode):
+    assert config.execution_mode == exec_mode_from_marker
 
 
-@pytest.mark.usefixtures("config")
-def test_mark_and_config_neither(cpp_from_marker: bool):
-    assert CppConfig.get_should_use_cpp() == cpp_from_marker
+def test_mark_and_config_neither(config: Config):
+    assert CppConfig.get_should_use_cpp()
+    assert config.execution_mode == ExecutionMode.GPU
 
 
 # === Fixture ===
 @pytest.mark.gpu_mode
-def test_fixture_gpu_mode(gpu_mode: bool):
-    assert gpu_mode
+def test_fixture_gpu_mode(execution_mode: ExecutionMode):
+    assert execution_mode == ExecutionMode.GPU
     assert CppConfig.get_should_use_cpp()
 
 
 @pytest.mark.cpu_mode
-def test_fixture_cpu_mode(gpu_mode: bool):
-    assert not gpu_mode
+def test_fixture_cpu_mode(execution_mode: ExecutionMode):
+    assert execution_mode == ExecutionMode.CPU
     assert not CppConfig.get_should_use_cpp()
 
 
-@pytest.mark.gpu_mode
-@pytest.mark.cpu_mode
-def test_fixture_both(gpu_mode: bool):
-    assert CppConfig.get_should_use_cpp() == gpu_mode
-
-
-def test_fixture_neither(gpu_mode: bool):
-    assert CppConfig.get_should_use_cpp() == gpu_mode
+def test_fixture_neither(execution_mode: ExecutionMode):
+    assert execution_mode == ExecutionMode.GPU
+    assert CppConfig.get_should_use_cpp()
 
 
 # === Config Fixture ===
@@ -198,21 +205,19 @@ class TestNoMarkerClass:
         assert CppConfig.get_should_use_cpp()
 
     @pytest.mark.cpu_mode
-    def test_python_marker(self):
+    def test_python_marker(self, execution_mode: ExecutionMode):
+        assert execution_mode == ExecutionMode.CPU
         assert not CppConfig.get_should_use_cpp()
 
     @pytest.mark.gpu_mode
-    def test_cpp_marker(self):
+    def test_cpp_marker(self, execution_mode: ExecutionMode):
+        assert execution_mode == ExecutionMode.GPU
         assert CppConfig.get_should_use_cpp()
 
-    @pytest.mark.gpu_mode
-    @pytest.mark.cpu_mode
-    def test_marker_both(self, cpp_from_marker: bool):
-        assert CppConfig.get_should_use_cpp() == cpp_from_marker
-
     @pytest.mark.slow
-    def test_other_marker(self, gpu_mode: bool):
-        assert CppConfig.get_should_use_cpp() == gpu_mode
+    def test_other_marker(self, execution_mode: ExecutionMode):
+        assert execution_mode == ExecutionMode.GPU
+        assert CppConfig.get_should_use_cpp()
 
 
 @pytest.mark.cpu_mode
@@ -221,17 +226,14 @@ class TestPythonMarkerClass:
     def test_no_marker(self):
         assert not CppConfig.get_should_use_cpp()
 
-    def test_with_fixture(self, gpu_mode: bool):
-        assert not gpu_mode
+    def test_with_fixture(self, execution_mode: ExecutionMode):
+        assert execution_mode == ExecutionMode.CPU
         assert not CppConfig.get_should_use_cpp()
 
     @pytest.mark.cpu_mode
-    def test_extra_marker(self):
+    def test_extra_marker(self, execution_mode: ExecutionMode):
+        assert execution_mode == ExecutionMode.CPU
         assert not CppConfig.get_should_use_cpp()
-
-    @pytest.mark.gpu_mode
-    def test_add_marker(self, cpp_from_marker: bool):
-        assert CppConfig.get_should_use_cpp() == cpp_from_marker
 
 
 @pytest.mark.gpu_mode
@@ -240,17 +242,13 @@ class TestCppMarkerClass:
     def test_no_marker(self):
         assert CppConfig.get_should_use_cpp()
 
-    def test_with_fixture(self, gpu_mode: bool):
-        assert gpu_mode
+    def test_with_fixture(self, execution_mode: ExecutionMode):
+        assert execution_mode == ExecutionMode.GPU
         assert CppConfig.get_should_use_cpp()
 
     @pytest.mark.gpu_mode
     def test_extra_marker(self):
         assert CppConfig.get_should_use_cpp()
-
-    @pytest.mark.cpu_mode
-    def test_add_marker(self, cpp_from_marker: bool):
-        assert CppConfig.get_should_use_cpp() == cpp_from_marker
 
 
 # === DF Type ===
