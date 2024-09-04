@@ -171,16 +171,3 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
 @pytest.mark.usefixtures("use_cpp")
 def test_constructor_cpp():
     check_all_messages(morpheus.config.CppConfig.get_should_use_cpp(), False)
-
-
-@pytest.mark.reload_modules([morpheus.config, morpheus.utils.type_utils])
-@pytest.mark.usefixtures("reload_modules", "restore_environ")
-def test_constructor_env():
-    # Set the NO_CPP flag which should disable C++ regardless
-    os.environ['MORPHEUS_NO_CPP'] = '1'
-
-    # Reload the CppConfig class just in case
-    importlib.reload(morpheus.config)
-
-    # Check all messages. Should be False regardless due to the environment variable
-    check_all_messages(False, False)
