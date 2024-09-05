@@ -37,10 +37,8 @@ def fixture_index_type(request: pytest.FixtureRequest) -> typing.Literal["normal
 
 @pytest.fixture(name="df", scope="function")
 def fixture_df(
-    gpu_mode: bool,  # pylint: disable=unused-argument
-    dataset: DatasetManager,
-    index_type: typing.Literal['normal', 'skip', 'dup', 'down',
-                               'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
+    dataset: DatasetManager, index_type: typing.Literal['normal', 'skip', 'dup', 'down',
+                                                        'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
     test_df = dataset["test_dataframe.jsonlines"]
 
     if (index_type == "normal"):

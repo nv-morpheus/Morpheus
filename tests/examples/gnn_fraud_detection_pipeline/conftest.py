@@ -44,7 +44,7 @@ def cuml_fixture(fail_missing: bool):
 
 
 @pytest.fixture(name="config")
-def config_fixture(config, gpu_mode: bool):  # pylint: disable=unused-argument
+def config_fixture(config):
     """
     The GNN fraud detection pipeline utilizes the "other" pipeline mode.
     """

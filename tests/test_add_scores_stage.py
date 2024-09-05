@@ -36,7 +36,7 @@ from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 
 
 @pytest.fixture(name='config')
-def fixture_config(config: Config, gpu_mode: bool):  # pylint: disable=unused-argument
+def fixture_config(config: Config):
     config.class_labels = ['frogs', 'lizards', 'toads']
     config.feature_length = 12
     yield config

@@ -32,7 +32,7 @@ from morpheus.stages.postprocess.add_classifications_stage import AddClassificat
 
 
 @pytest.fixture(name="config")
-def config_fixture(config: Config, gpu_mode: bool):  # pylint: disable=unused-argument
+def config_fixture(config: Config):
     config.class_labels = ['frogs', 'lizards', 'toads']
     yield config
 

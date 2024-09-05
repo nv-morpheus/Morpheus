@@ -31,7 +31,7 @@ from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 
 @pytest.fixture(name='config')
-def fixture_config(config: Config, gpu_mode: bool):  # pylint: disable=unused-argument
+def fixture_config(config: Config):
     config.class_labels = [
         "address",
         "bank_acct",
