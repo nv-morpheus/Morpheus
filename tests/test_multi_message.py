@@ -18,7 +18,6 @@
 
 import dataclasses
 import string
-import typing
 from unittest.mock import patch
 
 import cupy as cp
@@ -29,6 +28,7 @@ import pytest
 import cudf
 
 from _utils.dataset_manager import DatasetManager
+from morpheus.config import ExecutionMode
 from morpheus.messages import ControlMessage
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
@@ -45,6 +45,10 @@ from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
 from morpheus.utils import logger as morpheus_logger
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import DataFrameTypeStr
+from morpheus.utils.type_utils import get_array_pkg
+from morpheus.utils.type_utils import get_df_pkg_from_obj
 
 
 @pytest.mark.cpu_mode
@@ -60,7 +64,8 @@ def test_missing_explicit_init():
         BadMultiMessage(meta=None, value=5)
 
 
-def test_constructor_empty(filter_probs_df: cudf.DataFrame):
+@pytest.mark.gpu_and_cpu_mode
+def test_constructor_empty(filter_probs_df: DataFrameType):
 
     meta = MessageMeta(filter_probs_df)
 
@@ -71,7 +76,8 @@ def test_constructor_empty(filter_probs_df: cudf.DataFrame):
     assert multi.mess_count == meta.count
 
 
-def test_constructor_values(filter_probs_df: cudf.DataFrame):
+@pytest.mark.gpu_and_cpu_mode
+def test_constructor_values(filter_probs_df: DataFrameType):
 
     meta = MessageMeta(filter_probs_df)
 
@@ -94,7 +100,8 @@ def test_constructor_values(filter_probs_df: cudf.DataFrame):
     assert multi.mess_count == 5
 
 
-def test_constructor_invalid(filter_probs_df: cudf.DataFrame):
+@pytest.mark.gpu_and_cpu_mode
+def test_constructor_invalid(filter_probs_df: DataFrameType):
 
     meta = MessageMeta(filter_probs_df)
 
@@ -115,13 +122,13 @@ def test_constructor_invalid(filter_probs_df: cudf.DataFrame):
         MultiMessage(meta=meta, mess_offset=5, mess_count=(meta.count - 5) + 1)
 
 
-def _test_get_meta(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
+def _test_get_meta(df: DataFrameType):
     meta = MessageMeta(df)
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=5)
 
     # Manually slice the dataframe according to the multi settings
-    df_sliced: cudf.DataFrame = df.iloc[multi.mess_offset:multi.mess_offset + multi.mess_count, :]
+    df_sliced: DataFrameType = df.iloc[multi.mess_offset:multi.mess_offset + multi.mess_count, :]
 
     DatasetManager.assert_df_equal(multi.get_meta(), df_sliced)
 
@@ -145,15 +152,11 @@ def _test_get_meta(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     DatasetManager.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
 
-def test_get_meta(filter_probs_df: typing.Union[cudf.DataFrame, pd.DataFrame]):
+def test_get_meta(filter_probs_df: DataFrameType):
     _test_get_meta(filter_probs_df)
 
 
-# Ignore unused arguments warnigns due to using the `gpu_mode` fixture
-# pylint:disable=unused-argument
-
-
-@pytest.mark.usefixtures("gpu_mode")
+@pytest.mark.gpu_mode
 def test_get_meta_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
@@ -163,7 +166,7 @@ def test_get_meta_dup_index(dataset: DatasetManager):
     _test_get_meta(df)
 
 
-@pytest.mark.usefixtures("gpu_mode")
+@pytest.mark.gpu_mode
 def test_set_meta(dataset: DatasetManager):
     df_saved = dataset.pandas["filter_probs.csv"]
 
@@ -171,6 +174,7 @@ def test_set_meta(dataset: DatasetManager):
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=5)
 
+    # Although we are working with cuDF, this mask needs to be made with numpy
     saved_mask = np.ones(len(df_saved), bool)
     saved_mask[multi.mess_offset:multi.mess_offset + multi.mess_count] = False
 
@@ -206,8 +210,7 @@ def test_set_meta(dataset: DatasetManager):
     test_value(multi_columns, np.random.randn(multi.mess_count, len(multi_columns)))
 
 
-def _test_set_meta_new_column(df: typing.Union[cudf.DataFrame, pd.DataFrame], df_type: typing.Literal['cudf',
-                                                                                                      'pandas']):
+def _test_set_meta_new_column(df: DataFrameType, df_type: DataFrameTypeStr):
 
     meta = MessageMeta(df)
 
@@ -238,12 +241,12 @@ def _test_set_meta_new_column(df: typing.Union[cudf.DataFrame, pd.DataFrame], df
     DatasetManager.assert_df_equal(multi.get_meta(["v2", "new_column2"]), val_to_set)
 
 
-@pytest.mark.usefixtures("gpu_mode")
+@pytest.mark.gpu_mode
 def test_set_meta_new_column(dataset: DatasetManager):
     _test_set_meta_new_column(dataset["filter_probs.csv"], dataset.default_df_type)
 
 
-@pytest.mark.usefixtures("gpu_mode")
+@pytest.mark.gpu_mode
 def test_set_meta_new_column_dup_index(dataset: DatasetManager):
     # Duplicate some indices before creating the meta
     df = dataset.replace_index(dataset["filter_probs.csv"], replace_ids={3: 4, 5: 4})
@@ -270,7 +273,7 @@ def test_set_meta_issue_286(filter_probs_df: cudf.DataFrame, use_series: bool):
     mm2.set_meta('letters', values[5:10])
 
 
-def _test_copy_ranges(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
+def _test_copy_ranges(df: DataFrameType):
     meta = MessageMeta(df)
 
     mm1 = MultiMessage(meta=meta)
@@ -297,21 +300,17 @@ def _test_copy_ranges(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     assert mm3.mess_offset == 0
     assert mm3.mess_count == (6 - 2) + (15 - 12)
 
-    if isinstance(df, pd.DataFrame):
-        concat_fn = pd.concat
-    else:
-        concat_fn = cudf.concat
-
-    expected_df = concat_fn([df.iloc[2:6], df.iloc[12:15]])
+    df_pkg = get_df_pkg_from_obj(df)
+    expected_df = df_pkg.concat([df.iloc[2:6], df.iloc[12:15]])
 
     DatasetManager.assert_df_equal(mm3.get_meta(), expected_df)
 
 
-def test_copy_ranges(filter_probs_df: typing.Union[cudf.DataFrame, pd.DataFrame]):
+def test_copy_ranges(filter_probs_df: DataFrameType):
     _test_copy_ranges(filter_probs_df)
 
 
-@pytest.mark.usefixtures("gpu_mode")
+@pytest.mark.gpu_mode
 def test_copy_ranges_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
@@ -321,7 +320,7 @@ def test_copy_ranges_dup_index(dataset: DatasetManager):
     _test_copy_ranges(df)
 
 
-def test_get_slice_ranges(filter_probs_df: cudf.DataFrame):
+def test_get_slice_ranges(filter_probs_df: DataFrameType):
 
     meta = MessageMeta(filter_probs_df)
 
@@ -372,7 +371,7 @@ def test_get_slice_ranges(filter_probs_df: cudf.DataFrame):
         multi_full.get_slice(13, 16).get_slice(4, 5)
 
 
-def _test_get_slice_values(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
+def _test_get_slice_values(df: DataFrameType):
 
     meta = MessageMeta(df)
 
@@ -431,11 +430,11 @@ def _test_get_slice_values(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
         df.iloc[10 + 5:(10 + 5) + (8 - 5)][["v4", "v1", "v2"]])
 
 
-def test_get_slice_values(filter_probs_df: cudf.DataFrame):
+def test_get_slice_values(filter_probs_df: DataFrameType):
     _test_get_slice_values(filter_probs_df)
 
 
-@pytest.mark.usefixtures("gpu_mode")
+@pytest.mark.gpu_mode
 def test_get_slice_values_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
@@ -445,14 +444,15 @@ def test_get_slice_values_dup_index(dataset: DatasetManager):
     _test_get_slice_values(df)
 
 
-def test_get_slice_derived(filter_probs_df: cudf.DataFrame):
+def test_get_slice_derived(filter_probs_df: DataFrameType, execution_mode: ExecutionMode):
+    array_pkg = get_array_pkg(execution_mode)
 
     multi_tensor_message_tensors = {
-        "input_ids": cp.zeros((20, 2)),
-        "input_mask": cp.zeros((20, 2)),
-        "seq_ids": cp.expand_dims(cp.arange(0, 20, dtype=int), axis=1),
-        "input__0": cp.zeros((20, 2)),
-        "probs": cp.zeros((20, 2)),
+        "input_ids": array_pkg.zeros((20, 2)),
+        "input_mask": array_pkg.zeros((20, 2)),
+        "seq_ids": array_pkg.expand_dims(array_pkg.arange(0, 20, dtype=int), axis=1),
+        "input__0": array_pkg.zeros((20, 2)),
+        "probs": array_pkg.zeros((20, 2)),
     }
 
     def compare_slice(message_class, **kwargs):
@@ -491,7 +491,7 @@ def test_get_slice_derived(filter_probs_df: cudf.DataFrame):
                   memory=ResponseMemoryProbs(count=20, probs=multi_tensor_message_tensors["probs"]))
 
 
-def test_from_message(filter_probs_df: cudf.DataFrame):
+def test_from_message(filter_probs_df: DataFrameType):
 
     # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
     # pylint: disable=no-member
@@ -614,7 +614,7 @@ def test_from_message(filter_probs_df: cudf.DataFrame):
         MultiAEMessage.from_message(multi)
 
 
-def test_tensor_constructor(filter_probs_df: cudf.DataFrame):
+def test_tensor_constructor(filter_probs_df: DataFrameType, execution_mode: ExecutionMode):
 
     mess_len = len(filter_probs_df)
     ten_len = mess_len * 2
@@ -670,41 +670,42 @@ def test_tensor_constructor(filter_probs_df: cudf.DataFrame):
         MultiTensorMessage(meta=meta, mess_count=10, memory=memory, count=9)
 
     # === ID Tensors ===
-    id_tensor = cp.expand_dims(cp.arange(0, mess_len, dtype=int), axis=1)
+    array_pkg = get_array_pkg(execution_mode)
+    id_tensor = array_pkg.expand_dims(array_pkg.arange(0, mess_len, dtype=int), axis=1)
 
     # With valid ID tensor
     multi_tensor = MultiTensorMessage(meta=meta, memory=TensorMemory(count=mess_len, tensors={"seq_ids": id_tensor}))
-    assert cp.all(multi_tensor.get_id_tensor() == id_tensor)
+    assert array_pkg.all(multi_tensor.get_id_tensor() == id_tensor)
 
     # With different ID name
     multi_tensor = MultiTensorMessage(meta=meta,
                                       memory=TensorMemory(count=mess_len, tensors={"other_seq_ids": id_tensor}),
                                       id_tensor_name="other_seq_ids")
-    assert cp.all(multi_tensor.get_id_tensor() == id_tensor)
+    assert array_pkg.all(multi_tensor.get_id_tensor() == id_tensor)
 
     # With message offset
     multi_tensor = MultiTensorMessage(meta=meta,
                                       mess_offset=4,
                                       memory=TensorMemory(count=mess_len, tensors={"seq_ids": id_tensor}),
                                       offset=4)
-    assert cp.all(multi_tensor.get_id_tensor() == id_tensor[4:])
+    assert array_pkg.all(multi_tensor.get_id_tensor() == id_tensor[4:])
 
     # Incorrect start ID
-    invalid_id_tensor = cp.copy(id_tensor)
+    invalid_id_tensor = array_pkg.copy(id_tensor)
     invalid_id_tensor[0] = -1
     with pytest.raises(RuntimeError):
         multi_tensor = MultiTensorMessage(meta=meta,
                                           memory=TensorMemory(count=mess_len, tensors={"seq_ids": invalid_id_tensor}))
 
     # Incorrect end ID
-    invalid_id_tensor = cp.copy(id_tensor)
+    invalid_id_tensor = array_pkg.copy(id_tensor)
     invalid_id_tensor[-1] = invalid_id_tensor[-1] + 1
     with pytest.raises(RuntimeError):
         multi_tensor = MultiTensorMessage(meta=meta,
                                           memory=TensorMemory(count=mess_len, tensors={"seq_ids": invalid_id_tensor}))
 
     # Incorrect end ID, different id tensor name
-    invalid_id_tensor = cp.copy(id_tensor)
+    invalid_id_tensor = array_pkg.copy(id_tensor)
     invalid_id_tensor[-1] = invalid_id_tensor[-1] + 1
     with pytest.raises(RuntimeError):
         multi_tensor = MultiTensorMessage(meta=meta,
@@ -716,7 +717,7 @@ def test_tensor_constructor(filter_probs_df: cudf.DataFrame):
                                       memory=TensorMemory(count=mess_len, tensors={"id_tensor": invalid_id_tensor}))
 
 
-@pytest.mark.usefixtures("gpu_mode")
+@pytest.mark.gpu_mode
 def test_tensor_slicing(dataset: DatasetManager):
 
     # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
@@ -805,18 +806,18 @@ def test_tensor_slicing(dataset: DatasetManager):
     dataset.assert_df_equal(double_slice.get_meta(), single_slice.get_meta())
 
 
-@pytest.mark.usefixtures("gpu_mode")
-@pytest.mark.cpu_mode
-def test_deprecation_message(filter_probs_df: cudf.DataFrame, caplog):
+@pytest.mark.gpu_and_cpu_mode
+def test_deprecation_message(filter_probs_df: DataFrameType, execution_mode: ExecutionMode):
 
     meta = MessageMeta(filter_probs_df)
 
+    array_pkg = get_array_pkg(execution_mode)
     multi_tensor_message_tensors = {
-        "input_ids": cp.zeros((20, 2)),
-        "input_mask": cp.zeros((20, 2)),
-        "seq_ids": cp.expand_dims(cp.arange(0, 20, dtype=int), axis=1),
-        "input__0": cp.zeros((20, 2)),
-        "probs": cp.zeros((20, 2)),
+        "input_ids": array_pkg.zeros((20, 2)),
+        "input_mask": array_pkg.zeros((20, 2)),
+        "seq_ids": array_pkg.expand_dims(array_pkg.arange(0, 20, dtype=int), axis=1),
+        "input__0": array_pkg.zeros((20, 2)),
+        "probs": array_pkg.zeros((20, 2)),
     }
 
     def generate_deprecation_warning(deprecated_class, new_class):
