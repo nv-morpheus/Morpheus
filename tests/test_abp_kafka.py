@@ -17,14 +17,11 @@
 import os
 import typing
 from io import StringIO
-from unittest import mock
 
-import numpy as np
 import pandas
 import pytest
 
 from _utils import TEST_DIRS
-from _utils import mk_async_infer
 from _utils.dataset_manager import DatasetManager
 from _utils.kafka import KafkaTopics
 from _utils.kafka import write_file_to_kafka

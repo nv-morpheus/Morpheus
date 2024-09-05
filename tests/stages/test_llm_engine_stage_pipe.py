@@ -16,8 +16,6 @@
 
 import os
 
-import pytest
-
 from _utils import TEST_DIRS
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager

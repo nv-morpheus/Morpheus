@@ -24,7 +24,6 @@ import pytest
 
 from _utils import TEST_DIRS
 from morpheus.config import Config
-from morpheus.config import ExecutionMode
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.inference_memory import InferenceMemoryAE
 from morpheus.messages.memory.inference_memory import InferenceMemoryFIL

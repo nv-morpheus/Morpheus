@@ -403,12 +403,12 @@ def test_stage_decorator_needed_columns(config: Config, needed_columns: dict[str
 def test_end_to_end_pipe(config: Config, filter_probs_df: DataFrameType):
 
     @source(execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
-    def source_gen(dataframes: list[cudf.DataFrame]) -> collections.abc.Iterator[MessageMeta]:
+    def source_gen(*, dataframes: list[DataFrameType]) -> collections.abc.Iterator[MessageMeta]:
         for df in dataframes:
             yield MessageMeta(df)
 
     @stage(execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
-    def multiplier(message: MessageMeta, column: str, value: int | float = 2.0) -> MessageMeta:
+    def multiplier(message: MessageMeta, *, column: str, value: int | float = 2.0) -> MessageMeta:
         with message.mutable_dataframe() as df:
             df[column] = df[column] * value
 
@@ -419,7 +419,7 @@ def test_end_to_end_pipe(config: Config, filter_probs_df: DataFrameType):
     expected_df['v2'] = expected_df['v2'] * multipy_by * 2.0
 
     pipe = LinearPipeline(config)
-    pipe.set_source(source_gen(config, dataframes=[filter_probs_df]))
+    pipe.set_source(source_gen(config, dataframes=[filter_probs_df]))  # pylint: disable=too-many-function-args
     pipe.add_stage(multiplier(config, column='v2', value=multipy_by))
     pipe.add_stage(multiplier(config, column='v2'))
     sink = pipe.add_stage(CompareDataFrameStage(config, expected_df))

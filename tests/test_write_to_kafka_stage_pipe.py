@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
 import typing
 
 import pytest
-
-import cudf
 
 from _utils.dataset_manager import DatasetManager
 from _utils.kafka import KafkaTopics
@@ -35,6 +34,7 @@ if (typing.TYPE_CHECKING):
 @pytest.mark.kafka
 @pytest.mark.gpu_and_cpu_mode
 def test_write_to_kafka_stage_pipe(config,
+                                   df_pkg: types.ModuleType,
                                    dataset: DatasetManager,
                                    kafka_bootstrap_servers: str,
                                    kafka_consumer: "KafkaConsumer",
@@ -59,8 +59,7 @@ def test_write_to_kafka_stage_pipe(config,
     kafka_messages = list(kafka_consumer)
     assert len(kafka_messages) == len(filter_probs_df)
 
-    # TODO determine if we need to use cudf here rather than matching the df package of the test
-    output_df = cudf.io.read_json("\n".join(rec.value.decode("utf-8") for rec in kafka_messages), lines=True)
+    output_df = df_pkg.read_json("\n".join(rec.value.decode("utf-8") for rec in kafka_messages), lines=True)
 
     assert len(output_df) == len(filter_probs_df)
 

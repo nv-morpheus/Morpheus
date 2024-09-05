@@ -16,13 +16,10 @@
 
 import typing
 
-import cupy as cp
 import numpy as np
 import pandas as pd
 import pytest
 import typing_utils
-
-import cudf
 
 import morpheus._lib.messages as _messages
 from _utils.dataset_manager import DatasetManager

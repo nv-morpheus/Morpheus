@@ -29,7 +29,6 @@ import pytest
 import cudf
 
 from _utils.dataset_manager import DatasetManager
-from morpheus.config import ExecutionMode
 from morpheus.messages import ControlMessage
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
