@@ -18,6 +18,7 @@
 
 import dataclasses
 import string
+import types
 from unittest.mock import patch
 
 import cupy as cp
@@ -47,7 +48,6 @@ from morpheus.messages.multi_tensor_message import MultiTensorMessage
 from morpheus.utils import logger as morpheus_logger
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import DataFrameTypeStr
-from morpheus.utils.type_utils import get_array_pkg
 from morpheus.utils.type_utils import get_df_pkg_from_obj
 
 
@@ -444,9 +444,7 @@ def test_get_slice_values_dup_index(dataset: DatasetManager):
     _test_get_slice_values(df)
 
 
-def test_get_slice_derived(filter_probs_df: DataFrameType, execution_mode: ExecutionMode):
-    array_pkg = get_array_pkg(execution_mode)
-
+def test_get_slice_derived(filter_probs_df: DataFrameType, array_pkg: types.ModuleType):
     multi_tensor_message_tensors = {
         "input_ids": array_pkg.zeros((20, 2)),
         "input_mask": array_pkg.zeros((20, 2)),
@@ -614,7 +612,7 @@ def test_from_message(filter_probs_df: DataFrameType):
         MultiAEMessage.from_message(multi)
 
 
-def test_tensor_constructor(filter_probs_df: DataFrameType, execution_mode: ExecutionMode):
+def test_tensor_constructor(filter_probs_df: DataFrameType, array_pkg: types.ModuleType):
 
     mess_len = len(filter_probs_df)
     ten_len = mess_len * 2
@@ -670,7 +668,6 @@ def test_tensor_constructor(filter_probs_df: DataFrameType, execution_mode: Exec
         MultiTensorMessage(meta=meta, mess_count=10, memory=memory, count=9)
 
     # === ID Tensors ===
-    array_pkg = get_array_pkg(execution_mode)
     id_tensor = array_pkg.expand_dims(array_pkg.arange(0, mess_len, dtype=int), axis=1)
 
     # With valid ID tensor
@@ -807,11 +804,10 @@ def test_tensor_slicing(dataset: DatasetManager):
 
 
 @pytest.mark.gpu_and_cpu_mode
-def test_deprecation_message(filter_probs_df: DataFrameType, execution_mode: ExecutionMode):
+def test_deprecation_message(filter_probs_df: DataFrameType, array_pkg: types.ModuleType):
 
     meta = MessageMeta(filter_probs_df)
 
-    array_pkg = get_array_pkg(execution_mode)
     multi_tensor_message_tensors = {
         "input_ids": array_pkg.zeros((20, 2)),
         "input_mask": array_pkg.zeros((20, 2)),
