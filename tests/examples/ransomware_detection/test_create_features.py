@@ -124,6 +124,8 @@ class TestCreateFeaturesRWStage:
         expected_df.reset_index(drop=True, inplace=True)
         dataset_pandas.assert_compare_df(meta.copy_dataframe(), expected_df)
 
+    @pytest.mark.xfail(reason="The ransomeware pipeline depends on the AppShieldMeta class, which forces the pipeline "
+                       "to be python (CPU) only")
     @mock.patch('stages.create_features.Client')
     def test_create_multi_messages(self,
                                    mock_dask_client,

@@ -147,6 +147,8 @@ class TestPreprocessingRWStage:
         stage._merge_curr_and_prev_snapshots(df, source_pid_process)
         dataset_pandas.assert_compare_df(df.fillna(''), expected_df)
 
+    @pytest.mark.xfail(reason="The ransomeware pipeline depends on the AppShieldMeta class, which forces the pipeline "
+                       "to be python (CPU) only")
     def test_pre_process_batch(self, config: Config, rwd_conf: dict, dataset_pandas: DatasetManager):
 
         # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
