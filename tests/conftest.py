@@ -895,35 +895,11 @@ def dataset(df_type: typing.Literal['cudf', 'pandas']):
     ```
 
     A test that requests this fixture will parameterize on the type of DataFrame returned by the DatasetManager.
-    If a test requests both this fixture and the `gpu_mode` fixture, or indirectly via the `config` fixture, then
-    the test will parameterize over both df_type:[cudf, pandas] and gpu_mode[True, False]. However it will remove the
-    df_type=pandas & gpu_mode=True and df_type=cudf & gpu_mode=False combinations as this will cause an unsupported usage
-    of Pandas dataframes with the C++ implementation of message classes, and cuDF with CPU-only implementations.
+    If a test requests both this fixture and is marked either `gpu_mode` or `cpu_mode` then only cudf or pandas will be
+    used to prevent an unsupported usage of Pandas dataframes with the C++ implementation of message classes, and cuDF
+    with CPU-only implementations.
 
-    This behavior can also be overridden by using the `use_cudf`, `use_pandas`, `gpu_mode` or `use_pandas` marks ex:
-    ```
-    # This test will only run once with C++ enabled and cudf dataframes
-    @pytest.mark.gpu_mode
-    def test something(dataset: DatasetManager):
-    ...
-    # This test will run once for with pandas and C++ disabled
-    @pytest.mark.cpu_mode
-    def test something(dataset: DatasetManager):
-    ...
-    # This test will run once with C++ mode enabled, using cudf dataframes
-    @pytest.mark.use_cudf
-    def test something(gpu_mode: bool, dataset: DatasetManager):
-    ...
-    # This test creates an incompatible combination and will raise a RuntimeError without being executed
-    @pytest.mark.use_cudf
-    @pytest.mark.cpu_mode
-    def test something(dataset: DatasetManager):
-    ...
-    # This test creates an incompatible combination and will raise a RuntimeError without being executed
-    @pytest.mark.use_pandas
-    @pytest.mark.gpu_mode
-    def test something(dataset: DatasetManager):
-    ```
+    Similarly the `use_cudf`, `use_pandas` marks will also prevent parametarization over the DataFrame type.
 
     Users who don't want to parametarize over the DataFrame should use the `dataset_pandas` or `dataset_cudf` fixtures.
     """
