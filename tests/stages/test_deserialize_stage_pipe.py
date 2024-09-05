@@ -32,7 +32,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
 @pytest.mark.use_cudf
-@pytest.mark.usefixtures("gpu_mode")
+@pytest.mark.gpu_mode
 def test_fixing_non_unique_indexes(dataset: DatasetManager):
     # Set 2 ids equal to others
     df = dataset.dup_index(dataset["filter_probs.csv"], count=2)

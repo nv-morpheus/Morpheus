@@ -17,16 +17,14 @@
 import typing
 from unittest.mock import patch
 
-import pandas as pd
 import pytest
 import yaml
-
-import cudf
 
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.write_to_elasticsearch_stage import WriteToElasticsearchStage
+from morpheus.utils.type_aliases import DataFrameType
 
 
 def connection_kwargs_func(kwargs):
@@ -71,11 +69,12 @@ def test_constructor_with_custom_func(config: Config, connection_conf_file: str)
     assert stage._controller._connection_kwargs == expected_connection_kwargs
 
 
+@pytest.mark.use_cudf
 @patch("morpheus.stages.output.write_to_elasticsearch_stage.ElasticsearchController")
 def test_write_to_elasticsearch_stage_pipe(mock_controller: typing.Any,
                                            connection_conf_file: str,
                                            config: Config,
-                                           filter_probs_df: typing.Union[cudf.DataFrame, pd.DataFrame]):
+                                           filter_probs_df: DataFrameType):
     mock_df_to_parallel_bulk_write = mock_controller.return_value.df_to_parallel_bulk_write
     mock_refresh_client = mock_controller.return_value.refresh_client
 
@@ -89,14 +88,11 @@ def test_write_to_elasticsearch_stage_pipe(mock_controller: typing.Any,
     # Run the pipeline
     pipe.run()
 
-    if isinstance(filter_probs_df, cudf.DataFrame):
-        filter_probs_df = filter_probs_df.to_pandas()
-
     expected_index = mock_df_to_parallel_bulk_write.call_args[1]["index"]
-    expected_df = mock_df_to_parallel_bulk_write.call_args[1]["df"]
+    actual_df = mock_df_to_parallel_bulk_write.call_args[1]["df"]
 
     mock_refresh_client.assert_called_once()
     mock_df_to_parallel_bulk_write.assert_called_once()
 
     assert expected_index == "t_index"
-    assert expected_df.equals(filter_probs_df)
+    assert actual_df.equals(filter_probs_df.to_pandas())
