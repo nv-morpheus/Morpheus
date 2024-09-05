@@ -44,8 +44,6 @@ class MultiProcessingBaseStage(SinglePortStage, ABC, typing.Generic[InputT, Outp
         else:
             self._max_in_flight_messages = max_in_flight_messages
 
-        # self._max_in_flight_messages = 1
-
     @property
     def name(self) -> str:
         return "multi-processing-base-stage"
@@ -89,6 +87,11 @@ class MultiProcessingStage(MultiProcessingBaseStage[InputT, OutputT]):
     def name(self) -> str:
         return "multi-processing-stage"
 
+    def accepted_types(self) -> typing.Tuple:
+        input_type = typing.get_args(self.__orig_class__)[0]  # pylint: disable=no-member
+
+        return (input_type, )
+
     def _on_data(self, data: InputT) -> OutputT:
 
         future = self._shared_process_pool.submit_task(self.name, self._process_fn, data)
@@ -99,4 +102,11 @@ class MultiProcessingStage(MultiProcessingBaseStage[InputT, OutputT]):
     @staticmethod
     def create(*, c: Config, process_fn: typing.Callable[[InputT], OutputT], process_pool_usage: float):
 
-        return MultiProcessingStage[InputT, OutputT](c=c, process_pool_usage=process_pool_usage, process_fn=process_fn)
+        type_hints = typing.get_type_hints(process_fn)
+
+        input_type = next(iter(type_hints.values()))
+        output_type = type_hints["return"]
+
+        return MultiProcessingStage[input_type, output_type](c=c,
+                                                             process_pool_usage=process_pool_usage,
+                                                             process_fn=process_fn)
