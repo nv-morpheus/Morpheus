@@ -261,6 +261,11 @@ def _get_execution_mode(request: pytest.FixtureRequest) -> "ExecutionMode":
             raise RuntimeError(f"Both markers (gpu_mode and cpu_mode) were added to function {request.node.nodeid}. "
                                "Use the gpu_and_cpu_mode marker to test both.")
 
+        # if both are undefined, infer based on the df_type
+        if (not gpu_mode and not cpu_mode):
+            gpu_mode = request.node.get_closest_marker("use_cudf") is not None
+            cpu_mode = request.node.get_closest_marker("use_pandas") is not None
+
         # This will default to True or follow gpu_mode
         do_gpu_mode = not cpu_mode
 

@@ -24,6 +24,8 @@ from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import ExecutionMode
+from morpheus.utils.type_aliases import DataFrameTypeStr
+from morpheus.utils.type_utils import exec_mode_to_df_type_str
 
 
 def exec_mode_to_cpp_mode(exec_mode: ExecutionMode) -> bool:
@@ -254,6 +256,10 @@ class TestCppMarkerClass:
 # === DF Type ===
 def test_df_type_no_marks(df_type, df_type_from_marker):
     assert df_type == df_type_from_marker
+
+
+def test_df_type_matches_execution_mode(df_type: DataFrameTypeStr, execution_mode: ExecutionMode):
+    assert df_type == exec_mode_to_df_type_str(execution_mode)
 
 
 @pytest.mark.use_pandas
