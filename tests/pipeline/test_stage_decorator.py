@@ -27,6 +27,7 @@ import cudf
 from _utils import assert_results
 from morpheus.common import TypeId
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
@@ -38,6 +39,7 @@ from morpheus.pipeline.stage_decorator import source
 from morpheus.pipeline.stage_decorator import stage
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
+from morpheus.utils.type_aliases import DataFrameType
 
 
 def _get_annotation(type_: type, generator_type: type) -> type:
@@ -56,7 +58,6 @@ def _mk_compute_schema_fn(return_type: type) -> ComputeSchemaType:
     return lambda schema: schema.output_schema.set_type(return_type)
 
 
-@pytest.mark.cpu_mode
 @pytest.mark.parametrize("generator_type",
                          [None, typing.Iterator, typing.Generator, collections.abc.Iterator, collections.abc.Generator])
 @pytest.mark.parametrize("return_type, is_prealloc",
@@ -94,7 +95,6 @@ def test_wrapped_function_source_stage_constructor(config: Config,
     mock_compute_schema_fn.assert_called_once_with(schema)
 
 
-@pytest.mark.cpu_mode
 @pytest.mark.parametrize("src_cls", [WrappedFunctionSourceStage, PreAllocatedWrappedFunctionStage])
 def test_wrapped_function_source_stage_not_generator_error(config: Config, src_cls: type):
 
@@ -108,7 +108,6 @@ def test_wrapped_function_source_stage_not_generator_error(config: Config, src_c
                 compute_schema_fn=_mk_compute_schema_fn(MessageMeta))
 
 
-@pytest.mark.cpu_mode
 @pytest.mark.parametrize("generator_type",
                          [None, typing.Iterator, typing.Generator, collections.abc.Iterator, collections.abc.Generator])
 @pytest.mark.parametrize("return_type, is_prealloc",
@@ -132,7 +131,6 @@ def test_source_decorator(config: Config, generator_type: type, return_type: typ
     assert schema.output_schema.get_type() is return_type
 
 
-@pytest.mark.cpu_mode
 def test_source_decorator_name(config: Config):
 
     @source
@@ -143,7 +141,6 @@ def test_source_decorator_name(config: Config):
     assert source_stage.name == 'test_source_gen'  # pylint: disable=no-member
 
 
-@pytest.mark.cpu_mode
 def test_source_decorator_explicit_name(config: Config):
 
     @source(name="source_gen")
@@ -154,7 +151,6 @@ def test_source_decorator_explicit_name(config: Config):
     assert source_stage.name == 'source_gen'  # pylint: disable=no-member
 
 
-@pytest.mark.cpu_mode
 def test_source_decorator_explicit_compute_schema(config: Config):
     mock_compute_schema_fn = mock.MagicMock()
     mock_compute_schema_fn.side_effect = _mk_compute_schema_fn(int)
@@ -170,7 +166,6 @@ def test_source_decorator_explicit_compute_schema(config: Config):
     mock_compute_schema_fn.assert_called_once_with(schema)
 
 
-@pytest.mark.cpu_mode
 def test_source_decorator_no_annoation_error(config: Config):
 
     @source
@@ -181,7 +176,6 @@ def test_source_decorator_no_annoation_error(config: Config):
         test_source_gen(config)  # pylint: disable=too-many-function-args
 
 
-@pytest.mark.cpu_mode
 def test_not_generator_error(config: Config):
 
     @source
@@ -192,7 +186,6 @@ def test_not_generator_error(config: Config):
         test_fn(config)  # pylint: disable=too-many-function-args
 
 
-@pytest.mark.cpu_mode
 def test_source_stage_arg_no_value_error(config: Config):
 
     @source
@@ -203,7 +196,6 @@ def test_source_stage_arg_no_value_error(config: Config):
         test_source_gen(config)
 
 
-@pytest.mark.cpu_mode
 @pytest.mark.parametrize("accept_type, return_type",
                          [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
                           (typing.Union[float, int], float), (float, typing.Any), (typing.Any, float),
@@ -219,7 +211,6 @@ def test_wrapped_function_stage_constructor(config: Config, accept_type: type, r
     assert wrapped_stage.accepted_types() == (accept_type, )
 
 
-@pytest.mark.cpu_mode
 @pytest.mark.parametrize("accept_type, return_type",
                          [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
                           (typing.Union[float, int], float), (float, float), (typing.Any, float),
@@ -255,7 +246,6 @@ def test_wrapped_function_stage_output_types(config: Config, accept_type: type, 
     assert schema.output_schema.get_type() is return_type
 
 
-@pytest.mark.cpu_mode
 def test_wrapped_function_stage_name(config: Config):
 
     def multiplier(message: MessageMeta, column: str, value: int | float) -> MessageMeta:
@@ -272,7 +262,6 @@ def test_wrapped_function_stage_name(config: Config):
     assert wrapped_stage.name == 'multiplier'
 
 
-@pytest.mark.cpu_mode
 @pytest.mark.parametrize("needed_columns",
                          [None, {
                              'result': TypeId.INT64
@@ -294,7 +283,6 @@ def test_wrapped_function_stage_needed_columns(config: Config, needed_columns: d
     assert wrapped_stage._needed_columns == expected_needed_columns
 
 
-@pytest.mark.cpu_mode
 @pytest.mark.parametrize("use_accept_type_annotation", [True, False])
 @pytest.mark.parametrize("accept_type, return_type",
                          [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
@@ -319,7 +307,6 @@ def test_stage_decorator(config: Config, accept_type: type, return_type: type, u
     assert wrapped_stage.accepted_types() == (accept_type, )
 
 
-@pytest.mark.cpu_mode
 @pytest.mark.parametrize("name", [None, "unittest-stage"])
 def test_stage_decorator_name(config: Config, name: str):
     if name is None:
@@ -335,7 +322,6 @@ def test_stage_decorator_name(config: Config, name: str):
     assert wrapped_stage.name == expected_name
 
 
-@pytest.mark.cpu_mode
 @pytest.mark.parametrize("explicit_compute_schema_fn", [True, False])
 @pytest.mark.parametrize("accept_type, return_type",
                          [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
@@ -376,7 +362,6 @@ def test_stage_decorator_output_types(config: Config,
     assert schema.output_schema.get_type() is return_type
 
 
-@pytest.mark.cpu_mode
 def test_stage_decorator_no_annotation_error(config: Config):
 
     @stage
@@ -387,7 +372,6 @@ def test_stage_decorator_no_annotation_error(config: Config):
         test_fn(config)
 
 
-@pytest.mark.cpu_mode
 def test_stage_arg_no_value_error(config: Config):
 
     @stage
@@ -398,7 +382,6 @@ def test_stage_arg_no_value_error(config: Config):
         test_fn(config)  # pylint: disable=no-value-for-parameter
 
 
-@pytest.mark.cpu_mode
 @pytest.mark.parametrize("needed_columns",
                          [None, {
                              'result': TypeId.INT64
@@ -416,14 +399,15 @@ def test_stage_decorator_needed_columns(config: Config, needed_columns: dict[str
     assert wrapped_stage._needed_columns == expected_needed_columns
 
 
-def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
+@pytest.mark.gpu_and_cpu_mode
+def test_end_to_end_pipe(config: Config, filter_probs_df: DataFrameType):
 
-    @source
+    @source(execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
     def source_gen(dataframes: list[cudf.DataFrame]) -> collections.abc.Iterator[MessageMeta]:
         for df in dataframes:
             yield MessageMeta(df)
 
-    @stage
+    @stage(execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
     def multiplier(message: MessageMeta, column: str, value: int | float = 2.0) -> MessageMeta:
         with message.mutable_dataframe() as df:
             df[column] = df[column] * value
@@ -435,7 +419,7 @@ def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
     expected_df['v2'] = expected_df['v2'] * multipy_by * 2.0
 
     pipe = LinearPipeline(config)
-    pipe.set_source(source_gen(config, dataframes=[filter_probs_df]))  # pylint: disable=redundant-keyword-arg
+    pipe.set_source(source_gen(config, dataframes=[filter_probs_df]))
     pipe.add_stage(multiplier(config, column='v2', value=multipy_by))
     pipe.add_stage(multiplier(config, column='v2'))
     sink = pipe.add_stage(CompareDataFrameStage(config, expected_df))
