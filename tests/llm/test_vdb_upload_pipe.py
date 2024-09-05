@@ -30,8 +30,8 @@ from morpheus.config import Config
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 
 
+@pytest.mark.xfail(reason="This is a GPU centric test, but depends on the Python impl of the Triton client")
 @pytest.mark.milvus
-@pytest.mark.cpu_mode
 @pytest.mark.use_pandas
 @pytest.mark.import_mod([
     os.path.join(TEST_DIRS.examples_dir, 'llm/common'),

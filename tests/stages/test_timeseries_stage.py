@@ -67,7 +67,6 @@ def test_constructor(config):
     assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
-@pytest.mark.use_cudf
 @pytest.mark.cpu_mode
 def test_call_timeseries_user(config):
     stage = TimeSeriesStage(config)

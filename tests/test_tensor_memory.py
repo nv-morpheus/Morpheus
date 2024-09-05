@@ -16,14 +16,15 @@
 
 import os
 import string
+import types
 import typing
 
-import cupy as cp
 import numpy as np
 import pytest
 
 from _utils import TEST_DIRS
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.inference_memory import InferenceMemoryAE
 from morpheus.messages.memory.inference_memory import InferenceMemoryFIL
@@ -33,6 +34,7 @@ from morpheus.messages.memory.response_memory import ResponseMemoryAE
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import NDArrayType
 
 INPUT_FILE = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
 
@@ -40,14 +42,14 @@ INPUT_FILE = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
 # pylint: disable=unused-argument
 
 
-def compare_tensors(tensors1: typing.Dict[str, cp.ndarray], tensors2: typing.Dict[str, cp.ndarray]):
+def compare_tensors(tensors1: typing.Dict[str, NDArrayType], tensors2: typing.Dict[str, NDArrayType]):
     assert sorted(tensors1.keys()) == sorted(tensors2.keys())
     for (k, val1) in tensors1.items():
         assert (val1 == tensors2[k]).all()
 
 
-def check_tensor_memory(cls: type, count: int, tensors: typing.Dict[str, cp.ndarray]):
-    other_tensors = {'ones': cp.ones(count), 'zeros': cp.zeros(count)}
+def check_tensor_memory(cls: type, count: int, tensors: typing.Dict[str, NDArrayType], array_pkg: types.ModuleType):
+    other_tensors = {'ones': array_pkg.ones(count), 'zeros': array_pkg.zeros(count)}
 
     mem = cls(count=count)
     assert mem.count == count
@@ -73,18 +75,19 @@ def check_tensor_memory(cls: type, count: int, tensors: typing.Dict[str, cp.ndar
         cls(count, tensors)
 
 
-def test_tensor_memory(config: Config):
-    test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
+@pytest.mark.gpu_and_cpu_mode
+def test_tensor_memory(array_pkg: types.ModuleType):
+    test_data = array_pkg.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
     count = test_data.shape[0]
 
     # TensorMemory expects a dictionary of {<tensor_name> : <cupy array> }
     # Convert each column into a 1d cupy array
     tensors = {}
     for col in range(test_data.shape[1]):
-        tensors[string.ascii_lowercase[col]] = cp.array(test_data[:, col])
+        tensors[string.ascii_lowercase[col]] = array_pkg.array(test_data[:, col])
 
     for cls in (TensorMemory, InferenceMemory, ResponseMemory):
-        check_tensor_memory(cls, count, tensors)
+        check_tensor_memory(cls=cls, count=count, tensors=tensors, array_pkg=array_pkg)
 
 
 @pytest.mark.skip(reason="TODO: determine what to do about AE pipelines")
@@ -106,12 +109,14 @@ def test_inference_memory_ae(config: Config):
         InferenceMemoryAE(count, input_tensor, seq_ids)  # pylint: disable=too-many-function-args,missing-kwoa
 
 
-def test_inference_memory_fil(config: Config):
-    test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
+# TODO: Determine what to do about the Python impls for GPU based messages
+@pytest.mark.gpu_and_cpu_mode
+def test_inference_memory_fil(array_pkg: types.ModuleType):
+    test_data = array_pkg.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
     count = test_data.shape[0]
 
-    input_0 = cp.array(test_data[:, 0])
-    seq_ids = cp.array(test_data[:, 1])
+    input_0 = array_pkg.array(test_data[:, 0])
+    seq_ids = array_pkg.array(test_data[:, 1])
     mem = InferenceMemoryFIL(count=count, input__0=input_0, seq_ids=seq_ids)
 
     assert mem.count == count
@@ -123,13 +128,14 @@ def test_inference_memory_fil(config: Config):
         InferenceMemoryFIL(count, input_0, seq_ids)  # pylint: disable=too-many-function-args,missing-kwoa
 
 
-def test_inference_memory_nlp(config: Config):
-    test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
+@pytest.mark.gpu_and_cpu_mode
+def test_inference_memory_nlp(array_pkg: types.ModuleType):
+    test_data = array_pkg.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
     count = test_data.shape[0]
 
-    input_ids = cp.array(test_data[:, 0])
-    input_mask = cp.array(test_data[:, 1])
-    seq_ids = cp.array(test_data[:, 2])
+    input_ids = array_pkg.array(test_data[:, 0])
+    input_mask = array_pkg.array(test_data[:, 1])
+    seq_ids = array_pkg.array(test_data[:, 2])
     mem = InferenceMemoryNLP(count=count, input_ids=input_ids, input_mask=input_mask, seq_ids=seq_ids)
 
     assert mem.count == count
@@ -142,8 +148,8 @@ def test_inference_memory_nlp(config: Config):
         InferenceMemoryNLP(count, input_ids, input_mask, seq_ids)  # pylint: disable=too-many-function-args,missing-kwoa
 
 
-def check_response_memory_probs_and_ae(cls: type):
-    test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
+def check_response_memory_probs(cls: type, array_pkg: types.ModuleType):
+    test_data = array_pkg.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
     count = test_data.shape[0]
 
     mem = cls(count=count, probs=test_data)
@@ -160,7 +166,7 @@ def check_response_memory_probs_and_ae(cls: type):
 @pytest.mark.skip(reason="TODO: determine what to do about AE pipelines")
 @pytest.mark.cpu_mode
 def test_response_memory_ae(config: Config, filter_probs_df: DataFrameType):
-    mem = check_response_memory_probs_and_ae(ResponseMemoryAE)
+    mem = check_response_memory_probs(ResponseMemoryAE)
 
     assert mem.user_id == ""
     assert mem.explain_df is None
@@ -172,38 +178,43 @@ def test_response_memory_ae(config: Config, filter_probs_df: DataFrameType):
     assert (mem.explain_df.values == filter_probs_df.values).all()
 
 
-def test_response_memory_probs(config: Config):
-    check_response_memory_probs_and_ae(ResponseMemoryProbs)
+@pytest.mark.gpu_and_cpu_mode
+def test_response_memory_probs(array_pkg: types.ModuleType):
+    check_response_memory_probs(ResponseMemoryProbs, array_pkg)
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
-def test_constructor_length_error(config: Config, tensor_cls: type):
+def test_constructor_length_error(array_pkg: types.ModuleType, tensor_cls: type):
     count = 10
-    tensors = {"a": cp.zeros(count), "b": cp.ones(count)}
+    tensors = {"a": array_pkg.zeros(count), "b": array_pkg.ones(count)}
 
     with pytest.raises(ValueError):
         tensor_cls(count=count - 1, tensors=tensors)
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
-def test_set_tensor_length_error(config: Config, tensor_cls: type):
+def test_set_tensor_length_error(array_pkg: types.ModuleType, tensor_cls: type):
     count = 10
     mem = tensor_cls(count=count)
 
     with pytest.raises(ValueError):
-        mem.set_tensor('a', cp.zeros(count + 1))
+        mem.set_tensor('a', array_pkg.zeros(count + 1))
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
-def test_set_tensors_length_error(config: Config, tensor_cls: type):
+def test_set_tensors_length_error(array_pkg: types.ModuleType, tensor_cls: type):
     count = 10
-    tensors = {"a": cp.zeros(count), "b": cp.ones(count)}
+    tensors = {"a": array_pkg.zeros(count), "b": array_pkg.ones(count)}
     mem = tensor_cls(count=count + 1)
 
     with pytest.raises(ValueError):
         mem.set_tensors(tensors)
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
 @pytest.mark.parametrize(
     "shape",
@@ -211,12 +222,12 @@ def test_set_tensors_length_error(config: Config, tensor_cls: type):
         (536870912, 1),  # bytesize > 2**31
         (134217728, 4)  # bytesize > 2**31 and element count > 2**31
     ])
-def test_tensorindex_bug(config: Config, tensor_cls: type, shape: typing.Tuple[int, int]):
+def test_tensorindex_bug(array_pkg: types.ModuleType, tensor_cls: type, shape: typing.Tuple[int, int]):
     """
     Test for issue #1004. We use a 32bit signed integer for shape and strides, but we shouldn't for element counts and
     byte sizes.
     """
-    tensors = {"a": cp.zeros(shape, dtype=np.float32)}
+    tensors = {"a": array_pkg.zeros(shape, dtype=np.float32)}
 
     mem = tensor_cls(count=shape[0], tensors=tensors)
     tensor_a = mem.get_tensor('a')
@@ -224,19 +235,24 @@ def test_tensorindex_bug(config: Config, tensor_cls: type, shape: typing.Tuple[i
     assert tensor_a.nbytes == shape[0] * shape[1] * 4
 
 
-def test_tensor_update(config: Config):
+@pytest.mark.gpu_and_cpu_mode
+def test_tensor_update(array_pkg: types.ModuleType):
     tensor_data = {
-        "input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])
+        "input_ids": array_pkg.array([1, 2, 3]),
+        "input_mask": array_pkg.array([1, 1, 1]),
+        "segment_ids": array_pkg.array([0, 0, 1])
     }
     tensor_memory = TensorMemory(count=3, tensors=tensor_data)
 
     # Update tensors with new data
     new_tensors = {
-        "input_ids": cp.array([4, 5, 6]), "input_mask": cp.array([1, 0, 1]), "segment_ids": cp.array([1, 1, 0])
+        "input_ids": array_pkg.array([4, 5, 6]),
+        "input_mask": array_pkg.array([1, 0, 1]),
+        "segment_ids": array_pkg.array([1, 1, 0])
     }
 
     tensor_memory.set_tensors(new_tensors)
 
     for (key, cp_arr) in new_tensors.items():
         tensor = tensor_memory.get_tensor(key)
-        cp.allclose(tensor, cp_arr)
+        array_pkg.allclose(tensor, cp_arr)

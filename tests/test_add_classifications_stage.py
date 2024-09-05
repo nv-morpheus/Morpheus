@@ -61,7 +61,7 @@ def test_constructor_errors(config: Config):
         AddClassificationsStage(config, labels=['missing'])
 
 
-@pytest.mark.cpu_mode
+@pytest.mark.skip(reason="TODO: determine python impls for gpu only stages")
 def test_add_labels_with_multi_response_message_and_contgrol_message():
 
     class_labels = {0: "frogs", 1: "lizards", 2: "toads"}

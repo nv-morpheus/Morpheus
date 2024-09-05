@@ -50,7 +50,7 @@ def registered_module_conf():
     yield registered_module_conf
 
 
-@pytest.mark.cpu_mode
+@pytest.mark.gpu_and_cpu_mode
 def test_constructor(config, unregistered_module_conf):
 
     mod_stage = MultiPortModulesStage(config,

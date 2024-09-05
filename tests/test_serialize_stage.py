@@ -16,9 +16,8 @@
 
 import re
 
+import pandas as pd
 import pytest
-
-import cudf
 
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -27,13 +26,17 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 
 @pytest.mark.cpu_mode
 def test_fixed_columns(config):
-    df1 = cudf.DataFrame()
+    """
+    The serialize stage works in both GPU and CPU mode, however this test is only for CPU mode since it is testing the
+    CPU implementation of the stage.
+    """
+    df1 = pd.DataFrame()
     df1['apples'] = range(0, 4)
     df1['pears'] = range(5, 9)
     df1['apple_sauce'] = range(4, 0, -1)
     mm1 = MultiMessage(meta=MessageMeta(df1))
 
-    df2 = cudf.DataFrame()
+    df2 = pd.DataFrame()
     df2['apples'] = range(4, 7)
     df2['applause'] = range(9, 6, -1)
     df2['pears'] = range(7, 10)

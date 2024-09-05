@@ -25,7 +25,6 @@ from morpheus.messages.multi_inference_message import MultiInferenceFILMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 
-@pytest.mark.cpu_mode
 class TestPreprocessingRWStage:
     # pylint: disable=no-name-in-module
 

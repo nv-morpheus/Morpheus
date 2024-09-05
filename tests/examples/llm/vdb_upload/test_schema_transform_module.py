@@ -27,8 +27,6 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
 
-@pytest.mark.cpu_mode
-@pytest.mark.use_cudf
 @pytest.mark.parametrize("num_select, num_renames", [(1, 0), (0, 1), (1, 1), (6, 6), (13, 10), (10, 13)])
 def test_schema_transform_module(num_select,
                                  num_renames,
