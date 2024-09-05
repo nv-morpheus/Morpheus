@@ -17,13 +17,17 @@
 import collections.abc
 import typing
 
+import mrc
 import pytest
+from mrc.core import operators as ops
 
 from _utils.stages.conv_msg import ConvMsg
 from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.pipeline.execution_mode_mixins import CpuOnlyMixin
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
+from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_decorator import source
 from morpheus.pipeline.stage_decorator import stage
 
@@ -61,17 +65,48 @@ def gpu_cpu_stage(message: typing.Any) -> typing.Any:
     return message
 
 
-class CpuOnlyStage(CpuOnlyMixin, ConvMsg):
-    pass
+class BaseStage(PassThruTypeMixin, SinglePortStage):
+
+    def accepted_types(self) -> typing.Tuple:
+        return (typing.Any, )
+
+    def supports_cpp_node(self) -> bool:
+        return False
+
+    def on_data(self, data: typing.Any) -> typing.Any:
+        return data
+
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
+        builder.make_edge(input_node, node)
+
+        return node
 
 
-class GpuAndCpuStage(GpuAndCpuMixin, ConvMsg):
-    pass
+class CpuOnlyStage(CpuOnlyMixin, BaseStage):
+
+    @property
+    def name(self) -> str:
+        return "test-cpu-only-stage"
+
+
+class GpuOnlyStage(BaseStage):
+
+    @property
+    def name(self) -> str:
+        return "test-gpu-only-stage"
+
+
+class GpuAndCpuStage(GpuAndCpuMixin, BaseStage):
+
+    @property
+    def name(self) -> str:
+        return "test-gpu-and-cpu-stage"
 
 
 @pytest.mark.parametrize("stage_cls, expected_modes",
                          [
-                             (ConvMsg, {ExecutionMode.GPU}),
+                             (GpuOnlyStage, {ExecutionMode.GPU}),
                              (CpuOnlyStage, {ExecutionMode.CPU}),
                              (GpuAndCpuStage, {ExecutionMode.GPU, ExecutionMode.CPU}),
                              (gpu_only_source, {ExecutionMode.GPU}),
@@ -82,8 +117,7 @@ class GpuAndCpuStage(GpuAndCpuMixin, ConvMsg):
                              (gpu_cpu_stage, {ExecutionMode.GPU, ExecutionMode.CPU}),
                          ])
 def test_execution_mode_mixins(stage_cls: type[ConvMsg], expected_modes: set):
-    # intentionally not using the config fixture so that we can set the execution mode and avoid iterating over
-    # python/C++ execution modes
+    # intentionally not using the config fixture so that we can set the execution mode manually
     config = Config()
     if ExecutionMode.CPU in expected_modes:
         config.execution_mode = ExecutionMode.CPU
@@ -96,7 +130,7 @@ def test_execution_mode_mixins(stage_cls: type[ConvMsg], expected_modes: set):
 
 @pytest.mark.parametrize("stage_cls, execution_mode",
                          [
-                             (ConvMsg, ExecutionMode.CPU),
+                             (GpuOnlyStage, ExecutionMode.CPU),
                              (gpu_only_source, ExecutionMode.CPU),
                              (gpu_only_stage, ExecutionMode.CPU),
                              (CpuOnlyStage, ExecutionMode.GPU),
