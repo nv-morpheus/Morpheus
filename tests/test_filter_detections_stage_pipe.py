@@ -131,13 +131,15 @@ def test_filter_detections_stage_pipe(config: Config,
     return _test_filter_detections_stage_pipe(config, dataset_pandas, do_copy, order, pipeline_batch_size, repeat)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('do_copy', [True, False])
 def test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pandas: DatasetManager, do_copy: bool):
     return _test_filter_detections_stage_multi_segment_pipe(config, dataset_pandas, do_copy)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('do_copy', [True, False])
 def test_filter_detections_control_message_stage_multi_segment_pipe(config: Config,
-                                                                    dataset: DatasetManager,
+                                                                    dataset_pandas: DatasetManager,
                                                                     do_copy: bool):
-    return _test_filter_detections_control_message_stage_multi_segment_pipe(config, dataset, do_copy)
+    return _test_filter_detections_control_message_stage_multi_segment_pipe(config, dataset_pandas, do_copy)
