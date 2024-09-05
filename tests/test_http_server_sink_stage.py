@@ -89,7 +89,7 @@ def _custom_serializer(df: DataFrameType) -> str:
 
 
 @pytest.mark.slow
-@pytest.mark.cpu_mode
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("lines", [False, True])
 @pytest.mark.parametrize("max_rows_per_response", [10000, 10])
 @pytest.mark.parametrize("df_serializer_fn", [None, _custom_serializer])

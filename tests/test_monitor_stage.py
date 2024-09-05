@@ -178,7 +178,7 @@ def test_log_level(mock_progress_sink: mock.MagicMock,
     assert mock_sink_on_completed.call_count == expected_call_count
 
 
-@pytest.mark.cpu_mode
+@pytest.mark.gpu_and_cpu_mode
 def test_thread(config: Config, morpheus_log_level: int):
     """
     Test ensures the monitor stage executes on the same thread as the parent stage

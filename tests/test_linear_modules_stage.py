@@ -23,13 +23,14 @@ import pytest
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.utils.module_utils import mrc_version
 
-module_config = {
-    "module_id": "TestSimpleModule", "module_name": "test_simple_module", "namespace": "test_morpheus_modules"
-}
+
+@pytest.fixture(name="module_config")
+def module_config_fixture():
+    return {"module_id": "TestSimpleModule", "module_name": "test_simple_module", "namespace": "test_morpheus_modules"}
 
 
-@pytest.mark.cpu_mode
-def test_constructor(config):
+@pytest.mark.gpu_and_cpu_mode
+def test_constructor(config, module_config: dict):
 
     mod_stage = LinearModulesStage(config, module_config, input_port_name="test_in", output_port_name="test_out")
 
@@ -44,8 +45,8 @@ def test_constructor(config):
     pytest.raises(NotImplementedError, mod_stage._get_cpp_module_node, None)
 
 
-@pytest.mark.cpu_mode
-def test_build_single_before_module_registration(config):
+@pytest.mark.gpu_and_cpu_mode
+def test_build_single_before_module_registration(config, module_config: dict):
 
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
@@ -61,19 +62,20 @@ def test_build_single_before_module_registration(config):
         mod_stage._build_single(mock_segment, mock_input_stream)
 
 
-def register_test_module():
+def register_test_module(id_postfix: str):
     registry = mrc.ModuleRegistry
 
     def module_init_fn(_: mrc.Builder):
         pass
 
-    registry.register_module("TestSimpleModule", "test_morpheus_modules", mrc_version, module_init_fn)
+    registry.register_module(f"TestSimpleModule_{id_postfix}", "test_morpheus_modules", mrc_version, module_init_fn)
 
 
-@pytest.mark.cpu_mode
-def test_build_single_after_module_registration(config):
+@pytest.mark.gpu_and_cpu_mode
+def test_build_single_after_module_registration(config, module_config: dict):
 
-    register_test_module()
+    register_test_module(config.execution_mode.value)
+    module_config["module_id"] = f"{module_config['module_id']}_{config.execution_mode.value}"
 
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
