@@ -21,13 +21,13 @@ import pandas as pd
 import pytest
 import typing_utils
 
-import morpheus._lib.messages as _messages
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiResponseAEMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
+from morpheus.messages import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 
@@ -52,7 +52,7 @@ def _make_control_message(df, probs):
     df_ = df[0:len(probs)]
     cm = ControlMessage()
     cm.payload(MessageMeta(df_))
-    cm.tensors(_messages.TensorMemory(count=len(df_), tensors={'probs': probs}))
+    cm.tensors(TensorMemory(count=len(df_), tensors={'probs': probs}))
     cm.set_metadata("user_id", "test_user_id")
 
     return cm
