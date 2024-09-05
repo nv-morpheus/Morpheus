@@ -64,7 +64,7 @@ class HttpServerSinkStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
         Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
         used. Once the queue is full, the incoming edge buffer will begin to fill up.
     num_server_threads : int, default None
-        Number of threads to use for the HTTP server. If `None` then `os.cpu_count()` will be used.
+        Number of threads to use for the HTTP server. If `None` then `len(os.sched_getaffinity(0))` will be used.
     max_rows_per_response : int, optional
         Maximum number of rows to include in a single response, by default 10000.
     overflow_pct: float, optional
@@ -102,7 +102,7 @@ class HttpServerSinkStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
         self._port = port
         self._endpoint = endpoint
         self._method = method
-        self._num_server_threads = num_server_threads or os.cpu_count()
+        self._num_server_threads = num_server_threads or len(os.sched_getaffinity(0))
         self._max_rows_per_response = max_rows_per_response
         self._overflow_pct = overflow_pct
         self._request_timeout_secs = request_timeout_secs

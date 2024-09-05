@@ -266,7 +266,7 @@ def install(**kwargs):
 
 @cli.group(short_help="Run one of the available pipelines", no_args_is_help=True, cls=AliasedGroup)
 @click.option('--num_threads',
-              default=os.cpu_count(),
+              default=len(os.sched_getaffinity(0)),
               type=click.IntRange(min=1),
               help="Number of internal pipeline threads to use")
 @click.option('--pipeline_batch_size',

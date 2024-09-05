@@ -69,7 +69,7 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
         Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
         used.
     num_server_threads : int, default None
-        Number of threads to use for the HTTP server. If `None` then `os.cpu_count()` will be used.
+        Number of threads to use for the HTTP server. If `None` then `len(os.sched_getaffinity(0))` will be used.
     max_payload_size : int, default 10
         The maximum size in megabytes of the payload that the server will accept in a single request.
     request_timeout_secs : int, default 30
@@ -118,7 +118,7 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
         self._sleep_time = sleep_time
         self._queue_timeout = queue_timeout
         self._max_queue_size = max_queue_size or config.edge_buffer_size
-        self._num_server_threads = num_server_threads or os.cpu_count()
+        self._num_server_threads = num_server_threads or len(os.sched_getaffinity(0))
         self._max_payload_size_bytes = max_payload_size * 1024 * 1024
         self._request_timeout_secs = request_timeout_secs
         self._lines = lines

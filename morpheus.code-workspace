@@ -691,7 +691,7 @@
         "files.trimFinalNewlines": true,
         "files.trimTrailingWhitespace": true,
         "flake8.args": [
-            "--style=${workspaceFolder}/python/morpheus/setup.cfg"
+            "--style=${workspaceFolder}/pyproject.toml"
         ],
         "pylint.args": [
             "--rcfile=${workspaceFolder}/pyproject.toml",
@@ -742,7 +742,7 @@
             }
         ],
         "yapf.args": [
-            "--style=${workspaceFolder}/python/morpheus/setup.cfg"
+            "--style=${workspaceFolder}/pyproject.toml"
         ]
     }
 }
