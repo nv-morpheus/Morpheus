@@ -23,7 +23,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from _utils import TEST_DIRS
-from morpheus.messages.message_meta import AppShieldMessageMeta
+from morpheus.messages import ControlMessage
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 from morpheus.utils.directory_watcher import DirectoryWatcher
 
@@ -279,7 +279,7 @@ def test_files_to_dfs(cols_include, cols_exclude, plugins_include, meta_columns,
 @pytest.mark.parametrize(
     'input_df_per_source',
     [{
-        'appshield': [
+        'appshield':
             pd.DataFrame({
                 'PID':
                     pd.Series(['304', '304', '444', '350', '360', '563'], index=[0, 1, 3, 0, 1, 3]),
@@ -290,8 +290,7 @@ def test_files_to_dfs(cols_include, cols_exclude, plugins_include, meta_columns,
                     pd.Series(['appshield', 'appshield', 'appshield', 'appshield', 'appshield', 'appshield'],
                               index=[0, 1, 3, 0, 1, 3])
             }),
-        ],
-        'appshield-v2': [
+        'appshield-v2':
             pd.DataFrame({
                 'PID':
                     pd.Series(['304', '304', '444', '350', '360', '563'], index=[0, 1, 3, 0, 1, 3]),
@@ -303,11 +302,17 @@ def test_files_to_dfs(cols_include, cols_exclude, plugins_include, meta_columns,
                         'appshield-v2', 'appshield-v2', 'appshield-v2', 'appshield-v2', 'appshield-v2', 'appshield-v2'
                     ],
                               index=[0, 1, 3, 0, 1, 3])
-            }),
-        ]
+            })
     }])
-def test_build_metadata(input_df_per_source):
+def test_build_metadata(input_df_per_source: dict):
+    expected_sources = sorted(input_df_per_source.keys())
     appshield_message_metas = AppShieldSourceStage._build_messages(input_df_per_source)
 
-    assert len(appshield_message_metas) == 2
-    assert isinstance(appshield_message_metas[0], AppShieldMessageMeta)
+    assert len(appshield_message_metas) == len(expected_sources)
+
+    actual_sources = []
+    for message in appshield_message_metas:
+        assert isinstance(message, ControlMessage)
+        actual_sources.append(message.get_metadata('source'))
+
+    assert sorted(actual_sources) == expected_sources
