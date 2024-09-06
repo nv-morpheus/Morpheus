@@ -6,11 +6,14 @@
 
         """
 from __future__ import annotations
-import morpheus._lib.messages
+
 import typing
+
 import cupy
-import morpheus._lib.common
 import mrc.core.node
+
+import morpheus._lib.common
+import morpheus._lib.messages
 
 __all__ = [
     "ControlMessage",
@@ -83,10 +86,6 @@ class ControlMessage():
     def tensors(self) -> TensorMemory: ...
     @typing.overload
     def tensors(self, arg0: TensorMemory) -> None: ...
-    @typing.overload
-    def tensors(self, count: int, tensors: object) -> None: ...
-    @typing.overload
-    def tensors(self, tensors: object) -> None: ...
     pass
 class ControlMessageType():
     """
