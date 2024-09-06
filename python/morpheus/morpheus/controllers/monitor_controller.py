@@ -137,7 +137,7 @@ class MonitorController:
 
         Returns
         -------
-        msg: cudf.DataFrame | MessageMeta | ControlMessage | list
+        msg: typing.Union[cudf.DataFrame, MessageMeta, ControlMessage, list]
 
         """
 
