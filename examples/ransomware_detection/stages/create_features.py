@@ -142,7 +142,6 @@ class CreateFeaturesRWStage(ControlMessageStage):
 
             start = pid_process_index.min()
             stop = pid_process_index.max() + 1
-            mess_count = stop - start
 
             sliced_meta = app_shield_message_meta.get_slice(start, stop)
             control_message = ControlMessage()
