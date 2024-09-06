@@ -21,15 +21,15 @@ from io import StringIO
 import pandas as pd
 import pika
 
-import cudf
-
+from morpheus.config import ExecutionMode
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.stage_decorator import source
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
 
-@source(name="from-rabbitmq")
+@source(name="from-rabbitmq", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
 def rabbitmq_source(host: str,
                     exchange: str,
                     exchange_type: str = 'fanout',
