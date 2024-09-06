@@ -94,12 +94,10 @@ jobs:
       # for PRs with the conda-core-build label
       conda_core_run_build: ${{ !fromJSON(needs.prepare.outputs.is_pr) || fromJSON(needs.prepare.outputs.has_conda_core_build_label) }}
       # Upload morpheus-core conda package only for non PR branches. Use 'main' for main branch and 'dev' for all other branches
-      conda_core_upload_label: ${{ !fromJSON(needs.prepare.outputs.is_pr) && (fromJSON(needs.prepare.outputs.is_main_branch) && 'main' || 'dev') || '' }}
+      conda_upload_label: ${{ !fromJSON(needs.prepare.outputs.is_pr) && (fromJSON(needs.prepare.outputs.is_main_branch) && 'main' || 'dev') || '' }}
       # Run morpheus conda package, with all components. This is done for main/dev
       # branches and for PRs with the conda-build label.
       conda_run_build: ${{ !fromJSON(needs.prepare.outputs.is_pr) || fromJSON(needs.prepare.outputs.has_conda_build_label) }}
-      # Disable conda upload for now, once we have morpheus packages in conda forge set the value to
-      conda_upload_label: ""
       container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-240614
       test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-240614
     secrets:
