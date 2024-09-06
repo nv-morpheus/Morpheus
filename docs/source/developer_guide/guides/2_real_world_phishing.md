@@ -388,7 +388,7 @@ To start, we will need to instantiate and set a few attributes of the `Config` c
 config = Config()
 config.mode = PipelineModes.NLP
 
-config.num_threads = os.cpu_count()
+config.num_threads = len(os.sched_getaffinity(0))
 config.feature_length = model_fea_length
 
 with open(labels_file, encoding='UTF-8') as fh:
@@ -563,7 +563,7 @@ def run_pipeline(use_stage_function: bool,
     config.mode = PipelineModes.NLP
 
     # Set the thread count to match our cpu count
-    config.num_threads = os.cpu_count()
+    config.num_threads = len(os.sched_getaffinity(0))
     config.feature_length = model_fea_length
 
     with open(labels_file, encoding='UTF-8') as fh:

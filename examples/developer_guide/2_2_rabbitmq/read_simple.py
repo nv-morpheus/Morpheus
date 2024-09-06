@@ -38,7 +38,7 @@ def run_pipeline(use_source_function: bool):
     configure_logging(log_level=logging.DEBUG)
 
     config = Config()
-    config.num_threads = os.cpu_count()
+    config.num_threads = len(os.sched_getaffinity(0))
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
