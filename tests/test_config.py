@@ -15,8 +15,11 @@
 # limitations under the License.
 
 import json
+import logging
 import os
 from unittest import mock
+
+import pytest
 
 import morpheus
 import morpheus.config
@@ -104,3 +107,23 @@ def test_to_string(config):
     conf_str = config.to_string()
     assert isinstance(conf_str, str)
     assert isinstance(json.loads(conf_str), dict)
+
+
+def test_warning_model_batch_size_less_than_pipeline_batch_size(caplog: pytest.LogCaptureFixture):
+    config = morpheus.config.Config()
+    config.pipeline_batch_size = 256
+    with caplog.at_level(logging.WARNING):
+        config.model_max_batch_size = 257
+        assert len(caplog.records) == 1
+        import re
+        assert re.match(".*pipeline_batch_size < model_max_batch_size.*", caplog.records[0].message) is not None
+
+
+def test_warning_pipeline_batch_size_less_than_model_batch_size(caplog: pytest.LogCaptureFixture):
+    config = morpheus.config.Config()
+    config.model_max_batch_size = 8
+    with caplog.at_level(logging.WARNING):
+        config.pipeline_batch_size = 7
+        assert len(caplog.records) == 1
+        import re
+        assert re.match(".*pipeline_batch_size < model_max_batch_size.*", caplog.records[0].message) is not None
