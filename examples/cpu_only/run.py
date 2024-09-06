@@ -45,7 +45,6 @@ logger = logging.getLogger(f"morpheus.{__name__}")
               type=bool,
               is_flag=True,
               help=("Whether or not to run in CPU only mode, setting this to True will disable C++ mode."))
-@click.option("--use_python", is_flag=True, default=False, show_default=True)
 @click.option("--log_level",
               default="DEBUG",
               type=click.Choice(get_log_levels(), case_sensitive=False),
@@ -65,20 +64,16 @@ logger = logging.getLogger(f"morpheus.{__name__}")
     default="output.csv",
     required=True,
 )
-def run_pipeline(log_level: int, use_python: bool, use_cpu_only: bool, in_file: pathlib.Path, out_file: pathlib.Path):
+def run_pipeline(log_level: int, use_cpu_only: bool, in_file: pathlib.Path, out_file: pathlib.Path):
     # Enable the default logger
     configure_logging(log_level=log_level)
 
     if use_cpu_only:
         execution_mode = ExecutionMode.CPU
-        if not use_python:
-            logging.warning("C++ mode is disabled when running in CPU only mode.")
-            use_python = True
-
     else:
         execution_mode = ExecutionMode.GPU
 
-    CppConfig.set_should_use_cpp(not use_python)
+    CppConfig.set_should_use_cpp(not use_cpu_only)
 
     config = Config()
     config.execution_mode = execution_mode
