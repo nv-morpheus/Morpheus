@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
 import mrc
 from mrc.core import operators as ops
 
@@ -24,25 +22,26 @@ from common.feature_extractor import FeatureExtractor  # pylint: disable=no-name
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiMessage
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
+from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
 @register_stage("create-features", modes=[PipelineModes.FIL])
-class CreateFeaturesRWStage(MultiMessageStage):
+class CreateFeaturesRWStage(PassThruTypeMixin, SinglePortStage):
     """
-    This class extends MultiMessageStage to deal with scenario specific features from Appshiled plugins data.
+    Stage creates features from Appshiled plugins data.
 
     Parameters
     ----------
     c : morpheus.config.Config
         Pipeline configuration instance
-    interested_plugins : typing.List[str]
+    interested_plugins : list[str]
         Only intrested plugins files will be read from Appshield snapshots
-    feature_columns : typing.List[str]
+    feature_columns : list[str]
         List of features needed to be extracted.
-    file_extns : typing.List[str]
+    file_extns : list[str]
         File extensions.
     n_workers: int, default = 2
         Number of dask workers.
@@ -53,9 +52,9 @@ class CreateFeaturesRWStage(MultiMessageStage):
     def __init__(
         self,
         c: Config,
-        interested_plugins: typing.List[str],
-        feature_columns: typing.List[str],
-        file_extns: typing.List[str],
+        interested_plugins: list[str],
+        feature_columns: list[str],
+        file_extns: list[str],
         n_workers: int = 2,
         threads_per_worker: int = 2,
     ):
@@ -72,20 +71,21 @@ class CreateFeaturesRWStage(MultiMessageStage):
     def name(self) -> str:
         return "create-features-rw"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         """
         Returns accepted input types for this stage.
         """
-        return (AppShieldMessageMeta, )
+        return (ControlMessage, )
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
-    def on_next(self, x: AppShieldMessageMeta):
+    def on_next(self, msg: ControlMessage) -> ControlMessage:
 
         snapshot_fea_dfs = []
 
-        df = x.df
+        df = msg.payload().copy_dataframe()
+        msg_source = msg.get_metadata("source")
 
         # Type cast CommitCharge.
         df["CommitCharge"] = df["CommitCharge"].astype("float").astype("Int32")
@@ -117,37 +117,44 @@ class CreateFeaturesRWStage(MultiMessageStage):
         # Snapshot sequence will be generated using `source_pid_process`.
         # Determines which source generated the snapshot messages.
         # There's a chance of receiving the same snapshots names from multiple sources(hosts)
-        features_df['source_pid_process'] = x.source + '_' + features_df.pid_process
+        features_df['source_pid_process'] = msg_source + '_' + features_df.pid_process
 
         # Sort entries by pid_process and snapshot_id
         features_df = features_df.sort_values(by=["pid_process", "snapshot_id"]).reset_index(drop=True)
 
         # Create AppShieldMessageMeta with extracted features information.
-        meta = AppShieldMessageMeta(features_df, x.source)
+        meta = MessageMeta(features_df)
+        cm_msg = ControlMessage()
+        cm_msg.payload(meta)
+        cm_msg.set_metadata("source", msg_source)
 
-        return meta
+        return cm_msg
 
-    def create_multi_messages(self, x: AppShieldMessageMeta) -> typing.List[MultiMessage]:
+    def split_messages(self, msg: ControlMessage) -> list[ControlMessage]:
 
-        multi_messages = []
+        output_messages = []
 
-        df = x.df
+        msg_source = msg.get_metadata("source")
+        meta: MessageMeta = msg.payload()
+        with meta.mutable_dataframe() as df:
 
-        pid_processes = df.pid_process.unique()
+            pid_processes = df.pid_process.unique()
 
-        # Create multi messaage per pid_process, this assumes that the DF has been sorted by the `pid_process` column
-        for pid_process in pid_processes:
+            # Create a unique messaage per pid_process, this assumes the DF has been sorted by the `pid_process` column
+            for pid_process in pid_processes:
 
-            pid_process_index = df[df.pid_process == pid_process].index
+                pid_process_index = df[df.pid_process == pid_process].index
 
-            start = pid_process_index.min()
-            stop = pid_process_index.max() + 1
-            mess_count = stop - start
+                start = pid_process_index.min()
+                stop = pid_process_index.max() + 1
 
-            multi_message = MultiMessage(meta=x, mess_offset=start, mess_count=mess_count)
-            multi_messages.append(multi_message)
+                out_msg = ControlMessage()
+                out_msg.payload(MessageMeta(df.iloc[start:stop]))
+                out_msg.set_metadata("source", msg_source)
 
-        return multi_messages
+                output_messages.append(out_msg)
+
+            return output_messages
 
     def on_completed(self):
         # Close dask client when pipeline initiates shutdown
@@ -156,7 +163,7 @@ class CreateFeaturesRWStage(MultiMessageStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name,
                                  ops.map(self.on_next),
-                                 ops.map(self.create_multi_messages),
+                                 ops.map(self.split_messages),
                                  ops.on_completed(self.on_completed),
                                  ops.flatten())
         builder.make_edge(input_node, node)
