@@ -307,7 +307,7 @@ def test_files_to_dfs(cols_include, cols_exclude, plugins_include, meta_columns,
         ]
     }])
 def test_build_metadata(input_df_per_source):
-    appshield_message_metas = AppShieldSourceStage._build_metadata(input_df_per_source)
+    appshield_message_metas = AppShieldSourceStage._build_messages(input_df_per_source)
 
     assert len(appshield_message_metas) == 2
     assert isinstance(appshield_message_metas[0], AppShieldMessageMeta)

@@ -97,7 +97,7 @@ class TestCreateFeaturesRWStage:
                                                        plugins_include=interested_plugins,
                                                        encoding='latin1')
 
-        input_metas = AppShieldSourceStage._build_metadata(input_data)
+        input_metas = AppShieldSourceStage._build_messages(input_data)
 
         # Make sure the input test date looks the way we expect it
         assert len(input_metas) == 1

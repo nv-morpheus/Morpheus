@@ -16,7 +16,6 @@ import io
 import json
 import logging
 import re
-import typing
 from functools import partial
 from json.decoder import JSONDecodeError
 
@@ -27,7 +26,8 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages.message_meta import AppShieldMessageMeta
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.pipeline import SingleOutputSource
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.stage_schema import StageSchema
@@ -77,9 +77,9 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
     def __init__(self,
                  c: Config,
                  input_glob: str,
-                 plugins_include: typing.List[str],
-                 cols_include: typing.List[str],
-                 cols_exclude: typing.List[str] = None,
+                 plugins_include: list[str],
+                 cols_include: list[str],
+                 cols_exclude: list[str] = None,
                  watch_directory: bool = False,
                  max_files: int = -1,
                  sort_glob: bool = False,
@@ -124,10 +124,10 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         return False
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(AppShieldMessageMeta)
+        schema.output_schema.set_type(ControlMessage)
 
     @staticmethod
-    def fill_interested_cols(plugin_df: pd.DataFrame, cols_include: typing.List[str]):
+    def fill_interested_cols(plugin_df: pd.DataFrame, cols_include: list[str]):
         """
         Fill missing interested plugin columns.
 
@@ -135,7 +135,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         ----------
         plugin_df : pandas.DataFrame
             Snapshot plugin dataframe
-        cols_include : typing.List[str]
+        cols_include : list[str]
             Columns that needs to be included.
 
         Returns
@@ -152,7 +152,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         return plugin_df
 
     @staticmethod
-    def read_file_to_df(file: io.TextIOWrapper, cols_exclude: typing.List[str]):
+    def read_file_to_df(file: io.TextIOWrapper, cols_exclude: list[str]):
         """
         Read file content to dataframe.
 
@@ -160,7 +160,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         ----------
         file : `io.TextIOWrapper`
             Input file object
-        cols_exclude : typing.List[str]
+        cols_exclude : list[str]
             Dropping columns from a dataframe.
 
         Returns
@@ -185,7 +185,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         return plugin_df
 
     @staticmethod
-    def load_df(filepath: str, cols_exclude: typing.List[str], encoding: str) -> pd.DataFrame:
+    def load_df(filepath: str, cols_exclude: list[str], encoding: str) -> pd.DataFrame:
         """
         Reads a file into a dataframe.
 
@@ -193,7 +193,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         ----------
         filepath : str
             Path to a file.
-        cols_exclude : typing.List[str]
+        cols_exclude : list[str]
             Columns that needs to exclude.
         encoding : str
             Encoding to read a file.
@@ -228,13 +228,13 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         return plugin_df
 
     @staticmethod
-    def load_meta_cols(filepath_split: typing.List[str], plugin: str, plugin_df: pd.DataFrame) -> pd.DataFrame:
+    def load_meta_cols(filepath_split: list[str], plugin: str, plugin_df: pd.DataFrame) -> pd.DataFrame:
         """
         Loads meta columns to dataframe.
 
         Parameters
         ----------
-        filepath_split : typing.List[str]
+        filepath_split : list[str]
             Splits of file path.
         plugin : str
             Plugin name to which the data belongs to.
@@ -268,20 +268,20 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         return plugin_df
 
     @staticmethod
-    def batch_source_split(x: typing.List[pd.DataFrame], source: str) -> typing.Dict[str, pd.DataFrame]:
+    def batch_source_split(x: list[pd.DataFrame], source: str) -> dict[str, pd.DataFrame]:
         """
         Combines plugin dataframes from multiple snapshot and split dataframe per source.
 
         Parameters
         ----------
-        x : typing.List[pd.DataFrame]
+        x : list[pd.DataFrame]
             Dataframes from multiple sources.
         source : str
             source column name to group it.
 
         Returns
         -------
-        typing.Dict[str, pandas.DataFrame]
+        dict[str, pandas.DataFrame]
             Grouped dataframes by source.
         """
 
@@ -301,30 +301,30 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         return source_dfs
 
     @staticmethod
-    def files_to_dfs(x: typing.List[str],
-                     cols_include: typing.List[str],
-                     cols_exclude: typing.List[str],
-                     plugins_include: typing.List[str],
-                     encoding: str) -> typing.Dict[str, pd.DataFrame]:
+    def files_to_dfs(x: list[str],
+                     cols_include: list[str],
+                     cols_exclude: list[str],
+                     plugins_include: list[str],
+                     encoding: str) -> dict[str, pd.DataFrame]:
         """
         Load plugin files into a dataframe, then segment the dataframe by source.
 
         Parameters
         ----------
-        x : typing.List[str]
+        x : list[str]
             List of file paths.
-        cols_include : typing.List[str]
+        cols_include : list[str]
             Columns that needs to include.
-        cols_exclude : typing.List[str]
+        cols_exclude : list[str]
             Columns that needs to exclude.
-        plugins_include: typing.List[str]
+        plugins_include: list[str]
             For each path in `x`, a list of plugins to load additional meta cols from.
         encoding : str
             Encoding to read a file.
 
         Returns
         -------
-        typing.Dict[str, pandas.DataFrame]
+        dict[str, pandas.DataFrame]
             Grouped dataframes by source.
         """
         # Using pandas to parse nested JSON until cuDF adds support
@@ -349,17 +349,19 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         return df_per_source
 
     @staticmethod
-    def _build_metadata(x: typing.Dict[str, pd.DataFrame]):
+    def _build_messages(x: dict[str, pd.DataFrame]):
 
-        metas = []
+        messages = []
 
         for source, df in x.items():
 
-            # Now make a AppShieldMessageMeta with the source name
-            meta = AppShieldMessageMeta(df, source)
-            metas.append(meta)
+            # Now make a message with the source name
+            cm = ControlMessage()
+            cm.payload(MessageMeta(df))
+            cm.set_metadata("source", source)
+            messages.append(cm)
 
-        return metas
+        return messages
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         # The first source just produces filenames
@@ -376,7 +378,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
                         cols_exclude=self._cols_exclude,
                         plugins_include=self._plugins_include,
                         encoding=self._encoding)),
-            ops.map(self._build_metadata),
+            ops.map(self._build_messages),
             # Finally flatten to single meta
             ops.flatten())
         builder.make_edge(out_node, post_node)
