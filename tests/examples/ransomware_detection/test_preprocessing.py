@@ -19,7 +19,7 @@ import pytest
 
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
-from morpheus.messages import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceFILMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
@@ -158,12 +158,13 @@ class TestPreprocessingRWStage:
         df['source_pid_process'] = 'appshield_' + df.pid_process
         expected_df = df.copy(deep=True).fillna('')
         meta = AppShieldMessageMeta(df=df, source='tests')
-        multi = MultiMessage(meta=meta)
+        control_msg = ControlMessage()
+        control_msg.payload(meta)
 
         sliding_window = 4
         stage = PreprocessingRWStage(config, feature_columns=rwd_conf['model_features'], sliding_window=sliding_window)
-        results: MultiInferenceFILMessage = stage._pre_process_batch(multi)
-        assert isinstance(results, MultiInferenceFILMessage)
+        results: ControlMessage = stage._pre_process_batch(control_msg)
+        assert isinstance(results, ControlMessage)
 
         expected_df['sequence'] = ['dummy' for _ in range(len(expected_df))]
         expected_input__0 = cp.asarray([0 for i in range(len(rwd_conf['model_features']) * sliding_window)])
@@ -171,6 +172,6 @@ class TestPreprocessingRWStage:
         expected_seq_ids[:, 0] = cp.arange(0, len(expected_df), dtype=cp.uint32)
         expected_seq_ids[:, 2] = len(rwd_conf['model_features']) * 3
 
-        dataset_pandas.assert_compare_df(results.get_meta().fillna(''), expected_df)
-        assert (results.get_tensor('input__0') == expected_input__0).all()
-        assert (results.get_tensor('seq_ids') == expected_seq_ids).all()
+        dataset_pandas.assert_compare_df(results.payload().get_data().fillna(''), expected_df)
+        assert (results.tensors().get_tensor('input__0') == expected_input__0).all()
+        assert (results.tensors().get_tensor('seq_ids') == expected_seq_ids).all()

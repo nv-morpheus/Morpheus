@@ -88,14 +88,6 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
                       "count": 1, "inputs": cp_array, "seq_ids": cp_array
                   })
 
-    multi_tensor_message_tensors = {
-        "input_ids": cp.zeros((1, 2)),
-        "input_mask": cp.zeros((1, 2)),
-        "seq_ids": cp.zeros((1, 3), dtype=cp.int32),
-        "input__0": cp.zeros((1, 2)),
-        "probs": cp.zeros((1, 2))
-    }
-
     check_message(messages.ResponseMemory, _messages.ResponseMemory, should_be_cpp, no_cpp_class, **{"count": 1})
 
     check_message(messages.ResponseMemoryProbs,
