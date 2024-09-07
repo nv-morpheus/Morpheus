@@ -72,38 +72,38 @@ python examples/gnn_fraud_detection_pipeline/run.py
 ```
 ====Registering Pipeline====
 ====Building Pipeline====
-Graph construction rate: 0 messages [00:00, ? me====Building Pipeline Complete!====
-Inference rate: 0 messages [00:00, ? messages/s]====Registering Pipeline Complete!====
+====Building Pipeline Complete!====
+====Registering Pipeline Complete!====
 ====Starting Pipeline====
-====Pipeline Started==== 0 messages [00:00, ? messages/s]
-====Building Segment: linear_segment_0====ges/s]
-Added source: <from-file-0; FileSourceStage(filename=validation.csv, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=False)>
+====Pipeline Started====
+====Building Segment: linear_segment_0====
+Added source: <from-file-0; FileSourceStage(filename=/home/yuchenz/Work/Projects/Morpheus/examples/gnn_fraud_detection_pipeline/validation.csv, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=False, filter_null_columns=None, parser_kwargs=None)>
   └─> morpheus.MessageMeta
-Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True)>
-  └─ morpheus.MessageMeta -> morpheus.MultiMessage
-Added stage: <fraud-graph-construction-2; FraudGraphConstructionStage(training_file=training.csv)>
-  └─ morpheus.MultiMessage -> stages.FraudGraphMultiMessage
+Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True, task_type=None, task_payload=None)>
+  └─ morpheus.MessageMeta -> morpheus.ControlMessage
+Added stage: <fraud-graph-construction-2; FraudGraphConstructionStage(training_file=/home/yuchenz/Work/Projects/Morpheus/examples/gnn_fraud_detection_pipeline/training.csv)>
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <monitor-3; MonitorStage(description=Graph construction rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
-  └─ stages.FraudGraphMultiMessage -> stages.FraudGraphMultiMessage
-Added stage: <gnn-fraud-sage-4; GraphSAGEStage(model_dir=model, batch_size=100, record_id=index, target_node=transaction)>
-  └─ stages.FraudGraphMultiMessage -> stages.GraphSAGEMultiMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
+Added stage: <gnn-fraud-sage-4; GraphSAGEStage(model_dir=/home/yuchenz/Work/Projects/Morpheus/examples/gnn_fraud_detection_pipeline/model, batch_size=100, record_id=index, target_node=transaction)>
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <monitor-5; MonitorStage(description=Inference rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
-  └─ stages.GraphSAGEMultiMessage -> stages.GraphSAGEMultiMessage
-Added stage: <gnn-fraud-classification-6; ClassificationStage(model_xgb_file=model/xgb.pt)>
-  └─ stages.GraphSAGEMultiMessage -> morpheus.MultiMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
+Added stage: <gnn-fraud-classification-6; ClassificationStage(model_xgb_file=/home/yuchenz/Work/Projects/Morpheus/examples/gnn_fraud_detection_pipeline/model/xgb.pt)>
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <monitor-7; MonitorStage(description=Add classification rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
-  └─ morpheus.MultiMessage -> morpheus.MultiMessage
-Added stage: <serialize-8; SerializeStage(include=[], exclude=['^ID$', '^_ts_'], fixed_columns=True)>
-  └─ morpheus.MultiMessage -> morpheus.MessageMeta
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
+Added stage: <serialize-8; SerializeStage(include=None, exclude=None, fixed_columns=True)>
+  └─ morpheus.ControlMessage -> morpheus.MessageMeta
 Added stage: <monitor-9; MonitorStage(description=Serialize rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 Added stage: <to-file-10; WriteToFileStage(filename=output.csv, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Segment Complete!====
-Graph construction rate[Complete]: 265 messages [00:00, 1218.88 messages/s]
-Inference rate[Complete]: 265 messages [00:01, 174.04 messages/s]
-Add classification rate[Complete]: 265 messages [00:01, 170.69 messages/s]
-Serialize rate[Complete]: 265 messages [00:01, 166.36 messages/s]
+Graph construction rate[Complete]: 265 messages [00:00, 1016.18 messages/s]
+Inference rate[Complete]: 265 messages [00:00, 545.08 messages/s]
+Add classification rate[Complete]: 265 messages [00:00, 492.11 messages/s]
+Serialize rate[Complete]: 265 messages [00:00, 480.77 messages/s]
 ====Pipeline Complete====
 ```
 
