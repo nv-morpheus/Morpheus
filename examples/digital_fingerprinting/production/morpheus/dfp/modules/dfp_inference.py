@@ -27,8 +27,7 @@ from morpheus.messages import ControlMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
-from ..messages.multi_dfp_message import DFPMessageMeta
-from ..messages.multi_dfp_message import MultiDFPMessage
+from ..messages.dfp_message_meta import DFPMessageMeta
 from ..utils.module_ids import DFP_INFERENCE
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -82,7 +81,7 @@ def dfp_inference(builder: mrc.Builder):
                                              fallback_user_ids=[fallback_user],
                                              timeout=model_fetch_timeout)
 
-    def process_task(control_message: ControlMessage):
+    def process_task(control_message: ControlMessage) -> ControlMessage:
         start_time = time.time()
 
         user_id = control_message.get_metadata("user_id")
@@ -113,11 +112,10 @@ def dfp_inference(builder: mrc.Builder):
         output_df = cudf.concat([payload.df, results_df[results_cols]], axis=1)
 
         # Create an output message to allow setting meta
-        output_message = MultiDFPMessage(meta=DFPMessageMeta(output_df, user_id=user_id),
-                                         mess_offset=0,
-                                         mess_count=payload.count)
+        output_message = ControlMessage()
+        output_message.payload(DFPMessageMeta(output_df, user_id=user_id))
 
-        output_message.set_meta('model_version', f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
+        output_message.payload().set_data('model_version', f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
 
         if logger.isEnabledFor(logging.DEBUG):
             load_model_duration = (post_model_time - start_time) * 1000.0
@@ -132,7 +130,7 @@ def dfp_inference(builder: mrc.Builder):
 
         return output_message
 
-    def on_data(control_message: ControlMessage):
+    def on_data(control_message: ControlMessage) -> list[ControlMessage]:
         if (control_message is None):
             return None
 
