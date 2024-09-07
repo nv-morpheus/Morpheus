@@ -23,7 +23,7 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
+from morpheus.messages import ControlMessage
 
 # pylint: disable=no-name-in-module
 
@@ -52,19 +52,19 @@ class TestGraphConstructionStage:
 
         # Since we used the first 5 rows as the training data, send the second 5 as inference data
         meta = MessageMeta(cudf.DataFrame(df).tail(5))
-        multi_msg = MultiMessage(meta=meta)
-        fgmm = stage._process_message(multi_msg)
+        control_msg = ControlMessage()
+        control_msg.payload(meta)
 
-        assert isinstance(fgmm, graph_construction_stage.FraudGraphMultiMessage)
-        assert fgmm.meta is meta
-        assert fgmm.mess_offset == 0
-        assert fgmm.mess_count == 5
+        fgmm = stage._process_message(control_msg)
 
-        assert isinstance(fgmm.graph, dgl.DGLGraph)
+        assert isinstance(fgmm, ControlMessage)
+        assert fgmm.payload().count == 5
+
+        assert isinstance(fgmm.get_metadata("graph"), dgl.DGLGraph)
 
         # Since the graph has a reverse edge for each edge, one edge comparison is enough.
-        buy_edges = fgmm.graph.edges(etype='buy')
-        sell_edges = fgmm.graph.edges(etype='sell')
+        buy_edges = fgmm.get_metadata("graph").edges(etype='buy')
+        sell_edges = fgmm.get_metadata("graph").edges(etype='sell')
 
         # expected edges, convert [(u,v)] format to [u, v] of DGL edge format.
         exp_buy_edges = [torch.LongTensor(e).cuda() for e in zip(*expected_edges['buy'])]
@@ -76,4 +76,4 @@ class TestGraphConstructionStage:
 
         # Compare nodes.
         for node in ['client', 'merchant']:
-            assert fgmm.graph.nodes(node).tolist() == list(expected_nodes[node + "_node"])
+            assert fgmm.get_metadata("graph").nodes(node).tolist() == list(expected_nodes[node + "_node"])

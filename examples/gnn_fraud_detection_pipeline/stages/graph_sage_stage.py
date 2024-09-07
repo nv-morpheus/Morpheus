@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import dataclasses
+import typing
 
 import mrc
 from mrc.core import operators as ops
@@ -23,31 +23,11 @@ import cudf
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiMessage
-from morpheus.messages.message_meta import MessageMeta
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
-from .graph_construction_stage import FraudGraphMultiMessage
 from .model import load_model
-
-
-@dataclasses.dataclass
-class GraphSAGEMultiMessage(MultiMessage):
-    node_identifiers: list[int]
-    inductive_embedding_column_names: list[str]
-
-    def __init__(self,
-                 *,
-                 meta: MessageMeta,
-                 mess_offset: int = 0,
-                 mess_count: int = -1,
-                 node_identifiers: list[int],
-                 inductive_embedding_column_names: list[str]):
-        super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
-
-        self.node_identifiers = node_identifiers
-        self.inductive_embedding_column_names = inductive_embedding_column_names
 
 
 @register_stage("gnn-fraud-sage", modes=[PipelineModes.OTHER])
@@ -70,23 +50,23 @@ class GraphSAGEStage(SinglePortStage):
     def name(self) -> str:
         return "gnn-fraud-sage"
 
-    def accepted_types(self) -> (FraudGraphMultiMessage, ):
-        return (FraudGraphMultiMessage, )
+    def accepted_types(self) -> typing.Tuple:
+        return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(GraphSAGEMultiMessage)
+        schema.output_schema.set_type(ControlMessage)
 
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _process_message(self, message: FraudGraphMultiMessage) -> GraphSAGEMultiMessage:
+    def _process_message(self, message: ControlMessage) -> ControlMessage:
 
-        node_identifiers = list(message.get_meta(self._record_id).to_pandas())
+        node_identifiers = list(message.payload().get_data(self._record_id).to_pandas())
 
         # Perform inference
-        inductive_embedding, _ = self._dgl_model.inference(message.graph,
-                                                           message.node_features,
-                                                           message.test_index,
+        inductive_embedding, _ = self._dgl_model.inference(message.get_metadata("graph"),
+                                                           message.get_metadata("node_features"),
+                                                           message.get_metadata("test_index"),
                                                            batch_size=self._batch_size)
 
         inductive_embedding = cudf.DataFrame(inductive_embedding)
@@ -94,17 +74,16 @@ class GraphSAGEStage(SinglePortStage):
         # Rename the columns to be more descriptive
         inductive_embedding.rename(lambda x: "ind_emb_" + str(x), axis=1, inplace=True)
 
-        for col in inductive_embedding.columns.values.tolist():
-            # without `to_pandas`, all values in the meta become `<NA>`
-            message.set_meta(col, inductive_embedding[col].to_pandas())
+        with message.payload().mutable_dataframe() as df:
+            for col in inductive_embedding.columns.values.tolist():
+                df[col] = inductive_embedding[col]
 
-        assert (message.mess_count == len(inductive_embedding))
+        assert (message.payload().count == len(inductive_embedding))
 
-        return GraphSAGEMultiMessage(meta=message.meta,
-                                     node_identifiers=node_identifiers,
-                                     inductive_embedding_column_names=inductive_embedding.columns.values.tolist(),
-                                     mess_offset=message.mess_offset,
-                                     mess_count=message.mess_count)
+        message.set_metadata("node_identifiers", node_identifiers)
+        message.set_metadata("inductive_embedding_column_names", inductive_embedding.columns.values.tolist())
+
+        return message
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._process_message))

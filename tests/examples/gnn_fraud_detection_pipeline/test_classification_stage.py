@@ -19,6 +19,7 @@ import pytest
 
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 
 # pylint: disable=no-name-in-module
@@ -35,7 +36,6 @@ class TestClassificationStage:
 
     def test_process_message(self, config: Config, xgb_model: str, dataset_cudf: DatasetManager):
         from stages.classification_stage import ClassificationStage
-        from stages.graph_sage_stage import GraphSAGEMultiMessage
 
         df = dataset_cudf['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
         df.rename(lambda x: f"ind_emb_{x}", axis=1, inplace=True)
@@ -50,12 +50,13 @@ class TestClassificationStage:
         ind_emb_columns = list(df.columns)
 
         meta = MessageMeta(df)
-        msg = GraphSAGEMultiMessage(meta=meta,
-                                    node_identifiers=node_identifiers,
-                                    inductive_embedding_column_names=ind_emb_columns)
+        msg = ControlMessage()
+        msg.payload(meta)
+        msg.set_metadata("node_identifiers", node_identifiers)
+        msg.set_metadata("inductive_embedding_column_names", ind_emb_columns)
 
         stage = ClassificationStage(config, xgb_model)
         results = stage._process_message(msg)
 
         # The stage actually edits the message in place, and returns it, but we don't need to assert that
-        dataset_cudf.assert_compare_df(results.get_meta(['prediction', 'node_id']), expected_df)
+        dataset_cudf.assert_compare_df(results.payload().get_data(['prediction', 'node_id']), expected_df)

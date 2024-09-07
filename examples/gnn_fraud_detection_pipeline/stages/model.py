@@ -22,6 +22,7 @@ import torch
 from dgl import nn as dglnn
 from torch import nn
 from torch.nn import functional as F
+import typing
 
 import cudf as cf
 
@@ -473,7 +474,7 @@ def build_fsi_graph(train_data: cf.DataFrame, col_drop: list[str]) -> (dgl.DGLHe
 
 def prepare_data(
         training_data: cf.DataFrame,
-        test_data: cf.DataFrame) -> (cf.DataFrame, cf.DataFrame, cf.Series, cf.Series, cupy.ndarray, cf.DataFrame):
+        test_data: cf.DataFrame) -> typing.Union[cf.DataFrame, cf.DataFrame, cf.Series, cf.Series, cupy.ndarray, cf.DataFrame]:
     """Process data for training/inference operation
 
     Parameters
