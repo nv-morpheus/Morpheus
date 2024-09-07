@@ -207,7 +207,7 @@ jobs:
   package-core:
     name: Package Core
     if: ${{ inputs.conda_core_run_build }}
-    needs: [check, documentation, test]
+    needs: [documentation, test]
     runs-on: linux-amd64-cpu16
     timeout-minutes: 60
     container:
