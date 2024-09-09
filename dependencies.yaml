@@ -264,7 +264,6 @@ dependencies:
           - rdma-core>=48 # Needed for DOCA.
           - scikit-build=0.17.6
           - versioneer-518
-          - zlib=1.2.13
 
   checks:
     common:
@@ -392,7 +391,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - &cuml cuml=24.06.6
+          - &cuml cuml=24.06
           - pip
           - pip:
             - --find-links https://data.dgl.ai/wheels/cu121/repo.html

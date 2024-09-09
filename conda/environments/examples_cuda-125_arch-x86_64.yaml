@@ -16,7 +16,7 @@ dependencies:
 - boto3
 - click>=8
 - cudf=24.06
-- cuml=24.06.6
+- cuml=24.06
 - cupy
 - datacompy=0.10
 - dill=0.3.7
