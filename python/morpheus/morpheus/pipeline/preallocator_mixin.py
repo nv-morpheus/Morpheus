@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 class PreallocatorMixin(ABC):
     """
     Mixin intented to be added to stages, typically source stages,  which are emitting newly constructed DataFrame or
-    MessageMeta instances into the segment. During segment build, if the `_needed_columns` addtribut is not empty an
+    MessageMeta instances into the segment. During segment build, if the `_needed_columns` addtribute is not empty an
     additional node will be inserted into the graph after the derived class' node which will perform the allocation.
 
     The exceptions would be non-source stages like DFP's `DFPFileToDataFrameStage` which are not sources but are
