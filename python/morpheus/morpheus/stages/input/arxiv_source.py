@@ -112,7 +112,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
-        download_pages = builder.make_subscriber_source(self.unique_name + "-download", self._generate_frames)
+        download_pages = builder.make_source_subscriber(self.unique_name + "-download", self._generate_frames)
         process_pages = builder.make_node(self.unique_name + "-process", ops.map(self._process_pages))
         process_pages.launch_options.pe_count = 6
 

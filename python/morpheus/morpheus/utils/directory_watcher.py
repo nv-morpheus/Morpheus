@@ -104,7 +104,7 @@ class DirectoryWatcher():
         """
 
         # The first source just produces filenames
-        return builder.make_subscriber_source(name, self._generate_via_polling)
+        return builder.make_source_subscriber(name, self._generate_via_polling)
 
     def _get_filename_queue(self) -> FiberQueue:
         """

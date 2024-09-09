@@ -88,7 +88,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
         schema.output_schema.set_type(MessageMeta)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return builder.make_subscriber_source(self.unique_name, self.source_generator)
+        return builder.make_source_subscriber(self.unique_name, self.source_generator)
 
     def source_generator(self, subscriber: mrc.Subscriber) -> collections.abc.Iterator[MessageMeta]:
         try:

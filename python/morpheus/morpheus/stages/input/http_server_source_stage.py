@@ -288,7 +288,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                                                  lines=self._lines,
                                                  stop_after=self._stop_after)
         else:
-            node = builder.make_subscriber_source(self.unique_name, self._generate_frames)
+            node = builder.make_source_subscriber(self.unique_name, self._generate_frames)
 
         return node
 

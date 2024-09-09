@@ -127,7 +127,7 @@ class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._accepts_subscriber:
-            return builder.make_subscriber_source(self.unique_name, self._gen_fn)
+            return builder.make_source_subscriber(self.unique_name, self._gen_fn)
         else:
             return builder.make_source(self.unique_name, self._gen_fn)
 

@@ -128,7 +128,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
                                            self._filter_null_columns,
                                            self._parser_kwargs)
         else:
-            node = builder.make_subscriber_source(self.unique_name, self._generate_frames)
+            node = builder.make_source_subscriber(self.unique_name, self._generate_frames)
 
         return node
 

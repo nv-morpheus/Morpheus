@@ -76,4 +76,4 @@ class ControlMessageFileSourceStage(SingleOutputSource):
                     yield message_control
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return builder.make_subscriber_source(self.unique_name, self._create_control_message)
+        return builder.make_source_subscriber(self.unique_name, self._create_control_message)

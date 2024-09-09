@@ -754,11 +754,11 @@ def compute_schema(self, schema: StageSchema):
     schema.output_schema.set_type(MessageMeta)
 ```
 
-The `_build_source` method is similar to the `_build_single` method; it receives an instance of the MRC segment builder (`mrc.Builder`) and returns a `mrc.SegmentObject`. However, unlike in the previous examples, source stages do not have a parent stage and therefore do not receive an input node. Instead of building our node with `make_node`, we will call `make_subscriber_source` with the parameter `self.source_generator`, which is a method that we will define next.
+The `_build_source` method is similar to the `_build_single` method; it receives an instance of the MRC segment builder (`mrc.Builder`) and returns a `mrc.SegmentObject`. However, unlike in the previous examples, source stages do not have a parent stage and therefore do not receive an input node. Instead of building our node with `make_node`, we will call `make_source_subscriber` with the parameter `self.source_generator`, which is a method that we will define next.
 
 ```python
 def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-    return builder.make_subscriber_source(self.unique_name, self.source_generator)
+    return builder.make_source_subscriber(self.unique_name, self.source_generator)
 ```
 
 The `source_generator` method is where most of the RabbitMQ-specific code exists. When we have a message that we wish to emit into the pipeline, we simply `yield` it. We continue this process until the `is_stop_requested()` method returns `True` or `subscriber.is_subscribed()` returns `False`.
@@ -865,7 +865,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
         schema.output_schema.set_type(MessageMeta)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return builder.make_subscriber_source(self.unique_name, self.source_generator)
+        return builder.make_source_subscriber(self.unique_name, self.source_generator)
 
     def source_generator(self, subscriber: mrc.Subscriber) -> collections.abc.Iterator[MessageMeta]:
         try:

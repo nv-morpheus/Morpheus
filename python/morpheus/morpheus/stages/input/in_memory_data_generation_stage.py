@@ -60,6 +60,6 @@ class InMemoryDataGenStage(SingleOutputSource):
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if fn_receives_subscriber(self._data_source):
-            return builder.make_subscriber_source(self.unique_name, self._data_source)
+            return builder.make_source_subscriber(self.unique_name, self._data_source)
 
         return builder.make_source(self.unique_name, self._data_source)

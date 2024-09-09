@@ -241,6 +241,6 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             # multiple threads
             source.launch_options.pe_count = self._max_concurrent
         else:
-            source = builder.make_subscriber_source(self.unique_name, self._source_generator)
+            source = builder.make_source_subscriber(self.unique_name, self._source_generator)
 
         return source
