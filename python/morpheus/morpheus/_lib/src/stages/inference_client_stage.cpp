@@ -18,7 +18,6 @@
 #include "morpheus/stages/inference_client_stage.hpp"
 
 #include "morpheus/messages/control.hpp"                 // for ControlMessage
-#include "morpheus/messages/memory/response_memory.hpp"  // for ResponseMemory
 #include "morpheus/messages/memory/tensor_memory.hpp"    // for TensorMemory
 #include "morpheus/messages/meta.hpp"                    // for MessageMeta
 #include "morpheus/objects/data_table.hpp"               // for morpheus
