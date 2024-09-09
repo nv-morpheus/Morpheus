@@ -20,8 +20,8 @@ from pathlib import Path
 
 import pytest
 
-from morpheus.service.vdb.faiss_vdb_service import FaissVectorDBResourceService
-from morpheus.service.vdb.faiss_vdb_service import FaissVectorDBService
+from morpheus_llm.service.vdb.faiss_vdb_service import FaissVectorDBResourceService
+from morpheus_llm.service.vdb.faiss_vdb_service import FaissVectorDBService
 
 if (typing.TYPE_CHECKING):
     from langchain_core.embeddings import Embeddings
