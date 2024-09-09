@@ -26,13 +26,6 @@
 #include "morpheus/messages/memory/response_memory_probs.hpp"
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
-#include "morpheus/messages/multi.hpp"
-#include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/messages/multi_inference_fil.hpp"
-#include "morpheus/messages/multi_inference_nlp.hpp"
-#include "morpheus/messages/multi_response.hpp"
-#include "morpheus/messages/multi_response_probs.hpp"
-#include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/messages/raw_packet.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
@@ -150,22 +143,6 @@ PYBIND11_MODULE(messages, _module)
     // Add type registrations for all our common types
     reg_py_type_helper<ControlMessage>();
     reg_py_type_helper<MessageMeta>();
-    reg_py_type_helper<MultiMessage>();
-    reg_py_type_helper<MultiTensorMessage>();
-    reg_py_type_helper<MultiInferenceMessage>();
-    reg_py_type_helper<MultiInferenceFILMessage>();
-    reg_py_type_helper<MultiInferenceNLPMessage>();
-    reg_py_type_helper<MultiResponseMessage>();
-    reg_py_type_helper<MultiResponseProbsMessage>();
-
-    // EdgeConnectors for derived classes of MultiMessage to MultiMessage
-    register_permutations<MultiMessage,
-                          MultiTensorMessage,
-                          MultiInferenceMessage,
-                          MultiInferenceFILMessage,
-                          MultiInferenceNLPMessage,
-                          MultiResponseMessage,
-                          MultiResponseProbsMessage>();
 
     // Tensor Memory classes
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(_module, "TensorMemory")
@@ -272,131 +249,6 @@ PYBIND11_MODULE(messages, _module)
              py::arg("start"),
              py::arg("stop"))
         .def_static("make_from_file", &MessageMetaInterfaceProxy::init_cpp);
-
-    py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(_module, "MultiMessage")
-        .def(py::init<>(&MultiMessageInterfaceProxy::init),
-             py::kw_only(),
-             py::arg("meta"),
-             py::arg("mess_offset") = 0,
-             py::arg("mess_count")  = -1)
-        .def_property_readonly("meta", &MultiMessageInterfaceProxy::meta)
-        .def_property_readonly("mess_offset", &MultiMessageInterfaceProxy::mess_offset)
-        .def_property_readonly("mess_count", &MultiMessageInterfaceProxy::mess_count)
-        .def("get_meta_column_names", &MultiMessageInterfaceProxy::get_meta_column_names)
-        .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage&)>(&MultiMessageInterfaceProxy::get_meta),
-             py::return_value_policy::move)
-        .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage&, std::string)>(&MultiMessageInterfaceProxy::get_meta),
-             py::return_value_policy::move,
-             py::arg("columns"))
-        .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage&, std::vector<std::string>)>(
-                 &MultiMessageInterfaceProxy::get_meta),
-             py::return_value_policy::move,
-             py::arg("columns"))
-        .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage&, pybind11::none)>(&MultiMessageInterfaceProxy::get_meta),
-             py::return_value_policy::move,
-             py::arg("columns"))
-        .def("set_meta", &MultiMessageInterfaceProxy::set_meta, py::return_value_policy::move)
-        .def("get_slice", &MultiMessageInterfaceProxy::get_slice, py::return_value_policy::reference_internal)
-        .def("copy_ranges",
-             &MultiMessageInterfaceProxy::copy_ranges,
-             py::arg("ranges"),
-             py::arg("num_selected_rows") = py::none(),
-             py::return_value_policy::move)
-        .def("get_meta_list", &MultiMessageInterfaceProxy::get_meta_list, py::return_value_policy::move);
-
-    py::class_<MultiTensorMessage, MultiMessage, std::shared_ptr<MultiTensorMessage>>(_module, "MultiTensorMessage")
-        .def(py::init<>(&MultiTensorMessageInterfaceProxy::init),
-             py::kw_only(),
-             py::arg("meta"),
-             py::arg("mess_offset") = 0,
-             py::arg("mess_count")  = -1,
-             py::arg("memory"),
-             py::arg("offset")         = 0,
-             py::arg("count")          = -1,
-             py::arg("id_tensor_name") = "seq_ids")
-        .def_property_readonly("memory", &MultiTensorMessageInterfaceProxy::memory)
-        .def_property_readonly("offset", &MultiTensorMessageInterfaceProxy::offset)
-        .def_property_readonly("count", &MultiTensorMessageInterfaceProxy::count)
-        .def("get_tensor", &MultiTensorMessageInterfaceProxy::get_tensor)
-        .def("get_id_tensor", &MultiResponseMessageInterfaceProxy::get_id_tensor);
-
-    py::class_<MultiInferenceMessage, MultiTensorMessage, std::shared_ptr<MultiInferenceMessage>>(
-        _module, "MultiInferenceMessage")
-        .def(py::init<>(&MultiInferenceMessageInterfaceProxy::init),
-             py::kw_only(),
-             py::arg("meta"),
-             py::arg("mess_offset") = 0,
-             py::arg("mess_count")  = -1,
-             py::arg("memory"),
-             py::arg("offset")         = 0,
-             py::arg("count")          = -1,
-             py::arg("id_tensor_name") = "seq_ids")
-        .def("get_input", &MultiInferenceMessageInterfaceProxy::get_tensor);
-
-    py::class_<MultiInferenceNLPMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceNLPMessage>>(
-        _module, "MultiInferenceNLPMessage")
-        .def(py::init<>(&MultiInferenceNLPMessageInterfaceProxy::init),
-             py::kw_only(),
-             py::arg("meta"),
-             py::arg("mess_offset") = 0,
-             py::arg("mess_count")  = -1,
-             py::arg("memory"),
-             py::arg("offset")         = 0,
-             py::arg("count")          = -1,
-             py::arg("id_tensor_name") = "seq_ids")
-        .def_property_readonly("input_ids", &MultiInferenceNLPMessageInterfaceProxy::input_ids)
-        .def_property_readonly("input_mask", &MultiInferenceNLPMessageInterfaceProxy::input_mask)
-        .def_property_readonly("seq_ids", &MultiInferenceNLPMessageInterfaceProxy::seq_ids);
-
-    py::class_<MultiInferenceFILMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceFILMessage>>(
-        _module, "MultiInferenceFILMessage")
-        .def(py::init<>(&MultiInferenceFILMessageInterfaceProxy::init),
-             py::kw_only(),
-             py::arg("meta"),
-             py::arg("mess_offset") = 0,
-             py::arg("mess_count")  = -1,
-             py::arg("memory"),
-             py::arg("offset")         = 0,
-             py::arg("count")          = -1,
-             py::arg("id_tensor_name") = "seq_ids")
-        .def_property_readonly("input__0", &MultiInferenceFILMessageInterfaceProxy::input__0)
-        .def_property_readonly("seq_ids", &MultiInferenceFILMessageInterfaceProxy::seq_ids);
-
-    py::class_<MultiResponseMessage, MultiTensorMessage, std::shared_ptr<MultiResponseMessage>>(_module,
-                                                                                                "MultiResponseMessage")
-        .def(py::init<>(&MultiResponseMessageInterfaceProxy::init),
-             py::kw_only(),
-             py::arg("meta"),
-             py::arg("mess_offset") = 0,
-             py::arg("mess_count")  = -1,
-             py::arg("memory"),
-             py::arg("offset")            = 0,
-             py::arg("count")             = -1,
-             py::arg("id_tensor_name")    = "seq_ids",
-             py::arg("probs_tensor_name") = "probs")
-        .def_property("probs_tensor_name",
-                      &MultiResponseMessageInterfaceProxy::probs_tensor_name_getter,
-                      &MultiResponseMessageInterfaceProxy::probs_tensor_name_setter)
-        .def("get_output", &MultiResponseMessageInterfaceProxy::get_tensor)
-        .def("get_probs_tensor", &MultiResponseMessageInterfaceProxy::get_probs_tensor);
-
-    py::class_<MultiResponseProbsMessage, MultiResponseMessage, std::shared_ptr<MultiResponseProbsMessage>>(
-        _module, "MultiResponseProbsMessage")
-        .def(py::init<>(&MultiResponseProbsMessageInterfaceProxy::init),
-             py::kw_only(),
-             py::arg("meta"),
-             py::arg("mess_offset") = 0,
-             py::arg("mess_count")  = -1,
-             py::arg("memory"),
-             py::arg("offset")            = 0,
-             py::arg("count")             = -1,
-             py::arg("id_tensor_name")    = "seq_ids",
-             py::arg("probs_tensor_name") = "probs")
-        .def_property_readonly("probs", &MultiResponseProbsMessageInterfaceProxy::probs);
 
     py::enum_<ControlMessageType>(_module, "ControlMessageType")
         .value("INFERENCE", ControlMessageType::INFERENCE)
