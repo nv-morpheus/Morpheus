@@ -21,6 +21,7 @@ import typing_utils
 
 import cudf
 
+import morpheus._lib.messages as _messages
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
@@ -31,7 +32,7 @@ def _make_control_message(df, probs):
     df_ = df[0:len(probs)]
     cm = ControlMessage()
     cm.payload(MessageMeta(df_))
-    cm.tensors(count=len(df_), tensors={'probs': probs})
+    cm.tensors(_messages.TensorMemory(count=len(df_), tensors={'probs': probs}))
 
     return cm
 

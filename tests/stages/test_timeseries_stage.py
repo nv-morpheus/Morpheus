@@ -21,6 +21,7 @@ import pandas as pd
 import pytest
 import typing_utils
 
+import morpheus._lib.messages as _messages
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.messages import ControlMessage
@@ -41,7 +42,7 @@ def _make_control_message(df, probs):
     df_ = df[0:len(probs)]
     cm = ControlMessage()
     cm.payload(MessageMeta(df_))
-    cm.tensors(count=len(df_), tensors={'probs': probs})
+    cm.tensors(_messages.TensorMemory(count=len(df_), tensors={'probs': probs}))
     cm.set_metadata("user_id", "test_user_id")
 
     return cm

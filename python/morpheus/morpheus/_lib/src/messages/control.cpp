@@ -17,7 +17,6 @@
 
 #include "morpheus/messages/control.hpp"
 
-#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"  // for MessageMeta, MessageMetaInterfaceProxy
 
 #include <glog/logging.h>       // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
@@ -356,18 +355,6 @@ void ControlMessageProxy::set_timestamp(ControlMessage& self, const std::string&
 void ControlMessageProxy::payload_from_python_meta(ControlMessage& self, const pybind11::object& meta)
 {
     self.payload(MessageMetaInterfaceProxy::init_python_meta(meta));
-}
-
-void ControlMessageProxy::set_tensors_from_python(ControlMessage& self, const pybind11::object& tensor_memory)
-{
-    auto count               = tensor_memory.attr("count").cast<TensorIndex>();
-    pybind11::object tensors = tensor_memory.attr("get_tensors")();
-    self.tensors(TensorMemoryInterfaceProxy::init(count, tensors));
-}
-
-void ControlMessageProxy::set_tensors_from_python(ControlMessage& self, TensorIndex count, pybind11::object& tensors)
-{
-    self.tensors(TensorMemoryInterfaceProxy::init(count, tensors));
 }
 
 }  // namespace morpheus
