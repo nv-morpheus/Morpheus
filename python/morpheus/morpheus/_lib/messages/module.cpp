@@ -30,7 +30,6 @@
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/pybind11/json.hpp"  // IWYU pragma: keep
-#include "morpheus/types.hpp"          // for TensorIndex
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/json_types.hpp"  // for json_t
 #include "morpheus/utilities/string_util.hpp"
