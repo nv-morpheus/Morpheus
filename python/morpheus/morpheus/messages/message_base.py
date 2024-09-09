@@ -68,7 +68,7 @@ class MessageBase(metaclass=MessageImpl):
 @dataclasses.dataclass
 class MessageData(MessageBase):
     """
-    Base class for MultiMessage, defining serialization methods
+    Base class for TensorMemory, defining serialization methods
     """
 
     def __getstate__(self):

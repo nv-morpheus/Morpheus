@@ -26,7 +26,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 # Fixtures cannot be used directly as paramertize values, but we can fetch them by name
 @pytest.mark.parametrize("stage_fixture_name,num_inputs,num_outputs",
                          [("in_mem_source_stage", 0, 1), ("in_mem_multi_source_stage", 0, 3), ("stage", 1, 1),
-                          ("split_stage", 1, 2), ("multi_pass_thru_stage", 3, 3)])
+                          ("split_stage", 1, 2)])
 def test_constructor(request: pytest.FixtureRequest, stage_fixture_name: str, num_inputs: int, num_outputs: int):
     stage = request.getfixturevalue(stage_fixture_name)
     schema = StageSchema(stage)
@@ -72,7 +72,7 @@ def test_multi_port_output_schemas(split_stage: SplitStage):
         assert port_schema.get_type() is MessageMeta
 
 
-@pytest.mark.parametrize("stage_fixture_name", ["split_stage", "multi_pass_thru_stage"])
+@pytest.mark.parametrize("stage_fixture_name", ["split_stage"])
 def test_output_schema_multi_error(request: pytest.FixtureRequest, stage_fixture_name: str):
     """
     Test confirms that the output_schema property raises an error when there are multiple output schemas
