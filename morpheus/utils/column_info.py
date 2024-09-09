@@ -788,4 +788,3 @@ class DataFrameInputSchema:
                                       input_columns=self.input_columns,
                                       json_cols=self.json_columns,
                                       preserve_re=self.preserve_columns)
-
