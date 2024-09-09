@@ -13,9 +13,12 @@
 # limitations under the License.
 
 import mrc
+import pandas as pd
 from mrc.core import operators as ops
 
 from dask.distributed import Client
+
+import cudf
 
 from common.data_models import FeatureConfig  # pylint: disable=no-name-in-module
 from common.feature_extractor import FeatureExtractor  # pylint: disable=no-name-in-module
@@ -80,11 +83,13 @@ class CreateFeaturesRWStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def on_next(self, msg: ControlMessage) -> ControlMessage:
+    def on_next(self, msg: ControlMessage) -> list[ControlMessage]:
 
         snapshot_fea_dfs = []
 
-        df = msg.payload().copy_dataframe()
+        with msg.payload().mutable_dataframe() as cdf:
+            df = cdf.to_pandas()
+
         msg_source = msg.get_metadata("source")
 
         # Type cast CommitCharge.
@@ -119,42 +124,37 @@ class CreateFeaturesRWStage(PassThruTypeMixin, SinglePortStage):
         # There's a chance of receiving the same snapshots names from multiple sources(hosts)
         features_df['source_pid_process'] = msg_source + '_' + features_df.pid_process
 
+        # Cast int values to string preventing the df from converting to cuDF.
+        features_df['ldrmodules_df_path'] = features_df['ldrmodules_df_path'].astype(str)
+
         # Sort entries by pid_process and snapshot_id
         features_df = features_df.sort_values(by=["pid_process", "snapshot_id"]).reset_index(drop=True)
 
-        # Create AppShieldMessageMeta with extracted features information.
-        meta = MessageMeta(features_df)
-        cm_msg = ControlMessage()
-        cm_msg.payload(meta)
-        cm_msg.set_metadata("source", msg_source)
+        return self.split_messages(msg_source, features_df)
 
-        return cm_msg
-
-    def split_messages(self, msg: ControlMessage) -> list[ControlMessage]:
+    def split_messages(self, msg_source: str, df: pd.DataFrame) -> list[ControlMessage]:
 
         output_messages = []
 
-        msg_source = msg.get_metadata("source")
-        meta: MessageMeta = msg.payload()
-        with meta.mutable_dataframe() as df:
+        pid_processes = df.pid_process.unique()
 
-            pid_processes = df.pid_process.unique()
+        # Create a unique messaage per pid_process, this assumes the DF has been sorted by the `pid_process` column
+        for pid_process in pid_processes:
 
-            # Create a unique messaage per pid_process, this assumes the DF has been sorted by the `pid_process` column
-            for pid_process in pid_processes:
+            pid_process_index = df[df.pid_process == pid_process].index
 
-                pid_process_index = df[df.pid_process == pid_process].index
+            start = pid_process_index.min()
+            stop = pid_process_index.max() + 1
 
-                start = pid_process_index.min()
-                stop = pid_process_index.max() + 1
+            cdf = cudf.DataFrame(df.iloc[start:stop])
 
-                out_msg = ControlMessage()
-                out_msg.payload(MessageMeta(df.iloc[start:stop]))
-                out_msg.set_metadata("source", msg_source)
+            out_msg = ControlMessage()
+            out_msg.payload(MessageMeta(cdf))
+            out_msg.set_metadata("source", msg_source)
 
-                output_messages.append(out_msg)
+            output_messages.append(out_msg)
 
-            return output_messages
+        return output_messages
 
     def on_completed(self):
         # Close dask client when pipeline initiates shutdown
@@ -163,7 +163,6 @@ class CreateFeaturesRWStage(PassThruTypeMixin, SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name,
                                  ops.map(self.on_next),
-                                 ops.map(self.split_messages),
                                  ops.on_completed(self.on_completed),
                                  ops.flatten())
         builder.make_edge(input_node, node)
