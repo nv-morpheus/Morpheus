@@ -71,7 +71,6 @@ dependencies:
 - nodejs=18.*
 - numexpr
 - numpydoc=1.5
-- nvtabular=23.08.00
 - onnx=1.15
 - openai=1.13
 - papermill=2.4.0

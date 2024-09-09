@@ -105,7 +105,7 @@ def test_constructor(config: Config):
 @pytest.mark.parametrize('dl_type', ["single_thread", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('dask.distributed.Client')
-@mock.patch('dask_cuda.LocalCUDACluster')
+@mock.patch('dask.distributed.LocalCluster')
 @mock.patch('morpheus.controllers.file_to_df_controller.single_object_to_dataframe')
 @mock.patch('morpheus.utils.downloader.Distributed')
 @mock.patch('morpheus.controllers.file_to_df_controller.process_dataframe')
@@ -127,12 +127,6 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
     mock_dask_client.__enter__.return_value = mock_dask_client
     mock_dask_client.__exit__.return_value = False
 
-    mock_dist_client = mock.MagicMock()
-    mock_distributed.return_value = mock_distributed
-    mock_distributed.client = mock_dist_client
-    mock_distributed.__enter__.return_value = mock_distributed
-    mock_distributed.__exit__.return_value = False
-
     expected_hash = hashlib.md5(json.dumps([{
         'ukey': single_file_obj.fs.ukey(single_file_obj.path)
     }]).encode()).hexdigest()
@@ -149,8 +143,7 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
     returned_df = dataset_pandas['filter_probs.csv']
     mock_proc_df.return_value = returned_df
     if dl_type.startswith('dask'):
-        mock_dist_client.map.return_value = [returned_df]
-        mock_dist_client.gather.return_value = [returned_df]
+        mock_dask_client.gather.return_value = [returned_df]
     else:
         mock_obf_to_df.return_value = returned_df
 
@@ -174,12 +167,11 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
 
     if dl_type.startswith('dask'):
         mock_dask_client.assert_called_once_with(mock_dask_cluster)
-        mock_dist_client.map.assert_called_once()
-        mock_dist_client.gather.assert_called_once()
+        mock_dask_client.map.assert_called_once()
+        mock_dask_client.gather.assert_called_once()
     else:
         mock_dask_cluster.assert_not_called()
-        mock_dist_client.map.assert_not_called()
-        mock_dist_client.gather.assert_not_called()
+        mock_dask_client.assert_not_called()
 
     dataset_pandas.assert_df_equal(output_df, expected_df)
 
@@ -194,7 +186,7 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
-@mock.patch('dask_cuda.LocalCUDACluster')
+@mock.patch('dask.distributed.LocalCluster')
 @mock.patch('morpheus.controllers.file_to_df_controller.single_object_to_dataframe')
 def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
                                                       mock_dask_cluster: mock.MagicMock,
@@ -253,7 +245,7 @@ def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.Magic
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
-@mock.patch('dask_cuda.LocalCUDACluster')
+@mock.patch('dask.distributed.LocalCluster')
 @mock.patch('morpheus.controllers.file_to_df_controller.single_object_to_dataframe')
 def test_get_or_create_dataframe_from_batch_none_noop(mock_obf_to_df: mock.MagicMock,
                                                       mock_dask_cluster: mock.MagicMock,
