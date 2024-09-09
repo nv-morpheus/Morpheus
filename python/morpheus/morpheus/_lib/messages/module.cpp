@@ -443,14 +443,6 @@ PYBIND11_MODULE(messages, _module)
             py::arg("meta"))
         .def("tensors", pybind11::overload_cast<>(&ControlMessage::tensors))
         .def("tensors", pybind11::overload_cast<const std::shared_ptr<TensorMemory>&>(&ControlMessage::tensors))
-        .def("tensors",
-             pybind11::overload_cast<ControlMessage&, const py::object&>(&ControlMessageProxy::set_tensors_from_python),
-             py::arg("tensors"))
-        .def("tensors",
-             pybind11::overload_cast<ControlMessage&, TensorIndex, py::object&>(
-                 &ControlMessageProxy::set_tensors_from_python),
-             py::arg("count"),
-             py::arg("tensors"))
         .def("remove_task", &ControlMessage::remove_task, py::arg("task_type"))
         .def("set_metadata", &ControlMessage::set_metadata, py::arg("key"), py::arg("value"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
