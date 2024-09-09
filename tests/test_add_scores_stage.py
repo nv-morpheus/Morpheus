@@ -26,7 +26,6 @@ import morpheus._lib.messages as _messages
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
