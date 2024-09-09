@@ -21,8 +21,6 @@
 #include "morpheus/messages/memory/response_memory.hpp"  // for ResponseMemory
 #include "morpheus/messages/memory/tensor_memory.hpp"    // for TensorMemory
 #include "morpheus/messages/meta.hpp"                    // for MessageMeta
-#include "morpheus/messages/multi_inference.hpp"         // for MultiInferenceMessage
-#include "morpheus/messages/multi_response.hpp"          // for MultiResponseMessage
 #include "morpheus/objects/data_table.hpp"               // for morpheus
 #include "morpheus/objects/dev_mem_info.hpp"             // for DevMemInfo
 #include "morpheus/objects/dtype.hpp"                    // for DType
@@ -174,16 +172,6 @@ struct ExponentialBackoff
         m_delay *= 2;
     }
 };
-
-static std::shared_ptr<MultiResponseMessage> make_response(std::shared_ptr<MultiInferenceMessage> message,
-                                                           TensorMap&& output_tensor_map)
-{
-    // Final output of all mini-batches
-    auto response_mem = std::make_shared<ResponseMemory>(message->mess_count, std::move(output_tensor_map));
-
-    return std::make_shared<MultiResponseMessage>(
-        message->meta, message->mess_offset, message->mess_count, std::move(response_mem), 0, response_mem->count);
-}
 
 static std::shared_ptr<ControlMessage> make_response(std::shared_ptr<ControlMessage> message,
                                                      TensorMap&& output_tensor_map)

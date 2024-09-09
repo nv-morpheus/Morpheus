@@ -426,7 +426,7 @@ TEST_F(TestTritonInferenceStage, ForceConvert)
             auto tensors = TensorMap();
             tensors["seq_ids"].swap(Tensor::create(seq_ids_buffer, dtype, {count, 3}, {}));
 
-            // create the MultiInferenceMessage using the sequence id tensor.
+            // create the ControlMessage using the sequence id tensor.
             auto memory  = std::make_shared<morpheus::TensorMemory>(count, std::move(tensors));
             auto table   = create_test_table_with_metadata(count);
             auto meta    = morpheus::MessageMeta::create_from_cpp(std::move(table), 1);

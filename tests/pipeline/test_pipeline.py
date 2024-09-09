@@ -167,32 +167,6 @@ def test_startup_cb_called(filter_probs_df: DataFrameType):
     assert state_dict["sink_start_async"]
 
 
-@pytest.mark.use_cudf
-def test_pipeline_narrowing_types(config: Config, filter_probs_df: DataFrameType):
-    """
-    Test to ensure that we aren't narrowing the types of messages in the pipeline.
-
-    In this case, `ConvMsg` emits `MultiResponseMessage` messages which are a subclass of `MultiMessage`,
-    which is the accepted type for `MultiMessagePassThruStage`. We want to ensure that the type is retained allowing us
-    to place a stage after `MultiMessagePassThruStage` requring `MultiResponseMessage` like `AddScoresStage`.
-    """
-    config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
-    expected_df = filter_probs_df.to_pandas()
-    expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, config.class_labels)))
-
-    pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
-    pipe.add_stage(ConvMsg(config))
-    # pipe.add_stage(MultiMessagePassThruStage(config))
-    pipe.add_stage(AddScoresStage(config))
-    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
-    compare_stage = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
-    pipe.run()
-
-    assert_results(compare_stage.get_results())
-
-
 @pytest.mark.parametrize("num_outputs", [0, 2, 3])
 def test_add_edge_output_port_errors(config: Config, num_outputs: int):
     """
