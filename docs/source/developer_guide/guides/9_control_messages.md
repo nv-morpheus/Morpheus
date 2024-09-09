@@ -79,7 +79,9 @@ msg_meta == retrieved_payload # True
 
 ### Conversion from `MultiMessage` to `ControlMessage`
 
-The `MultiMessage` type was deprecated in version 24.06, and will be completely removed in version 24.10. All usage of `MultiMessage` should transit to `ControlMessage`. Each `MultiMessage` functionality has a corresponding equivalent in `ControlMessage`, as illustrated below.
+**The `MultiMessage` type is completely removed in version 24.10.**
+
+All usage of `MultiMessage` can be convert to `ControlMessage`. Each `MultiMessage` functionality has a corresponding equivalent in `ControlMessage`, as illustrated below.
 ```python
 import cudf
 from morpheus.messages import MultiMessage, ControlMessage
