@@ -43,12 +43,8 @@ if(MORPHEUS_BUILD_BENCHMARKS)
   # google benchmark
   # - Expects package to pre-exist in the build environment
   # ================
-  rapids_find_package(benchmark REQUIRED
-    GLOBAL_TARGETS benchmark::benchmark
-    BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
-    INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
-    FIND_ARGS CONFIG
-  )
+  include(${rapids-cmake-dir}/cpm/gbench.cmake)
+  rapids_cpm_gbench(BUILD_STATIC)
 endif()
 
 # glog
@@ -59,12 +55,8 @@ if(MORPHEUS_BUILD_TESTS)
   # google test
   # - Expects package to pre-exist in the build environment
   # ===========
-  rapids_find_package(GTest REQUIRED
-    GLOBAL_TARGETS GTest::gtest GTest::gmock GTest::gtest_main GTest::gmock_main
-    BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
-    INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
-    FIND_ARGS CONFIG
-  )
+  include(${rapids-cmake-dir}/cpm/gtest.cmake)
+  rapids_cpm_gtest(BUILD_STATIC)
 endif()
 
 # cccl -- get an explicit cccl build, matx tries to pull a tag that doesn't exist.

@@ -100,6 +100,8 @@ target_link_libraries(morpheus
     $<TARGET_NAME_IF_EXISTS:conda_env>
     cudf::cudf
     CUDA::nvtx3
+    cudf::cudf
+    glog::glog
     mrc::pymrc
     RDKAFKA::RDKAFKA
     TritonClient::httpclient_static

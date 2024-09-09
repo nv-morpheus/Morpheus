@@ -34,7 +34,7 @@ limitations under the License.
     - [Exporting and Deploying a Different Model from Huggingface](#exporting-and-deploying-a-different-model-from-huggingface)
 
 ## Supported Environments
-All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-121_arch-x86_64.yaml` or `conda/environments/examples_cuda-121_arch-x86_64.yaml` environment files.
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-125_arch-x86_64.yaml` or `conda/environments/examples_cuda-125_arch-x86_64.yaml` environment files.
 | Environment | Supported | Notes |
 |-------------|-----------|-------|
 | Conda | ✔ | |

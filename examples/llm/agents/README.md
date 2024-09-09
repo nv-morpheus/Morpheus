@@ -35,7 +35,7 @@ limitations under the License.
         - [Run example (Kafka Pipeline)](#run-example-kafka-pipeline)
 
 ## Supported Environments
-All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-121_arch-x86_64.yaml` or `conda/environments/examples_cuda-121_arch-x86_64.yaml` environment files. Refer to the [Install Dependencies](#install-dependencies) section for more information.
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-125_arch-x86_64.yaml` or `conda/environments/examples_cuda-125_arch-x86_64.yaml` environment files. Refer to the [Install Dependencies](#install-dependencies) section for more information.
 | Environment | Supported | Notes |
 |-------------|-----------|-------|
 | Conda | ✔ | |
@@ -106,7 +106,7 @@ Install the required dependencies.
 ```bash
 mamba env update \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./conda/environments/examples_cuda-121_arch-x86_64.yaml
+  --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
 ```
 
 

@@ -397,7 +397,15 @@ void MultiMessageInterfaceProxy::set_meta(MultiMessage& self, pybind11::object c
         }
 
         // Perform the update via slices
-        df.attr("loc")[pybind11::make_tuple(df.attr("index")[row_indexer], columns)] = value;
+        auto is_string_dtype = pybind11::module_::import("cudf.api.types").attr("is_string_dtype");
+        auto series = pybind11::module_::import("cudf").attr("Series");
+
+        if (is_string_dtype(series(value)).cast<bool>()) {
+            df[columns] = pybind11::str();
+            df[columns].attr("iloc")[row_indexer] = value;
+        } else {
+            df.attr("loc")[pybind11::make_tuple(df.attr("index")[row_indexer], columns)] = value;
+        }
 
         // Reset the index if we changed it
         if (!saved_index.is_none())
