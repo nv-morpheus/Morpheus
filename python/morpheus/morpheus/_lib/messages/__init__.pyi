@@ -6,11 +6,14 @@
 
         """
 from __future__ import annotations
-import morpheus._lib.messages
+
 import typing
+
 import cupy
-import morpheus._lib.common
 import mrc.core.node
+
+import morpheus._lib.common
+import morpheus._lib.messages
 
 __all__ = [
     "ControlMessage",
@@ -21,6 +24,13 @@ __all__ = [
     "InferenceMemoryFIL",
     "InferenceMemoryNLP",
     "MessageMeta",
+    "MultiInferenceFILMessage",
+    "MultiInferenceMessage",
+    "MultiInferenceNLPMessage",
+    "MultiMessage",
+    "MultiResponseMessage",
+    "MultiResponseProbsMessage",
+    "MultiTensorMessage",
     "MutableTableCtxMgr",
     "RawPacketMessage",
     "ResponseMemory",
@@ -76,10 +86,6 @@ class ControlMessage():
     def tensors(self) -> TensorMemory: ...
     @typing.overload
     def tensors(self, arg0: TensorMemory) -> None: ...
-    @typing.overload
-    def tensors(self, count: int, tensors: object) -> None: ...
-    @typing.overload
-    def tensors(self, tensors: object) -> None: ...
     pass
 class ControlMessageType():
     """
@@ -204,6 +210,113 @@ class MessageMeta():
         """
     @property
     def df(self) -> object:
+        """
+        :type: object
+        """
+    pass
+class MultiMessage():
+    def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1) -> None: ...
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]], num_selected_rows: object = None) -> MultiMessage: ...
+    @typing.overload
+    def get_meta(self) -> object: ...
+    @typing.overload
+    def get_meta(self, columns: None) -> object: ...
+    @typing.overload
+    def get_meta(self, columns: str) -> object: ...
+    @typing.overload
+    def get_meta(self, columns: typing.List[str]) -> object: ...
+    def get_meta_column_names(self) -> typing.List[str]: ...
+    def get_meta_list(self, arg0: object) -> object: ...
+    def get_slice(self, arg0: int, arg1: int) -> MultiMessage: ...
+    def set_meta(self, arg0: object, arg1: object) -> None: ...
+    @property
+    def mess_count(self) -> int:
+        """
+        :type: int
+        """
+    @property
+    def mess_offset(self) -> int:
+        """
+        :type: int
+        """
+    @property
+    def meta(self) -> MessageMeta:
+        """
+        :type: MessageMeta
+        """
+    pass
+class MultiTensorMessage(MultiMessage):
+    def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1, memory: TensorMemory, offset: int = 0, count: int = -1, id_tensor_name: str = 'seq_ids') -> None: ...
+    def get_id_tensor(self) -> object: ...
+    def get_tensor(self, arg0: str) -> object: ...
+    @property
+    def count(self) -> int:
+        """
+        :type: int
+        """
+    @property
+    def memory(self) -> TensorMemory:
+        """
+        :type: TensorMemory
+        """
+    @property
+    def offset(self) -> int:
+        """
+        :type: int
+        """
+    pass
+class MultiInferenceMessage(MultiTensorMessage, MultiMessage):
+    def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1, memory: TensorMemory, offset: int = 0, count: int = -1, id_tensor_name: str = 'seq_ids') -> None: ...
+    def get_input(self, arg0: str) -> object: ...
+    pass
+class MultiInferenceFILMessage(MultiInferenceMessage, MultiTensorMessage, MultiMessage):
+    def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1, memory: TensorMemory, offset: int = 0, count: int = -1, id_tensor_name: str = 'seq_ids') -> None: ...
+    @property
+    def input__0(self) -> object:
+        """
+        :type: object
+        """
+    @property
+    def seq_ids(self) -> object:
+        """
+        :type: object
+        """
+    pass
+class MultiResponseMessage(MultiTensorMessage, MultiMessage):
+    def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1, memory: TensorMemory, offset: int = 0, count: int = -1, id_tensor_name: str = 'seq_ids', probs_tensor_name: str = 'probs') -> None: ...
+    def get_output(self, arg0: str) -> object: ...
+    def get_probs_tensor(self) -> object: ...
+    @property
+    def probs_tensor_name(self) -> str:
+        """
+        :type: str
+        """
+    @probs_tensor_name.setter
+    def probs_tensor_name(self, arg1: str) -> None:
+        pass
+    pass
+class MultiResponseProbsMessage(MultiResponseMessage, MultiTensorMessage, MultiMessage):
+    def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1, memory: TensorMemory, offset: int = 0, count: int = -1, id_tensor_name: str = 'seq_ids', probs_tensor_name: str = 'probs') -> None: ...
+    @property
+    def probs(self) -> object:
+        """
+        :type: object
+        """
+    pass
+class MultiInferenceNLPMessage(MultiInferenceMessage, MultiTensorMessage, MultiMessage):
+    def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1, memory: TensorMemory, offset: int = 0, count: int = -1, id_tensor_name: str = 'seq_ids') -> None: ...
+    @property
+    def input_ids(self) -> object:
+        """
+        :type: object
+        """
+    @property
+    def input_mask(self) -> object:
+        """
+        :type: object
+        """
+    @property
+    def seq_ids(self) -> object:
         """
         :type: object
         """
