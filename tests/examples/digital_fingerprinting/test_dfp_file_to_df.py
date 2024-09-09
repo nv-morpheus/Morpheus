@@ -110,7 +110,6 @@ def test_constructor(config: Config):
 @mock.patch('morpheus.utils.downloader.Distributed')
 @mock.patch('morpheus.controllers.file_to_df_controller.process_dataframe')
 def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicMock,
-                                                       mock_distributed: mock.MagicMock,
                                                        mock_obf_to_df: mock.MagicMock,
                                                        mock_dask_cluster: mock.MagicMock,
                                                        mock_dask_client: mock.MagicMock,

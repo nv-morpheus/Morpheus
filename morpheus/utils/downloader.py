@@ -66,7 +66,6 @@ class Downloader:
                  download_method: typing.Union[DownloadMethods, str] = DownloadMethods.DASK_THREAD,
                  dask_heartbeat_interval: str = "30s"):
 
-        self._merlin_distributed = None
         self._dask_heartbeat_interval = dask_heartbeat_interval
 
         download_method = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", download_method)
