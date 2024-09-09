@@ -23,6 +23,7 @@ import pandas as pd
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
+from morpheus.utils import logger as morpheus_logger
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import SeriesType
 
@@ -380,5 +381,7 @@ class AppShieldMessageMeta(MessageMeta, cpp_class=None):
     source: str = dataclasses.field(init=False)
 
     def __init__(self, df: pd.DataFrame, source: str) -> None:
+        from morpheus.messages.control_message import ControlMessage
+        morpheus_logger.deprecated_message_warning(AppShieldMessageMeta, ControlMessage)
         super().__init__(df)
         self.source = source
