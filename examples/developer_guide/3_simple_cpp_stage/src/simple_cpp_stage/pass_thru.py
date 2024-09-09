@@ -20,7 +20,7 @@ from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.messages import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
@@ -52,7 +52,7 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        if self._build_cpp_node() and issubclass(self._input_type, MultiMessage):
+        if self._build_cpp_node() and isinstance(self._input_type, ControlMessage):
             from ._lib import pass_thru_cpp
 
             node = pass_thru_cpp.PassThruStage(builder, self.unique_name)

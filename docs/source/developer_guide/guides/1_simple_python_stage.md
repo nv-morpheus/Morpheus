@@ -108,7 +108,7 @@ There are four methods that need to be defined in our new subclass to implement 
         return "pass-thru"
 ```
 
-The `accepted_types` method returns a tuple of message classes that this stage is able to accept as input. Morpheus uses this to validate that the parent of this stage emits a message that this stage can accept. Since our stage is a pass through, we will declare that we can accept any incoming message type. Note that production stages will often declare only a single Morpheus message class such as `MessageMeta` or `MultiMessage` (refer to the message classes defined in `morpheus.pipeline.messages` for a complete list).
+The `accepted_types` method returns a tuple of message classes that this stage is able to accept as input. Morpheus uses this to validate that the parent of this stage emits a message that this stage can accept. Since our stage is a pass through, we will declare that we can accept any incoming message type. Note that production stages will often declare only a single Morpheus message class such as `MessageMeta` or `ControlMessage` (refer to the message classes defined in `morpheus.pipeline.messages` for a complete list).
 ```python
     def accepted_types(self) -> tuple:
         return (typing.Any,)

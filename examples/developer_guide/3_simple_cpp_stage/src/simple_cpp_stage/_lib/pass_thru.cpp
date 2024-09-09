@@ -17,7 +17,6 @@
 
 #include "pass_thru.hpp"
 
-#include <morpheus/messages/multi.hpp>
 #include <pybind11/attr.h>
 #include <pybind11/pybind11.h>
 #include <pymrc/utils.hpp>  // for pymrc::import

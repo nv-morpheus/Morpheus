@@ -460,7 +460,7 @@ pipeline.add_stage(AddScoresStage(config, labels=["is_phishing"]))
 
 Lastly, we will save our results to disk. For this purpose, we are using two stages that are often used in conjunction with each other: `SerializeStage` and `WriteToFileStage`.
 
-The `SerializeStage` is used to include and exclude columns as desired in the output. Importantly, it also handles conversion from the `MultiMessage`-derived output type to the `MessageMeta` class that is expected as input by the `WriteToFileStage`.
+The `SerializeStage` is used to include and exclude columns as desired in the output. Importantly, it also handles conversion from the `ControlMessage`-derived output type to the `MessageMeta` class that is expected as input by the `WriteToFileStage`.
 
 The `WriteToFileStage` will append message data to the output file as messages are received. Note however that for performance reasons the `WriteToFileStage` does not flush its contents out to disk every time a message is received. Instead, it relies on the underlying [buffered output stream](https://gcc.gnu.org/onlinedocs/libstdc++/manual/streambufs.html) to flush as needed, and then will close the file handle on shutdown.
 
@@ -889,7 +889,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 ```
 
 ### Function Based Approach
-Similar to the `stage` decorator used in previous examples Morpheus provides a `source` decorator which wraps a generator function to be used as a source stage. In the class based approach we explicitly added the `PreallocatorMixin`, when using the `source` decorator the return type annotation will be inspected and a stage will be created with the `PreallocatorMixin` if the return type is a `DataFrame` type or a message which contains a `DataFrame` (`MessageMeta` and `MultiMessage`).
+Similar to the `stage` decorator used in previous examples Morpheus provides a `source` decorator which wraps a generator function to be used as a source stage. In the class based approach we explicitly added the `PreallocatorMixin`, when using the `source` decorator the return type annotation will be inspected and a stage will be created with the `PreallocatorMixin` if the return type is a `DataFrame` type or a message which contains a `DataFrame` (`MessageMeta` and `ControlMessage`).
 
 The code for the function will first perform the same setup as was used in the class constructor, then entering a nearly identical loop as that in the `source_generator` method.
 

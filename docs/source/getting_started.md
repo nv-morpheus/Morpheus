@@ -279,9 +279,9 @@ The output should contain lines similar to:
 Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topic=('test_pcap',), group_id=morpheus, client_id=None, poll_interval=10millis, disable_commit=False, disable_pre_filtering=False, auto_offset_reset=AutoOffsetReset.LATEST, stop_after=0, async_commits=True)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True)>
-  └─ morpheus.MessageMeta -> morpheus.MultiMessage
+  └─ morpheus.MessageMeta -> morpheus.ControlMessage
 Added stage: <serialize-2; SerializeStage(include=(), exclude=('^ID$', '^_ts_'), fixed_columns=True)>
-  └─ morpheus.MultiMessage -> morpheus.MessageMeta
+  └─ morpheus.ControlMessage -> morpheus.MessageMeta
 Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Segment Complete!====

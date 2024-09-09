@@ -64,6 +64,8 @@ Configuring Pipeline via CLI
 Starting pipeline via CLI... Ctrl+C to Quit
 Config:
 {
+  "_model_max_batch_size": 8,
+  "_pipeline_batch_size": 256,
   "ae": null,
   "class_labels": [],
   "debug": false,
@@ -75,31 +77,23 @@ Config:
   "log_config_file": null,
   "log_level": 10,
   "mode": "OTHER",
-  "model_max_batch_size": 8,
   "num_threads": 64,
-  "pipeline_batch_size": 256,
   "plugins": []
 }
 CPP Enabled: True
-====Registering Pipeline====
-====Building Pipeline====
-====Building Pipeline Complete!====
-Starting! Time: 1689786614.4988477
-====Registering Pipeline Complete!====
 ====Starting Pipeline====
+====Pipeline Started====
 ====Building Segment: linear_segment_0====
-Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True)>
+Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, filter_null_columns=(), parser_kwargs={})>
   └─> morpheus.MessageMeta
-Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True)>
-  └─ morpheus.MessageMeta -> morpheus.MultiMessage
-Added stage: <serialize-2; SerializeStage(include=(), exclude=('^ID$', '^_ts_'), fixed_columns=True)>
-  └─ morpheus.MultiMessage -> morpheus.MessageMeta
+Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True, task_type=None, task_payload=None)>
+  └─ morpheus.MessageMeta -> morpheus.ControlMessage
+Added stage: <serialize-2; SerializeStage(include=(), exclude=(), fixed_columns=True)>
+  └─ morpheus.ControlMessage -> morpheus.MessageMeta
 Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Segment Complete!====
-====Pipeline Started====
 ====Pipeline Complete====
-Pipeline visualization saved to .tmp/simple_identity.png
 ```
 
 ### Pipeline Build Checks
@@ -113,10 +107,10 @@ morpheus --log_level=DEBUG run pipeline-other \
 
 Then the following error displays:
 ```
-RuntimeError: The to-file stage cannot handle input of <class 'morpheus.messages.multi_message.MultiMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
+RuntimeError: The to-file stage cannot handle input of <class 'morpheus._lib.messages.ControlMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
 ```
 
-This indicates that the ``to-file`` stage cannot accept the input type of `morpheus.messages.multi_message.MultiMessage`. This is because the ``to-file`` stage has no idea how to write that class to a file; it only knows how to write instances of `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `MultiMessage`, to `MessageMeta`, which is exactly what the `serialize` stage does.
+This indicates that the ``to-file`` stage cannot accept the input type of `morpheus.messages.ControlMessage`. This is because the ``to-file`` stage has no idea how to write that class to a file; it only knows how to write instances of `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `ControlMessage`, to `MessageMeta`, which is exactly what the `serialize` stage does.
 
 ### Kafka Source Example
 The above example essentially just copies a file. However, it is an important to note that most Morpheus pipelines are similar in structure, in that they begin with a source stage (`from-file`) followed by a `deserialize` stage, end with a `serialize` stage followed by a sink stage (`to-file`), with the actual training or inference logic occurring in between.
