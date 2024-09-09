@@ -17,16 +17,16 @@
 
 #include "morpheus/stages/inference_client_stage.hpp"
 
-#include "morpheus/messages/control.hpp"                 // for ControlMessage
-#include "morpheus/messages/memory/tensor_memory.hpp"    // for TensorMemory
-#include "morpheus/messages/meta.hpp"                    // for MessageMeta
-#include "morpheus/objects/data_table.hpp"               // for morpheus
-#include "morpheus/objects/dev_mem_info.hpp"             // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"                    // for DType
-#include "morpheus/objects/tensor.hpp"                   // for Tensor
-#include "morpheus/objects/tensor_object.hpp"            // for TensorObject
-#include "morpheus/stages/triton_inference.hpp"          // for HttpTritonClient, TritonInferenceClient
-#include "morpheus/utilities/matx_util.hpp"              // for MatxUtil
+#include "morpheus/messages/control.hpp"               // for ControlMessage
+#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
+#include "morpheus/messages/meta.hpp"                  // for MessageMeta
+#include "morpheus/objects/data_table.hpp"             // for morpheus
+#include "morpheus/objects/dev_mem_info.hpp"           // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"                  // for DType
+#include "morpheus/objects/tensor.hpp"                 // for Tensor
+#include "morpheus/objects/tensor_object.hpp"          // for TensorObject
+#include "morpheus/stages/triton_inference.hpp"        // for HttpTritonClient, TritonInferenceClient
+#include "morpheus/utilities/matx_util.hpp"            // for MatxUtil
 
 #include <boost/fiber/policy.hpp>  // for launch
 #include <cuda_runtime.h>          // for cudaMemcpy2D, cudaMemcpyKind
