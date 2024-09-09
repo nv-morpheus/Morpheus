@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from dataclasses import dataclass
 import logging
 import math
 import multiprocessing as mp
@@ -20,6 +21,7 @@ import os
 import queue
 import time
 from threading import Lock
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +50,17 @@ class SerializableFuture:
     def done(self):
         return self._done.is_set()
 
+@dataclass
+class Task:
+    id: uuid
+    process_fn: callable
+    args: tuple
+    kwargs: dict
+
+@dataclass
+class TaskResult:
+    result: any
+    exception: Exception
 
 # pylint: disable=W0201
 class SharedProcessPool:
