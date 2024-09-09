@@ -66,7 +66,8 @@ class FraudGraphConstructionStage(SinglePortStage):
 
     def _process_message(self, message: ControlMessage) -> ControlMessage:
 
-        _, _, _, test_index, _, graph_data = prepare_data(self._training_data, message.payload().get_data(self._column_names))
+        _, _, _, test_index, _, graph_data = prepare_data(self._training_data,
+                                                          message.payload().get_data(self._column_names))
 
         # meta columns to remove as node features
         meta_cols = ['client_node', 'merchant_node', 'index']

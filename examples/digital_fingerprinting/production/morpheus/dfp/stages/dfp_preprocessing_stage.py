@@ -19,8 +19,6 @@ import typing
 import mrc
 from mrc.core import operators as ops
 
-import cudf
-
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin

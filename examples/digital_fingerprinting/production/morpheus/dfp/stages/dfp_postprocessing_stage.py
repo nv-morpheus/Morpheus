@@ -19,7 +19,6 @@ import typing
 from datetime import datetime
 
 import mrc
-import numpy as np
 from mrc.core import operators as ops
 
 from morpheus.common import TypeId

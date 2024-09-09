@@ -115,7 +115,8 @@ def dfp_inference(builder: mrc.Builder):
         output_message = ControlMessage()
         output_message.payload(DFPMessageMeta(output_df, user_id=user_id))
 
-        output_message.payload().set_data('model_version', f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
+        output_message.payload().set_data('model_version',
+                                          f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
 
         if logger.isEnabledFor(logging.DEBUG):
             load_model_duration = (post_model_time - start_time) * 1000.0

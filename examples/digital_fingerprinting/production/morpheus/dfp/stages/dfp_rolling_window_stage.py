@@ -24,7 +24,6 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 

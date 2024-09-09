@@ -19,7 +19,6 @@ import typing
 
 import pytest
 
-from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
 from _utils.stages.in_memory_multi_source_stage import InMemoryMultiSourceStage
 from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
@@ -32,11 +31,7 @@ from morpheus.pipeline import Pipeline
 from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryEgressStage
 from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryIngressStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.type_aliases import DataFrameType
 
 
