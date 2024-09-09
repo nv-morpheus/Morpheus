@@ -102,6 +102,9 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._input_count = None
 
+        import cudf
+        self._cudf = cudf
+
         self._watcher = DirectoryWatcher(input_glob=input_glob,
                                          watch_directory=watch_directory,
                                          max_files=max_files,
@@ -348,20 +351,19 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return df_per_source
 
-    @staticmethod
-    def _build_messages(x: dict[str, pd.DataFrame]):
+    def _build_messages(self, source_dfs: dict[str, pd.DataFrame]):
 
-        messages = []
+        output_messages = []
 
-        for source, df in x.items():
+        for source, df in source_dfs.items():
 
             # Now make a message with the source name
             cm = ControlMessage()
-            cm.payload(MessageMeta(df))
+            cm.payload(MessageMeta(self._cudf.DataFrame(df)))
             cm.set_metadata("source", source)
-            messages.append(cm)
+            output_messages.append(cm)
 
-        return messages
+        return output_messages
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         # The first source just produces filenames
@@ -379,7 +381,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
                         plugins_include=self._plugins_include,
                         encoding=self._encoding)),
             ops.map(self._build_messages),
-            # Finally flatten to single meta
+            # Emit each message individually
             ops.flatten())
         builder.make_edge(out_node, post_node)
 
