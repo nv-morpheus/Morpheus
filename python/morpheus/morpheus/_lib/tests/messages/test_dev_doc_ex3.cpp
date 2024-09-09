@@ -17,8 +17,8 @@
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 
+#include "morpheus/messages/control.hpp"     // for ControlMessage
 #include "morpheus/messages/meta.hpp"        // for MessageMeta
-#include "morpheus/messages/control.hpp"       // for ControlMessage
 #include "morpheus/objects/table_info.hpp"   // for MutableTableInfo
 #include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
 

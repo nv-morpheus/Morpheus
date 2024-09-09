@@ -127,11 +127,11 @@ class TestCreateFeaturesRWStage:
 
     @mock.patch('stages.create_features.Client')
     def test_create_control_messages(self,
-                                   mock_dask_client,
-                                   config: Config,
-                                   rwd_conf: dict,
-                                   interested_plugins: typing.List[str],
-                                   dataset_pandas: DatasetManager):
+                                     mock_dask_client,
+                                     config: Config,
+                                     rwd_conf: dict,
+                                     interested_plugins: typing.List[str],
+                                     dataset_pandas: DatasetManager):
         from stages.create_features import CreateFeaturesRWStage
         mock_dask_client.return_value = mock_dask_client
 

@@ -29,7 +29,7 @@
 #include <pymrc/node.hpp>                    // for PythonSource
 #include <rxcpp/rx.hpp>                      // for subscriber
 
-#include <atomic>  // for atomic
+#include <atomic>   // for atomic
 #include <chrono>   // for duration
 #include <cstddef>  // for size_t
 #include <cstdint>  // for int64_t

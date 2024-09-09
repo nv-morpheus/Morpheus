@@ -19,8 +19,8 @@ import cudf
 
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
-from morpheus.messages import MessageMeta
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 
 
 # pylint: disable=no-name-in-module
