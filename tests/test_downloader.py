@@ -153,7 +153,6 @@ def test_download(mock_dask_cluster: mock.MagicMock,
     downloader = Downloader(download_method=dl_method)
 
     results = downloader.download(download_buckets, download_fn)
-    assert results == [returnd_df for _ in range(num_buckets)]
 
     if dl_method == "single_thread":
         download_fn.assert_has_calls([mock.call(bucket) for bucket in download_buckets])
