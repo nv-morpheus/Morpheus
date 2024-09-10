@@ -40,7 +40,6 @@ def check_inf_message(msg: ControlMessage,
                       expected_rollup_time: str,
                       expected_input__0: cp.ndarray):
     assert isinstance(msg, ControlMessage)
-    # assert msg.payload() is expected_meta
     assert msg.payload().count == expected_mess_count
     assert msg.tensors().count == expected_count
 

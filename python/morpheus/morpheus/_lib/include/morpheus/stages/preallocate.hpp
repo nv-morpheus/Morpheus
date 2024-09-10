@@ -63,9 +63,8 @@ void preallocate(std::shared_ptr<morpheus::ControlMessage> msg,
 
 /****** Component public implementations *******************/
 /****** PreallocateStage ********************************/
-/* Preallocates new columns into the underlying dataframe. This stage supports both MessageMeta &
- * ControlMessage. In the Python bindings the stage is bound as `PreallocateMessageMetaStage` and
- * `PreallocateControlMessageStage`
+/* Preallocates new columns into the underlying dataframe. This stage supports both MessageMeta & ControlMessage. In the
+ * Python bindings the stage is bound as `PreallocateMessageMetaStage` and `PreallocateControlMessageStage`
  */
 template <typename MessageT>
 class MORPHEUS_EXPORT PreallocateStage

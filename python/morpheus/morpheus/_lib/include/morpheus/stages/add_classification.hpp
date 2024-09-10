@@ -39,9 +39,8 @@ namespace morpheus {
  */
 
 /**
- * @brief Add detected classifications to each message. Classification labels
- * based on probabilities calculated in inference stage. Label indexes will be
- * looked up in the idx2label property.
+ * @brief Add detected classifications to each message. Classification labels based on probabilities calculated in
+ * inference stage. Label indexes will be looked up in the idx2label property.
  */
 class MORPHEUS_EXPORT AddClassificationsStage : public AddScoresStageBase
 {
