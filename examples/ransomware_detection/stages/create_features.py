@@ -28,11 +28,12 @@ from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
 @register_stage("create-features", modes=[PipelineModes.FIL])
-class CreateFeaturesRWStage(PassThruTypeMixin, SinglePortStage):
+class CreateFeaturesRWStage(PassThruTypeMixin, PreallocatorMixin, SinglePortStage):
     """
     Stage creates features from Appshiled plugins data.
 
