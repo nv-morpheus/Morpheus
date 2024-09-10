@@ -14,7 +14,6 @@
 
 import logging
 import typing
-from abc import abstractmethod
 from functools import partial
 
 import cupy as cp
@@ -94,8 +93,7 @@ class InferenceWorker:
 
         return output_message
 
-    @abstractmethod
-    def calc_output_dims(self, x: MultiInferenceMessage) -> typing.Tuple:
+    def calc_output_dims(self, x: MultiInferenceMessage) -> tuple:
         """
         Calculates the dimensions of the inference output message data given an input message.
 
@@ -106,12 +104,11 @@ class InferenceWorker:
 
         Returns
         -------
-        typing.Tuple
+        tuple
             Output dimensions of response.
         """
-        pass
+        raise NotImplementedError("No Python implementation provided by this stage")
 
-    @abstractmethod
     def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
         """
         Main inference processing function. This function will be called once for each mini-batch. Once the inference is
@@ -126,7 +123,7 @@ class InferenceWorker:
             Callback to set the values for the inference response.
 
         """
-        pass
+        raise NotImplementedError("No Python implementation provided by this stage")
 
 
 class InferenceStage(MultiMessageStage):
@@ -182,13 +179,13 @@ class InferenceStage(MultiMessageStage):
     def name(self) -> str:
         return "inference"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         """
         Accepted input types to this stage.
 
         Returns
         -------
-        typing.Tuple
+        tuple
             Tuple of input types.
         """
         return (MultiInferenceMessage, ControlMessage)
@@ -199,11 +196,10 @@ class InferenceStage(MultiMessageStage):
         else:
             schema.output_schema.set_type(MultiResponseMessage)
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         # Default to False unless derived classes override this value
         return False
 
-    @abstractmethod
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
         """
         Returns the main inference worker which manages requests possibly in another thread depending on which mode the
@@ -221,7 +217,7 @@ class InferenceStage(MultiMessageStage):
         `InferenceWorker`
             Inference worker implementation for stage.
         """
-        pass
+        raise NotImplementedError("No Python implementation provided by this stage")
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         raise NotImplementedError("No C++ node is available for this inference type")
