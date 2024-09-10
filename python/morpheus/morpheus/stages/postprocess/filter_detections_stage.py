@@ -25,6 +25,7 @@ from morpheus.controllers.filter_detections_controller import FilterDetectionsCo
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("filter")
-class FilterDetectionsStage(SinglePortStage):
+class FilterDetectionsStage(GpuAndCpuMixin, SinglePortStage):
     """
     Filter message by a classification threshold.
 
