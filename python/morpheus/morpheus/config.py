@@ -214,10 +214,10 @@ class Config(ConfigBase):
 
     mode: PipelineModes = PipelineModes.OTHER
 
+    _pipeline_batch_size: int = 256
+    _model_max_batch_size: int = 8
     feature_length: int = 256
-    pipeline_batch_size: int = 256
     num_threads: int = 1
-    model_max_batch_size: int = 8
     edge_buffer_size: int = 128
 
     # Class labels to convert class index to label.
@@ -260,6 +260,29 @@ class Config(ConfigBase):
             raise dataclasses.FrozenInstanceError("Cannot modify frozen Config object.")
 
         super().__setattr__(name, value)
+
+    @property
+    def pipeline_batch_size(self):
+        return self._pipeline_batch_size
+
+    @pipeline_batch_size.setter
+    def pipeline_batch_size(self, value: int):
+        self._pipeline_batch_size = value
+        self._validate_config()
+
+    @property
+    def model_max_batch_size(self):
+        return self._model_max_batch_size
+
+    @model_max_batch_size.setter
+    def model_max_batch_size(self, value: int):
+        self._model_max_batch_size = value
+        self._validate_config()
+
+    def _validate_config(self):
+        if self._pipeline_batch_size < self._model_max_batch_size:
+            logging.warning("Config has `pipeline_batch_size < model_max_batch_size` which effectively limits "
+                            "`model_max_batch_size`. This may reduce performance.")
 
     def save(self, filename: str):
         """

@@ -16,8 +16,8 @@
 # limitations under the License.
 
 # ============== LEGEND =================================================== #
-#                         [conda_bld_morpheus]
-#                               /
+#       [conda_bld_morpheus_core] [conda_bld_morpheus]
+#               /                  /
 # [base] -> [conda_env] -> [base_extended] -> [runtime_conda_create] -> [runtime]
 #                               \
 #                         [conda_env_dev] -> [development] -> [development_pydbg]
@@ -148,6 +148,52 @@ ENTRYPOINT [ "/opt/conda/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
 
 # Reset the shell back to normal
 SHELL ["/bin/bash", "-c"]
+
+# ============ Stage: conda_bld_morpheus_core ============
+# Now build the morpheus conda package
+FROM conda_env as conda_bld_morpheus_core
+
+ARG MORPHEUS_ROOT_HOST
+ARG CUDA_MAJOR_VER
+ARG CUDA_MINOR_VER
+
+# to upload the image use -
+# --build-arg CONDA_TOKEN=<anaconda-token>
+# --build-arg CONDA_UPLOAD=upload
+ARG CONDA_TOKEN
+ARG CONDA_UPLOAD
+
+ENV GIT_CLONE_PROTECTION_ACTIVE=false
+
+RUN --mount=type=cache,id=apt,target=/var/cache/apt \
+    apt update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt install --no-install-recommends -y \
+        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-nvml-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-nvtx-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy the source
+COPY . ./
+
+RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
+    --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    # Install git-lfs before running the build to avoid errors during conda build
+    /opt/conda/bin/mamba install -y -n base -c conda-forge "git-lfs" &&\
+    source activate base &&\
+    git lfs install &&\
+    # Need to get around recent versions of git locking paths until they are deemed safe
+    git config --global --add safe.directory "*" &&\
+    # Change to the morpheus directory and build the conda package
+    cd ${MORPHEUS_ROOT_HOST} &&\
+    MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_TOKEN=${CONDA_TOKEN} CONDA_BLD_PATH=/opt/conda/conda-bld ./ci/conda/recipes/run_conda_build.sh morpheus-core ${CONDA_UPLOAD}
 
 # ============ Stage: base_extended ============
 # Base environment with any optional extensions. ex. DOCA libs
