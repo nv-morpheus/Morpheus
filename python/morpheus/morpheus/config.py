@@ -227,10 +227,6 @@ class Config(ConfigBase):
     fil: ConfigFIL = dataclasses.field(default=None)
     frozen: bool = False
 
-    def __post_init__(self):
-        if self.execution_mode == ExecutionMode.CPU:
-            CppConfig.set_should_use_cpp(False)
-
     def freeze(self):
         """
         Freeze the Config object, making it immutable. This method will be invoked when the config object is passed to
@@ -238,8 +234,25 @@ class Config(ConfigBase):
 
         Calling `freeze` on a frozen instance will not have any effect.
         """
+        self._check_cpp_mode(fix_mis_match=not self.frozen)
         if not self.frozen:
             self.frozen = True
+
+    def _check_cpp_mode(self, fix_mis_match: bool = False):
+        """
+        Check if C++ mode matched the execution mode. If `
+
+        Parameters
+        ----------
+        fix_mis_match : bool
+            If True, set the C++ mode to the correct value. If False, raise an exception if the value is incorrect.
+        """
+        should_use_cpp: bool = (self.execution_mode == ExecutionMode.GPU)
+        if fix_mis_match:
+            CppConfig.set_should_use_cpp(should_use_cpp)
+        elif CppConfig.get_should_use_cpp() != should_use_cpp:
+            raise ValueError(
+                f"Execution mode {self.execution_mode} does not match C++ mode {CppConfig.get_should_use_cpp()}")
 
     def __setattr__(self, name, value):
         # Since __frozen is defined in the __post_init__, the attribute won't exist in the __init__ method.
