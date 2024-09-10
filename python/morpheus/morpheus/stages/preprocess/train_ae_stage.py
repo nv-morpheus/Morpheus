@@ -16,7 +16,6 @@ import glob
 import importlib
 import logging
 import pathlib
-import typing
 
 import dill
 import mrc
@@ -26,11 +25,10 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages.message_meta import UserMessageMeta
-from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.messages import ControlMessage
 from morpheus.models.dfencoder import AutoEncoder
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
+from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.seed import manual_seed
 
 logger = logging.getLogger(__name__)
@@ -123,7 +121,7 @@ class _UserModelManager:
 
 
 @register_stage("train-ae", modes=[PipelineModes.AE])
-class TrainAEStage(MultiMessageStage):
+class TrainAEStage(PassThruTypeMixin, SinglePortStage):
     """
     Train an Autoencoder model on incoming data.
 
@@ -196,34 +194,33 @@ class TrainAEStage(MultiMessageStage):
         self._pretrained_model: AutoEncoder = None
 
         # Per user model data
-        self._user_models: typing.Dict[str, _UserModelManager] = {}
+        self._user_models: dict[str, _UserModelManager] = {}
 
     @property
     def name(self) -> str:
         return "train-ae"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         """
         Returns accepted input types for this stage.
 
         """
-        return (UserMessageMeta, )
-
-    def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MultiAEMessage)
+        return (ControlMessage, )
 
     def supports_cpp_node(self):
         return False
 
-    def _get_per_user_model(self, x: UserMessageMeta):
+    def _get_per_user_model(self, msg: ControlMessage):
 
         model = None
         train_scores_mean = None
         train_scores_std = None
         user_model = None
 
-        if x.user_id in self._user_models:
-            user_model = self._user_models[x.user_id]
+        user_id = msg.get_metadata("user_id")
+
+        if user_id in self._user_models:
+            user_model = self._user_models[user_id]
         elif self._use_generic_model and "generic" in self._user_models.keys():
             user_model = self._user_models["generic"]
 
@@ -234,17 +231,21 @@ class TrainAEStage(MultiMessageStage):
 
         return model, train_scores_mean, train_scores_std
 
-    def _train_model(self, x: UserMessageMeta) -> typing.List[MultiAEMessage]:
+    def _train_model(self, msg: ControlMessage) -> list[ControlMessage]:
+        user_id = msg.get_metadata("user_id")
 
-        if (x.user_id not in self._user_models):
-            self._user_models[x.user_id] = _UserModelManager(self._config,
-                                                             x.user_id,
-                                                             False,
-                                                             self._train_epochs,
-                                                             self._train_max_history,
-                                                             self._seed)
+        if (user_id not in self._user_models):
+            self._user_models[user_id] = _UserModelManager(self._config,
+                                                           user_id,
+                                                           False,
+                                                           self._train_epochs,
+                                                           self._train_max_history,
+                                                           self._seed)
 
-        return self._user_models[x.user_id].train(x.df)
+        with msg.payload().mutable_dataframe() as cdf:
+            pdf = cdf.to_pandas()
+
+        return self._user_models[user_id].train(pdf)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         get_model_fn = None
@@ -312,21 +313,28 @@ class TrainAEStage(MultiMessageStage):
         else:
             get_model_fn = self._train_model
 
-        def on_next(x: UserMessageMeta):
+        def on_next(full_message: ControlMessage):
 
-            model, scores_mean, scores_std = get_model_fn(x)
+            model, scores_mean, scores_std = get_model_fn(full_message)
 
-            full_message = MultiAEMessage(meta=x,
-                                          model=model,
-                                          train_scores_mean=scores_mean,
-                                          train_scores_std=scores_std)
+            full_message.set_metadata("model", model)
+            full_message.set_metadata("train_scores_mean", scores_mean)
+            full_message.set_metadata("train_scores_std", scores_std)
+
+            # cuDF does not yet support timezone-aware datetimes
+            # Remove timezone information from pd.DatetimeTZDtype columns
+            meta = full_message.payload()
+            with meta.mutable_dataframe() as df:
+                for col in [col for col in df.columns if isinstance(df[col].dtype, pd.DatetimeTZDtype)]:
+                    df[col] = df[col].dt.tz_convert(None)
 
             to_send = []
 
             # Now split into batches
-            for i in range(0, full_message.mess_count, self._batch_size):
-
-                to_send.append(full_message.get_slice(i, min(i + self._batch_size, full_message.mess_count)))
+            for i in range(0, meta.count, self._batch_size):
+                output_message = ControlMessage(full_message)
+                output_message.payload(meta.get_slice(i, min(i + self._batch_size, meta.count)))
+                to_send.append(output_message)
 
             return to_send
 
