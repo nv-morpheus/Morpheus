@@ -13,15 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass
+from concurrent.futures import Future
 import logging
 import math
 import multiprocessing as mp
 import os
 import queue
 import time
-from threading import Lock
+import threading
 import uuid
+import typing
+from dataclasses import dataclass
+from threading import Lock
 
 logger = logging.getLogger(__name__)
 
@@ -50,17 +53,21 @@ class SerializableFuture:
     def done(self):
         return self._done.is_set()
 
+
 @dataclass
 class Task:
-    id: uuid
+    id: uuid.UUID
     process_fn: callable
     args: tuple
     kwargs: dict
 
+
 @dataclass
 class TaskResult:
+    id: uuid.UUID
     result: any
     exception: Exception
+
 
 # pylint: disable=W0201
 class SharedProcessPool:
@@ -98,23 +105,30 @@ class SharedProcessPool:
         self._task_queues = self._manager.dict()
         self._stage_semaphores = self._manager.dict()
         self._processes = []
+        self._tasks: typing.Dict[uuid.UUID, Future] = {}
+        self._completion_queue = self._manager.Queue()
 
         self._shutdown_in_progress = self._manager.Value("b", False)
 
         for i in range(total_max_workers):
             process = self._context.Process(target=self._worker,
-                                            args=(self._task_queues, self._stage_semaphores,
+                                            args=(self._task_queues,
+                                                  self._stage_semaphores,
+                                                  self._completion_queue,
                                                   self._shutdown_in_progress))
             process.start()
             self._processes.append(process)
             logger.debug("Process %s/%s has been started.", i + 1, total_max_workers)
+
+        self._task_result_collection_thread = threading.Thread(target=self._task_result_collection_loop,
+                                                               args=(self._completion_queue, self._tasks))
 
     @property
     def total_max_workers(self):
         return self._total_max_workers
 
     @staticmethod
-    def _worker(task_queues, stage_semaphores, shutdown_in_progress):
+    def _worker(task_queues, stage_semaphores, completion_queue, shutdown_in_progress):
         logger.debug("Worker process %s has been started.", os.getpid())
 
         while True:
@@ -141,23 +155,48 @@ class SharedProcessPool:
                     semaphore.release()
                     continue
 
-                process_fn, args, kwargs, future = task
+                process_fn = task.process_fn
+                args = task.args
+                kwargs = task.kwargs
+
+                task_result = TaskResult(task.id, None, None)
                 try:
                     result = process_fn(*args, **kwargs)
-                    future.set_result(result)
+                    task_result.result = result
                 except Exception as e:
-                    future.set_exception(e)
+                    task_result.exception = e
+
+                completion_queue.put(task_result)
 
                 semaphore.release()
 
                 time.sleep(0.1)  # Avoid busy-waiting
 
-    def submit_task(self, stage_name, process_fn, *args, **kwargs):
+    @staticmethod
+    def _task_result_collection_loop(completion_queue, tasks):
+        while True:
+            try:
+                task_result = completion_queue.get_nowait()
+
+                task_id = task_result.id
+                future = tasks.pop(task_id)
+
+                if task_result.exception is not None:
+                    future.set_exception(task_result.exception)
+                else:
+                    future.set_result(task_result.result)
+
+            except queue.Empty:
+                time.sleep(0.1)
+
+    def submit_task(self, stage_name, process_fn, *args, **kwargs) -> Future:
         """
         Submit a task to the corresponding task queue of the stage.
         """
-        future = SerializableFuture(self._context.Manager())
-        task = (process_fn, args, kwargs, future)
+        # future = SerializableFuture(self._context.Manager())
+        task = Task(uuid.uuid4(), process_fn, args, kwargs)
+        future = Future()
+        self._tasks[task.id] = future
         self._task_queues[stage_name].put(task)
 
         return future
