@@ -52,7 +52,7 @@ class PreprocessFILStage(PreprocessBaseStage):
     def name(self) -> str:
         return "preprocess-fil"
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return True
 
     def _get_preprocess_node(self, builder: mrc.Builder):
