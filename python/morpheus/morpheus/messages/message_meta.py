@@ -362,6 +362,8 @@ class UserMessageMeta(MessageMeta, cpp_class=None):
     user_id: str = dataclasses.field(init=False)
 
     def __init__(self, df: pd.DataFrame, user_id: str) -> None:
+        from morpheus.messages.control_message import ControlMessage
+        morpheus_logger.deprecated_message_warning(UserMessageMeta, ControlMessage)
         super().__init__(df)
         self.user_id = user_id
 

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import typing
 from abc import abstractmethod
 from functools import partial
 
@@ -23,14 +22,17 @@ from mrc.core import operators as ops
 
 from morpheus.common import FileTypes
 from morpheus.config import Config
-from morpheus.messages import UserMessageMeta
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.directory_watcher import DirectoryWatcher
+from morpheus.utils.type_utils import get_df_class
 
 
-class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
+class AutoencoderSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource):
     """
     All AutoEncoder source stages must extend this class and implement the `files_to_dfs_per_user` abstract method.
     Feature columns can be managed by overriding the `derive_features` method. Otherwise, all columns from input
@@ -91,11 +93,13 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         self._input_count = None
 
         # Hold the max index we have seen to ensure sequential and increasing indexes
-        self._rows_per_user: typing.Dict[str, int] = {}
+        self._rows_per_user: dict[str, int] = {}
 
         # Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode
         # is good for interleaving source stages.
         self._repeat_count = repeat
+
+        self._df_class = get_df_class(c.execution_mode)
 
         self._watcher = DirectoryWatcher(input_glob=input_glob,
                                          watch_directory=watch_directory,
@@ -112,7 +116,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         return self._input_count if self._input_count is not None else 0
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(UserMessageMeta)
+        schema.output_schema.set_type(ControlMessage)
 
     def get_match_pattern(self, glob_split):
         """Return a file match pattern"""
@@ -122,7 +126,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         return match_pattern
 
     @staticmethod
-    def repeat_df(df: pd.DataFrame, repeat_count: int) -> typing.List[pd.DataFrame]:
+    def repeat_df(df: pd.DataFrame, repeat_count: int) -> list[pd.DataFrame]:
         """
         This function iterates over the same dataframe to extending small datasets in debugging with incremental
         updates to the `event_dt` and `eventTime` columns.
@@ -136,7 +140,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
 
         Returns
         -------
-        df_array : typing.List[pd.DataFrame]
+        df_array : list[pd.DataFrame]
             List of repeated dataframes.
         """
 
@@ -159,7 +163,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         return df_array
 
     @staticmethod
-    def batch_user_split(x: typing.List[pd.DataFrame],
+    def batch_user_split(x: list[pd.DataFrame],
                          userid_column_name: str,
                          userid_filter: str,
                          datetime_column_name="event_dt"):
@@ -168,7 +172,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
 
         Parameters
         ----------
-        x : typing.List[pd.DataFrame]
+        x : list[pd.DataFrame]
             List of dataframes.
         userid_column_name : str
             Name of a dataframe column used for categorization.
@@ -179,7 +183,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
 
         Returns
         -------
-        user_dfs : typing.Dict[str, pd.DataFrame]
+        user_dfs : dict[str, pd.DataFrame]
             Dataframes, each of which is associated with a single userid.
         """
 
@@ -220,22 +224,22 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
 
     @staticmethod
     @abstractmethod
-    def files_to_dfs_per_user(x: typing.List[str],
+    def files_to_dfs_per_user(x: list[str],
                               userid_column_name: str,
-                              feature_columns: typing.List[str],
+                              feature_columns: list[str],
                               userid_filter: str = None,
-                              repeat_count: int = 1) -> typing.Dict[str, pd.DataFrame]:
+                              repeat_count: int = 1) -> dict[str, pd.DataFrame]:
         """
         Stages that extend `AutoencoderSourceStage` must implement this abstract function
         in order to convert messages in the files to dataframes per userid.
 
         Parameters
         ----------
-        x : typing.List[str]
+        x : list[str]
             List of messages.
         userid_column_name : str
             Name of the column used for categorization.
-        feature_columns : typing.List[str]
+        feature_columns : list[str]
             Feature column names.
         userid_filter : str
             Only rows with the supplied userid are filtered.
@@ -244,14 +248,14 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
 
         Returns
         -------
-            : typing.Dict[str, pd.DataFrame]
+            : dict[str, pd.DataFrame]
             Dataframe per userid.
         """
 
         pass
 
     @staticmethod
-    def derive_features(df: pd.DataFrame, feature_columns: typing.List[str]):  # pylint: disable=unused-argument
+    def derive_features(df: pd.DataFrame, feature_columns: list[str] | None):  # pylint: disable=unused-argument
         """
         If any features are available to be derived, can be implemented by overriding this function.
 
@@ -259,28 +263,28 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         ----------
         df : pd.DataFrame
             A dataframe.
-        feature_columns : typing.List[str]
+        feature_columns : list[str]
             Names of columns that are need to be derived.
 
         Returns
         -------
-        df : typing.List[pd.DataFrame]
+        df : list[pd.DataFrame]
             Dataframe with actual and derived columns.
         """
         return df
 
-    def _add_derived_features(self, x: typing.Dict[str, pd.DataFrame]):
+    def _add_derived_features(self, user_dataframes: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
 
-        for user_name in x.keys():
-            x[user_name] = self.derive_features(x[user_name], None)
+        for user_name in user_dataframes.keys():
+            user_dataframes[user_name] = self.derive_features(user_dataframes[user_name], None)
 
-        return x
+        return user_dataframes
 
-    def _build_user_metadata(self, x: typing.Dict[str, pd.DataFrame]):
+    def _build_message(self, user_dataframes: dict[str, pd.DataFrame]) -> list[ControlMessage]:
 
-        user_metas = []
+        messages = []
 
-        for user_name, user_df in x.items():
+        for user_name, user_df in user_dataframes.items():
 
             # See if we have seen this user before
             if (user_name not in self._rows_per_user):
@@ -294,12 +298,19 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
             user_df.index = range(self._rows_per_user[user_name], self._rows_per_user[user_name] + len(user_df))
             self._rows_per_user[user_name] += len(user_df)
 
-            # Now make a UserMessageMeta with the user name
-            meta = UserMessageMeta(user_df, user_name)
+            # If we're in GPU mode we need to convert to cuDF
+            if not isinstance(user_df, self._df_class):
+                user_df = self._df_class(user_df)
 
-            user_metas.append(meta)
+            # Now make a message with the user name in metadata
+            meta = MessageMeta(user_df)
+            message = ControlMessage()
+            message.payload(meta)
+            message.set_metadata("user_id", user_name)
 
-        return user_metas
+            messages.append(message)
+
+        return messages
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         # The first source just produces filenames
@@ -321,7 +332,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
             ops.map(self._add_derived_features),
             # Now group the batch of dataframes into a single df, split by user, and send a single UserMessageMeta
             # per user
-            ops.map(self._build_user_metadata),
+            ops.map(self._build_message),
             # Finally flatten to single meta
             ops.flatten())
         builder.make_edge(out_node, post_node)
