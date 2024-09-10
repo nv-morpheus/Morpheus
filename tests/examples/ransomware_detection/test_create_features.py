@@ -19,14 +19,14 @@ import types
 import typing
 from unittest import mock
 
+import pandas as pd
 import pytest
 
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
-from morpheus.messages import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import AppShieldMessageMeta
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 
 
@@ -55,7 +55,6 @@ class TestCreateFeaturesRWStage:
                                       n_workers=n_workers,
                                       threads_per_worker=threads_per_worker)
 
-        assert isinstance(stage, MultiMessageStage)
         assert stage._client is mock_dask_client
         scheduler_info = stage._client.scheduler_info()
         for worker in scheduler_info['workers'].values():
@@ -91,18 +90,25 @@ class TestCreateFeaturesRWStage:
         mock_dask_client.submit.return_value = mock_dask_future
 
         input_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', '*.json')
-        input_data = AppShieldSourceStage.files_to_dfs(glob.glob(input_glob),
-                                                       cols_include=rwd_conf['raw_columns'],
-                                                       cols_exclude=["SHA256"],
-                                                       plugins_include=interested_plugins,
-                                                       encoding='latin1')
+        appshield_source_stage = AppShieldSourceStage(config,
+                                                      input_glob,
+                                                      plugins_include=interested_plugins,
+                                                      cols_include=rwd_conf['raw_columns'],
+                                                      cols_exclude=["SHA256"],
+                                                      encoding='latin1')
 
-        input_metas = AppShieldSourceStage._build_messages(input_data)
+        input_data = appshield_source_stage.files_to_dfs(glob.glob(input_glob),
+                                                         cols_include=rwd_conf['raw_columns'],
+                                                         cols_exclude=["SHA256"],
+                                                         plugins_include=interested_plugins,
+                                                         encoding='latin1')
+
+        input_messages = appshield_source_stage._build_messages(input_data)
 
         # Make sure the input test date looks the way we expect it
-        assert len(input_metas) == 1
-        input_meta = input_metas[0]
-        assert input_meta.source == 'appshield'
+        assert len(input_messages) == 1
+        input_message = input_messages[0]
+        assert input_message.get_metadata('source') == 'appshield'
 
         stage = CreateFeaturesRWStage(config,
                                       interested_plugins=interested_plugins,
@@ -114,74 +120,24 @@ class TestCreateFeaturesRWStage:
         # make sure we have a mocked dask client
         assert stage._client is mock_dask_client
 
-        meta = stage.on_next(input_meta)
-        assert isinstance(meta, AppShieldMessageMeta)
-        assert meta.source == input_meta.source
+        messages = stage.on_next(input_message)
+
+        dataframes = []
+        for message in messages:
+            assert message.get_metadata('source') == input_message.get_metadata('source')
+            dataframes.append(message.payload().copy_dataframe().to_pandas())
+
+        actual_df = pd.concat(dataframes, ignore_index=True)
+        actual_df.sort_values(by=["pid_process", "snapshot_id"], inplace=True)
+        actual_df.reset_index(drop=True, inplace=True)
 
         expected_df = dataset_pandas[os.path.join(test_data_dir, 'dask_results.csv')]
         expected_df['source_pid_process'] = 'appshield_' + expected_df.pid_process
+        expected_df['ldrmodules_df_path'] = expected_df['ldrmodules_df_path'].astype(str)  # convert to string
         expected_df.sort_values(by=["pid_process", "snapshot_id"], inplace=True)
         expected_df.reset_index(drop=True, inplace=True)
-        dataset_pandas.assert_compare_df(meta.copy_dataframe(), expected_df)
 
-    @pytest.mark.xfail(reason="The ransomeware pipeline depends on the AppShieldMeta class, which forces the pipeline "
-                       "to be python (CPU) only")
-    @mock.patch('stages.create_features.Client')
-    def test_create_multi_messages(self,
-                                   mock_dask_client,
-                                   config: Config,
-                                   rwd_conf: dict,
-                                   interested_plugins: typing.List[str],
-                                   dataset_pandas: DatasetManager):
-        from stages.create_features import CreateFeaturesRWStage
-        mock_dask_client.return_value = mock_dask_client
-
-        pids = [75956, 118469, 1348612, 2698363, 2721362, 2788672]
-        df = dataset_pandas["filter_probs.csv"]
-        df['pid_process'] = [
-            2788672,
-            75956,
-            75956,
-            2788672,
-            2788672,
-            2698363,
-            2721362,
-            118469,
-            1348612,
-            2698363,
-            118469,
-            2698363,
-            1348612,
-            118469,
-            75956,
-            2721362,
-            75956,
-            118469,
-            118469,
-            118469
-        ]
-        df = df.sort_values(by=["pid_process"]).reset_index(drop=True)
-
-        stage = CreateFeaturesRWStage(config,
-                                      interested_plugins=interested_plugins,
-                                      feature_columns=rwd_conf['model_features'],
-                                      file_extns=rwd_conf['file_extensions'],
-                                      n_workers=5,
-                                      threads_per_worker=6)
-
-        meta = AppShieldMessageMeta(df, source='tests')
-        multi_messages = stage.create_multi_messages(meta)
-        assert len(multi_messages) == len(pids)
-
-        prev_loc = 0
-        for (i, _multi_message) in enumerate(multi_messages):
-            assert isinstance(_multi_message, MultiMessage)
-            pid = pids[i]
-            (_multi_message.get_meta(['pid_process']) == pid).all()
-            assert _multi_message.mess_offset == prev_loc
-            prev_loc = _multi_message.mess_offset + _multi_message.mess_count
-
-        assert prev_loc == len(df)
+        dataset_pandas.assert_compare_df(actual_df, expected_df)
 
     @mock.patch('stages.create_features.Client')
     def test_on_completed(self, mock_dask_client, config: Config, rwd_conf: dict, interested_plugins: typing.List[str]):
