@@ -126,7 +126,7 @@ class PreprocessingRWStage(PreprocessBaseStage):
         """
 
         meta = msg.payload()
-        snapshot_df = meta.copy_dataframe()
+        snapshot_df = meta.copy_dataframe().to_pandas()
 
         curr_snapshots_size = len(snapshot_df)
 
