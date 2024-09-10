@@ -23,6 +23,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from _utils import TEST_DIRS
+from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 from morpheus.utils.directory_watcher import DirectoryWatcher
@@ -304,14 +305,18 @@ def test_files_to_dfs(cols_include, cols_exclude, plugins_include, meta_columns,
                               index=[0, 1, 3, 0, 1, 3])
             })
     }])
-def test_build_metadata(input_df_per_source: dict):
+def test_build_messages(config: Config, tmp_path: str, input_df_per_source: dict):
     expected_sources = sorted(input_df_per_source.keys())
-    appshield_message_metas = AppShieldSourceStage._build_messages(input_df_per_source)
 
-    assert len(appshield_message_metas) == len(expected_sources)
+    input_glob = os.path.join(tmp_path, '*.json')
+    # These constructor arguments are not used by the _build_messages method
+    stage = AppShieldSourceStage(config, input_glob, ['unused'], ['unused'])
+    appshield_messages = stage._build_messages(input_df_per_source)
+
+    assert len(appshield_messages) == len(expected_sources)
 
     actual_sources = []
-    for message in appshield_message_metas:
+    for message in appshield_messages:
         assert isinstance(message, ControlMessage)
         actual_sources.append(message.get_metadata('source'))
 
