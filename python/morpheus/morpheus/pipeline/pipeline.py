@@ -31,7 +31,6 @@ from tqdm import tqdm
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.common import load_cudf_helper
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import ExecutionMode
 from morpheus.utils.type_utils import pretty_print_type_name
 
@@ -64,15 +63,6 @@ class Pipeline():
 
     def __init__(self, config: Config):
         config.freeze()
-
-        # Ensure we have a valid configuration
-        if config.execution_mode == ExecutionMode.CPU and CppConfig.get_should_use_cpp():
-            logger.warning("CPU execution mode requires disabling C++ execution.")
-            CppConfig.set_should_use_cpp(False)
-
-        elif config.execution_mode == ExecutionMode.GPU and not CppConfig.get_should_use_cpp():
-            logger.warning("GPU mode requires C++ execution mode.")
-            CppConfig.set_should_use_cpp(True)
 
         self._mutex = threading.RLock()
 
