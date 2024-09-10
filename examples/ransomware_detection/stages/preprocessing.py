@@ -19,6 +19,7 @@ import mrc
 import pandas as pd
 
 from common.data_models import SnapshotData  # pylint: disable=no-name-in-module
+import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
@@ -181,7 +182,8 @@ class PreprocessingRWStage(PreprocessBaseStage):
         seg_ids[:, 0] = cp.arange(0, curr_snapshots_size, dtype=cp.uint32)
         seg_ids[:, 2] = self._features_len * 3
 
-        msg.tensors(count=curr_snapshots_size, tensors={"input__0": data, "seq_ids": seg_ids})
+        memory = _messages.InferenceMemoryFIL(count=curr_snapshots_size, input__0=data, seq_ids=seg_ids)
+        msg.tensors(memory)
         msg.set_metadata("inference_memory_params", {"inference_type": "fil"})
 
         return msg
