@@ -26,7 +26,7 @@ def concat_dataframes(messages: list[ControlMessage] | list[MessageMeta]) -> pd.
 
     Parameters
     ----------
-    messages : list[ControlMessage] | list[cudf.DataFrame]
+    messages : list[ControlMessage] | list[MessageMeta]
         Messages containing DataFrames to concat.
 
     Returns
