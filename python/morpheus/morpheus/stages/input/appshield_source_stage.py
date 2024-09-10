@@ -29,6 +29,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import SingleOutputSource
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.directory_watcher import DirectoryWatcher
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("from-appshield", modes=[PipelineModes.FIL])
-class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
+class AppShieldSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource):
     """
     Source stage is used to load Appshield messages from one or more plugins into a dataframe.
     It normalizes nested json messages and arranges them into a dataframe by snapshot
