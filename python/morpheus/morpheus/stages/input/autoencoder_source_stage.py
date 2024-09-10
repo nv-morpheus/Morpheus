@@ -330,10 +330,9 @@ class AutoencoderSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSour
                     userid_filter=self._userid_filter,
                     repeat_count=self._repeat_count)),
             ops.map(self._add_derived_features),
-            # Now group the batch of dataframes into a single df, split by user, and send a single UserMessageMeta
+            # Now group the batch of dataframes into a single df, split by user, and send a single ControlMessage
             # per user
             ops.map(self._build_message),
-            # Finally flatten to single meta
             ops.flatten())
         builder.make_edge(out_node, post_node)
 
