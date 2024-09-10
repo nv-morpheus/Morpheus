@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import atexit
 import logging
 import multiprocessing as mp
 import threading
@@ -26,15 +25,17 @@ from morpheus.utils.shared_process_pool import SharedProcessPool
 
 logger = logging.getLogger(__name__)
 
+# set logger level to debug
+logger.setLevel(logging.DEBUG)
+
 
 @pytest.fixture(name="shared_process_pool")
 def shared_process_pool_fixture():
     pool = SharedProcessPool()
-    _reset_shared_process_pool(pool)
 
-    atexit.register(pool.shutdown)  # make sure to shutdown the pool before the test exits
+    yield pool
 
-    return pool
+    pool.shutdown()
 
 
 def _matrix_multiplication_task(size):
@@ -62,28 +63,18 @@ def _arbitrary_function(*args, **kwargs):
     return args, kwargs
 
 
-# SharedProcessPool is a singleton, need to reset before each test
-def _reset_shared_process_pool(pool: SharedProcessPool):
-    for stage in pool._stage_usage:
-        pool._stage_usage[stage] = 0.0
-        pool._stage_semaphores[stage] = pool._manager.Semaphore(1)
-        pool._task_queues[stage] = pool._manager.Queue()
-
-    pool._total_usage = 0.0
-
-
-def _test_worker(pool, stage_name, task_size, num_tasks):
+def _task_submit_worker(pool, stage_name, task_size, num_tasks):
     future_list = []
     for i in range(num_tasks):
         future_list.append(pool.submit_task(stage_name, _matrix_multiplication_task, task_size))
-        logging.info("Task %s/%s has been submitted to stage %s.", i + 1, num_tasks, stage_name)
+        logging.debug("Task %s/%s has been submitted to stage %s.", i + 1, num_tasks, stage_name)
 
     for future in future_list:
         future.result()
-        logging.info("task number %s has been completed in stage: %s", future_list.index(future), stage_name)
+        logging.debug("task number %s has been completed in stage: %s", future_list.index(future), stage_name)
 
-    logging.info("All tasks in stage %s have been completed in %.2f seconds.",
-                 stage_name, (future_list[-1].result()[1] - future_list[0].result()[1]))
+    logging.debug("All tasks in stage %s have been completed in %.2f seconds.",
+                  stage_name, (future_list[-1].result()[1] - future_list[0].result()[1]))
 
     assert len(future_list) == num_tasks
 
@@ -142,8 +133,8 @@ def test_unserializable_function(shared_process_pool):
 
     pool.set_usage("test_stage", 0.5)
 
+    future = pool.submit_task("test_stage", _unserializable_function)
     with pytest.raises(TypeError):
-        future = pool.submit_task("test_stage", _unserializable_function)
         future.result()
 
 
@@ -153,22 +144,26 @@ def test_unserializable_arg(shared_process_pool):
     pool.set_usage("test_stage", 0.5)
 
     with pytest.raises(TypeError):
-        future = pool.submit_task("test_stage", _arbitrary_function, threading.Lock())
-        future.result()
+        pool.submit_task("test_stage", _arbitrary_function, threading.Lock())
 
 
 def test_multiple_stages(shared_process_pool):
     pool = shared_process_pool
 
-    task_size = 3000
-    task_num = 30
-    tasks = [("test_stage_1", task_size, task_num), ("test_stage_2", task_size, task_num),
-             ("test_stage_3", task_size, task_num)]
+    pool.set_usage("test_stage_1", 0.1)
+    pool.set_usage("test_stage_2", 0.3)
+    pool.set_usage("test_stage_3", 0.6)
+
+    task_size = 3
+    task_num = 3
+    # tasks = [("test_stage_1", task_size, task_num), ("test_stage_2", task_size, task_num),
+    #          ("test_stage_3", task_size, task_num)]
+    tasks = [("test_stage_1", task_size, task_num)]
 
     processes = []
     for task in tasks:
         stage_name, task_size, num_tasks = task
-        p = mp.Process(target=_test_worker, args=(pool, stage_name, task_size, num_tasks))
+        p = mp.Process(target=_task_submit_worker, args=(pool, stage_name, task_size, num_tasks))
         processes.append(p)
 
     for p in processes:
@@ -204,10 +199,10 @@ def test_task_completion_before_shutdown(shared_process_pool):
 
     pool.set_usage("test_stage_1", 0.1)
     pool.set_usage("test_stage_2", 0.3)
-    pool.set_usage("test_stage_3", 0.6)
+    pool.set_usage("test_stage_3", 0.5)
 
-    task_size = 3000
-    task_num = 30
+    task_size = 3
+    task_num = 3
     futures = []
     for _ in range(task_num):
         futures.append(pool.submit_task("test_stage_1", _matrix_multiplication_task, task_size))

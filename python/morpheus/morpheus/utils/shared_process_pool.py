@@ -13,51 +13,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from concurrent.futures import Future
 import logging
 import math
 import multiprocessing as mp
 import os
+import pickle
 import queue
-import time
 import threading
-import uuid
+import time
 import typing
+import uuid
+from concurrent.futures import Future
 from dataclasses import dataclass
+from enum import Enum
 from threading import Lock
 
 logger = logging.getLogger(__name__)
 
+logger.setLevel(logging.DEBUG)
 
-class SerializableFuture:
 
-    def __init__(self, manager):
-        self._result = manager.Value("i", None)
-        self._exception = manager.Value("i", None)
-        self._done = manager.Event()
-
-    def set_result(self, result):
-        self._result.value = result
-        self._done.set()
-
-    def set_exception(self, exception):
-        self._exception.value = exception
-        self._done.set()
-
-    def result(self):
-        self._done.wait()
-        if self._exception.value is not None:
-            raise self._exception.value
-        return self._result.value
-
-    def done(self):
-        return self._done.is_set()
+class PoolStatus(Enum):
+    INITIALIZING = 0
+    RUNNING = 1
+    STOPPING = 2
+    SHUTDOWN = 3
 
 
 @dataclass
 class Task:
     id: uuid.UUID
-    process_fn: callable
+    process_fn: typing.Callable
     args: tuple
     kwargs: dict
 
@@ -65,8 +51,8 @@ class Task:
 @dataclass
 class TaskResult:
     id: uuid.UUID
-    result: any
-    exception: Exception
+    result: typing.Any
+    exception: typing.Optional[Exception] = None
 
 
 # pylint: disable=W0201
@@ -82,14 +68,20 @@ class SharedProcessPool:
         """
         logger.debug("Creating a new instance of SharedProcessPool...")
         with cls._lock:
+
+            max_workers = math.floor(max(1, len(os.sched_getaffinity(0)) * 0.5))
+
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
-                max_workers = math.floor(max(1, len(os.sched_getaffinity(0)) * 0.5))
                 cls._instance._initialize(max_workers)
                 logger.debug("SharedProcessPool has been initialized with %s workers.", max_workers)
 
             else:
-                logger.debug("SharedProcessPool instance already exists.")
+                if cls._instance.status is not PoolStatus.RUNNING:
+                    cls._instance._initialize(max_workers)
+                    logger.debug("SharedProcessPool has been initialized with %s workers.", max_workers)
+                else:
+                    logger.debug("SharedProcessPool instance already exists and currently running.")
 
         return cls._instance
 
@@ -97,42 +89,56 @@ class SharedProcessPool:
         """
         Initialize a concurrent.futures.ProcessPoolExecutor instance.
         """
+        self._status = PoolStatus.INITIALIZING
+
         self._total_max_workers = total_max_workers
-        self._context = mp.get_context("fork")
-        self._manager = self._context.Manager()
+        self._processes = []
         self._total_usage = 0.0
         self._stage_usage = {}
+
+        self._context = mp.get_context("fork")
+        self._manager = self._context.Manager()
+
         self._task_queues = self._manager.dict()
+        self._task_futures: typing.Dict[uuid.UUID, Future] = {}
         self._stage_semaphores = self._manager.dict()
-        self._processes = []
-        self._tasks: typing.Dict[uuid.UUID, Future] = {}
+
         self._completion_queue = self._manager.Queue()
 
-        self._shutdown_in_progress = self._manager.Value("b", False)
+        self._shutdown_flag = self._manager.Value("b", False)
+        self._shutdown_event = threading.Event()
 
         for i in range(total_max_workers):
             process = self._context.Process(target=self._worker,
                                             args=(self._task_queues,
                                                   self._stage_semaphores,
                                                   self._completion_queue,
-                                                  self._shutdown_in_progress))
+                                                  self._shutdown_flag))
             process.start()
             self._processes.append(process)
             logger.debug("Process %s/%s has been started.", i + 1, total_max_workers)
 
         self._task_result_collection_thread = threading.Thread(target=self._task_result_collection_loop,
-                                                               args=(self._completion_queue, self._tasks))
+                                                               args=(self._completion_queue,
+                                                                     self._task_futures,
+                                                                     self._shutdown_event))
+        self._task_result_collection_thread.start()
+        self._status = PoolStatus.RUNNING
 
     @property
     def total_max_workers(self):
         return self._total_max_workers
 
+    @property
+    def status(self) -> PoolStatus:
+        return self._status
+
     @staticmethod
-    def _worker(task_queues, stage_semaphores, completion_queue, shutdown_in_progress):
+    def _worker(task_queues, stage_semaphores, completion_queue, shutdown_flag):
         logger.debug("Worker process %s has been started.", os.getpid())
 
         while True:
-            if shutdown_in_progress.value:
+            if shutdown_flag.value:
                 logger.debug("Worker process %s has been terminated.", os.getpid())
                 return
 
@@ -166,20 +172,29 @@ class SharedProcessPool:
                 except Exception as e:
                     task_result.exception = e
 
-                completion_queue.put(task_result)
+                try:
+                    completion_queue.put(task_result)
+                # the result must be serializable
+                except (pickle.PicklingError, TypeError) as e:
+                    task_result.exception = e
+                    task_result.result = None
+                    completion_queue.put(task_result)
 
                 semaphore.release()
 
                 time.sleep(0.1)  # Avoid busy-waiting
 
     @staticmethod
-    def _task_result_collection_loop(completion_queue, tasks):
+    def _task_result_collection_loop(completion_queue, task_futures, shutdown_event):
         while True:
+            if shutdown_event.is_set() and completion_queue.empty():
+                logger.debug("Task result collection process has been terminated.")
+                return
             try:
                 task_result = completion_queue.get_nowait()
 
                 task_id = task_result.id
-                future = tasks.pop(task_id)
+                future = task_futures.pop(task_id)
 
                 if task_result.exception is not None:
                     future.set_exception(task_result.exception)
@@ -193,13 +208,13 @@ class SharedProcessPool:
         """
         Submit a task to the corresponding task queue of the stage.
         """
-        # future = SerializableFuture(self._context.Manager())
-        task = Task(uuid.uuid4(), process_fn, args, kwargs)
-        future = Future()
-        self._tasks[task.id] = future
-        self._task_queues[stage_name].put(task)
+        with self._lock:
+            task = Task(uuid.uuid4(), process_fn, args, kwargs)
+            future = Future()
+            self._task_futures[task.id] = future
+            self._task_queues[stage_name].put(task)
 
-        return future
+            return future
 
     def set_usage(self, stage_name, percentage):
         """
@@ -226,17 +241,27 @@ class SharedProcessPool:
         logger.debug("stage semaphores: %s", allowed_processes_num)
 
     def shutdown(self):
-        if not self._shutdown:
-            self._shutdown_in_progress.value = True
+        if self._status != PoolStatus.SHUTDOWN:
+
+            self._status = PoolStatus.STOPPING
+
+            while self._task_futures:
+                time.sleep(0.1)
+
+            self._shutdown_flag.value = True
 
             for i, p in enumerate(self._processes):
                 p.join()
                 logger.debug("Process %s/%s has been terminated.", i + 1, self._total_max_workers)
 
+            self._shutdown_event.set()
+            self._task_result_collection_thread.join()
+
             self._manager.shutdown()
             self._shutdown = True
+            self._status = PoolStatus.SHUTDOWN
             logger.debug("Process pool has been terminated.")
 
     def __del__(self):
-        if not self._shutdown:
+        if self._status != PoolStatus.SHUTDOWN:
             self.shutdown()
