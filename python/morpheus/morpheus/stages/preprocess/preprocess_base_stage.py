@@ -78,7 +78,7 @@ class PreprocessBaseStage(MultiMessageStage):
         """
         This method should be implemented by any subclasses with a C++ implementation.
         """
-        raise NotImplementedError("No Python implementation provided by this stage")
+        raise NotImplementedError("No C++ implementation provided by this stage")
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node():
