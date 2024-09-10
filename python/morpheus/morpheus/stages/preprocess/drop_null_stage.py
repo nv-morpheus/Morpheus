@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
 import mrc
 from mrc.core import operators as ops
 
@@ -51,20 +49,19 @@ class DropNullStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     def name(self) -> str:
         return "dropna"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         """
         Accepted input types for this stage are returned.
 
         Returns
         -------
-        typing.Tuple
+        tuple
             Accepted input types.
 
         """
         return (MessageMeta, )
 
-    def supports_cpp_node(self):
-        # Enable support by default
+    def supports_cpp_node(self) -> bool:
         return False
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
