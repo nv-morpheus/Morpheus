@@ -18,11 +18,11 @@ from functools import partial
 
 import cupy as cp
 
-import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
+from morpheus.messages import TensorMemory
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 logger = logging.getLogger(__name__)
@@ -101,7 +101,7 @@ class PreprocessAEStage(PreprocessBaseStage):
         msg.set_metadata("model", autoencoder)
         msg.set_metadata("train_scores_mean", scores_mean)
         msg.set_metadata("train_scores_std", scores_std)
-        msg.tensors(_messages.TensorMemory(count=count, tensors={"input": inputs, "seq_ids": seg_ids}))
+        msg.tensors(TensorMemory(count=count, tensors={"input": inputs, "seq_ids": seg_ids}))
         return msg
 
     def _get_preprocess_fn(self) -> typing.Callable[[ControlMessage], ControlMessage]:

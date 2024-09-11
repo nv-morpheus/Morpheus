@@ -18,7 +18,6 @@ Message classes, which contain data being transfered between pipeline stages
 # Import order is very important here. Import base classes before child ones
 # isort: off
 
-from morpheus._lib.messages import ControlMessage
 from morpheus._lib.messages import DataLoaderRegistry
 from morpheus._lib.messages import RawPacketMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
@@ -33,6 +32,7 @@ from morpheus.messages.message_base import MessageBase
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.message_meta import UserMessageMeta
+from morpheus.messages.control_message import ControlMessage
 
 __all__ = [
     "ControlMessage",
