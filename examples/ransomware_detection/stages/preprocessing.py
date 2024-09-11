@@ -18,15 +18,13 @@ import cupy as cp
 import mrc
 import pandas as pd
 
+import morpheus._lib.messages as _messages
 from common.data_models import SnapshotData  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import InferenceMemoryFIL
-from morpheus.messages import MultiInferenceFILMessage
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 
@@ -121,7 +119,7 @@ class PreprocessingRWStage(PreprocessBaseStage):
 
         return snapshot_df
 
-    def _pre_process_batch(self, x: MultiMessage) -> MultiInferenceFILMessage:
+    def _pre_process_batch(self, msg: ControlMessage) -> ControlMessage:
         """
         This function is invoked for every source_pid_process.
         It looks for any pending snapshots related to the source and pid process in the memory.
@@ -131,7 +129,7 @@ class PreprocessingRWStage(PreprocessBaseStage):
         Current run's unprocessed snapshots will be rolled over to the next.
         """
 
-        snapshot_df = x.get_meta()
+        snapshot_df = msg.payload().df
         curr_snapshots_size = len(snapshot_df)
 
         # Set snapshot_id as index this is used to get ordered snapshots based on sliding window.
@@ -148,6 +146,9 @@ class PreprocessingRWStage(PreprocessBaseStage):
             snapshot_df = self._merge_curr_and_prev_snapshots(snapshot_df, source_pid_process)
 
         snapshot_ids = snapshot_df.index.values
+
+        if isinstance(snapshot_ids, cp.ndarray):
+            snapshot_ids = snapshot_ids.get().tolist()
 
         curr_and_prev_snapshots_size = len(snapshot_df)
 
@@ -172,21 +173,22 @@ class PreprocessingRWStage(PreprocessBaseStage):
         self._rollover_pending_snapshots(snapshot_ids, source_pid_process, snapshot_df)
 
         # This column is used to identify whether sequence is genuine or dummy
-        x.set_meta('sequence', sequence)
+        msg.payload().set_data('sequence', sequence)
 
         # Convert data to cupy array
         data = cp.asarray(data)
 
         seg_ids = cp.zeros((curr_snapshots_size, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + curr_snapshots_size, dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(0, curr_snapshots_size, dtype=cp.uint32)
         seg_ids[:, 2] = self._features_len * 3
 
-        memory = InferenceMemoryFIL(count=curr_snapshots_size, input__0=data, seq_ids=seg_ids)
+        memory = _messages.InferenceMemoryFIL(count=curr_snapshots_size, input__0=data, seq_ids=seg_ids)
+        msg.tensors(memory)
+        msg.set_metadata("inference_memory_params", {"inference_type": "fil"})
 
-        infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
-        return infer_message
+        return msg
 
-    def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
+    def _get_preprocess_fn(self) -> typing.Callable[[ControlMessage], ControlMessage]:
         pre_process_batch_fn = self._pre_process_batch
         return pre_process_batch_fn
 

@@ -18,6 +18,7 @@
 #include "morpheus/io/data_loader.hpp"
 
 #include "morpheus/messages/control.hpp"
+#include "morpheus/utilities/json_types.hpp"  // for PythonByteContainer
 
 #include <glog/logging.h>
 

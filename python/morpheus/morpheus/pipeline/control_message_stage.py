@@ -14,14 +14,12 @@
 
 import logging
 import time
-import typing
 
 import mrc
 
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiMessage
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +28,7 @@ def _get_time_ms():
     return round(time.time() * 1000)
 
 
-class MultiMessageStage(_pipeline.SinglePortStage):
+class ControlMessageStage(_pipeline.SinglePortStage):
     """
     Subclass of SinglePortStage with option to log timestamps in MessageMeta dataframe.
 
@@ -48,25 +46,22 @@ class MultiMessageStage(_pipeline.SinglePortStage):
         super().__init__(c)
 
     def compute_schema(self, schema: _pipeline.StageSchema):
-        schema.output_schema.set_type(MultiMessage)
+        schema.output_schema.set_type(ControlMessage)
 
     def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        # Check if we are debug and should log timestamps. Disable for C++ nodes
-        if (self._config.debug and self._should_log_timestamps and not self._build_cpp_node()):
+        # Check if we are debug and should log timestamps.
+        if (self._config.debug and self._should_log_timestamps):
             # Cache the name property. Removes dependency on self in callback
             cached_name = self.name
 
             logger.info("Adding timestamp info for stage: '%s'", cached_name)
 
-            def post_timestamps(message: typing.Union[MultiMessage, ControlMessage]):
+            def post_timestamps(message: ControlMessage):
 
                 curr_time = _get_time_ms()
 
-                if (isinstance(message, MultiMessage)):
-                    message.set_meta("_ts_" + cached_name, curr_time)
-                else:
-                    message.set_metadata("_ts_" + cached_name, str(curr_time))
+                message.set_timestamp("_ts_" + cached_name, str(curr_time))
 
                 # Must return the original object
                 return message

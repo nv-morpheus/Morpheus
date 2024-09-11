@@ -24,8 +24,6 @@ import cudf
 import morpheus._lib.messages as _messages
 import morpheus.config
 from morpheus import messages
-from morpheus.messages.memory import inference_memory
-from morpheus.messages.memory import response_memory
 from morpheus.messages.memory import tensor_memory
 
 
@@ -90,44 +88,6 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
                       "count": 1, "inputs": cp_array, "seq_ids": cp_array
                   })
 
-    multi_tensor_message_tensors = {
-        "input_ids": cp.zeros((1, 2)),
-        "input_mask": cp.zeros((1, 2)),
-        "seq_ids": cp.zeros((1, 3), dtype=cp.int32),
-        "input__0": cp.zeros((1, 2)),
-        "probs": cp.zeros((1, 2))
-    }
-
-    check_message(messages.MultiTensorMessage,
-                  _messages.MultiTensorMessage,
-                  should_be_cpp,
-                  no_cpp_class,
-                  meta=messages.MessageMeta(df),
-                  memory=tensor_memory.TensorMemory(count=1, tensors=multi_tensor_message_tensors))
-
-    check_message(messages.MultiInferenceMessage,
-                  _messages.MultiInferenceMessage,
-                  should_be_cpp,
-                  no_cpp_class,
-                  meta=messages.MessageMeta(df),
-                  memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors))
-
-    check_message(
-        messages.MultiInferenceNLPMessage,
-        _messages.MultiInferenceNLPMessage,
-        should_be_cpp,
-        no_cpp_class,
-        meta=messages.MessageMeta(df),
-        memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors),
-    )
-
-    check_message(messages.MultiInferenceFILMessage,
-                  _messages.MultiInferenceFILMessage,
-                  should_be_cpp,
-                  no_cpp_class,
-                  meta=messages.MessageMeta(df),
-                  memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors))
-
     check_message(messages.ResponseMemory, _messages.ResponseMemory, should_be_cpp, no_cpp_class, **{"count": 1})
 
     check_message(messages.ResponseMemoryProbs,
@@ -140,31 +100,6 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
 
     # No C++ impl
     check_message(messages.ResponseMemoryAE, None, should_be_cpp, no_cpp_class, **{"count": 1, "probs": cp_array})
-
-    check_message(messages.MultiResponseMessage,
-                  _messages.MultiResponseMessage,
-                  should_be_cpp,
-                  no_cpp_class,
-                  meta=messages.MessageMeta(df),
-                  memory=response_memory.ResponseMemory(count=1, tensors=multi_tensor_message_tensors))
-
-    check_message(messages.MultiResponseProbsMessage,
-                  _messages.MultiResponseProbsMessage,
-                  should_be_cpp,
-                  no_cpp_class,
-                  meta=messages.MessageMeta(df),
-                  memory=response_memory.ResponseMemoryProbs(count=1, probs=multi_tensor_message_tensors["probs"]))
-
-    # No C++ impl
-    check_message(
-        messages.MultiResponseAEMessage,
-        None,
-        should_be_cpp,
-        no_cpp_class,
-        meta=messages.MessageMeta(df),
-        memory=response_memory.ResponseMemoryAE(count=1, probs=multi_tensor_message_tensors["probs"]),
-        user_id="",
-    )
 
 
 def test_constructor_cpp():

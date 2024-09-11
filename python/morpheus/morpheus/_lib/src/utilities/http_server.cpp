@@ -122,7 +122,7 @@ class Session : public std::enable_shared_from_this<Session>
     void handle_request(http::request<http::string_body>&& request)
     {
         DLOG(INFO) << "Received request: " << request.method() << " : " << request.target();
-        m_response = std::make_unique<http::response<http::string_body>>();
+        m_response         = std::make_unique<http::response<http::string_body>>();
         bool valid_request = false;
 
         for (const auto& endpoint : m_endpoints)

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ from langchain.agents.agent import AgentExecutor
 from langchain.llms.openai import OpenAI
 
 from morpheus.config import Config
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
@@ -67,8 +66,7 @@ def build_common_pipeline(config: Config, pipe: LinearPipeline, task_payload: di
     Construct the elements of the pipeline common to the simple and kafka agent pipelines.
     This method should be called after the source stage has been set.
     """
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=task_payload))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=task_payload))
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 

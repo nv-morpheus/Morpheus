@@ -20,8 +20,6 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiResponseMessage
-from morpheus.messages.multi_message import MultiMessage
 from morpheus.modules.output.write_to_vector_db import WriteToVectorDBLoaderFactory
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -115,11 +113,11 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
 
         Returns
         -------
-        typing.Tuple(ControlMessage, MultiResponseMessage, MultiMessage)
+        typing.Tuple(ControlMessage,)
             Accepted input types.
 
         """
-        return (ControlMessage, MultiResponseMessage, MultiMessage)
+        return (ControlMessage, )
 
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""

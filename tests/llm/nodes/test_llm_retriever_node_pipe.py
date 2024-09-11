@@ -67,8 +67,7 @@ def test_pipeline(config: Config):
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, dataframes=[input_df]))
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=task_payload))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=task_payload))
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(vdb_service=mock_vdb_service)))
     sink = pipe.add_stage(InMemorySinkStage(config))
 
@@ -117,8 +116,7 @@ def test_pipeline_with_milvus(config: Config,
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, dataframes=[input_df]))
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=task_payload))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=task_payload))
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(vdb_service=resource_service, expr=expr)))
     sink = pipe.add_stage(InMemorySinkStage(config))
 
