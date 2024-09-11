@@ -28,7 +28,7 @@ from morpheus.utils.type_utils import is_dataframe
 
 logger = logging.getLogger(__name__)
 
-SupportedTypes = typing.Union[DataFrameType, MessageMeta, ControlMessage, typing.List]
+SupportedTypes = typing.Union[DataFrameType, MessageMeta, ControlMessage, list]
 
 
 class MonitorController:

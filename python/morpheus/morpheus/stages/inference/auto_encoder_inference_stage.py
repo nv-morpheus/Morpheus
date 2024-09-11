@@ -18,7 +18,6 @@ import cupy as cp
 import numpy as np
 import pandas as pd
 
-import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -65,7 +64,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
 
         output_message = ControlMessage(msg)
         output_message.payload(msg.payload())
-        output_message.tensors(_messages.TensorMemory(count=output_dims[0], tensors={"probs": cp.zeros(output_dims)}))
+        output_message.tensors(TensorMemory(count=output_dims[0], tensors={"probs": cp.zeros(output_dims)}))
 
         return output_message
 
