@@ -86,10 +86,9 @@ bool SerializeStage::exclude_column(const std::string& column) const
 
 std::shared_ptr<SlicedMessageMeta> SerializeStage::get_meta(sink_type_t& msg)
 {
-    // If none of the columns match the include regex patterns or are all are
-    // excluded this has the effect of including all of the rows since calling
-    // msg->get_meta({}) will return a view with all columns. The Python impl
-    // appears to have the same behavior.
+    // If none of the columns match the include regex patterns or are all are excluded this has the effect of including
+    // all of the rows since calling msg->get_meta({}) will return a view with all columns. The Python impl appears to
+    // have the same behavior.
     if (!m_fixed_columns || m_column_names.empty())
     {
         m_column_names.clear();

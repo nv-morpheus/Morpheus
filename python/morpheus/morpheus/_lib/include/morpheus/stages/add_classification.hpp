@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,9 +39,8 @@ namespace morpheus {
  */
 
 /**
- * @brief Add detected classifications to each message. Classification labels
- * based on probabilities calculated in inference stage. Label indexes will be
- * looked up in the idx2label property.
+ * @brief Add detected classifications to each message. Classification labels based on probabilities calculated in
+ * inference stage. Label indexes will be looked up in the idx2label property.
  */
 class MORPHEUS_EXPORT AddClassificationsStage : public AddScoresStageBase
 {

@@ -126,7 +126,7 @@ class FilterDetectionsController:
 
         Returns
         -------
-        listist[`morpheus.messages.ControlMessage`]
+        list[`morpheus.messages.ControlMessage`]
             List of filtered messages.
 
         """

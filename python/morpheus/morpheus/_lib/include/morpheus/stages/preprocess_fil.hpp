@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -60,8 +60,7 @@ class MORPHEUS_EXPORT PreprocessFILStage
     /**
      * @brief Constructor for a class `PreprocessFILStage`
      *
-     * @param features : Reference to the features that are required for model
-     * inference
+     * @param features : Reference to the features that are required for model inference
      */
     PreprocessFILStage(const std::vector<std::string>& features);
 
@@ -88,8 +87,7 @@ struct MORPHEUS_EXPORT PreprocessFILStageInterfaceProxy
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
-     * @param features : Reference to the features that are required for model
-     * inference
+     * @param features : Reference to the features that are required for model inference
      * @return std::shared_ptr<mrc::segment::Object<PreprocessFILStage>>
      */
     static std::shared_ptr<mrc::segment::Object<PreprocessFILStage>> init(mrc::segment::Builder& builder,

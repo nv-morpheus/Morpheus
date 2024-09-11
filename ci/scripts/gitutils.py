@@ -202,7 +202,7 @@ class GitWrapper:
     @staticmethod
     def get_file_add_date(file_path):
         """Return the date a given file was added to git"""
-        date_str = _git("log", "--follow", "--format=%as", "--", file_path, "|", "tail", "-n 1")
+        date_str = _run_cmd(f"git log --follow --format=%as -- {file_path} | tail -n 1")
         return datetime.datetime.strptime(date_str, "%Y-%m-%d")
 
     @staticmethod

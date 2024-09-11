@@ -17,15 +17,16 @@ import pandas as pd
 import cudf
 
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 
 
-def concat_dataframes(messages: list[ControlMessage] | list[cudf.DataFrame]) -> pd.DataFrame:
+def concat_dataframes(messages: list[ControlMessage] | list[MessageMeta]) -> pd.DataFrame:
     """
     Concatinate the DataFrame associated with the collected messages into a single Pandas DataFrame.
 
     Parameters
     ----------
-    messages : list[ControlMessage] | list[cudf.DataFrame]
+    messages : list[ControlMessage] | list[MessageMeta]
         Messages containing DataFrames to concat.
 
     Returns
@@ -37,8 +38,10 @@ def concat_dataframes(messages: list[ControlMessage] | list[cudf.DataFrame]) -> 
     for msg in messages:
         if isinstance(msg, ControlMessage):
             df = msg.payload().df
-        else:
+        elif isinstance(msg, MessageMeta):
             df = msg.df
+        else:
+            raise ValueError("Invalid message type")
 
         if isinstance(df, cudf.DataFrame):
             df = df.to_pandas()
