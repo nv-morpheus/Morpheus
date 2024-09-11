@@ -140,8 +140,7 @@ def test_filter_slice(config, filter_probs_df):
     mock_control_message = _make_control_message(filter_probs_df, probs)
     output_control_message = fds._controller.filter_slice(mock_control_message)
     assert len(output_control_message) == len(output_multi_response_messages)
-    assert output_control_message[0].payload().get_data().to_numpy().tolist(
-    ) == filter_probs_df.loc[
+    assert output_control_message[0].payload().get_data().to_numpy().tolist() == filter_probs_df.loc[
         1:1, :].to_numpy().tolist()
 
     # Two adjacent rows have a value above the threashold
@@ -156,9 +155,8 @@ def test_filter_slice(config, filter_probs_df):
     mock_control_message = _make_control_message(filter_probs_df, probs)
     output_control_message = fds._controller.filter_slice(mock_control_message)
     assert len(output_control_message) == len(output_multi_response_messages)
-    assert output_control_message[0].payload().get_data().to_numpy().tolist(
-    ) == filter_probs_df.loc[
-        2:3, :]..to_numpy().tolist()
+    assert output_control_message[0].payload().get_data().to_numpy().tolist() == filter_probs_df.loc[
+        2:3, :].to_numpy().tolist()
 
     # Two non-adjacent rows have a value above the threashold
     probs = np.array([
