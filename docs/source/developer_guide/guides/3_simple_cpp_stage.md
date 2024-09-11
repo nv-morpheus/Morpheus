@@ -374,16 +374,16 @@ def compute_schema(self, schema: StageSchema):
 As mentioned in the previous section, our `_build_single` method needs to be updated to build a C++ node when the input type is `ControlMessage` and when `morpheus.config.CppConfig.get_should_use_cpp()` is `True` using the `self._build_cpp_node()` method. The `_build_cpp_node()` method compares both `morpheus.config.CppConfig.get_should_use_cpp()` and `supports_cpp_node()` and returns `True` only when both methods return `True`.
 
 ```python
-    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        if self._build_cpp_node() and isinstance(self._input_type, ControlMessage):
-            from ._lib import pass_thru_cpp
+def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+    if self._build_cpp_node() and isinstance(self._input_type, ControlMessage):
+        from ._lib import pass_thru_cpp
 
-            node = pass_thru_cpp.PassThruStage(builder, self.unique_name)
-        else:
-            node = builder.make_node(self.unique_name, ops.map(self.on_data))
+        node = pass_thru_cpp.PassThruStage(builder, self.unique_name)
+    else:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
 
-        builder.make_edge(input_node, node)
-        return node
+    builder.make_edge(input_node, node)
+    return node
 ```
 > **Note**: We lazily imported the C++ module to avoid importing it when it is not needed.
 

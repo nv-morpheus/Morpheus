@@ -460,7 +460,7 @@ pipeline.add_stage(AddScoresStage(config, labels=["is_phishing"]))
 
 Lastly, we will save our results to disk. For this purpose, we are using two stages that are often used in conjunction with each other: `SerializeStage` and `WriteToFileStage`.
 
-The `SerializeStage` is used to include and exclude columns as desired in the output. Importantly, it also handles conversion from the `ControlMessage`-derived output type to the `MessageMeta` class that is expected as input by the `WriteToFileStage`.
+The `SerializeStage` is used to include and exclude columns as desired in the output. Importantly, it also handles conversion from `ControlMessage` output type to the `MessageMeta` class that is expected as input by the `WriteToFileStage`.
 
 The `WriteToFileStage` will append message data to the output file as messages are received. Note however that for performance reasons the `WriteToFileStage` does not flush its contents out to disk every time a message is received. Instead, it relies on the underlying [buffered output stream](https://gcc.gnu.org/onlinedocs/libstdc++/manual/streambufs.html) to flush as needed, and then will close the file handle on shutdown.
 
