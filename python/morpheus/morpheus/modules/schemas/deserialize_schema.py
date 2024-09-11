@@ -1,4 +1,4 @@
-# Copyright (c) 2024, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class DeserializeSchema(BaseModel):
     ensure_sliceable_index: bool = True
-    message_type: str = "MultiMessage"
+    message_type: str = "ControlMessage"
     task_type: Optional[str] = None
     task_payload: Optional[Dict[Any, Any]] = None
     batch_size: int = 1024

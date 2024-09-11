@@ -59,19 +59,12 @@ void preallocate(std::shared_ptr<morpheus::ControlMessage> msg,
     preallocate(msg->payload(), columns);
 }
 
-void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
-                 const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
-{
-    preallocate(msg->meta, columns);
-}
-
 }  // namespace
 
 /****** Component public implementations *******************/
 /****** PreallocateStage ********************************/
-/* Preallocates new columns into the underlying dataframe. This stage supports both MessageMeta & subclasses of
- * MultiMessage. In the Python bindings the stage is bound as `PreallocateMessageMetaStage` and
- * `PreallocateMultiMessageStage`
+/* Preallocates new columns into the underlying dataframe. This stage supports both MessageMeta & ControlMessage. In the
+ * Python bindings the stage is bound as `PreallocateMessageMetaStage` and `PreallocateControlMessageStage`
  */
 template <typename MessageT>
 class MORPHEUS_EXPORT PreallocateStage
@@ -127,8 +120,12 @@ typename PreallocateStage<MessageT>::subscribe_fn_t PreallocateStage<MessageT>::
                 preallocate(x, m_needed_columns);
                 output.on_next(std::move(x));
             },
-            [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-            [&]() { output.on_completed(); }));
+            [&](std::exception_ptr error_ptr) {
+                output.on_error(error_ptr);
+            },
+            [&]() {
+                output.on_completed();
+            }));
     };
 }
 

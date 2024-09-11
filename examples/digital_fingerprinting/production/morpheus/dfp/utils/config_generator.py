@@ -174,7 +174,7 @@ def generate_ae_config(source: str,
                        pipeline_batch_size: int = 0,
                        edge_buffer_size: int = 0,
                        use_cpp: bool = False,
-                       num_threads: int = os.cpu_count()):
+                       num_threads: int = len(os.sched_getaffinity(0))):
     config = Config()
 
     CppConfig.set_should_use_cpp(use_cpp)

@@ -22,12 +22,10 @@ import pytest
 
 import cudf
 
+import morpheus._lib.messages as _messages
 from _utils.inference_worker import IW
-from morpheus.messages import ResponseMemory
-from morpheus.messages.memory.inference_memory import InferenceMemory
+from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.messages.multi_inference_message import MultiInferenceMessage
-from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
 
 
@@ -39,28 +37,20 @@ class InferenceStageT(InferenceStage):
         return IW(inf_queue)
 
 
-def _mk_message(mess_offset=0, mess_count=1, offset=0, count=1):
-    total_message_count = mess_offset + mess_count
-    total_tensor_count = offset + count
+def _mk_control_message(mess_count=1, count=1):
+    total_message_count = mess_count
+    total_tensor_count = count
 
     df = cudf.DataFrame(list(range(total_message_count)), columns=["col1"])
-
-    msg = MultiInferenceMessage(meta=MessageMeta(df),
-                                mess_offset=mess_offset,
-                                mess_count=mess_count,
-                                memory=InferenceMemory(count=total_tensor_count,
-                                                       tensors={
-                                                           "probs":
-                                                               cp.random.rand(total_tensor_count, 2),
-                                                           "seq_ids":
-                                                               cp.tile(
-                                                                   cp.expand_dims(cp.arange(
-                                                                       mess_offset, mess_offset + total_tensor_count),
-                                                                                  axis=1), (1, 3))
-                                                       }),
-                                offset=offset,
-                                count=count)
-
+    msg = ControlMessage()
+    msg.payload(MessageMeta(df))
+    msg.tensors(
+        _messages.InferenceMemory(
+            count=total_tensor_count,
+            tensors={
+                "probs": cp.random.rand(total_tensor_count, 2),
+                "seq_ids": cp.tile(cp.expand_dims(cp.arange(0, total_tensor_count), axis=1), (1, 3))
+            }))
     return msg
 
 
@@ -105,55 +95,40 @@ def test_join(config):
         worker.join.assert_awaited_once()
 
 
-def test_split_batches():
-    seq_ids = cp.zeros((10, 1))
-    seq_ids[2][0] = 15
-    seq_ids[6][0] = 16
-
-    mock_message = mock.MagicMock()
-    mock_message.get_input.return_value = seq_ids
-
-    out_resp = InferenceStageT._split_batches(mock_message, 5)
-    assert len(out_resp) == 3
-
-    assert mock_message.get_slice.call_count == 3
-    mock_message.get_slice.assert_has_calls([mock.call(0, 3), mock.call(3, 7), mock.call(7, 10)])
-
-
 @pytest.mark.use_python
 def test_convert_one_response():
-    # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
-    # pylint: disable=no-member
-
+    # Test ControlMessage
     # Test first branch where `inf.mess_count == inf.count`
-    mem = ResponseMemory(count=4, tensors={"probs": cp.zeros((4, 3))})
+    mem = _messages.ResponseMemory(count=4, tensors={"probs": cp.zeros((4, 3))})
 
-    inf = _mk_message(mess_count=4, count=4)
-    res = ResponseMemory(count=4, tensors={"probs": cp.random.rand(4, 3)})
+    inf = _mk_control_message(mess_count=4, count=4)
+    res = _messages.ResponseMemory(count=4, tensors={"probs": cp.random.rand(4, 3)})
+    output = _mk_control_message(mess_count=4, count=4)
+    output.tensors(mem)
 
-    mpm = InferenceStageT._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res)
-    assert mpm.meta == inf.meta
-    assert mpm.mess_offset == 0
-    assert mpm.mess_count == 4
-    assert mpm.offset == 0
-    assert mpm.count == 4
-    assert cp.all(mem.get_output('probs') == res.get_output("probs"))
+    cm = InferenceStageT._convert_one_response(output, inf, res)
+    assert cm.payload() == inf.payload()
+    assert cm.payload().count == 4
+    assert cm.tensors().count == 4
+    assert cp.all(cm.tensors().get_tensor("probs") == res.get_tensor("probs"))
 
     # Test for the second branch
-    inf = _mk_message(mess_count=3, count=3)
-    inf.memory.set_tensor("seq_ids", cp.array([[0], [1], [1]]))
-    inf.mess_count = 2  # Get around the consistency check
-    res = ResponseMemory(count=3, tensors={"probs": cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]])})
+    inf = _mk_control_message(mess_count=2, count=3)
+    inf.tensors().set_tensor("seq_ids", cp.array([[0], [1], [1]]))
+    res = _messages.ResponseMemory(count=3,
+                                   tensors={"probs": cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]])})
 
-    mem = ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 3))})
-    mpm = InferenceStageT._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res)
-    assert mem.get_output('probs').tolist() == [[0, 0.6, 0.7], [5.6, 6.7, 9.2]]
+    mem = _messages.ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 3))})
+    output = _mk_control_message(mess_count=2, count=3)
+    output.tensors(mem)
+    cm = InferenceStageT._convert_one_response(output, inf, res)
+    assert cm.tensors().get_tensor("probs").tolist() == [[0, 0.6, 0.7], [5.6, 6.7, 9.2]]
 
 
 def test_convert_one_response_error():
-    mem = ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 2))})
-    inf = _mk_message(mess_count=2, count=2)
-    res = _mk_message(mess_count=1, count=1)
+    inf = _mk_control_message(mess_count=2, count=2)
+    res = _mk_control_message(mess_count=1, count=1)
+    output = inf
 
     with pytest.raises(AssertionError):
-        InferenceStageT._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res.memory)
+        InferenceStageT._convert_one_response(output, inf, res.tensors())

@@ -22,6 +22,7 @@
 #include "morpheus/io/loaders/file.hpp"
 #include "morpheus/io/loaders/payload.hpp"
 #include "morpheus/messages/control.hpp"
+#include "morpheus/utilities/json_types.hpp"  // for PythonByteContainer
 
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>

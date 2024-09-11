@@ -469,9 +469,9 @@ class StringCatColumn(ColumnInfo):
             The processed column as a string Series.
         """
 
-        first_col = df[self.input_columns[0]]
+        first_col = df[self.input_columns[0]].astype(str)
 
-        return first_col.str.cat(others=df[self.input_columns[1:]], sep=self.sep)
+        return first_col.str.cat(others=df[self.input_columns[1:]].astype(str), sep=self.sep)
 
 
 @dataclasses.dataclass

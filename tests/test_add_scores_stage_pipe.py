@@ -26,8 +26,6 @@ from _utils.stages.conv_msg import ConvMsg
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -55,25 +53,14 @@ def test_add_scores_stage_pipe(config: Config,
     expected_df = dataset_pandas["filter_probs.csv"]
     expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, config.class_labels)))
 
-    pipe_mm = LinearPipeline(config)
-    pipe_mm.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
-    pipe_mm.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=MultiMessage))
-    pipe_mm.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
-    pipe_mm.add_stage(AddScoresStage(config))
-    pipe_mm.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
-    comp_stage = pipe_mm.add_stage(CompareDataFrameStage(config, expected_df))
-    pipe_mm.run()
-
-    assert_results(comp_stage.get_results())
-
-    pipe_cm = LinearPipeline(config)
-    pipe_cm.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
-    pipe_cm.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=ControlMessage))
-    pipe_cm.add_stage(ConvMsg(config, message_type=ControlMessage, order=order, columns=list(input_df.columns)))
-    pipe_cm.add_stage(AddScoresStage(config))
-    pipe_cm.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
-    comp_stage = pipe_cm.add_stage(CompareDataFrameStage(config, expected_df))
-    pipe_cm.run()
+    pipe = LinearPipeline(config)
+    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
+    pipe.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
+    pipe.add_stage(AddScoresStage(config))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
+    pipe.run()
 
     assert_results(comp_stage.get_results())
 
@@ -87,18 +74,18 @@ def test_add_scores_stage_multi_segment_pipe(config: Config, dataset_cudf: Datas
     filter_probs_df = dataset_cudf.pandas["filter_probs.csv"]
     expected_df = filter_probs_df.rename(columns=dict(zip(filter_probs_df.columns, config.class_labels)))
 
-    pipe_mm = LinearPipeline(config)
-    pipe_mm.set_source(InMemorySourceStage(config, [dataset_cudf["filter_probs.csv"]], repeat=repeat))
-    pipe_mm.add_segment_boundary(MessageMeta)
-    pipe_mm.add_stage(DeserializeStage(config))
-    pipe_mm.add_segment_boundary(MultiMessage)
-    pipe_mm.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns)))
-    pipe_mm.add_segment_boundary(MultiResponseMessage)
-    pipe_mm.add_stage(AddScoresStage(config))
-    pipe_mm.add_segment_boundary(MultiResponseMessage)
-    pipe_mm.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
-    pipe_mm.add_segment_boundary(MessageMeta)
-    comp_stage = pipe_mm.add_stage(CompareDataFrameStage(config, expected_df))
-    pipe_mm.run()
+    pipe = LinearPipeline(config)
+    pipe.set_source(InMemorySourceStage(config, [dataset_cudf["filter_probs.csv"]], repeat=repeat))
+    pipe.add_segment_boundary(MessageMeta)
+    pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
+    pipe.add_segment_boundary(ControlMessage)
+    pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns)))
+    pipe.add_segment_boundary(ControlMessage)
+    pipe.add_stage(AddScoresStage(config))
+    pipe.add_segment_boundary(ControlMessage)
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
+    pipe.add_segment_boundary(MessageMeta)
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
+    pipe.run()
 
     assert_results(comp_stage.get_results())
