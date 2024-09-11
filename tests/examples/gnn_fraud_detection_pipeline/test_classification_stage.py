@@ -24,8 +24,7 @@ from morpheus.messages import MessageMeta
 # pylint: disable=no-name-in-module
 
 
-@pytest.mark.xfail(reason="TODO: Need to determine what to do with GPU pipelines which only run in Python mode")
-@pytest.mark.cpu_mode
+@pytest.mark.gpu_mode
 class TestClassificationStage:
 
     def test_constructor(self, config: Config, xgb_model: str, cuml: types.ModuleType):
