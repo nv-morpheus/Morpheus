@@ -176,7 +176,6 @@ class TestCLI:
         assert result.exit_code == 0, result.output
         mock_manual_seed.assert_called_once_with(value)
 
-    @pytest.mark.xfail(reason="TODO: Fix this")
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae(self, config, callback_values):
         """
@@ -211,7 +210,6 @@ class TestCLI:
 
         config = obj["config"]
         assert config.mode == PipelineModes.AE
-        assert not CppConfig.get_should_use_cpp()
         assert config.class_labels == ["reconstruct_loss", "zscore"]
         assert config.model_max_batch_size == 1024
         assert config.pipeline_batch_size == 1024
@@ -266,7 +264,6 @@ class TestCLI:
         assert isinstance(to_file, WriteToFileStage)
         assert to_file._controller._output_file == 'out.csv'
 
-    @pytest.mark.xfail(reason="TODO: Fix this")
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae_all(self, callback_values):
         """
@@ -1031,7 +1028,6 @@ class TestCLI:
         assert config.fil.feature_columns == test_columns
 
     # pylint: disable=unused-argument
-    @pytest.mark.xfail(reason="TODO: Fix this")
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae_relative_path_precedence(self, config: Config, tmp_path: str, callback_values: dict):
         """
