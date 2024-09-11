@@ -21,7 +21,6 @@ from tqdm import tqdm
 
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.utils.logger import LogLevels
 from morpheus.utils.monitor_utils import MorpheusTqdm
 from morpheus.utils.type_aliases import DataFrameType
@@ -29,7 +28,7 @@ from morpheus.utils.type_utils import is_dataframe
 
 logger = logging.getLogger(__name__)
 
-SupportedTypes = typing.Union[DataFrameType, MultiMessage, MessageMeta, ControlMessage, typing.List]
+SupportedTypes = typing.Union[DataFrameType, MessageMeta, ControlMessage, typing.List]
 
 
 class MonitorController:
@@ -128,47 +127,46 @@ class MonitorController:
         """
         self._progress.refresh()
 
-    def progress_sink(self, x: SupportedTypes):
+    def progress_sink(self, msg: SupportedTypes) -> SupportedTypes:
         """
         Receives a message and determines the count of the message.
         The progress bar is displayed and the progress is updated.
 
         Parameters
         ----------
-        x: SupportedTypes
+        msg: SupportedTypes
             Message that determines the count of the message
 
         Returns
         -------
-        x: SupportedTypes
-
+        SupportedTypes
         """
 
         # Make sure the progress bar is shown
         self.ensure_progress_bar()
 
         if (self._determine_count_fn is None):
-            self._determine_count_fn = self.auto_count_fn(x)
+            self._determine_count_fn = self.auto_count_fn(msg)
 
         # Skip incase we have empty objects
         if (self._determine_count_fn is None):
-            return x
+            return msg
 
         # Do our best to determine the count
-        count = self._determine_count_fn(x)
+        count = self._determine_count_fn(msg)
 
         self._progress.update(n=count)
 
-        return x
+        return msg
 
-    def auto_count_fn(self, x: SupportedTypes):
+    def auto_count_fn(self, msg: SupportedTypes) -> typing.Callable[[SupportedTypes], int] | None:
         """
         This is a helper function that is used to determine the count of messages received by the
         monitor.
 
         Parameters
         ----------
-        x: SupportedTypes
+        msg: SupportedTypes
             Message that determines the count of the message
 
         Returns
@@ -179,23 +177,20 @@ class MonitorController:
 
         # pylint: disable=too-many-return-statements
 
-        if (x is None):
+        if (msg is None):
             return None
 
         # Wait for a list thats not empty
-        if (isinstance(x, list) and len(x) == 0):
+        if (isinstance(msg, list) and len(msg) == 0):
             return None
 
-        if (is_dataframe(x)):
+        if (is_dataframe(msg)):
             return lambda y: len(y.index)
 
-        if (isinstance(x, MultiMessage)):
-            return lambda y: y.mess_count
-
-        if (isinstance(x, MessageMeta)):
+        if (isinstance(msg, MessageMeta)):
             return lambda y: y.count
 
-        if isinstance(x, ControlMessage):
+        if isinstance(msg, ControlMessage):
 
             def check_df(y):
                 df = y.payload().df
@@ -206,17 +201,17 @@ class MonitorController:
 
             return check_df
 
-        if (isinstance(x, list)):
-            item_count_fn = self.auto_count_fn(x[0])
+        if (isinstance(msg, list)):
+            item_count_fn = self.auto_count_fn(msg[0])
             return lambda y: reduce(lambda sum, z, item_count_fn=item_count_fn: sum + item_count_fn(z), y, 0)
 
-        if (isinstance(x, (str, fsspec.core.OpenFile))):
+        if (isinstance(msg, (str, fsspec.core.OpenFile))):
             return lambda y: 1
 
-        if (hasattr(x, "__len__")):
+        if (hasattr(msg, "__len__")):
             return len  # Return len directly (same as `lambda y: len(y)`)
 
-        raise NotImplementedError(f"Unsupported type: {type(x)}")
+        raise NotImplementedError(f"Unsupported type: {type(msg)}")
 
     def sink_on_completed(self):
         """

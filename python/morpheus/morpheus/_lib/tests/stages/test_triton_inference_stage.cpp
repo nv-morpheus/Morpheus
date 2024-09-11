@@ -15,52 +15,52 @@
  * limitations under the License.
  */
 
-#include "../test_utils/common.hpp"  // IWYU pragma: associated
+#include "../test_utils/common.hpp"  // for TestWithPythonInterpreter, morpheus
 
-#include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/messages/meta.hpp"
-#include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/messages/multi_response.hpp"
-#include "morpheus/objects/dtype.hpp"
-#include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
-#include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/stages/inference_client_stage.hpp"
-#include "morpheus/stages/triton_inference.hpp"
-#include "morpheus/types.hpp"
-#include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/messages/control.hpp"               // for ControlMessage
+#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
+#include "morpheus/messages/meta.hpp"                  // for MessageMeta
+#include "morpheus/objects/dtype.hpp"                  // for TypeId, DType
+#include "morpheus/objects/memory_descriptor.hpp"      // for MemoryDescriptor
+#include "morpheus/objects/tensor.hpp"                 // for Tensor
+#include "morpheus/objects/tensor_object.hpp"          // for TensorObject
+#include "morpheus/stages/inference_client_stage.hpp"  // for TensorModelMapping, InferenceClientStage, IInferenceCl...
+#include "morpheus/stages/triton_inference.hpp"        // for TritonInferenceClient, TritonInferInput, TritonInferRe...
+#include "morpheus/types.hpp"                          // for TensorMap
+#include "morpheus/utilities/cudf_util.hpp"            // for CudfHelper
+#include "morpheus/utilities/matx_util.hpp"            // for MatxUtil
 
-#include <cuda_runtime.h>
-#include <cudf/column/column.hpp>
-#include <cudf/column/column_factories.hpp>
-#include <cudf/column/column_view.hpp>
-#include <cudf/io/types.hpp>
-#include <cudf/table/table.hpp>
-#include <cudf/types.hpp>
-#include <cudf/utilities/type_dispatcher.hpp>
-#include <glog/logging.h>
-#include <gtest/gtest.h>
-#include <http_client.h>
-#include <mrc/coroutines/task.hpp>
-#include <mrc/coroutines/test_scheduler.hpp>
-#include <pybind11/gil.h>
-#include <rmm/cuda_stream_view.hpp>
-#include <rmm/device_buffer.hpp>
+#include <cuda_runtime.h>                         // for cudaMemcpy, cudaMemcpyKind
+#include <cudf/column/column.hpp>                 // for column
+#include <cudf/column/column_factories.hpp>       // for make_fixed_width_column
+#include <cudf/column/column_view.hpp>            // for mutable_column_view
+#include <cudf/io/types.hpp>                      // for column_name_info, table_with_metadata, table_metadata
+#include <cudf/table/table.hpp>                   // for table
+#include <cudf/types.hpp>                         // for data_type
+#include <cudf/utilities/type_dispatcher.hpp>     // for type_to_id
+#include <glog/logging.h>                         // for COMPACT_GOOGLE_LOG_INFO, DVLOG, LogMessage
+#include <gtest/gtest.h>                          // for Message, TestPartResult, TestInfo, ASSERT_EQ, ASSERT_N...
+#include <http_client.h>                          // for Error, InferOptions, InferenceServerHttpClient, InferR...
+#include <mrc/coroutines/task.hpp>                // for Task
+#include <mrc/coroutines/test_scheduler.hpp>      // for TestScheduler
+#include <pybind11/gil.h>                         // for gil_scoped_acquire
+#include <rmm/cuda_stream_view.hpp>               // for cuda_stream_per_thread
+#include <rmm/device_buffer.hpp>                  // for device_buffer
 #include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
 
-#include <cstdint>
-#include <functional>
+#include <cstddef>           // for size_t
+#include <cstdint>           // for int32_t, int64_t, uint8_t, uint32_t
+#include <functional>        // for function
 #include <initializer_list>  // for initializer_list
-#include <map>
-#include <memory>
-#include <numeric>
-#include <ostream>  // for operator<<, basic_ostream
-#include <stdexcept>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
+#include <map>               // for map
+#include <memory>            // for shared_ptr, allocator, unique_ptr, make_shared, make_u...
+#include <numeric>           // for iota
+#include <ostream>           // for char_traits, operator<<, basic_ostream
+#include <stdexcept>         // for runtime_error, invalid_argument
+#include <string>            // for string, operator<=>, operator<<, basic_string, char_tr...
+#include <unordered_map>     // for unordered_map
+#include <utility>           // for move
+#include <vector>            // for vector
 class FakeInferResult : public triton::client::InferResult
 {
   private:
@@ -347,24 +347,26 @@ TEST_F(TestTritonInferenceStage, SingleRow)
     auto tensors = morpheus::TensorMap();
     tensors["seq_ids"].swap(morpheus::Tensor::create(buffer, dtype, {count, 1}, {}));
 
-    // create the MultiInferenceMessage using the sequence id tensor.
+    // create the ControlMessage using the sequence id tensor.
     auto memory  = std::make_shared<morpheus::TensorMemory>(count, std::move(tensors));
     auto table   = create_test_table_with_metadata(count);
     auto meta    = morpheus::MessageMeta::create_from_cpp(std::move(table), 1);
-    auto message = std::make_shared<morpheus::MultiInferenceMessage>(meta, 0, count, memory);
+    auto message = std::make_shared<morpheus::ControlMessage>();
+    message->payload(meta);
+    message->tensors(memory);
 
     // create the fake triton client used for testing.
     auto triton_client = std::make_unique<ErrorProneTritonClient>();
     auto triton_inference_client =
         std::make_unique<morpheus::TritonInferenceClient>(std::move(triton_client), "", true);
-    auto stage = morpheus::InferenceClientStage<morpheus::MultiInferenceMessage, morpheus::MultiResponseMessage>(
-        std::move(triton_inference_client), "", false, {}, {});
+    auto stage = morpheus::InferenceClientStage(std::move(triton_inference_client), "", false, {}, {});
 
     // manually invoke the stage and iterate through the inference responses
     auto on           = std::make_shared<mrc::coroutines::TestScheduler>();
-    auto results_task = [](auto& stage, auto message, auto on)
-        -> mrc::coroutines::Task<std::vector<std::shared_ptr<morpheus::MultiResponseMessage>>> {
-        std::vector<std::shared_ptr<morpheus::MultiResponseMessage>> results;
+    auto results_task = [](auto& stage,
+                           auto message,
+                           auto on) -> mrc::coroutines::Task<std::vector<std::shared_ptr<morpheus::ControlMessage>>> {
+        std::vector<std::shared_ptr<morpheus::ControlMessage>> results;
 
         auto responses_generator = stage.on_data(std::move(message), on);
 
@@ -428,21 +430,21 @@ TEST_F(TestTritonInferenceStage, ForceConvert)
             auto memory  = std::make_shared<morpheus::TensorMemory>(count, std::move(tensors));
             auto table   = create_test_table_with_metadata(count);
             auto meta    = morpheus::MessageMeta::create_from_cpp(std::move(table), 1);
-            auto message = std::make_shared<morpheus::MultiInferenceMessage>(meta, 0, count, memory);
+            auto message = std::make_shared<morpheus::ControlMessage>();
+            message->payload(meta);
+            message->tensors(memory);
 
             // create the fake triton client used for testing.
             auto triton_client = std::make_unique<FakeTritonClient>();
             auto triton_inference_client =
                 std::make_unique<morpheus::TritonInferenceClient>(std::move(triton_client), "", force_convert_inputs);
-            auto stage =
-                morpheus::InferenceClientStage<morpheus::MultiInferenceMessage, morpheus::MultiResponseMessage>(
-                    std::move(triton_inference_client), "", false, {}, {});
+            auto stage = morpheus::InferenceClientStage(std::move(triton_inference_client), "", false, {}, {});
 
             // manually invoke the stage and iterate through the inference responses
             auto on           = std::make_shared<mrc::coroutines::TestScheduler>();
             auto results_task = [](auto& stage, auto message, auto on)
-                -> mrc::coroutines::Task<std::vector<std::shared_ptr<morpheus::MultiResponseMessage>>> {
-                std::vector<std::shared_ptr<morpheus::MultiResponseMessage>> results;
+                -> mrc::coroutines::Task<std::vector<std::shared_ptr<morpheus::ControlMessage>>> {
+                std::vector<std::shared_ptr<morpheus::ControlMessage>> results;
 
                 auto responses_generator = stage.on_data(std::move(message), on);
 

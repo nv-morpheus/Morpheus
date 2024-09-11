@@ -26,9 +26,6 @@ from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -50,8 +47,7 @@ MODEL_MAX_BATCH_SIZE = 1024
 @pytest.mark.slow
 @pytest.mark.gpu_mode
 @pytest.mark.usefixtures("launch_mock_triton")
-@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
-def test_abp_cpp(config: Config, tmp_path: str, message_type: type, morpheus_log_level: int):
+def test_abp_cpp(config: Config, tmp_path: str, morpheus_log_level: int):
     config.mode = PipelineModes.FIL
     config.class_labels = ["mining"]
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
@@ -69,7 +65,7 @@ def test_abp_cpp(config: Config, tmp_path: str, message_type: type, morpheus_log
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
-    pipe.add_stage(DeserializeStage(config, message_type=message_type))
+    pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(PreprocessFILStage(config))
 
     # We are feeding TritonInferenceStage the port to the grpc server because that is what the validation tests do
@@ -100,13 +96,7 @@ def test_abp_cpp(config: Config, tmp_path: str, message_type: type, morpheus_log
 @pytest.mark.slow
 @pytest.mark.gpu_mode
 @pytest.mark.usefixtures("launch_mock_triton")
-@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
-def test_abp_multi_segment_cpp(config, tmp_path, message_type):
-
-    def get_boundary_type(boundary_type):
-        if message_type == ControlMessage:
-            return ControlMessage
-        return boundary_type
+def test_abp_multi_segment_cpp(config, tmp_path):
 
     config.mode = PipelineModes.FIL
     config.class_labels = ["mining"]
@@ -125,13 +115,13 @@ def test_abp_multi_segment_cpp(config, tmp_path, message_type):
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
-    pipe.add_stage(DeserializeStage(config, message_type=message_type))
+    pipe.add_stage(DeserializeStage(config))
 
-    pipe.add_segment_boundary(get_boundary_type(MultiMessage))  # Boundary 1
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 1
 
     pipe.add_stage(PreprocessFILStage(config))
 
-    pipe.add_segment_boundary(get_boundary_type(MultiInferenceMessage))  # Boundary 2
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 2
 
     # We are feeding TritonInferenceStage the port to the grpc server because that is what the validation tests do
     # but the code under-the-hood replaces this with the port number of the http server
@@ -139,17 +129,17 @@ def test_abp_multi_segment_cpp(config, tmp_path, message_type):
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='localhost:8001',
                              force_convert_inputs=True))
 
-    pipe.add_segment_boundary(get_boundary_type(MultiResponseMessage))  # Boundary 3
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 3
 
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config))
 
-    pipe.add_segment_boundary(get_boundary_type(MultiResponseMessage))  # Boundary 4
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 4
 
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
 
-    pipe.add_segment_boundary(get_boundary_type(MultiResponseMessage))  # Boundary 5
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 5
 
     pipe.add_stage(SerializeStage(config))
 

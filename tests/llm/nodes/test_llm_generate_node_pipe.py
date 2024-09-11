@@ -19,7 +19,6 @@ import cudf
 
 from _utils import assert_results
 from morpheus.config import Config
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -53,8 +52,7 @@ def test_pipeline(config: Config, mock_llm_client: mock.MagicMock):
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, dataframes=[input_df]))
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=task_payload))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=task_payload))
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(mock_llm_client=mock_llm_client)))
     sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
 

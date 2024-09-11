@@ -21,7 +21,6 @@ import typing_utils
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 
 
@@ -40,5 +39,4 @@ def test_constructor(config: Config):
     assert stage.features == config.fil.feature_columns
 
     accepted_union = typing.Union[stage.accepted_types()]
-    assert typing_utils.issubtype(MultiMessage, accepted_union)
     assert typing_utils.issubtype(ControlMessage, accepted_union)

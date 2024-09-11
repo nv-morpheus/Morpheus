@@ -26,11 +26,9 @@ from _utils import calc_error_val
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.message_meta import UserMessageMeta
-from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.messages.multi_inference_message import MultiInferenceMessage
-from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage
@@ -268,13 +266,13 @@ def test_dfp_user123_multi_segment(mock_ae: mock.MagicMock, config: Config, tmp_
             source_stage_class="morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage",
             seed=42,
             sort_glob=True))
-    pipe.add_segment_boundary(MultiAEMessage)  # Boundary 2
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 2
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
-    pipe.add_segment_boundary(MultiInferenceMessage)  # Boundary 3
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 3
     pipe.add_stage(AutoEncoderInferenceStage(config))
-    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 4
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 4
     pipe.add_stage(AddScoresStage(config))
-    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 5
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 5
     pipe.add_stage(
         TimeSeriesStage(config,
                         resolution="1m",
@@ -283,7 +281,7 @@ def test_dfp_user123_multi_segment(mock_ae: mock.MagicMock, config: Config, tmp_
                         cold_end=False,
                         filter_percent=90.0,
                         zscore_threshold=8.0))
-    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 6
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 6
     pipe.add_stage(
         MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf", log_level=morpheus_log_level))
     pipe.add_stage(
@@ -293,7 +291,7 @@ def test_dfp_user123_multi_segment(mock_ae: mock.MagicMock, config: Config, tmp_
                         index_col="_index_",
                         exclude=("event_dt", "zscore"),
                         rel_tol=0.1))
-    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 7
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 7
     pipe.add_stage(SerializeStage(config, include=[]))
     pipe.add_segment_boundary(MessageMeta)  # Boundary 8
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))

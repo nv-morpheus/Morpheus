@@ -25,9 +25,7 @@ import morpheus._lib.messages as _messages
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 
@@ -47,7 +45,6 @@ def test_constructor(config: Config):
     assert stage.name == "add-scores"
 
     accepted_union = typing.Union[stage.accepted_types()]
-    assert typing_utils.issubtype(MultiResponseMessage, accepted_union)
     assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
@@ -70,52 +67,17 @@ def test_add_labels_with_multi_response_message_and_control_message():
     df = pd.DataFrame([0, 1], columns=["dummy"])
     probs_array = np.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]])
 
-    mrm = MultiResponseMessage(meta=MessageMeta(df), memory=TensorMemory(count=2, tensors={"probs": probs_array}))
-
-    labeled_mrm = AddClassificationsStage._add_labels(mrm, idx2label=class_labels, threshold=None)
-
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("frogs"), probs_array[:, 0])
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("lizards"), probs_array[:, 1])
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("toads"), probs_array[:, 2])
-
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
     cm.tensors(TensorMemory(count=2, tensors={"probs": probs_array}))
 
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=None)
 
-    # Check that the labeled control message and labeled multi response message are the same
-    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("frogs"), labeled_mrm.get_meta("frogs"))
-    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("lizards"), labeled_mrm.get_meta("lizards"))
-    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("toads"), labeled_mrm.get_meta("toads"))
-
-    # Same thing but change the probs tensor name
-    mrm = MultiResponseMessage(meta=MessageMeta(df),
-                               memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
-                               probs_tensor_name="other_probs")
-
-    labeled_mrm = AddClassificationsStage._add_labels(mrm, idx2label=class_labels, threshold=None)
-
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("frogs"), probs_array[:, 0])
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("lizards"), probs_array[:, 1])
-    DatasetManager.assert_df_equal(labeled_mrm.get_meta("toads"), probs_array[:, 2])
-
-    # Fail in missing probs data
-    mrm = MultiResponseMessage(meta=MessageMeta(df),
-                               memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
-                               probs_tensor_name="other_probs")
-    mrm.probs_tensor_name = "probs"
-
-    with pytest.raises(KeyError):
-        AddClassificationsStage._add_labels(mrm, idx2label=class_labels, threshold=None)
+    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("frogs"), probs_array[:, 0])
+    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("lizards"), probs_array[:, 1])
+    DatasetManager.assert_df_equal(labeled_cm.payload().get_data("toads"), probs_array[:, 2])
 
     # Too small of a probs array
-    mrm = MultiResponseMessage(meta=MessageMeta(df),
-                               memory=TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
-
-    with pytest.raises(RuntimeError):
-        AddClassificationsStage._add_labels(mrm, idx2label=class_labels, threshold=None)
-
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
     cm.tensors(TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))

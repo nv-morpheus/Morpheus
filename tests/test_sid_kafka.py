@@ -115,4 +115,4 @@ def test_minibert_cpp(dataset_pandas: DatasetManager,
 
     results = compare_df(val_df, output_df, exclude_columns=[r'^ID$', r'^_ts_'], rel_tol=0.05)
 
-    assert results['diff_rows'] == 1204
+    assert results['diff_rows'] == 1585

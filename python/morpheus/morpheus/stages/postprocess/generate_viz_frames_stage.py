@@ -31,7 +31,6 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.producer_consumer_queue import AsyncIOProducerConsumerQueue
@@ -94,11 +93,11 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[morpheus.pipeline.messages.MultiResponseMessage, ControlMessage]
+        typing.Tuple[ControlMessage]
             Accepted input types
 
         """
-        return (MultiResponseMessage, ControlMessage)
+        return (ControlMessage, )
 
     def supports_cpp_node(self):
         return False
@@ -121,7 +120,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
         """
         return int(round(x / 1000.0) * 1000)
 
-    def _to_vis_df(self, x: MultiResponseMessage | ControlMessage):
+    def _to_vis_df(self, msg: ControlMessage):
 
         idx2label = {
             0: 'address',
@@ -137,10 +136,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
         }
 
         columns = ["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "data"]
-        if isinstance(x, MultiResponseMessage):
-            df = x.get_meta(columns)
-        elif isinstance(x, ControlMessage):
-            df = x.payload().get_data(columns)
+        df = msg.payload().get_data(columns)
 
         def indent_data(y: str):
             try:
@@ -153,10 +149,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
         df["data"] = df["data"].apply(indent_data)
 
-        if isinstance(x, MultiResponseMessage):
-            probs = x.get_probs_tensor()
-        elif isinstance(x, ControlMessage):
-            probs = x.tensors().get_tensor("probs")
+        probs = msg.tensors().get_tensor("probs")
 
         pass_thresh = (probs >= 0.5).any(axis=1)
         max_arg = probs.argmax(axis=1)
@@ -277,21 +270,15 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
         def node_fn(input_obs, output_obs):
 
-            def write_batch(x: MultiResponseMessage | ControlMessage):
+            def write_batch(msg: ControlMessage):
 
                 sink = pa.BufferOutputStream()
 
                 # This is the timestamp of the earliest message
-                if isinstance(x, MultiResponseMessage):
-                    time0 = x.get_meta("timestamp").min()
-                elif isinstance(x, ControlMessage):
-                    time0 = x.payload().get_data("timestamp").min()
+                time0 = msg.payload().get_data("timestamp").min()
 
                 columns = ["timestamp", "src_ip", "dest_ip", "secret_keys", "data"]
-                if isinstance(x, MultiResponseMessage):
-                    df = x.get_meta(columns)
-                elif isinstance(x, ControlMessage):
-                    df = x.payload().get_data(columns)
+                df = msg.payload().get_data(columns)
 
                 out_df = self._df_class()
 

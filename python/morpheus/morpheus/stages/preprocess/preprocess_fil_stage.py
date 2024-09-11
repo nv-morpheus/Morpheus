@@ -19,7 +19,6 @@ import mrc
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiInferenceFILMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 logger = logging.getLogger(__name__)
@@ -46,8 +45,6 @@ class PreprocessFILStage(PreprocessBaseStage):
         assert self._fea_length == len(self.features), \
             f"Number of features in preprocessing {len(self.features)}, does not match configuration {self._fea_length}"
 
-        self._fallback_output_type = MultiInferenceFILMessage
-
     @property
     def name(self) -> str:
         return "preprocess-fil"
@@ -57,7 +54,4 @@ class PreprocessFILStage(PreprocessBaseStage):
 
     def _get_preprocess_node(self, builder: mrc.Builder):
         import morpheus._lib.stages as _stages
-        if (self._use_control_message):
-            return _stages.PreprocessFILControlMessageStage(builder, self.unique_name, self.features)
-
-        return _stages.PreprocessFILMultiMessageStage(builder, self.unique_name, self.features)
+        return _stages.PreprocessFILStage(builder, self.unique_name, self.features)

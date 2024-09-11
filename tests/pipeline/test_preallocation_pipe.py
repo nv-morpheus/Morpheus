@@ -24,9 +24,8 @@ from _utils.stages.conv_msg import ConvMsg
 from morpheus.common import TypeId
 from morpheus.common import typeid_to_numpy_str
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -83,11 +82,11 @@ def test_preallocation_multi_segment_pipe(config: Config, filter_probs_df: DataF
     mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_segment_boundary(MultiMessage)
+    pipe.add_segment_boundary(ControlMessage)
     pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type=typeid_to_numpy_str(probs_type)))
-    (_, boundary_ingress) = pipe.add_segment_boundary(MultiResponseMessage)
+    (_, boundary_ingress) = pipe.add_segment_boundary(ControlMessage)
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
-    pipe.add_segment_boundary(MultiResponseMessage)
+    pipe.add_segment_boundary(ControlMessage)
     pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
@@ -113,7 +112,7 @@ def test_preallocation_error(config, filter_probs_df):
 
     pipe = LinearPipeline(config)
     mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    pipe.add_stage(DeserializeStage(config))
+    pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
     pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type='f4'))
     add_scores = pipe.add_stage(AddScoresStage(config))
     pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))

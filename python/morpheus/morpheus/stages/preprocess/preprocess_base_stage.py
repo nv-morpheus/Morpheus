@@ -19,14 +19,18 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+<<<<<<< HEAD
 from morpheus.messages import MessageBase
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
+=======
+from morpheus.pipeline.control_message_stage import ControlMessageStage
+>>>>>>> 1d02332d6a6fa57a1198565d036ca646b2c6e50e
 from morpheus.pipeline.stage_schema import StageSchema
 
 
-class PreprocessBaseStage(MultiMessageStage):
+class PreprocessBaseStage(ControlMessageStage):
     """
     This is a base pre-processing class holding general functionality for all preprocessing stages.
 
@@ -41,7 +45,6 @@ class PreprocessBaseStage(MultiMessageStage):
         super().__init__(c)
 
         self._should_log_timestamps = True
-        self._use_control_message = False
 
         # only used when not using control message
         self._fallback_output_type: type[MessageBase] = None
@@ -51,24 +54,13 @@ class PreprocessBaseStage(MultiMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (
-            MultiMessage,
-            ControlMessage,
-        )
+        return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):
-        out_type = MultiInferenceMessage
-        if (schema.input_type == ControlMessage):
-            self._use_control_message = True
-            out_type = ControlMessage
-        else:
-            self._use_control_message = False
-            out_type = self._fallback_output_type
-
-        schema.output_schema.set_type(out_type)
+        schema.output_schema.set_type(ControlMessage)
 
     def _get_preprocess_fn(
-            self) -> typing.Callable[[ControlMessage | MultiMessage], ControlMessage | MultiInferenceMessage]:
+            self) -> typing.Callable[[ControlMessage], ControlMessage]:
         """
         This method should be implemented by any subclasses with a Python implementation.
         """

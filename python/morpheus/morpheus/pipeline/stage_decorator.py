@@ -27,7 +27,6 @@ from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +76,7 @@ class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
     Source stage that wraps a generator function as the method for generating messages.
 
     The wrapped function must be a generator function.  If the output type of the generator is an instance of
-    `pandas.DataFrame`, `cudf.DataFrame`, `MessageMeta`, or `MultiMessage` the `PreAllocatedWrappedFunctionStage` class
+    `pandas.DataFrame`, `cudf.DataFrame` or `MessageMeta` the `PreAllocatedWrappedFunctionStage` class
     should be used instead, as this will also perform any DataFrame column allocations needed by other stages in the
     pipeline.
 
@@ -136,7 +135,7 @@ class PreAllocatedWrappedFunctionStage(_pipeline.PreallocatorMixin, WrappedFunct
 
     This stage provides the same functionality as `WrappedFunctionSourceStage`, but also performs any DataFrame column
     allocations needed by other stages in the pipeline. As such the return type for `gen_fn` must be one of:
-    `pandas.DataFrame`, `cudf.DataFrame`, `MessageMeta`, or `MultiMessage`.
+    `pandas.DataFrame`, `cudf.DataFrame`, or `MessageMeta`.
 
     Parameters
     ----------
@@ -218,7 +217,7 @@ def source(
 
         bound_gen_fn = functools.partial(gen_fn, **kwargs)
 
-        pre_allocation_output_types = [pd.DataFrame, MessageMeta, MultiMessage]
+        pre_allocation_output_types = [pd.DataFrame, MessageMeta]
         if config.execution_mode == ExecutionMode.GPU:
             import cudf
             pre_allocation_output_types.append(cudf.DataFrame)

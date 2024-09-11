@@ -145,6 +145,9 @@ class PreprocessingRWStage(PreprocessBaseStage):
 
         snapshot_ids = snapshot_df.index.values
 
+        if isinstance(snapshot_ids, cp.ndarray):
+            snapshot_ids = snapshot_ids.get().tolist()
+
         curr_and_prev_snapshots_size = len(snapshot_df)
 
         # Make a dummy set of data and a dummy sequence.
@@ -167,17 +170,18 @@ class PreprocessingRWStage(PreprocessBaseStage):
         # Rollover pending snapshots
         self._rollover_pending_snapshots(snapshot_ids, source_pid_process, snapshot_df)
 
-        with meta.mutable_dataframe() as df:
-            df['sequence'] = sequence
+        # This column is used to identify whether sequence is genuine or dummy
+        meta.set_data('sequence', sequence)
 
         # Convert data to cupy array
         data = cp.asarray(data)
 
-        seg_ids = cp.zeros((curr_snapshots_size, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(0, curr_snapshots_size, dtype=cp.uint32)
-        seg_ids[:, 2] = self._features_len * 3
+        seq_ids = cp.zeros((curr_snapshots_size, 3), dtype=cp.uint32)
+        seq_ids[:, 0] = cp.arange(0, curr_snapshots_size, dtype=cp.uint32)
+        seq_ids[:, 2] = self._features_len * 3
 
-        memory = InferenceMemoryFIL(count=curr_snapshots_size, input__0=data, seq_ids=seg_ids)
+        memory = InferenceMemoryFIL(count=curr_snapshots_size, input__0=data, seq_ids=seq_ids)
+        msg.set_metadata("inference_memory_params", {"inference_type": "fil"})
         msg.tensors(memory)
         return msg
 

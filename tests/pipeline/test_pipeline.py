@@ -23,12 +23,10 @@ from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
 from _utils.stages.in_memory_multi_source_stage import InMemoryMultiSourceStage
 from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
-from _utils.stages.multi_message_pass_thru import MultiMessagePassThruStage
 from _utils.stages.multi_port_pass_thru import MultiPortPassThruStage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline import Pipeline
 from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryEgressStage
@@ -184,9 +182,9 @@ def test_pipeline_narrowing_types(config: Config, filter_probs_df: DataFrameType
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    pipe.add_stage(DeserializeStage(config))
+    pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
     pipe.add_stage(ConvMsg(config))
-    pipe.add_stage(MultiMessagePassThruStage(config))
+    # pipe.add_stage(MultiMessagePassThruStage(config))
     pipe.add_stage(AddScoresStage(config))
     pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     compare_stage = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
@@ -227,7 +225,7 @@ def test_add_edge_input_port_errors(config: Config, num_inputs: int):
         pipe.add_edge(start_stage.output_ports[0], end_stage)
 
 
-@pytest.mark.parametrize("data_type", [int, float, str, MessageMeta, ControlMessage, MultiMessage])
+@pytest.mark.parametrize("data_type", [int, float, str, MessageMeta, ControlMessage])
 def test_add_segment_edge(config: Config, data_type: type):
     pipe = Pipeline(config)
 

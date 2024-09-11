@@ -20,7 +20,6 @@ import mrc
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
-from morpheus.messages import ControlMessage
 from morpheus.stages.postprocess.add_scores_stage_base import AddScoresStageBase
 
 logger = logging.getLogger(__name__)
@@ -70,13 +69,5 @@ class AddClassificationsStage(AddScoresStageBase):
 
     def _get_cpp_node(self, builder: mrc.Builder):
         import morpheus._lib.stages as _stages
-        if (self._schema.input_type == ControlMessage):
-            return _stages.AddClassificationsControlMessageStage(builder,
-                                                                 self.unique_name,
-                                                                 self._idx2label,
-                                                                 self._threshold)
 
-        return _stages.AddClassificationsMultiResponseMessageStage(builder,
-                                                                   self.unique_name,
-                                                                   self._idx2label,
-                                                                   self._threshold)
+        return _stages.AddClassificationsStage(builder, self.unique_name, self._idx2label, self._threshold)

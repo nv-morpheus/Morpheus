@@ -20,7 +20,7 @@ from mrc.core import operators as ops
 import cudf
 
 from morpheus.common import typeid_to_numpy_str
-from morpheus.messages import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -39,17 +39,17 @@ class CheckPreAlloc(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
         self._needed_columns.update({label: probs_type for label in c.class_labels})
 
     @property
-    def name(self):
+    def name(self) -> str:
         return "check-prealloc"
 
-    def accepted_types(self):
-        return (MultiMessage, )
+    def accepted_types(self) -> tuple:
+        return (ControlMessage, )
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
-    def _check_prealloc(self, msg: MultiMessage):
-        df = msg.get_meta()
+    def _check_prealloc(self, msg: ControlMessage) -> ControlMessage:
+        df = msg.payload().df
         for label in self._class_labels:
             assert label in df.columns
             assert df[label].dtype == self._expected_type

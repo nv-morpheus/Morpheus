@@ -12,23 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
 import pandas as pd
 
 from morpheus.messages import ControlMessage
-from morpheus.messages import MessageBase
-from morpheus.messages import MultiMessage
+from morpheus.messages import MessageMeta
 from morpheus.utils.type_utils import is_cudf_type
 
 
-def concat_dataframes(messages: typing.List[MessageBase]) -> pd.DataFrame:
+def concat_dataframes(messages: list[ControlMessage | MessageMeta]) -> pd.DataFrame:
     """
     Concatinate the DataFrame associated with the collected messages into a single Pandas DataFrame.
 
     Parameters
     ----------
-    messages : typing.List[typing.Union[MessageMeta, MultiMessage]]
+    messages : list[ControlMessage] | list[MessageMeta]
         Messages containing DataFrames to concat.
 
     Returns
@@ -37,13 +34,13 @@ def concat_dataframes(messages: typing.List[MessageBase]) -> pd.DataFrame:
     """
 
     all_meta = []
-    for x in messages:
-        if isinstance(x, MultiMessage):
-            df = x.get_meta()
-        elif isinstance(x, ControlMessage):
-            df = x.payload().df
+    for msg in messages:
+        if isinstance(msg, ControlMessage):
+            df = msg.payload().df
+        elif isinstance(msg, MessageMeta):
+            df = msg.df
         else:
-            df = x.df
+            raise ValueError("Invalid message type")
 
         if is_cudf_type(df):
             df = df.to_pandas()

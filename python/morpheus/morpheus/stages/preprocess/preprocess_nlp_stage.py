@@ -21,7 +21,6 @@ from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiInferenceNLPMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 logger = logging.getLogger(__name__)
@@ -87,7 +86,6 @@ class PreprocessNLPStage(PreprocessBaseStage):
         self._truncation = truncation
         self._do_lower_case = do_lower_case
         self._add_special_tokens = add_special_tokens
-        self._fallback_output_type = MultiInferenceNLPMessage
 
     @property
     def name(self) -> str:
@@ -98,23 +96,12 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
     def _get_preprocess_node(self, builder: mrc.Builder):
         import morpheus._lib.stages as _stages
-        if (self._use_control_message):
-            return _stages.PreprocessNLPControlMessageStage(builder,
-                                                            self.unique_name,
-                                                            self._vocab_hash_file,
-                                                            self._seq_length,
-                                                            self._truncation,
-                                                            self._do_lower_case,
-                                                            self._add_special_tokens,
-                                                            self._stride,
-                                                            self._column)
-
-        return _stages.PreprocessNLPMultiMessageStage(builder,
-                                                      self.unique_name,
-                                                      self._vocab_hash_file,
-                                                      self._seq_length,
-                                                      self._truncation,
-                                                      self._do_lower_case,
-                                                      self._add_special_tokens,
-                                                      self._stride,
-                                                      self._column)
+        _stages.PreprocessNLPStage(builder,
+                                   self.unique_name,
+                                   self._vocab_hash_file,
+                                   self._seq_length,
+                                   self._truncation,
+                                   self._do_lower_case,
+                                   self._add_special_tokens,
+                                   self._stride,
+                                   self._column)

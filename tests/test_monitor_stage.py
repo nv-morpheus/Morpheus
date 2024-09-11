@@ -30,7 +30,7 @@ import cudf
 from _utils import TEST_DIRS
 from _utils.stages.record_thread_id_stage import RecordThreadIdStage
 from morpheus.config import Config
-from morpheus.messages import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -109,7 +109,6 @@ def test_refresh(mock_morph_tqdm: mock.MagicMock, config: Config):
                              ('test', True, 1),
                              (cudf.DataFrame(), True, 0),
                              (cudf.DataFrame(range(12), columns=["test"]), True, 12),
-                             (MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"]))), True, 12),
                              ({}, True, 0),
                              (tuple(), True, 0),
                              (set(), True, 0),
@@ -145,7 +144,9 @@ def test_progress_sink(mock_morph_tqdm: mock.MagicMock, config: Config):
     assert stage._mc._determine_count_fn is None
     mock_morph_tqdm.update.assert_not_called()
 
-    stage._mc.progress_sink(MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"]))))
+    cm = ControlMessage()
+    cm.payload(MessageMeta(df=cudf.DataFrame(range(12), columns=["test"])))
+    stage._mc.progress_sink(cm)
     assert inspect.isfunction(stage._mc._determine_count_fn)
     mock_morph_tqdm.update.assert_called_once_with(n=12)
 

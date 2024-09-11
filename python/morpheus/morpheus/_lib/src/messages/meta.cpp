@@ -289,7 +289,7 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python_meta(const p
     }
     else
     {
-        throw pybind11::value_error("meta is not a Python instance of MestageMeta");
+        throw pybind11::value_error("meta is not a Python instance of MessageMeta");
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,26 +17,23 @@
 
 #pragma once
 
-#include "morpheus/export.h"
-#include "morpheus/messages/control.hpp"
-#include "morpheus/messages/multi_response.hpp"
+#include "morpheus/export.h"              // for MORPHEUS_EXPORT
+#include "morpheus/messages/control.hpp"  // for ControlMessage
 
-#include <boost/fiber/context.hpp>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>
+#include <boost/fiber/context.hpp>  // for operator<<
+#include <pymrc/node.hpp>           // for PythonNode
+#include <rxcpp/rx.hpp>             // for observable_member, trace_activity, decay_t, from
 
-#include <cstddef>
-#include <map>
-#include <memory>
-#include <optional>
-#include <string>
-#include <thread>
-
-// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
+#include <cstddef>   // for size_t
+#include <map>       // for map
+#include <memory>    // for shared_ptr
+#include <optional>  // for optional
+#include <string>    // for string
+#include <thread>    // for operator<<
 
 namespace morpheus {
 /****** Component public implementations *******************/
-/****** AddClassificationStage********************************/
+/**************AddScoresStageBase***************************/
 
 /**
  * @addtogroup stages
@@ -47,12 +44,11 @@ namespace morpheus {
 /**
  * @brief Base class for both `AddScoresStage` and `AddClassificationStage`
  */
-template <typename InputT, typename OutputT>
 class MORPHEUS_EXPORT AddScoresStageBase
-  : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
+  : public mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>
 {
   public:
-    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -68,22 +64,15 @@ class MORPHEUS_EXPORT AddScoresStageBase
     /**
      * Called every time a message is passed to this stage
      */
-    source_type_t on_data(sink_type_t x);
+    source_type_t on_data(sink_type_t msg);
 
   private:
-    void on_multi_response_message(std::shared_ptr<MultiResponseMessage> x);
-    void on_control_message(std::shared_ptr<ControlMessage> x);
     std::map<std::size_t, std::string> m_idx2label;
     std::optional<float> m_threshold;
 
     // The minimum number of columns needed to extract the label data
     std::size_t m_min_col_count;
 };
-
-using AddScoresStageBaseMM =  // NOLINT(readability-identifier-naming)
-    AddScoresStageBase<MultiResponseMessage, MultiResponseMessage>;
-using AddScoresStageBaseCM =  // NOLINT(readability-identifier-naming)
-    AddScoresStageBase<ControlMessage, ControlMessage>;
 
 /** @} */  // end of group
 }  // namespace morpheus

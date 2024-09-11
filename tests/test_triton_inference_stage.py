@@ -110,18 +110,16 @@ def test_resource_pool_create_raises_error():
     assert pool.borrow_obj() == 20
 
 
-@pytest.mark.skip(reason="TODO: determine what to do about python impls")
-@pytest.mark.cpu_mode
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
 def test_stage_constructor_worker_class(config: Config, pipeline_mode: PipelineModes):
     config.mode = pipeline_mode
-    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000')
+    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', use_shared_memory=True)
     worker = stage._get_inference_worker(ProducerConsumerQueue())
     assert isinstance(worker, TritonInferenceWorker)
 
 
-@pytest.mark.skip(reason="TODO: determine what to do about python impls")
-@pytest.mark.cpu_mode
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
 @pytest.mark.parametrize("needs_logits", [True, False, None])
 def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes, needs_logits: bool | None):
@@ -132,8 +130,72 @@ def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes
 
     config.mode = pipeline_mode
 
-    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', needs_logits=needs_logits)
+    stage = TritonInferenceStage(config,
+                                 model_name='test',
+                                 server_url='test:0000',
+                                 needs_logits=needs_logits,
+                                 use_shared_memory=True)
 
     worker = stage._get_inference_worker(ProducerConsumerQueue())
     assert isinstance(worker, TritonInferenceWorker)
     assert worker.needs_logits == expexted_needs_logits
+
+
+@pytest.mark.slow
+@pytest.mark.gpu_mode
+@pytest.mark.parametrize('num_records', [10])
+@mock.patch('tritonclient.grpc.InferenceServerClient')
+def test_triton_stage_pipe(mock_triton_client, config, num_records):
+    mock_metadata = {
+        "inputs": [{
+            'name': 'input__0', 'datatype': 'FP32', "shape": [-1, 1]
+        }],
+        "outputs": [{
+            'name': 'output__0', 'datatype': 'FP32', 'shape': ['-1', '1']
+        }]
+    }
+    mock_model_config = {"config": {"max_batch_size": MODEL_MAX_BATCH_SIZE}}
+
+    input_df = pd.DataFrame(data={'v': (i * 2 for i in range(num_records))})
+    expected_df = pd.DataFrame(data={'v': input_df['v'], 'score_test': input_df['v']})
+
+    mock_triton_client.return_value = mock_triton_client
+    mock_triton_client.is_server_live.return_value = True
+    mock_triton_client.is_server_ready.return_value = True
+    mock_triton_client.is_model_ready.return_value = True
+    mock_triton_client.get_model_metadata.return_value = mock_metadata
+    mock_triton_client.get_model_config.return_value = mock_model_config
+
+    inf_results = np.split(input_df.values, range(MODEL_MAX_BATCH_SIZE, len(input_df), MODEL_MAX_BATCH_SIZE))
+
+    async_infer = mk_async_infer(inf_results)
+    mock_triton_client.async_infer.side_effect = async_infer
+
+    config.mode = PipelineModes.FIL
+    config.class_labels = ["test"]
+    config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
+    config.pipeline_batch_size = 1024
+    config.feature_length = 1
+    config.edge_buffer_size = 128
+    config.num_threads = 1
+
+    config.fil = ConfigFIL()
+    config.fil.feature_columns = ['v']
+
+    pipe_cm = LinearPipeline(config)
+    pipe_cm.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    pipe_cm.add_stage(DeserializeStage(config))
+    pipe_cm.add_stage(PreprocessFILStage(config))
+    pipe_cm.add_stage(
+        TritonInferenceStage(config,
+                             model_name='abp-nvsmi-xgb',
+                             server_url='test:0000',
+                             force_convert_inputs=True,
+                             use_shared_memory=True))
+    pipe_cm.add_stage(AddScoresStage(config, prefix="score_"))
+    pipe_cm.add_stage(SerializeStage(config))
+    comp_stage = pipe_cm.add_stage(CompareDataFrameStage(config, expected_df))
+
+    pipe_cm.run()
+
+    assert_results(comp_stage.get_results())

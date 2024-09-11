@@ -19,7 +19,6 @@
 import dataclasses
 import string
 import types
-from unittest.mock import patch
 
 import cupy as cp
 import numpy as np
@@ -29,7 +28,6 @@ import pytest
 import cudf
 
 from _utils.dataset_manager import DatasetManager
-from morpheus.messages import ControlMessage
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
@@ -800,41 +798,3 @@ def test_tensor_slicing(dataset: DatasetManager):
     assert double_slice.count == single_slice.count
     assert cp.all(double_slice.get_tensor("probs") == single_slice.get_tensor("probs"))
     dataset.assert_df_equal(double_slice.get_meta(), single_slice.get_meta())
-
-
-@pytest.mark.gpu_and_cpu_mode
-def test_deprecation_message(filter_probs_df: DataFrameType, array_pkg: types.ModuleType):
-
-    meta = MessageMeta(filter_probs_df)
-
-    multi_tensor_message_tensors = {
-        "input_ids": array_pkg.zeros((20, 2)),
-        "input_mask": array_pkg.zeros((20, 2)),
-        "seq_ids": array_pkg.expand_dims(array_pkg.arange(0, 20, dtype=int), axis=1),
-        "input__0": array_pkg.zeros((20, 2)),
-        "probs": array_pkg.zeros((20, 2)),
-    }
-
-    def generate_deprecation_warning(deprecated_class, new_class):
-
-        # patching warning.warn here to get the warning message string from deprecated_message_warning() for asserting
-        with patch("warnings.warn") as mock_warning:
-            morpheus_logger.deprecated_message_warning(deprecated_class, new_class)
-            warning_msg = mock_warning.call_args.args[0]
-
-        return warning_msg
-
-    with pytest.warns(DeprecationWarning) as warnings:
-        MultiMessage(meta=meta)
-        MultiAEMessage(meta=meta, model=None)
-        MultiTensorMessage(meta=meta, memory=TensorMemory(count=20, tensors=multi_tensor_message_tensors))
-        MultiResponseMessage(meta=meta, memory=TensorMemory(count=20, tensors=multi_tensor_message_tensors))
-        MultiInferenceMessage(meta=meta, memory=TensorMemory(count=20, tensors=multi_tensor_message_tensors))
-        MultiInferenceAEMessage(meta=meta, memory=TensorMemory(count=20, tensors=multi_tensor_message_tensors))
-
-    assert str(warnings[0].message) == generate_deprecation_warning(MultiMessage, ControlMessage)
-    assert str(warnings[1].message) == generate_deprecation_warning(MultiAEMessage, ControlMessage)
-    assert str(warnings[2].message) == generate_deprecation_warning(MultiTensorMessage, ControlMessage)
-    assert str(warnings[3].message) == generate_deprecation_warning(MultiResponseMessage, ControlMessage)
-    assert str(warnings[4].message) == generate_deprecation_warning(MultiInferenceMessage, ControlMessage)
-    assert str(warnings[5].message) == generate_deprecation_warning(MultiInferenceAEMessage, ControlMessage)
