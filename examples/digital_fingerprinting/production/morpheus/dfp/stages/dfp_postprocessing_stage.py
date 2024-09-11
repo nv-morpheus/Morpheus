@@ -63,9 +63,6 @@ class DFPPostprocessingStage(PassThruTypeMixin, SinglePortStage):
         with message.payload().mutable_dataframe() as df:
             df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
 
-            # cudf does not support replacing values with different types
-            # df.replace(np.nan, 'NaN', regex=False, inplace=True)
-
     def on_data(self, message: ControlMessage):
         """Process a message."""
         if (not message or message.payload().count == 0):

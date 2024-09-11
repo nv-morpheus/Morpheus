@@ -63,7 +63,7 @@ class DFPPreprocessingStage(PassThruTypeMixin, SinglePortStage):
         start_time = time.time()
 
         # Process the columns
-        df_processed = process_dataframe(message.payload().df, self._input_schema)
+        df_processed = process_dataframe(message.payload().get_data(), self._input_schema)
 
         # Apply the new dataframe, only the rows in the offset
         with message.payload().mutable_dataframe() as df:

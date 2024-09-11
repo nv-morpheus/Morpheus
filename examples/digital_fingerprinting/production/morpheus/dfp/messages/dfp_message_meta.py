@@ -40,9 +40,3 @@ class DFPMessageMeta(MessageMeta, cpp_class=None):
     def __init__(self, df: pd.DataFrame, user_id: str) -> None:
         super().__init__(df)
         self.user_id = user_id
-
-    def get_df(self):
-        return self.df
-
-    def set_df(self, df):
-        self._df = df

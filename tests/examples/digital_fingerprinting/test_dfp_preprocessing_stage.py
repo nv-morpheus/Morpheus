@@ -60,4 +60,4 @@ def test_process_features(
     results = stage.process_features(control_message)
 
     assert isinstance(results, ControlMessage)
-    dataset_pandas.assert_compare_df(results.payload().df, expected_df)
+    dataset_pandas.assert_compare_df(results.payload().get_data(), expected_df)

@@ -19,6 +19,7 @@ import typing
 
 import pytest
 
+from _utils.stages.control_message_pass_thru import ControlMessagePassThruStage
 from _utils.stages.conv_msg import ConvMsg
 from _utils.stages.in_memory_multi_source_stage import InMemoryMultiSourceStage
 from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
@@ -28,6 +29,8 @@ from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline import Pipeline
+from morpheus.pipeline.stage_decorator import source
+from morpheus.pipeline.stage_decorator import stage
 from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryEgressStage
 from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryIngressStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
@@ -160,6 +163,34 @@ def test_startup_cb_called(filter_probs_df: DataFrameType):
     assert state_dict["source_start_async"]
     assert state_dict["sink_on_start"]
     assert state_dict["sink_start_async"]
+
+
+@pytest.mark.use_cudf
+def test_pipeline_narrowing_types(config: Config):
+    """
+    Test to ensure that we aren't narrowing the types of messages in the pipeline.
+    In this case, `derived_control_message_source` emits `DerivedControlMessage` messages which are a (dummy)
+    subclass of `ControlMessage`, which is the accepted type for `ControlMessagePassThruStage`.
+    We want to ensure that the type is retained allowing us to place a stage after `ControlMessagePassThruStage`
+    requring `DerivedControlMessage`.
+    """
+    pipe = LinearPipeline(config)
+
+    class DerivedControlMessage(ControlMessage):
+        pass
+
+    @source
+    def derived_control_message_source() -> DerivedControlMessage:
+        yield DerivedControlMessage()
+
+    @stage
+    def derived_control_message_sink(msg: DerivedControlMessage) -> DerivedControlMessage:
+        return msg
+
+    pipe.set_source(derived_control_message_source(config))  # pylint: disable=E1121
+    pipe.add_stage(ControlMessagePassThruStage(config))
+    pipe.add_stage(derived_control_message_sink(config))
+    pipe.run()
 
 
 @pytest.mark.parametrize("num_outputs", [0, 2, 3])
