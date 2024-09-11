@@ -45,7 +45,6 @@ class PreprocessAEStage(PreprocessBaseStage):
 
         self._fea_length = c.feature_length
         self._feature_columns = c.ae.feature_columns
-        self._fallback_output_type = MultiInferenceAEMessage
 
     @property
     def name(self) -> str:

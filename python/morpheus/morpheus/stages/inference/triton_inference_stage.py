@@ -780,6 +780,7 @@ class TritonInferenceStage(InferenceStage):
                                      needs_logits=self._needs_logits)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        import morpheus._lib.stages as _stages
         return _stages.InferenceClientStage(builder,
                                             self.unique_name,
                                             self._server_url,

@@ -80,7 +80,7 @@ class InferenceWorker:
         dims = self.calc_output_dims(msg)
         output_dims = (msg.payload().count, *dims[1:])
 
-        memory = _messages.TensorMemory(count=output_dims[0], tensors={'probs': cp.zeros(output_dims)})
+        memory = TensorMemory(count=output_dims[0], tensors={'probs': cp.zeros(output_dims)})
         output_message = ControlMessage(msg)
         output_message.payload(msg.payload())
         output_message.tensors(memory)

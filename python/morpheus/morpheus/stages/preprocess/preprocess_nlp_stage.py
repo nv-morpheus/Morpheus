@@ -96,12 +96,12 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
     def _get_preprocess_node(self, builder: mrc.Builder):
         import morpheus._lib.stages as _stages
-        _stages.PreprocessNLPStage(builder,
-                                   self.unique_name,
-                                   self._vocab_hash_file,
-                                   self._seq_length,
-                                   self._truncation,
-                                   self._do_lower_case,
-                                   self._add_special_tokens,
-                                   self._stride,
-                                   self._column)
+        return _stages.PreprocessNLPStage(builder,
+                                          self.unique_name,
+                                          self._vocab_hash_file,
+                                          self._seq_length,
+                                          self._truncation,
+                                          self._do_lower_case,
+                                          self._add_special_tokens,
+                                          self._stride,
+                                          self._column)
