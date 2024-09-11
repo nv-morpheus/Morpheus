@@ -65,7 +65,6 @@ def test_process_events_on_data(mock_datetime: mock.MagicMock,
     assert isinstance(control_message, ControlMessage)
     result_df = control_message.payload().copy_dataframe()
     assert (result_df['event_time'] == '2021-01-01T00:00:00Z').all()
-    # assert result_df['v2'][10] == 'NaN'
 
 
 def test_on_data_none(config: Config):
