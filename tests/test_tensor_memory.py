@@ -74,6 +74,21 @@ def check_tensor_memory(cls: type, count: int, tensors: typing.Dict[str, NDArray
         cls(count, tensors)
 
 
+def check_response_memory_probs(cls: type, array_pkg: types.ModuleType):
+    test_data = array_pkg.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
+    count = test_data.shape[0]
+
+    mem = cls(count=count, probs=test_data)
+    assert mem.count == count
+    compare_tensors(mem.get_tensors(), {'probs': test_data})
+    assert (mem.get_output('probs') == test_data).all()
+
+    with pytest.raises(TypeError):
+        cls(count, test_data)
+
+    return mem
+
+
 @pytest.mark.gpu_and_cpu_mode
 def test_tensor_memory(array_pkg: types.ModuleType):
     test_data = array_pkg.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
@@ -89,14 +104,13 @@ def test_tensor_memory(array_pkg: types.ModuleType):
         check_tensor_memory(cls=cls, count=count, tensors=tensors, array_pkg=array_pkg)
 
 
-@pytest.mark.skip(reason="TODO: determine what to do about AE pipelines")
-@pytest.mark.cpu_mode
-def test_inference_memory_ae(config: Config):
-    test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
+@pytest.mark.gpu_and_cpu_mode
+def test_inference_memory_ae(array_pkg: types.ModuleType):
+    test_data = array_pkg.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
     count = test_data.shape[0]
 
-    input_tensor = cp.array(test_data[:, 0])
-    seq_ids = cp.array(test_data[:, 1])
+    input_tensor = array_pkg.array(test_data[:, 0])
+    seq_ids = array_pkg.array(test_data[:, 1])
     mem = InferenceMemoryAE(count=count, inputs=input_tensor, seq_ids=seq_ids)
 
     assert mem.count == count
@@ -108,7 +122,6 @@ def test_inference_memory_ae(config: Config):
         InferenceMemoryAE(count, input_tensor, seq_ids)  # pylint: disable=too-many-function-args,missing-kwoa
 
 
-# TODO: Determine what to do about the Python impls for GPU based messages
 @pytest.mark.gpu_and_cpu_mode
 def test_inference_memory_fil(array_pkg: types.ModuleType):
     test_data = array_pkg.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
@@ -147,25 +160,9 @@ def test_inference_memory_nlp(array_pkg: types.ModuleType):
         InferenceMemoryNLP(count, input_ids, input_mask, seq_ids)  # pylint: disable=too-many-function-args,missing-kwoa
 
 
-def check_response_memory_probs(cls: type, array_pkg: types.ModuleType):
-    test_data = array_pkg.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
-    count = test_data.shape[0]
-
-    mem = cls(count=count, probs=test_data)
-    assert mem.count == count
-    compare_tensors(mem.get_tensors(), {'probs': test_data})
-    assert (mem.get_output('probs') == test_data).all()
-
-    with pytest.raises(TypeError):
-        cls(count, test_data)
-
-    return mem
-
-
-@pytest.mark.skip(reason="TODO: determine what to do about AE pipelines")
-@pytest.mark.cpu_mode
-def test_response_memory_ae(config: Config, filter_probs_df: DataFrameType):
-    mem = check_response_memory_probs(ResponseMemoryAE)
+@pytest.mark.gpu_and_cpu_mode
+def test_response_memory_ae(array_pkg: types.ModuleType, filter_probs_df: DataFrameType):
+    mem = check_response_memory_probs(ResponseMemoryAE, array_pkg)
 
     assert mem.user_id == ""
     assert mem.explain_df is None
