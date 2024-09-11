@@ -31,7 +31,6 @@ from morpheus.messages.memory.response_memory import ResponseMemoryAE
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
 from morpheus.messages.message_base import MessageBase
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.message_meta import UserMessageMeta
 
 __all__ = [
