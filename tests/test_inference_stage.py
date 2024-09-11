@@ -95,8 +95,7 @@ def test_join(config):
         worker.join.assert_awaited_once()
 
 
-@pytest.mark.skip(reason="Test is passing, but python only impls for inference remains TBD")
-@pytest.mark.cpu_mode
+@pytest.mark.gpu_mode
 def test_convert_one_response():
     # Test ControlMessage
     # Test first branch where `inf.mess_count == inf.count`

@@ -19,10 +19,10 @@ import pytest
 
 import cudf
 
-import morpheus._lib.messages as _messages
 from _utils.inference_worker import IW
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.messages import TensorMemory
 from morpheus.stages.inference import inference_stage
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
@@ -37,8 +37,7 @@ def test_constructor():
     worker.stop()
 
 
-@pytest.mark.skip(reason="Test is passing, but python only impls for inference remains TBD")
-@pytest.mark.cpu_mode
+@pytest.mark.gpu_mode
 @pytest.mark.usefixtures("config")
 def test_build_output_message():
 
@@ -59,7 +58,7 @@ def test_build_output_message():
     input__0 = cp.array([[0.], [2.], [4.], [6.], [8.], [10.], [12.], [14.], [16.], [18.]])
     seq_ids = cp.array([[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0], [4, 0, 0], [5, 0, 0], [6, 0, 0], [7, 0, 0],
                         [8, 0, 0], [9, 0, 0]])
-    msg.tensors(_messages.TensorMemory(count=num_records, tensors={'input__0': input__0, 'seq_ids': seq_ids}))
+    msg.tensors(TensorMemory(count=num_records, tensors={'input__0': input__0, 'seq_ids': seq_ids}))
 
     output_message = worker.build_output_message(msg)
 

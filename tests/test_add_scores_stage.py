@@ -21,10 +21,10 @@ import pandas as pd
 import pytest
 import typing_utils
 
-import morpheus._lib.messages as _messages
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
@@ -60,8 +60,8 @@ def test_constructor_errors(config: Config):
         AddScoresStage(config, labels=['missing'])
 
 
-@pytest.mark.skip(reason="TODO: determine python impls for gpu only stages")
-def test_add_labels_with_multi_response_message_and_control_message():
+@pytest.mark.cpu_mode
+def test_add_labels_with_control_message():
     class_labels = {0: "frogs", 1: "lizards", 2: "toads"}
 
     df = pd.DataFrame([0, 1], columns=["dummy"])
