@@ -22,9 +22,10 @@ import pytest
 
 import cudf
 
-import morpheus._lib.messages as _messages
 from _utils.inference_worker import IW
 from morpheus.messages import ControlMessage
+from morpheus.messages import InferenceMemory
+from morpheus.messages import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.inference.inference_stage import InferenceStage
 
@@ -45,12 +46,11 @@ def _mk_control_message(mess_count=1, count=1):
     msg = ControlMessage()
     msg.payload(MessageMeta(df))
     msg.tensors(
-        _messages.InferenceMemory(
-            count=total_tensor_count,
-            tensors={
-                "probs": cp.random.rand(total_tensor_count, 2),
-                "seq_ids": cp.tile(cp.expand_dims(cp.arange(0, total_tensor_count), axis=1), (1, 3))
-            }))
+        InferenceMemory(count=total_tensor_count,
+                        tensors={
+                            "probs": cp.random.rand(total_tensor_count, 2),
+                            "seq_ids": cp.tile(cp.expand_dims(cp.arange(0, total_tensor_count), axis=1), (1, 3))
+                        }))
     return msg
 
 
@@ -99,10 +99,10 @@ def test_join(config):
 def test_convert_one_response():
     # Test ControlMessage
     # Test first branch where `inf.mess_count == inf.count`
-    mem = _messages.ResponseMemory(count=4, tensors={"probs": cp.zeros((4, 3))})
+    mem = ResponseMemory(count=4, tensors={"probs": cp.zeros((4, 3))})
 
     inf = _mk_control_message(mess_count=4, count=4)
-    res = _messages.ResponseMemory(count=4, tensors={"probs": cp.random.rand(4, 3)})
+    res = ResponseMemory(count=4, tensors={"probs": cp.random.rand(4, 3)})
     output = _mk_control_message(mess_count=4, count=4)
     output.tensors(mem)
 
@@ -115,10 +115,9 @@ def test_convert_one_response():
     # Test for the second branch
     inf = _mk_control_message(mess_count=2, count=3)
     inf.tensors().set_tensor("seq_ids", cp.array([[0], [1], [1]]))
-    res = _messages.ResponseMemory(count=3,
-                                   tensors={"probs": cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]])})
+    res = ResponseMemory(count=3, tensors={"probs": cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]])})
 
-    mem = _messages.ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 3))})
+    mem = ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 3))})
     output = _mk_control_message(mess_count=2, count=3)
     output.tensors(mem)
     cm = InferenceStageT._convert_one_response(output, inf, res)

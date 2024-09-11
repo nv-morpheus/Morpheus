@@ -21,9 +21,9 @@ import cupy as cp
 import pytest
 import typing_utils
 
-import morpheus._lib.messages as _messages
 from morpheus.messages import ControlMessage
-from morpheus.messages.message_meta import MessageMeta
+from morpheus.messages import MessageMeta
+from morpheus.messages import TensorMemory
 from morpheus.stages.postprocess.ml_flow_drift_stage import MLFlowDriftStage
 
 
@@ -31,7 +31,7 @@ def _make_control_message(df, probs):
     df_ = df[0:len(probs)]
     cm = ControlMessage()
     cm.payload(MessageMeta(df_))
-    cm.tensors(_messages.TensorMemory(count=len(df_), tensors={'probs': probs}))
+    cm.tensors(TensorMemory(count=len(df_), tensors={'probs': probs}))
 
     return cm
 
