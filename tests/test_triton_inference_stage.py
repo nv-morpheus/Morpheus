@@ -25,6 +25,7 @@ import cudf
 
 from _utils import assert_results
 from _utils import mk_async_infer
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
@@ -153,7 +154,6 @@ def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes
     assert worker.needs_logits == expexted_needs_logits
 
 
-@pytest.mark.skip(reason="TODO: fix this currently failing an assertion in meta.cpp")
 @pytest.mark.slow
 @pytest.mark.gpu_mode
 @pytest.mark.parametrize('num_records', [10])
@@ -200,12 +200,13 @@ def test_triton_stage_pipe(mock_triton_client, config, num_records):
     pipe_cm.add_stage(DeserializeStage(config))
     pipe_cm.add_stage(PreprocessFILStage(config))
     pipe_cm.add_stage(
+        # Intentionally using use_shared_memory=True as this is the only way to use the Python impl
         TritonInferenceStage(config,
                              model_name='abp-nvsmi-xgb',
                              server_url='test:0000',
                              force_convert_inputs=True,
                              use_shared_memory=True))
-    pipe_cm.add_stage(AddScoresStage(config, prefix="score_"))
+    pipe_cm.add_stage(AddScoresStage(config, prefix="score_", probs_type=TypeId.FLOAT64))
     pipe_cm.add_stage(SerializeStage(config))
     comp_stage = pipe_cm.add_stage(CompareDataFrameStage(config, expected_df))
 
