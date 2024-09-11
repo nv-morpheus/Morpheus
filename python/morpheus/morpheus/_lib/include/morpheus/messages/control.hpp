@@ -19,7 +19,6 @@
 
 #include "morpheus/export.h"                  // for MORPHEUS_EXPORT
 #include "morpheus/messages/meta.hpp"         // for MessageMeta
-#include "morpheus/types.hpp"                 // for TensorIndex
 #include "morpheus/utilities/json_types.hpp"  // for json_t
 
 #include <pybind11/pytypes.h>  // for object, dict, list
