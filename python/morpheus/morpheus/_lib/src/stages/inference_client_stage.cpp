@@ -17,19 +17,16 @@
 
 #include "morpheus/stages/inference_client_stage.hpp"
 
-#include "morpheus/messages/control.hpp"                 // for ControlMessage
-#include "morpheus/messages/memory/response_memory.hpp"  // for ResponseMemory
-#include "morpheus/messages/memory/tensor_memory.hpp"    // for TensorMemory
-#include "morpheus/messages/meta.hpp"                    // for MessageMeta
-#include "morpheus/messages/multi_inference.hpp"         // for MultiInferenceMessage
-#include "morpheus/messages/multi_response.hpp"          // for MultiResponseMessage
-#include "morpheus/objects/data_table.hpp"               // for morpheus
-#include "morpheus/objects/dev_mem_info.hpp"             // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"                    // for DType
-#include "morpheus/objects/tensor.hpp"                   // for Tensor
-#include "morpheus/objects/tensor_object.hpp"            // for TensorObject
-#include "morpheus/stages/triton_inference.hpp"          // for HttpTritonClient, TritonInferenceClient
-#include "morpheus/utilities/matx_util.hpp"              // for MatxUtil
+#include "morpheus/messages/control.hpp"               // for ControlMessage
+#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
+#include "morpheus/messages/meta.hpp"                  // for MessageMeta
+#include "morpheus/objects/data_table.hpp"             // for morpheus
+#include "morpheus/objects/dev_mem_info.hpp"           // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"                  // for DType
+#include "morpheus/objects/tensor.hpp"                 // for Tensor
+#include "morpheus/objects/tensor_object.hpp"          // for TensorObject
+#include "morpheus/stages/triton_inference.hpp"        // for HttpTritonClient, TritonInferenceClient
+#include "morpheus/utilities/matx_util.hpp"            // for MatxUtil
 
 #include <boost/fiber/policy.hpp>  // for launch
 #include <cuda_runtime.h>          // for cudaMemcpy2D, cudaMemcpyKind
@@ -174,16 +171,6 @@ struct ExponentialBackoff
         m_delay *= 2;
     }
 };
-
-static std::shared_ptr<MultiResponseMessage> make_response(std::shared_ptr<MultiInferenceMessage> message,
-                                                           TensorMap&& output_tensor_map)
-{
-    // Final output of all mini-batches
-    auto response_mem = std::make_shared<ResponseMemory>(message->mess_count, std::move(output_tensor_map));
-
-    return std::make_shared<MultiResponseMessage>(
-        message->meta, message->mess_offset, message->mess_count, std::move(response_mem), 0, response_mem->count);
-}
 
 static std::shared_ptr<ControlMessage> make_response(std::shared_ptr<ControlMessage> message,
                                                      TensorMap&& output_tensor_map)

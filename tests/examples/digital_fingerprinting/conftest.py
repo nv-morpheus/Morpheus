@@ -91,7 +91,7 @@ def dfp_prod_in_sys_path(
 @pytest.fixture(name="dfp_message_meta")
 def dfp_message_meta_fixture(config, dataset_pandas: DatasetManager):
     import pandas as pd
-    from dfp.messages.multi_dfp_message import DFPMessageMeta
+    from dfp.messages.dfp_message_meta import DFPMessageMeta
 
     user_id = 'test_user'
     df = dataset_pandas['filter_probs.csv']
@@ -101,12 +101,11 @@ def dfp_message_meta_fixture(config, dataset_pandas: DatasetManager):
 
 
 @pytest.fixture
-def dfp_multi_message(dfp_message_meta):
-    from dfp.messages.multi_dfp_message import MultiDFPMessage
-    yield MultiDFPMessage(meta=dfp_message_meta)
+def control_message(dfp_message_meta):
+    from morpheus.messages import ControlMessage
+    message = ControlMessage()
+    message.payload(dfp_message_meta)
+    message.set_metadata("user_id", dfp_message_meta.user_id)
+    message.set_metadata("model", mock.MagicMock())
 
-
-@pytest.fixture
-def dfp_multi_ae_message(dfp_message_meta):
-    from morpheus.messages.multi_ae_message import MultiAEMessage
-    yield MultiAEMessage(meta=dfp_message_meta, model=mock.MagicMock())
+    yield message

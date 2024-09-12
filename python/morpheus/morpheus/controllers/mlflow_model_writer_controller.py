@@ -33,7 +33,7 @@ from mlflow.types.utils import _infer_schema
 
 import cudf
 
-from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.messages import ControlMessage
 from morpheus.models.dfencoder import AutoEncoder
 
 logger = logging.getLogger(__name__)
@@ -203,24 +203,24 @@ class MLFlowModelWriterController:
                              reg_model_name,
                              exc_info=True)
 
-    def on_data(self, message: MultiAEMessage):
+    def on_data(self, message: ControlMessage) -> ControlMessage:
         """
         Stores incoming models into MLflow.
 
         Parameters
         ----------
-        message : MultiAEMessage
+        message : ControlMessage
             The incoming message containing the model and related metadata.
 
         Returns
         -------
-        MultiAEMessage
+        ControlMessage
             The processed message.
         """
 
-        user = message.meta.user_id
+        user = message.get_metadata("user_id")
 
-        model: AutoEncoder = message.model
+        model: AutoEncoder = message.get_metadata("model")
 
         model_path = "dfencoder"
         reg_model_name = self.user_id_to_model(user_id=user)
@@ -245,9 +245,9 @@ class MLFlowModelWriterController:
                     "Epochs": model.learning_rate_decay.state_dict().get("last_epoch", "unknown"),
                     "Learning rate": model.learning_rate,
                     "Batch size": model.batch_size,
-                    "Start Epoch": message.get_meta(self._timestamp_column_name).min(),
-                    "End Epoch": message.get_meta(self._timestamp_column_name).max(),
-                    "Log Count": message.mess_count,
+                    "Start Epoch": message.payload().get_data(self._timestamp_column_name).min(),
+                    "End Epoch": message.payload().get_data(self._timestamp_column_name).max(),
+                    "Log Count": message.payload().count,
                 })
 
                 metrics_dict: typing.Dict[str, float] = {}
@@ -266,7 +266,7 @@ class MLFlowModelWriterController:
 
                 # Use the prepare_df function to setup the direct inputs to the model. Only include features returned by
                 # prepare_df to show the actual inputs to the model (any extra are discarded)
-                input_df = message.get_meta().iloc[0:1]
+                input_df = message.payload().get_data().iloc[0:1]
 
                 if isinstance(input_df, cudf.DataFrame):
                     input_df = input_df.to_pandas()
@@ -309,9 +309,9 @@ class MLFlowModelWriterController:
                 model_src = RunsArtifactRepository.get_underlying_uri(model_info.model_uri)
 
                 tags = {
-                    "start": message.get_meta(self._timestamp_column_name).min(),
-                    "end": message.get_meta(self._timestamp_column_name).max(),
-                    "count": message.get_meta(self._timestamp_column_name).count()
+                    "start": message.payload().get_data(self._timestamp_column_name).min(),
+                    "end": message.payload().get_data(self._timestamp_column_name).max(),
+                    "count": message.payload().get_data(self._timestamp_column_name).count()
                 }
 
                 # Now create the model version

@@ -21,7 +21,7 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.controllers.mlflow_model_writer_controller import MLFlowModelWriterController
-from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -83,7 +83,7 @@ class DFPMLFlowModelWriterStage(PassThruTypeMixin, SinglePortStage):
 
     def accepted_types(self) -> typing.Tuple:
         """Types accepted by this stage"""
-        return (MultiAEMessage, )
+        return (ControlMessage, )
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._controller.on_data))

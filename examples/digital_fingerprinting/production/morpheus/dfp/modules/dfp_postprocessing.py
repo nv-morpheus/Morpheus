@@ -19,7 +19,7 @@ from datetime import datetime
 import mrc
 from mrc.core import operators as ops
 
-from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.messages import ControlMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
@@ -48,17 +48,17 @@ def dfp_postprocessing(builder: mrc.Builder):
 
     timestamp_column_name = config.get("timestamp_column_name", "timestamp")
 
-    def process_events(message: MultiAEMessage):
+    def process_events(message: ControlMessage):
         # Assume that a filter stage preceedes this stage
         # df = message.get_meta()
         # df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
         # df.replace(np.nan, 'NaN', regex=True, inplace=True)
         # TODO(Devin): figure out why we are not able to set meta for a whole dataframe, but works for single column.
         # message.set_meta(None, df)
-        message.set_meta("event_time", datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
+        message.payload().set_data("event_time", datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
 
-    def on_data(message: MultiAEMessage):
-        if (not message or message.mess_count == 0):
+    def on_data(message: ControlMessage):
+        if (not message or message.payload().count == 0):
             return None
 
         start_time = time.time()
@@ -69,11 +69,11 @@ def dfp_postprocessing(builder: mrc.Builder):
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Completed postprocessing for user %s in %s ms. Event count: %s. Start: %s, End: %s",
-                         message.meta.user_id,
+                         message.get_metadata("user_id"),
                          duration,
-                         message.mess_count,
-                         message.get_meta(timestamp_column_name).min(),
-                         message.get_meta(timestamp_column_name).max())
+                         message.payload().count,
+                         message.payload().get_data(timestamp_column_name).min(),
+                         message.payload().get_data(timestamp_column_name).max())
 
         return message
 

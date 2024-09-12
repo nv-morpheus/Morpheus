@@ -99,7 +99,6 @@ def dfp_rolling_window(builder: mrc.Builder):
     def try_build_window(message: MessageMeta, user_id: str) -> typing.Union[MessageMeta, None]:
         with get_user_cache(user_id) as user_cache:
 
-            # incoming_df = message.get_df()
             with message.mutable_dataframe() as dfm:
                 incoming_df = dfm.to_pandas()
 

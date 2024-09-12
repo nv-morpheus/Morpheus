@@ -21,7 +21,6 @@ import pytest
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
-from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
@@ -51,9 +50,10 @@ def test_on_data(mock_train_test_split: mock.MagicMock,
                  config: Config,
                  dataset_pandas: DatasetManager,
                  validation_size: float):
-    from dfp.messages.multi_dfp_message import DFPMessageMeta
-    from dfp.messages.multi_dfp_message import MultiDFPMessage
+    from dfp.messages.dfp_message_meta import DFPMessageMeta
     from dfp.stages.dfp_training import DFPTraining
+
+    from morpheus.messages import ControlMessage
 
     mock_ae.return_value = mock_ae
 
@@ -65,16 +65,16 @@ def test_on_data(mock_train_test_split: mock.MagicMock,
     mock_train_test_split.return_value = (train_df, mock_validation_df)
 
     meta = DFPMessageMeta(df, 'Account-123456789')
-    msg = MultiDFPMessage(meta=meta)
+    msg = ControlMessage()
+    msg.payload(meta)
+    msg.set_metadata("user_id", meta.user_id)
 
     stage = DFPTraining(config, validation_size=validation_size)
     results = stage.on_data(msg)
 
-    assert isinstance(results, MultiAEMessage)
-    assert results.meta is meta
-    assert results.mess_offset == msg.mess_offset
-    assert results.mess_count == msg.mess_count
-    assert results.model is mock_ae
+    assert isinstance(results, ControlMessage)
+    assert results.payload().count == msg.payload().count
+    assert results.get_metadata("model") is mock_ae
 
     # Pandas doesn't like the comparison that mock will make if we called MagicMock.assert_called_once_with(df)
     # Checking the call args manually
@@ -99,4 +99,4 @@ def test_on_data(mock_train_test_split: mock.MagicMock,
     }
 
     # The stage shouldn't be modifying the dataframe
-    dataset_pandas.assert_compare_df(results.get_meta(), dataset_pandas[input_file])
+    dataset_pandas.assert_compare_df(results.payload().df, dataset_pandas[input_file])
