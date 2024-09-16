@@ -42,6 +42,8 @@ def rabbitmq_source(subscription: mrc.Subscription,
 
     Parameters
     ----------
+    subscription : mrc.Subscription
+        Subscription object used to determine if the pipeline is still running.
     host : str
         Hostname or IP of the RabbitMQ server.
     exchange : str

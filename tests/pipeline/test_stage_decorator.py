@@ -452,7 +452,7 @@ def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
 def test_fn_receives_subscription(has_arg: bool, type_hint: typing.Any, expected: bool):
     if has_arg:
 
-        def test_fn(first_arg: type_hint):
+        def test_fn(first_arg: type_hint):  # pylint: disable=unused-argument
             pass
     else:
 

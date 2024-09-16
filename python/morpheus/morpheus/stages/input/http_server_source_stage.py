@@ -252,7 +252,8 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                     df = self._queue.get(block=False)
                     self._queue_size -= 1
                 except queue.Empty:
-                    if (not self._http_server.is_running() or self.is_stop_requested()):
+                    if (not self._http_server.is_running() or self.is_stop_requested()
+                            or not subscription.is_subscribed()):
                         self._processing = False
                     else:
                         logger.debug("Queue empty, sleeping ...")
