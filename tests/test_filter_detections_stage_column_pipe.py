@@ -42,7 +42,7 @@ def test_filter_column(config, filter_probs_df, use_conv_msg, do_copy, threshold
     pipe.add_stage(DeserializeStage(config))
 
     # When `use_conv_msg` is true, ConvMsg will convert messages to MultiResponseProbs,
-    # when false, the filter stage will receive instances of MultiMessage
+    # when false, the filter stage will receive instances of ControlMessage
     if use_conv_msg:
         pipe.add_stage(ConvMsg(config, empty_probs=True))
 

@@ -33,7 +33,6 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiInferenceMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
@@ -569,12 +568,12 @@ class TritonInferenceWorker(InferenceWorker):
                              exc_info=ex)
             raise ex
 
-    def calc_output_dims(self, x: MultiInferenceMessage) -> typing.Tuple:
-        return (x.count, self._outputs[list(self._outputs.keys())[0]].shape[1])
+    def calc_output_dims(self, msg: ControlMessage) -> typing.Tuple:
+        return (msg.tensors().count, self._outputs[list(self._outputs.keys())[0]].shape[1])
 
     def _build_response(
             self,
-            batch: MultiInferenceMessage,  # pylint: disable=unused-argument
+            batch: ControlMessage,  # pylint: disable=unused-argument
             result: tritonclient.InferResult) -> TensorMemory:
         output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
 
@@ -595,7 +594,7 @@ class TritonInferenceWorker(InferenceWorker):
     def _infer_callback(self,
                         cb: typing.Callable[[TensorMemory], None],
                         m: InputWrapper,
-                        b: MultiInferenceMessage,
+                        b: ControlMessage,
                         result: tritonclient.InferResult,
                         error: tritonclient.InferenceServerException):
 
@@ -613,13 +612,13 @@ class TritonInferenceWorker(InferenceWorker):
 
     # pylint: enable=invalid-name
 
-    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: ControlMessage, callback: typing.Callable[[TensorMemory], None]):
         """
         This function sends batch of events as a requests to Triton inference server using triton client API.
 
         Parameters
         ----------
-        batch : `morpheus.pipeline.messages.MultiInferenceMessage`
+        batch : `morpheus.messages.ControlMessage`
             Mini-batch of inference messages.
         callback : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
             Callback to set the values for the inference response.
@@ -629,7 +628,7 @@ class TritonInferenceWorker(InferenceWorker):
 
         inputs: typing.List[tritonclient.InferInput] = [
             mem.build_input(input.name,
-                            batch.get_input(input.mapped_name),
+                            batch.tensors().get_tensor(input.mapped_name),
                             force_convert_inputs=self._force_convert_inputs) for input in self._inputs.values()
         ]
 
@@ -782,24 +781,14 @@ class TritonInferenceStage(InferenceStage):
                                      needs_logits=self._needs_logits)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        if self._schema.input_type == ControlMessage:
-            return _stages.InferenceClientStageCM(builder,
-                                                  self.unique_name,
-                                                  self._server_url,
-                                                  self._model_name,
-                                                  self._needs_logits,
-                                                  self._force_convert_inputs,
-                                                  self._input_mapping,
-                                                  self._output_mapping)
-
-        return _stages.InferenceClientStageMM(builder,
-                                              self.unique_name,
-                                              self._server_url,
-                                              self._model_name,
-                                              self._needs_logits,
-                                              self._force_convert_inputs,
-                                              self._input_mapping,
-                                              self._output_mapping)
+        return _stages.InferenceClientStage(builder,
+                                            self.unique_name,
+                                            self._server_url,
+                                            self._model_name,
+                                            self._needs_logits,
+                                            self._force_convert_inputs,
+                                            self._input_mapping,
+                                            self._output_mapping)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = super()._build_single(builder, input_node)

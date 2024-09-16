@@ -165,8 +165,9 @@ def test_build_window(
         use_on_data: bool,
         dfp_message_meta: "DFPMessageMeta",  # noqa: F821
         dataset_pandas: DatasetManager):
-    from dfp.messages.multi_dfp_message import MultiDFPMessage
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+
+    from morpheus.messages import ControlMessage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -183,11 +184,7 @@ def test_build_window(
     else:
         msg = stage._build_window(dfp_message_meta)
 
-    assert isinstance(msg, MultiDFPMessage)
-    assert msg.user_id == dfp_message_meta.user_id
-    assert msg.meta.user_id == dfp_message_meta.user_id
-    assert msg.mess_offset == 0
-    assert msg.mess_count == len(dataset_pandas['filter_probs.csv'])
-    dataset_pandas.assert_df_equal(msg.get_meta(), train_df)
-    dataset_pandas.assert_df_equal(msg.meta.get_df(), train_df)
-    dataset_pandas.assert_df_equal(msg.get_meta_dataframe(), train_df)
+    assert isinstance(msg, ControlMessage)
+    assert msg.get_metadata("user_id") == dfp_message_meta.user_id
+    assert msg.payload().count == len(dataset_pandas['filter_probs.csv'])
+    dataset_pandas.assert_df_equal(msg.payload().df, train_df)

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,24 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import dataclasses
 import logging
-from typing import Any
-from typing import Dict
-from typing import Optional
 
-from pydantic import BaseModel
+import pandas as pd
+
+from morpheus.messages.message_meta import MessageMeta
 
 logger = logging.getLogger(__name__)
 
 
-class DeserializeSchema(BaseModel):
-    ensure_sliceable_index: bool = True
-    message_type: str = "ControlMessage"
-    task_type: Optional[str] = None
-    task_payload: Optional[Dict[Any, Any]] = None
-    batch_size: int = 1024
-    max_concurrency: int = 1
-    should_log_timestamp: bool = True
+@dataclasses.dataclass(init=False)
+class DFPMessageMeta(MessageMeta, cpp_class=None):
+    """
+    This class extends MessageMeta to also hold userid corresponding to batched metadata.
 
-    class Config:
-        extra = "forbid"
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input rows in dataframe.
+    user_id : str
+        User id.
+
+    """
+    user_id: str
+
+    def __init__(self, df: pd.DataFrame, user_id: str) -> None:
+        super().__init__(df)
+        self.user_id = user_id

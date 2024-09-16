@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,17 @@
 #include "mrc/segment/builder.hpp"  // for Builder
 #include "mrc/segment/object.hpp"   // for Object
 
-#include "morpheus/messages/control.hpp"           // for ControlMessage
-#include "morpheus/messages/multi.hpp"             // for MultiMessage
-#include "morpheus/messages/multi_tensor.hpp"      // for MultiTensorMessage
-#include "morpheus/objects/dev_mem_info.hpp"       // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"              // for DType
-#include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
-#include "morpheus/objects/table_info.hpp"         // for TableInfo
-#include "morpheus/types.hpp"                      // for RangeType
-#include "morpheus/utilities/matx_util.hpp"        // for MatxUtil
-#include "morpheus/utilities/tensor_util.hpp"      // for TensorUtils
+#include "morpheus/messages/control.hpp"               // for ControlMessage
+#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
+#include "morpheus/messages/meta.hpp"                  // for MessageMeta
+#include "morpheus/objects/dev_mem_info.hpp"           // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"                  // for DType
+#include "morpheus/objects/memory_descriptor.hpp"      // for MemoryDescriptor
+#include "morpheus/objects/table_info.hpp"             // for TableInfo
+#include "morpheus/objects/tensor_object.hpp"          // for TensorObject
+#include "morpheus/types.hpp"                          // for RangeType
+#include "morpheus/utilities/matx_util.hpp"            // for MatxUtil
+#include "morpheus/utilities/tensor_util.hpp"          // for TensorUtils
 
 #include <cuda_runtime.h>                         // for cudaMemcpy, cudaMemcpyKind
 #include <cudf/column/column_view.hpp>            // for column_view
@@ -37,13 +38,14 @@
 #include <glog/logging.h>                         // for COMPACT_GOOGLE_LOG_FATAL, LogMessageFatal, CHECK, DCHECK
 #include <mrc/cuda/common.hpp>                    // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>               // for cuda_stream_per_thread
+#include <rmm/device_buffer.hpp>                  // for device_buffer
 #include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
 
 #include <cstddef>     // for size_t
 #include <cstdint>     // for uint8_t
 #include <exception>   // for exception_ptr
 #include <functional>  // for function
-#include <memory>      // for make_shared, shared_ptr, __shared_ptr_access
+#include <memory>      // for shared_ptr, make_shared
 #include <ostream>     // for operator<<, basic_ostream
 #include <string>      // for char_traits, string
 #include <utility>     // for move, pair
@@ -53,11 +55,10 @@ namespace morpheus {
 
 // Component public implementations
 // ************ FilterDetectionStage **************************** //
-template <typename MessageT>
-FilterDetectionsStage<MessageT>::FilterDetectionsStage(float threshold,
-                                                       bool copy,
-                                                       FilterSource filter_source,
-                                                       std::string field_name) :
+FilterDetectionsStage::FilterDetectionsStage(float threshold,
+                                             bool copy,
+                                             FilterSource filter_source,
+                                             std::string field_name) :
   base_t(base_t::op_factory_from_sub_fn(build_operator())),
   m_threshold(threshold),
   m_copy(copy),
@@ -67,58 +68,23 @@ FilterDetectionsStage<MessageT>::FilterDetectionsStage(float threshold,
     CHECK(m_filter_source != FilterSource::Auto);  // The python stage should determine this
 }
 
-template <typename MessageT>
-DevMemInfo FilterDetectionsStage<MessageT>::get_tensor_filter_source(const sink_type_t& x)
+DevMemInfo FilterDetectionsStage::get_tensor_filter_source(const sink_type_t& x)
 {
-    if constexpr (std::is_same_v<MessageT, MultiMessage>)
-    {
-        // The pipeline build will check to ensure that our input is a MultiResponseMessage
-        const auto& filter_source = std::static_pointer_cast<MultiTensorMessage>(x)->get_tensor(m_field_name);
-        CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
-            << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
-               "arrays";
+    const auto& filter_source = x->tensors()->get_tensor(m_field_name);
+    CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
+        << "C++ impl of the FilterDetectionsStage currently only supports one "
+           "and two dimensional "
+           "arrays";
 
-        // Depending on the input the stride is given in bytes or elements, convert to elements
-        auto stride = TensorUtils::get_element_stride(filter_source.get_stride());
-        return {
-            filter_source.data(), filter_source.dtype(), filter_source.get_memory(), filter_source.get_shape(), stride};
-    }
-    else if constexpr (std::is_same_v<MessageT, ControlMessage>)
-    {
-        const auto& filter_source = x->tensors()->get_tensor(m_field_name);
-        CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
-            << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
-               "arrays";
-
-        // Depending on the input the stride is given in bytes or elements, convert to elements
-        auto stride = TensorUtils::get_element_stride(filter_source.get_stride());
-        return {
-            filter_source.data(), filter_source.dtype(), filter_source.get_memory(), filter_source.get_shape(), stride};
-    }
-    else
-    {
-        // sink_type_t not supported
-        static_assert(!sizeof(sink_type_t), "FilterDetectionsStage receives unsupported input type");
-    }
+    // Depending on the input the stride is given in bytes or elements, convert to
+    // elements
+    auto stride = TensorUtils::get_element_stride(filter_source.get_stride());
+    return {filter_source.data(), filter_source.dtype(), filter_source.get_memory(), filter_source.get_shape(), stride};
 }
 
-template <typename MessageT>
-DevMemInfo FilterDetectionsStage<MessageT>::get_column_filter_source(const sink_type_t& x)
+DevMemInfo FilterDetectionsStage::get_column_filter_source(const sink_type_t& x)
 {
-    TableInfo table_info;
-    if constexpr (std::is_same_v<MessageT, MultiMessage>)
-    {
-        table_info = x->get_meta(m_field_name);
-    }
-    else if constexpr (std::is_same_v<MessageT, ControlMessage>)
-    {
-        table_info = x->payload()->get_info(m_field_name);
-    }
-    else
-    {
-        // sink_type_t not supported
-        static_assert(!sizeof(sink_type_t), "FilterDetectionsStage receives unsupported input type");
-    }
+    TableInfo table_info = x->payload()->get_info(m_field_name);
 
     // since we only asked for one column, we know its the first
     const auto& col = table_info.get_column(0);
@@ -136,8 +102,7 @@ DevMemInfo FilterDetectionsStage<MessageT>::get_column_filter_source(const sink_
     };
 }
 
-template <typename MessageT>
-FilterDetectionsStage<MessageT>::subscribe_fn_t FilterDetectionsStage<MessageT>::build_operator()
+FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         std::function<DevMemInfo(const sink_type_t& x)> get_filter_source;
@@ -198,23 +163,10 @@ FilterDetectionsStage<MessageT>::subscribe_fn_t FilterDetectionsStage<MessageT>:
                         }
                         else
                         {
-                            if constexpr (std::is_same_v<MessageT, MultiMessage>)
-                            {
-                                output.on_next(x->get_slice(slice_start, row));
-                            }
-                            else if constexpr (std::is_same_v<MessageT, ControlMessage>)
-                            {
-                                auto meta                                 = x->payload();
-                                std::shared_ptr<ControlMessage> sliced_cm = std::make_shared<ControlMessage>(*x);
-                                sliced_cm->payload(meta->get_slice(slice_start, row));
-                                output.on_next(sliced_cm);
-                            }
-                            else
-                            {
-                                // sink_type_t not supported
-                                static_assert(!sizeof(sink_type_t),
-                                              "FilterDetectionsStage receives unsupported input type");
-                            }
+                            auto meta                                 = x->payload();
+                            std::shared_ptr<ControlMessage> sliced_cm = std::make_shared<ControlMessage>(*x);
+                            sliced_cm->payload(meta->get_slice(slice_start, row));
+                            output.on_next(sliced_cm);
                         }
 
                         slice_start = num_rows;
@@ -231,22 +183,9 @@ FilterDetectionsStage<MessageT>::subscribe_fn_t FilterDetectionsStage<MessageT>:
                     }
                     else
                     {
-                        if constexpr (std::is_same_v<MessageT, MultiMessage>)
-                        {
-                            output.on_next(x->get_slice(slice_start, num_rows));
-                        }
-                        else if constexpr (std::is_same_v<MessageT, ControlMessage>)
-                        {
-                            auto meta = x->payload();
-                            x->payload(meta->get_slice(slice_start, num_rows));
-                            output.on_next(x);
-                        }
-                        else
-                        {
-                            // sink_type_t not supported
-                            static_assert(!sizeof(sink_type_t),
-                                          "FilterDetectionsStage receives unsupported input type");
-                        }
+                        auto meta = x->payload();
+                        x->payload(meta->get_slice(slice_start, num_rows));
+                        output.on_next(x);
                     }
                 }
 
@@ -255,21 +194,10 @@ FilterDetectionsStage<MessageT>::subscribe_fn_t FilterDetectionsStage<MessageT>:
                 if (num_selected_rows > 0)
                 {
                     DCHECK(m_copy);
-                    if constexpr (std::is_same_v<MessageT, MultiMessage>)
-                    {
-                        output.on_next(x->copy_ranges(selected_ranges, num_selected_rows));
-                    }
-                    else if constexpr (std::is_same_v<MessageT, ControlMessage>)
-                    {
-                        auto meta = x->payload();
-                        x->payload(meta->copy_ranges(selected_ranges));
-                        output.on_next(x);
-                    }
-                    else
-                    {
-                        // sink_type_t not supported
-                        static_assert(!sizeof(sink_type_t), "FilterDetectionsStage receives unsupported input type");
-                    }
+
+                    auto meta = x->payload();
+                    x->payload(meta->copy_ranges(selected_ranges));
+                    output.on_next(x);
                 }
             },
             [&](std::exception_ptr error_ptr) {
@@ -282,7 +210,7 @@ FilterDetectionsStage<MessageT>::subscribe_fn_t FilterDetectionsStage<MessageT>:
 }
 
 // ************ FilterDetectionStageInterfaceProxy ************* //
-std::shared_ptr<mrc::segment::Object<FilterDetectionsStageMM>> FilterDetectionStageInterfaceProxy::init_mm(
+std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> FilterDetectionStageInterfaceProxy::init(
     mrc::segment::Builder& builder,
     const std::string& name,
     float threshold,
@@ -290,20 +218,7 @@ std::shared_ptr<mrc::segment::Object<FilterDetectionsStageMM>> FilterDetectionSt
     FilterSource filter_source,
     std::string field_name)
 {
-    auto stage = builder.construct_object<FilterDetectionsStageMM>(name, threshold, copy, filter_source, field_name);
-
-    return stage;
-}
-
-std::shared_ptr<mrc::segment::Object<FilterDetectionsStageCM>> FilterDetectionStageInterfaceProxy::init_cm(
-    mrc::segment::Builder& builder,
-    const std::string& name,
-    float threshold,
-    bool copy,
-    FilterSource filter_source,
-    std::string field_name)
-{
-    auto stage = builder.construct_object<FilterDetectionsStageCM>(name, threshold, copy, filter_source, field_name);
+    auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold, copy, filter_source, field_name);
 
     return stage;
 }

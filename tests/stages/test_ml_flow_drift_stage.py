@@ -23,17 +23,8 @@ import typing_utils
 
 import morpheus._lib.messages as _messages
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiResponseMessage
-from morpheus.messages import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.ml_flow_drift_stage import MLFlowDriftStage
-
-
-def _make_multi_response_message(df, probs):
-    df_ = df[0:len(probs)]
-    mem = ResponseMemory(count=len(df_), tensors={'probs': probs})
-
-    return MultiResponseMessage(meta=MessageMeta(df_), count=len(df_), memory=mem)
 
 
 def _make_control_message(df, probs):
@@ -51,7 +42,6 @@ def test_constructor(config):
     assert stage.name == "mlflow_drift"
 
     accepted_union = typing.Union[stage.accepted_types()]
-    assert typing_utils.issubtype(MultiResponseMessage, accepted_union)
     assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
@@ -63,7 +53,7 @@ def test_calc_drift(config, filter_probs_df):
         stage = MLFlowDriftStage(config, labels=labels, batch_size=1)
 
     probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
-    mock_multi_response_message = _make_multi_response_message(filter_probs_df, probs)
+
     mock_control_message = _make_control_message(filter_probs_df, probs)
 
     expected_metrics = [{
@@ -72,16 +62,9 @@ def test_calc_drift(config, filter_probs_df):
         'a': 0.8, 'b': 0.7, 'c': 0.6, 'total': 0.7000000000000001
     }]
 
-    multi_response_message_metrics = []
-    with patch("morpheus.stages.postprocess.ml_flow_drift_stage.mlflow.log_metrics") as mock_log_metrics:
-        stage._calc_drift(mock_multi_response_message)
-        for call_arg in mock_log_metrics.call_args_list:
-            multi_response_message_metrics.append(call_arg[0][0])
-    assert multi_response_message_metrics == expected_metrics
-
     control_message_metrics = []
     with patch("morpheus.stages.postprocess.ml_flow_drift_stage.mlflow.log_metrics") as mock_log_metrics:
         stage._calc_drift(mock_control_message)
         for call_arg in mock_log_metrics.call_args_list:
             control_message_metrics.append(call_arg[0][0])
-    assert control_message_metrics == multi_response_message_metrics
+    assert control_message_metrics == expected_metrics
