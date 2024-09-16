@@ -14,7 +14,6 @@
 """Split messages into individual users and generic messages."""
 
 import logging
-import typing
 
 import mrc
 import numpy as np
@@ -24,11 +23,12 @@ from mrc.core import operators as ops
 import cudf
 
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.type_aliases import DataFrameType
 
-from ..messages.dfp_message_meta import DFPMessageMeta
 from ..utils.logging_timer import log_time
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -60,8 +60,8 @@ class DFPSplitUsersStage(SinglePortStage):
                  c: Config,
                  include_generic: bool,
                  include_individual: bool,
-                 skip_users: typing.List[str] = None,
-                 only_users: typing.List[str] = None):
+                 skip_users: list[str] = None,
+                 only_users: list[str] = None):
         super().__init__(c)
 
         self._include_generic = include_generic
@@ -70,25 +70,25 @@ class DFPSplitUsersStage(SinglePortStage):
         self._only_users = only_users if only_users is not None else []
 
         # Map of user ids to total number of messages. Keeps indexes monotonic and increasing per user
-        self._user_index_map: typing.Dict[str, int] = {}
+        self._user_index_map: dict[str, int] = {}
 
     @property
     def name(self) -> str:
         """Stage name."""
         return "dfp-split-users"
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         """Whether this stage supports a C++ node."""
         return False
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         """Input types accepted by this stage."""
         return (cudf.DataFrame, pd.DataFrame)
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(DFPMessageMeta)
+        schema.output_schema.set_type(ControlMessage)
 
-    def extract_users(self, message: DataFrameType) -> typing.List[DFPMessageMeta]:
+    def extract_users(self, message: DataFrameType) -> list[ControlMessage]:
         """
         Extract users from a message, splitting the incoming data into unique messages on a per-user basis, and
         potentially filtering data based on the user.
@@ -102,7 +102,7 @@ class DFPSplitUsersStage(SinglePortStage):
                 # Convert to pandas because cudf is slow at this
                 message = message.to_pandas()
 
-            split_dataframes: typing.Dict[str, pd.DataFrame] = {}
+            split_dataframes: dict[str, pd.DataFrame] = {}
 
             # If we are skipping users, do that here
             if (len(self._skip_users) > 0):
@@ -124,7 +124,7 @@ class DFPSplitUsersStage(SinglePortStage):
                     user_df in message.groupby(self._config.ae.userid_column_name, sort=False)
                 })
 
-            output_messages: typing.List[DFPMessageMeta] = []
+            output_messages: list[ControlMessage] = []
 
             for user_id in sorted(split_dataframes.keys()):
 
@@ -139,7 +139,11 @@ class DFPSplitUsersStage(SinglePortStage):
                 user_df.index = range(current_user_count, current_user_count + len(user_df))
                 self._user_index_map[user_id] = current_user_count + len(user_df)
 
-                output_messages.append(DFPMessageMeta(df=user_df, user_id=user_id))
+                meta = MessageMeta(cudf.DataFrame(user_df))
+                cm_msg = ControlMessage()
+                cm_msg.payload(meta)
+                cm_msg.set_metadata("user_id", user_id)
+                output_messages.append(cm_msg)
 
                 # logger.debug("Emitting dataframe for user '%s'. Start: %s, End: %s, Count: %s",
                 #              user,
@@ -147,9 +151,8 @@ class DFPSplitUsersStage(SinglePortStage):
                 #              df_user[self._config.ae.timestamp_column_name].max(),
                 #              df_user[self._config.ae.timestamp_column_name].count())
 
-            rows_per_user = [len(x.df) for x in output_messages]
-
             if (len(output_messages) > 0):
+                rows_per_user = [len(x.payload().df) for x in output_messages]
                 log_info.set_log(
                     ("Batch split users complete. Input: %s rows from %s to %s. "
                      "Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms"),
