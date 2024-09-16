@@ -16,13 +16,14 @@
 
 import collections
 import functools
+import inspect
 import typing
 from unittest import mock
 
 import mrc
 import pandas as pd
 import pytest
-from mrc import Subscriber
+from mrc import Subscription
 
 import cudf
 
@@ -461,4 +462,5 @@ def test_fn_receives_subscription(has_arg: bool, type_hint: typing.Any, expected
         def test_fn():
             pass
 
-    assert _fn_receives_subscription(test_fn) is expected
+    sig = inspect.signature(test_fn)
+    assert _fn_receives_subscription(sig) is expected
