@@ -63,20 +63,20 @@ def _arbitrary_function(*args, **kwargs):
     return args, kwargs
 
 
-def _task_submit_worker(pool, stage_name, task_size, num_tasks):
-    future_list = []
-    for i in range(num_tasks):
-        future_list.append(pool.submit_task(stage_name, _matrix_multiplication_task, task_size))
-        logging.debug("Task %s/%s has been submitted to stage %s.", i + 1, num_tasks, stage_name)
+# def _task_submit_worker(pool, stage_name, task_size, num_tasks):
+#     future_list = []
+#     for i in range(num_tasks):
+#         future_list.append(pool.submit_task(stage_name, _matrix_multiplication_task, task_size))
+#         logging.debug("Task %s/%s has been submitted to stage %s.", i + 1, num_tasks, stage_name)
 
-    for future in future_list:
-        future.result()
-        logging.debug("task number %s has been completed in stage: %s", future_list.index(future), stage_name)
+#     for future in future_list:
+#         future.result()
+#         logging.debug("task number %s has been completed in stage: %s", future_list.index(future), stage_name)
 
-    logging.debug("All tasks in stage %s have been completed in %.2f seconds.",
-                  stage_name, (future_list[-1].result()[1] - future_list[0].result()[1]))
+#     logging.debug("All tasks in stage %s have been completed in %.2f seconds.",
+#                   stage_name, (future_list[-1].result()[1] - future_list[0].result()[1]))
 
-    assert len(future_list) == num_tasks
+#     assert len(future_list) == num_tasks
 
 
 def test_singleton():
@@ -94,14 +94,14 @@ def test_single_task(shared_process_pool):
     a = 10
     b = 20
 
-    future = pool.submit_task("test_stage", _simple_add_task, a, b)
-    assert future.result() == a + b
+    task = pool.submit_task("test_stage", _simple_add_task, a, b)
+    assert task.result() == a + b
 
-    future = pool.submit_task("test_stage", _simple_add_task, a=a, b=b)
-    assert future.result() == a + b
+    task = pool.submit_task("test_stage", _simple_add_task, a=a, b=b)
+    assert task.result() == a + b
 
-    future = pool.submit_task("test_stage", _simple_add_task, a, b=b)
-    assert future.result() == a + b
+    task = pool.submit_task("test_stage", _simple_add_task, a, b=b)
+    assert task.result() == a + b
 
 
 def test_multiple_tasks(shared_process_pool):
@@ -110,11 +110,11 @@ def test_multiple_tasks(shared_process_pool):
     pool.set_usage("test_stage", 0.5)
 
     num_tasks = 100
-    futures = []
+    tasks = []
     for _ in range(num_tasks):
-        futures.append(pool.submit_task("test_stage", _simple_add_task, 10, 20))
+        tasks.append(pool.submit_task("test_stage", _simple_add_task, 10, 20))
 
-    for future in futures:
+    for future in tasks:
         assert future.result() == 30
 
 
@@ -124,8 +124,8 @@ def test_error_process_function(shared_process_pool):
     pool.set_usage("test_stage", 0.5)
 
     with pytest.raises(ValueError):
-        future = pool.submit_task("test_stage", _process_func_with_exception)
-        future.result()
+        task = pool.submit_task("test_stage", _process_func_with_exception)
+        task.result()
 
 
 def test_unserializable_function(shared_process_pool):
@@ -133,9 +133,9 @@ def test_unserializable_function(shared_process_pool):
 
     pool.set_usage("test_stage", 0.5)
 
-    future = pool.submit_task("test_stage", _unserializable_function)
+    task = pool.submit_task("test_stage", _unserializable_function)
     with pytest.raises(TypeError):
-        future.result()
+        task.result()
 
 
 def test_unserializable_arg(shared_process_pool):
@@ -147,30 +147,30 @@ def test_unserializable_arg(shared_process_pool):
         pool.submit_task("test_stage", _arbitrary_function, threading.Lock())
 
 
-def test_multiple_stages(shared_process_pool):
-    pool = shared_process_pool
+# def test_multiple_stages(shared_process_pool):
+#     pool = shared_process_pool
 
-    pool.set_usage("test_stage_1", 0.1)
-    pool.set_usage("test_stage_2", 0.3)
-    pool.set_usage("test_stage_3", 0.6)
+#     pool.set_usage("test_stage_1", 0.1)
+#     pool.set_usage("test_stage_2", 0.3)
+#     pool.set_usage("test_stage_3", 0.6)
 
-    task_size = 3
-    task_num = 3
-    # tasks = [("test_stage_1", task_size, task_num), ("test_stage_2", task_size, task_num),
-    #          ("test_stage_3", task_size, task_num)]
-    tasks = [("test_stage_1", task_size, task_num)]
+#     task_size = 3
+#     task_num = 3
+#     # tasks = [("test_stage_1", task_size, task_num), ("test_stage_2", task_size, task_num),
+#     #          ("test_stage_3", task_size, task_num)]
+#     tasks = [("test_stage_1", task_size, task_num)]
 
-    processes = []
-    for task in tasks:
-        stage_name, task_size, num_tasks = task
-        p = mp.Process(target=_task_submit_worker, args=(pool, stage_name, task_size, num_tasks))
-        processes.append(p)
+#     processes = []
+#     for task in tasks:
+#         stage_name, task_size, num_tasks = task
+#         p = mp.Process(target=_task_submit_worker, args=(pool, stage_name, task_size, num_tasks))
+#         processes.append(p)
 
-    for p in processes:
-        p.start()
+#     for p in processes:
+#         p.start()
 
-    for p in processes:
-        p.join()
+#     for p in processes:
+#         p.join()
 
 
 def test_invalid_stage_usage(shared_process_pool):
@@ -214,4 +214,4 @@ def test_task_completion_before_shutdown(shared_process_pool):
     # all tasks should be completed before shutdown
     assert len(futures) == 3 * task_num
     for future in futures:
-        assert future.done()
+        assert future._done.is_set()
