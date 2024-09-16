@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import logging
-import multiprocessing as mp
 import threading
 import time
 
@@ -35,7 +34,9 @@ def shared_process_pool_fixture():
 
     yield pool
 
-    pool.shutdown()
+    print("Pool process in fixture before stop: " + str(pool.status))
+    pool.stop()
+    pool.reset()
 
 
 def _matrix_multiplication_task(size):
@@ -79,7 +80,7 @@ def _arbitrary_function(*args, **kwargs):
 #     assert len(future_list) == num_tasks
 
 
-def test_singleton():
+def test_singleton(shared_process_pool):
     pool_1 = SharedProcessPool()
     pool_2 = SharedProcessPool()
 
@@ -88,6 +89,7 @@ def test_singleton():
 
 def test_single_task(shared_process_pool):
     pool = shared_process_pool
+    print("Pool status: " + str(pool.status))
 
     pool.set_usage("test_stage", 0.5)
 
@@ -209,9 +211,9 @@ def test_task_completion_before_shutdown(shared_process_pool):
         futures.append(pool.submit_task("test_stage_2", _matrix_multiplication_task, task_size))
         futures.append(pool.submit_task("test_stage_3", _matrix_multiplication_task, task_size))
 
-    pool.shutdown()
+    pool.stop()
 
-    # all tasks should be completed before shutdown
+    # all tasks should be completed before stopping the pool
     assert len(futures) == 3 * task_num
     for future in futures:
         assert future._done.is_set()
