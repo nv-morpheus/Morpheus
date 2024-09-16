@@ -47,7 +47,7 @@ def _make_mock_result(file_name: str):
 
 
 @pytest.mark.parametrize("use_subdir", [False, True])
-def test_generate_frames_cache_miss(mock_subscriber: mock.MagicMock,
+def test_generate_frames_cache_miss(mock_subscription: mock.MagicMock,
                                     mock_arxiv_search: mock.MagicMock,
                                     config: Config,
                                     tmp_path: str,
@@ -62,7 +62,7 @@ def test_generate_frames_cache_miss(mock_subscriber: mock.MagicMock,
     stage = ArxivSource(config, query="unittest", cache_dir=cache_dir)
 
     expected_file_paths = [os.path.join(cache_dir, "apples.pdf"), os.path.join(cache_dir, "plums.pdf")]
-    assert list(stage._generate_frames(mock_subscriber)) == expected_file_paths
+    assert list(stage._generate_frames(mock_subscription)) == expected_file_paths
 
     assert os.path.exists(cache_dir)
 
@@ -73,7 +73,7 @@ def test_generate_frames_cache_miss(mock_subscriber: mock.MagicMock,
         mock_result.download_pdf.assert_called_once()
 
 
-def test_generate_frames_cache_hit(mock_subscriber: mock.MagicMock,
+def test_generate_frames_cache_hit(mock_subscription: mock.MagicMock,
                                    mock_arxiv_search: mock.MagicMock,
                                    config: Config,
                                    tmp_path: str):
@@ -83,7 +83,7 @@ def test_generate_frames_cache_hit(mock_subscriber: mock.MagicMock,
     stage = ArxivSource(config, query="unittest", cache_dir=tmp_path)
 
     expected_file_paths = [os.path.join(tmp_path, "apples.pdf"), os.path.join(tmp_path, "plums.pdf")]
-    assert list(stage._generate_frames(mock_subscriber)) == expected_file_paths
+    assert list(stage._generate_frames(mock_subscription)) == expected_file_paths
 
     mock_arxiv_search.assert_called_once()
     mock_arxiv_search.results.assert_called_once()

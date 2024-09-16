@@ -27,13 +27,13 @@ from morpheus.pipeline.stage_decorator import stage
 
 
 @source
-def error_source(subscriber: mrc.Subscriber, *, raise_error: bool = False) -> collections.abc.Iterator[int]:
+def error_source(subscription: mrc.Subscription, *, raise_error: bool = False) -> collections.abc.Iterator[int]:
     yield 1
 
     if raise_error:
         raise RuntimeError("Test error in source")
 
-    while subscriber.is_subscribed():
+    while subscription.is_subscribed():
         time.sleep(0.1)
 
 

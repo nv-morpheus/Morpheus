@@ -20,11 +20,10 @@ import mrc
 from morpheus.config import Config
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.utils.stage_utils import fn_receives_subscriber
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
-DataSourceType = (typing.Callable[[mrc.Subscriber], typing.Iterable[typing.Any]]
+DataSourceType = (typing.Callable[[mrc.Subscription], typing.Iterable[typing.Any]]
                   | typing.Callable[[], typing.Iterable[typing.Any]])
 
 
@@ -36,7 +35,7 @@ class InMemoryDataGenStage(SingleOutputSource):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    data_source : Callable[[mrc.Subscriber], Iterable[Any]]
+    data_source : Callable[[mrc.Subscription], Iterable[Any]]
         An iterable or a generator function that yields data to be processed by the pipeline.
     output_data_type : Type
         The data type of the objects that the data_source yields.
@@ -59,7 +58,4 @@ class InMemoryDataGenStage(SingleOutputSource):
         return False
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        if fn_receives_subscriber(self._data_source):
-            return builder.make_source_subscriber(self.unique_name, self._data_source)
-
         return builder.make_source(self.unique_name, self._data_source)

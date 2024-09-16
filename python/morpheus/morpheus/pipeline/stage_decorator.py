@@ -29,7 +29,6 @@ from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.utils.stage_utils import fn_receives_subscriber
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +74,35 @@ def _validate_keyword_arguments(fn_name: str,
                              f"{fn_name} contains '{param.name}' that was not provided with a value")
 
 
+def _fn_receives_subscription(signature: inspect.Signature) -> bool:
+    """
+    Inspects a function's signature to determine if the function expects a `mrc.Subscription` as it's first argument.
+    This requires the type-hint to be set to either `mrc.Subscription` or a string hint of `"mrc.Subscription"` or
+    `"Subscription"`
+
+    Parameters
+    ----------
+    signature : `inspect.Signature` | `typing.Callable`
+        Function or signature of a function to be checked
+
+    Returns
+    -------
+    bool
+        True if the signature indicates the first argument to be a `mrc.Subscription`.
+    """
+    param_iter = iter(signature.parameters.values())
+
+    try:
+        first_param = next(param_iter)
+        if (first_param.annotation is mrc.Subscription or first_param.annotation == "mrc.Subscription"
+                or first_param.annotation == "Subscription"):
+            return True
+    except StopIteration:
+        pass
+
+    return False
+
+
 class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
     """
     Source stage that wraps a generator function as the method for generating messages.
@@ -94,17 +122,9 @@ class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
         Generator function to use as the source of messages.
     compute_schema_fn : `ComputeSchemaType`
         Function to use for computing the schema of the stage.
-    accepts_subscriber: `bool`
-        Indicate that the `gen_fn` function accepts a reference to the subscriber object.
     """
 
-    def __init__(self,
-                 config: Config,
-                 *,
-                 name: str,
-                 gen_fn: GeneratorType,
-                 compute_schema_fn: ComputeSchemaType,
-                 accepts_subscriber: bool = False):
+    def __init__(self, config: Config, *, name: str, gen_fn: GeneratorType, compute_schema_fn: ComputeSchemaType):
         super().__init__(config)
         # collections.abc.Generator is a subclass of collections.abc.Iterator
         if not inspect.isgeneratorfunction(gen_fn):
@@ -113,7 +133,6 @@ class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
         self._name = name
         self._gen_fn = gen_fn
         self._compute_schema_fn = compute_schema_fn
-        self._accepts_subscriber = accepts_subscriber
 
     @property
     def name(self) -> str:
@@ -126,10 +145,7 @@ class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
         self._compute_schema_fn(schema)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        if self._accepts_subscriber:
-            return builder.make_source_subscriber(self.unique_name, self._gen_fn)
-        else:
-            return builder.make_source(self.unique_name, self._gen_fn)
+        return builder.make_source(self.unique_name, self._gen_fn)
 
 
 class PreAllocatedWrappedFunctionStage(_pipeline.PreallocatorMixin, WrappedFunctionSourceStage):
@@ -150,8 +166,6 @@ class PreAllocatedWrappedFunctionStage(_pipeline.PreallocatorMixin, WrappedFunct
         Generator function to use as the source of messages.
     compute_schema_fn : `ComputeSchemaType`
         Function to use for computing the schema of the stage.
-    accepts_subscriber: `bool`
-        Indicate that the `gen_fn` function accepts a reference to the subscriber object.
     """
 
 
@@ -200,12 +214,10 @@ def source(
         if return_type is signature.empty:
             raise ValueError("Source functions must specify a return type annotation")
 
-        # Try and determine if the method expects a reference to a subscriber object
-        accepts_subscriber = fn_receives_subscriber(signature)
-
+        # Try and determine if the method expects a reference to a subscription object
         param_iter = iter(signature.parameters.values())
-        if accepts_subscriber:
-            next(param_iter)  # advance the iterator past the subscriber
+        if _fn_receives_subscription(signature):
+            next(param_iter)  # advance the iterator past the subscription
 
         # We need to unpack generator and iterator return types to get the actual type of the yielded type.
         # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
@@ -231,14 +243,12 @@ def source(
             return PreAllocatedWrappedFunctionStage(config=config,
                                                     name=name,
                                                     gen_fn=bound_gen_fn,
-                                                    compute_schema_fn=compute_schema_fn,
-                                                    accepts_subscriber=accepts_subscriber)
+                                                    compute_schema_fn=compute_schema_fn)
 
         return WrappedFunctionSourceStage(config=config,
                                           name=name,
                                           gen_fn=bound_gen_fn,
-                                          compute_schema_fn=compute_schema_fn,
-                                          accepts_subscriber=accepts_subscriber)
+                                          compute_schema_fn=compute_schema_fn)
 
     return wrapper
 

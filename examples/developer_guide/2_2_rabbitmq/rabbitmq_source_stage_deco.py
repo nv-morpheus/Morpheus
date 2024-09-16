@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 @source(name="from-rabbitmq")
-def rabbitmq_source(subscriber: mrc.Subscriber,
+def rabbitmq_source(subscription: mrc.Subscription,
                     host: str,
                     exchange: str,
                     exchange_type: str = 'fanout',
@@ -68,7 +68,7 @@ def rabbitmq_source(subscriber: mrc.Subscriber,
     poll_interval = pd.Timedelta(poll_interval)
 
     try:
-        while subscriber.is_subscribed():
+        while subscription.is_subscribed():
             (method_frame, _, body) = channel.basic_get(queue_name)
             if method_frame is not None:
                 try:

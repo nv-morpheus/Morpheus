@@ -95,5 +95,5 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         schema.output_schema.set_type(MessageMeta)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        source = builder.make_source_subscriber(self.unique_name, self._controller.feed_generator)
+        source = builder.make_source(self.unique_name, self._controller.feed_generator)
         return source

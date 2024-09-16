@@ -176,7 +176,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return message_meta
 
-    def _source_generator(self, subscriber: mrc.Subscriber):
+    def _source_generator(self, subscription: mrc.Subscription):
         consumer = None
         try:
             consumer = ck.Consumer(self._consumer_params)
@@ -184,7 +184,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
             batch = []
 
-            while not self.is_stop_requested() and subscriber.is_subscribed():
+            while not self.is_stop_requested() and subscription.is_subscribed():
                 do_process_batch = False
                 do_sleep = False
 
@@ -241,6 +241,6 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             # multiple threads
             source.launch_options.pe_count = self._max_concurrent
         else:
-            source = builder.make_source_subscriber(self.unique_name, self._source_generator)
+            source = builder.make_source(self.unique_name, self._source_generator)
 
         return source
