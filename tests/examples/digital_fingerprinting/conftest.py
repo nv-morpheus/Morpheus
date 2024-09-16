@@ -90,6 +90,7 @@ def dfp_prod_in_sys_path(
 
 @pytest.fixture(name="dfp_message_meta")
 def dfp_message_meta_fixture(config, dataset_pandas: DatasetManager):
+    # TODO: This should be a cudf DataFrame, and emit a control message
     import pandas as pd
     from dfp.messages.dfp_message_meta import DFPMessageMeta
 
