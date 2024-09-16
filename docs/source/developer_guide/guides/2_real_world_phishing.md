@@ -761,12 +761,12 @@ def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
     return builder.make_source(self.unique_name, self.source_generator)
 ```
 
-The `source_generator` method is where most of the RabbitMQ-specific code exists. When we have a message that we wish to emit into the pipeline, we simply `yield` it. We continue this process until the `is_stop_requested()` method returns `True` or `subscriber.is_subscribed()` returns `False`.
+The `source_generator` method is where most of the RabbitMQ-specific code exists. When we have a message that we wish to emit into the pipeline, we simply `yield` it. We continue this process until the `is_stop_requested()` method returns `True` or `subscription.is_subscribed()` returns `False`.
 
 ```python
-def source_generator(self, subscriber: mrc.Subscriber) -> collections.abc.Iterator[MessageMeta]:
+def source_generator(self, subscription: mrc.Subscription) -> collections.abc.Iterator[MessageMeta]:
     try:
-        while not self.is_stop_requested() and subscriber.is_subscribed():
+        while not self.is_stop_requested() and subscription.is_subscribed():
             (method_frame, _, body) = self._channel.basic_get(self._queue_name)
             if method_frame is not None:
                 try:
@@ -867,9 +867,9 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self.source_generator)
 
-    def source_generator(self, subscriber: mrc.Subscriber) -> collections.abc.Iterator[MessageMeta]:
+    def source_generator(self, subscription: mrc.Subscription) -> collections.abc.Iterator[MessageMeta]:
         try:
-            while not self.is_stop_requested() and subscriber.is_subscribed():
+            while not self.is_stop_requested() and subscription.is_subscribed():
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
@@ -912,7 +912,7 @@ logger = logging.getLogger(__name__)
 
 
 @source(name="from-rabbitmq")
-def rabbitmq_source(subscriber: mrc.Subscriber,
+def rabbitmq_source(subscription: mrc.Subscription,
                     host: str,
                     exchange: str,
                     exchange_type: str = 'fanout',
@@ -949,7 +949,7 @@ def rabbitmq_source(subscriber: mrc.Subscriber,
     poll_interval = pd.Timedelta(poll_interval)
 
     try:
-        while subscriber.is_subscribed():
+        while subscription.is_subscribed():
             (method_frame, _, body) = channel.basic_get(queue_name)
             if method_frame is not None:
                 try:
