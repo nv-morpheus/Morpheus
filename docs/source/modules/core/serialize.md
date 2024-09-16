@@ -17,7 +17,7 @@ limitations under the License.
 
 ## Serialize Module
 
-This module filters columns from a `MultiMessage` object, emitting a `MessageMeta`.
+This module filters columns from a `ControlMessage` object, emitting a `MessageMeta`.
 
 ### Configurable Parameters
 

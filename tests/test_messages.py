@@ -50,12 +50,6 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     # always received the python impl
     check_message(messages.UserMessageMeta, None, should_be_cpp, no_cpp_class, *(None, None))
 
-    check_message(messages.MultiMessage,
-                  _messages.MultiMessage,
-                  should_be_cpp,
-                  no_cpp_class,
-                  **{"meta": messages.MessageMeta(df)})
-
     check_message(tensor_memory.TensorMemory, _messages.TensorMemory, should_be_cpp, no_cpp_class, **{"count": 1})
     check_message(messages.InferenceMemory, _messages.InferenceMemory, should_be_cpp, no_cpp_class, **{"count": 1})
 

@@ -20,7 +20,6 @@
 #include "morpheus/export.h"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
-#include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
 
 #include <mrc/node/sink_properties.hpp>

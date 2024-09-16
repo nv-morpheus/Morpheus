@@ -166,17 +166,17 @@ Starting! Time: 1668537665.9479523
 Added source: <from-file-0; FileSourceStage(filename=/workspace/models/datasets/validation-data/root-cause-validation-data-input.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
-  └─ morpheus.MessageMeta -> morpheus.MultiMessage
+  └─ morpheus.MessageMeta -> morpheus.ControlMessage
 Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1, column=log)>
-  └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=root-cause-binary-onnx, server_url=localhost:8001, force_convert_inputs=True, use_shared_memory=False)>
-  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <monitor-4; MonitorStage(description=Inference rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <add-scores-5; AddScoresStage(labels=('is_root_cause',), prefix=)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessagee -> morpheus.ControlMessage
 Added stage: <serialize-6; SerializeStage(include=(), exclude=('^ts_',), fixed_columns=True)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MessageMeta
+  └─ morpheus.ControlMessage -> morpheus.MessageMeta
 Added stage: <to-file-7; WriteToFileStage(filename=./root-cause-binary-output.jsonlines, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 Inference rate[Complete]: 473 inf [00:01, 340.43 inf/s]

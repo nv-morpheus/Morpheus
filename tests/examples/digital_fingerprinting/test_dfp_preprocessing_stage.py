@@ -19,6 +19,7 @@ import pytest
 
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
@@ -39,15 +40,14 @@ def test_constructor(config: Config):
 @pytest.mark.parametrize('log_level', [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
 def test_process_features(
         config: Config,
-        dfp_multi_message: "MultiDFPMessage",  # noqa: F821
+        control_message: "ControlMessage",  # noqa: F821
         dataset_pandas: DatasetManager,
         log_level: int):
-    from dfp.messages.multi_dfp_message import MultiDFPMessage
     from dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
 
     set_log_level(log_level)
 
-    expected_df = dfp_multi_message.get_meta_dataframe().copy(deep=True)
+    expected_df = control_message.payload().copy_dataframe()
     expected_df['v210'] = expected_df['v2'] + 10
     expected_df['v3'] = expected_df['v3'].astype(str)
 
@@ -57,7 +57,7 @@ def test_process_features(
     ])
 
     stage = DFPPreprocessingStage(config, input_schema=schema)
-    results = stage.process_features(dfp_multi_message)
+    results = stage.process_features(control_message)
 
-    assert isinstance(results, MultiDFPMessage)
-    dataset_pandas.assert_compare_df(results.get_meta_dataframe(), expected_df)
+    assert isinstance(results, ControlMessage)
+    dataset_pandas.assert_compare_df(results.payload().get_data(), expected_df)

@@ -45,7 +45,7 @@ def test_constructor(config: Config):
     assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
-def test_process_control_message_and_multi_message(config: Config):
+def test_process_control_message(config: Config):
     stage = GenerateVizFramesStage(config)
 
     df = cudf.DataFrame({

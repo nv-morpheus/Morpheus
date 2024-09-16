@@ -61,7 +61,7 @@ auto convert_to_host(rmm::device_buffer& buffer)
     return host_buffer;
 }
 
-TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
+TEST_F(TestAddClassification, TestProcessControlMessage)
 {
     pybind11::gil_scoped_release no_gil;
     auto test_data_dir               = test::get_morpheus_root() / "tests/tests_data";
@@ -90,12 +90,9 @@ TEST_F(TestAddClassification, TestProcessControlMessageAndMultiResponseMessage)
     cudf::io::csv_reader_options read_opts = cudf::io::csv_reader_options::builder(cudf::io::source_info(input_file))
                                                  .dtypes({cudf::data_type(cudf::data_type{cudf::type_to_id<bool>()})})
                                                  .header(0);
-    auto meta_mm = MessageMeta::create_from_cpp(cudf::io::read_csv(read_opts));
 
     std::map<std::size_t, std::string> idx2label = {{0, "bool"}};
 
-    // Create a separate dataframe from a file (otherwise they will overwrite
-    // eachother)
     auto meta_cm = MessageMeta::create_from_cpp(cudf::io::read_csv(read_opts));
 
     // Create ControlMessage

@@ -21,6 +21,7 @@ import pytest
 
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.logger import set_log_level
 
@@ -76,17 +77,16 @@ def test_on_data(
         config: Config,
         mock_mlflow_client: mock.MagicMock,  # pylint: disable=unused-argument
         mock_model_manager: mock.MagicMock,
-        dfp_multi_message: "MultiDFPMessage",  # noqa: F821
+        control_message: "ControlMessage",  # noqa: F821
         log_level: int,
         dataset_pandas: DatasetManager):
-    from dfp.messages.multi_dfp_message import MultiDFPMessage
     from dfp.stages.dfp_inference_stage import DFPInferenceStage
 
     set_log_level(log_level)
 
-    expected_results = list(range(1000, dfp_multi_message.mess_count + 1000))
+    expected_results = list(range(1000, control_message.payload().count + 1000))
 
-    expected_df = dfp_multi_message.get_meta_dataframe().copy(deep=True)
+    expected_df = control_message.payload().copy_dataframe()
     expected_df["results"] = expected_results
     expected_df["model_version"] = "test_model_name:test_model_version"
 
@@ -101,13 +101,12 @@ def test_on_data(
     mock_model_manager.load_user_model.return_value = mock_model_cache
 
     stage = DFPInferenceStage(config, model_name_formatter="test_model_name-{user_id}")
-    results = stage.on_data(dfp_multi_message)
+    results = stage.on_data(control_message)
 
-    assert isinstance(results, MultiDFPMessage)
-    assert results.meta is dfp_multi_message.meta
-    assert results.mess_offset == dfp_multi_message.mess_offset
-    assert results.mess_count == dfp_multi_message.mess_count
-    dataset_pandas.assert_compare_df(results.get_meta(), expected_df)
+    assert isinstance(results, ControlMessage)
+    assert results.payload() is control_message.payload()
+    assert results.payload().count == control_message.payload().count
+    dataset_pandas.assert_compare_df(results.payload().get_data(), expected_df)
 
 
 @pytest.mark.parametrize("raise_error", [True, False])
@@ -115,7 +114,7 @@ def test_on_data_get_model_error(
         config: Config,
         mock_mlflow_client: mock.MagicMock,  # pylint: disable=unused-argument
         mock_model_manager: mock.MagicMock,
-        dfp_multi_message: "MultiDFPMessage",  # noqa: F821
+        control_message: "ControlMessage",  # noqa: F821
         raise_error: bool):
     from dfp.stages.dfp_inference_stage import DFPInferenceStage
 
@@ -126,4 +125,4 @@ def test_on_data_get_model_error(
         mock_model_manager.load_user_model.return_value = None
 
     stage = DFPInferenceStage(config, model_name_formatter="test_model_name-{user_id}")
-    assert stage.on_data(dfp_multi_message) is None
+    assert stage.on_data(control_message) is None

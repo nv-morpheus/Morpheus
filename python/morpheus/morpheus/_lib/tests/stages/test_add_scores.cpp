@@ -49,7 +49,7 @@ using namespace morpheus;
 
 TEST_CLASS_WITH_PYTHON(AddScores);
 
-TEST_F(TestAddScores, TestProcessControlMessageAndMultiResponseMessage)
+TEST_F(TestAddScores, TestProcessControlMessage)
 {
     pybind11::gil_scoped_release no_gil;
     auto test_data_dir               = test::get_morpheus_root() / "tests/tests_data";
@@ -70,14 +70,8 @@ TEST_F(TestAddScores, TestProcessControlMessageAndMultiResponseMessage)
     auto packed_data = std::make_shared<rmm::device_buffer>(
         packed_data_host.data(), cols_size * mess_count * sizeof(double), rmm::cuda_stream_per_thread);
 
-    // Create a dataframe from a file
-    auto meta_mm = MessageMeta::create_from_cpp(load_table_from_file(input_file));
-    preallocate(meta_mm, {{"colA", TypeId::FLOAT64}, {"colB", TypeId::FLOAT64}});
-
     std::map<std::size_t, std::string> idx2label = {{0, "colA"}, {1, "colB"}};
 
-    // Create a separate dataframe from a file (otherwise they will overwrite
-    // eachother)
     auto meta_cm = MessageMeta::create_from_cpp(load_table_from_file(input_file));
     preallocate(meta_cm, {{"colA", TypeId::FLOAT64}, {"colB", TypeId::FLOAT64}});
 

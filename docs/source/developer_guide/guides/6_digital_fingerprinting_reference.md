@@ -319,7 +319,7 @@ After training the generic model, individual user models can be trained. Individ
 ### Training Stages
 
 #### Training Stage (`DFPTraining`)
-The {py:obj}`~dfp.stages.dfp_training.DFPTraining` trains a model for each incoming `DataFrame` and emits an instance of `morpheus.messages.multi_ae_message.MultiAEMessage` containing the trained model.
+The {py:obj}`~dfp.stages.dfp_training.DFPTraining` trains a model for each incoming `DataFrame` and emits an instance of `morpheus.messages.ControlMessage` containing the trained model.
 
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
