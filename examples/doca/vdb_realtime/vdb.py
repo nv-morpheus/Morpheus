@@ -18,7 +18,6 @@ import click
 import pymilvus
 
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
@@ -118,8 +117,6 @@ def run_pipeline(nic_addr: str,
                  vector_db_resource_name: str):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
-
-    CppConfig.set_should_use_cpp(True)
 
     config = Config()
     config.mode = PipelineModes.NLP

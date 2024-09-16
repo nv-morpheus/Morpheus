@@ -21,7 +21,6 @@ import click
 from morpheus.config import AEFeatureScalar
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -100,8 +99,6 @@ def run_pipeline(num_threads,
                  output_file):
     """Configure and run the pipeline."""
     configure_logging(log_level=logging.DEBUG)
-
-    CppConfig.set_should_use_cpp(False)
 
     config = Config()
     config.mode = PipelineModes.AE

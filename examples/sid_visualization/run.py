@@ -21,7 +21,6 @@ import mrc
 
 from morpheus.common import FileTypes
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
@@ -155,8 +154,6 @@ def run_pipeline(debug, use_cpp, num_threads, input_file, max_batch_size, model_
         configure_logging(log_level=logging.DEBUG)
     else:
         configure_logging(log_level=logging.INFO)
-
-    CppConfig.set_should_use_cpp(use_cpp)
 
     # Its necessary to get the global config object and configure it for FIL mode.
     config = Config()
