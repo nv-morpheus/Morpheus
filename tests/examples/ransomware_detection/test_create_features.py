@@ -20,7 +20,6 @@ import typing
 from unittest import mock
 
 import pandas as pd
-import pytest
 
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager

@@ -33,7 +33,6 @@ from morpheus.common import FileTypes
 from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage

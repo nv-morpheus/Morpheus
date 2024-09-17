@@ -20,6 +20,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
+from morpheus.config import CppConfig
 from morpheus.config import ExecutionMode
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import DataFrameTypeStr
@@ -191,6 +192,12 @@ def exec_mode_to_df_type_str(execution_mode: ExecutionMode) -> DataFrameTypeStr:
     return "pandas"
 
 
+def cpp_mode_to_exec_mode() -> ExecutionMode:
+    if CppConfig.get_should_use_cpp():
+        return ExecutionMode.GPU
+    return ExecutionMode.CPU
+
+
 def df_type_str_to_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
     """
     Return the appropriate DataFrame package based on the DataFrame type string.
@@ -206,20 +213,22 @@ def df_type_str_to_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
 
 
 @typing.overload
-def get_df_pkg(selector: DataFrameTypeStr) -> types.ModuleType:
+def get_df_pkg(selector: DataFrameTypeStr = None) -> types.ModuleType:
     ...
 
 
 @typing.overload
-def get_df_pkg(selector: ExecutionMode) -> types.ModuleType:
+def get_df_pkg(selector: ExecutionMode = None) -> types.ModuleType:
     ...
 
 
-def get_df_pkg(selector: ExecutionMode | DataFrameTypeStr) -> types.ModuleType:
+def get_df_pkg(selector: ExecutionMode | DataFrameTypeStr = None) -> types.ModuleType:
     """
     Return the appropriate DataFrame package based on the execution mode.
     """
-    if not isinstance(selector, ExecutionMode):
+    if selector is None:
+        execution_mode = cpp_mode_to_exec_mode()
+    elif not isinstance(selector, ExecutionMode):
         execution_mode = df_type_str_to_exec_mode(selector)
     else:
         execution_mode = selector
@@ -231,28 +240,21 @@ def get_df_pkg(selector: ExecutionMode | DataFrameTypeStr) -> types.ModuleType:
     return pd
 
 
-def get_array_pkg(execution_mode: ExecutionMode) -> types.ModuleType:
-    """
-    Return the appropriate array package (CuPy for GPU, NumPy for CPU) based on the execution mode.
-    """
-
-    if execution_mode == ExecutionMode.GPU:
-        import cupy
-        return cupy
-
-    return np
-
-
 @typing.overload
-def get_df_class(df_type_str: DataFrameTypeStr) -> type[DataFrameType]:
+def get_df_class(selector: DataFrameTypeStr = None) -> type[DataFrameType]:
     ...
 
 
-def get_df_class(execution_mode: ExecutionMode) -> type[DataFrameType]:
+@typing.overload
+def get_df_class(selector: ExecutionMode = None) -> type[DataFrameType]:
+    ...
+
+
+def get_df_class(selector: ExecutionMode | DataFrameTypeStr = None) -> type[DataFrameType]:
     """
     Return the appropriate DataFrame class based on the execution mode.
     """
-    df_pkg = get_df_pkg(execution_mode)
+    df_pkg = get_df_pkg(selector)
     return df_pkg.DataFrame
 
 
@@ -280,3 +282,17 @@ def is_dataframe(obj: typing.Any) -> bool:
     """
     df_pkg = get_df_pkg_from_obj(obj)
     return isinstance(obj, df_pkg.DataFrame)
+
+
+def get_array_pkg(execution_mode: ExecutionMode = None) -> types.ModuleType:
+    """
+    Return the appropriate array package (CuPy for GPU, NumPy for CPU) based on the execution mode.
+    """
+    if execution_mode is None:
+        execution_mode = cpp_mode_to_exec_mode()
+
+    if execution_mode == ExecutionMode.GPU:
+        import cupy
+        return cupy
+
+    return np

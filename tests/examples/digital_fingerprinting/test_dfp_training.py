@@ -54,8 +54,6 @@ def test_on_data(mock_train_test_split: mock.MagicMock,
                  validation_size: float):
     from dfp.stages.dfp_training import DFPTraining
 
-    from morpheus.messages import ControlMessage
-
     mock_ae.return_value = mock_ae
 
     input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
