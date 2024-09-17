@@ -300,6 +300,9 @@ class AutoencoderSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSour
 
             # If we're in GPU mode we need to convert to cuDF
             if not isinstance(user_df, self._df_class):
+                for col in [col for col in user_df.columns if isinstance(user_df[col].dtype, pd.DatetimeTZDtype)]:
+                    user_df[col] = user_df[col].dt.tz_convert(None)
+
                 user_df = self._df_class(user_df)
 
             # Now make a message with the user name in metadata

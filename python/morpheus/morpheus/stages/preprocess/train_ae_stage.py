@@ -324,10 +324,6 @@ class TrainAEStage(PassThruTypeMixin, SinglePortStage):
             # cuDF does not yet support timezone-aware datetimes
             # Remove timezone information from pd.DatetimeTZDtype columns
             meta = full_message.payload()
-            with meta.mutable_dataframe() as df:
-                for col in [col for col in df.columns if isinstance(df[col].dtype, pd.DatetimeTZDtype)]:
-                    df[col] = df[col].dt.tz_convert(None)
-
             to_send = []
 
             # Now split into batches
