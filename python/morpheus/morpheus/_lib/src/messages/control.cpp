@@ -19,21 +19,23 @@
 
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory, TensorMemoryInterfaceProxy
 #include "morpheus/messages/meta.hpp"                  // for MessageMeta, MessageMetaInterfaceProxy
+#include "morpheus/types.hpp"                          // for TensorIndex
 
-#include <boost/algorithm/string/case_conv.hpp>  // for to_lower_copy
-#include <glog/logging.h>                        // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
-#include <nlohmann/json.hpp>                     // for basic_json, json_ref, iter_impl, operator<<
-#include <pybind11/chrono.h>                     // IWYU pragma: keep
-#include <pybind11/pybind11.h>                   // for cast, object::cast
-#include <pybind11/pytypes.h>  // for object, none, dict, isinstance, list, str, value_error, generic_item
-#include <pybind11/stl.h>      // for casting to std::map
-#include <pymrc/utils.hpp>     // for cast_from_pyobject
+#include <boost/algorithm/string.hpp>  // for to_lower_copy
+#include <glog/logging.h>              // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
+#include <nlohmann/json.hpp>           // for basic_json, json_ref, iter_impl, operator<<
+#include <pybind11/chrono.h>           // IWYU pragma: keep
+#include <pybind11/pybind11.h>         // for cast, object::cast
+#include <pybind11/pytypes.h>          // for object, none, dict, isinstance, list, str, value_error, generic_item
+#include <pybind11/stl.h>              // IWYU pragma: keep
+#include <pymrc/utils.hpp>             // for cast_from_pyobject
 
 #include <optional>   // for optional, nullopt
 #include <ostream>    // for basic_ostream, operator<<
 #include <regex>      // for regex_search, regex
 #include <stdexcept>  // for runtime_error
 #include <utility>    // for pair
+// IWYU pragma: no_include <boost/iterator/iterator_facade.hpp>
 
 namespace py = pybind11;
 using namespace py::literals;

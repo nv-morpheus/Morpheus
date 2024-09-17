@@ -25,7 +25,7 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 
-#include <atomic>   // for atomic
+#include <atomic>  // for atomic
 #include <cstdlib>  // for getenv
 #include <memory>
 #include <mutex>

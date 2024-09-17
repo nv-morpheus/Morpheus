@@ -32,7 +32,6 @@
 #include "py_llm_lambda_node.hpp"
 
 #include "morpheus/messages/control.hpp"  // IWYU pragma: keep
-#include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/version.hpp"
 
 #include <mrc/segment/object.hpp>  // for Object, ObjectProperties
