@@ -17,16 +17,16 @@ DFP module definitions, each module is automatically registered when imported
 
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
-from dfp.modules import dfp_data_prep
-from dfp.modules import dfp_deployment
-from dfp.modules import dfp_inference
-from dfp.modules import dfp_inference_pipe
-from dfp.modules import dfp_postprocessing
-from dfp.modules import dfp_preproc
-from dfp.modules import dfp_rolling_window
-from dfp.modules import dfp_split_users
-from dfp.modules import dfp_training
-from dfp.modules import dfp_training_pipe
+from morpheus_dfp.modules import dfp_data_prep
+from morpheus_dfp.modules import dfp_deployment
+from morpheus_dfp.modules import dfp_inference
+from morpheus_dfp.modules import dfp_inference_pipe
+from morpheus_dfp.modules import dfp_postprocessing
+from morpheus_dfp.modules import dfp_preproc
+from morpheus_dfp.modules import dfp_rolling_window
+from morpheus_dfp.modules import dfp_split_users
+from morpheus_dfp.modules import dfp_training
+from morpheus_dfp.modules import dfp_training_pipe
 
 __all__ = [
     "dfp_split_users",

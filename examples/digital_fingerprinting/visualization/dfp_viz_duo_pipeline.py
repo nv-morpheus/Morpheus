@@ -23,9 +23,9 @@ from datetime import timezone
 import click
 import mlflow
 import pandas as pd
-from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
-from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
-from dfp.stages.dfp_inference_stage import DFPInferenceStage
+from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+from morpheus_dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+from morpheus_dfp.stages.dfp_inference_stage import DFPInferenceStage
 from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
 from dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
 from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage

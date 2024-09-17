@@ -209,7 +209,7 @@ For input files containing an ISO 8601 formatted date string the `iso_date_regex
 from functools import partial
 
 from morpheus.utils.file_utils import date_extractor
-from dfp.utils.regex_utils import iso_date_regex
+from morpheus_dfp.utils.regex_utils import iso_date_regex
 ```
 ```python
 # Batch files into buckets by time. Use the default ISO date extractor from the filename

@@ -19,8 +19,6 @@ from contextlib import contextmanager
 
 import mrc
 import pandas as pd
-from dfp.utils.cached_user_window import CachedUserWindow
-from dfp.utils.logging_timer import log_time
 from mrc.core import operators as ops
 
 import cudf
@@ -30,6 +28,8 @@ from morpheus.messages import MessageMeta
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
+from ..utils.cached_user_window import CachedUserWindow
+from ..utils.logging_timer import log_time
 from ..utils.module_ids import DFP_ROLLING_WINDOW
 
 logger = logging.getLogger(f"morpheus.{__name__}")
