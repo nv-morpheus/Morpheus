@@ -75,12 +75,6 @@ from morpheus.stages.input.control_message_kafka_source_stage import ControlMess
     help="The training duration to run starting from start_time",
 )
 @click.option(
-    "--use_cpp",
-    type=click.BOOL,
-    default=True,
-    help=("Indicates what type of logs are going to be used in the workload."),
-)
-@click.option(
     "--cache_dir",
     type=str,
     default="./.cache/dfp",
@@ -147,7 +141,6 @@ def run_pipeline(source: str,
                  sample_rate_s: int,
                  tracking_uri,
                  silence_monitors,
-                 use_cpp,
                  mlflow_experiment_name_template,
                  mlflow_model_name_template,
                  **kwargs):
@@ -180,7 +173,7 @@ def run_pipeline(source: str,
     # Default timestamp column -- override with ControlMessage
     timestamp_column_name = "timestamp"
 
-    config: Config = generate_ae_config(source, userid_column_name, timestamp_column_name, use_cpp=use_cpp)
+    config: Config = generate_ae_config(source, userid_column_name, timestamp_column_name)
 
     # Construct the data frame Schema used to normalize incoming data
     schema_builder = SchemaBuilder(config, source)

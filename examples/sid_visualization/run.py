@@ -119,7 +119,6 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
 
 @click.command()
 @click.option("--debug/--no-debug", default=False)
-@click.option('--use_cpp', default=True)
 @click.option(
     "--num_threads",
     default=len(os.sched_getaffinity(0)),
@@ -148,7 +147,7 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
     help="The name of the model that is deployed on Tritonserver.",
 )
 @click.option("--triton_server_url", default="localhost:8001", required=True, help="Tritonserver url.")
-def run_pipeline(debug, use_cpp, num_threads, input_file, max_batch_size, model_name, triton_server_url):
+def run_pipeline(debug, num_threads, input_file, max_batch_size, model_name, triton_server_url):
 
     if debug:
         configure_logging(log_level=logging.DEBUG)

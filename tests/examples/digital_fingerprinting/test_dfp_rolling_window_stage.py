@@ -157,8 +157,6 @@ def test_build_window(config: Config,
                       train_df: pd.DataFrame):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
-    from morpheus.messages import ControlMessage
-
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
     # Create an overlap

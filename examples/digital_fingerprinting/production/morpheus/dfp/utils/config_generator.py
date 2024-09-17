@@ -172,7 +172,6 @@ def generate_ae_config(source: str,
                        timestamp_column_name: str,
                        pipeline_batch_size: int = 0,
                        edge_buffer_size: int = 0,
-                       use_cpp: bool = False,
                        num_threads: int = len(os.sched_getaffinity(0))):
     config = Config()
     config.num_threads = num_threads
