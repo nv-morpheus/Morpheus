@@ -31,10 +31,12 @@ from morpheus.messages.memory.response_memory import ResponseMemoryProbs
 from morpheus.messages.message_base import MessageBase
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.message_meta import UserMessageMeta
+from morpheus.messages.control_message import ControlMessageType
 from morpheus.messages.control_message import ControlMessage
 
 __all__ = [
     "ControlMessage",
+    "ControlMessageType",
     "DataLoaderRegistry",
     "InferenceMemory",
     "InferenceMemoryAE",
