@@ -125,6 +125,7 @@ class DFPSplitUsersStage(SinglePortStage):
                 })
 
             output_messages: list[ControlMessage] = []
+            rows_per_user: list[int] = []
 
             for user_id in sorted(split_dataframes.keys()):
 
@@ -139,7 +140,8 @@ class DFPSplitUsersStage(SinglePortStage):
                 user_df.index = range(current_user_count, current_user_count + len(user_df))
                 self._user_index_map[user_id] = current_user_count + len(user_df)
 
-                meta = MessageMeta(cudf.DataFrame(user_df))
+                rows_per_user.append(len(user_df))
+                meta = MessageMeta(cudf.DataFrame.from_pandas(user_df))
                 cm_msg = ControlMessage()
                 cm_msg.payload(meta)
                 cm_msg.set_metadata("user_id", user_id)
@@ -152,7 +154,6 @@ class DFPSplitUsersStage(SinglePortStage):
                 #              df_user[self._config.ae.timestamp_column_name].count())
 
             if (len(output_messages) > 0):
-                rows_per_user = [len(x.payload().df) for x in output_messages]
                 log_info.set_log(
                     ("Batch split users complete. Input: %s rows from %s to %s. "
                      "Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms"),
