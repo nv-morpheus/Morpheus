@@ -27,6 +27,7 @@ from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from _utils.kafka import KafkaTopics
 from morpheus.cli import commands
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
@@ -48,10 +49,9 @@ if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
 
 
-@pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.kafka
 @pytest.mark.slow
-@pytest.mark.cpu_mode
+@pytest.mark.gpu_mode
 @pytest.mark.reload_modules([commands, preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules", "loglevel_debug")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
@@ -104,7 +104,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
             sort_glob=True))
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
-    pipe.add_stage(AddScoresStage(config))
+    pipe.add_stage(AddScoresStage(config, probs_type=TypeId.FLOAT64))
     pipe.add_stage(
         TimeSeriesStage(config,
                         resolution="1m",
@@ -153,10 +153,9 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
     assert results['diff_rows'] == 0
 
 
-@pytest.mark.skip(reason="Need to determine what to do with GPU pipelines that are Python only")
 @pytest.mark.kafka
 @pytest.mark.slow
-@pytest.mark.cpu_mode
+@pytest.mark.gpu_mode
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules", "loglevel_debug")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
@@ -208,7 +207,7 @@ def test_dfp_user123(mock_ae: mock.MagicMock,
             sort_glob=True))
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
-    pipe.add_stage(AddScoresStage(config))
+    pipe.add_stage(AddScoresStage(config, probs_type=TypeId.FLOAT64))
     pipe.add_stage(
         TimeSeriesStage(config,
                         resolution="1m",
