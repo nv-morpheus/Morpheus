@@ -88,25 +88,22 @@ def dfp_prod_in_sys_path(
     sys.path.append(example_dir)
 
 
-@pytest.fixture(name="dfp_message_meta")
-def dfp_message_meta_fixture(config, dataset_pandas: DatasetManager):
-    # TODO: This should be a cudf DataFrame, and emit a control message
-    import pandas as pd
-    from dfp.messages.dfp_message_meta import DFPMessageMeta
+@pytest.fixture
+def control_message(config, dataset_cudf: DatasetManager):
+    import cudf
+
+    from morpheus.messages import ControlMessage
+    from morpheus.messages import MessageMeta
 
     user_id = 'test_user'
-    df = dataset_pandas['filter_probs.csv']
-    df[config.ae.timestamp_column_name] = pd.to_datetime([1683054498 + i for i in range(0, len(df) * 30, 30)], unit='s')
+    df = dataset_cudf['filter_probs.csv']
+    timestamps = [1683054498 + i for i in range(0, len(df) * 30, 30)]
+    df[config.ae.timestamp_column_name] = cudf.to_datetime(timestamps, unit='s')
     df[config.ae.userid_column_name] = user_id
-    yield DFPMessageMeta(df, user_id)
 
-
-@pytest.fixture
-def control_message(dfp_message_meta):
-    from morpheus.messages import ControlMessage
     message = ControlMessage()
-    message.payload(dfp_message_meta)
-    message.set_metadata("user_id", dfp_message_meta.user_id)
+    message.payload(MessageMeta(df))
+    message.set_metadata("user_id", user_id)
     message.set_metadata("model", mock.MagicMock())
 
     yield message

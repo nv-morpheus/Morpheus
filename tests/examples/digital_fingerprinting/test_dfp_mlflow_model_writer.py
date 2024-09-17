@@ -27,6 +27,7 @@ from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 MockedRequests = namedtuple("MockedRequests", ["get", "patch", "response"])
@@ -238,7 +239,6 @@ def test_on_data(
         databricks_env: dict,
         databricks_permissions: dict,
         tracking_uri: str):
-    from dfp.messages.dfp_message_meta import DFPMessageMeta
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     from dfp.stages.dfp_mlflow_model_writer import conda_env
 
@@ -272,11 +272,10 @@ def test_on_data(
     mock_model.prepare_df.return_value = df
     mock_model.get_anomaly_score.return_value = pd.Series(float(i) for i in range(len(df)))
 
-    meta = DFPMessageMeta(df, 'Account-123456789')
     msg = ControlMessage()
-    msg.payload(meta)
+    msg.payload(MessageMeta(df))
     msg.set_metadata("model", mock_model)
-    msg.set_metadata("user_id", meta.user_id)
+    msg.set_metadata("user_id", 'Account-123456789')
 
     stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions, timeout=10)
     assert stage._controller.on_data(msg) is msg  # Should be a pass-thru

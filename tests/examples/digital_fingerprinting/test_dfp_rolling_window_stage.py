@@ -21,7 +21,13 @@ import pytest
 
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
+
+
+@pytest.fixture(name="train_df")
+def train_df_fixture(control_message: ControlMessage) -> pd.DataFrame:
+    return control_message.payload().copy_dataframe().to_pandas()
 
 
 def build_mock_user_cache(user_id: str = 'test_user',
@@ -81,90 +87,74 @@ def test_get_user_cache_miss(config: Config):
         assert results2 is results
 
 
-def test_build_window_no_new(
-        config: Config,
-        dfp_message_meta: "DFPMessageMeta"  # noqa: F821
-):
+def test_build_window_no_new(config: Config, control_message: ControlMessage):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
     mock_cache = build_mock_user_cache()
     mock_cache.append_dataframe.return_value = False
-    stage._user_cache_map[dfp_message_meta.user_id] = mock_cache
-    assert stage._build_window(dfp_message_meta) is None
+    stage._user_cache_map[control_message.get_metadata('user_id')] = mock_cache
+    assert stage._build_window(control_message) is None
 
 
-def test_build_window_not_enough_data(
-        config: Config,
-        dfp_message_meta: "DFPMessageMeta"  # noqa: F821
-):
+def test_build_window_not_enough_data(config: Config, control_message: ControlMessage):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
     mock_cache = build_mock_user_cache(count=3)
-    stage._user_cache_map[dfp_message_meta.user_id] = mock_cache
-    assert stage._build_window(dfp_message_meta) is None
+    stage._user_cache_map[control_message.get_metadata('user_id')] = mock_cache
+    assert stage._build_window(control_message) is None
 
 
-def test_build_window_min_increment(
-        config: Config,
-        dfp_message_meta: "DFPMessageMeta"  # noqa: F821
-):
+def test_build_window_min_increment(config: Config, control_message: ControlMessage):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
     mock_cache = build_mock_user_cache(count=5, total_count=30, last_train_count=25)
-    stage._user_cache_map[dfp_message_meta.user_id] = mock_cache
-    assert stage._build_window(dfp_message_meta) is None
+    stage._user_cache_map[control_message.get_metadata('user_id')] = mock_cache
+    assert stage._build_window(control_message) is None
 
 
-def test_build_window_invalid(
-        config: Config,
-        dfp_message_meta: "DFPMessageMeta"  # noqa: F821
-):
+def test_build_window_invalid(config: Config, control_message: ControlMessage, train_df: pd.DataFrame):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
-    train_df = dfp_message_meta.copy_dataframe()
     # exact values not important so long as they don't match the actual hash
     train_df['_row_hash'] = [-1 for _ in range(len(train_df))]
 
     mock_cache = build_mock_user_cache(train_df=train_df)
-    stage._user_cache_map[dfp_message_meta.user_id] = mock_cache
+    stage._user_cache_map[control_message.get_metadata('user_id')] = mock_cache
 
     with pytest.raises(RuntimeError):
-        stage._build_window(dfp_message_meta)
+        stage._build_window(control_message)
 
 
-def test_build_window_overlap(
-        config: Config,
-        dfp_message_meta: "DFPMessageMeta"  # noqa: F821
-):
+def test_build_window_overlap(config: Config, control_message: ControlMessage, train_df: pd.DataFrame):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
     # Create an overlap
-    train_df = dfp_message_meta.copy_dataframe()[-5:]
+    train_df = train_df[-5:]
     train_df['_row_hash'] = pd.util.hash_pandas_object(train_df, index=False)
 
     mock_cache = build_mock_user_cache(train_df=train_df)
-    stage._user_cache_map[dfp_message_meta.user_id] = mock_cache
+    stage._user_cache_map[control_message.get_metadata('user_id')] = mock_cache
 
     with pytest.raises(RuntimeError):
-        stage._build_window(dfp_message_meta)
+        stage._build_window(control_message)
 
 
 @pytest.mark.parametrize('use_on_data', [True, False])
-def test_build_window(
-        config: Config,
-        use_on_data: bool,
-        dfp_message_meta: "DFPMessageMeta",  # noqa: F821
-        dataset_pandas: DatasetManager):
+def test_build_window(config: Config,
+                      use_on_data: bool,
+                      control_message: ControlMessage,
+                      dataset_pandas: DatasetManager,
+                      train_df: pd.DataFrame):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     from morpheus.messages import ControlMessage
@@ -172,19 +162,18 @@ def test_build_window(
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
     # Create an overlap
-    train_df = dfp_message_meta.copy_dataframe()
     train_df['_row_hash'] = pd.util.hash_pandas_object(train_df, index=False)
 
     mock_cache = build_mock_user_cache(train_df=train_df)
-    stage._user_cache_map[dfp_message_meta.user_id] = mock_cache
+    stage._user_cache_map[control_message.get_metadata('user_id')] = mock_cache
 
     # on_data is a thin wrapper around _build_window, results should be the same
     if use_on_data:
-        msg = stage.on_data(dfp_message_meta)
+        out_msg = stage.on_data(control_message)
     else:
-        msg = stage._build_window(dfp_message_meta)
+        out_msg = stage._build_window(control_message)
 
-    assert isinstance(msg, ControlMessage)
-    assert msg.get_metadata("user_id") == dfp_message_meta.user_id
-    assert msg.payload().count == len(dataset_pandas['filter_probs.csv'])
-    dataset_pandas.assert_df_equal(msg.payload().df, train_df)
+    assert isinstance(out_msg, ControlMessage)
+    assert out_msg.get_metadata("user_id") == control_message.get_metadata('user_id')
+    assert out_msg.payload().count == len(dataset_pandas['filter_probs.csv'])
+    dataset_pandas.assert_df_equal(out_msg.payload().df, train_df)
