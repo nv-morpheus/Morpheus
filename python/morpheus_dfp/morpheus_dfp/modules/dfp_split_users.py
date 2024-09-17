@@ -17,7 +17,6 @@ import typing
 
 import mrc
 import pandas as pd
-from dfp.utils.logging_timer import log_time
 from mrc.core import operators as ops
 
 import cudf
@@ -27,6 +26,7 @@ from morpheus.messages import MessageMeta
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
+from ..utils.logging_timer import log_time
 from ..utils.module_ids import DFP_SPLIT_USERS
 
 logger = logging.getLogger(f"morpheus.{__name__}")

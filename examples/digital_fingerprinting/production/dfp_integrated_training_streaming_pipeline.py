@@ -17,23 +17,23 @@ import typing
 from datetime import datetime
 
 import click
-# When segment modules are imported, they're added to the module registry.
-# To avoid flake8 warnings about unused code, the noqa flag is used during import.
-import dfp.modules  # noqa: F401 # pylint:disable=unused-import
-from dfp.utils.config_generator import ConfigGenerator
-from dfp.utils.config_generator import generate_ae_config
-from dfp.utils.dfp_arg_parser import DFPArgParser
-from dfp.utils.schema_utils import Schema
-from dfp.utils.schema_utils import SchemaBuilder
 
 import morpheus.loaders  # noqa: F401 # pylint:disable=unused-import
 import morpheus.modules  # noqa: F401 # pylint:disable=unused-import
+# When segment modules are imported, they're added to the module registry.
+# To avoid flake8 warnings about unused code, the noqa flag is used during import.
+import morpheus_dfp.modules  # noqa: F401 # pylint:disable=unused-import
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.multi_port_modules_stage import MultiPortModulesStage
 from morpheus.stages.input.control_message_kafka_source_stage import ControlMessageKafkaSourceStage
+from morpheus_dfp.utils.config_generator import ConfigGenerator
+from morpheus_dfp.utils.config_generator import generate_ae_config
+from morpheus_dfp.utils.dfp_arg_parser import DFPArgParser
+from morpheus_dfp.utils.schema_utils import Schema
+from morpheus_dfp.utils.schema_utils import SchemaBuilder
 
 
 @click.command()

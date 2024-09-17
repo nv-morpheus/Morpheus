@@ -14,12 +14,6 @@
 
 import os
 
-from dfp.utils.dfp_arg_parser import DFPArgParser
-from dfp.utils.dfp_arg_parser import pyobj2str
-from dfp.utils.module_ids import DFP_DEPLOYMENT
-from dfp.utils.regex_utils import iso_date_regex_pattern
-from dfp.utils.schema_utils import Schema
-
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
@@ -27,6 +21,12 @@ from morpheus.config import CppConfig
 from morpheus.messages import ControlMessage
 from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
+
+from .dfp_arg_parser import DFPArgParser
+from .dfp_arg_parser import pyobj2str
+from .module_ids import DFP_DEPLOYMENT
+from .regex_utils import iso_date_regex_pattern
+from .schema_utils import Schema
 
 
 class ConfigGenerator:

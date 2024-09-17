@@ -16,8 +16,6 @@ import logging
 import time
 
 import mrc
-from dfp.utils.model_cache import ModelCache
-from dfp.utils.model_cache import ModelManager
 from mlflow.tracking.client import MlflowClient
 from mrc.core import operators as ops
 
@@ -26,6 +24,8 @@ import cudf
 from morpheus.messages import ControlMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
+from morpheus_dfp.utils.model_cache import ModelCache
+from morpheus_dfp.utils.model_cache import ModelManager
 
 from ..messages.dfp_message_meta import DFPMessageMeta
 from ..utils.module_ids import DFP_INFERENCE
