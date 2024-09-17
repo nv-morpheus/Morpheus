@@ -20,8 +20,6 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiResponseMessage
-from morpheus.messages.multi_message import MultiMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.module_utils import ModuleLoader

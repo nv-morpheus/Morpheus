@@ -15,7 +15,7 @@
 import importlib
 import typing
 
-import morpheus.service  # pylint: disable=unused-import
+import morpheus_llm.service  # pylint: disable=unused-import
 
 
 def handle_service_exceptions(func):
@@ -80,7 +80,8 @@ class VectorDBServiceFactory:
     @classmethod
     def create_instance(
             cls, service_name: typing.Literal["milvus"], *args: typing.Any,
-            **kwargs: dict[str, typing.Any]) -> "morpheus_llm.service.vdb.milvus_vector_db_service.MilvusVectorDBService":
+            **kwargs: dict[str,
+                           typing.Any]) -> "morpheus_llm.service.vdb.milvus_vector_db_service.MilvusVectorDBService":
         pass
 
     @classmethod
