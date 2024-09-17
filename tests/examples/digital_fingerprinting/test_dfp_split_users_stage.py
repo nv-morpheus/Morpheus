@@ -19,13 +19,13 @@ import typing
 import warnings
 from collections import defaultdict
 
-import pandas as pd
 import pytest
 
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.utils.type_utils import get_df_pkg_from_obj
 
 
 def test_constructor(config: Config):
@@ -61,7 +61,7 @@ def test_constructor(config: Config):
                          [[], ['WENDY.HUERTA@Brooklyn-dynamic.edu'],
                           ['terrietahon@planner-viral.com', 'SAMUEL.DAVIS@transition-high-life.com']])
 def test_extract_users(config: Config,
-                       dataset_pandas: DatasetManager,
+                       dataset: DatasetManager,
                        include_generic: bool,
                        include_individual: bool,
                        skip_users: typing.List[str],
@@ -69,15 +69,24 @@ def test_extract_users(config: Config,
     from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
     config.ae.userid_column_name = "From"
     config.ae.fallback_username = "testy_testerson"
+    ts_col = config.ae.timestamp_column_name
 
     input_file = os.path.join(TEST_DIRS.tests_data_dir,
                               "examples/developer_guide/email_with_addresses_first_10.jsonlines")
 
-    df = dataset_pandas[input_file]
+    df = dataset[input_file]
+    df_pkg = get_df_pkg_from_obj(df)
+
+    # When the file is read using pandas (as is the case in the actual DFP pipeline), the timestamp column is
+    # automatically converted to datetime objects. However cuDF doesn't do this and the column will contain integers.
+    # When `dataset` is returning pandas DFs this might still be the case if `input_file` is first read using cuDF and
+    # cached by the DatasetManager and then converted to pandas.
+    if df[ts_col].dtype == 'int64':
+        df[ts_col] = df_pkg.to_datetime(df[ts_col], unit='s')
 
     all_data = []
     expected_data = defaultdict(list)
-    ts_col = config.ae.timestamp_column_name
+
     with open(input_file, encoding='UTF-8') as fh:
         for line in fh:
             json_data = json.loads(line)
@@ -88,7 +97,7 @@ def test_extract_users(config: Config,
             if len(only_users) > 0 and user_id not in only_users:
                 continue
 
-            json_data[ts_col] = pd.to_datetime(json_data[ts_col], unit='s')
+            json_data[ts_col] = df_pkg.to_datetime(json_data[ts_col], unit='s')
 
             if include_generic:
                 all_data.append(json_data)
