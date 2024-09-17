@@ -195,6 +195,9 @@ class SharedProcessPool:
         """
         Set the maximum percentage of processes that can be used by each stage.
         """
+        if self._status.value != PoolStatus.RUNNING:
+            raise ValueError("Cannot set usage to a SharedProcessPool that is not running.")
+
         if not 0 <= percentage <= 1:
             raise ValueError("Percentage must be between 0 and 1.")
 
@@ -216,8 +219,9 @@ class SharedProcessPool:
         logger.debug("stage semaphores: %s", allowed_processes_num)
 
     def stop(self):
-        if self._status.value != PoolStatus.RUNNING:
-            raise ValueError("Cannot stop a SharedProcessPool that is not running.")
+        if self._status.value not in (PoolStatus.RUNNING, PoolStatus.INITIALIZING):
+            logger.info("Cannot stop a SharedProcessPool that is not running.")
+            return
 
         self._status.value = PoolStatus.STOPPING
         for i, p in enumerate(self._processes):
@@ -228,8 +232,9 @@ class SharedProcessPool:
         self._status.value = PoolStatus.SHUTDOWN
 
     def kill(self):
-        if self._status.value != PoolStatus.RUNNING:
-            raise ValueError("Cannot kill a SharedProcessPool that is not running.")
+        if self._status.value not in (PoolStatus.RUNNING, PoolStatus.INITIALIZING):
+            logger.info("Cannot kill a SharedProcessPool that is not running.")
+            return
 
         for i, p in enumerate(self._processes):
             p.terminate()
@@ -248,7 +253,7 @@ class SharedProcessPool:
 
     def reset(self):
         if self._status.value != PoolStatus.SHUTDOWN:
-            raise ValueError("Cannot reset a SharedProcessPool that is not shutdown.")
+            raise ValueError("Cannot reset a SharedProcessPool that is not already shutdown.")
 
         self._initialize(self._total_max_workers)
 

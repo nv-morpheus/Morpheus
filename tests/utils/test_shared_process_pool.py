@@ -64,23 +64,7 @@ def _arbitrary_function(*args, **kwargs):
     return args, kwargs
 
 
-# def _task_submit_worker(pool, stage_name, task_size, num_tasks):
-#     future_list = []
-#     for i in range(num_tasks):
-#         future_list.append(pool.submit_task(stage_name, _matrix_multiplication_task, task_size))
-#         logging.debug("Task %s/%s has been submitted to stage %s.", i + 1, num_tasks, stage_name)
-
-#     for future in future_list:
-#         future.result()
-#         logging.debug("task number %s has been completed in stage: %s", future_list.index(future), stage_name)
-
-#     logging.debug("All tasks in stage %s have been completed in %.2f seconds.",
-#                   stage_name, (future_list[-1].result()[1] - future_list[0].result()[1]))
-
-#     assert len(future_list) == num_tasks
-
-
-def test_singleton(shared_process_pool):
+def test_singleton():
     pool_1 = SharedProcessPool()
     pool_2 = SharedProcessPool()
 
@@ -147,32 +131,6 @@ def test_unserializable_arg(shared_process_pool):
 
     with pytest.raises(TypeError):
         pool.submit_task("test_stage", _arbitrary_function, threading.Lock())
-
-
-# def test_multiple_stages(shared_process_pool):
-#     pool = shared_process_pool
-
-#     pool.set_usage("test_stage_1", 0.1)
-#     pool.set_usage("test_stage_2", 0.3)
-#     pool.set_usage("test_stage_3", 0.6)
-
-#     task_size = 3
-#     task_num = 3
-#     # tasks = [("test_stage_1", task_size, task_num), ("test_stage_2", task_size, task_num),
-#     #          ("test_stage_3", task_size, task_num)]
-#     tasks = [("test_stage_1", task_size, task_num)]
-
-#     processes = []
-#     for task in tasks:
-#         stage_name, task_size, num_tasks = task
-#         p = mp.Process(target=_task_submit_worker, args=(pool, stage_name, task_size, num_tasks))
-#         processes.append(p)
-
-#     for p in processes:
-#         p.start()
-
-#     for p in processes:
-#         p.join()
 
 
 def test_invalid_stage_usage(shared_process_pool):
