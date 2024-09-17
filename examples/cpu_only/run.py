@@ -98,8 +98,7 @@ def run_pipeline(log_level: int, use_cpu_only: bool, in_file: pathlib.Path, out_
 
     pipeline.add_stage(print_msg(config))
 
-    # TODO: Remove if PR #1803 is merged first
-    pipeline.add_stage(DeserializeStage(config, message_type=ControlMessage))
+    pipeline.add_stage(DeserializeStage(config))
 
     pipeline.add_stage(MonitorStage(config, description="deserialize"))
 
