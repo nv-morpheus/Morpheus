@@ -17,7 +17,9 @@ import json
 import os
 import typing
 import warnings
+from collections import defaultdict
 
+import pandas as pd
 import pytest
 
 from _utils import TEST_DIRS
@@ -59,7 +61,7 @@ def test_constructor(config: Config):
                          [[], ['WENDY.HUERTA@Brooklyn-dynamic.edu'],
                           ['terrietahon@planner-viral.com', 'SAMUEL.DAVIS@transition-high-life.com']])
 def test_extract_users(config: Config,
-                       dataset: DatasetManager,
+                       dataset_pandas: DatasetManager,
                        include_generic: bool,
                        include_individual: bool,
                        skip_users: typing.List[str],
@@ -71,10 +73,11 @@ def test_extract_users(config: Config,
     input_file = os.path.join(TEST_DIRS.tests_data_dir,
                               "examples/developer_guide/email_with_addresses_first_10.jsonlines")
 
-    df = dataset[input_file]
+    df = dataset_pandas[input_file]
 
     all_data = []
-    expected_data = {}
+    expected_data = defaultdict(list)
+    ts_col = config.ae.timestamp_column_name
     with open(input_file, encoding='UTF-8') as fh:
         for line in fh:
             json_data = json.loads(line)
@@ -85,11 +88,13 @@ def test_extract_users(config: Config,
             if len(only_users) > 0 and user_id not in only_users:
                 continue
 
+            json_data[ts_col] = pd.to_datetime(json_data[ts_col], unit='s')
+
             if include_generic:
                 all_data.append(json_data)
 
             if include_individual:
-                expected_data[user_id] = [json_data]
+                expected_data[user_id].append(json_data)
 
     if include_generic:
         expected_data[config.ae.fallback_username] = all_data
@@ -114,9 +119,11 @@ def test_extract_users(config: Config,
     # Add one for the generic user
     assert len(results) == len(expected_data)
     for msg in results:
-        assert len(msg.df) == len(expected_data[msg.user_id])
-        if msg.user_id != config.ae.fallback_username:
-            assert msg.df.iloc[0].to_dict() == expected_data[msg.user_id][0]
+        actual_df = msg.payload().df
+        user_id = msg.get_metadata('user_id')
+        assert len(actual_df) == len(expected_data[user_id])
+        if user_id != config.ae.fallback_username:
+            assert actual_df.to_dict('records') == expected_data[user_id]
 
 
 def test_extract_users_none_to_empty(config: Config):
