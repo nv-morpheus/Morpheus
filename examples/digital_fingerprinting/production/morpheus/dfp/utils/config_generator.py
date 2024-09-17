@@ -24,7 +24,6 @@ from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
-from morpheus.config import CppConfig
 from morpheus.messages import ControlMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 
@@ -176,9 +175,6 @@ def generate_ae_config(source: str,
                        use_cpp: bool = False,
                        num_threads: int = len(os.sched_getaffinity(0))):
     config = Config()
-
-    CppConfig.set_should_use_cpp(use_cpp)
-
     config.num_threads = num_threads
 
     if pipeline_batch_size > 0:

@@ -124,7 +124,7 @@ class DFPRollingWindowStage(SinglePortStage):
 
         with self._get_user_cache(user_id) as user_cache:
 
-            incoming_df = message.payload().get_data()
+            incoming_df = message.payload().get_data().to_pandas()
             # existing_df = user_cache.df
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
