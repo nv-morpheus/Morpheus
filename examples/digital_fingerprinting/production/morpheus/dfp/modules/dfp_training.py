@@ -102,6 +102,7 @@ def dfp_training(builder: mrc.Builder):
 
             output_message = ControlMessage()
             output_message.payload(dfp_mm)
+            output_message.set_metadata("user_id", user_id)
             output_message.set_metadata("model", model)
             output_message.set_metadata("train_scores_mean", 0.0)
             output_message.set_metadata("train_scores_std", 1.0)
