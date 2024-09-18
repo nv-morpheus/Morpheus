@@ -25,7 +25,7 @@ from morpheus.cli.utils import load_labels_file
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
-from morpheus.messages.multi_message import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 
 
@@ -37,7 +37,7 @@ class ConfigGenerator:
         self._encoding = encoding
         self._source_schema_str = pyobj2str(schema.source, encoding=encoding)
         self._preprocess_schema_str = pyobj2str(schema.preprocess, encoding=encoding)
-        self._input_message_type = pyobj2str(MultiMessage, encoding)
+        self._input_message_type = pyobj2str(ControlMessage, encoding)
         self._start_time_str = self._dfp_arg_parser.time_fields.start_time.isoformat()
         self._end_time_str = self._dfp_arg_parser.time_fields.end_time.isoformat()
 
@@ -174,7 +174,7 @@ def generate_ae_config(source: str,
                        pipeline_batch_size: int = 0,
                        edge_buffer_size: int = 0,
                        use_cpp: bool = False,
-                       num_threads: int = os.cpu_count()):
+                       num_threads: int = len(os.sched_getaffinity(0))):
     config = Config()
 
     CppConfig.set_should_use_cpp(use_cpp)

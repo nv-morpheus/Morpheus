@@ -20,7 +20,7 @@ import cupy as cp
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import ControlMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
@@ -70,12 +70,14 @@ class _PyTorchInferenceWorker(InferenceWorker):
         # Load the model into CUDA memory
         self._model = torch.load(self._model_filename).to('cuda')
 
-    def calc_output_dims(self, x: MultiInferenceMessage) -> typing.Tuple:
-
+    def calc_output_dims(self, msg: ControlMessage) -> typing.Tuple:
+        input_ids = msg.tensors().get_tensor("input_ids")
+        input_mask = msg.tensors().get_tensor("input_mask")
+        count = msg.tensors().count
         # If we haven't cached the output dimension, do that here
         if (not self._output_size):
-            test_intput_ids_shape = (self._max_batch_size, ) + x.get_input("input_ids").shape[1:]
-            test_input_mask_shape = (self._max_batch_size, ) + x.get_input("input_mask").shape[1:]
+            test_intput_ids_shape = (self._max_batch_size, ) + input_ids.shape[1:]
+            test_input_mask_shape = (self._max_batch_size, ) + input_mask.shape[1:]
 
             test_outputs = self._model(torch.randint(65000, (test_intput_ids_shape), dtype=torch.long).cuda(),
                                        token_type_ids=None,
@@ -84,13 +86,16 @@ class _PyTorchInferenceWorker(InferenceWorker):
             # Send random input through the model
             self._output_size = test_outputs[0].data.shape
 
-        return (x.count, self._outputs[list(self._outputs.keys())[0]].shape[1])
+        return (count, self._outputs[list(self._outputs.keys())[0]].shape[1])
 
-    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: ControlMessage, callback: typing.Callable[[TensorMemory], None]):
+        input_ids = batch.tensors().get_tensor("input_ids")
+        input_mask = batch.tensors().get_tensor("input_mask")
+        count = batch.tensors().count
 
         # convert from cupy to torch tensor using dlpack
-        input_ids = from_dlpack(batch.get_input("input_ids").astype(cp.float).toDlpack()).type(torch.long)
-        attention_mask = from_dlpack(batch.get_input("input_mask").astype(cp.float).toDlpack()).type(torch.long)
+        input_ids = from_dlpack(input_ids.astype(cp.float).toDlpack()).type(torch.long)
+        attention_mask = from_dlpack(input_mask.astype(cp.float).toDlpack()).type(torch.long)
 
         with torch.no_grad():
             logits = self._model(input_ids, token_type_ids=None, attention_mask=attention_mask)[0]
@@ -102,7 +107,7 @@ class _PyTorchInferenceWorker(InferenceWorker):
         if (len(probs_cp.shape) == 1):
             probs_cp = cp.expand_dims(probs_cp, axis=1)
 
-        response_mem = TensorMemory(count=batch.count, tensors={'probs': probs_cp})
+        response_mem = TensorMemory(count=count, tensors={'probs': probs_cp})
 
         # Return the response
         callback(response_mem)

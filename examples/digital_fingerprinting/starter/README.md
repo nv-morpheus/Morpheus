@@ -131,13 +131,13 @@ The following table shows mapping between the main Morpheus CLI commands and und
 | `sort_glob`              | If true the list of files matching `input_glob` will be processed in sorted order. Default is False.
 | `models_output_filename` | Can be used with `--train_data_glob` to save trained user models to file using provided file path. Models can be loaded later using `--pretrained_filename`.
 
-The `PreprocessAEStage` is responsible for creating a Morpheus message that contains everything needed by the inference stage. For DFP inference, this stage must pass a `MultiInferenceAEMessage` to the inference stage. Each message will correspond to a single user and include the input feature columns, the user's model and training data anomaly scores.
+The `PreprocessAEStage` is responsible for creating a Morpheus message that contains everything needed by the inference stage. For DFP inference, this stage must pass a `ControlMessage` to the inference stage. Each message will correspond to a single user and include the input feature columns, the user's model and training data anomaly scores.
 
 **Inference stage** - `AutoEncoderInferenceStage` calculates anomaly scores (specifically, reconstruction loss) and z-scores for each user input dataset.
 
 **Post-processing stage** - The DFP pipeline uses the `AddScoresStage` for post-processing to add anomaly scores and z-scores from previous inference stage with matching labels.
 
-**Serialize stage** - `SerializeStage` is used to convert `MultiResponseMessage` from previous stage to a `MessageMeta` to make it suitable for output (for example writing to file or Kafka).
+**Serialize stage** - `SerializeStage` is used to convert `ControlMessage` from previous stage to a `MessageMeta` to make it suitable for output (for example writing to file or Kafka).
 
 **Write stage** - `WriteToFileStage` writes input data with inference results to an output file path.
 

@@ -23,11 +23,11 @@ import pandas as pd
 from mrc.core import operators as ops
 
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
-from ..messages.multi_dfp_message import DFPMessageMeta
-from ..messages.multi_dfp_message import MultiDFPMessage
+from ..messages.dfp_message_meta import DFPMessageMeta
 from ..utils.cached_user_window import CachedUserWindow
 from ..utils.logging_timer import log_time
 
@@ -92,7 +92,7 @@ class DFPRollingWindowStage(SinglePortStage):
         return (DFPMessageMeta, )
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MultiDFPMessage)
+        schema.output_schema.set_type(ControlMessage)
 
     @contextmanager
     def _get_user_cache(self, user_id: str) -> typing.Generator[CachedUserWindow, None, None]:
@@ -116,13 +116,13 @@ class DFPRollingWindowStage(SinglePortStage):
         # # When it returns, make sure to save
         # user_cache.save()
 
-    def _build_window(self, message: DFPMessageMeta) -> MultiDFPMessage:
+    def _build_window(self, message: DFPMessageMeta) -> ControlMessage:
 
         user_id = message.user_id
 
         with self._get_user_cache(user_id) as user_cache:
 
-            incoming_df = message.get_df()
+            incoming_df = message.get_data()
             # existing_df = user_cache.df
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
@@ -161,11 +161,13 @@ class DFPRollingWindowStage(SinglePortStage):
                                     "Rolling history can only be used with non-overlapping batches"))
 
             # Otherwise return a new message
-            return MultiDFPMessage(meta=DFPMessageMeta(df=train_df, user_id=user_id),
-                                   mess_offset=0,
-                                   mess_count=len(train_df))
+            response_msg = ControlMessage()
+            response_msg.payload(DFPMessageMeta(df=train_df, user_id=user_id))
+            response_msg.set_metadata("user_id", user_id)
 
-    def on_data(self, message: DFPMessageMeta) -> MultiDFPMessage:
+            return response_msg
+
+    def on_data(self, message: DFPMessageMeta) -> ControlMessage:
         """
         Emits a new message containing the rolling window for the user if and only if the history requirments are met,
         returns `None` otherwise.
@@ -183,9 +185,9 @@ class DFPRollingWindowStage(SinglePortStage):
                     len(message.df),
                     message.df[self._config.ae.timestamp_column_name].min(),
                     message.df[self._config.ae.timestamp_column_name].max(),
-                    result.mess_count,
-                    result.get_meta(self._config.ae.timestamp_column_name).min(),
-                    result.get_meta(self._config.ae.timestamp_column_name).max(),
+                    result.payload().count,
+                    result.payload().get_data(self._config.ae.timestamp_column_name).min(),
+                    result.payload().get_data(self._config.ae.timestamp_column_name).max(),
                 )
             else:
                 # Dont print anything

@@ -20,12 +20,11 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import process_dataframe
-
-from ..messages.multi_dfp_message import MultiDFPMessage
 
 logger = logging.getLogger("morpheus.{__name__}")
 
@@ -55,27 +54,28 @@ class DFPPreprocessingStage(PassThruTypeMixin, SinglePortStage):
         return False
 
     def accepted_types(self) -> typing.Tuple:
-        return (MultiDFPMessage, )
+        return (ControlMessage, )
 
-    def process_features(self, message: MultiDFPMessage):
+    def process_features(self, message: ControlMessage):
         if (message is None):
             return None
 
         start_time = time.time()
 
         # Process the columns
-        df_processed = process_dataframe(message.get_meta_dataframe(), self._input_schema)
+        df_processed = process_dataframe(message.payload().get_data(), self._input_schema)
 
         # Apply the new dataframe, only the rows in the offset
-        message.set_meta_dataframe(list(df_processed.columns), df_processed)
+        with message.payload().mutable_dataframe() as df:
+            df[list(df_processed.columns)] = df_processed
 
         if logger.isEnabledFor(logging.DEBUG):
             duration = (time.time() - start_time) * 1000.0
 
             logger.debug("Preprocessed %s data for logs in %s to %s in %s ms",
-                         message.mess_count,
-                         message.get_meta(self._config.ae.timestamp_column_name).min(),
-                         message.get_meta(self._config.ae.timestamp_column_name).max(),
+                         message.payload().count,
+                         message.payload().get_data(self._config.ae.timestamp_column_name).min(),
+                         message.payload().get_data(self._config.ae.timestamp_column_name).max(),
                          duration)
 
         return message

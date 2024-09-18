@@ -25,9 +25,6 @@ import morpheus._lib.messages as _messages
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiResponseAEMessage
-from morpheus.messages import MultiResponseMessage
-from morpheus.messages import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 
@@ -39,13 +36,6 @@ def fixture_config(config: Config):
     config.ae.feature_columns = ["data"]
     config.ae.timestamp_column_name = "ts"
     yield config
-
-
-def _make_multi_response_ae_message(df, probs):
-    df_ = df[0:len(probs)]
-    mem = ResponseMemory(count=len(df_), tensors={'probs': probs})
-
-    return MultiResponseAEMessage(meta=MessageMeta(df_), count=len(df_), memory=mem, user_id="test_user_id")
 
 
 def _make_control_message(df, probs):
@@ -63,7 +53,6 @@ def test_constructor(config):
     assert stage.name == "timeseries"
 
     accepted_union = typing.Union[stage.accepted_types()]
-    assert typing_utils.issubtype(MultiResponseMessage, accepted_union)
     assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
@@ -74,8 +63,6 @@ def test_call_timeseries_user(config):
 
     df = pd.DataFrame({"ts": pd.date_range(start='01-01-2022', periods=5)})
     probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
-    mock_multi_response_ae_message = _make_multi_response_ae_message(df, probs)
     mock_control_message = _make_control_message(df, probs)
 
-    assert stage._call_timeseries_user(mock_multi_response_ae_message)[0].user_id == "test_user_id"
     assert stage._call_timeseries_user(mock_control_message)[0].get_metadata("user_id") == "test_user_id"

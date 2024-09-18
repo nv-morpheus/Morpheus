@@ -345,7 +345,7 @@ Source: `morpheus/modules/mlflow_model_writer.py`
 
 The `mlflow_model_writer` module is responsible for uploading trained models to the MLflow server.
 
-For each `MultiAEMessage` received, containing a trained model, the function uploads the model to MLflow along with associated metadata such as experiment name, run name, parameters, metrics, and the model signature. If the MLflow server is running on Databricks, the function also applies the required permissions to the registered model.
+For each `ControlMessage` received, containing a trained model, the function uploads the model to MLflow along with associated metadata such as experiment name, run name, parameters, metrics, and the model signature. If the MLflow server is running on Databricks, the function also applies the required permissions to the registered model.
 
 For a complete reference, refer to: [MLflow Model Writer](../../modules/core/mlflow_model_writer.md)
 
@@ -460,9 +460,9 @@ For a complete reference, refer to: [DFP Post Processing](../../modules/examples
 
 Source: `morpheus/modules/serialize.py`
 
-The serialize module function is responsible for filtering columns from a `MultiMessage` object and emitting a `MessageMeta` object.
+The serialize module function is responsible for filtering columns from a `ControlMessage` object and emitting a `MessageMeta` object.
 
-The `convert_to_df` function converts a DataFrame to JSON lines. It takes a `MultiMessage` instance, `include_columns` (a pattern for columns to include), `exclude_columns` (a list of patterns for columns to exclude), and `columns` (a list of columns to include). The function filters the columns of the input DataFrame based on the include and exclude patterns and retrieves the metadata of the filtered columns.
+The `convert_to_df` function converts a DataFrame to JSON lines. It takes a `ControlMessage` instance, `include_columns` (a pattern for columns to include), `exclude_columns` (a list of patterns for columns to exclude), and `columns` (a list of columns to include). The function filters the columns of the input DataFrame based on the include and exclude patterns and retrieves the metadata of the filtered columns.
 
 The module function compiles the include and exclude patterns into regular expressions. It then creates a node using the `convert_to_df` function with the compiled include and exclude patterns and the specified columns.
 

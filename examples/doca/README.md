@@ -151,21 +151,21 @@ Added source: <from-doca-0; DocaSourceStage(nic_pci_address=cc:00.1, gpu_pci_add
 Added stage: <monitor-1; MonitorStage(description=DOCA GPUNetIO rate, smoothing=0.05, unit=pkts, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 Added stage: <deserialize-2; DeserializeStage(ensure_sliceable_index=True)>
-  └─ morpheus.MessageMeta -> morpheus.MultiMessage
+  └─ morpheus.MessageMeta -> morpheus.ControlMessage
 Added stage: <monitor-3; MonitorStage(description=Deserialize rate, smoothing=0.05, unit=pkts, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
-  └─ morpheus.MultiMessage -> morpheus.MultiMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <preprocess-nlp-4; PreprocessNLPStage(vocab_hash_file=/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1, column=data)>
-  └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <monitor-5; MonitorStage(description=Tokenize rate, smoothing=0.05, unit=pkts, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
-  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiInferenceNLPMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <inference-6; TritonInferenceStage(model_name=sid-minibert-onnx, server_url=localhost:8000, force_convert_inputs=True, use_shared_memory=True)>
-  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <monitor-7; MonitorStage(description=Inference rate, smoothing=0.05, unit=pkts, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <add-class-8; AddClassificationsStage(labels=None, prefix=, probs_type=TypeId.BOOL8, threshold=0.5)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <monitor-9; MonitorStage(description=AddClass rate, smoothing=0.05, unit=pkts, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 ====Building Segment Complete!====
 Stopping pipeline. Please wait... Press Ctrl+C again to kill.
 DOCA GPUNetIO rate: 0 pkts [00:09, ? pkts/s]

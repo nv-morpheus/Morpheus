@@ -19,8 +19,8 @@ import cudf
 
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 
 
 # pylint: disable=no-name-in-module
@@ -45,27 +45,28 @@ class TestGraphSageStage:
                              test_data: dict,
                              dataset_pandas: DatasetManager):
         from stages.graph_construction_stage import FraudGraphConstructionStage
-        from stages.graph_sage_stage import GraphSAGEMultiMessage
         from stages.graph_sage_stage import GraphSAGEStage
 
         expected_df = dataset_pandas['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
 
         df = test_data['df']
         meta = MessageMeta(cudf.DataFrame(df))
-        multi_msg = MultiMessage(meta=meta)
+        control_msg = ControlMessage()
+        control_msg.payload(meta)
+
         construction_stage = FraudGraphConstructionStage(config, training_file)
-        fgmm_msg = construction_stage._process_message(multi_msg)
+        fgmm_msg = construction_stage._process_message(control_msg)
 
         stage = GraphSAGEStage(config, model_dir=model_dir)
         results = stage._process_message(fgmm_msg)
 
-        assert isinstance(results, GraphSAGEMultiMessage)
-        assert results.meta is meta
-        assert results.mess_offset == 0
-        assert results.mess_count == len(df)
-        assert results.node_identifiers == test_data['index']
+        assert isinstance(results, ControlMessage)
+        assert results.payload().count == len(df)
+        assert results.get_metadata("node_identifiers") == test_data['index']
 
-        cols = results.inductive_embedding_column_names + ['index']
+        cols = results.get_metadata("inductive_embedding_column_names") + ['index']
         assert sorted(cols) == sorted(expected_df.columns)
-        ind_emb_df = results.get_meta(cols)
+        ind_emb_df = results.payload().get_data(cols)
+        print("ind_emb_df", ind_emb_df)
+        print("expected_df", expected_df)
         dataset_pandas.assert_compare_df(ind_emb_df.to_pandas(), expected_df, abs_tol=1, rel_tol=1)

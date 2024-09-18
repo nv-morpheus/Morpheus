@@ -149,8 +149,11 @@ def test_string_cat_column():
                                               ],
                                               sep=", ")
 
-    with pytest.raises(Exception):
-        string_cat_col_with_int._process_column(df)
+    actual = string_cat_col_with_int._process_column(df)
+
+    expected = pd.Series(["New York, 10001", "Dallas, 75001", "Austin, 73301"])
+
+    assert actual.equals(expected)
 
 
 @pytest.mark.use_python
