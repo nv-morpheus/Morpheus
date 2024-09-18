@@ -16,47 +16,43 @@
 import logging
 import threading
 import time
-
-import numpy as np
+from decimal import Decimal
+from fractions import Fraction
 import pytest
 
+from morpheus.utils.shared_process_pool import PoolStatus
 from morpheus.utils.shared_process_pool import SharedProcessPool
 
 logger = logging.getLogger(__name__)
 
-# set logger level to debug
-logger.setLevel(logging.DEBUG)
-
+# This unit test does NOT work well with the `-s` option of pytest. Run pytest without `-s` flag.
 
 @pytest.fixture(name="shared_process_pool")
 def shared_process_pool_fixture():
-    pool = SharedProcessPool()
 
+    pool = SharedProcessPool()
     yield pool
 
-    print("Pool process in fixture before stop: " + str(pool.status))
+    # Stop and reset the pool after each test
     pool.stop()
+    pool.join()
     pool.reset()
 
 
-def _matrix_multiplication_task(size):
-    matrix_a = np.random.rand(size, size)
-    matrix_b = np.random.rand(size, size)
-
-    mul = np.dot(matrix_a, matrix_b)
-    result = (mul, time.time())
-    return result
+def _add_task(x, y):
+    return x + y
 
 
-def _simple_add_task(a, b):
-    return a + b
+def _time_consuming_task(sleep_time):
+    time.sleep(sleep_time)
+    return sleep_time
 
 
-def _process_func_with_exception():
-    raise ValueError("Exception is raised in the process.")
+def _function_raises_exception():
+    raise RuntimeError("Exception is raised in the process.")
 
 
-def _unserializable_function():
+def _function_returns_unserializable_result():
     return threading.Lock()
 
 
@@ -64,114 +60,229 @@ def _arbitrary_function(*args, **kwargs):
     return args, kwargs
 
 
+def _check_pool_stage_settings(pool: SharedProcessPool, stage_name: str, usage: float):
+
+    assert pool._stage_usage.get(stage_name) == usage
+    assert stage_name in pool._stage_semaphores
+    assert stage_name in pool._task_queues
+
+
 def test_singleton():
+
     pool_1 = SharedProcessPool()
     pool_2 = SharedProcessPool()
 
     assert pool_1 is pool_2
 
 
-def test_single_task(shared_process_pool):
+def test_pool_status(shared_process_pool):
+
     pool = shared_process_pool
-    print("Pool status: " + str(pool.status))
+    pool.wait_until_ready()
+    assert pool.status == PoolStatus.RUNNING
 
     pool.set_usage("test_stage", 0.5)
 
-    a = 10
-    b = 20
+    pool.stop()
+    pool.join()
+    assert pool.status == PoolStatus.SHUTDOWN
 
-    task = pool.submit_task("test_stage", _simple_add_task, a, b)
-    assert task.result() == a + b
+    # With pool.start(), the pool should have the same status as before stopping
+    pool.start()
+    pool.wait_until_ready()
+    assert pool.status == PoolStatus.RUNNING
+    assert pool._total_usage == 0.5
+    _check_pool_stage_settings(pool, "test_stage", 0.5)
 
-    task = pool.submit_task("test_stage", _simple_add_task, a=a, b=b)
-    assert task.result() == a + b
+    pool.terminate()
+    pool.join()
+    assert pool.status == PoolStatus.SHUTDOWN
 
-    task = pool.submit_task("test_stage", _simple_add_task, a, b=b)
-    assert task.result() == a + b
+    # With pool.reset(), the pool should reset all the status
+    pool.reset()
+    pool.wait_until_ready()
+    assert pool.status == PoolStatus.RUNNING
+    assert pool._total_usage == 0.0
+    assert not pool._stage_usage
+    assert not pool._stage_semaphores
+    assert not pool._task_queues
 
 
-def test_multiple_tasks(shared_process_pool):
+@pytest.mark.parametrize(
+    "a, b, expected",
+    [
+        (1, 2, 3),  # Integers
+        (complex(1, 2), complex(3, 4), complex(4, 6)),  # Complex numbers
+        (Decimal('1.1'), Decimal('2.2'), Decimal('3.3')),  # Decimal numbers
+        (Fraction(1, 2), Fraction(1, 3), Fraction(5, 6)),  # Fractions
+        ("Hello, ", "world!", "Hello, world!"),  # Strings
+        ([1, 2, 3], [4, 5, 6], [1, 2, 3, 4, 5, 6]),  # Lists
+        ((1, 2, 3), (4, 5, 6), (1, 2, 3, 4, 5, 6)),  # Tuples
+    ])
+def test_submit_single_task(shared_process_pool, a, b, expected):
+
     pool = shared_process_pool
+    pool.wait_until_ready()
+    pool.set_usage("test_stage", 0.5)
 
+    task = pool.submit_task("test_stage", _add_task, a, b)
+    assert task.result() == expected
+
+    task = pool.submit_task("test_stage", _add_task, x=a, y=b)
+    assert task.result() == expected
+
+    task = pool.submit_task("test_stage", _add_task, a, y=b)
+    assert task.result() == expected
+
+    pool.stop()
+    pool.join()
+
+    # After the pool is shutdown, it should not accept any new tasks
+    with pytest.raises(RuntimeError):
+        pool.submit_task("test_stage", _add_task, 10, 20)
+
+
+def test_submit_task_with_invalid_stage(shared_process_pool):
+
+    pool = shared_process_pool
+    pool.wait_until_ready()
+
+    with pytest.raises(ValueError):
+        pool.submit_task("stage_does_not_exist", _add_task, 10, 20)
+
+
+def test_submit_task_raises_exception(shared_process_pool):
+
+    pool = shared_process_pool
+    pool.set_usage("test_stage", 0.5)
+
+    task = pool.submit_task("test_stage", _function_raises_exception)
+    with pytest.raises(RuntimeError):
+        task.result()
+
+
+def test_submit_task_with_unserializable_result(shared_process_pool):
+
+    pool = shared_process_pool
+    pool.set_usage("test_stage", 0.5)
+
+    task = pool.submit_task("test_stage", _function_returns_unserializable_result)
+    with pytest.raises(TypeError):
+        task.result()
+
+
+def test_submit_task_with_unserializable_arg(shared_process_pool):
+
+    pool = shared_process_pool
+    pool.set_usage("test_stage", 0.5)
+
+    # Unserializable arguments cannot be submitted to the pool
+    with pytest.raises(TypeError):
+        pool.submit_task("test_stage", _arbitrary_function, threading.Lock())
+
+@pytest.mark.parametrize(
+    "a, b, expected",
+    [
+        (1, 2, 3),  # Integers
+        (complex(1, 2), complex(3, 4), complex(4, 6)),  # Complex numbers
+        (Decimal('1.1'), Decimal('2.2'), Decimal('3.3')),  # Decimal numbers
+        (Fraction(1, 2), Fraction(1, 3), Fraction(5, 6)),  # Fractions
+        ("Hello, ", "world!", "Hello, world!"),  # Strings
+        ([1, 2, 3], [4, 5, 6], [1, 2, 3, 4, 5, 6]),  # Lists
+        ((1, 2, 3), (4, 5, 6), (1, 2, 3, 4, 5, 6)),  # Tuples
+    ])
+def test_submit_multiple_tasks(shared_process_pool, a, b, expected):
+
+    pool = shared_process_pool
     pool.set_usage("test_stage", 0.5)
 
     num_tasks = 100
     tasks = []
     for _ in range(num_tasks):
-        tasks.append(pool.submit_task("test_stage", _simple_add_task, 10, 20))
+        tasks.append(pool.submit_task("test_stage", _add_task, a, b))
 
     for future in tasks:
-        assert future.result() == 30
+        assert future.result() == expected
 
 
-def test_error_process_function(shared_process_pool):
+def test_set_usage(shared_process_pool):
+
     pool = shared_process_pool
-
-    pool.set_usage("test_stage", 0.5)
-
-    with pytest.raises(ValueError):
-        task = pool.submit_task("test_stage", _process_func_with_exception)
-        task.result()
-
-
-def test_unserializable_function(shared_process_pool):
-    pool = shared_process_pool
-
-    pool.set_usage("test_stage", 0.5)
-
-    task = pool.submit_task("test_stage", _unserializable_function)
-    with pytest.raises(TypeError):
-        task.result()
-
-
-def test_unserializable_arg(shared_process_pool):
-    pool = shared_process_pool
-
-    pool.set_usage("test_stage", 0.5)
-
-    with pytest.raises(TypeError):
-        pool.submit_task("test_stage", _arbitrary_function, threading.Lock())
-
-
-def test_invalid_stage_usage(shared_process_pool):
-    pool = shared_process_pool
-
-    with pytest.raises(ValueError):
-        pool.set_usage("test_stage", 1.1)
-
-    with pytest.raises(ValueError):
-        pool.set_usage("test_stage", -0.1)
+    pool.wait_until_ready()
 
     pool.set_usage("test_stage_1", 0.5)
-    pool.set_usage("test_stage_2", 0.4)
+    assert pool._total_usage == 0.5
+    _check_pool_stage_settings(pool, "test_stage_1", 0.5)
 
-    pool.set_usage("test_stage_1", 0.6)  # ok to update the usage of an existing stage
+    pool.set_usage("test_stage_2", 0.3)
+    assert pool._total_usage == 0.8
+    _check_pool_stage_settings(pool, "test_stage_2", 0.3)
+
+    # valid update to the usage of an existing stage
+    pool.set_usage("test_stage_1", 0.6)
+    assert pool._total_usage == 0.9
+    _check_pool_stage_settings(pool, "test_stage_1", 0.6)
+
+    # invalid update to the usage of an existing stage, exceeding the total usage limit
+    with pytest.raises(ValueError):
+        pool.set_usage("test_stage_1", 0.8)
+
+    # adding a new stage usage, exceeding the total usage limit
+    with pytest.raises(ValueError):
+        pool.set_usage("test_stage_3", 0.2)
 
     with pytest.raises(ValueError):
-        pool.set_usage("test_stage_1", 0.7)  # not ok to exceed the total usage limit after updating
+        pool.set_usage("test_stage_1", 1.1)
 
     with pytest.raises(ValueError):
-        pool.set_usage("test_stage_3", 0.1)
+        pool.set_usage("test_stage_1", -0.1)
+
+    # invalid settings should not change the pool status
+    _check_pool_stage_settings(pool, "test_stage_1", 0.6)
+    assert pool._total_usage == 0.9
 
 
-def test_task_completion_before_shutdown(shared_process_pool):
+def test_task_completion_with_early_stop(shared_process_pool):
+
     pool = shared_process_pool
-
     pool.set_usage("test_stage_1", 0.1)
     pool.set_usage("test_stage_2", 0.3)
     pool.set_usage("test_stage_3", 0.5)
 
-    task_size = 3
-    task_num = 3
-    futures = []
+    tasks = []
+
+    task_num = 5
+    sleep_time = 10
     for _ in range(task_num):
-        futures.append(pool.submit_task("test_stage_1", _matrix_multiplication_task, task_size))
-        futures.append(pool.submit_task("test_stage_2", _matrix_multiplication_task, task_size))
-        futures.append(pool.submit_task("test_stage_3", _matrix_multiplication_task, task_size))
+        tasks.append(pool.submit_task("test_stage_1", _time_consuming_task, sleep_time))
+        tasks.append(pool.submit_task("test_stage_2", _time_consuming_task, sleep_time))
+        tasks.append(pool.submit_task("test_stage_3", _time_consuming_task, sleep_time))
 
     pool.stop()
+    pool.join()
 
-    # all tasks should be completed before stopping the pool
-    assert len(futures) == 3 * task_num
-    for future in futures:
-        assert future._done.is_set()
+    # all tasks should be completed before the pool is shutdown
+    assert len(tasks) == 3 * task_num
+    for task in tasks:
+        assert task.done()
+
+
+def test_terminate_running_tasks(shared_process_pool):
+
+    pool = shared_process_pool
+    pool.set_usage("test_stage_1", 0.1)
+    pool.set_usage("test_stage_2", 0.3)
+    pool.set_usage("test_stage_3", 0.5)
+
+    tasks = []
+
+    task_num = 5
+    sleep_time = 100000
+    for _ in range(task_num):
+        tasks.append(pool.submit_task("test_stage_1", _time_consuming_task, sleep_time))
+        tasks.append(pool.submit_task("test_stage_2", _time_consuming_task, sleep_time))
+        tasks.append(pool.submit_task("test_stage_3", _time_consuming_task, sleep_time))
+
+    # The pool should be shutdown immediately after calling terminate() without waiting for the tasks to complete
+    pool.terminate()
+    pool.join()
