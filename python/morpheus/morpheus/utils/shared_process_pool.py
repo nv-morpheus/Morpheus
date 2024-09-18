@@ -118,7 +118,7 @@ class SharedProcessPool:
                 logger.info("SharedProcessPool.__new__: Creating a new instance...")
                 cls._instance = super().__new__(cls)
                 cls._instance._initialize()
-                logger.info("SharedProcessPool has been initialized.")
+                logger.info("SharedProcessPool.__new__: SharedProcessPool has been initialized.")
 
             else:
                 if cls._instance.status is not PoolStatus.RUNNING:
@@ -344,7 +344,7 @@ class SharedProcessPool:
         Terminate all processes and shutdown the SharedProcessPool immediately.
         """
         if self._status not in (PoolStatus.RUNNING, PoolStatus.INITIALIZING):
-            logger.info("SharedProcessPool.terminate():Cannot terminate a SharedProcessPool that is not running.")
+            logger.info("SharedProcessPool.terminate(): Cannot terminate a SharedProcessPool that is not running.")
             return
 
         for i, p in enumerate(self._processes):
