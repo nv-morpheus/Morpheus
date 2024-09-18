@@ -78,7 +78,7 @@ class PreprocessAEStage(PreprocessBaseStage):
         morpheus.messages.ControlMessage
 
         """
-        meta_df = msg.payload().get_data(msg.payload().df.columns.intersection(feature_columns))
+        meta_df = msg.payload().get_data(msg.payload().df.columns.intersection(feature_columns)).to_pandas()
 
         autoencoder = msg.get_metadata("model")
         scores_mean = msg.get_metadata("train_scores_mean")

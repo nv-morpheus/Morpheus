@@ -86,7 +86,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
 
         """
 
-        data = batch.payload().get_data(batch.payload().df.columns.intersection(self._feature_columns))
+        data = batch.payload().get_data(batch.payload().df.columns.intersection(self._feature_columns)).to_pandas()
 
         explain_cols = [x + "_z_loss" for x in self._feature_columns] + ["max_abs_z", "mean_abs_z"]
         explain_df = pd.DataFrame(np.empty((batch.tensors().count, (len(self._feature_columns) + 2)), dtype=object),
