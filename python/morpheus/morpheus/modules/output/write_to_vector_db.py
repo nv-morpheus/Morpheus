@@ -199,7 +199,7 @@ def _write_to_vector_db(builder: mrc.Builder):
                                                                (current_time - accum_stats.last_insert_time)
                                                                >= write_time_interval):
                         if accum_stats.data:
-                            df_pkg = get_df_pkg_from_obj(accum_stats.data)
+                            df_pkg = get_df_pkg_from_obj(accum_stats.data[0])
                             merged_df = df_pkg.concat(accum_stats.data)
 
                             # pylint: disable=not-a-mapping
