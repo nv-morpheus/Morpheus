@@ -41,7 +41,7 @@ def build_mock_user_cache(user_id: str = 'test_user',
 
 
 def test_constructor(config: Config):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
     assert isinstance(stage, SinglePortStage)
@@ -53,7 +53,7 @@ def test_constructor(config: Config):
 
 
 def test_get_user_cache_hit(config: Config):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -65,8 +65,8 @@ def test_get_user_cache_hit(config: Config):
 
 
 def test_get_user_cache_miss(config: Config):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
-    from dfp.utils.cached_user_window import CachedUserWindow
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.utils.cached_user_window import CachedUserWindow
 
     config.ae.timestamp_column_name = 'test_timestamp_col'
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
@@ -85,7 +85,7 @@ def test_build_window_no_new(
         config: Config,
         dfp_message_meta: "DFPMessageMeta"  # noqa: F821
 ):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -99,7 +99,7 @@ def test_build_window_not_enough_data(
         config: Config,
         dfp_message_meta: "DFPMessageMeta"  # noqa: F821
 ):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -112,7 +112,7 @@ def test_build_window_min_increment(
         config: Config,
         dfp_message_meta: "DFPMessageMeta"  # noqa: F821
 ):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -125,7 +125,7 @@ def test_build_window_invalid(
         config: Config,
         dfp_message_meta: "DFPMessageMeta"  # noqa: F821
 ):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -144,7 +144,7 @@ def test_build_window_overlap(
         config: Config,
         dfp_message_meta: "DFPMessageMeta"  # noqa: F821
 ):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -165,9 +165,8 @@ def test_build_window(
         use_on_data: bool,
         dfp_message_meta: "DFPMessageMeta",  # noqa: F821
         dataset_pandas: DatasetManager):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
-
     from morpheus.messages import ControlMessage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
