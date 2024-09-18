@@ -21,8 +21,6 @@ import mrc
 import pandas as pd
 import pika
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta

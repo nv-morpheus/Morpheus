@@ -17,7 +17,6 @@ import functools
 import logging
 import os
 import typing
-import warnings
 
 import click
 
