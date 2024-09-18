@@ -92,7 +92,7 @@ def run_pipeline(log_level: int, use_cpu_only: bool, in_file: pathlib.Path, out_
         if isinstance(msg, MessageMeta):
             log_msg.append(f"- df type: {type(msg.df)}")
 
-        print(" ".join(log_msg))
+        logger.debug(" ".join(log_msg))
 
         return msg
 
@@ -107,7 +107,7 @@ def run_pipeline(log_level: int, use_cpu_only: bool, in_file: pathlib.Path, out_
         meta = msg.payload()
 
         with meta.mutable_dataframe() as df:
-            print(f"Received a ControlMessage with a dataframe of type {type(df)}")
+            logger.debug("Received a ControlMessage with a dataframe of type %s", type(df))
             df[total_column_name] = df.select_dtypes(include="number").sum(axis=1)
 
         return msg
@@ -123,7 +123,7 @@ def run_pipeline(log_level: int, use_cpu_only: bool, in_file: pathlib.Path, out_
 
     pipeline.run()
 
-    known_gpu_packages = ['cudf', 'cuml', 'cupy', 'tensorrt', 'torch']
+    known_gpu_packages = ['cudf', 'cuml', 'tensorrt', 'torch']
     known_gpu_packages_loaded = [pkg in sys.modules for pkg in known_gpu_packages]
 
     if any(known_gpu_packages_loaded):
@@ -135,7 +135,7 @@ def run_pipeline(log_level: int, use_cpu_only: bool, in_file: pathlib.Path, out_
                 else:
                     logger.info(msg)
     else:
-        logger.infp("No GPU packages loaded")
+        logger.info("No GPU packages loaded")
 
 
 if __name__ == "__main__":
