@@ -49,7 +49,7 @@ jobs:
       - checks
       - ci_pipe
     secrets: inherit
-    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.02
+    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.10
 
   prepare:
     # Executes the get-pr-info action to determine if the PR has the skip-ci label, if the action fails we assume the
