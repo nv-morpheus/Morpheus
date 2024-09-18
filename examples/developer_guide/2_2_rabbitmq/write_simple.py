@@ -31,13 +31,19 @@ from morpheus.utils.logger import configure_logging
               type=click.Path(exists=True, readable=True),
               default=os.path.join(os.environ['MORPHEUS_ROOT'], 'examples/data/email.jsonlines'))
 @click.option('--use_cpu_only', default=False, type=bool, is_flag=True, help=("Whether or not to run in CPU only mode"))
-def run_pipeline(use_cpu_only: bool, input_file: str):
+@click.option(
+    "--num_threads",
+    default=len(os.sched_getaffinity(0)),
+    type=click.IntRange(min=1),
+    help="Number of internal pipeline threads to use",
+)
+def run_pipeline(use_cpu_only: bool, input_file: str, num_threads: int):
     # Enable the Morpheus logger
     configure_logging(log_level=logging.DEBUG)
 
     config = Config()
     config.execution_mode = ExecutionMode.CPU if use_cpu_only else ExecutionMode.GPU
-    config.num_threads = len(os.sched_getaffinity(0))
+    config.num_threads = num_threads
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
