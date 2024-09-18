@@ -17,6 +17,7 @@ import functools
 import logging
 import os
 import typing
+import warnings
 
 import click
 
@@ -302,8 +303,10 @@ def install(**kwargs):
 @prepare_command(parse_config=True)
 def run(ctx: click.Context, **kwargs):
     """Run subcommand, used for running a pipeline"""
-    # Since the option isnt the same name as `should_use_cpp` anymore, manually set the value here.
+    if ctx.get_parameter_source("use_cpp") is not click.core.ParameterSource.DEFAULT:
+        logger.warning("The --use_cpp flag is deprecated and will be removed in a future release")
 
+    # Since the option isnt the same name as `should_use_cpp` anymore, manually set the value here.
     use_cpu_only = kwargs.pop("use_cpu_only")
     use_cpp = kwargs.pop("use_cpp")
     if use_cpu_only:
