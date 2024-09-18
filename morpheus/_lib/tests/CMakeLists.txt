@@ -26,6 +26,7 @@ add_executable(test_cuda
 
 target_link_libraries(test_cuda
   PRIVATE
+    glog::glog
     GTest::gtest
     GTest::gtest_main
     matx::matx

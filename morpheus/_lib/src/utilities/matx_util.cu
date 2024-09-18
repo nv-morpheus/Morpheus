@@ -274,7 +274,7 @@ struct MatxUtil__MatxThreshold
         auto output_tensor = matx::make_tensor<bool>(static_cast<bool*>(output_data), output_shape);
 
         // Convert max value to bool
-        (output_tensor = matx::rmax(input_tensor, {1}) > (InputT)threshold).run(stream.value());
+        (output_tensor = matx::max(input_tensor, {1}) > (InputT)threshold).run(stream.value());
     }
 
     /**
@@ -362,7 +362,7 @@ struct MatxUtil__MatxReduceMax
 
         auto output_slice = output_tensor.template Slice<1>({output_idx, 0}, {matx::matxDropDim, matx::matxEnd});
 
-        (output_slice = matx::rmax(input_slice.Permute({1, 0}))).run(stream.value());
+        (output_slice = matx::max(input_slice.Permute({1, 0}))).run(stream.value());
     }
 };
 }  // namespace

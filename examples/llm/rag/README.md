@@ -18,7 +18,7 @@ limitations under the License.
 # Retrieval Augmented Generation (RAG) Pipeline
 
 ## Supported Environments
-All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-121_arch-x86_64.yaml` or `conda/environments/examples_cuda-121_arch-x86_64.yaml` environment files. This example also requires the [VDB upload](../vdb_upload/README.md) pipeline to have been run previously.
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-125_arch-x86_64.yaml` or `conda/environments/examples_cuda-125_arch-x86_64.yaml` environment files. This example also requires the [VDB upload](../vdb_upload/README.md) pipeline to have been run previously.
 | Environment | Supported | Notes |
 |-------------|-----------|-------|
 | Conda | ✔ | |
