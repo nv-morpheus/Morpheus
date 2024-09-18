@@ -22,6 +22,7 @@ from rabbitmq_source_stage_deco import rabbitmq_source
 
 from morpheus.common import FileTypes
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -33,11 +34,13 @@ from morpheus.utils.logger import configure_logging
               is_flag=True,
               default=False,
               help="Use the function based version of the RabbitMQ source stage instead of the class")
-def run_pipeline(use_source_function: bool):
+@click.option('--use_cpu_only', default=False, type=bool, is_flag=True, help=("Whether or not to run in CPU only mode"))
+def run_pipeline(use_source_function: bool, use_cpu_only: bool):
     # Enable the Morpheus logger
     configure_logging(log_level=logging.DEBUG)
 
     config = Config()
+    config.execution_mode = ExecutionMode.CPU if use_cpu_only else ExecutionMode.GPU
     config.num_threads = len(os.sched_getaffinity(0))
 
     # Create a linear pipeline object
