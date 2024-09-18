@@ -146,7 +146,7 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
     default="sid-minibert-onnx",
     help="The name of the model that is deployed on Tritonserver.",
 )
-@click.option("--triton_server_url", default="localhost:8001", required=True, help="Tritonserver url.")
+@click.option("--triton_server_url", default="localhost:8000", required=True, help="Tritonserver url.")
 def run_pipeline(debug, num_threads, input_file, max_batch_size, model_name, triton_server_url):
 
     if debug:
