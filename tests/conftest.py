@@ -1121,7 +1121,7 @@ def mock_nemollm_fixture():
 @pytest.fixture(name="mock_subscription")
 def mock_subscription_fixture():
     """
-    Returns a mock object whic like mrc.Subscription has a is_subscribed method
+    Returns a mock object which like mrc.Subscription has a is_subscribed method
     """
     ms = mock.MagicMock()
     ms.is_subscribed.return_value = True
