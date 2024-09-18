@@ -18,6 +18,8 @@ import os
 
 import click
 
+from morpheus.cli.utils import MorpheusRelativePath
+from morpheus.common import TypeId
 from morpheus.config import AEFeatureScalar
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
@@ -57,7 +59,7 @@ from morpheus.utils.logger import configure_logging
 )
 @click.option(
     "--columns_file",
-    type=click.Path(exists=True, readable=True),
+    type=MorpheusRelativePath(exists=True, readable=True),
     required=True,
     help="Feature columns file",
 )
@@ -134,7 +136,7 @@ def run_pipeline(num_threads,
     pipeline.add_stage(AutoEncoderInferenceStage(config))
 
     # Add anomaly scores and z-scores to each message
-    pipeline.add_stage(AddScoresStage(config))
+    pipeline.add_stage(AddScoresStage(config, probs_type=TypeId.FLOAT64))
 
     # Add serialize stage
     pipeline.add_stage(SerializeStage(config))
