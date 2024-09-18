@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
+import inspect
 import typing
-from abc import ABC
 from abc import abstractmethod
 
 import mrc
@@ -29,14 +30,14 @@ InputT = typing.TypeVar('InputT')
 OutputT = typing.TypeVar('OutputT')
 
 
-class MultiProcessingBaseStage(SinglePortStage, ABC, typing.Generic[InputT, OutputT]):
+class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT]):
 
     def __init__(self, *, c: Config, process_pool_usage: float, max_in_flight_messages: int = None):
         super().__init__(c=c)
 
         self._process_pool_usage = process_pool_usage
         self._shared_process_pool = SharedProcessPool()
-        self._shared_process_pool.set_usage(self.name, self._process_pool_usage)
+        self._shared_process_pool.wait_until_ready()
 
         if max_in_flight_messages is None:
             # set the multiplier to 1.5 to keep the workers busy
@@ -45,15 +46,43 @@ class MultiProcessingBaseStage(SinglePortStage, ABC, typing.Generic[InputT, Outp
             self._max_in_flight_messages = max_in_flight_messages
 
     @property
+    @abstractmethod
     def name(self) -> str:
+        """
+        Marked as abstract to force the derived stage to provide a unique name.
+
+        Returns:
+            str: The unique name of the stage.
+        """
         return "multi-processing-base-stage"
 
     def accepted_types(self) -> typing.Tuple:
-        return (InputT, )
+        if hasattr(self, "__orig_class__"):
+            # Derived with abstract types
+            input_type = typing.get_args(self.__orig_class__)[0]  # pylint: disable=no-member
+
+        elif hasattr(self, "__orig_bases__"):
+            # Derived with concrete types
+            input_type = typing.get_args(self.__orig_bases__[0])[0]  # pylint: disable=no-member
+
+        else:
+            raise RuntimeError("Could not deduct input type")
+
+        return (input_type, )
 
     def compute_schema(self, schema: StageSchema):
-        for (port_idx, port_schema) in enumerate(schema.input_schemas):
-            schema.output_schemas[port_idx].set_type(port_schema.get_type())
+        if hasattr(self, "__orig_class__"):
+            # Derived with abstract types
+            output_type = typing.get_args(self.__orig_class__)[1]  # pylint: disable=no-member
+
+        elif hasattr(self, "__orig_bases__"):
+            # Derived with concrete types
+            output_type = typing.get_args(self.__orig_bases__[0])[1]
+
+        else:
+            raise RuntimeError("Could not deduct output type")
+
+        schema.output_schema.set_type(output_type)
 
     def supports_cpp_node(self):
         return False
@@ -71,42 +100,65 @@ class MultiProcessingBaseStage(SinglePortStage, ABC, typing.Generic[InputT, Outp
         return node
 
 
+def _get_func_signature(func: typing.Callable[[InputT], OutputT]) -> tuple[type, type]:
+    signature = inspect.signature(func)
+
+    if isinstance(func, functools.partial):
+        # If the function is a partial, find the type of the first unbound argument
+        bound_args = func.keywords
+        input_arg = None
+
+        for param in signature.parameters.values():
+            if param.name not in bound_args:
+                input_arg = param
+                break
+
+        if input_arg is None:
+            raise ValueError("Could not find unbound argument in partial function")
+        input_t = input_arg.annotation
+
+    else:
+        input_t = next(iter(signature.parameters.values())).annotation
+
+    output_t = signature.return_annotation
+
+    return (input_t, output_t)
+
+
 class MultiProcessingStage(MultiProcessingBaseStage[InputT, OutputT]):
 
     def __init__(self,
                  *,
                  c: Config,
-                 process_pool_usage: float,
+                 unique_name: str,
                  process_fn: typing.Callable[[InputT], OutputT],
+                 process_pool_usage: float,
                  max_in_flight_messages: int = None):
         super().__init__(c=c, process_pool_usage=process_pool_usage, max_in_flight_messages=max_in_flight_messages)
 
+        self._name = unique_name
         self._process_fn = process_fn
+        self._shared_process_pool.set_usage(self.name, self._process_pool_usage)
 
     @property
     def name(self) -> str:
-        return "multi-processing-stage"
-
-    def accepted_types(self) -> typing.Tuple:
-        input_type = typing.get_args(self.__orig_class__)[0]  # pylint: disable=no-member
-
-        return (input_type, )
+        return self._name
 
     def _on_data(self, data: InputT) -> OutputT:
-
-        future = self._shared_process_pool.submit_task(self.name, self._process_fn, data)
-        result = future.result()
+        task = self._shared_process_pool.submit_task(self.name, self._process_fn, data)
+        result = task.result()
 
         return result
 
     @staticmethod
-    def create(*, c: Config, process_fn: typing.Callable[[InputT], OutputT], process_pool_usage: float):
+    def create(*,
+               c: Config,
+               unique_name: str,
+               process_fn: typing.Callable[[InputT], OutputT],
+               process_pool_usage: float):
 
-        type_hints = typing.get_type_hints(process_fn)
-
-        input_type = next(iter(type_hints.values()))
-        output_type = type_hints["return"]
-
-        return MultiProcessingStage[input_type, output_type](c=c,
-                                                             process_pool_usage=process_pool_usage,
-                                                             process_fn=process_fn)
+        input_t, output_t = _get_func_signature(process_fn)
+        return MultiProcessingStage[input_t, output_t](c=c,
+                                                       unique_name=unique_name,
+                                                       process_pool_usage=process_pool_usage,
+                                                       process_fn=process_fn)

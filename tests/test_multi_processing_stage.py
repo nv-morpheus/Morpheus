@@ -14,12 +14,11 @@
 # limitations under the License.
 
 import os
+import typing
 from functools import partial
 from typing import Generator
-from typing import Tuple
 
 import pandas as pd
-import pytest
 
 import cudf
 
@@ -29,6 +28,7 @@ from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
+from morpheus.pipeline.stage_decorator import stage
 from morpheus.stages.general.multi_processing_stage import MultiProcessingBaseStage
 from morpheus.stages.general.multi_processing_stage import MultiProcessingStage
 from morpheus.stages.input.in_memory_data_generation_stage import InMemoryDataGenStage
@@ -39,16 +39,41 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
-def process_fn(pdf: pd.DataFrame) -> pd.DataFrame:
-
-    pdf["new_column"] = "Hello"
-    return pdf
+def _create_df(count: int) -> pd.DataFrame:
+    return pd.DataFrame({"a": range(count)}, {"b": range(count)})
 
 
-def test_constructor(config: Config):
+def _process_df(df: pd.DataFrame, column: str, value: str) -> pd.DataFrame:
+    df[column] = value
+    return df
 
-    stage = MultiProcessingStage.create(c=config, process_fn=process_fn, process_pool_usage=0.5)
-    assert stage.name == "multi-processing-stage"
+
+def test_create_stage_type_deduction(config: Config, dataset_pandas: DatasetManager):
+
+    # Test create() with normal function
+    stage = MultiProcessingStage.create(c=config,
+                                        unique_name="multi-processing-stage-1",
+                                        process_fn=_create_df,
+                                        process_pool_usage=0.1)
+    assert stage.name == "multi-processing-stage-1"
+    input_t, output_t = typing.get_args(stage.__orig_class__)  # pylint: disable=no-member
+    assert input_t == int
+    assert output_t == pd.DataFrame
+
+    # Test create() with partial function
+    df = dataset_pandas["csv_sample.csv"]
+    partial_fn = partial(_process_df, df=df, value="new_value")
+
+    stage = MultiProcessingStage.create(c=config,
+                                        unique_name="multi-processing-stage-2",
+                                        process_fn=partial_fn,
+                                        process_pool_usage=0.1)
+
+    assert stage.name == "multi-processing-stage-2"
+    input_t, output_t = typing.get_args(stage.__orig_class__)  # pylint: disable=no-member
+    assert stage.accepted_types() == (str, )
+    assert input_t == str
+    assert output_t == pd.DataFrame
 
 
 class DerivedMultiProcessingStage(MultiProcessingBaseStage[ControlMessage, ControlMessage]):
@@ -62,30 +87,78 @@ class DerivedMultiProcessingStage(MultiProcessingBaseStage[ControlMessage, Contr
         super().__init__(c=c, process_pool_usage=process_pool_usage, max_in_flight_messages=max_in_flight_messages)
 
         self._add_column_name = add_column_name
+        self._shared_process_pool.set_usage(self.name, self._process_pool_usage)
 
     @property
     def name(self) -> str:
         return "derived-multi-processing-stage"
 
-    def accepted_types(self) -> Tuple:
-        return (ControlMessage, )
-
     def _on_data(self, data: ControlMessage) -> ControlMessage:
 
-        pdf = data.payload().copy_dataframe().to_pandas()
+        input_df = data.payload().copy_dataframe()
+        pdf = input_df.to_pandas()
+        partial_process_fn = partial(_process_df, column=self._add_column_name, value="Hello")
 
-        future = self._shared_process_pool.submit_task(self.name, process_fn, pdf)
-        data.payload(MessageMeta(cudf.DataFrame.from_pandas(future.result())))
+        task = self._shared_process_pool.submit_task(self.name, partial_process_fn, pdf)
+
+        df = cudf.DataFrame.from_pandas(task.result())
+        meta = MessageMeta(df)
+        data.payload(meta)
 
         return data
 
 
-@pytest.mark.use_python
+def test_derived_stage_type_deduction(config: Config):
+
+    stage = DerivedMultiProcessingStage(c=config, process_pool_usage=0.1, add_column_name="new_column")
+    assert stage.name == "derived-multi-processing-stage"
+    assert stage.accepted_types() == (ControlMessage, )
+
+    input_t, output_t = typing.get_args(stage.__orig_bases__[0])  # pylint: disable=no-member
+    assert input_t == ControlMessage
+    assert output_t == ControlMessage
+
+
+def pandas_dataframe_generator(dataset_pandas: DatasetManager, count: int) -> Generator[pd.DataFrame, None, None]:
+
+    df = dataset_pandas["csv_sample.csv"]
+    for _ in range(count):
+        yield df
+
+
+def test_created_stage_pipe(config: Config, dataset_pandas: DatasetManager):
+
+    config.num_threads = os.cpu_count()
+
+    input_df = dataset_pandas["csv_sample.csv"]
+
+    expected_df = input_df.copy()
+    expected_df["new_column"] = "Hello"
+
+    df_count = 100
+    df_generator = partial(pandas_dataframe_generator, dataset_pandas, df_count)
+
+    partial_fn = partial(_process_df, column="new_column", value="Hello")
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(InMemoryDataGenStage(config, df_generator, output_data_type=pd.DataFrame))
+    pipe.add_stage(MultiProcessingStage[pd.DataFrame, pd.DataFrame].create(c=config,
+                                                                           unique_name="multi-processing-stage-3",
+                                                                           process_fn=partial_fn,
+                                                                           process_pool_usage=0.1))
+    sink_stage = pipe.add_stage(InMemorySinkStage(config))
+
+    pipe.run()
+
+    for df in sink_stage.get_messages():
+        assert df.equals(expected_df)
+
+
 def test_derived_stage_pipe(config: Config, dataset_pandas: DatasetManager):
 
     config.num_threads = os.cpu_count()
 
-    input_df = dataset_pandas["filter_probs.csv"]
+    input_df = dataset_pandas["csv_sample.csv"]
     add_column_name = "new_column"
     expected_df = input_df.copy()
     expected_df[add_column_name] = "Hello"
@@ -93,7 +166,7 @@ def test_derived_stage_pipe(config: Config, dataset_pandas: DatasetManager):
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
-    pipe.add_stage(DerivedMultiProcessingStage(c=config, process_pool_usage=0.5, add_column_name=add_column_name))
+    pipe.add_stage(DerivedMultiProcessingStage(c=config, process_pool_usage=0.1, add_column_name=add_column_name))
     pipe.add_stage(SerializeStage(config))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
 
@@ -102,35 +175,40 @@ def test_derived_stage_pipe(config: Config, dataset_pandas: DatasetManager):
     assert_results(comp_stage.get_results())
 
 
-def pandas_dataframe_generator(dataset_pandas: DatasetManager, count: int) -> Generator[pd.DataFrame, None, None]:
-
-    df = dataset_pandas["filter_probs.csv"]
-
-    for _ in range(count):
-        yield df
-
-
-@pytest.mark.use_python
-def test_base_stage_with_function_pipe(config: Config, dataset_pandas: DatasetManager):
-
+def test_multiple_stages_pipe(config: Config, dataset_pandas: DatasetManager):
     config.num_threads = os.cpu_count()
 
-    input_df = dataset_pandas["filter_probs.csv"]
+    input_df = dataset_pandas["csv_sample.csv"]
 
     expected_df = input_df.copy()
-    expected_df["new_column"] = "Hello"
+    expected_df["new_column_1"] = "new_value_1"
+    expected_df["new_column_2"] = "new_value_2"
 
-    df_count = 10
+    df_count = 100
     df_generator = partial(pandas_dataframe_generator, dataset_pandas, df_count)
+
+    partial_fn = partial(_process_df, column="new_column_2", value="new_value_2")
+
+    @stage
+    def pdf_to_control_message_stage(pdf: pd.DataFrame) -> ControlMessage:
+        df = cudf.DataFrame.from_pandas(pdf)
+        meta = MessageMeta(df)
+        msg = ControlMessage()
+        msg.payload(meta)
+
+        return msg
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemoryDataGenStage(config, df_generator, output_data_type=pd.DataFrame))
     pipe.add_stage(MultiProcessingStage[pd.DataFrame, pd.DataFrame].create(c=config,
-                                                                           process_fn=process_fn,
-                                                                           process_pool_usage=0.5))
-    sink_stage = pipe.add_stage(InMemorySinkStage(config))
+                                                                           unique_name="multi-processing-stage-4",
+                                                                           process_fn=partial_fn,
+                                                                           process_pool_usage=0.1))
+    pipe.add_stage(pdf_to_control_message_stage(config))
+    pipe.add_stage(DerivedMultiProcessingStage(c=config, process_pool_usage=0.1, add_column_name="new_column_1"))
+    pipe.add_stage(SerializeStage(config))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
 
     pipe.run()
 
-    for df in sink_stage.get_messages():
-        assert df.equals(expected_df)
+    assert_results(comp_stage.get_results())

@@ -121,18 +121,14 @@ class SharedProcessPool:
                 logger.info("SharedProcessPool.__new__: SharedProcessPool has been initialized.")
 
             else:
-                if cls._instance.status is not PoolStatus.RUNNING:
-                    raise RuntimeError("SharedProcessPool instance already exists but it is not running.\
-                        Please use start() or reset() to launch the pool.")
-
-                logger.debug("SharedProcessPool.__new__: instance already exists and is currently running.")
+                logger.info("SharedProcessPool.__new__: instance already exists.")
 
         return cls._instance
 
     def _initialize(self):
         self._status = PoolStatus.INITIALIZING
 
-        self._total_max_workers = math.floor(max(1, len(os.sched_getaffinity(0)) * 0.5))
+        self._total_max_workers = math.floor(max(1, len(os.sched_getaffinity(0)) * 0.1))
         self._processes = []
 
         self._context = mp.get_context("fork")
@@ -185,6 +181,12 @@ class SharedProcessPool:
                 try:
                     task = task_queue.get_nowait()
                 except queue.Empty:
+                    semaphore.release()
+                    continue
+
+                if task is None:
+                    logger.warning("SharedProcessPool._worker: Worker process %s has received a None task.",
+                                   os.getpid())
                     semaphore.release()
                     continue
 
@@ -291,7 +293,8 @@ class SharedProcessPool:
             If the SharedProcessPool is not shutdown.
         """
         if self._status != PoolStatus.SHUTDOWN:
-            raise RuntimeError("Cannot start a SharedProcessPool that is not shutdown.")
+            logger.warning("SharedProcessPool.start(): Cannot start a SharedProcessPool that is not shutdown.")
+            return
 
         self._launch_workers()
         self._status = PoolStatus.RUNNING
@@ -316,7 +319,7 @@ class SharedProcessPool:
         Complete existing tasks and stop the SharedProcessPool.
         """
         if self._status not in (PoolStatus.RUNNING, PoolStatus.INITIALIZING):
-            logger.info("SharedProcessPool.stop(): Cannot stop a SharedProcessPool that is not running.")
+            logger.warning("SharedProcessPool.stop(): Cannot stop a SharedProcessPool that is not running.")
             return
 
         # no new tasks will be accepted from this point
@@ -343,10 +346,6 @@ class SharedProcessPool:
         """
         Terminate all processes and shutdown the SharedProcessPool immediately.
         """
-        if self._status not in (PoolStatus.RUNNING, PoolStatus.INITIALIZING):
-            logger.info("SharedProcessPool.terminate(): Cannot terminate a SharedProcessPool that is not running.")
-            return
-
         for i, p in enumerate(self._processes):
             p.terminate()
             logger.debug("Process %s/%s has been terminated.", i + 1, self._total_max_workers)
@@ -407,5 +406,4 @@ class SharedProcessPool:
         logger.debug("SharedProcessPool.join(): SharedProcessPool has been joined.")
 
     def __del__(self):
-        if self._status != PoolStatus.SHUTDOWN:
-            self.stop()
+        self.terminate()
