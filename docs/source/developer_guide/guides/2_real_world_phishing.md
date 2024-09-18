@@ -976,7 +976,7 @@ The code for our sink will be similar to other stages with a few changes. First,
 
 ```python
 @register_stage("to-rabbitmq")
-class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
+class WriteToRabbitMQStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 ```
 
 Our sink will function as a pass-through allowing the possibility of other sinks to be added to the pipeline. We could, hypothetically, have a pipeline where we emit the results to both RabbitMQ and a file. For this reason we will also be using the `PassThruTypeMixin`.
@@ -1028,6 +1028,7 @@ import pika
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -1035,7 +1036,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("to-rabbitmq")
-class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
+class WriteToRabbitMQStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
     """
     Source stage used to load messages from a RabbitMQ queue.
 
