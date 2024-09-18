@@ -140,12 +140,11 @@ def _write_to_vector_db(builder: mrc.Builder):
         final_df_references = []
 
         if len(accumulator_dict):
-            df_pkg = get_df_pkg_from_obj(next(iter(accumulator_dict.values())))
-
             # Pushing remaining messages
             for key, accum_stats in accumulator_dict.items():
                 try:
                     if accum_stats.data:
+                        df_pkg = get_df_pkg_from_obj(accum_stats.data[0])
                         merged_df = df_pkg.concat(accum_stats.data)
                         service.insert_dataframe(name=key, df=merged_df)
                         final_df_references.append(accum_stats.data)
