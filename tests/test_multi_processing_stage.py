@@ -33,8 +33,8 @@ from morpheus.stages.general.multi_processing_stage import MultiProcessingBaseSt
 from morpheus.stages.general.multi_processing_stage import MultiProcessingStage
 from morpheus.stages.input.in_memory_data_generation_stage import InMemoryDataGenStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
+from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
@@ -92,7 +92,7 @@ def test_derived_stage_pipe(config: Config, dataset_pandas: DatasetManager):
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
-    pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True, message_type=ControlMessage))
+    pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
     pipe.add_stage(DerivedMultiProcessingStage(c=config, process_pool_usage=0.5, add_column_name=add_column_name))
     pipe.add_stage(SerializeStage(config))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))

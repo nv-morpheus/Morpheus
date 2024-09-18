@@ -122,11 +122,10 @@ class SharedProcessPool:
 
             else:
                 if cls._instance.status is not PoolStatus.RUNNING:
-                    raise RuntimeError(
-                        "SharedProcessPool instance already exists but it is not running. Please use start() or reset() to launch the pool."
-                    )
-                else:
-                    logger.debug("SharedProcessPool.__new__: instance already exists and is currently running.")
+                    raise RuntimeError("SharedProcessPool instance already exists but it is not running.\
+                        Please use start() or reset() to launch the pool.")
+
+                logger.debug("SharedProcessPool.__new__: instance already exists and is currently running.")
 
         return cls._instance
 
@@ -377,7 +376,7 @@ class SharedProcessPool:
 
         start_time = time.time()
         while self.status != PoolStatus.RUNNING:
-            if timeout is not None and timeout > 0 and time.time() - start_time > timeout:
+            if timeout is not None and time.time() - start_time > timeout:
                 raise TimeoutError("SharedProcessPool wait_until_ready has timed out.")
             time.sleep(0.1)
 
@@ -401,7 +400,7 @@ class SharedProcessPool:
         start_time = time.time()
 
         while self._status != PoolStatus.SHUTDOWN:
-            if timeout is not None and timeout > 0 and time.time() - start_time > timeout:
+            if timeout is not None and time.time() - start_time > timeout:
                 raise TimeoutError("SharedProcessPool join has timed out.")
             time.sleep(0.1)
 

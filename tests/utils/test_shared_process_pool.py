@@ -18,6 +18,7 @@ import threading
 import time
 from decimal import Decimal
 from fractions import Fraction
+
 import pytest
 
 from morpheus.utils.shared_process_pool import PoolStatus
@@ -26,6 +27,7 @@ from morpheus.utils.shared_process_pool import SharedProcessPool
 logger = logging.getLogger(__name__)
 
 # This unit test does NOT work well with the `-s` option of pytest. Run pytest without `-s` flag.
+
 
 @pytest.fixture(name="shared_process_pool")
 def shared_process_pool_fixture():
@@ -179,6 +181,7 @@ def test_submit_task_with_unserializable_arg(shared_process_pool):
     # Unserializable arguments cannot be submitted to the pool
     with pytest.raises(TypeError):
         pool.submit_task("test_stage", _arbitrary_function, threading.Lock())
+
 
 @pytest.mark.parametrize(
     "a, b, expected",
