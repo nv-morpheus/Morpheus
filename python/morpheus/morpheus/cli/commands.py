@@ -305,14 +305,11 @@ def run(ctx: click.Context, **kwargs):
     # Since the option isnt the same name as `should_use_cpp` anymore, manually set the value here.
 
     use_cpu_only = kwargs.pop("use_cpu_only")
-    use_cpu = kwargs.pop("use_cpp")
+    use_cpp = kwargs.pop("use_cpp")
     if use_cpu_only:
-        if use_cpu:
-            logger.warning("use_cpu_only is set to True, disabling C++ mode")
-
         CppConfig.set_should_use_cpp(False)
     else:
-        CppConfig.set_should_use_cpp(use_cpu)
+        CppConfig.set_should_use_cpp(use_cpp)
 
     config = get_config_from_ctx(ctx)
     config.execution_mode = ExecutionMode.CPU if use_cpu_only else ExecutionMode.GPU
