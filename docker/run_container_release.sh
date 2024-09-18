@@ -38,7 +38,15 @@ DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 popd &> /dev/null
 
-DOCKER_ARGS="--runtime=nvidia --env WORKSPACE_VOLUME=${PWD} --net=host --gpus=all --cap-add=sys_nice ${DOCKER_EXTRA_ARGS}"
+DOCKER_ARGS="--env WORKSPACE_VOLUME=${PWD} --net=host --cap-add=sys_nice ${DOCKER_EXTRA_ARGS}"
+
+if [[ -n "${CPU_ONLY}" ]]; then
+   echo -e "${b}Executing in CPU only mode${x}"
+   DOCKER_ARGS="${DOCKER_ARGS} --runtime=runc"
+else
+    echo -e "${b}Executing in GPU mode${x}"
+    DOCKER_ARGS="${DOCKER_ARGS} --runtime=nvidia --gpus=all"
+fi
 
 if [[ -n "${SSH_AUTH_SOCK}" ]]; then
    echo -e "${b}Setting up ssh-agent auth socket${x}"
