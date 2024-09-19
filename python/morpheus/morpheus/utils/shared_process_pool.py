@@ -18,9 +18,8 @@ import math
 import multiprocessing as mp
 import os
 import queue
-import time
+import threading
 from enum import Enum
-from threading import Lock
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +29,8 @@ logger.setLevel(logging.DEBUG)
 class PoolStatus(Enum):
     INITIALIZING = 0
     RUNNING = 1
-    STOPPING = 2
-    SHUTDOWN = 3
+    STOPPED = 2
+    SHUTDOWN = 4
 
 
 class SimpleFuture:
@@ -96,7 +95,7 @@ class CancellationToken:
 class SharedProcessPool:
 
     _instance = None
-    _lock = Lock()
+    _lock = threading.Lock()
 
     def __new__(cls):
         """
@@ -115,20 +114,25 @@ class SharedProcessPool:
 
         with cls._lock:
             if cls._instance is None:
-                logger.info("SharedProcessPool.__new__: Creating a new instance...")
+                logger.debug("SharedProcessPool.__new__: Creating a new instance...")
                 cls._instance = super().__new__(cls)
                 cls._instance._initialize()
-                logger.info("SharedProcessPool.__new__: SharedProcessPool has been initialized.")
+                logger.debug("SharedProcessPool.__new__: SharedProcessPool has been initialized.")
 
             else:
-                logger.info("SharedProcessPool.__new__: instance already exists.")
+                logger.debug("SharedProcessPool.__new__: instance already exists.")
 
         return cls._instance
 
     def _initialize(self):
         self._status = PoolStatus.INITIALIZING
 
-        self._total_max_workers = math.floor(max(1, len(os.sched_getaffinity(0)) * 0.1))
+        cpu_usage = os.environ.get("SHARED_PROCESS_POOL_CPU_USAGE", None)
+        if cpu_usage is not None:
+            cpu_usage = float(cpu_usage)
+        else:
+            cpu_usage = 0.1
+        self._total_max_workers = math.floor(max(1, len(os.sched_getaffinity(0)) * cpu_usage))
         self._processes = []
 
         self._context = mp.get_context("fork")
@@ -139,7 +143,12 @@ class SharedProcessPool:
         self._stage_usage = {}
 
         self._cancellation_token = CancellationToken(self._manager)
-        self._launch_workers()
+        self._launch_condition = threading.Condition()
+        self._join_condition = threading.Condition()
+
+        process_launcher = threading.Thread(target=self._launch_workers)
+        process_launcher.start()
+        process_launcher.join()
 
         self._status = PoolStatus.RUNNING
 
@@ -152,6 +161,8 @@ class SharedProcessPool:
             logger.debug("SharedProcessPool._lanch_workers(): Process %s/%s has been started.",
                          i + 1,
                          self.total_max_workers)
+        with self._launch_condition:
+            self._launch_condition.notify_all()
 
     @property
     def total_max_workers(self):
@@ -179,7 +190,7 @@ class SharedProcessPool:
                     continue
 
                 try:
-                    task = task_queue.get_nowait()
+                    task = task_queue.get(timeout=0.1)
                 except queue.Empty:
                     semaphore.release()
                     continue
@@ -200,9 +211,21 @@ class SharedProcessPool:
                 except Exception as e:
                     task.set_exception(e)
 
+                task_queue.task_done()
+
                 semaphore.release()
 
-                time.sleep(0.1)  # Avoid busy-waiting
+    def _join_process_pool(self):
+        for task_queue in self._task_queues.values():
+            task_queue.join()
+
+        self._cancellation_token.cancel()
+        for i, p in enumerate(self._processes):
+            p.join()
+            logger.debug("Process %s/%s has been joined.", i + 1, len(self._processes))
+
+        with self._join_condition:
+            self._join_condition.notify_all()
 
     def submit_task(self, stage_name, process_fn, *args, **kwargs) -> Task:
         """
@@ -299,60 +322,6 @@ class SharedProcessPool:
         self._launch_workers()
         self._status = PoolStatus.RUNNING
 
-    def reset(self):
-        """
-        Clear all the previous settings and restart the SharedProcessPool.
-
-        Raises
-        ------
-        RuntimeError
-            If the SharedProcessPool is not already shutdown.
-        """
-        if self._status != PoolStatus.SHUTDOWN:
-            raise RuntimeError(
-                "SharedProcessPool.reset(): Cannot reset a SharedProcessPool that is not already shutdown.")
-
-        self._initialize()
-
-    def stop(self):
-        """
-        Complete existing tasks and stop the SharedProcessPool.
-        """
-        if self._status not in (PoolStatus.RUNNING, PoolStatus.INITIALIZING):
-            logger.warning("SharedProcessPool.stop(): Cannot stop a SharedProcessPool that is not running.")
-            return
-
-        # no new tasks will be accepted from this point
-        self._status = PoolStatus.STOPPING
-
-        # wait for all task queues to be empty
-        task_queue_count = len(self._task_queues)
-        empty_task_queues = set()
-        while len(empty_task_queues) < task_queue_count:
-            for stage_name, task_queue in self._task_queues.items():
-                if task_queue.empty():
-                    empty_task_queues.add(stage_name)
-
-        self._cancellation_token.cancel()
-
-        for i, p in enumerate(self._processes):
-            p.join()
-            logger.debug("Process %s/%s has been joined.", i + 1, self._total_max_workers)
-
-        logger.debug("SharedProcessPool.stop(): All tasks have been completed. SharedProcessPool has been stopped.")
-        self._status = PoolStatus.SHUTDOWN
-
-    def terminate(self):
-        """
-        Terminate all processes and shutdown the SharedProcessPool immediately.
-        """
-        for i, p in enumerate(self._processes):
-            p.terminate()
-            logger.debug("Process %s/%s has been terminated.", i + 1, self._total_max_workers)
-
-        logger.debug("SharedProcessPool.terminate(): SharedProcessPool has been terminated.")
-        self._status = PoolStatus.SHUTDOWN
-
     def wait_until_ready(self, timeout=None):
         """
         Wait until the SharedProcessPool is running and ready to accept tasks.
@@ -370,16 +339,44 @@ class SharedProcessPool:
         TimeoutError
             If has been waiting more than the timeout.
         """
-        if self.status not in (PoolStatus.INITIALIZING, PoolStatus.RUNNING):
-            raise RuntimeError("Cannot wait for a SharedProcessPool that is not initializing.")
+        if self._status == PoolStatus.RUNNING:
+            logger.debug("SharedProcessPool.wait_until_ready(): SharedProcessPool is already running.")
+            return
 
-        start_time = time.time()
-        while self.status != PoolStatus.RUNNING:
-            if timeout is not None and time.time() - start_time > timeout:
-                raise TimeoutError("SharedProcessPool wait_until_ready has timed out.")
-            time.sleep(0.1)
+        if self._status == PoolStatus.INITIALIZING:
+            with self._launch_condition:
+                launched = self._launch_condition.wait(timeout)
+                if not launched:
+                    raise TimeoutError("Time out.")
+        else:
+            raise RuntimeError("Cannot wait for a pool that is not initializing.")
 
         logger.debug("SharedProcessPool.wait_until_ready(): SharedProcessPool is ready.")
+
+    def reset(self):
+        """
+        Clear all the previous settings and restart the SharedProcessPool.
+
+        Raises
+        ------
+        RuntimeError
+            If the SharedProcessPool is not already shutdown.
+        """
+        if self._status != PoolStatus.SHUTDOWN:
+            raise RuntimeError("Cannot reset a SharedProcessPool that is not already shutdown.")
+
+        self._initialize()
+
+    def stop(self):
+        """
+        Stop receiving any new tasks.
+        """
+        if self._status not in (PoolStatus.RUNNING, PoolStatus.INITIALIZING):
+            logger.warning("SharedProcessPool.stop(): Cannot stop a SharedProcessPool that is not running.")
+            return
+
+        # no new tasks will be accepted from this point
+        self._status = PoolStatus.STOPPED
 
     def join(self, timeout=None):
         """
@@ -393,17 +390,40 @@ class SharedProcessPool:
 
         Raises
         ------
+        RuntimeError
+            If is called on a SharedProcessPool that is not stopped.
+
         TimeoutError
             If has been waiting more than the timeout.
         """
-        start_time = time.time()
 
-        while self._status != PoolStatus.SHUTDOWN:
-            if timeout is not None and time.time() - start_time > timeout:
-                raise TimeoutError("SharedProcessPool join has timed out.")
-            time.sleep(0.1)
+        if self._status != PoolStatus.STOPPED:
+            raise RuntimeError("Cannot join SharedProcessPool that is not stopped.")
+
+        process_joiner = threading.Thread(target=self._join_process_pool)
+        process_joiner.start()
+
+        with self._join_condition:
+            joined = self._join_condition.wait(timeout)
+            if not joined:
+                raise TimeoutError("time out.")
+
+        process_joiner.join()
+
+        self._status = PoolStatus.SHUTDOWN
 
         logger.debug("SharedProcessPool.join(): SharedProcessPool has been joined.")
+
+    def terminate(self):
+        """
+        Terminate all processes and shutdown the SharedProcessPool immediately.
+        """
+        for i, p in enumerate(self._processes):
+            p.terminate()
+            logger.debug("Process %s/%s has been terminated.", i + 1, self._total_max_workers)
+
+        logger.debug("SharedProcessPool.terminate(): SharedProcessPool has been terminated.")
+        self._status = PoolStatus.SHUTDOWN
 
     def __del__(self):
         self.terminate()

@@ -26,13 +26,15 @@ from morpheus.utils.shared_process_pool import SharedProcessPool
 
 logger = logging.getLogger(__name__)
 
-# This unit test does NOT work well with the `-s` option of pytest. Run pytest without `-s` flag.
+# This test has issues with joining processes when testing with pytest `-s` option. Run pytest without `-s` flag.
 
 
 @pytest.fixture(name="shared_process_pool")
 def shared_process_pool_fixture():
 
     pool = SharedProcessPool()
+    pool.start()
+    pool.wait_until_ready()
     yield pool
 
     # Stop and reset the pool after each test
@@ -80,7 +82,7 @@ def test_singleton():
 def test_pool_status(shared_process_pool):
 
     pool = shared_process_pool
-    pool.wait_until_ready()
+    # pool.wait_until_ready()
     assert pool.status == PoolStatus.RUNNING
 
     pool.set_usage("test_stage", 0.5)
@@ -97,7 +99,6 @@ def test_pool_status(shared_process_pool):
     _check_pool_stage_settings(pool, "test_stage", 0.5)
 
     pool.terminate()
-    pool.join()
     assert pool.status == PoolStatus.SHUTDOWN
 
     # With pool.reset(), the pool should reset all the status
@@ -137,9 +138,8 @@ def test_submit_single_task(shared_process_pool, a, b, expected):
     assert task.result() == expected
 
     pool.stop()
-    pool.join()
 
-    # After the pool is shutdown, it should not accept any new tasks
+    # After the pool is stopped, it should not accept any new tasks
     with pytest.raises(RuntimeError):
         pool.submit_task("test_stage", _add_task, 10, 20)
 
@@ -288,4 +288,3 @@ def test_terminate_running_tasks(shared_process_pool):
 
     # The pool should be shutdown immediately after calling terminate() without waiting for the tasks to complete
     pool.terminate()
-    pool.join()

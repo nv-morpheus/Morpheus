@@ -21,6 +21,7 @@ from typing import Generator
 import pandas as pd
 
 import cudf
+import pytest
 
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
@@ -60,7 +61,7 @@ def test_create_stage_type_deduction(config: Config, dataset_pandas: DatasetMana
     assert input_t == int
     assert output_t == pd.DataFrame
 
-    # Test create() with partial function
+    # Test create() with partial function with 1 unbound argument
     df = dataset_pandas["csv_sample.csv"]
     partial_fn = partial(_process_df, df=df, value="new_value")
 
@@ -74,6 +75,22 @@ def test_create_stage_type_deduction(config: Config, dataset_pandas: DatasetMana
     assert stage.accepted_types() == (str, )
     assert input_t == str
     assert output_t == pd.DataFrame
+
+    # Invalid case: create() with partial function with 0 unbound argument
+    invalid_partial_fn = partial(_process_df, df=df, column="new_column", value="new_value")
+    with pytest.raises(ValueError):
+        MultiProcessingStage.create(c=config,
+                                    unique_name="multi-processing-stage-3",
+                                    process_fn=invalid_partial_fn,
+                                    process_pool_usage=0.1)
+
+    # Invalid case: create() with function with more than 1 arguments
+    invalid_partial_fn = partial(_process_df, df=df)
+    with pytest.raises(ValueError):
+        MultiProcessingStage.create(c=config,
+                                    unique_name="multi-processing-stage-4",
+                                    process_fn=invalid_partial_fn,
+                                    process_pool_usage=0.1)
 
 
 class DerivedMultiProcessingStage(MultiProcessingBaseStage[ControlMessage, ControlMessage]):

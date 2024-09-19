@@ -35,7 +35,10 @@ class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT])
     def __init__(self, *, c: Config, process_pool_usage: float, max_in_flight_messages: int = None):
         super().__init__(c=c)
 
+        if not 0 <= process_pool_usage <= 1:
+            raise ValueError("process_pool_usage must be between 0 and 1.")
         self._process_pool_usage = process_pool_usage
+
         self._shared_process_pool = SharedProcessPool()
         self._shared_process_pool.wait_until_ready()
 
@@ -45,24 +48,44 @@ class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT])
         else:
             self._max_in_flight_messages = max_in_flight_messages
 
-    @property
-    @abstractmethod
-    def name(self) -> str:
+    def accepted_types(self) -> typing.Tuple:
         """
-        Marked as abstract to force the derived stage to provide a unique name.
+        There are two approaches to inherit from this class:
+            - With generic types: MultiProcessingDerivedStage(MultiProcessingBaseStage[InputT, OutputT])
+            - With concrete types: MultiProcessingDerivedStage(MultiProcessingBaseStage[int, str])
+
+        When inheriting with generic types, the derived class can be instantiated like this:
+
+            stage = MultiProcessingDerivedStage[int, str]()
+
+        In this case, typing.Generic stores the stage type in stage.__orig_class__, the concrete types can be accessed
+        as below:
+
+            input_type = typing.get_args(stage.__orig_class__)[0] # int
+            output_type = typing.get_args(stage.__orig_class__)[1] # str
+
+        However, when instantiating a stage which inherits with concrete types:
+
+            stage = MultiProcessingDerivedStage()
+
+        The stage instance does not have __orig_class__ attribute (since it is not a generic type). Thus, the concrete
+        types need be retrieved from its base class (which is a generic type):
+
+            input_type = typing.get_args(stage.__orig_bases__[0])[0] # int
+            output_type = typing.get_args(stage.__orig_bases__[0])[1] # str
+
+        Raises:
+            RuntimeError: if the accepted cannot be deducted from either __orig_class__ or __orig_bases__
 
         Returns:
-            str: The unique name of the stage.
+            typing.Tuple: accepted input types
         """
-        return "multi-processing-base-stage"
-
-    def accepted_types(self) -> typing.Tuple:
         if hasattr(self, "__orig_class__"):
-            # Derived with abstract types
+            # inherited with generic types
             input_type = typing.get_args(self.__orig_class__)[0]  # pylint: disable=no-member
 
         elif hasattr(self, "__orig_bases__"):
-            # Derived with concrete types
+            # inherited with concrete types
             input_type = typing.get_args(self.__orig_bases__[0])[0]  # pylint: disable=no-member
 
         else:
@@ -71,12 +94,21 @@ class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT])
         return (input_type, )
 
     def compute_schema(self, schema: StageSchema):
+        """
+        See the comment on `accepted_types` for more information on accessing the input and output types.
+
+        Args:
+            schema (StageSchema): StageSchema
+
+        Raises:
+            RuntimeError: if the output type cannot be deducted from either __orig_class__ or __orig_bases__
+        """
         if hasattr(self, "__orig_class__"):
-            # Derived with abstract types
+            # inherited with abstract types
             output_type = typing.get_args(self.__orig_class__)[1]  # pylint: disable=no-member
 
         elif hasattr(self, "__orig_bases__"):
-            # Derived with concrete types
+            # inherited with concrete types
             output_type = typing.get_args(self.__orig_bases__[0])[1]
 
         else:
@@ -110,14 +142,18 @@ def _get_func_signature(func: typing.Callable[[InputT], OutputT]) -> tuple[type,
 
         for param in signature.parameters.values():
             if param.name not in bound_args:
+                if input_arg is not None:
+                    raise ValueError("Found more than one unbound arguments in partial function")
                 input_arg = param
-                break
 
         if input_arg is None:
-            raise ValueError("Could not find unbound argument in partial function")
+            raise ValueError("Cannot find unbound argument in partial function")
         input_t = input_arg.annotation
 
     else:
+        if len(signature.parameters) != 1:
+            raise ValueError("Function must have exactly one argument")
+        
         input_t = next(iter(signature.parameters.values())).annotation
 
     output_t = signature.return_annotation
