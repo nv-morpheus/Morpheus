@@ -21,7 +21,7 @@ from dfp.utils.regex_utils import iso_date_regex_pattern
 from dfp.utils.schema_utils import Schema
 
 from morpheus.cli.utils import get_package_relative_file
-from morpheus.cli.utils import load_labels_file
+from morpheus.utils.file_utils import load_labels_file
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig

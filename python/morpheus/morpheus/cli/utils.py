@@ -27,6 +27,8 @@ import click.globals
 import morpheus
 from morpheus.config import Config
 from morpheus.config import ConfigBase
+# For backwards compatibility
+from morpheus.utils.file_utils import load_labels_file
 
 # Ignore pipeline unless we are typechecking since it takes a while to import
 if (typing.TYPE_CHECKING):
@@ -191,12 +193,6 @@ def parse_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: ty
     result = enum_map[value]
 
     return result
-
-
-def load_labels_file(labels_file: str) -> typing.List[str]:
-    """Returns a list of labels from the given file, where each line is a label."""
-    with open(labels_file, "r", encoding='UTF-8') as fh:
-        return [x.strip() for x in fh.readlines()]
 
 
 def get_package_relative_file(filename: str):

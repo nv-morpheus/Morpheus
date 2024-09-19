@@ -35,7 +35,7 @@ from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
 from morpheus.cli.utils import get_package_relative_file
-from morpheus.cli.utils import load_labels_file
+from morpheus.utils.file_utils import load_labels_file
 ```
 ```python
 CppConfig.set_should_use_cpp(False)
