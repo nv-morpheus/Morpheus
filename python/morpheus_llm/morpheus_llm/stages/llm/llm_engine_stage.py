@@ -15,14 +15,14 @@
 import functools
 import logging
 import types
+import typing
 
 import mrc
 from mrc.core import operators as ops
 
 from morpheus.config import Config
-from morpheus.config import ExecutionMode
+from morpheus.config import CppConfig
 from morpheus.messages import ControlMessage
-from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus_llm.llm import LLMEngine
@@ -30,7 +30,7 @@ from morpheus_llm.llm import LLMEngine
 logger = logging.getLogger(__name__)
 
 
-class LLMEngineStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
+class LLMEngineStage(PassThruTypeMixin, SinglePortStage):
     """
     Stage for executing an LLM engine within a Morpheus pipeline.
 
@@ -52,7 +52,7 @@ class LLMEngineStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
         """Return the name of the stage"""
         return "llm-engine"
 
-    def accepted_types(self) -> tuple:
+    def accepted_types(self) -> typing.Tuple:
         """
         Returns accepted input types for this stage.
 
@@ -70,8 +70,8 @@ class LLMEngineStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 
     def _cast_control_message(self, message: ControlMessage, *, cpp_messages_lib: types.ModuleType) -> ControlMessage:
         """
-        LLMEngineStage does not contain a Python implementation, however it is capable of running in cpu-only mode.
-        This method is needed to cast the Python ControlMessage to a C++ ControlMessage.
+        LLMEngineStage does not contain a Python implementation, however it is capable of running in Python/cpu-only
+        mode. This method is needed to cast the Python ControlMessage to a C++ ControlMessage.
 
         This is different than casting from the Python bindings for the C++ ControlMessage to a C++ ControlMessage.
         """
@@ -82,7 +82,7 @@ class LLMEngineStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
         node = _llm.LLMEngineStage(builder, self.unique_name, self._engine)
         node.launch_options.pe_count = 1
 
-        if self._config.execution_mode == ExecutionMode.CPU:
+        if not CppConfig.get_should_use_cpp():
             import morpheus._lib.messages as _messages
             cast_fn = functools.partial(self._cast_control_message, cpp_messages_lib=_messages)
             pre_node = builder.make_node(f"{self.unique_name}-pre-cast", ops.map(cast_fn))
