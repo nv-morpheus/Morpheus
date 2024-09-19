@@ -16,10 +16,6 @@
 # It is assumed that this script is executed from the root of the repo directory by conda-build
 # (https://conda-forge.org/docs/maintainer/knowledge_base.html#using-cmake)
 
-# Need to ensure this value is set before checking it in the if block
-MORPHEUS_SUPPORT_DOCA=-OFF
-MORPHEUS_BUILD_MORPHEUS_LLM=-OFF
-
 # This will store all of the cmake args. Make sure to prepend args to allow
 # incoming values to overwrite them
 CMAKE_ARGS=${CMAKE_ARGS:-""}
@@ -35,6 +31,14 @@ if [[ -n "${MORPHEUS_CACHE_DIR}" ]]; then
    # Double check that the cache dir has been created
    mkdir -p ${MORPHEUS_CACHE_DIR}
 fi
+
+# Enable core. Core is enabled by default and this is to just highlight that it is on
+CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_CORE=ON ${CMAKE_ARGS}"
+
+# Disable dfp, llm and doca
+CMAKE_ARGS="-DMORPHEUS_SUPPORT_DOCA=OFF ${CMAKE_ARGS}"
+CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_DFP=OFF ${CMAKE_ARGS}"
+CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_LLM=OFF ${CMAKE_ARGS}"
 
 CMAKE_ARGS="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON ${CMAKE_ARGS}"
 CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=$PREFIX ${CMAKE_ARGS}"

@@ -13,18 +13,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-list(APPEND CMAKE_MESSAGE_CONTEXT "python")
+list(APPEND CMAKE_MESSAGE_CONTEXT "dep_core")
 
-if (MORPHEUS_BUILD_MORPHEUS_CORE)
-add_subdirectory(morpheus)
-endif()
+# cccl -- get an explicit cccl build, matx tries to pull a tag that doesn't exist.
+# =========
+morpheus_utils_configure_cccl()
 
-if (MORPHEUS_BUILD_MORPHEUS_LLM)
-add_subdirectory(morpheus_llm)
-endif()
+# matx
+# ====
+morpheus_utils_configure_matx()
 
-if (MORPHEUS_BUILD_MORPHEUS_DFP)
-add_subdirectory(morpheus_dfp)
-endif()
+# pybind11
+# =========
+morpheus_utils_configure_pybind11()
+
+# RD-Kafka
+# =====
+morpheus_utils_configure_rdkafka()
+
+# RxCpp
+# =====
+morpheus_utils_configure_rxcpp()
+
+# MRC (Should come after all third party but before NVIDIA repos)
+# =====
+morpheus_utils_configure_mrc()
+
+# CuDF
+# =====
+morpheus_utils_configure_cudf()
+
+# Triton-client
+# =====
+morpheus_utils_configure_tritonclient()
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
