@@ -13,10 +13,7 @@
 # limitations under the License.
 
 import logging
-from typing import Any
-from typing import Callable
-from typing import Iterable
-from typing import Type
+import typing
 
 import mrc
 
@@ -25,6 +22,9 @@ from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(f"morpheus.{__name__}")
+
+DataSourceType = (typing.Callable[[mrc.Subscription], typing.Iterable[typing.Any]]
+                  | typing.Callable[[], typing.Iterable[typing.Any]])
 
 
 class InMemoryDataGenStage(SingleOutputSource):
@@ -35,13 +35,13 @@ class InMemoryDataGenStage(SingleOutputSource):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    data_source : Callable[[], Iterable[Any]]
+    data_source : Callable[[mrc.Subscription], Iterable[Any]]
         An iterable or a generator function that yields data to be processed by the pipeline.
     output_data_type : Type
         The data type of the objects that the data_source yields.
     """
 
-    def __init__(self, c: Config, data_source: Callable[[], Iterable[Any]], output_data_type: Type = Any):
+    def __init__(self, c: Config, data_source: DataSourceType, output_data_type: typing.Type = typing.Any):
         super().__init__(c)
         self._data_source = data_source
         self._output_data_type = output_data_type
@@ -57,9 +57,5 @@ class InMemoryDataGenStage(SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def _generate_data(self) -> Iterable[Any]:
-        # Directly use the data source as it's already an iterable
-        return self._data_source()
-
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return builder.make_source(self.unique_name, self._generate_data())
+        return builder.make_source(self.unique_name, self._data_source)

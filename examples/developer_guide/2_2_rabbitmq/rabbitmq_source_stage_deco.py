@@ -18,6 +18,7 @@ import logging
 import time
 from io import StringIO
 
+import mrc
 import pandas as pd
 import pika
 
@@ -30,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 @source(name="from-rabbitmq")
-def rabbitmq_source(host: str,
+def rabbitmq_source(subscription: mrc.Subscription,
+                    host: str,
                     exchange: str,
                     exchange_type: str = 'fanout',
                     queue_name: str = '',
@@ -40,6 +42,8 @@ def rabbitmq_source(host: str,
 
     Parameters
     ----------
+    subscription : mrc.Subscription
+        Subscription object used to determine if the pipeline is still running.
     host : str
         Hostname or IP of the RabbitMQ server.
     exchange : str
@@ -66,7 +70,7 @@ def rabbitmq_source(host: str,
     poll_interval = pd.Timedelta(poll_interval)
 
     try:
-        while True:
+        while subscription.is_subscribed():
             (method_frame, _, body) = channel.basic_get(queue_name)
             if method_frame is not None:
                 try:
