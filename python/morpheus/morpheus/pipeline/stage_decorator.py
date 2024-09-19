@@ -56,6 +56,7 @@ def _validate_keyword_arguments(fn_name: str,
     # If we have any keyword arguments with a default value that we did not receive an explicit value for, we need
     # to bind it, otherwise it will trigger an error when MRC.
     for param in param_iter:
+
         if param.default is not signature.empty and param.name not in kwargs:
             kwargs[param.name] = param.default
 
@@ -69,6 +70,35 @@ def _validate_keyword_arguments(fn_name: str,
 
             raise ValueError("Positional arguments are not supported for wrapped functions. "
                              f"{fn_name} contains '{param.name}' that was not provided with a value")
+
+
+def _fn_receives_subscription(signature: inspect.Signature) -> bool:
+    """
+    Inspects a function's signature to determine if the function expects a `mrc.Subscription` as it's first argument.
+    This requires the type-hint to be set to either `mrc.Subscription` or a string hint of `"mrc.Subscription"` or
+    `"Subscription"`
+
+    Parameters
+    ----------
+    signature : `inspect.Signature` | `typing.Callable`
+        Function or signature of a function to be checked
+
+    Returns
+    -------
+    bool
+        True if the signature indicates the first argument to be a `mrc.Subscription`.
+    """
+    param_iter = iter(signature.parameters.values())
+
+    try:
+        first_param = next(param_iter)
+        if (first_param.annotation is mrc.Subscription or first_param.annotation == "mrc.Subscription"
+                or first_param.annotation == "Subscription"):
+            return True
+    except StopIteration:
+        pass
+
+    return False
 
 
 class WrappedFunctionSourceStage(_pipeline.SingleOutputSource):
@@ -199,6 +229,11 @@ def source(
         if return_type is signature.empty:
             raise ValueError("Source functions must specify a return type annotation")
 
+        # Try and determine if the method expects a reference to a subscription object
+        param_iter = iter(signature.parameters.values())
+        if _fn_receives_subscription(signature):
+            next(param_iter)  # advance the iterator past the subscription
+
         # We need to unpack generator and iterator return types to get the actual type of the yielded type.
         # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
         # typing.GenericAlias, however when someone uses typing.Generator or typing.Iterator the return type is an
@@ -213,7 +248,7 @@ def source(
 
             compute_schema_fn = compute_schema_fn_inner
 
-        _validate_keyword_arguments(name, signature, kwargs, param_iter=iter(signature.parameters.values()))
+        _validate_keyword_arguments(name, signature, kwargs, param_iter=param_iter)
 
         bound_gen_fn = functools.partial(gen_fn, **kwargs)
 

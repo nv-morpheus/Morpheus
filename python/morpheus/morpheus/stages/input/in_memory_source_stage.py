@@ -14,6 +14,8 @@
 
 import typing
 
+import mrc
+
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
@@ -41,9 +43,12 @@ class InMemorySourceStage(PreallocatorMixin, InMemoryDataGenStage):
         self._dataframes = dataframes
         self._repeat_count = repeat
 
-        def _generate_frames() -> typing.Iterator[MessageMeta]:
+        def _generate_frames(subscription: mrc.Subscription) -> typing.Iterator[MessageMeta]:
             for i in range(self._repeat_count):
                 for k, df in enumerate(self._dataframes):
+                    if not subscription.is_subscribed():
+                        break
+
                     x = MessageMeta(df)
 
                     # If we are looping, copy the object. Do this before we push the object in case it changes

@@ -94,14 +94,14 @@ class DataBricksDeltaLakeSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOu
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self.source_generator)
 
-    def source_generator(self):
+    def source_generator(self, subscription: mrc.Subscription):
         try:
             spark_df = self.spark.sql(self.spark_query)
             spark_df = spark_df.withColumn('_id', sf.monotonically_increasing_id())
             window = Window.partitionBy(sf.lit(1)).orderBy("_id")
             spark_df = spark_df.select("*").withColumn("_id", sf.row_number().over(window))
             count = spark_df.count()
-            while self.offset <= count:
+            while self.offset <= count and subscription.is_subscribed():
                 df = spark_df.where(sf.col('_id').between(self.offset, self.offset + self.items_per_page))
                 logger.debug("Reading next iteration data between index: \
                     %s and %s",

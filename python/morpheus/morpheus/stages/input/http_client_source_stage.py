@@ -169,7 +169,7 @@ class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
 
         return self._payload_to_df_fn(payload, self._lines)
 
-    def _generate_frames(self) -> typing.Iterator[MessageMeta]:
+    def _generate_frames(self, subscription: mrc.Subscription) -> typing.Iterator[MessageMeta]:
         # Running counter of the number of messages emitted by this source
         num_records_emitted = 0
 
@@ -189,7 +189,8 @@ class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
 
         request_args.update(self._requst_kwargs)
 
-        while (not self.is_stop_requested() and (self._stop_after == 0 or num_records_emitted < self._stop_after)):
+        while (not self.is_stop_requested() and subscription.is_subscribed()
+               and (self._stop_after == 0 or num_records_emitted < self._stop_after)):
             if self._query_params_fn is not None:
                 request_args['params'] = self._query_params_fn()
 
@@ -211,4 +212,4 @@ class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
             time.sleep(self._sleep_time)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return builder.make_source(self.unique_name, self._generate_frames())
+        return builder.make_source(self.unique_name, self._generate_frames)

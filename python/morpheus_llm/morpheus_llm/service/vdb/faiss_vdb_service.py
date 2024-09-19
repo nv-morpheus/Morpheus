@@ -17,9 +17,9 @@ import logging
 import time
 import typing
 
-from morpheus.service.vdb.vector_db_service import VectorDBResourceService
-from morpheus.service.vdb.vector_db_service import VectorDBService
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus_llm.service.vdb.vector_db_service import VectorDBResourceService
+from morpheus_llm.service.vdb.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
 

@@ -115,9 +115,9 @@ class RabbitMQSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
 
         self._channel.queue_bind(exchange=self._exchange, queue=self._queue_name)
 
-    def source_generator(self):
+    def source_generator(self, subscription: mrc.Subscription):
         try:
-            while not self.is_stop_requested():
+            while not self.is_stop_requested() and subscription.is_subscribed():
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:

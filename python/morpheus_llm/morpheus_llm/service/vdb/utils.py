@@ -15,7 +15,7 @@
 import importlib
 import typing
 
-import morpheus.service  # pylint: disable=unused-import
+import morpheus_llm.service  # pylint: disable=unused-import
 
 
 def handle_service_exceptions(func):
@@ -43,7 +43,7 @@ def handle_service_exceptions(func):
             return func(*args, **kwargs)
         except (ModuleNotFoundError, AttributeError) as exc:
             service_name = args[0] if args else kwargs.get('service_name', 'Unknown')
-            module_name = f"morpheus.service.vdb.{service_name}_vector_db_service"
+            module_name = f"morpheus_llm.service.vdb.{service_name}_vector_db_service"
             raise ValueError(f"Service {service_name} not found. Ensure that the corresponding service class, " +
                              f"such as {module_name}, has been implemented.") from exc
 
@@ -68,7 +68,7 @@ def validate_service(service_name: str):
         If the specified service name is not found or does not correspond to a valid service class.
     """
 
-    module_name = f"morpheus.service.vdb.{service_name}_vector_db_service"
+    module_name = f"morpheus_llm.service.vdb.{service_name}_vector_db_service"
     importlib.import_module(module_name)
 
     return service_name
@@ -80,7 +80,8 @@ class VectorDBServiceFactory:
     @classmethod
     def create_instance(
             cls, service_name: typing.Literal["milvus"], *args: typing.Any,
-            **kwargs: dict[str, typing.Any]) -> "morpheus.service.vdb.milvus_vector_db_service.MilvusVectorDBService":
+            **kwargs: dict[str,
+                           typing.Any]) -> "morpheus_llm.service.vdb.milvus_vector_db_service.MilvusVectorDBService":
         pass
 
     @classmethod
@@ -109,7 +110,7 @@ class VectorDBServiceFactory:
         ValueError
             If the specified service name is not found or does not correspond to a valid service class.
         """
-        module_name = f"morpheus.service.vdb.{service_name}_vector_db_service"
+        module_name = f"morpheus_llm.service.vdb.{service_name}_vector_db_service"
         module = importlib.import_module(module_name)
         class_name = f"{service_name.capitalize()}VectorDBService"
         class_ = getattr(module, class_name)

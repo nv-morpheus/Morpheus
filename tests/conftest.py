@@ -1111,3 +1111,13 @@ def array_pkg_fixture(execution_mode: "ExecutionMode") -> types.ModuleType:
 def df_pkg_fixture(execution_mode: "ExecutionMode") -> types.ModuleType:
     from morpheus.utils.type_utils import get_df_pkg
     return get_df_pkg(execution_mode)
+
+
+@pytest.fixture(name="mock_subscription")
+def mock_subscription_fixture():
+    """
+    Returns a mock object which like mrc.Subscription has a is_subscribed method
+    """
+    ms = mock.MagicMock()
+    ms.is_subscribed.return_value = True
+    return ms

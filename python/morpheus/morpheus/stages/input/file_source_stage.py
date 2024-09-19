@@ -130,11 +130,11 @@ class FileSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
                                            self._filter_null_columns,
                                            self._parser_kwargs)
         else:
-            node = builder.make_source(self.unique_name, self._generate_frames())
+            node = builder.make_source(self.unique_name, self._generate_frames)
 
         return node
 
-    def _generate_frames(self) -> typing.Iterable[MessageMeta]:
+    def _generate_frames(self, subscription: mrc.Subscription) -> typing.Iterable[MessageMeta]:
 
         df = read_file_to_df(
             self._filename,
@@ -146,6 +146,9 @@ class FileSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
         )
 
         for i in range(self._repeat_count):
+            if not subscription.is_subscribed():
+                break
+
             x = MessageMeta(df)
 
             # If we are looping, copy the object. Do this before we push the object in case it changes

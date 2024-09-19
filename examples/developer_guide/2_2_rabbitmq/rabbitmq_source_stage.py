@@ -93,9 +93,9 @@ class RabbitMQSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self.source_generator)
 
-    def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
+    def source_generator(self, subscription: mrc.Subscription) -> collections.abc.Iterator[MessageMeta]:
         try:
-            while not self.is_stop_requested():
+            while not self.is_stop_requested() and subscription.is_subscribed():
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
