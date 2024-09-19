@@ -163,9 +163,6 @@ class HttpServerSourceStage(PreallocatorMixin, ConfigurableOutputSource):
         """Indicates whether this stage supports C++ nodes."""
         return True
 
-    def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MessageMeta)
-
     def stop(self):
         """
         Performs cleanup steps when pipeline is stopped.
