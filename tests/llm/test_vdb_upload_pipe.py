@@ -27,7 +27,7 @@ from _utils import TEST_DIRS
 from _utils import mk_async_infer
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
-from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
+from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 
 
 @pytest.mark.milvus
