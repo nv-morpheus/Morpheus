@@ -35,8 +35,6 @@ outputs:
         - CMAKE_CUDA_ARCHITECTURES
         - MORPHEUS_CACHE_DIR
         - MORPHEUS_PYTHON_BUILD_STUBS
-        - MORPHEUS_SUPPORT_DOCA
-        - MORPHEUS_BUILD_MORPHEUS_LLM
         - PARALLEL_LEVEL
       run_exports:
         - {{ pin_subpackage("morpheus-core", max_pin="x.x") }}

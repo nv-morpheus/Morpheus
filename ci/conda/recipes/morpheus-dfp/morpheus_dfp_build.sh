@@ -16,9 +16,6 @@
 # It is assumed that this script is executed from the root of the repo directory by conda-build
 # (https://conda-forge.org/docs/maintainer/knowledge_base.html#using-cmake)
 
-# Need to ensure this value is set before checking it in the if block
-MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
-
 # This will store all of the cmake args. Make sure to prepend args to allow
 # incoming values to overwrite them
 CMAKE_ARGS=${CMAKE_ARGS:-""}
@@ -35,19 +32,13 @@ if [[ -n "${MORPHEUS_CACHE_DIR}" ]]; then
    mkdir -p ${MORPHEUS_CACHE_DIR}
 fi
 
-if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
-   CMAKE_ARGS="-DMORPHEUS_SUPPORT_DOCA=ON ${CMAKE_ARGS}"
-
-   # Set the CMAKE_CUDA_ARCHITECTURES to just 80;86 since that is what DOCA supports for now
-   CMAKE_CUDA_ARCHITECTURES="80;86"
-
-   echo "MORPHEUS_SUPPORT_DOCA is ON. Setting CMAKE_CUDA_ARCHITECTURES to supported values: '${CMAKE_CUDA_ARCHITECTURES}'"
-fi
-
-# enable all functional blocks
-CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_CORE=ON ${CMAKE_ARGS}"
-CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_LLM=ON ${CMAKE_ARGS}"
+# Enable DFP
 CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_DFP=ON ${CMAKE_ARGS}"
+
+# Disable core, llm and doca
+CMAKE_ARGS="-DMORPHEUS_SUPPORT_DOCA=OFF ${CMAKE_ARGS}"
+CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_CORE=OFF ${CMAKE_ARGS}"
+CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_LLM=OFF ${CMAKE_ARGS}"
 
 CMAKE_ARGS="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON ${CMAKE_ARGS}"
 CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=$PREFIX ${CMAKE_ARGS}"
@@ -67,12 +58,6 @@ CMAKE_ARGS="--log-level=VERBOSE ${CMAKE_ARGS}"
 if [[ "${USE_SCCACHE}" == "1" ]]; then
    CMAKE_ARGS="-DCCACHE_PROGRAM_PATH=$(which sccache) ${CMAKE_ARGS}"
 fi
-
-echo "CC          : ${CC}"
-echo "CXX         : ${CXX}"
-echo "CUDAHOSTCXX : ${CUDAHOSTCXX}"
-echo "CUDA        : ${CUDA}"
-echo "CMAKE_ARGS  : ${CMAKE_ARGS}"
 
 echo "========Begin Env========"
 env
@@ -97,7 +82,5 @@ cmake -B ${BUILD_DIR} \
 # Build the components
 cmake --build ${BUILD_DIR} -j${PARALLEL_LEVEL:-$(nproc)} --target install
 
-# Install just the python wheel components
-${PYTHON} -m pip install -vv ${BUILD_DIR}/python/morpheus/dist/*.whl
-${PYTHON} -m pip install -vv ${BUILD_DIR}/python/morpheus_llm/dist/*.whl
+# Install the mprpheus dfp python wheel components
 ${PYTHON} -m pip install -vv ${BUILD_DIR}/python/morpheus_dfp/dist/*.whl

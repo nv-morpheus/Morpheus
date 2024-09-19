@@ -13,18 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-list(APPEND CMAKE_MESSAGE_CONTEXT "python")
+c_compiler_version:
+  - 11.2
 
-if (MORPHEUS_BUILD_MORPHEUS_CORE)
-add_subdirectory(morpheus)
-endif()
+cxx_compiler_version:
+  - 11.2
 
-if (MORPHEUS_BUILD_MORPHEUS_LLM)
-add_subdirectory(morpheus_llm)
-endif()
+cuda_compiler:
+  - cuda-nvcc
 
-if (MORPHEUS_BUILD_MORPHEUS_DFP)
-add_subdirectory(morpheus_dfp)
-endif()
+cuda_compiler_version:
+  - 12.1
 
-list(POP_BACK CMAKE_MESSAGE_CONTEXT)
+python:
+  - 3.10
+
+rapids_version:
+  - 24.02
