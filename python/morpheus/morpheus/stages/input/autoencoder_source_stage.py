@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import os
 import typing
 from abc import abstractmethod
@@ -29,8 +28,6 @@ from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.directory_watcher import DirectoryWatcher
-
-logger = logging.getLogger(__name__)
 
 
 class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
@@ -106,7 +103,8 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
                                          sort_glob=sort_glob,
                                          recursive=recursive,
                                          queue_max_size=queue_max_size,
-                                         batch_timeout=batch_timeout)
+                                         batch_timeout=batch_timeout,
+                                         should_stop_fn=self.is_stop_requested)
 
     @property
     def input_count(self) -> int:
@@ -202,12 +200,6 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
             combined_df = combined_df.sort_values(by=[datetime_column_name, "idx"])
 
             combined_df.index.name = saved_index_name
-
-            logger.debug(
-                "CloudTrail loading complete. Total rows: %d. Timespan: %s",
-                len(combined_df),
-                str(combined_df.loc[combined_df.index[-1], datetime_column_name] -
-                    combined_df.loc[combined_df.index[0], datetime_column_name]))
 
         # Get the users in this DF
         unique_users = combined_df[userid_column_name].unique()

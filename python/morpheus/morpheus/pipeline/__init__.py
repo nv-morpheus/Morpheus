@@ -41,7 +41,7 @@ from morpheus.pipeline.receiver import Receiver
 from morpheus.pipeline.stage_base import StageBase
 from morpheus.pipeline.stage import Stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.source_stage import SourceStage
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.configurable_output_source import ConfigurableOutputSource

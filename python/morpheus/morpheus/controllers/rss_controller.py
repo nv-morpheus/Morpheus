@@ -15,14 +15,21 @@
 import logging
 import os
 import time
+from collections.abc import Callable
+from collections.abc import Iterable
 from dataclasses import asdict
 from dataclasses import dataclass
+from datetime import datetime
+from datetime import timedelta
 from urllib.parse import urlparse
 
+import mrc
 import requests
 import requests_cache
 
 import cudf
+
+from morpheus.messages import MessageMeta
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +79,12 @@ class RSSController:
         Request timeout in secs to fetch the feed.
     strip_markup : bool, optional, default = False
         When true, strip HTML & XML markup from the from the content, summary and title fields.
+    stop_after: int, default = 0
+        Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
+    interval_secs : float, optional, default = 600
+        Interval in seconds between fetching new feed items.
+    should_stop_fn: Callable[[], bool]
+        Function that returns a boolean indicating if the watcher should stop processing files.
     """
 
     # Fields which may contain HTML or XML content
@@ -89,7 +102,10 @@ class RSSController:
                  cache_dir: str = "./.cache/http",
                  cooldown_interval: int = 600,
                  request_timeout: float = 2.0,
-                 strip_markup: bool = False):
+                 strip_markup: bool = False,
+                 stop_after: int = 0,
+                 interval_secs: float = 600,
+                 should_stop_fn: Callable[[], bool] = None):
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
@@ -104,6 +120,11 @@ class RSSController:
         self._request_timeout = request_timeout
         self._strip_markup = strip_markup
 
+        if should_stop_fn is None:
+            self._should_stop_fn = lambda: False
+        else:
+            self._should_stop_fn = should_stop_fn
+
         # Validate feed_input
         for f in self._feed_input:
             if not RSSController.is_url(f) and not os.path.exists(f):
@@ -113,7 +134,14 @@ class RSSController:
             # If feed_input is URL. Runs indefinitely
             run_indefinitely = any(RSSController.is_url(f) for f in self._feed_input)
 
+        if (stop_after > 0 and run_indefinitely):
+            raise ValueError("Cannot set both `stop_after` and `run_indefinitely` to True.")
+
+        self._stop_after = stop_after
         self._run_indefinitely = run_indefinitely
+        self._interval_secs = interval_secs
+        self._interval_td = timedelta(seconds=self._interval_secs)
+
         self._enable_cache = enable_cache
 
         if enable_cache:
@@ -381,3 +409,45 @@ class RSSController:
             return parsed_url.scheme != '' and parsed_url.netloc != ''
         except Exception:
             return False
+
+    def feed_generator(self, subscription: mrc.Subscription) -> Iterable[MessageMeta]:
+        """
+        Fetch RSS feed entries and yield as MessageMeta object.
+        """
+        stop_requested = False
+        records_emitted = 0
+
+        while (not stop_requested and not self._should_stop_fn() and subscription.is_subscribed()):
+            try:
+                for df in self.fetch_dataframes():
+                    df_size = len(df)
+
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.info("Received %d new entries...", df_size)
+                        logger.info("Emitted %d records so far.", records_emitted)
+
+                    yield MessageMeta(df=df)
+
+                    records_emitted += df_size
+
+                    if (0 < self._stop_after <= records_emitted):
+                        stop_requested = True
+                        logger.info("Stop limit reached... preparing to halt the source.")
+                        break
+
+            except Exception as exc:
+                if not self.run_indefinitely:
+                    logger.error("Failed either in the process of fetching or processing entries: %s.", exc)
+                    raise
+                logger.error("Failed either in the process of fetching or processing entries: %s.", exc)
+
+            if not self.run_indefinitely:
+                stop_requested = True
+                continue
+
+            logger.info("Waiting for %d seconds before fetching again...", self._interval_secs)
+            sleep_until = datetime.now() + self._interval_td
+            while (datetime.now() < sleep_until and not self._should_stop_fn() and subscription.is_subscribed()):
+                time.sleep(1)
+
+        logger.info("RSS source exhausted, stopping.")

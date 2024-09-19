@@ -19,12 +19,11 @@ import typing
 from datetime import datetime
 
 import mrc
-import numpy as np
 from mrc.core import operators as ops
 
 from morpheus.common import TypeId
 from morpheus.config import Config
-from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -57,18 +56,16 @@ class DFPPostprocessingStage(PassThruTypeMixin, SinglePortStage):
 
     def accepted_types(self) -> typing.Tuple:
         """Accepted input types."""
-        return (MultiAEMessage, )
+        return (ControlMessage, )
 
-    def _process_events(self, message: MultiAEMessage):
+    def _process_events(self, message: ControlMessage):
         # Assume that a filter stage preceedes this stage
-        df = message.get_meta()
-        df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-        df.replace(np.nan, 'NaN', regex=True, inplace=True)
-        message.set_meta(None, df)
+        with message.payload().mutable_dataframe() as df:
+            df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
 
-    def on_data(self, message: MultiAEMessage):
+    def on_data(self, message: ControlMessage):
         """Process a message."""
-        if (not message or message.mess_count == 0):
+        if (not message or message.payload().count == 0):
             return None
 
         start_time = time.time()
@@ -79,11 +76,11 @@ class DFPPostprocessingStage(PassThruTypeMixin, SinglePortStage):
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Completed postprocessing for user %s in %s ms. Event count: %s. Start: %s, End: %s",
-                         message.meta.user_id,
+                         message.get_metadata("user_id"),
                          duration,
-                         message.mess_count,
-                         message.get_meta(self._config.ae.timestamp_column_name).min(),
-                         message.get_meta(self._config.ae.timestamp_column_name).max())
+                         message.payload().count,
+                         message.payload().get_data(self._config.ae.timestamp_column_name).min(),
+                         message.payload().get_data(self._config.ae.timestamp_column_name).max())
 
         return message
 

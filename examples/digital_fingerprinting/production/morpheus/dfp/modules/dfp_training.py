@@ -21,13 +21,11 @@ from sklearn.model_selection import train_test_split
 import cudf
 
 from morpheus.messages import ControlMessage
-from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
-from ..messages.multi_dfp_message import DFPMessageMeta
-from ..messages.multi_dfp_message import MultiDFPMessage
+from ..messages.dfp_message_meta import DFPMessageMeta
 from ..utils.module_ids import DFP_TRAINING
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -69,7 +67,7 @@ def dfp_training(builder: mrc.Builder):
         raise ValueError(f"validation_size={validation_size} should be a positive float in the "
                          "(0, 1) range")
 
-    def on_data(control_message: ControlMessage):
+    def on_data(control_message: ControlMessage) -> list[ControlMessage]:
         if (control_message is None):
             return None
 
@@ -101,13 +99,13 @@ def dfp_training(builder: mrc.Builder):
             logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
             dfp_mm = DFPMessageMeta(cudf.from_pandas(final_df), user_id=user_id)
-            multi_message = MultiDFPMessage(meta=dfp_mm, mess_offset=0, mess_count=len(final_df))
-            output_message = MultiAEMessage(meta=multi_message.meta,
-                                            mess_offset=multi_message.mess_offset,
-                                            mess_count=multi_message.mess_count,
-                                            model=model,
-                                            train_scores_mean=0.0,
-                                            train_scores_std=1.0)
+
+            output_message = ControlMessage()
+            output_message.payload(dfp_mm)
+            output_message.set_metadata("user_id", user_id)
+            output_message.set_metadata("model", model)
+            output_message.set_metadata("train_scores_mean", 0.0)
+            output_message.set_metadata("train_scores_std", 1.0)
 
             output_messages.append(output_message)
 

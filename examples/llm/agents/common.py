@@ -1,4 +1,4 @@
-# Copyright (c) 2024, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,16 +21,15 @@ from langchain.agents.agent import AgentExecutor
 from langchain.llms.openai import OpenAI
 
 from morpheus.config import Config
-from morpheus.llm import LLMEngine
-from morpheus.llm.nodes.extracter_node import ExtracterNode
-from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
-from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus_llm.llm import LLMEngine
+from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
+from morpheus_llm.llm.nodes.langchain_agent_node import LangChainAgentNode
+from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
+from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +66,7 @@ def build_common_pipeline(config: Config, pipe: LinearPipeline, task_payload: di
     Construct the elements of the pipeline common to the simple and kafka agent pipelines.
     This method should be called after the source stage has been set.
     """
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=task_payload))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=task_payload))
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 

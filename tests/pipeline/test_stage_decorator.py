@@ -16,11 +16,14 @@
 
 import collections
 import functools
+import inspect
 import typing
 from unittest import mock
 
+import mrc
 import pandas as pd
 import pytest
+from mrc import Subscription
 
 import cudf
 
@@ -28,12 +31,12 @@ from _utils import assert_results
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.stage_decorator import ComputeSchemaType
 from morpheus.pipeline.stage_decorator import PreAllocatedWrappedFunctionStage
 from morpheus.pipeline.stage_decorator import WrappedFunctionSourceStage
 from morpheus.pipeline.stage_decorator import WrappedFunctionStage
+from morpheus.pipeline.stage_decorator import _fn_receives_subscription
 from morpheus.pipeline.stage_decorator import source
 from morpheus.pipeline.stage_decorator import stage
 from morpheus.pipeline.stage_schema import StageSchema
@@ -59,9 +62,8 @@ def _mk_compute_schema_fn(return_type: type) -> ComputeSchemaType:
 @pytest.mark.use_python
 @pytest.mark.parametrize("generator_type",
                          [None, typing.Iterator, typing.Generator, collections.abc.Iterator, collections.abc.Generator])
-@pytest.mark.parametrize("return_type, is_prealloc",
-                         [(pd.DataFrame, True), (cudf.DataFrame, True), (MessageMeta, True), (MultiMessage, True),
-                          (float, False)])
+@pytest.mark.parametrize("return_type, is_prealloc", [(pd.DataFrame, True), (cudf.DataFrame, True), (MessageMeta, True),
+                                                      (float, False)])
 def test_wrapped_function_source_stage_constructor(config: Config,
                                                    generator_type: type,
                                                    return_type: type,
@@ -111,9 +113,8 @@ def test_wrapped_function_source_stage_not_generator_error(config: Config, src_c
 @pytest.mark.use_python
 @pytest.mark.parametrize("generator_type",
                          [None, typing.Iterator, typing.Generator, collections.abc.Iterator, collections.abc.Generator])
-@pytest.mark.parametrize("return_type, is_prealloc",
-                         [(pd.DataFrame, True), (cudf.DataFrame, True), (MessageMeta, True), (MultiMessage, True),
-                          (float, False)])
+@pytest.mark.parametrize("return_type, is_prealloc", [(pd.DataFrame, True), (cudf.DataFrame, True), (MessageMeta, True),
+                                                      (float, False)])
 def test_source_decorator(config: Config, generator_type: type, return_type: type, is_prealloc: bool):
     return_annotation = _get_annotation(return_type, generator_type)
 
@@ -442,3 +443,21 @@ def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
     pipe.run()
 
     assert_results(sink.get_results())
+
+
+@pytest.mark.parametrize("has_arg, type_hint, expected",
+                         [(False, None, False), (True, float, False), (True, "int", False),
+                          (True, mrc.Subscription, True), (True, Subscription, True), (True, "mrc.Subscription", True),
+                          (True, "Subscription", True)])
+def test_fn_receives_subscription(has_arg: bool, type_hint: typing.Any, expected: bool):
+    if has_arg:
+
+        def test_fn(first_arg: type_hint):  # pylint: disable=unused-argument
+            pass
+    else:
+
+        def test_fn():
+            pass
+
+    sig = inspect.signature(test_fn)
+    assert _fn_receives_subscription(sig) is expected

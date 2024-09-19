@@ -73,7 +73,7 @@ class HttpServerSourceStage(PreallocatorMixin, ConfigurableOutputSource):
         Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
         used.
     num_server_threads : int, default None
-        Number of threads to use for the HTTP server. If `None` then `os.cpu_count()` will be used.
+        Number of threads to use for the HTTP server. If `None` then `len(os.sched_getaffinity(0))` will be used.
     max_payload_size : int, default 10
         The maximum size in megabytes of the payload that the server will accept in a single request.
     request_timeout_secs : int, default 30
@@ -133,7 +133,7 @@ class HttpServerSourceStage(PreallocatorMixin, ConfigurableOutputSource):
         self._sleep_time = sleep_time
         self._queue_timeout = queue_timeout
         self._max_queue_size = max_queue_size or config.edge_buffer_size
-        self._num_server_threads = num_server_threads or os.cpu_count()
+        self._num_server_threads = num_server_threads or len(os.sched_getaffinity(0))
         self._max_payload_size_bytes = max_payload_size * 1024 * 1024
         self._request_timeout_secs = request_timeout_secs
         self._lines = lines
@@ -162,6 +162,20 @@ class HttpServerSourceStage(PreallocatorMixin, ConfigurableOutputSource):
     def supports_cpp_node(self) -> bool:
         """Indicates whether this stage supports C++ nodes."""
         return True
+
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
+    def stop(self):
+        """
+        Performs cleanup steps when pipeline is stopped.
+        """
+        logger.debug("Stopping HttpServerSourceStage")
+        # Indicate we need to stop
+        if self._http_server is not None:
+            self._http_server.stop()
+
+        return super().stop()
 
     def _parse_payload(self, payload: str, headers: dict = None) -> HttpParseResponse:
         try:
@@ -228,7 +242,7 @@ class HttpServerSourceStage(PreallocatorMixin, ConfigurableOutputSource):
                                  content_type=MimeTypes.TEXT.value,
                                  body=err_msg)
 
-    def _generate_frames(self) -> typing.Iterator[ControlMessage | MessageMeta]:
+    def _generate_frames(self, subscription: mrc.Subscription) -> typing.Iterator[ControlMessage | MessageMeta]:
         from morpheus.common import FiberQueue
         from morpheus.common import HttpEndpoint
         from morpheus.common import HttpServer
@@ -259,10 +273,11 @@ class HttpServerSourceStage(PreallocatorMixin, ConfigurableOutputSource):
                 df: cudf.DataFrame = None
                 headers: dict = None
                 try:
-                    (df, headers) = self._queue.get()
+                    (df, headers) = self._queue.get(block=False)
                     self._queue_size -= 1
                 except queue.Empty:
-                    if (not self._http_server.is_running()):
+                    if (not self._http_server.is_running() or self.is_stop_requested()
+                            or not subscription.is_subscribed()):
                         self._processing = False
                     else:
                         logger.debug("Queue empty, sleeping ...")
@@ -318,7 +333,7 @@ class HttpServerSourceStage(PreallocatorMixin, ConfigurableOutputSource):
 
             node = server_class(builder, self.unique_name, **http_server_kwargs)
         else:
-            node = builder.make_source(self.unique_name, self._generate_frames())
+            node = builder.make_source(self.unique_name, self._generate_frames)
 
         return node
 

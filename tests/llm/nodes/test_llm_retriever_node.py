@@ -19,8 +19,8 @@ from unittest import mock
 import pytest
 
 from _utils.llm import execute_node
-from morpheus.llm import LLMNodeBase
-from morpheus.llm.nodes.retriever_node import RetrieverNode
+from morpheus_llm.llm import LLMNodeBase
+from morpheus_llm.llm.nodes.retriever_node import RetrieverNode
 
 
 @pytest.mark.parametrize("embedding", [None, mock.AsyncMock()])

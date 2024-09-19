@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2024, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@ import asyncio
 import typing
 from unittest import mock
 
-from morpheus.llm import InputMap
-from morpheus.llm import LLMContext
-from morpheus.llm import LLMNodeBase
-from morpheus.llm import LLMTask
-from morpheus.llm import LLMTaskHandler
 from morpheus.messages import ControlMessage
+from morpheus_llm.llm import InputMap
+from morpheus_llm.llm import LLMContext
+from morpheus_llm.llm import LLMNodeBase
+from morpheus_llm.llm import LLMTask
+from morpheus_llm.llm import LLMTaskHandler
 
 
 def _mk_context(parent_context: LLMContext, input_values: dict) -> LLMContext:

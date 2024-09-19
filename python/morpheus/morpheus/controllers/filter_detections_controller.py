@@ -17,12 +17,9 @@ import typing
 
 import cupy as cp
 import numpy as np
-import typing_utils
 
 from morpheus.common import FilterSource
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseMessage
 
 logger = logging.getLogger(__name__)
 
@@ -67,18 +64,12 @@ class FilterDetectionsController:
         """
         return self._field_name
 
-    def _find_detections(self, x: MultiMessage | ControlMessage) -> typing.Union[cp.ndarray, np.ndarray]:
+    def _find_detections(self, msg: ControlMessage) -> typing.Union[cp.ndarray, np.ndarray]:
         # Determine the filter source
-        if isinstance(x, MultiMessage):
-            if self._filter_source == FilterSource.TENSOR:
-                filter_source = x.get_output(self._field_name)
-            else:
-                filter_source = x.get_meta(self._field_name).values
-        elif isinstance(x, ControlMessage):
-            if self._filter_source == FilterSource.TENSOR:
-                filter_source = x.tensors().get_tensor(self._field_name)
-            else:
-                filter_source = x.payload().get_data(self._field_name).values
+        if self._filter_source == FilterSource.TENSOR:
+            filter_source = msg.tensors().get_tensor(self._field_name)
+        else:
+            filter_source = msg.payload().get_data(self._field_name).values
 
         if (isinstance(filter_source, np.ndarray)):
             array_mod = np
@@ -96,70 +87,60 @@ class FilterDetectionsController:
 
         return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
-    def filter_copy(self, x: MultiMessage | ControlMessage) -> MultiMessage | ControlMessage:
+    def filter_copy(self, msg: ControlMessage) -> ControlMessage:
         """
         This function uses a threshold value to filter the messages.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
+        msg : `morpheus.messages.ControlMessasge`
             Response message with probabilities calculated from inference results.
 
         Returns
         -------
-        `morpheus.pipeline.messages.MultiMessage`
+        `morpheus.messages.ControlMessage`
             A new message containing a copy of the rows above the threshold.
 
         """
-        if x is None:
+        if msg is None:
             return None
 
-        true_pairs = self._find_detections(x)
+        true_pairs = self._find_detections(msg)
 
         # If we didnt have any detections, return None
         if (true_pairs.shape[0] == 0):
             return None
 
-        if isinstance(x, MultiMessage):
-            return x.copy_ranges(true_pairs)
-        if isinstance(x, ControlMessage):
-            meta = x.payload()
-            x.payload(meta.copy_ranges(true_pairs))
-            return x
-        raise TypeError(f"Unsupported message type: {type(x)}")
+        meta = msg.payload()
+        msg.payload(meta.copy_ranges(true_pairs))
+        return msg
 
-    def filter_slice(self, x: MultiMessage | ControlMessage) -> typing.List[MultiMessage] | typing.List[ControlMessage]:
+    def filter_slice(self, msg: ControlMessage) -> list[ControlMessage]:
         """
         This function uses a threshold value to filter the messages.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
+        msg : `morpheus.messages.ControlMessage`
             Response message with probabilities calculated from inference results.
 
         Returns
         -------
-        typing.List[`morpheus.pipeline.messages.MultiMessage`]
+        list[`morpheus.messages.ControlMessage`]
             List of filtered messages.
 
         """
         # Unfortunately we have to convert this to a list in case there are non-contiguous groups
         output_list = []
-        if x is not None:
-            true_pairs = self._find_detections(x)
-            if isinstance(x, MultiMessage):
-                for pair in true_pairs:
-                    pair = tuple(pair.tolist())
-                    if ((pair[1] - pair[0]) > 0):
-                        output_list.append(x.get_slice(*pair))
-            elif isinstance(x, ControlMessage):
-                for pair in true_pairs:
-                    pair = tuple(pair.tolist())
-                    if ((pair[1] - pair[0]) > 0):
-                        sliced_meta = x.payload().get_slice(*pair)
-                        cm = ControlMessage(x)
-                        cm.payload(sliced_meta)
-                        output_list.append(cm)
+        if msg is not None:
+            true_pairs = self._find_detections(msg)
+            for pair in true_pairs:
+                pair = tuple(pair.tolist())
+                if ((pair[1] - pair[0]) > 0):
+                    sliced_meta = msg.payload().get_slice(*pair)
+                    cm = ControlMessage(msg)
+                    cm.payload(sliced_meta)
+                    output_list.append(cm)
 
         return output_list
 
@@ -175,10 +156,7 @@ class FilterDetectionsController:
 
         # Unfortunately we have to convert this to a list in case there are non-contiguous groups
         if self._filter_source == FilterSource.Auto:
-            if (typing_utils.issubtype(message_type, MultiResponseMessage)):
-                self._filter_source = FilterSource.TENSOR
-            else:
-                self._filter_source = FilterSource.DATAFRAME
+            self._filter_source = FilterSource.DATAFRAME
 
             logger.debug(
                 "filter_source was set to Auto, inferring a filter source of %s based on an input "

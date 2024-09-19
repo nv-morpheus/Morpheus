@@ -15,6 +15,7 @@
 
 import os
 import pickle
+import typing
 
 import cupy
 import dgl
@@ -472,8 +473,8 @@ def build_fsi_graph(train_data: cf.DataFrame, col_drop: list[str]) -> (dgl.DGLHe
 
 
 def prepare_data(
-        training_data: cf.DataFrame,
-        test_data: cf.DataFrame) -> (cf.DataFrame, cf.DataFrame, cf.Series, cf.Series, cupy.ndarray, cf.DataFrame):
+    training_data: cf.DataFrame, test_data: cf.DataFrame
+) -> typing.Union[cf.DataFrame, cf.DataFrame, cf.Series, cf.Series, cupy.ndarray, cf.DataFrame]:
     """Process data for training/inference operation
 
     Parameters

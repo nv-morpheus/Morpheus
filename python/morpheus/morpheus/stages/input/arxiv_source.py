@@ -96,7 +96,6 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         self._total_pdfs = 0
         self._total_pages = 0
         self._total_chunks = 0
-        self._stop_requested = False
         self._cache_dir = cache_dir
 
     @property
@@ -113,7 +112,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
-        download_pages = builder.make_source(self.unique_name + "-download", self._generate_frames())
+        download_pages = builder.make_source(self.unique_name + "-download", self._generate_frames)
         process_pages = builder.make_node(self.unique_name + "-process", ops.map(self._process_pages))
         process_pages.launch_options.pe_count = 6
 
@@ -126,7 +125,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
         return splitting_pages
 
-    def _generate_frames(self):
+    def _generate_frames(self, subscription: mrc.Subscription):
         os.makedirs(self._cache_dir, exist_ok=True)
 
         try:
@@ -142,7 +141,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         )
 
         for x in search_results.results():
-            if self._stop_requested:
+            if self.is_stop_requested() or not subscription.is_subscribed():
                 break
 
             full_path = os.path.join(self._cache_dir, x._get_default_filename())
@@ -175,7 +174,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
                 logger.debug("Processing %s/%s: %s", len(documents), self._total_pages, pdf_path)
                 if self._total_pages > self._max_pages:
-                    self._stop_requested = True
+                    self.request_stop()
 
                 return documents
             except PdfStreamError:

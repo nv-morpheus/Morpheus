@@ -22,11 +22,10 @@ from mlflow.tracking.client import MlflowClient
 from mrc.core import operators as ops
 
 from morpheus.config import Config
-from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
-from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.model_cache import ModelCache
 from ..utils.model_cache import ModelManager
 
@@ -70,10 +69,10 @@ class DFPInferenceStage(SinglePortStage):
 
     def accepted_types(self) -> typing.Tuple:
         """Accepted input types."""
-        return (MultiDFPMessage, )
+        return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MultiAEMessage)
+        schema.output_schema.set_type(ControlMessage)
 
     def get_model(self, user: str) -> ModelCache:
         """
@@ -82,15 +81,15 @@ class DFPInferenceStage(SinglePortStage):
         """
         return self._model_manager.load_user_model(self._client, user_id=user, fallback_user_ids=[self._fallback_user])
 
-    def on_data(self, message: MultiDFPMessage) -> MultiDFPMessage:
+    def on_data(self, message: ControlMessage) -> ControlMessage:
         """Perform inference on the input data."""
-        if (not message or message.mess_count == 0):
+        if (not message or message.payload().count == 0):
             return None
 
         start_time = time.time()
 
-        df_user = message.get_meta()
-        user_id = message.user_id
+        user_df = message.payload().df.to_pandas()
+        user_id = message.get_metadata("user_id")
 
         try:
             model_cache = self.get_model(user_id)
@@ -106,16 +105,17 @@ class DFPInferenceStage(SinglePortStage):
 
         post_model_time = time.time()
 
-        results_df = loaded_model.get_results(df_user, return_abs=True)
+        results_df = loaded_model.get_results(user_df, return_abs=True)
 
         # Create an output message to allow setting meta
-        output_message = MultiDFPMessage(meta=message.meta,
-                                         mess_offset=message.mess_offset,
-                                         mess_count=message.mess_count)
+        output_message = ControlMessage()
+        output_message.payload(message.payload())
 
-        output_message.set_meta(list(results_df.columns), results_df)
+        for col in list(results_df.columns):
+            output_message.payload().set_data(col, results_df[col])
 
-        output_message.set_meta('model_version', f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
+        output_message.payload().set_data('model_version',
+                                          f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
 
         if logger.isEnabledFor(logging.DEBUG):
             load_model_duration = (post_model_time - start_time) * 1000.0
@@ -125,8 +125,8 @@ class DFPInferenceStage(SinglePortStage):
                          user_id,
                          load_model_duration,
                          get_anomaly_duration,
-                         df_user[self._config.ae.timestamp_column_name].min(),
-                         df_user[self._config.ae.timestamp_column_name].max())
+                         user_df[self._config.ae.timestamp_column_name].min(),
+                         user_df[self._config.ae.timestamp_column_name].max())
 
         return output_message
 

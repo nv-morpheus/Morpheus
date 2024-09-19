@@ -24,9 +24,9 @@ import pytest
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
-from morpheus.messages import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import AppShieldMessageMeta
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 
 
@@ -56,7 +56,7 @@ class TestCreateFeaturesRWStage:
                                       n_workers=n_workers,
                                       threads_per_worker=threads_per_worker)
 
-        assert isinstance(stage, MultiMessageStage)
+        assert isinstance(stage, ControlMessageStage)
         assert stage._client is mock_dask_client
         scheduler_info = stage._client.scheduler_info()
         for worker in scheduler_info['workers'].values():
@@ -126,12 +126,12 @@ class TestCreateFeaturesRWStage:
         dataset_pandas.assert_compare_df(meta.copy_dataframe(), expected_df)
 
     @mock.patch('stages.create_features.Client')
-    def test_create_multi_messages(self,
-                                   mock_dask_client,
-                                   config: Config,
-                                   rwd_conf: dict,
-                                   interested_plugins: typing.List[str],
-                                   dataset_pandas: DatasetManager):
+    def test_create_control_messages(self,
+                                     mock_dask_client,
+                                     config: Config,
+                                     rwd_conf: dict,
+                                     interested_plugins: typing.List[str],
+                                     dataset_pandas: DatasetManager):
         from stages.create_features import CreateFeaturesRWStage
         mock_dask_client.return_value = mock_dask_client
 
@@ -169,16 +169,15 @@ class TestCreateFeaturesRWStage:
                                       threads_per_worker=6)
 
         meta = AppShieldMessageMeta(df, source='tests')
-        multi_messages = stage.create_multi_messages(meta)
-        assert len(multi_messages) == len(pids)
+        control_messages = stage.create_control_messages(meta)
+        assert len(control_messages) == len(pids)
 
         prev_loc = 0
-        for (i, _multi_message) in enumerate(multi_messages):
-            assert isinstance(_multi_message, MultiMessage)
+        for (i, _control_message) in enumerate(control_messages):
+            assert isinstance(_control_message, ControlMessage)
             pid = pids[i]
-            (_multi_message.get_meta(['pid_process']) == pid).all()
-            assert _multi_message.mess_offset == prev_loc
-            prev_loc = _multi_message.mess_offset + _multi_message.mess_count
+            (_control_message.payload().get_data(['pid_process']) == pid).all()
+            prev_loc = prev_loc + _control_message.payload().count
 
         assert prev_loc == len(df)
 

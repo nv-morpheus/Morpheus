@@ -26,14 +26,6 @@ add_library(morpheus
   src/io/loaders/payload.cpp
   src/io/loaders/rest.cpp
   src/io/serializers.cpp
-  src/llm/input_map.cpp
-  src/llm/llm_context.cpp
-  src/llm/llm_engine.cpp
-  src/llm/llm_node_runner.cpp
-  src/llm/llm_node.cpp
-  src/llm/llm_task_handler_runner.cpp
-  src/llm/llm_task.cpp
-  src/llm/utils.cpp
   src/messages/control.cpp
   src/messages/memory/inference_memory_fil.cpp
   src/messages/memory/inference_memory_nlp.cpp
@@ -43,13 +35,6 @@ add_library(morpheus
   src/messages/memory/response_memory.cpp
   src/messages/memory/tensor_memory.cpp
   src/messages/meta.cpp
-  src/messages/multi_inference_fil.cpp
-  src/messages/multi_inference_nlp.cpp
-  src/messages/multi_inference.cpp
-  src/messages/multi_response_probs.cpp
-  src/messages/multi_response.cpp
-  src/messages/multi_tensor.cpp
-  src/messages/multi.cpp
   src/messages/raw_packet.cpp
   src/modules/data_loader_module.cpp
   src/objects/data_table.cpp

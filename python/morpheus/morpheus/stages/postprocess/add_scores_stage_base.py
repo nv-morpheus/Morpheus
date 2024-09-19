@@ -23,7 +23,6 @@ import mrc.core.operators as ops
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -87,11 +86,11 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiResponseMessage`, ]
+        typing.Tuple[`morpheus.messages.ControlMessage`,]
             Accepted input types.
 
         """
-        return (MultiResponseMessage, ControlMessage)
+        return (ControlMessage, )
 
     @abstractmethod
     def _get_cpp_node(self, builder: mrc.Builder):
@@ -113,28 +112,19 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
 
     @typing.overload
     @staticmethod
-    def _add_labels(x: MultiResponseMessage, idx2label: dict[int, str],
-                    threshold: typing.Optional[float]) -> MultiResponseMessage:
+    def _add_labels(msg: ControlMessage, idx2label: dict[int, str],
+                    threshold: typing.Optional[float]) -> ControlMessage:
         ...
 
     @typing.overload
     @staticmethod
-    def _add_labels(x: ControlMessage, idx2label: dict[int, str], threshold: typing.Optional[float]) -> ControlMessage:
+    def _add_labels(msg: ControlMessage, idx2label: dict[int, str],
+                    threshold: typing.Optional[float]) -> ControlMessage:
         ...
 
     @staticmethod
-    def _add_labels(x: MultiResponseMessage | ControlMessage,
-                    idx2label: dict[int, str],
-                    threshold: typing.Optional[float]):
-        if isinstance(x, ControlMessage):
-            return AddScoresStageBase.process_control_message(x, idx2label, threshold)
-        if isinstance(x, MultiResponseMessage):
-            return AddScoresStageBase.process_multi_message(x, idx2label, threshold)
-        raise TypeError("Unsupported message type")
-
-    @staticmethod
-    def process_control_message(x: ControlMessage, idx2label: typing.Dict[int, str], threshold: typing.Optional[float]):
-        probs = x.tensors().get_tensor("probs")
+    def _add_labels(msg: ControlMessage, idx2label: dict[int, str], threshold: typing.Optional[float]):
+        probs = msg.tensors().get_tensor("probs")
 
         if (probs.shape[1] <= max(idx2label.keys())):
             raise RuntimeError(("Model output did not contain enough columns to fufill the requested labels. "
@@ -145,27 +135,7 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
 
         # Do these one at a time to prevent failures
         for i, label in idx2label.items():
-            x.payload().set_data(label, probs[:, i])
+            msg.payload().set_data(label, probs[:, i])
 
         # Return the same object
-        return x
-
-    @staticmethod
-    def process_multi_message(x: MultiResponseMessage,
-                              idx2label: typing.Dict[int, str],
-                              threshold: typing.Optional[float]):
-        probs = x.get_probs_tensor()
-
-        if (probs.shape[1] <= max(idx2label.keys())):
-            raise RuntimeError(("Model output did not contain enough columns to fufill the requested labels. "
-                                f"Label indexes: {idx2label}, Model output columns: {probs.shape[1]}"))
-
-        if (threshold is not None):
-            probs = (probs > threshold).astype(bool)
-
-        # Do these one at a time to prevent failures
-        for i, label in idx2label.items():
-            x.set_meta(label, probs[:, i])
-
-        # Return the same object
-        return x
+        return msg

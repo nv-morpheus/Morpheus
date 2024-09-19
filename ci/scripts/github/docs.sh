@@ -17,6 +17,7 @@
 set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
+source ${WORKSPACE}/ci/scripts/github/cmake_all.sh
 
 rapids-dependency-file-generator \
   --output conda \
@@ -30,6 +31,7 @@ download_artifact "wheel.tar.bz"
 tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
 
 pip install ${MORPHEUS_ROOT}/${BUILD_DIR}/python/morpheus/dist/*.whl
+pip install ${MORPHEUS_ROOT}/${BUILD_DIR}/python/morpheus_llm/dist/*.whl
 
 rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}

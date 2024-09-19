@@ -37,7 +37,7 @@ The organization of Morpheus can be broken down into four different layers. Work
     * Composed of one or more nodes, connected by edges.
     * All nodes are guaranteed to operate on the same machine, in the same process space.
 * Module Layer
-    * TODO: Add details about modules.
+    * Similar to stages, modules can builds and connect multiple nodes.
 * Node Layer
     * Smallest building block in Morpheus.
     * Each node operates on the same thread.

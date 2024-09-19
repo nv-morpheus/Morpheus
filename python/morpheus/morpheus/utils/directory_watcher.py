@@ -16,6 +16,7 @@ import glob
 import logging
 import os
 import queue
+from collections.abc import Callable
 
 import mrc
 from watchdog.events import FileSystemEvent
@@ -58,6 +59,8 @@ class DirectoryWatcher():
         Maximum queue size to hold the file paths to be processed that match `input_glob`.
     batch_timeout: float
         Timeout to retrieve batch messages from the queue.
+    should_stop_fn: Callable[[], bool]
+        Function that returns a boolean indicating if the watcher should stop processing files.
     """
 
     def __init__(self,
@@ -67,7 +70,8 @@ class DirectoryWatcher():
                  sort_glob: bool,
                  recursive: bool,
                  queue_max_size: int,
-                 batch_timeout: float):
+                 batch_timeout: float,
+                 should_stop_fn: Callable[[], bool] = None):
 
         self._input_glob = input_glob
         self._watch_directory = watch_directory
@@ -76,6 +80,10 @@ class DirectoryWatcher():
         self._recursive = recursive
         self._queue_max_size = queue_max_size
         self._batch_timeout = batch_timeout
+        if should_stop_fn is None:
+            self._should_stop_fn = lambda: False
+        else:
+            self._should_stop_fn = should_stop_fn
 
         # Determine the directory to watch and the match pattern from the glob
         glob_split = self._input_glob.split("*", 1)
@@ -96,7 +104,7 @@ class DirectoryWatcher():
         """
 
         # The first source just produces filenames
-        return builder.make_source(name, self._generate_via_polling())
+        return builder.make_source(name, self._generate_via_polling)
 
     def _get_filename_queue(self) -> FiberQueue:
         """
@@ -145,14 +153,14 @@ class DirectoryWatcher():
 
         return f_queue
 
-    def _generate_via_polling(self):
+    def _generate_via_polling(self, subscription: mrc.Subscription):
 
         # Its a bit ugly, but utilize a filber queue to yield the thread. This will be improved in the future
         file_queue = FiberQueue(self._queue_max_size)
 
         snapshot = EmptyDirectorySnapshot()
 
-        while (True):
+        while (not self._should_stop_fn() and subscription.is_subscribed()):
 
             # Get a new snapshot
             new_snapshot = DirectorySnapshot(self._dir_to_watch, recursive=self._recursive)

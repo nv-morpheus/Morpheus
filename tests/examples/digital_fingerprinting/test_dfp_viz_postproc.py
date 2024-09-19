@@ -25,22 +25,23 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 # pylint: disable=redefined-outer-name
 
 
-@pytest.fixture(name="dfp_multi_message")
-def dfp_multi_message_fixture(config: Config, dfp_multi_message: "MultiDFPMessage"):  # noqa F821
+@pytest.fixture(name="control_message")
+def control_message_fixture(config: Config, control_message: "ControlMessage"):  # noqa F821
     # Fill in some values for columns that the stage is looking for
-    with dfp_multi_message.meta.mutable_dataframe() as df:
+    with control_message.payload().mutable_dataframe() as df:
         step = (len(df) + 1) * 100
         df["mean_abs_z"] = list(range(0, len(df) * step, step))
         for (i, col) in enumerate(sorted(config.ae.feature_columns)):
             step = i + 1 * 100
             df[f"{col}_z_loss"] = list(range(0, len(df) * step, step))
 
-    yield dfp_multi_message
+    yield control_message
 
 
 @pytest.fixture(name="expected_df")
-def expected_df_fixture(config: Config, dfp_multi_message: "MultiDFPMessage"):  # noqa F821
-    df = dfp_multi_message.meta.copy_dataframe()
+def expected_df_fixture(config: Config, control_message: "ControlMessage"):  # noqa F821
+    df = control_message.payload().copy_dataframe()
+    df = df.to_pandas()
     expected_df = pd.DataFrame()
     expected_df["user"] = df[config.ae.userid_column_name]
     expected_df["time"] = df[config.ae.timestamp_column_name]
@@ -68,14 +69,14 @@ def test_constructor(config: Config):
 
 def test_postprocess(
         config: Config,
-        dfp_multi_message: "MultiDFPMessage",  # noqa: F821
+        control_message: "ControlMessage",  # noqa: F821
         expected_df: pd.DataFrame,
         dataset_pandas: DatasetManager):
     from dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
 
     # _postprocess doesn't write to disk, so the fake output_dir, shouldn't be an issue
     stage = DFPVizPostprocStage(config, period='min', output_dir='/fake/test/dir', output_prefix='test_prefix')
-    results = stage._postprocess(dfp_multi_message)
+    results = stage._postprocess(control_message)
 
     assert isinstance(results, pd.DataFrame)
     dataset_pandas.assert_compare_df(results, expected_df)
@@ -84,13 +85,13 @@ def test_postprocess(
 def test_write_to_files(
         config: Config,
         tmp_path: str,
-        dfp_multi_message: "MultiDFPMessage",  # noqa: F821
+        control_message: "ControlMessage",  # noqa: F821
         expected_df: pd.DataFrame,
         dataset_pandas: DatasetManager):
     from dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
 
     stage = DFPVizPostprocStage(config, period='min', output_dir=tmp_path, output_prefix='test_prefix_')
-    assert stage._write_to_files(dfp_multi_message) is dfp_multi_message
+    assert stage._write_to_files(control_message) is control_message
 
     # The times in the DF have a 30 second step, so the number of unique minutes is half the length of the DF
     num_expected_periods = len(expected_df) // 2

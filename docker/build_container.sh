@@ -35,6 +35,7 @@ FROM_IMAGE=${FROM_IMAGE:-"nvidia/cuda"}
 LINUX_DISTRO=${LINUX_DISTRO:-ubuntu}
 LINUX_VER=${LINUX_VER:-22.04}
 MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-"OFF"}
+MORPHEUS_BUILD_MORPHEUS_LLM=${MORPHEUS_BUILD_MORPHEUS_LLM:-"ON"}
 PYTHON_VER=${PYTHON_VER:-3.10}
 
 # Determine the relative path from $PWD to $MORPHEUS_ROOT
@@ -51,6 +52,7 @@ DOCKER_ARGS="${DOCKER_ARGS} --build-arg LINUX_DISTRO=${LINUX_DISTRO}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg LINUX_VER=${LINUX_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}"
+DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_BUILD_MORPHEUS_LLM=${MORPHEUS_BUILD_MORPHEUS_LLM}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg PYTHON_VER=${PYTHON_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --network=host"
 
@@ -61,15 +63,16 @@ DOCKER_ARGS="${DOCKER_ARGS} ${DOCKER_EXTRA_ARGS}"
 export DOCKER_BUILDKIT=1
 
 echo "Building morpheus:${DOCKER_TAG} with args..."
-echo "   CUDA_MAJOR_VER       : ${CUDA_MAJOR_VER}"
-echo "   CUDA_MINOR_VER       : ${CUDA_MINOR_VER}"
-echo "   CUDA_REV_VER         : ${CUDA_REV_VER}"
-echo "   FROM_IMAGE           : ${FROM_IMAGE}"
-echo "   LINUX_DISTRO         : ${LINUX_DISTRO}"
-echo "   LINUX_VER            : ${LINUX_VER}"
-echo "   MORPHEUS_ROOT_HOST   : ${MORPHEUS_ROOT_HOST}"
-echo "   MORPHEUS_SUPPORT_DOCA: ${MORPHEUS_SUPPORT_DOCA}"
-echo "   PYTHON_VER           : ${PYTHON_VER}"
+echo "   CUDA_MAJOR_VER             : ${CUDA_MAJOR_VER}"
+echo "   CUDA_MINOR_VER             : ${CUDA_MINOR_VER}"
+echo "   CUDA_REV_VER               : ${CUDA_REV_VER}"
+echo "   FROM_IMAGE                 : ${FROM_IMAGE}"
+echo "   LINUX_DISTRO               : ${LINUX_DISTRO}"
+echo "   LINUX_VER                  : ${LINUX_VER}"
+echo "   MORPHEUS_ROOT_HOST         : ${MORPHEUS_ROOT_HOST}"
+echo "   MORPHEUS_SUPPORT_DOCA      : ${MORPHEUS_SUPPORT_DOCA}"
+echo "   MORPHEUS_BUILD_MORPHEUS_LLM: ${MORPHEUS_BUILD_MORPHEUS_LLM}"
+echo "   PYTHON_VER                 : ${PYTHON_VER}"
 
 echo ""
 echo "   COMMAND: docker build ${DOCKER_ARGS} -f ${SCRIPT_DIR}/Dockerfile ."

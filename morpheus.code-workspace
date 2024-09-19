@@ -46,7 +46,7 @@
                     // "from-kafka",
                     "deserialize",
                     "preprocess",
-                    "--vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt",
+                    "--vocab_hash_file=./python/morpheus/morpheus/data/bert-base-uncased-hash.txt",
                     "--truncation=True",
                     "--do_lower_case=True",
                     "--add_special_tokens=False",
@@ -79,7 +79,7 @@
                 "cwd": "${workspaceFolder}",
                 "justMyCode": false,
                 "name": "Python: Run Pipeline (NLP)",
-                "program": "${workspaceFolder}/morpheus/cli/run.py",
+                "program": "${workspaceFolder}/python/morpheus/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
                 "type": "debugpy"
@@ -135,7 +135,7 @@
                 "cwd": "${workspaceFolder}",
                 "justMyCode": false,
                 "name": "Python: Run Pipeline (FIL)",
-                "program": "${workspaceFolder}/morpheus/cli/run.py",
+                "program": "${workspaceFolder}/python/morpheus/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
                 "type": "debugpy"
@@ -149,7 +149,7 @@
                     "--model_max_batch_size=1024",
                     "--use_cpp=False",
                     "pipeline-ae",
-                    "--columns_file=morpheus/data/columns_ae_cloudtrail.txt",
+                    "--columns_file=python/morpheus/morpheus/data/columns_ae_cloudtrail.txt",
                     "--userid_column_name=userIdentitysessionContextsessionIssueruserName",
                     "--userid_filter=user123",
                     "--timestamp_column_name=event_dt",
@@ -197,7 +197,7 @@
                 "cwd": "${workspaceFolder}",
                 "justMyCode": false,
                 "name": "Python: Run Pipeline (AE)",
-                "program": "${workspaceFolder}/morpheus/cli/run.py",
+                "program": "${workspaceFolder}/python/morpheus/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
                 "type": "debugpy"
@@ -212,7 +212,7 @@
                     "--model_max_batch_size=32",
                     // "--use_cpp=False",
                     "pipeline-nlp",
-                    "--labels_file=morpheus/data/labels_phishing.txt",
+                    "--labels_file=python/morpheus/morpheus/data/labels_phishing.txt",
                     "--model_seq_length=128",
                     "from-file",
                     "--filename=models/datasets/validation-data/phishing-email-validation-data.jsonlines",
@@ -221,7 +221,7 @@
                     // "from-kafka",
                     "deserialize",
                     "preprocess",
-                    "--vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt",
+                    "--vocab_hash_file=./python/morpheus/morpheus/data/bert-base-uncased-hash.txt",
                     "--truncation=True",
                     // "--stride=",
                     "--do_lower_case=True",
@@ -262,7 +262,7 @@
                 "cwd": "${workspaceFolder}",
                 "justMyCode": false,
                 "name": "Python: Run Pipeline (NLP-Phishing)",
-                "program": "${workspaceFolder}/morpheus/cli/run.py",
+                "program": "${workspaceFolder}/python/morpheus/morpheus/cli/run.py",
                 "request": "launch",
                 "subProcess": true,
                 "type": "debugpy"
@@ -307,7 +307,7 @@
             {
                 "MIMode": "gdb",
                 "args": [
-                    "./morpheus/cli.py",
+                    "./python/morpheus/morpheus/cli.py",
                     "--log_level=DEBUG",
                     "run",
                     "--num_threads=2",
@@ -325,7 +325,7 @@
                     // "from-kafka",
                     "deserialize",
                     "preprocess",
-                    "--vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt",
+                    "--vocab_hash_file=./python/morpheus/morpheus/data/bert-base-uncased-hash.txt",
                     "--truncation=True",
                     "--do_lower_case=True",
                     "--add_special_tokens=False",
@@ -403,7 +403,7 @@
             {
                 "MIMode": "gdb",
                 "args": [
-                    "./morpheus/cli.py",
+                    "./python/morpheus/morpheus/cli.py",
                     "--log_level=DEBUG",
                     // "--debug",
                     "run",
@@ -496,7 +496,7 @@
             {
                 "MIMode": "gdb",
                 "args": [
-                    "./morpheus/cli.py",
+                    "./python/morpheus/morpheus/cli.py",
                     "--log_level=DEBUG",
                     "run",
                     "--num_threads=1",
@@ -600,7 +600,7 @@
                 "externalConsole": false,
                 "miDebuggerPath": "gdb",
                 "name": "Debug LLM C++ Tests",
-                "program": "${workspaceFolder}/build/morpheus/_lib/tests/test_llm.x",
+                "program": "${workspaceFolder}/build/python/morpheus/morpheus/_lib/tests/test_llm.x",
                 "request": "launch",
                 "setupCommands": [
                     {
@@ -679,7 +679,7 @@
         "files.trimFinalNewlines": true,
         "files.trimTrailingWhitespace": true,
         "flake8.args": [
-            "--style=${workspaceFolder}/setup.cfg"
+            "--style=${workspaceFolder}/pyproject.toml"
         ],
         "pylint.args": [
             "--rcfile=${workspaceFolder}/pyproject.toml",
@@ -730,7 +730,7 @@
             }
         ],
         "yapf.args": [
-            "--style=${workspaceFolder}/setup.cfg"
+            "--style=${workspaceFolder}/pyproject.toml"
         ]
     }
 }

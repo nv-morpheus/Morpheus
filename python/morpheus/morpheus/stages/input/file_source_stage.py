@@ -128,11 +128,11 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
                                            self._filter_null_columns,
                                            self._parser_kwargs)
         else:
-            node = builder.make_source(self.unique_name, self._generate_frames())
+            node = builder.make_source(self.unique_name, self._generate_frames)
 
         return node
 
-    def _generate_frames(self) -> typing.Iterable[MessageMeta]:
+    def _generate_frames(self, subscription: mrc.Subscription) -> typing.Iterable[MessageMeta]:
 
         df = read_file_to_df(
             self._filename,
@@ -144,6 +144,9 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         )
 
         for i in range(self._repeat_count):
+            if not subscription.is_subscribed():
+                break
+
             if (self._build_cpp_node()):
                 x = CppMessageMeta(df)
             else:

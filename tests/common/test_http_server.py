@@ -43,7 +43,7 @@ def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,
 @pytest.mark.parametrize("include_headers", [True, False], ids=["with_headers", "without_headers"])
 @pytest.mark.parametrize("use_callback", [True, False], ids=["with_callback", "without_callback"])
 @pytest.mark.parametrize("use_context_mgr", [True, False], ids=["with_context_mgr", "without_context_mgr"])
-@pytest.mark.parametrize("num_threads", [1, 2, min(8, os.cpu_count())])
+@pytest.mark.parametrize("num_threads", [1, 2, min(8, len(os.sched_getaffinity(0)))])
 @pytest.mark.parametrize("status,content_type,content",
                          [(HTTPStatus.OK, MimeTypes.TEXT.value, "OK"),
                           (HTTPStatus.OK, MimeTypes.JSON.value, '{"test": "OK"}'),

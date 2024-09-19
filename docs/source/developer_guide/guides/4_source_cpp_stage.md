@@ -493,13 +493,10 @@ def __init__(self,
     self._exchange_type = exchange_type
     self._queue_name = queue_name
 
-    self._connection = None
+    self._connection: pika.BlockingConnection = None
     self._channel = None
 
     self._poll_interval = pd.Timedelta(poll_interval)
-
-    # Flag to indicate whether or not we should stop
-    self._stop_requested = False
 ```
 ```python
 def connect(self):
@@ -523,13 +520,13 @@ def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
     if self._build_cpp_node():
         from ._lib import rabbitmq_cpp_stage
 
-        node = morpheus_rabbit_cpp.RabbitMQSourceStage(builder,
-                                                        self.unique_name,
-                                                        self._host,
-                                                        self._exchange,
-                                                        self._exchange_type,
-                                                        self._queue_name,
-                                                        self._poll_interval.to_pytimedelta())
+        node = rabbitmq_cpp_stage.RabbitMQSourceStage(builder,
+                                                      self.unique_name,
+                                                      self._host,
+                                                      self._exchange,
+                                                      self._exchange_type,
+                                                      self._queue_name,
+                                                      self._poll_interval.to_pytimedelta())
     else:
         self.connect()
         node = builder.make_source(self.unique_name, self.source_generator)
