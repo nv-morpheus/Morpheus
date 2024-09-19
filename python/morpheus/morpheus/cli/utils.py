@@ -28,7 +28,7 @@ import morpheus
 from morpheus.config import Config
 from morpheus.config import ConfigBase
 # For backwards compatibility
-from morpheus.utils.file_utils import load_labels_file  # pylint: disable=unused-import
+from morpheus.utils.file_utils import load_labels_file  # pylint: disable=unused-import # noqa: F401
 
 # Ignore pipeline unless we are typechecking since it takes a while to import
 if (typing.TYPE_CHECKING):
