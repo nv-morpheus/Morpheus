@@ -64,7 +64,7 @@ class LLMEngineStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
         """
         return (ControlMessage, )
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         """Indicates whether this stage supports a C++ node."""
         return True
 
