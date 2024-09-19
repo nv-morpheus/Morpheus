@@ -58,7 +58,7 @@ class LLMEngineStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 
         Returns
         -------
-        typing.Tuple(`ControlMessage`, )
+        tuple(`ControlMessage`, )
             Accepted input types.
 
         """
@@ -75,7 +75,7 @@ class LLMEngineStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 
         This is different than casting from the Python bindings for the C++ ControlMessage to a C++ ControlMessage.
         """
-        return cpp_messages_lib.ControlMessage(message)
+        return cpp_messages_lib.ControlMessage(message, no_cast=True)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         import morpheus_llm._lib.llm as _llm

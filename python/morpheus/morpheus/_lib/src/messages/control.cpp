@@ -415,9 +415,16 @@ void ControlMessageProxy::set_timestamp(ControlMessage& self, const std::string&
     }
 }
 
-void ControlMessageProxy::payload_from_python_meta(ControlMessage& self, const pybind11::object& meta)
+void ControlMessageProxy::payload_from_python_meta(ControlMessage& self, const pybind11::object& meta, bool no_cast)
 {
-    self.payload(MessageMetaInterfaceProxy::init_python_meta(meta));
+    if (!no_cast)
+    {
+        self.payload(MessageMetaInterfaceProxy::init_python_meta(meta));
+    }
+    else
+    {
+        // TODO
+    }
 }
 
 }  // namespace morpheus

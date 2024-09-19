@@ -21,6 +21,7 @@
 #include "morpheus/messages/meta.hpp"         // for MessageMeta
 #include "morpheus/utilities/json_types.hpp"  // for json_t
 
+#include <mrc/types.hpp>       // for PyHolder
 #include <pybind11/pytypes.h>  // for object, dict, list
 #include <pybind11/stl.h>      // IWYU pragma: keep
 
@@ -169,6 +170,8 @@ class MORPHEUS_EXPORT ControlMessage
      */
     void payload(const std::shared_ptr<MessageMeta>& payload);
 
+    void payload(pybind11::object payload);
+
     /**
      * @brief Retrieves the tensor memory associated with the control message.
      *
@@ -250,6 +253,7 @@ class MORPHEUS_EXPORT ControlMessage
     ControlMessageType to_task_type(const std::string& task_type, bool throw_on_error) const;
 
     ControlMessageType m_cm_type{ControlMessageType::NONE};
+    std::unique_ptr<mrc::pymrc::PyHolder> m_py_payload{nullptr};
     std::shared_ptr<MessageMeta> m_payload{nullptr};
     std::shared_ptr<TensorMemory> m_tensors{nullptr};
 
@@ -308,7 +312,7 @@ struct MORPHEUS_EXPORT ControlMessageProxy
      * @brief Set the payload object given a Python instance of MessageMeta
      * @param meta
      */
-    static void payload_from_python_meta(ControlMessage& self, const pybind11::object& meta);
+    static void payload_from_python_meta(ControlMessage& self, const pybind11::object& meta, bool no_cast = false);
 
     /**
      * @brief Sets a timestamp for a given key.

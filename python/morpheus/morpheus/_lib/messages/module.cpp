@@ -284,10 +284,11 @@ PYBIND11_MODULE(messages, _module)
         .def("list_metadata", &ControlMessageProxy::list_metadata)
         .def("payload", pybind11::overload_cast<>(&ControlMessage::payload))
         .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload))
-        .def(
-            "payload",
-            pybind11::overload_cast<ControlMessage&, const py::object&>(&ControlMessageProxy::payload_from_python_meta),
-            py::arg("meta"))
+        .def("payload",
+             pybind11::overload_cast<ControlMessage&, const py::object&, bool>(
+                 &ControlMessageProxy::payload_from_python_meta),
+             py::arg("meta"),
+             py::arg("no_cast") = false)
         .def("tensors", pybind11::overload_cast<>(&ControlMessage::tensors))
         .def("tensors", pybind11::overload_cast<const std::shared_ptr<TensorMemory>&>(&ControlMessage::tensors))
         .def("remove_task", &ControlMessage::remove_task, py::arg("task_type"))
