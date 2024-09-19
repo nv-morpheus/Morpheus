@@ -38,7 +38,6 @@ from dfp.utils.regex_utils import iso_date_regex
 
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_package_relative_file
-from morpheus.utils.file_utils import load_labels_file
 from morpheus.cli.utils import parse_log_level
 from morpheus.common import FileTypes
 from morpheus.common import FilterSource
@@ -59,6 +58,7 @@ from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.file_utils import date_extractor
+from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
 
 
