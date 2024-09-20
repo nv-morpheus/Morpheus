@@ -230,3 +230,61 @@ def test_multiple_stages_pipe(config: Config, dataset_pandas: DatasetManager):
     pipe.run()
 
     assert_results(comp_stage.get_results())
+
+import numpy as np
+
+def cpu_intensive_task(size: int) -> int:
+    # Create two random matrices of the given size
+    A = np.random.rand(size, size)
+    B = np.random.rand(size, size)
+
+    # Perform matrix multiplication
+    result = np.dot(A, B)
+    _ = result.sum()
+    return int(size/500)
+
+def test_benchmarking(config: Config):
+    from morpheus.stages.general.monitor_stage import MonitorStage
+    config.num_threads = os.cpu_count()
+
+    def int_generator(n: int, count: int) -> Generator[int, None, None]:
+        for _ in range(count):
+            yield n
+
+    n = 5000
+    count = 500
+    int_generator_partial = partial(int_generator, n, count)
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(InMemoryDataGenStage(config, int_generator_partial, output_data_type=int))
+    pipe.add_stage(MonitorStage(config, description="source -> 1st stage"))
+    pipe.add_stage(
+        MultiProcessingStage.create(c=config,
+                                    unique_name="1st stage",
+                                    process_fn=cpu_intensive_task,
+                                    process_pool_usage=0.1))
+    pipe.add_stage(MonitorStage(config, description="1st stage -> 2nd stage"))
+    pipe.add_stage(
+        MultiProcessingStage.create(c=config,
+                                    unique_name="2nd stage",
+                                    process_fn=cpu_intensive_task,
+                                    process_pool_usage=0.9))
+    pipe.add_stage(MonitorStage(config, description="2nd stage -> sink"))
+
+    import time
+    start_time = time.time()
+    pipe.run()
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Time taken by pipe.run(): {elapsed_time:.2f} seconds")
+
+if __name__ == "__main__":
+    import logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    c = Config()
+    test_benchmarking(c)
+
+    from morpheus.utils.shared_process_pool import SharedProcessPool
+    pool = SharedProcessPool()
+    pool.terminate()

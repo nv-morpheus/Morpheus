@@ -95,7 +95,7 @@ class SharedProcessPool:
     _instance = None
     _lock = threading.Lock()
 
-    def __new__(cls):
+    def __new__(cls, use_semaphore=True):
         """
         Singleton pattern for SharedProcessPool.
 
@@ -114,7 +114,7 @@ class SharedProcessPool:
             if cls._instance is None:
                 logger.debug("SharedProcessPool.__new__: Creating a new instance...")
                 cls._instance = super().__new__(cls)
-                cls._instance._initialize()
+                cls._instance._initialize(use_semaphore)
                 logger.debug("SharedProcessPool.__new__: SharedProcessPool has been initialized.")
 
             else:
@@ -122,7 +122,7 @@ class SharedProcessPool:
 
         return cls._instance
 
-    def _initialize(self):
+    def _initialize(self, use_semaphore=True):
         self._status = PoolStatus.INITIALIZING
 
         cpu_usage = os.environ.get("SHARED_PROCESS_POOL_CPU_USAGE", None)
@@ -137,6 +137,9 @@ class SharedProcessPool:
         self._manager = self._context.Manager()
         self._task_queues = self._manager.dict()
         self._stage_semaphores = self._manager.dict()
+        self._working_process_count = self._manager.Value("i", 0) # For debugging
+        self._use_semaphore = self._manager.Value("b", use_semaphore) # For debugging
+        self._mp_lock = self._manager.Lock() # For debugging
         self._total_usage = 0.0
         self._stage_usage = {}
 
@@ -149,7 +152,7 @@ class SharedProcessPool:
     def _launch_workers(self):
         for i in range(self.total_max_workers):
             process = self._context.Process(target=self._worker,
-                                            args=(self._cancellation_token, self._task_queues, self._stage_semaphores))
+                                            args=(self._cancellation_token, self._task_queues, self._stage_semaphores, self._working_process_count, self._use_semaphore, self._mp_lock))
             process.start()
             self._processes.append(process)
             logger.debug("SharedProcessPool._lanch_workers(): Process %s/%s has been started.",
@@ -168,7 +171,7 @@ class SharedProcessPool:
         return self._status
 
     @staticmethod
-    def _worker(cancellation_token, task_queues, stage_semaphores):
+    def _worker(cancellation_token, task_queues, stage_semaphores, working_process_count, use_semaphore, mp_lock):
         logger.debug("SharedProcessPool._worker: Worker process %s has been started.", os.getpid())
 
         while True:
@@ -178,24 +181,31 @@ class SharedProcessPool:
                 return
 
             for stage_name, task_queue in task_queues.items():
-                semaphore = stage_semaphores[stage_name]
+                if use_semaphore.value:
+                    semaphore = stage_semaphores[stage_name]
 
-                if not semaphore.acquire(blocking=False):
-                    # Stage has reached the limitation of processes
-                    continue
+                    if not semaphore.acquire(blocking=False):
+                        # Stage has reached the limitation of processes
+                        continue
 
                 try:
                     task = task_queue.get(timeout=0.1)
                 except queue.Empty:
-                    semaphore.release()
+                    if use_semaphore.value:
+                        semaphore.release()
                     continue
 
                 if task is None:
                     logger.warning("SharedProcessPool._worker: Worker process %s has received a None task.",
                                    os.getpid())
-                    semaphore.release()
+                    if use_semaphore.value:
+                        semaphore.release()
                     continue
 
+                # logger.warning(f"SharedProcessPool._worker: use_semaphore {use_semaphore.value}")
+                # with mp_lock:
+                #     working_process_count.value += 1
+                #     logger.warning(f"SharedProcessPool._worker: current working process count {working_process_count.value}")
                 process_fn = task.process_fn
                 args = task.args
                 kwargs = task.kwargs
@@ -207,8 +217,11 @@ class SharedProcessPool:
                     task.set_exception(e)
 
                 task_queue.task_done()
+                # with mp_lock:
+                #     working_process_count.value -= 1
 
-                semaphore.release()
+                if use_semaphore.value:
+                    semaphore.release()
 
     def _join_process_pool(self):
         for task_queue in self._task_queues.values():
@@ -299,7 +312,7 @@ class SharedProcessPool:
             self._task_queues[stage_name] = self._manager.Queue()
 
         logger.debug("SharedProcessPool.set_usage(): stage_usage: %s", self._stage_usage)
-        logger.debug("SharedProcessPool.set_usage(): stage semaphores: %s", allowed_processes_num)
+        logger.warning("SharedProcessPool.set_usage(): stage semaphores: %s", allowed_processes_num)
 
     def start(self):
         """

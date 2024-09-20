@@ -39,7 +39,7 @@ class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT])
             raise ValueError("process_pool_usage must be between 0 and 1.")
         self._process_pool_usage = process_pool_usage
 
-        self._shared_process_pool = SharedProcessPool()
+        self._shared_process_pool = SharedProcessPool(use_semaphore=True)
         self._shared_process_pool.wait_until_ready()
 
         if max_in_flight_messages is None:

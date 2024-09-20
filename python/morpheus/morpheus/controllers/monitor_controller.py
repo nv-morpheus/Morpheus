@@ -179,6 +179,9 @@ class MonitorController:
         if (msg is None):
             return None
 
+        if isinstance(msg, int):
+            return lambda y: 1
+
         # Wait for a list thats not empty
         if (isinstance(msg, list) and len(msg) == 0):
             return None
