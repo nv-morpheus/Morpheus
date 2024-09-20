@@ -153,7 +153,7 @@ def _get_func_signature(func: typing.Callable[[InputT], OutputT]) -> tuple[type,
     else:
         if len(signature.parameters) != 1:
             raise ValueError("Function must have exactly one argument")
-        
+
         input_t = next(iter(signature.parameters.values())).annotation
 
     output_t = signature.return_annotation
