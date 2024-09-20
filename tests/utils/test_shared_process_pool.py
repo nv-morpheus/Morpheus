@@ -14,13 +14,14 @@
 # limitations under the License.
 
 import logging
+import multiprocessing as mp
 import threading
 import time
 from decimal import Decimal
 from fractions import Fraction
 
 import pytest
-import multiprocessing as mp
+
 from morpheus.utils.shared_process_pool import PoolStatus
 from morpheus.utils.shared_process_pool import SharedProcessPool
 
@@ -29,11 +30,23 @@ logger = logging.getLogger(__name__)
 # This test has issues with joining processes when testing with pytest `-s` option. Run pytest without `-s` flag.
 
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_and_teardown():
+
+    pool = SharedProcessPool()
+    # Since SharedProcessPool might be used in other tests, terminate and reset the pool before the test starts
+    pool.terminate()
+    pool.reset()
+    yield
+
+    # Terminate the pool after all tests are done
+    pool.terminate()
+
+
 @pytest.fixture(name="shared_process_pool")
 def shared_process_pool_fixture():
 
     pool = SharedProcessPool()
-    pool.start()
     pool.wait_until_ready()
     yield pool
 

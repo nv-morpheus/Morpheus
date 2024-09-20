@@ -23,8 +23,6 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
-
 
 class PoolStatus(Enum):
     INITIALIZING = 0
@@ -131,7 +129,7 @@ class SharedProcessPool:
         if cpu_usage is not None:
             cpu_usage = float(cpu_usage)
         else:
-            cpu_usage = 0.1
+            cpu_usage = 0.5
         self._total_max_workers = math.floor(max(1, len(os.sched_getaffinity(0)) * cpu_usage))
         self._processes = []
 
@@ -147,7 +145,6 @@ class SharedProcessPool:
         self._join_condition = threading.Condition()
 
         self.start()
-
 
     def _launch_workers(self):
         for i in range(self.total_max_workers):

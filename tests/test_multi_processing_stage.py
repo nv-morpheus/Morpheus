@@ -19,9 +19,9 @@ from functools import partial
 from typing import Generator
 
 import pandas as pd
+import pytest
 
 import cudf
-import pytest
 
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
@@ -53,9 +53,9 @@ def test_create_stage_type_deduction(config: Config, dataset_pandas: DatasetMana
 
     # Test create() with normal function
     mp_stage = MultiProcessingStage.create(c=config,
-                                        unique_name="multi-processing-stage-1",
-                                        process_fn=_create_df,
-                                        process_pool_usage=0.1)
+                                           unique_name="multi-processing-stage-1",
+                                           process_fn=_create_df,
+                                           process_pool_usage=0.1)
     assert mp_stage.name == "multi-processing-stage-1"
     input_t, output_t = typing.get_args(mp_stage.__orig_class__)  # pylint: disable=no-member
     assert input_t == int
@@ -66,9 +66,9 @@ def test_create_stage_type_deduction(config: Config, dataset_pandas: DatasetMana
     partial_fn = partial(_process_df, df=df, value="new_value")
 
     mp_stage = MultiProcessingStage.create(c=config,
-                                        unique_name="multi-processing-stage-2",
-                                        process_fn=partial_fn,
-                                        process_pool_usage=0.1)
+                                           unique_name="multi-processing-stage-2",
+                                           process_fn=partial_fn,
+                                           process_pool_usage=0.1)
 
     assert mp_stage.name == "multi-processing-stage-2"
     input_t, output_t = typing.get_args(mp_stage.__orig_class__)  # pylint: disable=no-member
