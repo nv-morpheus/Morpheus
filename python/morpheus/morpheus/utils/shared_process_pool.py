@@ -20,6 +20,7 @@ import os
 import queue
 import threading
 from enum import Enum
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ class PoolStatus(Enum):
 
 class SimpleFuture:
 
-    def __init__(self, manager):
+    def __init__(self, manager: mp.managers.SyncManager):
         self._result = manager.Value("i", None)
         self._exception = manager.Value("i", None)
         self._done = manager.Event()
@@ -58,7 +59,7 @@ class SimpleFuture:
 
 class Task(SimpleFuture):
 
-    def __init__(self, manager, process_fn, args, kwargs):
+    def __init__(self, manager: mp.managers.SyncManager, process_fn: Callable, args, kwargs):
         super().__init__(manager)
         self._process_fn = process_fn
         self._args = args
@@ -79,7 +80,7 @@ class Task(SimpleFuture):
 
 class CancellationToken:
 
-    def __init__(self, manager):
+    def __init__(self, manager: mp.managers.SyncManager):
         self._cancel_event = manager.Event()
 
     def cancel(self):
@@ -222,7 +223,7 @@ class SharedProcessPool:
         with self._join_condition:
             self._join_condition.notify_all()
 
-    def submit_task(self, stage_name, process_fn, *args, **kwargs) -> Task:
+    def submit_task(self, stage_name: str, process_fn: Callable, *args, **kwargs) -> Task:
         """
         Submit a task to the SharedProcessPool.
 
@@ -260,7 +261,7 @@ class SharedProcessPool:
 
         return task
 
-    def set_usage(self, stage_name, percentage):
+    def set_usage(self, stage_name: str, percentage: float):
         """
         Set the usage of the SharedProcessPool for a specific stage.
 
@@ -318,7 +319,7 @@ class SharedProcessPool:
         process_launcher.start()
         process_launcher.join()
 
-    def wait_until_ready(self, timeout=None):
+    def wait_until_ready(self, timeout: float | None = None):
         """
         Wait until the SharedProcessPool is running and ready to accept tasks.
 
@@ -374,7 +375,7 @@ class SharedProcessPool:
         # No new tasks will be accepted from this point
         self._status = PoolStatus.STOPPED
 
-    def join(self, timeout=None):
+    def join(self, timeout: float | None = None):
         """
         Wait until the SharedProcessPool is terminated.
 

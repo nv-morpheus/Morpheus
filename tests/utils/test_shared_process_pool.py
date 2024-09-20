@@ -16,7 +16,6 @@
 import logging
 import multiprocessing as mp
 import threading
-import time
 from decimal import Decimal
 from fractions import Fraction
 
@@ -27,13 +26,14 @@ from morpheus.utils.shared_process_pool import SharedProcessPool
 
 logger = logging.getLogger(__name__)
 
-# This test has issues with joining processes when testing with pytest `-s` option. Run pytest without `-s` flag.
+# This test has issues with joining processes when testing with pytest `-s` option. Run pytest without `-s` flag
 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_and_teardown():
 
     pool = SharedProcessPool()
+
     # Since SharedProcessPool might be used in other tests, terminate and reset the pool before the test starts
     pool.terminate()
     pool.reset()
@@ -57,11 +57,6 @@ def shared_process_pool_fixture():
 
 def _add_task(x, y):
     return x + y
-
-
-def _time_consuming_task(sleep_time):
-    time.sleep(sleep_time)
-    return sleep_time
 
 
 def _blocked_until_signaled_task(q: mp.Queue):
@@ -300,14 +295,20 @@ def test_terminate_running_tasks(shared_process_pool):
     pool.set_usage("test_stage_2", 0.3)
     pool.set_usage("test_stage_3", 0.5)
 
+    manager = mp.Manager()
+    queue = manager.Queue()
+
     tasks = []
 
-    task_num = 5
-    sleep_time = 100000
-    for _ in range(task_num):
-        tasks.append(pool.submit_task("test_stage_1", _time_consuming_task, sleep_time))
-        tasks.append(pool.submit_task("test_stage_2", _time_consuming_task, sleep_time))
-        tasks.append(pool.submit_task("test_stage_3", _time_consuming_task, sleep_time))
+    task_num = 10
 
-    # The pool should be shutdown immediately after calling terminate() without waiting for the tasks to complete
+    for _ in range(task_num):
+        tasks.append(pool.submit_task("test_stage_1", _blocked_until_signaled_task, queue))
+        tasks.append(pool.submit_task("test_stage_2", _blocked_until_signaled_task, queue))
+        tasks.append(pool.submit_task("test_stage_3", _blocked_until_signaled_task, queue))
+
     pool.terminate()
+
+    # No tasks have been completed since they have not been signaled yet
+    for task in tasks:
+        assert not task.done()
