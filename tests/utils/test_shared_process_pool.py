@@ -37,9 +37,8 @@ def shared_process_pool_fixture():
     pool.wait_until_ready()
     yield pool
 
-    # Stop and reset the pool after each test
-    pool.stop()
-    pool.join()
+    # Terminate and reset the pool after each test
+    pool.terminate()
     pool.reset()
 
 
@@ -82,7 +81,6 @@ def test_singleton():
 def test_pool_status(shared_process_pool):
 
     pool = shared_process_pool
-    # pool.wait_until_ready()
     assert pool.status == PoolStatus.RUNNING
 
     pool.set_usage("test_stage", 0.5)
@@ -91,7 +89,7 @@ def test_pool_status(shared_process_pool):
     pool.join()
     assert pool.status == PoolStatus.SHUTDOWN
 
-    # With pool.start(), the pool should have the same status as before stopping
+    # After pool.start(), the pool should have the same status as before stopping
     pool.start()
     pool.wait_until_ready()
     assert pool.status == PoolStatus.RUNNING
@@ -101,7 +99,7 @@ def test_pool_status(shared_process_pool):
     pool.terminate()
     assert pool.status == PoolStatus.SHUTDOWN
 
-    # With pool.reset(), the pool should reset all the status
+    # After pool.reset(), the pool should reset all the status
     pool.reset()
     pool.wait_until_ready()
     assert pool.status == PoolStatus.RUNNING
@@ -125,7 +123,6 @@ def test_pool_status(shared_process_pool):
 def test_submit_single_task(shared_process_pool, a, b, expected):
 
     pool = shared_process_pool
-    pool.wait_until_ready()
     pool.set_usage("test_stage", 0.5)
 
     task = pool.submit_task("test_stage", _add_task, a, b)
@@ -147,7 +144,6 @@ def test_submit_single_task(shared_process_pool, a, b, expected):
 def test_submit_task_with_invalid_stage(shared_process_pool):
 
     pool = shared_process_pool
-    pool.wait_until_ready()
 
     with pytest.raises(ValueError):
         pool.submit_task("stage_does_not_exist", _add_task, 10, 20)
@@ -211,7 +207,6 @@ def test_submit_multiple_tasks(shared_process_pool, a, b, expected):
 def test_set_usage(shared_process_pool):
 
     pool = shared_process_pool
-    pool.wait_until_ready()
 
     pool.set_usage("test_stage_1", 0.5)
     assert pool._total_usage == 0.5

@@ -30,7 +30,7 @@ class PoolStatus(Enum):
     INITIALIZING = 0
     RUNNING = 1
     STOPPED = 2
-    SHUTDOWN = 4
+    SHUTDOWN = 3
 
 
 class SimpleFuture:
@@ -146,11 +146,8 @@ class SharedProcessPool:
         self._launch_condition = threading.Condition()
         self._join_condition = threading.Condition()
 
-        process_launcher = threading.Thread(target=self._launch_workers)
-        process_launcher.start()
-        process_launcher.join()
+        self.start()
 
-        self._status = PoolStatus.RUNNING
 
     def _launch_workers(self):
         for i in range(self.total_max_workers):
@@ -163,6 +160,7 @@ class SharedProcessPool:
                          self.total_max_workers)
         with self._launch_condition:
             self._launch_condition.notify_all()
+        self._status = PoolStatus.RUNNING
 
     @property
     def total_max_workers(self):
@@ -315,12 +313,13 @@ class SharedProcessPool:
         RuntimeError
             If the SharedProcessPool is not shutdown.
         """
-        if self._status != PoolStatus.SHUTDOWN:
-            logger.warning("SharedProcessPool.start(): Cannot start a SharedProcessPool that is not shutdown.")
+        if self._status == PoolStatus.RUNNING:
+            logger.warning("SharedProcessPool.start(): process pool is already running.")
             return
 
-        self._launch_workers()
-        self._status = PoolStatus.RUNNING
+        process_launcher = threading.Thread(target=self._launch_workers)
+        process_launcher.start()
+        process_launcher.join()
 
     def wait_until_ready(self, timeout=None):
         """
@@ -349,7 +348,7 @@ class SharedProcessPool:
                 if not launched:
                     raise TimeoutError("Time out.")
         else:
-            raise RuntimeError("Cannot wait for a pool that is not initializing.")
+            raise RuntimeError("Cannot wait for a pool that is not initializing or running.")
 
         logger.debug("SharedProcessPool.wait_until_ready(): SharedProcessPool is ready.")
 
@@ -360,10 +359,10 @@ class SharedProcessPool:
         Raises
         ------
         RuntimeError
-            If the SharedProcessPool is not already shutdown.
+            If the SharedProcessPool is not already shut down.
         """
         if self._status != PoolStatus.SHUTDOWN:
-            raise RuntimeError("Cannot reset a SharedProcessPool that is not already shutdown.")
+            raise RuntimeError("Cannot reset a SharedProcessPool that is not already shut down.")
 
         self._initialize()
 
@@ -375,7 +374,7 @@ class SharedProcessPool:
             logger.warning("SharedProcessPool.stop(): Cannot stop a SharedProcessPool that is not running.")
             return
 
-        # no new tasks will be accepted from this point
+        # No new tasks will be accepted from this point
         self._status = PoolStatus.STOPPED
 
     def join(self, timeout=None):
@@ -398,6 +397,10 @@ class SharedProcessPool:
         """
 
         if self._status != PoolStatus.STOPPED:
+            if self._status == PoolStatus.SHUTDOWN:
+                logging.warning("SharedProcessPool.join(): process pool is already shut down.")
+                return
+
             raise RuntimeError("Cannot join SharedProcessPool that is not stopped.")
 
         process_joiner = threading.Thread(target=self._join_process_pool)
