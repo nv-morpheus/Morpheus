@@ -52,15 +52,12 @@ run:
    --help                          Show this message and exit.
 
    Commands:
-   pipeline-ae     Run the inference pipeline with an AutoEncoder model
    pipeline-fil    Run the inference pipeline with a FIL model
    pipeline-nlp    Run the inference pipeline with a NLP model
    pipeline-other  Run a custom inference pipeline without a specific model type
 
 Currently, Morpheus pipeline can be operated in four different modes.
 
- * ``pipeline-ae``
-    * This pipeline mode is used to run training/inference on the AutoEncoder model.
  * ``pipeline-fil``
     * This pipeline mode is used to run inference on FIL (Forest Inference Library) models such as XGBoost, RandomForestClassifier, etc.
  * ``pipeline-nlp``

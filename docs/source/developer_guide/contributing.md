@@ -347,7 +347,7 @@ Launching a full production Kafka cluster is outside the scope of this project; 
 
 ### Pipeline Validation
 
-To verify that all pipelines are working correctly, validation scripts have been added at `${MORPHEUS_ROOT}/scripts/validation`. There are scripts for each of the main workflows: Anomalous Behavior Profiling (ABP), Humans-as-Machines-Machines-as-Humans (HAMMAH), Phishing Detection (Phishing), and Sensitive Information Detection (SID).
+To verify that all pipelines are working correctly, validation scripts have been added at `${MORPHEUS_ROOT}/scripts/validation`. There are scripts for each of the main workflows: Anomalous Behavior Profiling (ABP), Phishing Detection (Phishing), and Sensitive Information Detection (SID).
 
 To run all of the validation workflow scripts, use the following commands:
 
