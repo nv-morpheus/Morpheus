@@ -34,7 +34,7 @@ class PoolStatus(Enum):
 
 class SimpleFuture:
 
-    def __init__(self, manager: mp.managers.SyncManager):
+    def __init__(self, manager):
         self._result = manager.Value("i", None)
         self._exception = manager.Value("i", None)
         self._done = manager.Event()
@@ -59,7 +59,7 @@ class SimpleFuture:
 
 class Task(SimpleFuture):
 
-    def __init__(self, manager: mp.managers.SyncManager, process_fn: Callable, args, kwargs):
+    def __init__(self, manager, process_fn: Callable, args, kwargs):
         super().__init__(manager)
         self._process_fn = process_fn
         self._args = args
@@ -80,7 +80,7 @@ class Task(SimpleFuture):
 
 class CancellationToken:
 
-    def __init__(self, manager: mp.managers.SyncManager):
+    def __init__(self, manager):
         self._cancel_event = manager.Event()
 
     def cancel(self):
