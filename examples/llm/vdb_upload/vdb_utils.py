@@ -20,7 +20,7 @@ import yaml
 
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.service.vdb.milvus_client import DATA_TYPE_MAP
+from morpheus_llm.service.vdb.milvus_client import DATA_TYPE_MAP
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +184,7 @@ def is_valid_service(ctx, param, value):  # pylint: disable=unused-argument
     click.BadParameter
         If the provided service name is not supported or invalid.
     """
-    from morpheus.service.vdb.utils import validate_service
+    from morpheus_llm.service.vdb.utils import validate_service
     value = value.lower()
     return validate_service(service_name=value)
 

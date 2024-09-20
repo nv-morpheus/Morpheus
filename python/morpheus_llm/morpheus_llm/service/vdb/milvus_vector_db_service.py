@@ -24,9 +24,9 @@ import cudf
 
 from morpheus.io.utils import cudf_string_cols_exceed_max_bytes
 from morpheus.io.utils import truncate_string_cols_by_bytes
-from morpheus.service.vdb.vector_db_service import VectorDBResourceService
-from morpheus.service.vdb.vector_db_service import VectorDBService
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus_llm.service.vdb.vector_db_service import VectorDBResourceService
+from morpheus_llm.service.vdb.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ try:
     import pymilvus
     from pymilvus.orm.mutation import MutationResult
 
-    from morpheus.service.vdb.milvus_client import MilvusClient  # pylint: disable=ungrouped-imports
+    from morpheus_llm.service.vdb.milvus_client import MilvusClient  # pylint: disable=ungrouped-imports
 except ImportError as import_exc:
     IMPORT_EXCEPTION = import_exc
 

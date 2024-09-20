@@ -151,7 +151,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return control_messages
 
-    def _source_generator(self):
+    def _source_generator(self, subscription: mrc.Subscription):
         consumer = None
         try:
             consumer = ck.Consumer(self._consumer_params)
@@ -159,7 +159,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
             do_sleep = False
 
-            while not self.is_stop_requested():
+            while not self.is_stop_requested() and subscription.is_subscribed():
 
                 msg = consumer.poll(timeout=1.0)
                 if msg is None:
@@ -177,7 +177,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
                     else:
                         raise ck.KafkaException(msg_error)
 
-                if do_sleep and not self.is_stop_requested():
+                if do_sleep and not self.is_stop_requested() and subscription.is_subscribed():
                     time.sleep(self._poll_interval)
 
         finally:

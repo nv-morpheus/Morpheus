@@ -23,6 +23,7 @@ from datetime import datetime
 from datetime import timedelta
 from urllib.parse import urlparse
 
+import mrc
 import requests
 import requests_cache
 
@@ -409,14 +410,14 @@ class RSSController:
         except Exception:
             return False
 
-    def feed_generator(self) -> Iterable[MessageMeta]:
+    def feed_generator(self, subscription: mrc.Subscription) -> Iterable[MessageMeta]:
         """
         Fetch RSS feed entries and yield as MessageMeta object.
         """
         stop_requested = False
         records_emitted = 0
 
-        while (not stop_requested and not self._should_stop_fn()):
+        while (not stop_requested and not self._should_stop_fn() and subscription.is_subscribed()):
             try:
                 for df in self.fetch_dataframes():
                     df_size = len(df)
@@ -446,7 +447,7 @@ class RSSController:
 
             logger.info("Waiting for %d seconds before fetching again...", self._interval_secs)
             sleep_until = datetime.now() + self._interval_td
-            while (datetime.now() < sleep_until and not self._should_stop_fn()):
+            while (datetime.now() < sleep_until and not self._should_stop_fn() and subscription.is_subscribed()):
                 time.sleep(1)
 
         logger.info("RSS source exhausted, stopping.")

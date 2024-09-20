@@ -24,14 +24,14 @@ from pydantic import ValidationError
 import cudf
 
 from morpheus.messages import ControlMessage
-from morpheus.modules.schemas.write_to_vector_db_schema import WriteToVDBSchema
-from morpheus.service.vdb.milvus_client import DATA_TYPE_MAP
-from morpheus.service.vdb.utils import VectorDBServiceFactory
-from morpheus.service.vdb.vector_db_service import VectorDBService
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import WRITE_TO_VECTOR_DB
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
+from morpheus_llm.modules.schemas.write_to_vector_db_schema import WriteToVDBSchema
+from morpheus_llm.service.vdb.milvus_client import DATA_TYPE_MAP
+from morpheus_llm.service.vdb.utils import VectorDBServiceFactory
+from morpheus_llm.service.vdb.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
 
