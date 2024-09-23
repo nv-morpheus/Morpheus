@@ -193,13 +193,16 @@ def run_pipeline(debug,
 
     # Add a inference stage.
     # This stage sends inference requests to the Tritonserver and captures the response.
-    pipeline.add_stage(
+    inf_stage = pipeline.add_stage(
         TritonInferenceStage(
             config,
             model_name=model_name,
             server_url=server_url,
             force_convert_inputs=True,
         ))
+
+    # Work-around for issue #1891 remove once resolved.
+    inf_stage._thread_count = 1
 
     # Add a monitor stage.
     # This stage logs the metrics (msg/sec) from the above stage.
