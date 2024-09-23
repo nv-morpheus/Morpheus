@@ -16,7 +16,6 @@ import functools
 import logging
 import types
 import typing
-from collections import deque
 
 import mrc
 from mrc.core import operators as ops
