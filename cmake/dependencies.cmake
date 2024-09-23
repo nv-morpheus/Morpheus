@@ -80,4 +80,8 @@ if(MORPHEUS_BUILD_MORPHEUS_CORE)
   include(dependencies_core)
 endif()
 
+if(MORPHEUS_BUILD_MORPHEUS_LLM)
+  include(dependencies_llm)
+endif()
+
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
