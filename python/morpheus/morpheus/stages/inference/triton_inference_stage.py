@@ -684,6 +684,9 @@ class TritonInferenceStage(InferenceStage):
         which will be inroduced as:
 
             inout_mapping={"mask": "input_mask", "output": "probs"}
+    thread_count : int, optional
+        Number of threads to use for inference. If not provided, the `num_threads` attribute of the `Config` object
+        will be used.
     """
 
     _INFERENCE_WORKER_DEFAULT_INOUT_MAPPING = {
@@ -710,8 +713,9 @@ class TritonInferenceStage(InferenceStage):
                  needs_logits: bool = None,
                  inout_mapping: dict[str, str] = None,
                  input_mapping: dict[str, str] = None,
-                 output_mapping: dict[str, str] = None):
-        super().__init__(c)
+                 output_mapping: dict[str, str] = None,
+                 thread_count: int = None):
+        super().__init__(c, thread_count=thread_count)
 
         self._config = c
 

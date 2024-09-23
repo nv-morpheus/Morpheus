@@ -199,6 +199,7 @@ def run_pipeline(debug,
             model_name=model_name,
             server_url=server_url,
             force_convert_inputs=True,
+            thread_count=1  # Work-around for issue #1891 remove once resolved.
         ))
 
     # Add a monitor stage.

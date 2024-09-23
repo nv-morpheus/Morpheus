@@ -148,10 +148,12 @@ class InferenceStage(ControlMessageStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-
+    thread_count : int, optional
+        Number of threads to use for inference. If not provided, the `num_threads` attribute of the `Config` object
+        will be used.
     """
 
-    def __init__(self, c: Config):
+    def __init__(self, c: Config, thread_count: int = None):
         super().__init__(c)
 
         # GPU only stage, assuming all messages are cuDF/CuPy based
@@ -160,7 +162,7 @@ class InferenceStage(ControlMessageStage):
 
         self._fea_length = c.feature_length
 
-        self._thread_count = c.num_threads
+        self._thread_count = thread_count or c.num_threads
         self._workers: typing.List[InferenceWorker] = []
         self._inf_queue = ProducerConsumerQueue()
 
