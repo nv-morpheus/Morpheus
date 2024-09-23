@@ -15,6 +15,8 @@
 import functools
 import logging
 import types
+import typing
+from collections import deque
 
 import mrc
 from mrc.core import operators as ops
@@ -77,7 +79,22 @@ class LLMEngineStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
         message.set_metadata("llm_message_meta", message.payload())
         return message
 
-    def _cast_to_cpp_control_message(self, message: ControlMessage, *,
+    def _copy_tasks_and_metadata(self,
+                                 src: ControlMessage,
+                                 dst: ControlMessage,
+                                 metadata: dict[str, typing.Any] = None):
+        if metadata is None:
+            metadata = src.get_metadata()
+
+        for (key, value) in metadata.items():
+            dst.set_metadata(key, value)
+
+        tasks = src.get_tasks()
+        for (task, task_value) in tasks.items():
+            for tv in task_value:
+                dst.add_task(task, tv)
+
+    def _cast_to_cpp_control_message(self, py_message: ControlMessage, *,
                                      cpp_messages_lib: types.ModuleType) -> ControlMessage:
         """
         LLMEngineStage does not contain a Python implementation, however it is capable of running in cpu-only mode.
@@ -85,12 +102,10 @@ class LLMEngineStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 
         This is different than casting from the Python bindings for the C++ ControlMessage to a C++ ControlMessage.
         """
-        cm = cpp_messages_lib.ControlMessage()
-        metadata = message.get_metadata()
-        for (key, value) in metadata.items():
-            cm.set_metadata(key, value)
+        cpp_message = cpp_messages_lib.ControlMessage()
+        self._copy_tasks_and_metadata(py_message, cpp_message)
 
-        return cm
+        return cpp_message
 
     def _restore_payload(self, message: ControlMessage) -> ControlMessage:
         """
@@ -103,8 +118,8 @@ class LLMEngineStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 
         out_message = ControlMessage()
         out_message.payload(message_meta)
-        for (key, value) in metadata.items():
-            out_message.set_metadata(key, value)
+
+        self._copy_tasks_and_metadata(message, out_message, metadata=metadata)
 
         return out_message
 
