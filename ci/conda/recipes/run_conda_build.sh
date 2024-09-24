@@ -164,6 +164,16 @@ if hasArg morpheus-dfp; then
    set +x
 fi
 
+if hasArg morpheus-llm; then
+   # Set GIT_VERSION to set the project version inside of meta.yaml
+   export GIT_VERSION="$(get_version)"
+
+   echo "Running conda-build for morpheus-llm v${GIT_VERSION}..."
+   set -x
+   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus-llm
+   set +x
+fi
+
 if hasArg pydebug; then
    export MORPHEUS_PYTHON_VER=$(python --version | cut -d ' ' -f 2)
 
