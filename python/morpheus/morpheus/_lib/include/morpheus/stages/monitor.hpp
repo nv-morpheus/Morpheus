@@ -1,7 +1,7 @@
 #pragma once
 
 #include "morpheus/export.h"  // for MORPHEUS_EXPORT
-
+#include "morpheus/stages/monitor_controller.hpp"  // for MonitorController
 #include <indicators/progress_bar.hpp>
 #include <mrc/segment/builder.hpp>  // for Builder
 #include <pymrc/node.hpp>           // for PythonNode
@@ -11,7 +11,7 @@
 
 namespace morpheus {
 /****** Component public implementations *******************/
-/****** FilterDetectionStage********************************/
+/****** MonitorStage********************************/
 
 /**
  * @addtogroup stages
@@ -22,29 +22,26 @@ namespace morpheus {
 /**
  * @brief
  */
-template <typename InputT, typename OutputT>
-class MORPHEUS_EXPORT MonitorStage : public mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>
+template <typename MessageT>
+class MORPHEUS_EXPORT MonitorStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
 {
   public:
-    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<InputT>, std::shared_ptr<OutputT>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    /**
-     * @brief
-     */
-    MonitorStage(const std::string& description, float smoothing, const std::string& unit, bool delayed_start);
+    MonitorStage(const std::string& description,
+                 float smoothing,
+                 const std::string& unit,
+                 bool delayed_start,
+                 std::optional<std::function<int(MessageT)>> determine_count_fn = std::nullopt);
 
   private:
     subscribe_fn_t build_operator();
-    const std::string& m_description;
-    float m_smoothing;
-    const std::string& m_unit;
-    bool m_delayed_start;
-    long long m_count;
 
-    indicators::ProgressBar m_progress_bar;
+    MonitorController<MessageT> m_monitor_controller;
+
 };
 
 /****** MonitorStageInterfaceProxy******************/
@@ -53,8 +50,8 @@ class MORPHEUS_EXPORT MonitorStage : public mrc::pymrc::PythonNode<std::shared_p
  */
 struct MORPHEUS_EXPORT MonitorStageInterfaceProxy
 {
-    template <typename InputT, typename OutputT>
-    static std::shared_ptr<mrc::segment::Object<MonitorStage<InputT, OutputT>>> init(mrc::segment::Builder& builder);
+    template <typename MessageT>
+    static std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>> init(mrc::segment::Builder& builder);
 };
 
 /** @} */  // end of group
