@@ -59,6 +59,7 @@ add_library(morpheus
   src/stages/http_server_source_stage.cpp
   src/stages/inference_client_stage.cpp
   src/stages/kafka_source.cpp
+  src/stages/monitor.cpp
   src/stages/preprocess_fil.cpp
   src/stages/preprocess_nlp.cpp
   src/stages/serialize.cpp
@@ -79,6 +80,7 @@ add_library(${PROJECT_NAME}::morpheus ALIAS morpheus)
 
 target_link_libraries(morpheus
   PRIVATE
+    indicators::indicators
     matx::matx
     $<$<CONFIG:Debug>:ZLIB::ZLIB>
   PUBLIC
