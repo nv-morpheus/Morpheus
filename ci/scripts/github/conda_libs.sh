@@ -41,21 +41,21 @@ fi
 # Print the info just to be sure base is active
 conda info
 
-rapids-logger "Building Conda Package morpheus-dfp"
+rapids-logger "Building Morpheus Libraries"
 
 # Run the conda build, and upload to conda forge if requested
 export MORPHEUS_PYTHON_BUILD_STUBS=OFF
 export CONDA_ARGS="--skip-existing"
-${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus-dfp "${CI_SCRIPT_ARGS}"
+${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus-libs "${CI_SCRIPT_ARGS}"
 
 # If we didn't receive the upload argument, upload the artifact to S3
 if [[ " ${CI_SCRIPT_ARGS} " =~ " upload " ]]; then
-   rapids-logger "Building Conda Package morpheus-dfp... Done"
+   rapids-logger "Building Morpheus Libraries... Done"
 else
    # if we didn't receive the upload argument, we can still upload the artifact to S3
-   tar cfj "${WORKSPACE_TMP}/conda_morpheus_dfp.tar.bz" "${RAPIDS_CONDA_BLD_OUTPUT_DIR}"
+   tar cfj "${WORKSPACE_TMP}/conda_libs.tar.bz" "${RAPIDS_CONDA_BLD_OUTPUT_DIR}"
    ls -lh ${WORKSPACE_TMP}/
 
    rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}/"
-   upload_artifact "${WORKSPACE_TMP}/conda_morpheus_dfp.tar.bz"
+   upload_artifact "${WORKSPACE_TMP}/conda_libs.tar.bz"
 fi

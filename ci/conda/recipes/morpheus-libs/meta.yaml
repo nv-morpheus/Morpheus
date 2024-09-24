@@ -13,18 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This recipe splits into packages - morpheus-core, morpheus-dfp and morpheus-llm
 {% set version = environ.get('GIT_VERSION', '0.0.0.dev').lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
 {% set minor_version =  version.split('.')[0] + '.' + version.split('.')[1] %}
 
 package:
-  name: morpheus-core
+  name: morpheus-split
   version: {{ version }}
 
 source:
   git_url: ../../../..
 
 outputs:
-
+  ############################### morpheus-core #############################
   - name: morpheus-core
     build:
       number: {{ GIT_DESCRIBE_NUMBER }}
@@ -45,14 +46,12 @@ outputs:
         - {{ compiler("c") }}
         - {{ compiler("cuda") }}
         - {{ compiler("cxx") }}
-        - automake =1.16.5 # Needed for DOCA build
         - ccache
         - cmake =3.27
         - cuda-cudart-dev {{ cuda_compiler_version }}.* # Needed by CMake to compile a test application
         - cuda-version {{ cuda_compiler_version }}.*
-        - libtool # Needed for DOCA build
         - ninja =1.11
-        - pkg-config =0.29 # for mrc cmake
+        - pkg-config =0.29
         - sysroot_linux-64 =2.17
       host:
         # CUDA dependencies
@@ -128,11 +127,80 @@ outputs:
       imports:
         - morpheus
       commands:
-          - echo # make sure test requirements get installed
+          - echo # pytest will be added post re-factoring
 
+  ############################### morpheus-dfp #############################
+  - name: morpheus-dfp
+    build:
+      number: {{ GIT_DESCRIBE_NUMBER }}
+      string: cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
+      script_env:
+        - CMAKE_CUDA_ARCHITECTURES
+        - MORPHEUS_CACHE_DIR
+        - MORPHEUS_PYTHON_BUILD_STUBS
+        - PARALLEL_LEVEL
+      run_exports:
+        - {{ pin_subpackage("morpheus-dfp", max_pin="x.x") }}
+    script: morpheus_dfp_build.sh
+
+    requirements:
+      build:
+        - ccache
+        - cmake =3.27
+      host:
+        - {{ pin_subpackage('morpheus-core', exact=True) }}
+        - pip
+        - python {{ python }}
+        - scikit-build 0.17.6
+        - versioneer-518
+      run:
+        - {{ pin_subpackage('morpheus-core', exact=True) }}
+
+    #test: Tests will be added post test refactoring
+
+  ############################### morpheus-llm #############################
+  - name: morpheus-llm
+    build:
+      number: {{ GIT_DESCRIBE_NUMBER }}
+      string: cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
+      script_env:
+        - CMAKE_CUDA_ARCHITECTURES
+        - MORPHEUS_CACHE_DIR
+        - MORPHEUS_PYTHON_BUILD_STUBS
+        - PARALLEL_LEVEL
+      run_exports:
+        - {{ pin_subpackage("morpheus-llm", max_pin="x.x") }}
+    script: morpheus_llm_build.sh
+
+    requirements:
+      build:
+        - {{ compiler("c") }}
+        - {{ compiler("cxx") }}
+        - ccache
+        - cmake =3.27
+        - ninja =1.11
+        - pkg-config =0.29
+      host:
+        # morpheus-core has to be at the top. changing that order will result in different
+        # package versions getting installed creating unexpected version conflicts.
+        - {{ pin_subpackage('morpheus-core', exact=True) }}
+        - cython 3.0.*
+        - glog 0.6.*
+        - pip
+        - pybind11-stubgen 0.10.5
+        - python {{ python }}
+        - rapidjson 1.1.0
+        - scikit-build 0.17.6
+        - versioneer-518
+        - zlib 1.2.13 # required to build triton client
+      run:
+        - {{ pin_subpackage('morpheus-core', exact=True) }}
+
+    #test: Tests will be added post test refactoring
+ 
 about:
   home: https://github.com/nv-morpheus/Morpheus
   license: Apache-2.0
   license_family: Apache
   license_file: LICENSE
-  summary: Morpheus Cybersecurity Core Library
+  summary: Morpheus Cybersecurity Library
