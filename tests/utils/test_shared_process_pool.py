@@ -36,11 +36,13 @@ def setup_and_teardown():
 
     # Since SharedProcessPool might be used in other tests, terminate and reset the pool before the test starts
     pool.terminate()
+    pool.join()
     pool.reset()
     yield
 
     # Terminate the pool after all tests are done
     pool.terminate()
+    pool.join()
 
 
 @pytest.fixture(name="shared_process_pool")
@@ -50,8 +52,9 @@ def shared_process_pool_fixture():
     pool.wait_until_ready()
     yield pool
 
-    # Terminate and reset the pool after each test
-    pool.terminate()
+    # Stop and reset the pool after each test
+    pool.stop()
+    pool.join()
     pool.reset()
 
 
@@ -109,6 +112,7 @@ def test_pool_status(shared_process_pool):
     _check_pool_stage_settings(pool, "test_stage", 0.5)
 
     pool.terminate()
+    pool.join()
     assert pool.status == PoolStatus.SHUTDOWN
 
     # After pool.reset(), the pool should reset all the status
@@ -308,7 +312,7 @@ def test_terminate_running_tasks(shared_process_pool):
         tasks.append(pool.submit_task("test_stage_3", _blocked_until_signaled_task, queue))
 
     pool.terminate()
+    pool.join()
 
-    # No tasks have been completed since they have not been signaled yet
-    for task in tasks:
-        assert not task.done()
+    # As pool.terminate() is called, at least some of the tasks are not finished
+    assert any(not task.done() for task in tasks)

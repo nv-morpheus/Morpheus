@@ -126,9 +126,11 @@ class SharedProcessPool:
     def _initialize(self):
         self._status = PoolStatus.INITIALIZING
 
-        cpu_usage = os.environ.get("SHARED_PROCESS_POOL_CPU_USAGE", None)
+        cpu_usage = os.environ.get("MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE", None)
         if cpu_usage is not None:
             cpu_usage = float(cpu_usage)
+            if not 0 <= cpu_usage <= 1:
+                raise ValueError("CPU usage must be between 0 and 1.")
         else:
             cpu_usage = 0.5
         self._total_max_workers = math.floor(max(1, len(os.sched_getaffinity(0)) * cpu_usage))
