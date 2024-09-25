@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "morpheus/stages/monitor_controller.hpp"
+#include "morpheus/controllers/monitor_controller.hpp"
 
 #include "indicators/setting.hpp"
 

@@ -23,13 +23,10 @@ namespace morpheus {
 // ****************** MonitorStage ************************ //
 template <typename MessageT>
 MonitorStage<MessageT>::MonitorStage(const std::string& description,
-                                     float smoothing,
-                                     const std::string& unit,
-                                     bool delayed_start,
                                      std::optional<std::function<int(MessageT)>> determine_count_fn) :
   base_t(base_t::op_factory_from_sub_fn(build_operator()))
 {
-    m_monitor_controller = MonitorController<MessageT>(description, smoothing, unit, delayed_start, determine_count_fn);
+    m_monitor_controller = MonitorController<MessageT>(description, determine_count_fn);
 }
 
 template <typename MessageT>

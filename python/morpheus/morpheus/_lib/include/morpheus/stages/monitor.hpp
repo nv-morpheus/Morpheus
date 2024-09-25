@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/export.h"                       // for MORPHEUS_EXPORT
-#include "morpheus/stages/monitor_controller.hpp"  // for MonitorController
+#include "morpheus/controllers/monitor_controller.hpp"  // for MonitorController
 
 #include <indicators/progress_bar.hpp>
 #include <mrc/segment/builder.hpp>  // for Builder
@@ -50,9 +50,6 @@ class MORPHEUS_EXPORT MonitorStage : public mrc::pymrc::PythonNode<std::shared_p
     using typename base_t::subscribe_fn_t;
 
     MonitorStage(const std::string& description,
-                 float smoothing,
-                 const std::string& unit,
-                 bool delayed_start,
                  std::optional<std::function<int(MessageT)>> determine_count_fn = std::nullopt);
 
   private:
