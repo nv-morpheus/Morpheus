@@ -304,12 +304,15 @@ def test_terminate_running_tasks(shared_process_pool):
 
     tasks = []
 
-    task_num = 10
+    task_num = 50
 
     for _ in range(task_num):
         tasks.append(pool.submit_task("test_stage_1", _blocked_until_signaled_task, queue))
         tasks.append(pool.submit_task("test_stage_2", _blocked_until_signaled_task, queue))
         tasks.append(pool.submit_task("test_stage_3", _blocked_until_signaled_task, queue))
+
+    for i in range(len(tasks)):
+        queue.put(i)
 
     pool.terminate()
     pool.join()
