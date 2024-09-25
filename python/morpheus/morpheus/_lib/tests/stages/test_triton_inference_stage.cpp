@@ -291,20 +291,7 @@ class ErrorProneTritonClient : public FakeTritonClient
 };
 
 class TestTritonInferenceStage : public morpheus::test::TestWithPythonInterpreter
-{
-  protected:
-    void SetUp() override
-    {
-        morpheus::test::TestWithPythonInterpreter::SetUp();
-        {
-            pybind11::gil_scoped_acquire gil;
-
-            // Initially I ran into an issue bootstrapping cudf, I was able to work-around the issue, details in:
-            // https://github.com/rapidsai/cudf/issues/12862
-            morpheus::CudfHelper::load();
-        }
-    }
-};
+{};
 
 cudf::io::table_with_metadata create_test_table_with_metadata(uint32_t rows)
 {

@@ -252,7 +252,6 @@ void SerializersProxy::write_df_to_file(pybind11::object df,
                                         FileTypes file_type,
                                         const py::kwargs& kwargs)
 {
-    CudfHelper::load();
     if (file_type == FileTypes::Auto)
     {
         file_type = determine_file_type(filename);  // throws if it is unable to determine the type
