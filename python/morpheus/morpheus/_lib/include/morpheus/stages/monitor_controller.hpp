@@ -43,9 +43,6 @@ class MonitorController
 {
   public:
     MonitorController(const std::string& description,
-                      float smoothing,
-                      const std::string& unit,
-                      bool delayed_start,
                       std::optional<std::function<int(MessageT)>> determin_count_fn = std::nullopt);
 
   private:
@@ -54,10 +51,7 @@ class MonitorController
     void sink_on_completed();
 
     const std::string& m_description;
-    float m_smoothing;
-    const std::string& m_unit;
-    bool m_delayed_start;
-    unsigned long m_count;
+    size_t m_count;
 
     indicators::ProgressBar m_progress_bar;
 

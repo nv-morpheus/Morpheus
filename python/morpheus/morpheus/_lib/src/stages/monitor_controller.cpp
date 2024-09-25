@@ -37,14 +37,9 @@ namespace morpheus {
 
 template <typename MessageT>
 MonitorController<MessageT>::MonitorController(const std::string& description,
-                                               float smoothing,
-                                               const std::string& unit,
-                                               bool delayed_start,
                                                std::optional<std::function<int(MessageT)>> determin_count_fn) :
   m_description(description),
-  m_smoothing(smoothing),
-  m_unit(unit),
-  m_delayed_start(delayed_start),
+  m_determine_count_fn(determin_count_fn),
   m_count(0)
 {
     m_progress_bar.set_option(indicators::option::BarWidth{50});
@@ -112,15 +107,24 @@ auto MonitorController<MessageT>::auto_count_fn(MessageT msg) -> std::optional<s
 
     if constexpr (is_vector<MessageT>::value)
     {
-        return [](MessageT msg) {
-            return msg.size();
+        if (msg.empty())
+        {
+            return std::nullopt;
+        }
+
+        return [this](MessageT msg) {
+            auto item_count_fn = auto_count_fn<MessageT>(msg[0]);
+            if (item_count_fn == std::nullopt)
+            {
+                return 0;
+            }
+            return std::accumulate(msg.begin(), msg.end(), 0, [item_count_fn](int sum, const auto& item) {
+                return sum + (*item_count_fn)(item);
+            });
         };
     }
 
-    // Otherwise just count the number of received messages
-    return [](MessageT msg) {
-        return 1;
-    };
+    throw std::runtime_error("Unsupported message type received for MonitorController");
 }
 
 template <typename MessageT>
