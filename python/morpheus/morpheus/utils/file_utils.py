@@ -16,7 +16,6 @@
 
 import os
 import re
-import typing
 from datetime import datetime
 from datetime import timezone
 
@@ -60,7 +59,7 @@ def get_data_file_path(data_filename: str) -> str:
     return data_filename
 
 
-def load_labels_file(labels_filename: str) -> typing.List[str]:
+def load_labels_file(labels_filename: str) -> list[str]:
     """
     Get list of labels from file.
 
@@ -71,7 +70,7 @@ def load_labels_file(labels_filename: str) -> typing.List[str]:
 
     Returns
     -------
-    typing.List[str]
+    list[str]
         List of labels
     """
     with open(labels_filename, "r", encoding='UTF-8') as fh:
