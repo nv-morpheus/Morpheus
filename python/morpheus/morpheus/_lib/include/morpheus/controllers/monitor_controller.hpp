@@ -43,20 +43,19 @@ class MonitorController
 {
   public:
     MonitorController(const std::string& description,
-                      std::optional<std::function<int(MessageT)>> determin_count_fn = std::nullopt);
+                      std::optional<std::function<int(MessageT)>> determine_count_fn = std::nullopt);
 
-  private:
-    MessageT progress_sink(MessageT msg);
     auto auto_count_fn(MessageT msg) -> std::optional<std::function<int(MessageT)>>;
+
+    MessageT progress_sink(MessageT msg);
     void sink_on_completed();
 
+  private:
     const std::string& m_description;
     size_t m_count;
-
-    indicators::ProgressBar m_progress_bar;
-
     std::optional<std::function<int(MessageT)>> m_determine_count_fn;
 
+    indicators::ProgressBar m_progress_bar;
     static indicators::DynamicProgress<indicators::ProgressBar> m_progress_bars;
 };
 

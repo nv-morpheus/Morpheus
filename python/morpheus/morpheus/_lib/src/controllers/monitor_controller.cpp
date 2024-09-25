@@ -37,9 +37,9 @@ namespace morpheus {
 
 template <typename MessageT>
 MonitorController<MessageT>::MonitorController(const std::string& description,
-                                               std::optional<std::function<int(MessageT)>> determin_count_fn) :
+                                               std::optional<std::function<int(MessageT)>> determine_count_fn) :
   m_description(description),
-  m_determine_count_fn(determin_count_fn),
+  m_determine_count_fn(determine_count_fn),
   m_count(0)
 {
     m_progress_bar.set_option(indicators::option::BarWidth{50});
