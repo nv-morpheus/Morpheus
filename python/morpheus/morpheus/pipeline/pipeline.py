@@ -29,9 +29,7 @@ import networkx
 from tqdm import tqdm
 
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
-from morpheus.common import load_cudf_helper
 from morpheus.config import Config
-from morpheus.config import ExecutionMode
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
@@ -295,10 +293,6 @@ class Pipeline():
         """
         assert self._state == PipelineState.INITIALIZED, "Pipeline can only be built once!"
         assert len(self._sources) > 0, "Pipeline must have a source stage"
-
-        if (self._execution_mode == ExecutionMode.GPU):
-            # Load the cudf helper
-            load_cudf_helper()
 
         self._pre_build()
 

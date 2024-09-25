@@ -28,7 +28,6 @@
 #include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
-#include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/http_server.hpp"
 #include "morpheus/version.hpp"
 
@@ -142,10 +141,6 @@ PYBIND11_MODULE(common, _module)
                 py::arg("df"),
                 py::arg("filename"),
                 py::arg("file_type") = FileTypes::Auto);
-
-    _module.def("load_cudf_helper", [] {
-        CudfHelper::load();
-    });
 
     py::enum_<FilterSource>(
         _module, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")

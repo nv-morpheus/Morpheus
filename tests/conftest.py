@@ -1094,13 +1094,6 @@ def mock_nemollm_fixture():
         yield mock_nemollm
 
 
-@pytest.fixture(name="load_cudf_helper", scope="session", autouse=True)
-def load_cudf_helper_fixture():
-    if os.environ.get("MORPHEUS_CPU_ONLY") is None:
-        from morpheus.common import load_cudf_helper
-        load_cudf_helper()
-
-
 @pytest.fixture(name="array_pkg")
 def array_pkg_fixture(execution_mode: "ExecutionMode") -> types.ModuleType:
     from morpheus.utils.type_utils import get_array_pkg
