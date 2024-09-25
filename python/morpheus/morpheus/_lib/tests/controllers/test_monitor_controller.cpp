@@ -1,6 +1,7 @@
 #include "../test_utils/common.hpp"  // for get_morpheus_root, TEST_CLASS_WITH_PYTHON, morpheus
 
 #include "morpheus/controllers/monitor_controller.hpp"  // for MonitorController
+#include "morpheus/stages/monitor.hpp"                  // for MonitorStage
 
 #include <cudf/column/column.hpp>
 #include <cudf/column/column_factories.hpp>
@@ -46,5 +47,5 @@ std::unique_ptr<cudf::table> create_cudf_table(int rows, int cols)
 
 TEST_F(TestMonitorController, TestAutoCountFn)
 {
-    auto mc_1 = MonitorController<cudf::table>("mc_1 progress_bar");
+    MonitorController<int> a("test");
 }
