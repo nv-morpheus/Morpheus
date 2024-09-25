@@ -158,8 +158,10 @@ class SharedProcessPool:
             logger.debug("SharedProcessPool._lanch_workers(): Process %s/%s has been started.",
                          i + 1,
                          self.total_max_workers)
+
         with self._launch_condition:
             self._launch_condition.notify_all()
+
         self._status = PoolStatus.RUNNING
 
     @property
