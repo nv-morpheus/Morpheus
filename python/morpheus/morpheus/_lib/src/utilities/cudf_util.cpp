@@ -25,7 +25,7 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 
-#include <atomic>  // for atomic
+#include <atomic>   // for atomic
 #include <cstdlib>  // for getenv
 #include <memory>
 #include <mutex>
@@ -38,49 +38,38 @@
  */
 #include "cudf_helpers_api.h"
 
-namespace {
-/*
- * We want to prevent calling import_morpheus___lib__cudf_helpers() concurrently which is the purpose of the mutex.
- * Although it is safe to call import_morpheus___lib__cudf_helpers() multiple times, we would still like to avoid it
- * along with the call to std::getenv(), the atomic bool provides a cheap way to check if the library has been loaded.
- */
-std::atomic<bool> g_cudf_helpers_loaded = false;
-std::mutex g_cudf_helpers_load_mutex;
-}  // namespace
-
 namespace morpheus {
 
-void CudfHelper::load()
+CudfHelper::CudfHelper()
 {
-    if (!g_cudf_helpers_loaded)
+    // Avoid loading cudf_helpers if we are in a sphinx build
+    if (std::getenv("MORPHEUS_IN_SPHINX_BUILD") == nullptr)
     {
-        // Avoid loading cudf_helpers if we are in a sphinx build
-        if (std::getenv("MORPHEUS_IN_SPHINX_BUILD") == nullptr)
+        if (import_morpheus___lib__cudf_helpers() != 0)
         {
-            std::lock_guard<std::mutex> guard(g_cudf_helpers_load_mutex);
-            if (import_morpheus___lib__cudf_helpers() != 0)
-            {
-                pybind11::error_already_set ex;
+            pybind11::error_already_set ex;
 
-                LOG(ERROR) << "Could not load cudf_helpers library: " << ex.what();
-                throw ex;
-            }
-            else
-            {
-                g_cudf_helpers_loaded = true;
-            }
+            LOG(ERROR) << "Could not load cudf_helpers library: " << ex.what();
+            throw ex;
         }
     }
 }
 
+void CudfHelper::load()
+{
+    static CudfHelper s;
+}
+
 pybind11::object proxy_table_from_table_with_metadata(cudf::io::table_with_metadata&& table, int index_col_count)
 {
+    CudfHelper::load();
     return pybind11::reinterpret_steal<pybind11::object>(
         (PyObject*)make_table_from_table_with_metadata(std::move(table), index_col_count));
 }
 
 morpheus::TableInfoData proxy_table_info_data_from_table(pybind11::object table)
 {
+    CudfHelper::load();
     return make_table_info_data_from_table(table.ptr());
 }
 
@@ -91,6 +80,7 @@ pybind11::object CudfHelper::table_from_table_with_metadata(cudf::io::table_with
 
 pybind11::object CudfHelper::table_from_table_info(const TableInfoBase& table_info)
 {
+    CudfHelper::load();
     // Get the table info data from the table_into
     auto table_info_data = table_info.get_data();
 

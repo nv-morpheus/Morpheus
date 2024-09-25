@@ -139,7 +139,7 @@ def _write_to_vector_db(builder: mrc.Builder):
     def on_completed():
         final_df_references = []
 
-        if len(accumulator_dict):
+        try:
             # Pushing remaining messages
             for key, accum_stats in accumulator_dict.items():
                 try:
@@ -150,8 +150,9 @@ def _write_to_vector_db(builder: mrc.Builder):
                         final_df_references.append(accum_stats.data)
                 except Exception as e:
                     logger.error("Unable to upload dataframe entries to vector database: %s", e)
-        # Close vector database service connection
-        service.close()
+        finally:
+            # Close vector database service connection
+            service.close()
 
     def extract_df(msg: ControlMessage):
         df = None
@@ -233,10 +234,7 @@ def _write_to_vector_db(builder: mrc.Builder):
 
         except Exception as exc:
             logger.error("Unable to insert into collection: %s due to %s", msg_resource_target, exc)
-            # TODO(Devin): This behavior is likely buggy; we need to decide whether or not to collect control messages
-            # and output all of them when an accumulation is flushed, or to simply mark a control message as "done",
-            # even if it is just accumulated.
-            msg.set_metadata("insert_response", {"status": "failed", "err_count": 1})
+            raise
 
         return msg
 
