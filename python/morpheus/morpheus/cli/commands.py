@@ -287,13 +287,14 @@ def install(**kwargs):
 @click.option('--use_cpp',
               default=True,
               type=bool,
-              help=("Whether or not to use C++ node and message types or to prefer python. "
-                    "Only use as a last resort if bugs are encountered"))
+              help=("[Deprecated] Whether or not to use C++ node and message types or to prefer python. "
+                    "Only use as a last resort if bugs are encountered. Cannot be used with --use_cpu_only"))
 @click.option('--use_cpu_only',
               default=False,
               type=bool,
               is_flag=True,
-              help=("Whether or not to run in CPU only mode, setting this to True will disable C++ mode."))
+              help=("Whether or not to run in CPU only mode, setting this to True will disable C++ mode. "
+                    "Cannot be used with --use_cpp"))
 @click.option('--manual_seed',
               default=None,
               type=click.IntRange(min=1),
@@ -302,19 +303,26 @@ def install(**kwargs):
 @prepare_command(parse_config=True)
 def run(ctx: click.Context, **kwargs):
     """Run subcommand, used for running a pipeline"""
+
+    if (ctx.get_parameter_source("use_cpu_only") is not click.core.ParameterSource.DEFAULT
+            and ctx.get_parameter_source("use_cpp") is not click.core.ParameterSource.DEFAULT):
+        # If the user set explicit values for both use_cpu_only and use_cpp raise an error
+        raise click.UsageError("Cannot set both --use_cpp and --use_cpu_only. The --use_cpp flag is deprecated. "
+                               "Use only --use_cpu_only.")
+
+    use_cpu_only = kwargs.pop("use_cpu_only")
+    use_cpp = kwargs.pop("use_cpp")
+
+    # only check this value if the flag was explicitly set by the user
     if ctx.get_parameter_source("use_cpp") is not click.core.ParameterSource.DEFAULT:
         logger.warning("The --use_cpp flag is deprecated and will be removed in a future release")
 
-    # Since the option isnt the same name as `should_use_cpp` anymore, manually set the value here.
-    use_cpu_only = kwargs.pop("use_cpu_only")
-    use_cpp = kwargs.pop("use_cpp")
-    if use_cpu_only:
-        CppConfig.set_should_use_cpp(False)
+        execution_mode = ExecutionMode.GPU if use_cpp else ExecutionMode.CPU
     else:
-        CppConfig.set_should_use_cpp(use_cpp)
+        execution_mode = ExecutionMode.CPU if use_cpu_only else ExecutionMode.GPU
 
     config = get_config_from_ctx(ctx)
-    config.execution_mode = ExecutionMode.CPU if use_cpu_only else ExecutionMode.GPU
+    config.execution_mode = execution_mode
 
     manual_seed_val = kwargs.pop("manual_seed", None)
     if manual_seed_val is not None:
