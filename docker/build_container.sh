@@ -41,6 +41,10 @@ PYTHON_VER=${PYTHON_VER:-3.10}
 # Determine the relative path from $PWD to $MORPHEUS_ROOT
 MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST:-"$(realpath --relative-to=${PWD} ${MORPHEUS_ROOT})"}
 
+# When defined use the git url and tag to clone the source
+MORPHEUS_GIT_URL=${MORPHEUS_GIT_URL:-""}
+MORPHEUS_GIT_TAG=${MORPHEUS_GIT_TAG:-"$(git -C ${MORPHEUS_ROOT} describe --tags --abbrev=0)"}
+
 # Build the docker arguments
 DOCKER_ARGS="-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
 DOCKER_ARGS="${DOCKER_ARGS} --target ${DOCKER_TARGET}"
@@ -54,6 +58,8 @@ DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST}
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_BUILD_MORPHEUS_LLM=${MORPHEUS_BUILD_MORPHEUS_LLM}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg PYTHON_VER=${PYTHON_VER}"
+DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_GIT_URL=${MORPHEUS_GIT_URL}"
+DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_GIT_TAG=${MORPHEUS_GIT_TAG}"
 DOCKER_ARGS="${DOCKER_ARGS} --network=host"
 
 # Last add any extra args (duplicates override earlier ones)
@@ -70,6 +76,8 @@ echo "   FROM_IMAGE                 : ${FROM_IMAGE}"
 echo "   LINUX_DISTRO               : ${LINUX_DISTRO}"
 echo "   LINUX_VER                  : ${LINUX_VER}"
 echo "   MORPHEUS_ROOT_HOST         : ${MORPHEUS_ROOT_HOST}"
+echo "   MORPHEUS_GIT_URL           : ${MORPHEUS_GIT_URL}"
+echo "   MORPHEUS_GIT_TAG           : ${MORPHEUS_GIT_TAG}"
 echo "   MORPHEUS_SUPPORT_DOCA      : ${MORPHEUS_SUPPORT_DOCA}"
 echo "   MORPHEUS_BUILD_MORPHEUS_LLM: ${MORPHEUS_BUILD_MORPHEUS_LLM}"
 echo "   PYTHON_VER                 : ${PYTHON_VER}"

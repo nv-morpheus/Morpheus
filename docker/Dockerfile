@@ -57,6 +57,9 @@ ARG PYTHON_VER=3.10
 # Allows running the docker build from a different directory than MORPHEUS_ROOT. Needed for using Morpheus in a
 # submodule
 ARG MORPHEUS_ROOT_HOST=.
+ARG MORPHEUS_GIT_URL=""
+ARG MORPHEUS_GIT_BRANCH=main
+
 # Supply a channel alias to use for conda. This is needed if the conda channels go down
 ARG CONDA_CHANNEL_ALIAS="https://conda.anaconda.org"
 
@@ -339,11 +342,13 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
 FROM conda_env_dev as git_clone
 
 ARG MORPHEUS_ROOT_HOST
+ARG MORPHEUS_GIT_URL
+ARG MORPHEUS_GIT_TAG
 
 # Source the morpheus env to pick up the git-lfs package
 RUN --mount=type=bind,source=${MORPHEUS_ROOT_HOST},target=/opt/host_repo \
     source activate morpheus &&\
-    git clone file:///opt/host_repo /tmp/morpheus_repo &&\
+    MORPHEUS_ROOT_HOST="/opt/host_repo" /opt/host_repo/docker/clone_source.sh /tmp/morpheus_repo &&\
     cd /tmp/morpheus_repo &&\
     git lfs install &&\
     /tmp/morpheus_repo/scripts/fetch_data.py fetch datasets examples
