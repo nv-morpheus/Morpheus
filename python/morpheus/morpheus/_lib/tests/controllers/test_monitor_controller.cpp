@@ -22,7 +22,7 @@ using namespace morpheus;
 
 TEST_CLASS(MonitorController);
 
-std::unique_ptr<cudf::table> create_cudf_table(int rows, int cols)
+std::shared_ptr<cudf::table> create_cudf_table(int rows, int cols)
 {
     std::vector<std::unique_ptr<cudf::column>> columns;
 
@@ -42,10 +42,13 @@ std::unique_ptr<cudf::table> create_cudf_table(int rows, int cols)
     }
 
     // Create and return the table
-    return std::make_unique<cudf::table>(std::move(columns));
+    return std::make_shared<cudf::table>(std::move(columns));
 }
 
 TEST_F(TestMonitorController, TestAutoCountFn)
 {
-    MonitorController<int> a("test");
+    auto test_mc_cudf = MonitorController<std::shared_ptr<cudf::table>>("test_cudf_table");
+    auto cudf_auto_count_fn = test_mc_cudf.auto_count_fn();
+    auto cudf_table = create_cudf_table(10, 2);
+    assert((*cudf_auto_count_fn)(cudf_table) == 10);
 }

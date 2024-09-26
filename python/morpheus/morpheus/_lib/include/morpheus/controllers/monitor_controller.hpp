@@ -18,7 +18,6 @@
 #pragma once
 #include "indicators/setting.hpp"
 
-#include "morpheus/export.h"  // for MORPHEUS_EXPORT
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 
@@ -28,6 +27,7 @@
 #include <pymrc/node.hpp>           // for PythonNode
 #include <rxcpp/rx.hpp>             // for trace_activity, decay_t, from
 
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -51,9 +51,9 @@ class MonitorController
 {
   public:
     MonitorController(const std::string& description,
-                      std::optional<std::function<int(MessageT)>> determine_count_fn = std::nullopt);
+                      std::optional<std::function<size_t(MessageT)>> determine_count_fn = std::nullopt);
 
-    auto auto_count_fn(MessageT msg) -> std::optional<std::function<int(MessageT)>>;
+    auto auto_count_fn() -> std::optional<std::function<size_t(MessageT)>>;
 
     MessageT progress_sink(MessageT msg);
     void sink_on_completed();
@@ -72,7 +72,7 @@ indicators::DynamicProgress<indicators::ProgressBar> MonitorController<InputT>::
 
 template <typename MessageT>
 MonitorController<MessageT>::MonitorController(const std::string& description,
-                                               std::optional<std::function<int(MessageT)>> determine_count_fn) :
+                                               std::optional<std::function<size_t(MessageT)>> determine_count_fn) :
   m_description(description),
   m_determine_count_fn(determine_count_fn),
   m_count(0)
@@ -113,39 +113,39 @@ struct is_vector<std::vector<T, U>> : std::true_type
 {};
 
 template <typename MessageT>
-auto MonitorController<MessageT>::auto_count_fn(MessageT msg) -> std::optional<std::function<int(MessageT)>>
+auto MonitorController<MessageT>::auto_count_fn() -> std::optional<std::function<size_t(MessageT)>>
 {
-    if constexpr (std::is_same_v<MessageT, cudf::table>)
+    if constexpr (std::is_same_v<MessageT, std::shared_ptr<cudf::table>>)
     {
         return [](MessageT msg) {
-            return msg.num_rows();
+            return msg->num_rows();
         };
     }
 
-    if constexpr (std::is_same_v<MessageT, MessageMeta>)
+    if constexpr (std::is_same_v<MessageT, std::shared_ptr<MessageMeta>>)
     {
         return [](MessageT msg) {
-            return msg.count();
+            return msg->count();
         };
     }
 
-    if constexpr (std::is_same_v<MessageT, ControlMessage>)
+    if constexpr (std::is_same_v<MessageT, std::shared_ptr<ControlMessage>>)
     {
         return [](MessageT msg) {
-            if (!msg.payload())
+            if (!msg->payload())
             {
                 return 0;
             }
-            return msg.payload()->count();
+            return msg->payload()->count();
         };
     }
 
     if constexpr (is_vector<MessageT>::value)
     {
-        if (msg.empty())
-        {
-            return std::nullopt;
-        }
+        // if (msg.empty())
+        // {
+        //     return std::nullopt;
+        // }
 
         return [this](MessageT msg) {
             auto item_count_fn = auto_count_fn<MessageT>(msg[0]);
