@@ -21,16 +21,12 @@ on:
       run_check:
         required: true
         type: boolean
-      conda_lib_build:
-        description: 'Runs the stage to build the conda packages for all morpheus libraries - core, dfp etc.'
-        required: true
-        type: boolean
       conda_upload_label:
         description: 'The label to use when uploading the morpheus conda packages. Leave empty to disable uploading'
         required: true
         type: string
       conda_run_build:
-        description: 'Runs the conda-build stage to build the conda package with all morpheus components'
+        description: 'Runs the conda-build stage to build the morpheus conda packages'
         required: true
         type: boolean
       container:
@@ -206,7 +202,7 @@ jobs:
 
   package-core:
     name: Package Core
-    if: ${{ inputs.conda_lib_build }}
+    if: ${{ inputs.conda_run_build }}
     needs: [documentation, test]
     runs-on: linux-amd64-cpu16
     timeout-minutes: 60
@@ -244,7 +240,7 @@ jobs:
 
   package-dfp:
     name: Package DFP library
-    if: ${{ inputs.conda_lib_build }}
+    if: ${{ inputs.conda_run_build }}
     needs: [package-core]
     runs-on: linux-amd64-cpu16
     timeout-minutes: 60
@@ -279,37 +275,3 @@ jobs:
           SCRIPT_ARGS: "${{ inputs.conda_upload_label != '' && 'upload' || '' }}"
           CONDA_PKG_LABEL: "${{ inputs.conda_upload_label }}"
         run: ./morpheus/ci/scripts/github/conda_dfp.sh $SCRIPT_ARGS
-
-  package:
-    name: Package All
-    if: ${{ inputs.conda_run_build }}
-    needs: [check, documentation, test]
-    runs-on: linux-amd64-cpu16
-    timeout-minutes: 60
-    container:
-      credentials:
-        username: '$oauthtoken'
-        password: ${{ secrets.NGC_API_KEY }}
-      image: ${{ inputs.container }}
-    strategy:
-      fail-fast: true
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          lfs: false
-          path: 'morpheus'
-          fetch-depth: 0
-          submodules: 'recursive'
-
-      - name: Get AWS credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@v1-node16
-        with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-          role-duration-seconds: 43200 # 12h
-
-      - name: conda
-        shell: bash
-        run: ./morpheus/ci/scripts/github/conda.sh
