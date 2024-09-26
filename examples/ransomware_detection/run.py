@@ -41,7 +41,7 @@ CUR_DIR = os.path.dirname(__file__)
 @click.option('--use_cpp', default=False, help="Enable C++ execution for this pipeline, currently this is unsupported.")
 @click.option(
     "--num_threads",
-    default=os.cpu_count(),
+    default=len(os.sched_getaffinity(0)),
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use.",
 )

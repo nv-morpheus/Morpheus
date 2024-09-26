@@ -388,7 +388,7 @@ To start, we will need to instantiate and set a few attributes of the `Config` c
 config = Config()
 config.mode = PipelineModes.NLP
 
-config.num_threads = os.cpu_count()
+config.num_threads = len(os.sched_getaffinity(0))
 config.feature_length = model_fea_length
 
 with open(labels_file, encoding='UTF-8') as fh:
@@ -460,7 +460,7 @@ pipeline.add_stage(AddScoresStage(config, labels=["is_phishing"]))
 
 Lastly, we will save our results to disk. For this purpose, we are using two stages that are often used in conjunction with each other: `SerializeStage` and `WriteToFileStage`.
 
-The `SerializeStage` is used to include and exclude columns as desired in the output. Importantly, it also handles conversion from the `MultiMessage`-derived output type to the `MessageMeta` class that is expected as input by the `WriteToFileStage`.
+The `SerializeStage` is used to include and exclude columns as desired in the output. Importantly, it also handles conversion from `ControlMessage` output type to the `MessageMeta` class that is expected as input by the `WriteToFileStage`.
 
 The `WriteToFileStage` will append message data to the output file as messages are received. Note however that for performance reasons the `WriteToFileStage` does not flush its contents out to disk every time a message is received. Instead, it relies on the underlying [buffered output stream](https://gcc.gnu.org/onlinedocs/libstdc++/manual/streambufs.html) to flush as needed, and then will close the file handle on shutdown.
 
@@ -563,7 +563,7 @@ def run_pipeline(use_stage_function: bool,
     config.mode = PipelineModes.NLP
 
     # Set the thread count to match our cpu count
-    config.num_threads = os.cpu_count()
+    config.num_threads = len(os.sched_getaffinity(0))
     config.feature_length = model_fea_length
 
     with open(labels_file, encoding='UTF-8') as fh:
@@ -761,20 +761,20 @@ def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
     return builder.make_source(self.unique_name, self.source_generator)
 ```
 
-The `source_generator` method is where most of the RabbitMQ-specific code exists. When we have a message that we wish to emit into the pipeline, we simply `yield` it.
+The `source_generator` method is where most of the RabbitMQ-specific code exists. When we have a message that we wish to emit into the pipeline, we simply `yield` it. We continue this process until the `is_stop_requested()` method returns `True` or `subscription.is_subscribed()` returns `False`.
 
 ```python
-def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
+def source_generator(self, subscription: mrc.Subscription) -> collections.abc.Iterator[MessageMeta]:
     try:
-        while not self._stop_requested:
-            (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
+        while not self.is_stop_requested() and subscription.is_subscribed():
+            (method_frame, _, body) = self._channel.basic_get(self._queue_name)
             if method_frame is not None:
                 try:
                     buffer = StringIO(body.decode("utf-8"))
                     df = cudf.io.read_json(buffer, orient='records', lines=True)
                     yield MessageMeta(df=df)
                 except Exception as ex:
-                    logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
+                    logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
                 finally:
                     self._channel.basic_ack(method_frame.delivery_tag)
             else:
@@ -824,11 +824,11 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
         Hostname or IP of the RabbitMQ server.
     exchange : str
         Name of the RabbitMQ exchange to connect to.
-    exchange_type : str
+    exchange_type : str, optional
         RabbitMQ exchange type; defaults to `fanout`.
-    queue_name : str
+    queue_name : str, optional
         Name of the queue to listen to. If left blank, RabbitMQ will generate a random queue name bound to the exchange.
-    poll_interval : str
+    poll_interval : str, optional
         Amount of time  between polling RabbitMQ for new messages
     """
 
@@ -854,9 +854,6 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._poll_interval = pd.Timedelta(poll_interval)
 
-        # Flag to indicate whether or not we should stop
-        self._stop_requested = False
-
     @property
     def name(self) -> str:
         return "from-rabbitmq"
@@ -867,18 +864,12 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def stop(self):
-        # Indicate we need to stop
-        self._stop_requested = True
-
-        return super().stop()
-
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self.source_generator)
 
-    def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
+    def source_generator(self, subscription: mrc.Subscription) -> collections.abc.Iterator[MessageMeta]:
         try:
-            while not self._stop_requested:
+            while not self.is_stop_requested() and subscription.is_subscribed():
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
@@ -898,7 +889,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 ```
 
 ### Function Based Approach
-Similar to the `stage` decorator used in previous examples Morpheus provides a `source` decorator which wraps a generator function to be used as a source stage. In the class based approach we explicitly added the `PreallocatorMixin`, when using the `source` decorator the return type annotation will be inspected and a stage will be created with the `PreallocatorMixin` if the return type is a `DataFrame` type or a message which contains a `DataFrame` (`MessageMeta` and `MultiMessage`).
+Similar to the `stage` decorator used in previous examples Morpheus provides a `source` decorator which wraps a generator function to be used as a source stage. In the class based approach we explicitly added the `PreallocatorMixin`, when using the `source` decorator the return type annotation will be inspected and a stage will be created with the `PreallocatorMixin` if the return type is a `DataFrame` type or a message which contains a `DataFrame` (`MessageMeta` and `ControlMessage`).
 
 The code for the function will first perform the same setup as was used in the class constructor, then entering a nearly identical loop as that in the `source_generator` method.
 
@@ -908,6 +899,7 @@ import logging
 import time
 from io import StringIO
 
+import mrc
 import pandas as pd
 import pika
 
@@ -920,7 +912,8 @@ logger = logging.getLogger(__name__)
 
 
 @source(name="from-rabbitmq")
-def rabbitmq_source(host: str,
+def rabbitmq_source(subscription: mrc.Subscription,
+                    host: str,
                     exchange: str,
                     exchange_type: str = 'fanout',
                     queue_name: str = '',
@@ -930,6 +923,8 @@ def rabbitmq_source(host: str,
 
     Parameters
     ----------
+    subscription : mrc.Subscription
+        Subscription object used to determine if the pipeline is still running.
     host : str
         Hostname or IP of the RabbitMQ server.
     exchange : str
@@ -956,7 +951,7 @@ def rabbitmq_source(host: str,
     poll_interval = pd.Timedelta(poll_interval)
 
     try:
-        while True:
+        while subscription.is_subscribed():
             (method_frame, _, body) = channel.basic_get(queue_name)
             if method_frame is not None:
                 try:

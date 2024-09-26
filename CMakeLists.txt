@@ -22,6 +22,7 @@ option(BUILD_SHARED_LIBS "Default value for whether or not to build shared or st
 option(MORPHEUS_BUILD_BENCHMARKS "Whether or not to build benchmarks" OFF)
 option(MORPHEUS_BUILD_DOCS "Enable building of API documentation" OFF)
 option(MORPHEUS_BUILD_EXAMPLES "Whether or not to build examples" OFF)
+option(MORPHEUS_BUILD_MORPHEUS_LLM "Whether or not to build morpheus_llm" OFF)
 option(MORPHEUS_BUILD_TESTS "Whether or not to build tests" OFF)
 option(MORPHEUS_ENABLE_DEBUG_INFO "Enable printing debug information" OFF)
 option(MORPHEUS_PYTHON_BUILD_STUBS "Whether or not to generated .pyi stub files for C++ Python modules. Disable to avoid requiring loading the NVIDIA GPU Driver during build" ON)
@@ -44,6 +45,10 @@ enable_testing()
 
 if(MORPHEUS_USE_IWYU AND MORPHEUS_USE_CCACHE)
   message(FATAL_ERROR "MORPHEUS_USE_IWYU and MORPHEUS_USE_CCACHE cannot be set simultaneously")
+endif()
+
+if (MORPHEUS_BUILD_DOCS AND NOT MORPHEUS_BUILD_MORPHEUS_LLM)
+  message(FATAL_ERROR "MORPHEUS_BUILD_MORPHEUS_LLM must be ON if MORPHEUS_BUILD_DOCS is ON")
 endif()
 
 # MRC CMake path and module extensions
@@ -143,36 +148,7 @@ morpheus_utils_compiler_set_defaults(MORPHEUS_USE_CLANG_TIDY)
 # Setup IWYU if enabled
 include(environment/init_iwyu)
 
-# #################################
-# #### Morpheus Python Setup ######
-# #################################
-morpheus_utils_python_configure()
-
-# Include the main morpheus code
-morpheus_utils_create_python_package(morpheus
-  PROJECT_DIRECTORY "${CMAKE_SOURCE_DIR}"
-  SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/morpheus"
-)
-
-add_subdirectory(morpheus)
-
-# Complete the python package
-if(MORPHEUS_PYTHON_INPLACE_BUILD)
-  list(APPEND extra_args "IS_INPLACE")
-endif()
-
-if(MORPHEUS_PYTHON_BUILD_WHEEL)
-  list(APPEND extra_args "BUILD_WHEEL")
-endif()
-
-if(MORPHEUS_PYTHON_PERFORM_INSTALL)
-  list(APPEND extra_args "INSTALL_WHEEL")
-endif()
-
-file(GLOB morpheus_data_files "${CMAKE_CURRENT_SOURCE_DIR}/morpheus/data/*")
-morpheus_utils_add_python_sources(${morpheus_data_files})
-
-morpheus_utils_build_python_package(morpheus ${extra_args})
+add_subdirectory(python)
 
 if(MORPHEUS_BUILD_EXAMPLES)
   add_subdirectory(examples)

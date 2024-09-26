@@ -17,6 +17,7 @@
 set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
+source ${WORKSPACE}/ci/scripts/github/cmake_all.sh
 
 rapids-dependency-file-generator \
   --output conda \
@@ -47,7 +48,8 @@ cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL}
 log_sccache_stats
 
 rapids-logger "Installing Morpheus"
-pip install ./
+pip install ./python/morpheus
+pip install ./python/morpheus_llm
 
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}

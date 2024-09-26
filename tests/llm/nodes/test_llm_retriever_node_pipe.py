@@ -20,18 +20,18 @@ import pytest
 import cudf
 
 from morpheus.config import Config
-from morpheus.llm import LLMEngine
-from morpheus.llm.nodes.extracter_node import ExtracterNode
-from morpheus.llm.nodes.retriever_node import RetrieverNode
-from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBResourceService
-from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus_llm.llm import LLMEngine
+from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
+from morpheus_llm.llm.nodes.retriever_node import RetrieverNode
+from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
+from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBResourceService
+from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBService
+from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
 
 @pytest.fixture(scope="module", name="milvus_service")
@@ -67,8 +67,7 @@ def test_pipeline(config: Config):
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, dataframes=[input_df]))
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=task_payload))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=task_payload))
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(vdb_service=mock_vdb_service)))
     sink = pipe.add_stage(InMemorySinkStage(config))
 
@@ -117,8 +116,7 @@ def test_pipeline_with_milvus(config: Config,
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, dataframes=[input_df]))
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=task_payload))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=task_payload))
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(vdb_service=resource_service, expr=expr)))
     sink = pipe.add_stage(InMemorySinkStage(config))
 

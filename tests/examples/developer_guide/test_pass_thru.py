@@ -20,8 +20,8 @@ import pytest
 
 from _utils import TEST_DIRS
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.type_aliases import DataFrameType
 
@@ -34,10 +34,11 @@ def _check_pass_thru(config: Config,
     assert isinstance(stage, SinglePortStage)
 
     meta = MessageMeta(filter_probs_df)
-    multi = MultiMessage(meta=meta)
+    msg = ControlMessage()
+    msg.payload(meta)
 
     on_data_fn = getattr(stage, on_data_fn_name)
-    assert on_data_fn(multi) is multi
+    assert on_data_fn(msg) is msg
 
 
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'developer_guide/1_simple_python_stage/pass_thru.py'))

@@ -19,14 +19,15 @@ export SCRIPT_DIR=${SCRIPT_DIR:-"$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /de
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-"$(realpath ${SCRIPT_DIR}/../..)"}
 
 export PY_ROOT="${MORPHEUS_ROOT}"
-export PY_CFG="${PY_ROOT}/setup.cfg"
+export PY_CFG="${PY_ROOT}/python/morpheus/setup.cfg"
+export PROJ_TOML="${MORPHEUS_ROOT}/pyproject.toml"
 export PY_DIRS="${PY_ROOT} ci/scripts"
 
 # Determine the commits to compare against. If running in CI, these will be set. Otherwise, diff with main
 export BASE_SHA=${CHANGE_TARGET:-${BASE_SHA:-$(${SCRIPT_DIR}/gitutils.py get_merge_target)}}
 export COMMIT_SHA=${GIT_COMMIT:-${COMMIT_SHA:-HEAD}}
 
-export CPP_FILE_REGEX='^(\.\/)?(examples|morpheus|tests)\/.*\.(cc|cpp|h|hpp)$'
+export CPP_FILE_REGEX='^(\.\/)?(examples|python|tests)\/.*\.(cc|cpp|h|hpp)$'
 export PYTHON_FILE_REGEX='^(\.\/)?(?!\.|build|external).*\.(py|pyx|pxd)$'
 
 # Use these options to skip any of the checks

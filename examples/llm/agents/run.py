@@ -27,7 +27,7 @@ def run():
 @run.command(help="Runs a simple finite pipeline with a single execution of a LangChain agent from a fixed input")
 @click.option(
     "--num_threads",
-    default=os.cpu_count(),
+    default=len(os.sched_getaffinity(0)),
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use",
 )
@@ -67,7 +67,7 @@ def simple(**kwargs):
 @run.command(help="Runs a pipeline LangChain agents which pulls inputs from a Kafka message bus")
 @click.option(
     "--num_threads",
-    default=os.cpu_count(),
+    default=len(os.sched_getaffinity(0)),
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use",
 )

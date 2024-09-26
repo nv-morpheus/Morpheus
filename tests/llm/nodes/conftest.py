@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,7 @@ import pytest
 
 @pytest.fixture(name="mock_llm_client")
 def mock_llm_client_fixture():
-    from morpheus.llm.services.llm_service import LLMClient
+    from morpheus_llm.llm.services.llm_service import LLMClient
     mock_client = mock.MagicMock(LLMClient)
     mock_client.return_value = mock_client
     mock_client.get_input_names.return_value = ["prompt"]
