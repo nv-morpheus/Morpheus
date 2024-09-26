@@ -35,22 +35,14 @@ from morpheus.cli.utils import parse_log_level
               type=click.Choice(get_log_levels(), case_sensitive=False),
               callback=parse_log_level,
               help="Specify the logging level to use.")
-@click.option('--use_cpp',
-              default=True,
-              type=bool,
-              help=("Whether or not to use C++ node and message types or to prefer python. "
-                    "Only use as a last resort if bugs are encountered"))
 @click.version_option()
 @click.pass_context
 def cli(ctx: click.Context, log_level: int, use_cpp: bool):
     """Main entrypoint for the LLM Examples"""
 
-    from morpheus.config import CppConfig
     from morpheus.utils.logger import configure_logging
 
     ctx_dict = ctx.ensure_object(dict)
-
-    CppConfig.set_should_use_cpp(use_cpp)
 
     # Configure the logging
     configure_logging(log_level=log_level)
