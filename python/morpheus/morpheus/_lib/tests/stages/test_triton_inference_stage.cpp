@@ -27,7 +27,6 @@
 #include "morpheus/stages/inference_client_stage.hpp"  // for TensorModelMapping, InferenceClientStage, IInferenceCl...
 #include "morpheus/stages/triton_inference.hpp"        // for TritonInferenceClient, TritonInferInput, TritonInferRe...
 #include "morpheus/types.hpp"                          // for TensorMap
-#include "morpheus/utilities/cudf_util.hpp"            // for CudfHelper
 #include "morpheus/utilities/matx_util.hpp"            // for MatxUtil
 
 #include <cuda_runtime.h>                         // for cudaMemcpy, cudaMemcpyKind
@@ -43,7 +42,6 @@
 #include <http_client.h>                          // for Error, InferOptions, InferenceServerHttpClient, InferR...
 #include <mrc/coroutines/task.hpp>                // for Task
 #include <mrc/coroutines/test_scheduler.hpp>      // for TestScheduler
-#include <pybind11/gil.h>                         // for gil_scoped_acquire
 #include <rmm/cuda_stream_view.hpp>               // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>                  // for device_buffer
 #include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
