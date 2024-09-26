@@ -295,12 +295,13 @@ FROM conda_env_dev as git_clone
 ARG MORPHEUS_ROOT_HOST
 
 # Source the morpheus env to pick up the git-lfs package
-RUN --mount=type=bind,source=${MORPHEUS_ROOT_HOST},target=/opt/host_repo \
+RUN --mount=type=bind,source=.,target=/opt/host_repo \
     source activate morpheus &&\
-    git clone file:///opt/host_repo /tmp/morpheus_repo &&\
+    # Use a local clone to allow unpushed commits to be included
+    git clone file:///opt/host_repo/${MORPHEUS_ROOT_HOST} /tmp/morpheus_repo &&\
     cd /tmp/morpheus_repo &&\
     git lfs install &&\
-    /tmp/morpheus_repo/scripts/fetch_data.py fetch datasets examples
+    ./scripts/fetch_data.py fetch datasets examples
 
 # ============ Stage: runtime ============
 # Setup container for runtime environment
