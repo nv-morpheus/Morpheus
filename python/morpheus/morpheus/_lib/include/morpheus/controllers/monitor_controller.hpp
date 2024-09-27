@@ -28,6 +28,7 @@
 #include <rxcpp/rx.hpp>             // for trace_activity, decay_t, from
 
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -42,6 +43,7 @@ namespace morpheus {
  * @{
  * @file
  */
+
 
 /**
  * @brief
@@ -77,6 +79,15 @@ MonitorController<MessageT>::MonitorController(const std::string& description,
   m_determine_count_fn(determine_count_fn),
   m_count(0)
 {
+    if (!m_determine_count_fn)
+    {
+        m_determine_count_fn = auto_count_fn();
+        if (!m_determine_count_fn)
+        {
+            throw std::runtime_error("No count function provided and no default count function available");
+        }
+    }
+
     m_progress_bar.set_option(indicators::option::BarWidth{50});
     m_progress_bar.set_option(indicators::option::Start{"["});
     m_progress_bar.set_option(indicators::option::Fill("■"));
@@ -93,45 +104,37 @@ MonitorController<MessageT>::MonitorController(const std::string& description,
 template <typename MessageT>
 MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
 {
-    if (m_determine_count_fn == std::nullopt)
-    {
-        m_determine_count_fn = auto_count_fn(msg);
-    }
-
     m_count += (*m_determine_count_fn)(msg);
     m_progress_bar.set_progress(m_count);
 
     return msg;
 }
 
-template <typename T>
-struct is_vector : std::false_type
-{};
-
-template <typename T, typename U>
-struct is_vector<std::vector<T, U>> : std::true_type
-{};
-
 template <typename MessageT>
 auto MonitorController<MessageT>::auto_count_fn() -> std::optional<std::function<size_t(MessageT)>>
 {
-    if constexpr (std::is_same_v<MessageT, std::shared_ptr<cudf::table>>)
+    if constexpr (std::is_same_v<MessageT, std::shared_ptr<MessageMeta>>)
     {
-        return [](MessageT msg) {
-            return msg->num_rows();
+        return [](std::shared_ptr<MessageMeta> msg) {
+            return msg->count();
         };
     }
 
-    if constexpr (std::is_same_v<MessageT, std::shared_ptr<MessageMeta>>)
+    if constexpr (std::is_same_v<MessageT, std::vector<std::shared_ptr<MessageMeta>>>)
     {
-        return [](MessageT msg) {
-            return msg->count();
+        return [](std::vector<std::shared_ptr<MessageMeta>> msg) {
+            auto item_count_fn = [](std::shared_ptr<MessageMeta> msg) {
+                return msg->count();
+            };
+            return std::accumulate(msg.begin(), msg.end(), 0, [&](int sum, const auto& item) {
+                return sum + (*item_count_fn)(item);
+            });
         };
     }
 
     if constexpr (std::is_same_v<MessageT, std::shared_ptr<ControlMessage>>)
     {
-        return [](MessageT msg) {
+        return [](std::shared_ptr<ControlMessage> msg) {
             if (!msg->payload())
             {
                 return 0;
@@ -140,26 +143,23 @@ auto MonitorController<MessageT>::auto_count_fn() -> std::optional<std::function
         };
     }
 
-    if constexpr (is_vector<MessageT>::value)
+    if constexpr (std::is_same_v<MessageT, std::vector<std::shared_ptr<ControlMessage>>>)
     {
-        // if (msg.empty())
-        // {
-        //     return std::nullopt;
-        // }
-
-        return [this](MessageT msg) {
-            auto item_count_fn = auto_count_fn<MessageT>(msg[0]);
-            if (item_count_fn == std::nullopt)
-            {
-                return 0;
-            }
-            return std::accumulate(msg.begin(), msg.end(), 0, [item_count_fn](int sum, const auto& item) {
+        return [](std::vector<std::shared_ptr<ControlMessage>> msg) {
+            auto item_count_fn = [](std::shared_ptr<ControlMessage> msg) {
+                if (!msg->payload())
+                {
+                    return 0;
+                }
+                return msg->payload()->count();
+            };
+            return std::accumulate(msg.begin(), msg.end(), 0, [&](int sum, const auto& item) {
                 return sum + (*item_count_fn)(item);
             });
         };
     }
 
-    throw std::runtime_error("Unsupported message type received for MonitorController");
+    return std::nullopt;
 }
 
 template <typename MessageT>

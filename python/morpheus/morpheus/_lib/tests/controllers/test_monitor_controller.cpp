@@ -1,12 +1,13 @@
 #include "../test_utils/common.hpp"  // for get_morpheus_root, TEST_CLASS_WITH_PYTHON, morpheus
 
 #include "morpheus/controllers/monitor_controller.hpp"  // for MonitorController
-#include "morpheus/stages/monitor.hpp"                  // for MonitorStage
+#include "morpheus/messages/control.hpp"                // for ControlMessage
 
 #include <cudf/column/column.hpp>
 #include <cudf/column/column_factories.hpp>
 #include <cudf/column/column_view.hpp>
 #include <cudf/filling.hpp>
+#include <cudf/io/types.hpp>
 #include <cudf/scalar/scalar.hpp>
 #include <cudf/table/table.hpp>
 #include <cudf/types.hpp>
@@ -16,39 +17,74 @@
 
 #include <memory>
 #include <numeric>
+#include <stdexcept>
 #include <vector>
 
 using namespace morpheus;
 
-TEST_CLASS(MonitorController);
+TEST_CLASS_WITH_PYTHON(MonitorController);
 
-std::shared_ptr<cudf::table> create_cudf_table(int rows, int cols)
+cudf::io::table_with_metadata create_cudf_table_with_metadata(int rows, int cols)
 {
     std::vector<std::unique_ptr<cudf::column>> columns;
 
     for (int i = 0; i < cols; ++i)
     {
-        // Create a numeric column of type INT32 with 'rows' elements
         auto col      = cudf::make_numeric_column(cudf::data_type{cudf::type_id::INT32}, rows);
         auto col_view = col->mutable_view();
 
-        // Fill the column with range [0, rows - 1]
         std::vector<int32_t> data(rows);
         std::iota(data.begin(), data.end(), 0);
         cudaMemcpy(col_view.data<int32_t>(), data.data(), data.size() * sizeof(int32_t), cudaMemcpyHostToDevice);
 
-        // Add the column to the vector
         columns.push_back(std::move(col));
     }
 
-    // Create and return the table
-    return std::make_shared<cudf::table>(std::move(columns));
+    auto table = std::make_unique<cudf::table>(std::move(columns));
+
+    auto index_info   = cudf::io::column_name_info{""};
+    auto column_names = std::vector<cudf::io::column_name_info>(cols, index_info);
+    auto metadata     = cudf::io::table_metadata{std::move(column_names), {}, {}};
+
+    return cudf::io::table_with_metadata{std::move(table), metadata};
 }
 
 TEST_F(TestMonitorController, TestAutoCountFn)
 {
-    auto test_mc_cudf = MonitorController<std::shared_ptr<cudf::table>>("test_cudf_table");
-    auto cudf_auto_count_fn = test_mc_cudf.auto_count_fn();
-    auto cudf_table = create_cudf_table(10, 2);
-    assert((*cudf_auto_count_fn)(cudf_table) == 10);
+    auto message_meta_mc            = MonitorController<std::shared_ptr<MessageMeta>>("test_message_meta");
+    auto message_meta_auto_count_fn = message_meta_mc.auto_count_fn();
+    auto meta                       = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(10, 2)));
+    EXPECT_EQ((*message_meta_auto_count_fn)(meta), 10);
+
+    auto control_message_mc            = MonitorController<std::shared_ptr<ControlMessage>>("test_control_message");
+    auto control_message_auto_count_fn = control_message_mc.auto_count_fn();
+    auto control_message               = std::make_shared<ControlMessage>();
+    auto cm_meta = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(20, 3)));
+    control_message->payload(cm_meta);
+    EXPECT_EQ((*control_message_auto_count_fn)(control_message), 20);
+
+    auto message_meta_vector_mc =
+        MonitorController<std::vector<std::shared_ptr<MessageMeta>>>("test_message_meta_vector");
+    auto message_meta_vector_auto_count_fn = message_meta_vector_mc.auto_count_fn();
+    std::vector<std::shared_ptr<MessageMeta>> meta_vector;
+    for (int i = 0; i < 5; ++i)
+    {
+        meta_vector.emplace_back(MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(5, 2))));
+    }
+    EXPECT_EQ((*message_meta_vector_auto_count_fn)(meta_vector), 25);
+
+    auto control_message_vector_mc =
+        MonitorController<std::vector<std::shared_ptr<ControlMessage>>>("test_control_message_vector");
+    auto control_message_vector_auto_count_fn = control_message_vector_mc.auto_count_fn();
+    std::vector<std::shared_ptr<ControlMessage>> control_message_vector;
+    for (int i = 0; i < 5; ++i)
+    {
+        auto cm = std::make_shared<ControlMessage>();
+        cm->payload(MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(6, 2))));
+        control_message_vector.emplace_back(cm);
+    }
+    EXPECT_EQ((*control_message_vector_auto_count_fn)(control_message_vector), 30);
+
+    // Test invalid message type
+    EXPECT_THROW(MonitorController<int>("invalid message type"), std::runtime_error);
 }

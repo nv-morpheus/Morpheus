@@ -17,17 +17,15 @@
 
 #include "morpheus/controllers/monitor_controller.hpp"
 
+#include "morpheus/messages/control.hpp"
+
 #include <cudf/column/column.hpp>
 #include <cudf/column/column_factories.hpp>
 #include <cudf/table/table.hpp>
-
-
 
 namespace morpheus {
 
 // Component public implementations
 // ****************** MonitorController ************************ //
-
-
 
 }  // namespace morpheus
