@@ -26,7 +26,7 @@ def run():
 
 
 @run.command()
-@click.option('--use_cpu_only', default=False, type=bool, is_flag=True, help=("Whether or not to run in CPU only mode"))
+@click.option('--use_cpu_only', default=False, type=bool, is_flag=True, help="Run in CPU only mode")
 @click.option(
     "--num_threads",
     default=len(os.sched_getaffinity(0)),
