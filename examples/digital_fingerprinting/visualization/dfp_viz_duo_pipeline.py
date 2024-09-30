@@ -41,7 +41,6 @@ from morpheus.cli.utils import parse_log_level
 from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
-from morpheus.config import CppConfig
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.utils.column_info import BoolColumn
@@ -183,9 +182,6 @@ def run_pipeline(train_users,
         logger.info("Tracking URI: %s", mlflow.get_tracking_uri())
 
     config = Config()
-
-    CppConfig.set_should_use_cpp(False)
-
     config.num_threads = len(os.sched_getaffinity(0))
 
     config.ae = ConfigAutoEncoder()
