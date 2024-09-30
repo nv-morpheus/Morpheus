@@ -34,48 +34,22 @@ add_library(${PROJECT_NAME}::morpheus_llm ALIAS morpheus_llm)
 # 2. For conda packaging purposes morpheus_llm is built on its own. In this case
 #    the dependencies (including morpheus-core) are loaded from the conda enviroment.
 if (MORPHEUS_BUILD_MORPHEUS_CORE)
-
-  target_link_libraries(morpheus_llm
-    PRIVATE
-      $<$<CONFIG:Debug>:ZLIB::ZLIB>
-    PUBLIC
-      $<TARGET_NAME_IF_EXISTS:conda_env>
-      cudf::cudf
-      mrc::pymrc
-      ${PROJECT_NAME}::morpheus
-  )
-
-  # Add the include directories of the cudf_helpers_project since we dont want to link directly to it
-  get_property(cudf_helpers_target GLOBAL PROPERTY cudf_helpers_target_property)
-  get_target_property(cudf_helpers_include ${cudf_helpers_target} INTERFACE_INCLUDE_DIRECTORIES)
-
-  target_include_directories(morpheus
-    PRIVATE
-       ${cudf_helpers_include}
-  )
-
-  # Also add a dependency to the target so that the headers are generated before the target is built
-  add_dependencies(morpheus_llm ${cudf_helpers_target})
-
   # Add a dependency on the morpheus cpython libraries
   get_property(py_morpheus_target GLOBAL PROPERTY py_morpheus_target_property)
   add_dependencies(morpheus_llm ${py_morpheus_target})
-
 else()
-
   rapids_find_package(morpheus REQUIRED)
-
-  target_link_libraries(morpheus_llm
-    PRIVATE
-      $<$<CONFIG:Debug>:ZLIB::ZLIB>
-    PUBLIC
-      $<TARGET_NAME_IF_EXISTS:conda_env>
-      cudf::cudf
-      mrc::pymrc
-      morpheus::morpheus
-  )
-
 endif()
+
+target_link_libraries(morpheus_llm
+  PRIVATE
+    $<$<CONFIG:Debug>:ZLIB::ZLIB>
+  PUBLIC
+    $<TARGET_NAME_IF_EXISTS:conda_env>
+    cudf::cudf
+    mrc::pymrc
+    ${PROJECT_NAME}::morpheus
+)
 
 target_include_directories(morpheus_llm
   PUBLIC
