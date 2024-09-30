@@ -438,7 +438,6 @@ helm install --set ngc.apiKey="$API_KEY" \
       --edge_buffer_size=4 \
       --pipeline_batch_size=1024 \
       --model_max_batch_size=1024 \
-      --use_cpp=False \
       pipeline-ae \
         --columns_file=data/columns_ae_cloudtrail.txt \
         --userid_filter=user123 \
