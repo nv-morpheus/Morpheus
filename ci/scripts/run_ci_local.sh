@@ -21,13 +21,13 @@ case "$1" in
         STAGES=("bash")
         ;;
     "all" )
-        STAGES=("checks" "build" "docs" "test" "conda_core" "conda_dfp" "conda_llm" "conda")
+        STAGES=("checks" "build" "docs" "test" "conda_libs" "conda")
         ;;
-    "checks" | "build" | "docs" | "test" | "conda_core" | "conda_dfp" | "conda_llm" | "conda" | "bash" )
+    "checks" | "build" | "docs" | "test" | "conda_libs" | "conda" | "bash" )
         STAGES=("$1")
         ;;
     * )
-        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build\", \"docs\", \"test\", \"conda_core\", \"conda_dfp\", \"conda_llm\", \"conda\", or \"bash\""
+        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build\", \"docs\", \"test\", \"conda_libs\", \"conda\", or \"bash\""
         exit 1
         ;;
 esac

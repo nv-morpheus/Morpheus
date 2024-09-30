@@ -18,19 +18,13 @@
 
 # This will store all of the cmake args. Make sure to prepend args to allow
 # incoming values to overwrite them
+
+source $RECIPE_DIR/cmake_common.sh
+
 CMAKE_ARGS=${CMAKE_ARGS:-""}
 
 export CCACHE_BASEDIR=$(realpath ${SRC_DIR}/..)
 export USE_SCCACHE=${USE_SCCACHE:-""}
-
-# Check for some mrc environment variables. Append to front of args to allow users to overwrite them
-if [[ -n "${MORPHEUS_CACHE_DIR}" ]]; then
-   # Set the cache variable, then set the Staging prefix to allow for host searching
-   CMAKE_ARGS="-DMORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR} ${CMAKE_ARGS}"
-
-   # Double check that the cache dir has been created
-   mkdir -p ${MORPHEUS_CACHE_DIR}
-fi
 
 # Enable DFP
 CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_DFP=ON ${CMAKE_ARGS}"
@@ -40,30 +34,12 @@ CMAKE_ARGS="-DMORPHEUS_SUPPORT_DOCA=OFF ${CMAKE_ARGS}"
 CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_CORE=OFF ${CMAKE_ARGS}"
 CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_LLM=OFF ${CMAKE_ARGS}"
 
-CMAKE_ARGS="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON ${CMAKE_ARGS}"
-CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=$PREFIX ${CMAKE_ARGS}"
-CMAKE_ARGS="-DCMAKE_INSTALL_LIBDIR=lib ${CMAKE_ARGS}"
-CMAKE_ARGS="-DBUILD_SHARED_LIBS=ON ${CMAKE_ARGS}"
-CMAKE_ARGS="-DMORPHEUS_USE_CONDA=ON ${CMAKE_ARGS}"
-CMAKE_ARGS="-DMORPHEUS_USE_CCACHE=ON ${CMAKE_ARGS}"
-CMAKE_ARGS="-DMORPHEUS_PYTHON_BUILD_STUBS=${MORPHEUS_PYTHON_BUILD_STUBS=-"ON"} ${CMAKE_ARGS}"
-CMAKE_ARGS="-DMORPHEUS_PYTHON_INPLACE_BUILD=ON ${CMAKE_ARGS}"
-CMAKE_ARGS="-DMORPHEUS_PYTHON_BUILD_WHEEL=ON ${CMAKE_ARGS}"
-CMAKE_ARGS="-DCMAKE_BUILD_RPATH_USE_ORIGIN=ON ${CMAKE_ARGS}"
-CMAKE_ARGS="-DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES=-"RAPIDS"} ${CMAKE_ARGS}"
-CMAKE_ARGS="-DPython_EXECUTABLE=${PYTHON} ${CMAKE_ARGS}"
-CMAKE_ARGS="-DPYTHON_EXECUTABLE=${PYTHON} ${CMAKE_ARGS}" # for pybind11
-CMAKE_ARGS="--log-level=VERBOSE ${CMAKE_ARGS}"
 
 if [[ "${USE_SCCACHE}" == "1" ]]; then
    CMAKE_ARGS="-DCCACHE_PROGRAM_PATH=$(which sccache) ${CMAKE_ARGS}"
 fi
 
-echo "========Begin Env========"
-env
-echo "========End Env========"
-
-BUILD_DIR="build-conda"
+BUILD_DIR="build-conda-dfp"
 
 # Check if the build directory already exists. And if so, delete the
 # CMakeCache.txt and CMakeFiles to ensure a clean configuration
