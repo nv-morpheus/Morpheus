@@ -73,8 +73,6 @@ def run_pipeline(log_level: int, use_cpu_only: bool, in_file: pathlib.Path, out_
     else:
         execution_mode = ExecutionMode.GPU
 
-    CppConfig.set_should_use_cpp(not use_cpu_only)
-
     config = Config()
     config.execution_mode = execution_mode
 
