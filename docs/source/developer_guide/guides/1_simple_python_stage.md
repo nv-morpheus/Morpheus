@@ -52,6 +52,20 @@ def pass_thru_stage(message: typing.Any) -> typing.Any:
     return message
 ```
 
+By default, Morpheus stages are assumed to require a GPU. However since this stage doesn't perform any specific GPU operations. We can indicate that the stage does not require a GPU by passing a tuple of supported execution modes to the decorator as follows:
+```python
+import typing
+
+from morpheus.config import ExecutionMode
+from morpheus.pipeline.stage_decorator import stage
+
+
+@stage(name="pass-thru", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
+def pass_thru_stage(message: typing.Any) -> typing.Any:
+    # Return the message for the next stage
+    return message
+```
+
 We can then add our stage to a pipeline as follows:
 ```python
 config = Config()
@@ -60,7 +74,7 @@ pipeline = LinearPipeline(config)
 pipeline.add_stage(pass_thru_stage(config))
 ```
 
-It is possible to provide additional keyword arguments to the function. Consider the following example:
+It is also possible to provide additional keyword arguments to the function. Consider the following example:
 ```python
 @stage
 def multiplier(message: MessageMeta, *, column: str, value: int | float = 2.0) -> MessageMeta:
@@ -80,6 +94,8 @@ The class based approach to defining a stage offers a bit more flexibility, spec
 
 Stages in Morpheus define what types of data they accept, and the type of data that they emit. In this example we are emitting messages of the same type that is received, this is actually quite common and Morpheus provides a mixin class, `PassThruTypeMixin`, to simplify this.
 
+Similar to the function based stage, the class based stage will be not require a GPU, and we will indicate that it is able to be used in both GPU and CPU execution modes by utilizing the `GpuAndCpuMixin`.
+
 Optionally, stages can be registered as a command with the Morpheus CLI using the `register_stage` decorator. This allows for pipelines to be constructed from both pre-built stages and custom user stages via the command line. Any constructor arguments will be introspected using [`numpydoc`](https://numpydoc.readthedocs.io/en/latest/) and exposed as command line flags. Similarly, the class's docstrings will be exposed in the help string of the stage on the command line.
 
 We start our class definition with a few basic imports:
@@ -91,12 +107,13 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
 @register_stage("pass-thru")
-class PassThruStage(PassThruTypeMixin, SinglePortStage):
+class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 ```
 
 There are four methods that need to be defined in our new subclass to implement the stage interface: `name`, `accepted_types`, `compute_schema`, `supports_cpp_node`, and `_build_single`. In practice, it is often necessary to define at least one more method which will perform the actual work of the stage; by convention, this method is typically named `on_data`, which we will define in our examples.
@@ -171,12 +188,13 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
 @register_stage("pass-thru")
-class PassThruStage(PassThruTypeMixin, SinglePortStage):
+class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
     """
     A Simple Pass Through Stage
     """
@@ -191,12 +209,11 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def on_data(self, message: typing.Any):
+    def on_data(self, message: typing.Any) -> typing.Any:
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: mrc.Builder,
-                      input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_node, node)
 
