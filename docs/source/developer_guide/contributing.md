@@ -160,15 +160,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 - Volta architecture GPU or better
 - [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-0-download-archive)
 - `conda` and `mamba`
-  - Refer to the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
-  - Install `mamba`:
-
-      ```bash
-      conda activate base
-      conda install -c conda-forge mamba
-      ```
-
-  - **Note:** `mamba` should only be installed once in the base environment
+  - If `conda` and `mamba` are not installed, we recommend using the MiniForge install guide which is located [here](https://github.com/conda-forge/miniforge). This will install both `conda` and `mamba` and set the channel default to use `conda-forge`.
 
 1. Set up environment variables and clone the repo:
    ```bash
@@ -177,7 +169,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    cd $MORPHEUS_ROOT
    ```
 
-1. Ensure all submodules are checked out:
+2. Ensure all submodules are checked out:
 
 ```bash
 git submodule update --init --recursive
