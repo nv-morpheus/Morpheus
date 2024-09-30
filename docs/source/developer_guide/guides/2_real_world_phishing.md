@@ -99,7 +99,7 @@ def __init__(self, config: Config):
 
 Refer to the [Stage Constructors](#stage-constructors) section for more details.
 
-Since the purpose of this stage is specifically tied to pre-processing text data for an NLP pipeline, when we register the stage, we will explicitly limit the stage to NLP pipelines:
+Since the purpose of this stage is specifically tied to pre-processing text data for an NLP pipeline, when we register the stage, we will explicitly limit the stage to NLP pipelines. In addition to this since the pipeline our stage is operating in is a GPU pipeline, we will not be utilizing the `GpuAndCpuMixin` mixin from the previous example.:
 ```python
 @register_stage("recipient-features", modes=[PipelineModes.NLP])
 class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
@@ -540,7 +540,7 @@ MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
     default="phishing-bert-onnx",
     help="The name of the model that is deployed on Tritonserver.",
 )
-@click.option("--server_url", default='localhost:8001', help="Tritonserver url.")
+@click.option("--server_url", default='localhost:8000', help="Tritonserver url.")
 @click.option(
     "--output_file",
     default=os.path.join(tempfile.gettempdir(), "detections.jsonlines"),
@@ -630,7 +630,7 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
   recipient-features \
   deserialize \
   preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=true --do_lower_case=true --add_special_tokens=false \
-  inf-triton --model_name=phishing-bert-onnx --server_url=localhost:8001 --force_convert_inputs=true \
+  inf-triton --model_name=phishing-bert-onnx --server_url=localhost:8000 --force_convert_inputs=true \
   monitor --description="Inference Rate" --smoothing=0.001 --unit=inf \
   add-scores --label=is_phishing \
   serialize \
