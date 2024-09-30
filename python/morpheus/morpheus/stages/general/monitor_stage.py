@@ -97,7 +97,7 @@ class MonitorStage(PassThruTypeMixin, SinglePortStage):
         return (typing.Any, )
 
     def supports_cpp_node(self):
-        return False
+        return True
 
     async def start_async(self):
         """

@@ -26,14 +26,15 @@
 #include "morpheus/stages/http_server_source_stage.hpp"  // for HttpServerSourceStage, HttpServerSourceStageInterfac...
 #include "morpheus/stages/inference_client_stage.hpp"    // for InferenceClientStage, InferenceClientStageInterfaceP...
 #include "morpheus/stages/kafka_source.hpp"              // for KafkaSourceStage, KafkaSourceStageInterfaceProxy
-#include "morpheus/stages/preallocate.hpp"               // for PreallocateStage, PreallocateStageInterfaceProxy
-#include "morpheus/stages/preprocess_fil.hpp"            // for PreprocessFILStage, PreprocessFILStageInterfaceProxy
-#include "morpheus/stages/preprocess_nlp.hpp"            // for PreprocessNLPStage, PreprocessNLPStageInterfaceProxy
-#include "morpheus/stages/serialize.hpp"                 // for SerializeStage, SerializeStageInterfaceProxy
-#include "morpheus/stages/write_to_file.hpp"             // for WriteToFileStage, WriteToFileStageInterfaceProxy
-#include "morpheus/utilities/cudf_util.hpp"              // for CudfHelper
-#include "morpheus/utilities/http_server.hpp"            // for DefaultMaxPayloadSize
-#include "morpheus/version.hpp"                          // for morpheus_VERSION_MAJOR, morpheus_VERSION_MINOR, morp...
+// #include "morpheus/stages/monitor.hpp"                   // for MonitorStage, MonitorStageInterfaceProxy
+#include "morpheus/stages/preallocate.hpp"     // for PreallocateStage, PreallocateStageInterfaceProxy
+#include "morpheus/stages/preprocess_fil.hpp"  // for PreprocessFILStage, PreprocessFILStageInterfaceProxy
+#include "morpheus/stages/preprocess_nlp.hpp"  // for PreprocessNLPStage, PreprocessNLPStageInterfaceProxy
+#include "morpheus/stages/serialize.hpp"       // for SerializeStage, SerializeStageInterfaceProxy
+#include "morpheus/stages/write_to_file.hpp"   // for WriteToFileStage, WriteToFileStageInterfaceProxy
+#include "morpheus/utilities/cudf_util.hpp"    // for CudfHelper
+#include "morpheus/utilities/http_server.hpp"  // for DefaultMaxPayloadSize
+#include "morpheus/version.hpp"                // for morpheus_VERSION_MAJOR, morpheus_VERSION_MINOR, morp...
 
 #include <mrc/segment/builder.hpp>     // for Builder
 #include <mrc/segment/object.hpp>      // for Object, ObjectProperties
@@ -191,6 +192,26 @@ PYBIND11_MODULE(stages, _module)
              py::arg("stop_after")            = 0,
              py::arg("async_commits")         = true,
              py::arg("oauth_callback")        = py::none());
+
+    // py::class_<mrc::segment::Object<MonitorStage<MessageMeta>>,
+    //            mrc::segment::ObjectProperties,
+    //            std::shared_ptr<mrc::segment::Object<MonitorStage<MessageMeta>>>>(
+    //     _module, "MessageMetaMonitorStage", py::multiple_inheritance())
+    //     .def(py::init<>(&MonitorStageInterfaceProxy<MessageMeta>::init),
+    //          py::arg("builder"),
+    //          py::arg("name"),
+    //          py::arg("description"),
+    //          py::arg("determine_count_fn") = py::none());
+
+    // py::class_<mrc::segment::Object<MonitorStage<ControlMessage>>,
+    //            mrc::segment::ObjectProperties,
+    //            std::shared_ptr<mrc::segment::Object<MonitorStage<ControlMessage>>>>(
+    //     _module, "ControlMessageMonitorStage", py::multiple_inheritance())
+    //     .def(py::init<>(&MonitorStageInterfaceProxy<MessageMeta>::init),
+    //          py::arg("builder"),
+    //          py::arg("name"),
+    //          py::arg("description"),
+    //          py::arg("determine_count_fn") = py::none());
 
     py::class_<mrc::segment::Object<PreallocateStage<ControlMessage>>,
                mrc::segment::ObjectProperties,

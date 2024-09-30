@@ -16,8 +16,6 @@
  */
 
 #pragma once
-#include "indicators/setting.hpp"
-
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 
@@ -44,7 +42,6 @@ namespace morpheus {
  * @file
  */
 
-
 /**
  * @brief
  */
@@ -61,16 +58,18 @@ class MonitorController
     void sink_on_completed();
 
   private:
+    std::unique_ptr<indicators::ProgressBar> initialize_progress_bar();
+    std::unique_ptr<indicators::ProgressBar> m_progress_bar;
     const std::string& m_description;
     size_t m_count;
     std::optional<std::function<int(MessageT)>> m_determine_count_fn;
+    int m_bar_id;
 
-    indicators::ProgressBar m_progress_bar;
-    static indicators::DynamicProgress<indicators::ProgressBar> m_progress_bars;
+    static indicators::DynamicProgress<indicators::ProgressBar> s_progress_bars;
 };
 
 template <typename InputT>
-indicators::DynamicProgress<indicators::ProgressBar> MonitorController<InputT>::m_progress_bars;
+indicators::DynamicProgress<indicators::ProgressBar> MonitorController<InputT>::s_progress_bars;
 
 template <typename MessageT>
 MonitorController<MessageT>::MonitorController(const std::string& description,
@@ -87,25 +86,32 @@ MonitorController<MessageT>::MonitorController(const std::string& description,
             throw std::runtime_error("No count function provided and no default count function available");
         }
     }
+    m_progress_bar = initialize_progress_bar();
+    m_bar_id       = MonitorController::s_progress_bars.push_back(*m_progress_bar);
+}
 
-    m_progress_bar.set_option(indicators::option::BarWidth{50});
-    m_progress_bar.set_option(indicators::option::Start{"["});
-    m_progress_bar.set_option(indicators::option::Fill("■"));
-    m_progress_bar.set_option(indicators::option::Lead(">"));
-    m_progress_bar.set_option(indicators::option::Remainder(" "));
-    m_progress_bar.set_option(indicators::option::End("]"));
-    m_progress_bar.set_option(indicators::option::PostfixText{m_description});
-    m_progress_bar.set_option(indicators::option::ForegroundColor{indicators::Color::yellow});
-    m_progress_bar.set_option(indicators::option::ShowElapsedTime{true});
-
-    MonitorController::m_progress_bars.push_back(m_progress_bar);
+template <typename MessageT>
+std::unique_ptr<indicators::ProgressBar> MonitorController<MessageT>::initialize_progress_bar()
+{
+    auto progress_bar = std::make_unique<indicators::ProgressBar>(
+        indicators::option::BarWidth{50},
+        indicators::option::Start{"["},
+        indicators::option::Fill("■"),
+        indicators::option::Lead(">"),
+        indicators::option::Remainder(" "),
+        indicators::option::End("]"),
+        indicators::option::PostfixText{m_description},
+        indicators::option::ForegroundColor{indicators::Color::yellow},
+        indicators::option::FontStyles{std::vector<indicators::FontStyle>{indicators::FontStyle::bold}},
+        indicators::option::ShowElapsedTime{true});
+    return std::move(progress_bar);
 }
 
 template <typename MessageT>
 MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
 {
     m_count += (*m_determine_count_fn)(msg);
-    m_progress_bar.set_progress(m_count);
+    MonitorController::s_progress_bars[m_bar_id].set_progress(m_count);
 
     return msg;
 }
@@ -165,7 +171,7 @@ auto MonitorController<MessageT>::auto_count_fn() -> std::optional<std::function
 template <typename MessageT>
 void MonitorController<MessageT>::sink_on_completed()
 {
-    m_progress_bar.mark_as_completed();
+    s_progress_bars[m_bar_id].mark_as_completed();
 }
 
 /** @} */  // end of group

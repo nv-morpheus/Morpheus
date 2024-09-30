@@ -24,12 +24,5 @@ namespace morpheus {
 
 
 // ************ MonitorStageInterfaceProxy ************* //
-template <typename MessageT>
-std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>> MonitorStageInterfaceProxy::init(
-    mrc::segment::Builder& builder)
-{
-    auto stage = builder.construct_object<MonitorStage<MessageT>>();
 
-    return stage;
-}
 }  // namespace morpheus
