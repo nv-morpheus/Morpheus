@@ -37,7 +37,7 @@ from morpheus.cli.utils import parse_log_level
               help="Specify the logging level to use.")
 @click.version_option()
 @click.pass_context
-def cli(ctx: click.Context, log_level: int, use_cpp: bool):
+def cli(ctx: click.Context, log_level: int):
     """Main entrypoint for the LLM Examples"""
 
     from morpheus.utils.logger import configure_logging
