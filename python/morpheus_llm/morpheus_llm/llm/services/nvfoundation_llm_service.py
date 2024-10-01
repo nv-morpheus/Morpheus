@@ -151,7 +151,7 @@ class NVFoundationLLMClient(LLMClient):
         # listed in issue #1555 For now, we generate a warning if `return_exceptions` is True.
         if (return_exceptions):
             warnings.warn(
-                "return_exceptions==True is not currently supported by the NVFoundationLLMClient.generate_batch()."
+                "return_exceptions==True is not currently supported by the NVFoundationLLMClient.generate_batch() method. "
                 "If an exception is raised for any item, the function will exit and raise that exception.")
 
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
@@ -202,7 +202,7 @@ class NVFoundationLLMClient(LLMClient):
         # listed in issue #1555 For now, we generate a warning if `return_exceptions` is True.
         if (return_exceptions):
             warnings.warn(
-                "return_exceptions==True is not currently supported by the NVFoundationLLMClient.generate_batch_async()"
+                "return_exceptions==True is not currently supported by the NVFoundationLLMClient.generate_batch_async() method"
                 ". If an exception is raised for any item, the function will exit and raise that exception.")
 
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]

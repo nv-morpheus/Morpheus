@@ -121,7 +121,7 @@ class NeMoLLMClient(LLMClient):
         # As soon as one of the requests fails, the entire batch fails. Instead, we need to implement the functionality
         # listed in issue #1555 For now, we generate a warning if `return_exceptions` is True.
         if (return_exceptions):
-            warnings.warn("return_exceptions==True is not currently supported by the NeMoLLMClient.generate_batch()."
+            warnings.warn("return_exceptions==True is not currently supported by the NeMoLLMClient.generate_batch() method. "
                           "If an exception is raised for any item, the function will exit and raise that exception.")
 
         return typing.cast(
