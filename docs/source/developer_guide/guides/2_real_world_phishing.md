@@ -748,6 +748,12 @@ In this example, we will create a source that reads messages from a [RabbitMQ](h
 
 The `PreallocatorMixin` when added to a stage class, typically a source stage, indicates that the stage emits newly constructed DataFrames either directly or contained in a `MessageMeta` instance into the pipeline. Adding this mixin allows any columns needed by other stages to be inserted into the DataFrame.
 
+Similar to the pass through stage, this new source stage should be able to operate in both GPU and CPU execution modes, as such we will be using the `GpuAndCpuMixin` mixin. One thing to note is that the DataFrame payload of a `MessageMeta` object is always a `cudf.DataFrame` when running in GPU mode and a `pandas.DataFrame` when running in CPU mode. When supporting both GPU and CPU execution modes, care must be taken to avoid directly importing `cudf` (or any other package requiring a GPU) when running in CPU mode on a system without a GPU and would therefore result in an error. Stages are able to examine the execution mode with the `morpheus.config.Config.execution_mode` attribute. The `morpheus.utils.type_utils.get_df_pkg` helper method is used to import the appropriate DataFrame package based on the execution mode in the constructor:
+```python
+    # This will return either cudf.DataFrame or pandas.DataFrame depending on the execution mode
+    self._df_pkg = get_df_pkg(config.execution_mode)
+```
+
 The `compute_schema` method allows us to define our output type of `MessageMeta`, we do so by calling the `set_type` method of the `output_schema` attribute of the `StageSchema` object passed into the method. Of note here is that it is perfectly valid for a stage to determine its output type based upon configuration arguments passed into the constructor. However the stage must document a single output type per output port. If a stage emitted multiple output types, then the types must share a common base class which would serve as the stage's output type.
 ```python
 def compute_schema(self, schema: StageSchema):
@@ -771,7 +777,7 @@ def source_generator(self, subscription: mrc.Subscription) -> collections.abc.It
             if method_frame is not None:
                 try:
                     buffer = StringIO(body.decode("utf-8"))
-                    df = cudf.io.read_json(buffer, orient='records', lines=True)
+                    df = self._df_pkg.read_json(buffer, orient='records', lines=True)
                     yield MessageMeta(df=df)
                 except Exception as ex:
                     logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
@@ -799,20 +805,20 @@ import mrc
 import pandas as pd
 import pika
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.utils.type_utils import get_df_pkg
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("from-rabbitmq")
-class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
+class RabbitMQSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource):
     """
     Source stage used to load messages from a RabbitMQ queue.
 
@@ -854,6 +860,9 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._poll_interval = pd.Timedelta(poll_interval)
 
+        # This will return either cudf.DataFrame or pandas.DataFrame depending on the execution mode
+        self._df_pkg = get_df_pkg(config.execution_mode)
+
     @property
     def name(self) -> str:
         return "from-rabbitmq"
@@ -874,7 +883,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
                 if method_frame is not None:
                     try:
                         buffer = StringIO(body.decode("utf-8"))
-                        df = cudf.io.read_json(buffer, orient='records', lines=True)
+                        df = self._df_pkg.read_json(buffer, orient='records', lines=True)
                         yield MessageMeta(df=df)
                     except Exception as ex:
                         logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
@@ -889,7 +898,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 ```
 
 ### Function Based Approach
-Similar to the `stage` decorator used in previous examples Morpheus provides a `source` decorator which wraps a generator function to be used as a source stage. In the class based approach we explicitly added the `PreallocatorMixin`, when using the `source` decorator the return type annotation will be inspected and a stage will be created with the `PreallocatorMixin` if the return type is a `DataFrame` type or a message which contains a `DataFrame` (`MessageMeta` and `ControlMessage`).
+Similar to the `stage` decorator used in previous examples Morpheus provides a `source` decorator which wraps a generator function to be used as a source stage. In the class based approach we explicitly added the `PreallocatorMixin`, when using the `source` decorator the return type annotation will be inspected and a stage will be created with the `PreallocatorMixin` if the return type is a `DataFrame` type or a message which contains a `DataFrame` (`MessageMeta` and `ControlMessage`). We will also indicate which execution modes are supported by the stage by setting the `execution_modes` argument to the decorator.
 
 The code for the function will first perform the same setup as was used in the class constructor, then entering a nearly identical loop as that in the `source_generator` method.
 
@@ -903,15 +912,15 @@ import mrc
 import pandas as pd
 import pika
 
-import cudf
-
+from morpheus.config import ExecutionMode
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.stage_decorator import source
+from morpheus.utils.type_utils import get_df_pkg
 
 logger = logging.getLogger(__name__)
 
 
-@source(name="from-rabbitmq")
+@source(name="from-rabbitmq", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
 def rabbitmq_source(subscription: mrc.Subscription,
                     host: str,
                     exchange: str,
@@ -950,13 +959,15 @@ def rabbitmq_source(subscription: mrc.Subscription,
 
     poll_interval = pd.Timedelta(poll_interval)
 
+    df_pkg = get_df_pkg()
+
     try:
         while subscription.is_subscribed():
             (method_frame, _, body) = channel.basic_get(queue_name)
             if method_frame is not None:
                 try:
                     buffer = StringIO(body.decode("utf-8"))
-                    df = cudf.io.read_json(buffer, orient='records', lines=True)
+                    df = df_pkg.read_json(buffer, orient='records', lines=True)
                     yield MessageMeta(df=df)
                 except Exception as ex:
                     logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
@@ -995,16 +1006,21 @@ def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> 
     return node
 ```
 
-Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/user_guide/api_docs/dataframe/) attached to the incoming message. We then serialize to an [`io.StringIO`](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
+Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the DataFrane attached to the incoming message. We then serialize to an [`io.StringIO`](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
+
+> **Note**: This stage supports both GPU and CPU execution modes. When running in GPU mode, the payload of a `MessageMeta` object is always a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/user_guide/api_docs/dataframe/). When running in CPU mode, the payload is always a [pandas](https://pandas.pydata.org/) [DataFrane](https://pandas.pydata.org/docs/reference/frame.html). In many cases the two will be API compatible without requiring any changes to the code. In some cases however, the API may differ slightly and there is a need to know the pyaload type, care must be taken not to directly import `cudf` or any other package requiring a GPU when running in CPU mode on a system without a GPU. Morpheus provides some helper methods to assist with this, such as `morpheus.utils.type_utils.is_cudf_type`  and `morpheus.utils.type_utils.get_df_pkg_from_obj`.
 
 ```python
-def on_data(self, message: MessageMeta):
-    df = message.df
-    buffer = StringIO()
-    df.to_json(buffer, orient='records', lines=True)
-    body = buffer.getvalue().strip()
-    self._channel.basic_publish(exchange=self._exchange, routing_key=self._routing_key, body=body)
-    return message
+    def on_data(self, message: MessageMeta) -> MessageMeta:
+        df = message.df
+
+        buffer = StringIO()
+        df.to_json(buffer, orient='records', lines=True)
+        body = buffer.getvalue().strip()
+
+        self._channel.basic_publish(exchange=self._exchange, routing_key=self._routing_key, body=body)
+
+        return message
 ```
 
 The two new methods introduced in this example are the `on_error` and `on_complete` methods. For both methods, we want to make sure  the [connection](https://pika.readthedocs.io/en/stable/modules/connection.html) object is properly closed.
