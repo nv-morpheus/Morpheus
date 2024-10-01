@@ -178,7 +178,7 @@ If a Conda environment on the host machine is preferred over Docker, it is relat
 
    This creates a new environment named `morpheus`, and activates that environment.
 
-   > **Note**: The `dev_cuda-121_arch-x86_64.yaml` Conda environment file specifies all of the dependences required to build Morpheus and run Morpheus. However many of the examples, and optional packages such as `morpheus_llm` require additional dependencies. Alternately the following command can be used to create the Conda environment:
+   > **Note**: The `dev_cuda-121_arch-x86_64.yaml` Conda environment file specifies all of the dependencies required to build Morpheus and run Morpheus. However many of the examples, and optional packages such as `morpheus_llm` require additional dependencies. Alternately the following command can be used to create the Conda environment:
    ```bash
    conda env create --solver=libmamba -n morpheus --file conda/environments/all_cuda-121_arch-x86_64.yaml
    conda activate morpheus
@@ -187,7 +187,7 @@ If a Conda environment on the host machine is preferred over Docker, it is relat
    ```bash
    ./scripts/compile.sh
    ```
-   This script will build and install Morpheus into the conda environment.
+   This script will build and install Morpheus into the Conda environment.
 1. Test the build (Note: some tests will be skipped)
    Some of the tests will rely on external data sets.
    ```bash
