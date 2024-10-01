@@ -45,6 +45,7 @@ dependencies:
 - grpcio=1.59
 - gxx_linux-64=11.2
 - include-what-you-use=0.20
+- indicators=2.3
 - ipython
 - isort
 - libcudf=24.02

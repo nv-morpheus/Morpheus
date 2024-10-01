@@ -52,6 +52,7 @@ outputs:
         - cmake =3.27
         - cuda-cudart-dev {{ cuda_compiler_version }}.* # Needed by CMake to compile a test application
         - cuda-version {{ cuda_compiler_version }}.*
+        - indicators=2.3 # C++ library for progress monitoring
         - libtool # Needed for DOCA build
         - ninja =1.11
         - pkg-config =0.29 # for mrc cmake
