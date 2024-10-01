@@ -377,6 +377,35 @@ Due to the large number of dependencies, it's common to run into build issues. T
  - Message indicating `git apply ...` failed
    - Many of the dependencies require small patches to make them work. These patches must be applied once and only once. If this error displays, try deleting the offending package from the `build/_deps/<offending_package>` directory or from `.cache/cpm/<offending_package>`.
    - If all else fails, delete the entire `build/` directory and `.cache/` directory.
+ - Older build artifacts when performing an in-place build.
+   - When built with `MORPHEUS_PYTHON_INPLACE_BUILD=ON` compiled libraries will be deployed in-place in the source tree, and older build artifacts exist in the source tree. Remove these with:
+       ```bash
+       find ./python -name "*.so" -delete
+       find ./examples -name "*.so" -delete
+       ```
+ - Issues building documentation
+   - Intermediate documentation build artifacts can cause errors for Sphinx. To remove these, run:
+       ```bash
+       rm -rf build/docs/ docs/source/_modules docs/source/_lib
+       ```
+ - CI Issues
+   - To run CI locally, the `ci/scripts/run_ci_local.sh` script can be used. For example to run a local CI build:
+      ```bash
+      ci/scripts/run_ci_local.sh build
+      ```
+      - Build artifacts resulting from a local CI run can be found in the `.tmp/local_ci_tmp/` directory.
+   - To troubleshoot a particular CI stage it can be helpful to run:
+      ```bash
+      ci/scripts/run_ci_local.sh bash
+      ```
+
+      This will open a bash shell inside the CI container with all of the environment variables typically set during a CI run. From here you can run the commands that would typically be run by one of the CI scripts in `ci/scripts/github`.
+
+      To run a CI stage requiring a GPU (ex: `test`), set the `USE_GPU` environment variable to `1`:
+      ```bash
+      USE_GPU=1 ci/scripts/run_ci_local.sh bash
+      ```
+
 
 ## Licensing
 Morpheus is licensed under the Apache v2.0 license. All new source files including CMake and other build scripts should contain the Apache v2.0 license header. Any edits to existing source code should update the date range of the copyright to the current year. The format for the license header is:
