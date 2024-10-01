@@ -29,7 +29,6 @@ import cudf
 
 from _utils import assert_results
 from morpheus.config import Config
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -95,8 +94,7 @@ def _run_pipeline(config: Config,
 
     pipe.set_source(InMemorySourceStage(config, dataframes=[source_df]))
 
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=completion_task))
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
 

@@ -41,7 +41,7 @@ from morpheus.cli.utils import load_labels_file
 CppConfig.set_should_use_cpp(False)
 
 config = Config()
-config.num_threads = os.cpu_count()
+config.num_threads = len(os.sched_getaffinity(0))
 config.ae = ConfigAutoEncoder()
 config.ae.feature_columns = load_labels_file(get_package_relative_file("data/columns_ae_azure.txt"))
 ```
@@ -319,7 +319,7 @@ After training the generic model, individual user models can be trained. Individ
 ### Training Stages
 
 #### Training Stage (`DFPTraining`)
-The {py:obj}`~dfp.stages.dfp_training.DFPTraining` trains a model for each incoming `DataFrame` and emits an instance of `morpheus.messages.multi_ae_message.MultiAEMessage` containing the trained model.
+The {py:obj}`~dfp.stages.dfp_training.DFPTraining` trains a model for each incoming `DataFrame` and emits an instance of `morpheus.messages.ControlMessage` containing the trained model.
 
 | Argument | Type | Description |
 | -------- | ---- | ----------- |

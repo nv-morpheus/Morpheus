@@ -18,7 +18,7 @@ limitations under the License.
 # Example RabbitMQ stages
 This example builds upon the `examples/developer_guide/2_2_rabbitmq` example adding a C++ implementation for the `RabbitMQSourceStage` along with adding package install scripts.
 
-This example adds two flags to the `read_simple.py` script. A `--use_cpp` flag which defaults to `True` and a `--num_threads` flag which defaults to the number of cores on the system as returned by `os.cpu_count()`.
+This example adds two flags to the `read_simple.py` script. A `--use_cpp` flag which defaults to `True` and a `--num_threads` flag which defaults to the number of cores on the system as returned by `len(os.sched_getaffinity(0))`.
 
 ## Supported Environments
 | Environment | Supported | Notes |

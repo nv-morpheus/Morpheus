@@ -17,8 +17,8 @@
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 
+#include "morpheus/messages/control.hpp"     // for ControlMessage
 #include "morpheus/messages/meta.hpp"        // for MessageMeta
-#include "morpheus/messages/multi.hpp"       // for MultiMessage
 #include "morpheus/objects/table_info.hpp"   // for MutableTableInfo
 #include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
 
@@ -57,8 +57,8 @@ TEST_F(TestDevDocEx3, TestPyObjFromMultiMesg)
     using namespace pybind11::literals;
     pybind11::gil_scoped_release no_gil;
 
-    auto doc_fn = [](std::shared_ptr<MultiMessage> msg) {
-        auto mutable_info = msg->meta->get_mutable_info();
+    auto doc_fn = [](std::shared_ptr<ControlMessage> msg) {
+        auto mutable_info = msg->payload()->get_mutable_info();
 
         std::shared_ptr<MessageMeta> new_meta;
         {
@@ -79,7 +79,8 @@ TEST_F(TestDevDocEx3, TestPyObjFromMultiMesg)
     };
 
     auto msg_meta = create_mock_msg_meta({"col1", "col2", "col3"}, {"int32", "float32", "string"}, 5);
-    auto msg      = std::make_shared<MultiMessage>(msg_meta);
+    auto msg      = std::make_shared<ControlMessage>();
+    msg->payload(msg_meta);
 
     auto result = doc_fn(msg);
 

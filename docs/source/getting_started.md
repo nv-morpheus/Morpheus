@@ -279,9 +279,9 @@ The output should contain lines similar to:
 Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topic=('test_pcap',), group_id=morpheus, client_id=None, poll_interval=10millis, disable_commit=False, disable_pre_filtering=False, auto_offset_reset=AutoOffsetReset.LATEST, stop_after=0, async_commits=True)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True)>
-  └─ morpheus.MessageMeta -> morpheus.MultiMessage
+  └─ morpheus.MessageMeta -> morpheus.ControlMessage
 Added stage: <serialize-2; SerializeStage(include=(), exclude=('^ID$', '^_ts_'), fixed_columns=True)>
-  └─ morpheus.MultiMessage -> morpheus.MessageMeta
+  └─ morpheus.ControlMessage -> morpheus.MessageMeta
 Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Segment Complete!====
@@ -295,10 +295,10 @@ $ morpheus run pipeline-nlp from-kafka --bootstrap_servers localhost:9092 --inpu
 Configuring Pipeline via CLI
 Starting pipeline via CLI... Ctrl+C to Quit
 E20221214 14:53:17.425515 452045 controller.cpp:62] exception caught while performing update - this is fatal - issuing kill
-E20221214 14:53:17.425714 452045 context.cpp:125] rank: 0; size: 1; tid: 140065439217216; fid: 0x7f6144041000: set_exception issued; issuing kill to current runnable. Exception msg: RuntimeError: The to-file stage cannot handle input of <class 'morpheus.messages.multi_message.MultiMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
+E20221214 14:53:17.425714 452045 context.cpp:125] rank: 0; size: 1; tid: 140065439217216; fid: 0x7f6144041000: set_exception issued; issuing kill to current runnable. Exception msg: RuntimeError: The to-file stage cannot handle input of <class 'morpheus.messages.ControlMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
 ```
 
-This indicates that the `to-file` stage cannot accept the input type of `morpheus.messages.multi_message.MultiMessage`. This is because the `to-file` stage has no idea how to write that class to a file; it only knows how to write messages of type `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine at the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the error message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.messages.multi_message.MultiMessage`, to `morpheus.messages.message_meta.MessageMeta`, which is exactly what the `serialize` stage does.
+This indicates that the `to-file` stage cannot accept the input type of `morpheus.messages.ControlMessage`. This is because the `to-file` stage has no idea how to write that class to a file; it only knows how to write messages of type `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine at the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the error message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.messages.ControlMessage`, to `morpheus.messages.message_meta.MessageMeta`, which is exactly what the `serialize` stage does.
 
 #### Pipeline Stages
 

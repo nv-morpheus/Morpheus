@@ -48,8 +48,6 @@ export CMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES:-"RAPIDS"}
 export MORPHEUS_PYTHON_BUILD_STUBS=${MORPHEUS_PYTHON_BUILD_STUBS:-"ON"}
 export MORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR:-"${MORPHEUS_ROOT}/.cache"}
 export PARALLEL_LEVEL=${PARALLEL_LEVEL:-$(nproc)}
-export MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
-export MORPHEUS_BUILD_MORPHEUS_LLM=${MORPHEUS_BUILD_MORPHEUS_LLM:-ON}
 
 # Set CONDA_CHANNEL_ALIAS to mimic the conda config channel_alias property during the build
 CONDA_CHANNEL_ALIAS=${CONDA_CHANNEL_ALIAS:-""}
@@ -82,6 +80,31 @@ fi
 # Holds the arguments in an array to allow for complex json objects
 CONDA_ARGS_ARRAY=()
 
+if hasArg upload; then
+   # Set the conda token
+   CONDA_TOKEN=${CONDA_TOKEN:?"CONDA_TOKEN must be set to allow upload"}
+
+   # Get the label to apply to the package
+   CONDA_PKG_LABEL=${CONDA_PKG_LABEL:-"dev"}
+
+   # Ensure we have anaconda-client installed for upload
+   if [[ -z "$(conda list | grep anaconda-client)" ]]; then
+      echo -e "${y}anaconda-client not found and is required for up. Installing...${x}"
+
+      mamba install -y anaconda-client
+   fi
+
+   echo -e "${y}Uploading conda package${x}"
+
+   # Add the conda token needed for uploading
+   CONDA_ARGS_ARRAY+=("--token" "${CONDA_TOKEN}")
+
+   if [[ -n "${CONDA_PKG_LABEL}" ]]; then
+      CONDA_ARGS_ARRAY+=("--label" "${CONDA_PKG_LABEL}")
+      echo -e "${y}   Using label: ${CONDA_PKG_LABEL}${x}"
+   fi
+fi
+
 # Some default args
 CONDA_ARGS_ARRAY+=("--use-local")
 
@@ -103,18 +126,33 @@ CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}defa
 if [[ ${NUMARGS} == 0 ]]; then
    echo -e "${r}ERROR: No arguments were provided. Please provide at least one package to build. Available packages:${x}"
    echo -e "${r}   morpheus${x}"
+   echo -e "${r}   morpheus-core${x}"
    echo -e "${r}   pydebug${x}"
    echo -e "${r}Exiting...${x}"
    exit 12
 fi
 
 if hasArg morpheus; then
+   export MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
+   export MORPHEUS_BUILD_MORPHEUS_LLM=${MORPHEUS_BUILD_MORPHEUS_LLM:-ON}
    # Set GIT_VERSION to set the project version inside of meta.yaml
    export GIT_VERSION="$(get_version)"
 
    echo "Running conda-build for morpheus v${GIT_VERSION}..."
    set -x
    conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
+   set +x
+fi
+
+if hasArg morpheus-core; then
+   export MORPHEUS_SUPPORT_DOCA=-OFF
+   export MORPHEUS_BUILD_MORPHEUS_LLM=-OFF
+   # Set GIT_VERSION to set the project version inside of meta.yaml
+   export GIT_VERSION="$(get_version)"
+
+   echo "Running conda-build for morpheus-core v${GIT_VERSION}..."
+   set -x
+   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus-core
    set +x
 fi
 

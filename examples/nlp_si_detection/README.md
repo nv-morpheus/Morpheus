@@ -176,17 +176,17 @@ CPP Enabled: True
 Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
-  └─ morpheus.MessageMeta -> morpheus.MultiMessage
+  └─ morpheus.MessageMeta -> morpheus.ControlMessage
 Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
-  └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=sid-minibert-onnx, server_url=localhost:8000, force_convert_inputs=True, use_shared_memory=False)>
-  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage-> morpheus.ControlMessage
 Added stage: <add-class-5; AddClassificationsStage(threshold=0.5, labels=[], prefix=)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <serialize-6; SerializeStage(include=[], exclude=['^_ts_'], fixed_columns=True)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MessageMeta
+  └─ morpheus.ControlMessage -> morpheus.MessageMeta
 Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====

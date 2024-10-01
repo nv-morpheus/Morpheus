@@ -23,7 +23,8 @@
 #include "morpheus_llm/llm/llm_task_handler_runner.hpp"  // for LLMTaskHandlerRunner
 #include "morpheus_llm/llm/utils.hpp"
 
-#include "morpheus/messages/control.hpp"  // for ControlMessage
+#include "morpheus/messages/control.hpp"      // for ControlMessage
+#include "morpheus/utilities/json_types.hpp"  // for PythonByteContainer
 
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <nlohmann/json.hpp>

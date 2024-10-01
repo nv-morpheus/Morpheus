@@ -24,15 +24,15 @@ from common.feature_extractor import FeatureExtractor  # pylint: disable=no-name
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiMessage
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.messages import ControlMessage
+from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
 
 
 @register_stage("create-features", modes=[PipelineModes.FIL])
-class CreateFeaturesRWStage(MultiMessageStage):
+class CreateFeaturesRWStage(ControlMessageStage):
     """
-    This class extends MultiMessageStage to deal with scenario specific features from Appshiled plugins data.
+    This class extends ControlMessageStage to deal with scenario specific features from Appshiled plugins data.
 
     Parameters
     ----------
@@ -127,11 +127,11 @@ class CreateFeaturesRWStage(MultiMessageStage):
 
         return meta
 
-    def create_multi_messages(self, x: AppShieldMessageMeta) -> typing.List[MultiMessage]:
+    def create_control_messages(self, app_shield_message_meta: AppShieldMessageMeta) -> typing.List[ControlMessage]:
 
-        multi_messages = []
+        control_messages = []
 
-        df = x.df
+        df = app_shield_message_meta.df
 
         pid_processes = df.pid_process.unique()
 
@@ -142,12 +142,14 @@ class CreateFeaturesRWStage(MultiMessageStage):
 
             start = pid_process_index.min()
             stop = pid_process_index.max() + 1
-            mess_count = stop - start
 
-            multi_message = MultiMessage(meta=x, mess_offset=start, mess_count=mess_count)
-            multi_messages.append(multi_message)
+            sliced_meta = app_shield_message_meta.get_slice(start, stop)
+            control_message = ControlMessage()
+            control_message.payload(sliced_meta)
 
-        return multi_messages
+            control_messages.append(control_message)
+
+        return control_messages
 
     def on_completed(self):
         # Close dask client when pipeline initiates shutdown
@@ -156,7 +158,7 @@ class CreateFeaturesRWStage(MultiMessageStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name,
                                  ops.map(self.on_next),
-                                 ops.map(self.create_multi_messages),
+                                 ops.map(self.create_control_messages),
                                  ops.on_completed(self.on_completed),
                                  ops.flatten())
         builder.make_edge(input_node, node)

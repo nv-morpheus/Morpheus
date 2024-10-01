@@ -45,13 +45,6 @@ addopts = "--benchmark-disable"
 
 asyncio_mode = "auto"
 
-[tool.yapfignore]
-ignore_patterns = [
-  "**/*.pyx",
-  "**/*.pxd",
-  "**/_version.py",
-]
-
 [tool.mypy]
 # Allow None for argument default values
 implicit_optional = true
@@ -738,6 +731,7 @@ default_section = "THIRDPARTY"
 sections= ["FUTURE", "STDLIB", "THIRDPARTY", "DASK", "RAPIDS", "FIRSTPARTY", "LOCALFOLDER"]
 skip= [
     "__init__.py",
+    "__init__.pyi",
     # Skip _version.py as it is auto-generated
     "_version.py",
     ".eggs",
@@ -753,3 +747,81 @@ skip= [
     "models",
     "thirdparty"
 ]
+
+[tool.flake8]
+filename=[
+  "*.py",
+  "*.pyx",
+  "*.pxd"
+]
+# TODO: Remove dfencoder https://github.com/nv-morpheus/Morpheus/issues/786
+exclude=[
+   "__pycache__",
+   ".git",
+   ".tmp/",
+   "*.egg",
+   "build/",
+   "cpp",
+   "docs",
+   "models/",
+   "python/morpheus/morpheus/models/dfencoder/*.py",
+   "thirdparty"
+]
+max-line-length=120
+max-doc-length=120
+
+extend-ignore=[
+    # Ignore missing docstrings __init__ methods as we document those on the class
+    "D107",
+    # Don't require quotes to be placed on the same line as a one-line docstring, useful when the docstring is close
+    # to the line limit
+    "D200",
+    # Allow a blank line between a docstring and the code
+    "D202",
+    # D204: 1 blank line required after class docstring
+    "D204",
+    # D205: 1 blank line required between summary line and description (allow for a paragraph)
+    "D205",
+    # D400: First line should end with a period (only works if we're adhering to D205)
+    "D400",
+    # D401: First line should be in imperative mood
+    "D401"
+]
+
+# Cython Rules ignored:
+# E999: invalid syntax (works for Python, not Cython)
+# E225: Missing whitespace around operators (breaks cython casting syntax like <int>)
+# E226: Missing whitespace around arithmetic operators (breaks cython pointer syntax like int*)
+# E227: Missing whitespace around bitwise or shift operator (Can also break casting syntax)
+# W503: line break before binary operator (breaks lines that start with a pointer)
+# W504: line break after binary operator (breaks lines that end with a pointer)
+
+per-file-ignores =[
+    # imported but unused
+    "__init__.py: F401, E402",
+    # Ignore additional deps needed for examples
+    "examples/*.py: F821",
+    # Cython Exclusions
+    "*.pyx: E999, E225, E226, E227, W503, W504",
+    "*.pxd: E999, E225, E226, E227, W503, W504",
+    # Remove some documentation requirements for tests
+    # D100: Missing docstring in public module
+    # D101: Missing docstring in public class
+    # D102: Missing docstring in public method
+    # D103: Missing docstring in public function
+    "tests/*.py: D100, D101, D102, D103"
+]
+
+[tool.yapfignore]
+ignore_patterns = [
+  "**/*.pyx",
+  "**/*.pxd",
+  "**/_version.py"
+]
+
+[tool.yapf]
+based_on_style="pep8"
+column_limit=120
+split_all_top_level_comma_separated_values=true
+join_multiple_lines=true
+indent_dictionary_value=true

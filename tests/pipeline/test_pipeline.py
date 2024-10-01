@@ -19,26 +19,22 @@ import typing
 
 import pytest
 
-from _utils import assert_results
+from _utils.stages.control_message_pass_thru import ControlMessagePassThruStage
 from _utils.stages.conv_msg import ConvMsg
 from _utils.stages.in_memory_multi_source_stage import InMemoryMultiSourceStage
 from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
-from _utils.stages.multi_message_pass_thru import MultiMessagePassThruStage
 from _utils.stages.multi_port_pass_thru import MultiPortPassThruStage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline import Pipeline
+from morpheus.pipeline.stage_decorator import source
+from morpheus.pipeline.stage_decorator import stage
 from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryEgressStage
 from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryIngressStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.type_aliases import DataFrameType
 
 
@@ -170,29 +166,31 @@ def test_startup_cb_called(filter_probs_df: DataFrameType):
 
 
 @pytest.mark.use_cudf
-def test_pipeline_narrowing_types(config: Config, filter_probs_df: DataFrameType):
+def test_pipeline_narrowing_types(config: Config):
     """
     Test to ensure that we aren't narrowing the types of messages in the pipeline.
-
-    In this case, `ConvMsg` emits `MultiResponseMessage` messages which are a subclass of `MultiMessage`,
-    which is the accepted type for `MultiMessagePassThruStage`. We want to ensure that the type is retained allowing us
-    to place a stage after `MultiMessagePassThruStage` requring `MultiResponseMessage` like `AddScoresStage`.
+    In this case, `derived_control_message_source` emits `DerivedControlMessage` messages which are a (dummy)
+    subclass of `ControlMessage`, which is the accepted type for `ControlMessagePassThruStage`.
+    We want to ensure that the type is retained allowing us to place a stage after `ControlMessagePassThruStage`
+    requring `DerivedControlMessage`.
     """
-    config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
-    expected_df = filter_probs_df.to_pandas()
-    expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, config.class_labels)))
-
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config))
-    pipe.add_stage(MultiMessagePassThruStage(config))
-    pipe.add_stage(AddScoresStage(config))
-    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
-    compare_stage = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
-    pipe.run()
 
-    assert_results(compare_stage.get_results())
+    class DerivedControlMessage(ControlMessage):
+        pass
+
+    @source
+    def derived_control_message_source() -> DerivedControlMessage:
+        yield DerivedControlMessage()
+
+    @stage
+    def derived_control_message_sink(msg: DerivedControlMessage) -> DerivedControlMessage:
+        return msg
+
+    pipe.set_source(derived_control_message_source(config))  # pylint: disable=E1121
+    pipe.add_stage(ControlMessagePassThruStage(config))
+    pipe.add_stage(derived_control_message_sink(config))
+    pipe.run()
 
 
 @pytest.mark.parametrize("num_outputs", [0, 2, 3])
@@ -227,7 +225,7 @@ def test_add_edge_input_port_errors(config: Config, num_inputs: int):
         pipe.add_edge(start_stage.output_ports[0], end_stage)
 
 
-@pytest.mark.parametrize("data_type", [int, float, str, MessageMeta, ControlMessage, MultiMessage])
+@pytest.mark.parametrize("data_type", [int, float, str, MessageMeta, ControlMessage])
 def test_add_segment_edge(config: Config, data_type: type):
     pipe = Pipeline(config)
 

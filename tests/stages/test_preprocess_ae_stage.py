@@ -25,7 +25,6 @@ from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiAEMessage
 from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 
 
@@ -42,33 +41,24 @@ def test_constructor(config: Config):
     assert stage.name == "preprocess-ae"
 
     accepted_union = typing.Union[stage.accepted_types()]
-    assert typing_utils.issubtype(MultiAEMessage, accepted_union)
     assert typing_utils.issubtype(ControlMessage, accepted_union)
 
 
-def test_process_control_message_and_multi_message(config: Config):
+def test_process_control_message(config: Config):
     stage = PreprocessAEStage(config)
 
     df = cudf.DataFrame({"data": ["a", "b", "c"]})
     meta = MessageMeta(df)
-
-    input_multi_ae_message = MultiAEMessage(meta=meta,
-                                            mess_offset=0,
-                                            mess_count=3,
-                                            model=None,
-                                            train_scores_mean=0.0,
-                                            train_scores_std=1.0)
-
-    output_multi_inference_ae_message = stage.pre_process_batch(input_multi_ae_message,
-                                                                fea_len=256,
-                                                                feature_columns=["data"])
 
     input_control_message = ControlMessage()
     input_control_message.payload(meta)
 
     output_control_message = stage.pre_process_batch(input_control_message, fea_len=256, feature_columns=["data"])
 
-    # Check if each tensor in the control message is equal to the corresponding tensor in the inference message
-    for tensor_key in output_control_message.tensors().tensor_names:
-        assert cp.array_equal(output_control_message.tensors().get_tensor(tensor_key),
-                              getattr(output_multi_inference_ae_message, tensor_key))
+    expected_input = cp.zeros(df.shape, dtype=cp.float32)
+    assert cp.array_equal(output_control_message.tensors().get_tensor("input"), expected_input)
+
+    expect_seq_ids = cp.zeros((df.shape[0], 3), dtype=cp.uint32)
+    expect_seq_ids[:, 0] = cp.arange(0, df.shape[0], dtype=cp.uint32)
+    expect_seq_ids[:, 2] = stage._fea_length - 1
+    assert cp.array_equal(output_control_message.tensors().get_tensor("seq_ids"), expect_seq_ids)

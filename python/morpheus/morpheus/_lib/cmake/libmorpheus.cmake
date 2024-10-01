@@ -35,13 +35,6 @@ add_library(morpheus
   src/messages/memory/response_memory.cpp
   src/messages/memory/tensor_memory.cpp
   src/messages/meta.cpp
-  src/messages/multi_inference_fil.cpp
-  src/messages/multi_inference_nlp.cpp
-  src/messages/multi_inference.cpp
-  src/messages/multi_response_probs.cpp
-  src/messages/multi_response.cpp
-  src/messages/multi_tensor.cpp
-  src/messages/multi.cpp
   src/messages/raw_packet.cpp
   src/modules/data_loader_module.cpp
   src/objects/data_table.cpp

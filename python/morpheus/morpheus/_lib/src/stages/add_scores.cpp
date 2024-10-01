@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,43 +17,30 @@
 
 #include "morpheus/stages/add_scores.hpp"
 
-#include "mrc/segment/builder.hpp"
-#include "mrc/segment/object.hpp"
+#include "mrc/segment/builder.hpp"  // for Builder
+#include "mrc/segment/object.hpp"   // for Object
 
-#include "morpheus/messages/control.hpp"
-#include "morpheus/stages/add_scores_stage_base.hpp"
+#include "morpheus/stages/add_scores_stage_base.hpp"  // for AddScoresStageBase
 
-#include <cstddef>  // for size_t
-#include <map>
-#include <memory>
-#include <optional>
-#include <utility>  // for move
-// IWYU thinks we need __alloc_traits<>::value_type for vector assignments
-// IWYU pragma: no_include <ext/alloc_traits.h>
+#include <cstddef>   // for size_t
+#include <map>       // for map
+#include <memory>    // for shared_ptr
+#include <optional>  // for nullopt, optional
+#include <utility>   // for move
 
 namespace morpheus {
 
 // Component public implementations
 // ************ AddScoresStage **************************** //
-template <typename InputT, typename OutputT>
-AddScoresStage<InputT, OutputT>::AddScoresStage(std::map<std::size_t, std::string> idx2label) :
-  AddScoresStageBase<InputT, OutputT>(std::move(idx2label), std::nullopt)
+AddScoresStage::AddScoresStage(std::map<std::size_t, std::string> idx2label) :
+  AddScoresStageBase(std::move(idx2label), std::nullopt)
 {}
 
-template class AddScoresStage<MultiResponseMessage, MultiResponseMessage>;
-template class AddScoresStage<ControlMessage, ControlMessage>;
-
 // ************ AddScoresStageInterfaceProxy ************* //
-std::shared_ptr<mrc::segment::Object<AddScoresStageMM>> AddScoresStageInterfaceProxy::init_multi(
+std::shared_ptr<mrc::segment::Object<AddScoresStage>> AddScoresStageInterfaceProxy::init(
     mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label)
 {
-    return builder.construct_object<AddScoresStageMM>(name, std::move(idx2label));
-}
-
-std::shared_ptr<mrc::segment::Object<AddScoresStageCM>> AddScoresStageInterfaceProxy::init_cm(
-    mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label)
-{
-    return builder.construct_object<AddScoresStageCM>(name, std::move(idx2label));
+    return builder.construct_object<AddScoresStage>(name, std::move(idx2label));
 }
 
 }  // namespace morpheus

@@ -26,10 +26,10 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import UserMessageMeta
-from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.seed import manual_seed
 
@@ -123,7 +123,7 @@ class _UserModelManager:
 
 
 @register_stage("train-ae", modes=[PipelineModes.AE])
-class TrainAEStage(MultiMessageStage):
+class TrainAEStage(ControlMessageStage):
     """
     Train an Autoencoder model on incoming data.
 
@@ -210,7 +210,7 @@ class TrainAEStage(MultiMessageStage):
         return (UserMessageMeta, )
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MultiAEMessage)
+        schema.output_schema.set_type(ControlMessage)
 
     def supports_cpp_node(self):
         return False
@@ -234,7 +234,7 @@ class TrainAEStage(MultiMessageStage):
 
         return model, train_scores_mean, train_scores_std
 
-    def _train_model(self, x: UserMessageMeta) -> typing.List[MultiAEMessage]:
+    def _train_model(self, x: UserMessageMeta) -> list[ControlMessage]:
 
         if (x.user_id not in self._user_models):
             self._user_models[x.user_id] = _UserModelManager(self._config,
@@ -316,17 +316,26 @@ class TrainAEStage(MultiMessageStage):
 
             model, scores_mean, scores_std = get_model_fn(x)
 
-            full_message = MultiAEMessage(meta=x,
-                                          model=model,
-                                          train_scores_mean=scores_mean,
-                                          train_scores_std=scores_std)
+            # cuDF does not yet support timezone-aware datetimes
+            # Remove timezone information from pd.DatetimeTZDtype columns
+            with x.mutable_dataframe() as df:
+                for col in [col for col in df.columns if isinstance(df[col].dtype, pd.DatetimeTZDtype)]:
+                    df[col] = df[col].dt.tz_convert(None)
+
+            full_message = ControlMessage()
+            full_message.payload(x)
+            full_message.set_metadata("model", model)
+            full_message.set_metadata("train_scores_mean", scores_mean)
+            full_message.set_metadata("train_scores_std", scores_std)
 
             to_send = []
 
             # Now split into batches
-            for i in range(0, full_message.mess_count, self._batch_size):
-
-                to_send.append(full_message.get_slice(i, min(i + self._batch_size, full_message.mess_count)))
+            for i in range(0, full_message.payload().count, self._batch_size):
+                output_message = ControlMessage(full_message)
+                output_message.payload(full_message.payload().get_slice(
+                    i, min(i + self._batch_size, full_message.payload().count)))
+                to_send.append(output_message)
 
             return to_send
 

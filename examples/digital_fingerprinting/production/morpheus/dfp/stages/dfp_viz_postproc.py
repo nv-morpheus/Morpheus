@@ -23,7 +23,7 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.io import serializers
-from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -71,33 +71,34 @@ class DFPVizPostprocStage(PassThruTypeMixin, SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiAEMessage`, ]
+        typing.Tuple[`morpheus.messages.ControlMessage`, ]
             Accepted input types.
 
         """
-        return (MultiAEMessage, )
+        return (ControlMessage, )
 
     def supports_cpp_node(self):
         """Whether this stage supports a C++ node."""
         return False
 
-    def _postprocess(self, x: MultiAEMessage) -> pd.DataFrame:
+    def _postprocess(self, msg: ControlMessage) -> pd.DataFrame:
 
+        pdf = msg.payload().copy_dataframe().to_pandas()
         viz_pdf = pd.DataFrame()
-        viz_pdf[["user", "time"]] = x.get_meta([self._user_column_name, self._timestamp_column])
+        viz_pdf[["user", "time"]] = pdf[[self._user_column_name, self._timestamp_column]]
         datetimes = pd.to_datetime(viz_pdf["time"], errors='coerce')
         viz_pdf["period"] = datetimes.dt.to_period(self._period)
 
         for f in self._feature_columns:
-            viz_pdf[f + "_score"] = x.get_meta(f + "_z_loss")
+            viz_pdf[f + "_score"] = pdf[f + "_z_loss"]
 
-        viz_pdf["anomalyScore"] = x.get_meta("mean_abs_z")
+        viz_pdf["anomalyScore"] = pdf["mean_abs_z"]
 
         return viz_pdf
 
-    def _write_to_files(self, x: MultiAEMessage):
+    def _write_to_files(self, msg: ControlMessage):
 
-        df = self._postprocess(x)
+        df = self._postprocess(msg)
 
         unique_periods = df["period"].unique()
 
@@ -116,7 +117,7 @@ class DFPVizPostprocStage(PassThruTypeMixin, SinglePortStage):
             with open(output_file, "a", encoding='UTF-8') as out_file:
                 out_file.writelines(lines)
 
-        return x
+        return msg
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         dfp_viz_postproc = builder.make_node(self.unique_name, ops.map(self._write_to_files))
