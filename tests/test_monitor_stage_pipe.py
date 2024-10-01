@@ -88,8 +88,7 @@ def test_monitor_stage_pipe(config):
     pipe.add_stage(MonitorStage(config, description="postprocess", unit="records"))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
-        MonitorStage(config, description="sink", unit="MessageMeta",
-                     determine_count_fn=customized_determine_count_fn))
+        MonitorStage(config, description="sink", unit="MessageMeta", determine_count_fn=customized_determine_count_fn))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
