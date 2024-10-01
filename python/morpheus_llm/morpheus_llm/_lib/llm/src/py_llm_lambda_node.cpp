@@ -97,7 +97,7 @@ Task<std::shared_ptr<LLMContext>> PyLLMLambdaNode::execute(std::shared_ptr<LLMCo
     pybind11::gil_scoped_acquire gil;
 
     // Convert to python dictionary
-    auto py_inputs = inputs.to_python();
+    auto py_inputs = utilities::cast_from_json(std::move(inputs));
 
     // Call the function
     auto py_coro = m_fn(**py_inputs);
@@ -121,7 +121,7 @@ Task<std::shared_ptr<LLMContext>> PyLLMLambdaNode::execute(std::shared_ptr<LLMCo
     }
 
     // Convert back to JSON
-    auto return_val = mrc::pymrc::JSONValues(std::move(o_result));
+    auto return_val = utilities::cast_from_pyobject(std::move(o_result));
 
     // Set the object back into the context outputs
     context->set_output(std::move(return_val));

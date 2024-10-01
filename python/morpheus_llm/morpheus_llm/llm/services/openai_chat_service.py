@@ -211,17 +211,19 @@ class OpenAIChatClient(LLMClient):
         return content
 
     @typing.overload
-    def _generate(self,
-                  prompt: str,
-                  assistant: str = None,
-                  return_exceptions: typing.Literal[True] = True) -> str | BaseException:
+    def _generate(self, prompt: str, assistant: str | None,
+                  return_exceptions: typing.Literal[True]) -> str | BaseException:
         ...
 
     @typing.overload
-    def _generate(self, prompt: str, assistant: str = None, return_exceptions: typing.Literal[False] = False) -> str:
+    def _generate(self, prompt: str, assistant: str | None, return_exceptions: typing.Literal[False]) -> str:
         ...
 
-    def _generate(self, prompt: str, assistant: str = None, return_exceptions: bool = False):
+    @typing.overload
+    def _generate(self, prompt: str, assistant: str | None, return_exceptions: bool) -> str | BaseException:
+        ...
+
+    def _generate(self, prompt: str, assistant: str = None, return_exceptions=False) -> str | BaseException:
 
         try:
             messages = self._create_messages(prompt, assistant)
@@ -246,9 +248,11 @@ class OpenAIChatClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        return self._generate(input_dict[self._prompt_key],
-                              input_dict.get(self._assistant_key),
-                              return_exceptions=False)
+
+        prompt: str = input_dict[self._prompt_key]
+        assistant: str = input_dict[self._assistant_key]
+
+        return self._generate(prompt=prompt, assistant=assistant, return_exceptions=False)
 
     async def _generate_async(self, prompt: str, assistant: str = None) -> str:
 
@@ -280,13 +284,16 @@ class OpenAIChatClient(LLMClient):
         return await self._generate_async(input_dict[self._prompt_key], input_dict.get(self._assistant_key))
 
     @typing.overload
-    def generate_batch(self,
-                       inputs: dict[str, list],
-                       return_exceptions: typing.Literal[True] = True) -> list[str | BaseException]:
+    def generate_batch(self, inputs: dict[str, list],
+                       return_exceptions: typing.Literal[True]) -> list[str | BaseException]:
         ...
 
     @typing.overload
-    def generate_batch(self, inputs: dict[str, list], return_exceptions: typing.Literal[False] = False) -> list[str]:
+    def generate_batch(self, inputs: dict[str, list], return_exceptions: typing.Literal[False]) -> list[str]:
+        ...
+
+    @typing.overload
+    def generate_batch(self, inputs: dict[str, list], return_exceptions: bool=False) -> list[str] | list[str | BaseException]:
         ...
 
     def generate_batch(self, inputs: dict[str, list], return_exceptions=False) -> list[str] | list[str | BaseException]:
@@ -309,24 +316,28 @@ class OpenAIChatClient(LLMClient):
 
         results = []
         for (i, prompt) in enumerate(prompts):
-            assistant = assistants[i] if assistants is not None else None
+            p: str = prompt
+            assistant: str | None = assistants[i] if assistants is not None else None
             if (return_exceptions):
-                results.append(self._generate(prompt, assistant, return_exceptions=True))
+                results.append(self._generate(p, assistant, return_exceptions=True))
             else:
-                results.append(self._generate(prompt, assistant, return_exceptions=False))
+                results.append(self._generate(p, assistant, return_exceptions=False))
 
         return results
 
     @typing.overload
-    async def generate_batch_async(self,
-                                   inputs: dict[str, list],
-                                   return_exceptions: typing.Literal[True] = True) -> list[str | BaseException]:
+    async def generate_batch_async(self, inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[True]) -> list[str | BaseException]:
         ...
 
     @typing.overload
-    async def generate_batch_async(self,
-                                   inputs: dict[str, list],
-                                   return_exceptions: typing.Literal[False] = False) -> list[str]:
+    async def generate_batch_async(self, inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[False]) -> list[str]:
+        ...
+
+    @typing.overload
+    async def generate_batch_async(self, inputs: dict[str, list],
+                                   return_exceptions: bool=False) -> list[str] | list[str | BaseException]:
         ...
 
     async def generate_batch_async(self,
@@ -382,15 +393,15 @@ class OpenAIChatService(LLMService):
     """
 
     class APIKey(EnvConfigValue):
-        _ENV_KEY: str = "OPENAI_API_KEY"
+        _ENV_KEY = "OPENAI_API_KEY"
 
     class OrgId(EnvConfigValue):
-        _ENV_KEY: str = "OPENAI_ORG_ID"
-        _ALLOW_NONE: bool = True
+        _ENV_KEY = "OPENAI_ORG_ID"
+        _ALLOW_NONE = True
 
     class BaseURL(EnvConfigValue):
-        _ENV_KEY: str = "OPENAI_BASE_URL"
-        _ALLOW_NONE: bool = True
+        _ENV_KEY = "OPENAI_BASE_URL"
+        _ALLOW_NONE = True
 
     def __init__(self,
                  *,

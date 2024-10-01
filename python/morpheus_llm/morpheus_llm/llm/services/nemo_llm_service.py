@@ -91,13 +91,18 @@ class NeMoLLMClient(LLMClient):
                                                 return_exceptions=False))[0]
 
     @typing.overload
-    def generate_batch(self,
-                       inputs: dict[str, list],
-                       return_exceptions: typing.Literal[True] = True) -> list[str | BaseException]:
+    def generate_batch(self, inputs: dict[str, list],
+                       return_exceptions: typing.Literal[True]) -> list[str | BaseException]:
         ...
 
     @typing.overload
-    def generate_batch(self, inputs: dict[str, list], return_exceptions: typing.Literal[False] = False) -> list[str]:
+    def generate_batch(self, inputs: dict[str, list], return_exceptions: typing.Literal[False]) -> list[str]:
+        ...
+
+    @typing.overload
+    def generate_batch(self,
+                       inputs: dict[str, list],
+                       return_exceptions: bool = False) -> list[str] | list[str | BaseException]:
         ...
 
     def generate_batch(self, inputs: dict[str, list], return_exceptions=False) -> list[str] | list[str | BaseException]:
@@ -116,7 +121,7 @@ class NeMoLLMClient(LLMClient):
         # As soon as one of the requests fails, the entire batch fails. Instead, we need to implement the functionality
         # listed in issue #1555 For now, we generate a warning if `return_exceptions` is True.
         if (return_exceptions):
-            warnings.warn("return_exceptions==True is not currently supported by the NeMoLLMClient. "
+            warnings.warn("return_exceptions==True is not currently supported by the NeMoLLMClient.generate_batch()."
                           "If an exception is raised for any item, the function will exit and raise that exception.")
 
         return typing.cast(
@@ -152,15 +157,19 @@ class NeMoLLMClient(LLMClient):
             f"Errors: {errors}")
 
     @typing.overload
-    async def generate_batch_async(self,
-                                   inputs: dict[str, list],
-                                   return_exceptions: typing.Literal[True] = True) -> list[str | BaseException]:
+    async def generate_batch_async(self, inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[True]) -> list[str | BaseException]:
+        ...
+
+    @typing.overload
+    async def generate_batch_async(self, inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[False]) -> list[str]:
         ...
 
     @typing.overload
     async def generate_batch_async(self,
                                    inputs: dict[str, list],
-                                   return_exceptions: typing.Literal[False] = False) -> list[str]:
+                                   return_exceptions: bool = False) -> list[str] | list[str | BaseException]:
         ...
 
     async def generate_batch_async(self,
@@ -207,16 +216,16 @@ class NeMoLLMService(LLMService):
     """
 
     class APIKey(EnvConfigValue):
-        _ENV_KEY: str = "NGC_API_KEY"
-        _ALLOW_NONE: bool = True
+        _ENV_KEY = "NGC_API_KEY"
+        _ALLOW_NONE = True
 
     class OrgId(EnvConfigValue):
-        _ENV_KEY: str = "NGC_ORG_ID"
-        _ALLOW_NONE: bool = True
+        _ENV_KEY = "NGC_ORG_ID"
+        _ALLOW_NONE = True
 
     class BaseURL(EnvConfigValue):
-        _ENV_KEY: str = "NGC_API_BASE"
-        _ALLOW_NONE: bool = True
+        _ENV_KEY = "NGC_API_BASE"
+        _ALLOW_NONE = True
 
     def __init__(self,
                  *,

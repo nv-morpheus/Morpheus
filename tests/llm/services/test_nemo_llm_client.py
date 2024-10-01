@@ -57,6 +57,34 @@ def test_generate_batch(mock_nemollm: mock.MagicMock):
                                                            customization_id="test_custom_id")
 
 
+def test_generate_batch_exception(mock_nemollm: mock.MagicMock):
+
+    def mock_post_process_generate_response(*args, **_):
+        if ("error" in args[0]):
+            raise RuntimeError("unittest")
+        elif ("fail" in args[0]):
+            return {"status": "fail", "msg": "unittest"}
+
+        return {"status": "success", "text": args[0]}
+
+    mock_nemollm.post_process_generate_response.side_effect = mock_post_process_generate_response
+
+    client = NeMoLLMService(api_key="dummy").get_client(model_name="test_model", customization_id="test_custom_id")
+
+    # Test warning, return_exceptions=True
+    with pytest.warns(UserWarning):
+        assert client.generate_batch({'prompt': ["prompt1", "prompt2", "prompt3"]},
+                                     return_exceptions=True) == ["prompt1", "prompt2", "prompt3"]
+
+    # Test failures, return_exceptions=False
+    with pytest.raises(RuntimeError, match="unittest"):
+        client.generate_batch({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=False)
+
+    # Test exceptions, return_exceptions=False
+    with pytest.raises(RuntimeError, match="unittest"):
+        client.generate_batch({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=False)
+
+
 async def test_generate_async(mock_nemollm: mock.MagicMock):
 
     client = NeMoLLMService(api_key="dummy").get_client(model_name="test_model", customization_id="test_custom_id")
@@ -86,13 +114,35 @@ async def test_generate_batch_async(mock_nemollm: mock.MagicMock):
     ])
 
 
-async def test_generate_batch_async_error(mock_nemollm: mock.MagicMock):
-    mock_nemollm.post_process_generate_response.return_value = {"status": "fail", "msg": "unittest"}
+async def test_generate_batch_async_exception(mock_nemollm: mock.MagicMock):
+
+    def mock_post_process_generate_response(*args, **_):
+        if ("error" in args[0]):
+            raise RuntimeError("unittest")
+        elif ("fail" in args[0]):
+            return {"status": "fail", "msg": "unittest"}
+
+        return {"status": "success", "text": args[0]}
+
+    mock_nemollm.post_process_generate_response.side_effect = mock_post_process_generate_response
 
     client = NeMoLLMService(api_key="dummy").get_client(model_name="test_model", customization_id="test_custom_id")
 
+    # Test failures, return_exceptions=True
+    results = await client.generate_batch_async({'prompt': ["prompt1", "fail", "prompt3"]}, return_exceptions=True)
+    assert isinstance(results[1], RuntimeError)
+
+    # Test failures, return_exceptions=False
     with pytest.raises(RuntimeError, match="unittest"):
-        await client.generate_batch_async({'prompt': ["prompt1", "prompt2"]})
+        await client.generate_batch_async({'prompt': ["prompt1", "fail", "prompt3"]}, return_exceptions=False)
+
+    # Test exceptions, return_exceptions=True
+    results = await client.generate_batch_async({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=True)
+    assert isinstance(results[1], RuntimeError)
+
+    # Test exceptions, return_exceptions=False
+    with pytest.raises(RuntimeError, match="unittest"):
+        await client.generate_batch_async({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=False)
 
 
 async def test_generate_batch_async_error_retry(mock_nemollm: mock.MagicMock):

@@ -15,6 +15,7 @@
 
 import asyncio
 import os
+import time
 from unittest import mock
 
 import pytest
@@ -200,6 +201,86 @@ def test_generate_batch(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMo
         mock_async_client.chat.completions.create.assert_not_called()
 
     assert results == expected_results
+
+
+def test_generate_batch_exception(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], ):
+
+    from openai.types.chat.chat_completion import ChatCompletion
+    from openai.types.chat.chat_completion import Choice
+    from openai.types.chat.chat_completion_message import ChatCompletionMessage
+
+    (mock_client, mock_async_client) = mock_chat_completion
+
+    def mock_create(*args, messages, **kwargs):
+
+        choices = []
+
+        for i, p in enumerate(messages):
+            if ("error" in p["content"]):
+                raise RuntimeError("unittest")
+
+            choices.append(
+                Choice(index=i,
+                       finish_reason="stop",
+                       message=ChatCompletionMessage(content=p["content"], role="assistant")))
+
+        return ChatCompletion(id="test_id",
+                              model="test_model",
+                              object="chat.completion",
+                              choices=choices,
+                              created=int(time.time()))
+
+    mock_client.chat.completions.create.side_effect = mock_create
+
+    client = OpenAIChatService().get_client(model_name="test_model")
+
+    # Return_exceptions=True
+    results = client.generate_batch({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=True)
+    assert isinstance(results[1], RuntimeError)
+
+    # Test exceptions, return_exceptions=False
+    with pytest.raises(RuntimeError, match="unittest"):
+        client.generate_batch({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=False)
+
+
+async def test_generate_batch_async_exception(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], ):
+
+    from openai.types.chat.chat_completion import ChatCompletion
+    from openai.types.chat.chat_completion import Choice
+    from openai.types.chat.chat_completion_message import ChatCompletionMessage
+
+    (mock_client, mock_async_client) = mock_chat_completion
+
+    async def mock_create(*args, messages, **kwargs):
+
+        choices = []
+
+        for i, p in enumerate(messages):
+            if ("error" in p["content"]):
+                raise RuntimeError("unittest")
+
+            choices.append(
+                Choice(index=i,
+                       finish_reason="stop",
+                       message=ChatCompletionMessage(content=p["content"], role="assistant")))
+
+        return ChatCompletion(id="test_id",
+                              model="test_model",
+                              object="chat.completion",
+                              choices=choices,
+                              created=int(time.time()))
+
+    mock_async_client.chat.completions.create.side_effect = mock_create
+
+    client = OpenAIChatService().get_client(model_name="test_model")
+
+    # Return_exceptions=True
+    results = await client.generate_batch_async({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=True)
+    assert isinstance(results[1], RuntimeError)
+
+    # Test exceptions, return_exceptions=False
+    with pytest.raises(RuntimeError, match="unittest"):
+        await client.generate_batch_async({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=False)
 
 
 @pytest.mark.parametrize("completion", [[], [None]], ids=["no_choices", "no_content"])

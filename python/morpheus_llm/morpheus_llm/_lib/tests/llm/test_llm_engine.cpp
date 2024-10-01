@@ -28,7 +28,6 @@
 #include <mrc/coroutines/event.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
 #include <mrc/coroutines/task.hpp>
-#include <pymrc/utilities/json_values.hpp>  // for JSONValues
 
 #include <atomic>
 #include <coroutine>
@@ -89,7 +88,7 @@ TEST_F(TestLLMEngine, AsyncTest)
     EXPECT_TRUE(return_val.is_ready());
     EXPECT_EQ(counter, 2);
 
-    const auto& json_outputs = out_context->view_outputs().view_json();
+    const auto& json_outputs = out_context->view_outputs();
     EXPECT_EQ(json_outputs["start"], 123);
     EXPECT_EQ(json_outputs["test"], 124);
 }

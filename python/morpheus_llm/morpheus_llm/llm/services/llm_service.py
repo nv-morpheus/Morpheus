@@ -79,14 +79,20 @@ class LLMClient(ABC):
 
     @typing.overload
     @abstractmethod
-    def generate_batch(self,
-                       inputs: dict[str, list],
-                       return_exceptions: typing.Literal[True] = True) -> list[str | BaseException]:
+    def generate_batch(self, inputs: dict[str, list],
+                       return_exceptions: typing.Literal[True]) -> list[str | BaseException]:
         ...
 
     @typing.overload
     @abstractmethod
-    def generate_batch(self, inputs: dict[str, list], return_exceptions: typing.Literal[False] = False) -> list[str]:
+    def generate_batch(self, inputs: dict[str, list], return_exceptions: typing.Literal[False]) -> list[str]:
+        ...
+
+    @typing.overload
+    @abstractmethod
+    def generate_batch(self,
+                       inputs: dict[str, list],
+                       return_exceptions: bool = False) -> list[str] | list[str | BaseException]:
         ...
 
     @abstractmethod
@@ -110,16 +116,21 @@ class LLMClient(ABC):
 
     @typing.overload
     @abstractmethod
-    async def generate_batch_async(self,
-                                   inputs: dict[str, list],
-                                   return_exceptions: typing.Literal[True] = True) -> list[str | BaseException]:
+    async def generate_batch_async(self, inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[True]) -> list[str | BaseException]:
+        ...
+
+    @typing.overload
+    @abstractmethod
+    async def generate_batch_async(self, inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[False]) -> list[str]:
         ...
 
     @typing.overload
     @abstractmethod
     async def generate_batch_async(self,
                                    inputs: dict[str, list],
-                                   return_exceptions: typing.Literal[False] = False) -> list[str]:
+                                   return_exceptions: bool = False) -> list[str] | list[str | BaseException]:
         ...
 
     @abstractmethod

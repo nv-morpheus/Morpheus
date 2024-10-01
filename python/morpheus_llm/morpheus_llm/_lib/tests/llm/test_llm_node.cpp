@@ -27,7 +27,6 @@
 #include <gtest/gtest.h>
 #include <mrc/channel/forward.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
-#include <pymrc/utilities/json_values.hpp>  // for JSONValues
 
 #include <coroutine>
 #include <memory>
@@ -64,7 +63,7 @@ TEST_F(TestLLMNode, NoNodes)
     auto out_context = coroutines::sync_wait(node.execute(context));
 
     ASSERT_EQ(out_context, context);
-    ASSERT_EQ(out_context->view_outputs().view_json().size(), 0);
+    ASSERT_EQ(out_context->view_outputs().size(), 0);
 }
 
 TEST_F(TestLLMNode, AddNode)
@@ -163,5 +162,5 @@ TEST_F(TestLLMNode, AddChildNode)
     auto context     = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
     auto out_context = coroutines::sync_wait(node.execute(context));
 
-    ASSERT_EQ(out_context->view_outputs().view_json()["Root3"], 3);
+    ASSERT_EQ(out_context->view_outputs()["Root3"], 3);
 }

@@ -29,7 +29,6 @@
 #include <mrc/channel/forward.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
 #include <mrc/coroutines/when_all.hpp>
-#include <pymrc/utilities/json_values.hpp>  // for JSONValues
 
 #include <coroutine>
 #include <memory>
@@ -137,6 +136,6 @@ TEST_F(TestLLMNodeRunner, Execute)
 
     coroutines::sync_wait(coroutines::when_all(runner_1->execute(context), runner_2->execute(context)));
 
-    ASSERT_EQ(context->view_outputs().view_json()["Root1"], 0);
-    ASSERT_EQ(context->view_outputs().view_json()["Root2"], 1);
+    ASSERT_EQ(context->view_outputs()["Root1"], 0);
+    ASSERT_EQ(context->view_outputs()["Root2"], 1);
 }
