@@ -341,12 +341,13 @@ FROM conda_env_dev as git_clone
 ARG MORPHEUS_ROOT_HOST
 
 # Source the morpheus env to pick up the git-lfs package
-RUN --mount=type=bind,source=${MORPHEUS_ROOT_HOST},target=/opt/host_repo \
+RUN --mount=type=bind,source=.,target=/opt/host_repo \
     source activate morpheus &&\
-    git clone file:///opt/host_repo /tmp/morpheus_repo &&\
+    # Use a local clone to allow unpushed commits to be included
+    git clone file:///opt/host_repo/${MORPHEUS_ROOT_HOST} /tmp/morpheus_repo &&\
     cd /tmp/morpheus_repo &&\
     git lfs install &&\
-    /tmp/morpheus_repo/scripts/fetch_data.py fetch datasets examples
+    ./scripts/fetch_data.py fetch datasets examples
 
 # ============ Stage: runtime ============
 # Setup container for runtime environment
@@ -357,7 +358,7 @@ ARG MORPHEUS_ROOT_HOST
 # Only copy specific files/folders over that are necessary for runtime
 COPY --from=git_clone "/tmp/morpheus_repo/conda/environments/*.yaml" "./conda/environments/"
 COPY --from=git_clone "/tmp/morpheus_repo/docker" "./docker"
-COPY --from=build_docs "/workspace/build/docs/html" "./docs"
+COPY --from=build_docs "/workspace/${MORPHEUS_ROOT_HOST}/build/docs/html" "./docs"
 COPY --from=git_clone "/tmp/morpheus_repo/examples" "./examples"
 COPY --from=git_clone "/tmp/morpheus_repo/models/datasets" "./models/datasets"
 COPY --from=git_clone "/tmp/morpheus_repo/scripts" "./scripts"

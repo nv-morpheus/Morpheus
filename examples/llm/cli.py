@@ -16,6 +16,10 @@ import logging
 import time
 
 import click
+# pypdfium2 utilizes an atexit handler to perform cleanup, importing here to ensure that handler is registered before
+# after_pipeline is, and thus is executed after after_pipeline is invoked. This avoids memory leak warnings at shutdown.
+# https://github.com/nv-morpheus/Morpheus/issues/1864
+import pypdfium2  # pylint: disable=unused-import # noqa: F401
 
 from llm.agents import run as run_agents
 from llm.completion import run as run_completion
