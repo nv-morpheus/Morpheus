@@ -28,7 +28,6 @@ from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.utils.type_utils import get_df_pkg
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +70,6 @@ class RabbitMQSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
         self._channel = None
 
         self._poll_interval = pd.Timedelta(poll_interval)
-
-        # This will return either cudf.DataFrame or pandas.DataFrame depending on the execution mode
-        self._df_pkg = get_df_pkg(config.execution_mode)
 
     @property
     def name(self) -> str:
@@ -122,7 +118,7 @@ class RabbitMQSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
                 if method_frame is not None:
                     try:
                         buffer = StringIO(body.decode("utf-8"))
-                        df = self._df_pkg.read_json(buffer, orient='records', lines=True)
+                        df = pd.read_json(buffer, orient='records', lines=True)
                         yield MessageMeta(df=df)
                     except Exception as ex:
                         logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
