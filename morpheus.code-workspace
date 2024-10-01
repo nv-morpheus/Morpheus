@@ -32,7 +32,7 @@
                 "type": "cppdbg",
                 "request": "launch",
                 "program": "${workspaceFolder}/build/python/morpheus/morpheus/_lib/tests/test_controllers.x",
-                "args": ["--gtest_filter=TestMonitorController.TestProgressBar"],
+                // "args": ["--gtest_filter=TestMonitorController.TestProgressBar"],
                 "stopAtEntry": false,
                 "cwd": "${workspaceFolder}",
                 "environment": [],

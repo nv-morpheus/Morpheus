@@ -73,7 +73,6 @@ MonitorStage<MessageT>::subscribe_fn_t MonitorStage<MessageT>::build_operator()
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t msg) {
                 m_monitor_controller.progress_sink(msg);
-                std::cout << "-===============debug======================" << std::endl;
                 output.on_next(msg);
             },
             [&](std::exception_ptr error_ptr) {

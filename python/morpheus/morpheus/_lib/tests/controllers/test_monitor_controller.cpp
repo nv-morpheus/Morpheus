@@ -18,6 +18,7 @@
 #include <memory>
 #include <numeric>
 #include <stdexcept>
+#include <thread>
 #include <vector>
 
 using namespace morpheus;
@@ -91,49 +92,25 @@ TEST_F(TestMonitorController, TestAutoCountFn)
 
 TEST_F(TestMonitorController, TestProgressBar)
 {
-    auto message_meta_mc            = MonitorController<std::shared_ptr<MessageMeta>>("test_message_meta");
-    auto meta                       = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(10,
-    2)));
-    std::cout << "log message" << std::endl;
-    message_meta_mc.progress_sink(meta);
-    std::cout << "log message" << std::endl;
-    message_meta_mc.progress_sink(meta);
-    std::cout << "log message" << std::endl;
-    message_meta_mc.progress_sink(meta);
+    auto message_meta_mc = MonitorController<std::shared_ptr<MessageMeta>>("test_message_meta");
+    auto meta            = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(10, 2)));
 
-    // message_meta_mc.sink_on_completed();
+    // auto message_meta_mc_2 = MonitorController<std::shared_ptr<MessageMeta>>("test_message_meta_2");
+    // auto meta_2            = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(10, 2)));
 
-    auto message_meta_mc_2            = MonitorController<std::shared_ptr<MessageMeta>>("test_message_meta_2");
-    auto meta_2                       = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(10,
-    2)));
-
-    message_meta_mc_2.progress_sink(meta_2);
-    std::cout << "log message" << std::endl;
-    message_meta_mc_2.progress_sink(meta_2);
-    std::cout << "log message" << std::endl;
-    message_meta_mc_2.progress_sink(meta_2);
-
-    // message_meta_mc_2.sink_on_completed();
-
-    // auto control_message_mc            = MonitorController<std::shared_ptr<ControlMessage>>("test_control_message");
-    // auto control_message               = std::make_shared<ControlMessage>();
-    // auto cm_meta = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(20, 3)));
+    // auto control_message_mc = MonitorController<std::shared_ptr<ControlMessage>>("test_control_message");
+    // auto control_message    = std::make_shared<ControlMessage>();
+    // auto cm_meta            = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(20, 3)));
     // control_message->payload(cm_meta);
-    // control_message_mc.progress_sink(control_message);
-    // control_message_mc.sink_on_completed();
-    // using namespace indicators;
-    // auto progress_bar = std::make_unique<indicators::ProgressBar>(
-    //     indicators::option::BarWidth{50},
-    //     indicators::option::Start{"["},
-    //     indicators::option::Fill("■"),
-    //     indicators::option::Lead(">"),
-    //     indicators::option::Remainder(" "),
-    //     indicators::option::End("]"),
-    //     indicators::option::PostfixText{"test_message_meta"},
-    //     indicators::option::ForegroundColor{indicators::Color::yellow},
-    //     indicators::option::FontStyles{std::vector<indicators::FontStyle>{indicators::FontStyle::bold}},
-    //     indicators::option::ShowElapsedTime{true});
-    // DynamicProgress<ProgressBar> bars(*progress_bar);
-    // bars[0].set_progress(10);
-    // bars[0].mark_as_completed();
+
+    for (int i = 0; i < 10000; i++)
+    {
+        std::cout << "log message" << std::endl;
+        message_meta_mc.progress_sink(meta);
+        // std::cout << "log message 2" << std::endl;
+        // message_meta_mc_2.progress_sink(meta_2);
+        // std::cout << "log message 3" << std::endl;
+        // control_message_mc.progress_sink(control_message);
+        std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(100));
+    }
 }
