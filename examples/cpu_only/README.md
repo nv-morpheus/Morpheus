@@ -26,9 +26,9 @@ limitations under the License.
 | Dev Container | ✔ |  |
 
 ## CPU Only Pipeline
-This example demonstrates a simple Morpheus pipeline which is able to opperate on a host without access GPU.
+This example demonstrates a simple Morpheus pipeline which is able to operate on a host without access GPU.
 
-> **Note**: A more complex example of a pipeline that can exexute without a GPU is also available at `examples/llm/completion/README.md`
+> **Note**: A more complex example of a pipeline that can execute without a GPU is also available at `examples/llm/completion/README.md`
 
 From the root of the Morpheus repo, run:
 ```bash
