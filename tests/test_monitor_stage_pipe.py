@@ -25,16 +25,13 @@ import pytest
 import cudf
 
 from _utils import assert_results
-from _utils.stages.conv_msg import ConvMsg
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.stage_decorator import stage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_data_generation_stage import InMemoryDataGenStage
-from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
-from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
@@ -78,14 +75,21 @@ def test_monitor_stage_pipe(config):
 
         return msg
 
+    # The default determine_count_fn for MessageMeta and ControlMessage returns the number of rows in the DataFrame
+    # This customized_determine_count_fn returns 1 for each MessageMeta
+    def customized_determine_count_fn(msg: MessageMeta) -> int:  # pylint: disable=unused-argument
+        return 1
+
     pipe = LinearPipeline(config)
     pipe.set_source(InMemoryDataGenStage(config, cudf_generator, output_data_type=MessageMeta))
     pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
-    pipe.add_stage(MonitorStage(config, description="preprocess", unit="pre process messages"))
+    pipe.add_stage(MonitorStage(config, description="preprocess", unit="records"))
     pipe.add_stage(dummy_control_message_process_stage(config))
-    pipe.add_stage(MonitorStage(config, description="postprocess", unit="post process messages"))
+    pipe.add_stage(MonitorStage(config, description="postprocess", unit="records"))
     pipe.add_stage(SerializeStage(config))
-    pipe.add_stage(MonitorStage(config, description="sink", unit="sink messages"))
+    pipe.add_stage(
+        MonitorStage(config, description="sink", unit="MessageMeta",
+                     determine_count_fn=customized_determine_count_fn))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 

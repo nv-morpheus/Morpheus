@@ -94,17 +94,24 @@ MonitorStage<MessageT>::subscribe_fn_t MonitorStage<MessageT>::build_operator()
 template <typename MessageT>
 struct MORPHEUS_EXPORT MonitorStageInterfaceProxy
 {
-    static std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>> init(mrc::segment::Builder& builder,
-                                                                              const std::string& name,
-                                                                              const std::string& description,
-                                                                              const std::string& unit);
+    static std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>> init(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        const std::string& description,
+        const std::string& unit,
+        std::optional<std::function<int(typename MonitorStage<MessageT>::sink_type_t)>> determine_count_fn =
+            std::nullopt);
 };
 
 template <typename MessageT>
 std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>> MonitorStageInterfaceProxy<MessageT>::init(
-    mrc::segment::Builder& builder, const std::string& name, const std::string& description, const std::string& unit)
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    const std::string& description,
+    const std::string& unit,
+    std::optional<std::function<int(typename MonitorStage<MessageT>::sink_type_t)>> determine_count_fn)
 {
-    auto stage = builder.construct_object<MonitorStage<MessageT>>(name, description, unit, std::nullopt);
+    auto stage = builder.construct_object<MonitorStage<MessageT>>(name, description, unit, determine_count_fn);
 
     return stage;
 }

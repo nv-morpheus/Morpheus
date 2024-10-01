@@ -40,17 +40,19 @@
 #include <mrc/segment/object.hpp>      // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>  // for MRC_CONCAT_STR
 #include <pybind11/attr.h>             // for multiple_inheritance
-#include <pybind11/pybind11.h>         // for arg, init, class_, module_, overload_cast, overload_...
-#include <pybind11/pytypes.h>          // for none, dict, str_attr
-#include <pybind11/stl/filesystem.h>   // IWYU pragma: keep
-#include <pymrc/utils.hpp>             // for from_import, import
-#include <rxcpp/rx.hpp>                // for trace_activity, decay_t
+#include <pybind11/functional.h>
+#include <pybind11/pybind11.h>        // for arg, init, class_, module_, overload_cast, overload_...
+#include <pybind11/pytypes.h>         // for none, dict, str_attr
+#include <pybind11/stl/filesystem.h>  // IWYU pragma: keep
+#include <pymrc/utils.hpp>            // for from_import, import
+#include <rxcpp/rx.hpp>               // for trace_activity, decay_t
 
 #include <filesystem>  // for path
 #include <memory>      // for shared_ptr, allocator
-#include <sstream>     // for operator<<, basic_ostringstream
-#include <string>      // for string
-#include <vector>      // for vector
+#include <optional>
+#include <sstream>  // for operator<<, basic_ostringstream
+#include <string>   // for string
+#include <vector>   // for vector
 
 namespace morpheus {
 namespace py = pybind11;
@@ -196,22 +198,24 @@ PYBIND11_MODULE(stages, _module)
     py::class_<mrc::segment::Object<MonitorStage<MessageMeta>>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<MonitorStage<MessageMeta>>>>(
-        _module, "MessageMetaMonitorStage", py::multiple_inheritance())
+        _module, "MonitorMessageMetaStage", py::multiple_inheritance())
         .def(py::init<>(&MonitorStageInterfaceProxy<MessageMeta>::init),
              py::arg("builder"),
              py::arg("name"),
              py::arg("description"),
-             py::arg("unit")               = "messages");
+             py::arg("unit")               = "messages",
+             py::arg("determine_count_fn") = py::none());
 
     py::class_<mrc::segment::Object<MonitorStage<ControlMessage>>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<MonitorStage<ControlMessage>>>>(
-        _module, "ControlMessageMonitorStage", py::multiple_inheritance())
+        _module, "MonitorControlMessageStage", py::multiple_inheritance())
         .def(py::init<>(&MonitorStageInterfaceProxy<ControlMessage>::init),
              py::arg("builder"),
              py::arg("name"),
              py::arg("description"),
-             py::arg("unit")               = "messages");
+             py::arg("unit")               = "messages",
+             py::arg("determine_count_fn") = py::none());
 
     py::class_<mrc::segment::Object<PreallocateStage<ControlMessage>>,
                mrc::segment::ObjectProperties,

@@ -81,7 +81,7 @@ class ProgressBarContextManager
         // The fix to this issue is not yet released, so we need to:
         //     - Maintain the lifetime of the progress bar in MultiProgressBarContext while it is being used
         //     - Push the underlying progress bar object to the DynamicProgress container, since it accepts
-        //        `Indicator &bar` rather than `std::unique_ptr<Indicator> bar` before the fix
+        //        Indicator &bar rather than std::unique_ptr<Indicator> bar before the fix
         return m_dynamic_progress_bars.push_back(*m_progress_bars.back());
     }
 

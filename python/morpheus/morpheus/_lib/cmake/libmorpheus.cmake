@@ -17,7 +17,6 @@ include(GenerateExportHeader)
 add_library(morpheus
 
   # Keep these sorted!
-  src/controllers/monitor_controller.cpp
   src/io/data_loader_registry.cpp
   src/io/data_loader.cpp
   src/io/deserializers.cpp
@@ -60,7 +59,6 @@ add_library(morpheus
   src/stages/http_server_source_stage.cpp
   src/stages/inference_client_stage.cpp
   src/stages/kafka_source.cpp
-  src/stages/monitor.cpp
   src/stages/preprocess_fil.cpp
   src/stages/preprocess_nlp.cpp
   src/stages/serialize.cpp

@@ -123,13 +123,18 @@ class MonitorStage(PassThruTypeMixin, SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node():
             if self._schema.input_type == ControlMessage:
-                node = _stages.ControlMessageMonitorStage(builder,
+                node = _stages.MonitorControlMessageStage(builder,
                                                           self.unique_name,
                                                           self._mc._description,
-                                                          self._mc._unit)
+                                                          self._mc._unit,
+                                                          self._mc._determine_count_fn)
                 node.launch_options.pe_count = self._config.num_threads
             else:
-                node = _stages.MessageMetaMonitorStage(builder, self.unique_name, self._mc._description, self._mc._unit)
+                node = _stages.MonitorMessageMetaStage(builder,
+                                                       self.unique_name,
+                                                       self._mc._description,
+                                                       self._mc._unit,
+                                                       self._mc._determine_count_fn)
                 node.launch_options.pe_count = self._config.num_threads
 
         else:

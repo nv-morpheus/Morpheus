@@ -10,6 +10,7 @@ import morpheus._lib.stages
 import typing
 from morpheus._lib.common import FilterSource
 import morpheus._lib.common
+import morpheus._lib.messages
 import mrc.core.coro
 import mrc.core.segment
 import os
@@ -17,7 +18,6 @@ import os
 __all__ = [
     "AddClassificationsStage",
     "AddScoresStage",
-    "ControlMessageMonitorStage",
     "DeserializeStage",
     "FileSourceStage",
     "FilterDetectionsStage",
@@ -25,7 +25,8 @@ __all__ = [
     "HttpServerSourceStage",
     "InferenceClientStage",
     "KafkaSourceStage",
-    "MessageMetaMonitorStage",
+    "MonitorControlMessageStage",
+    "MonitorMessageMetaStage",
     "PreallocateControlMessageStage",
     "PreallocateMessageMetaStage",
     "PreprocessFILStage",
@@ -40,9 +41,6 @@ class AddClassificationsStage(mrc.core.segment.SegmentObject):
     pass
 class AddScoresStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, idx2label: typing.Dict[int, str]) -> None: ...
-    pass
-class ControlMessageMonitorStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, description: str, unit: str = 'messages') -> None: ...
     pass
 class DeserializeStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, batch_size: int, ensure_sliceable_index: bool = True, task_type: object = None, task_payload: object = None) -> None: ...
@@ -68,8 +66,11 @@ class KafkaSourceStage(mrc.core.segment.SegmentObject):
     @typing.overload
     def __init__(self, builder: mrc.core.segment.Builder, name: str, max_batch_size: int, topics: typing.List[str], batch_timeout_ms: int, config: typing.Dict[str, str], disable_commits: bool = False, disable_pre_filtering: bool = False, stop_after: int = 0, async_commits: bool = True, oauth_callback: typing.Optional[function] = None) -> None: ...
     pass
-class MessageMetaMonitorStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, description: str, unit: str = 'messages') -> None: ...
+class MonitorControlMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, description: str, unit: str = 'messages', determine_count_fn: typing.Optional[typing.Callable[[morpheus._lib.messages.ControlMessage], int]] = None) -> None: ...
+    pass
+class MonitorMessageMetaStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, description: str, unit: str = 'messages', determine_count_fn: typing.Optional[typing.Callable[[morpheus._lib.messages.MessageMeta], int]] = None) -> None: ...
     pass
 class PreallocateControlMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: typing.List[typing.Tuple[str, morpheus._lib.common.TypeId]]) -> None: ...
