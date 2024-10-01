@@ -539,7 +539,6 @@ To run the DFP pipelines with the example datasets within the container, run the
     ```bash
     python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
-        --use_cpp=true \
         --source duo \
         --start_time "2022-08-01" \
         --duration "60d" \
@@ -551,7 +550,6 @@ To run the DFP pipelines with the example datasets within the container, run the
     ```bash
     python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
-        --use_cpp=true \
         --source duo \
         --start_time "2022-08-30" \
         --input_file "./control_messages/duo_payload_inference.json"
@@ -561,7 +559,6 @@ To run the DFP pipelines with the example datasets within the container, run the
     ```bash
     python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
-        --use_cpp=true \
         --source duo \
         --start_time "2022-08-01" \
         --duration "60d" \
@@ -573,7 +570,6 @@ To run the DFP pipelines with the example datasets within the container, run the
     ```bash
     python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
-        --use_cpp=true \
         --source azure \
         --start_time "2022-08-01" \
         --duration "60d" \
@@ -585,7 +581,6 @@ To run the DFP pipelines with the example datasets within the container, run the
     ```bash
     python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
-        --use_cpp=true \
         --source azure \
         --start_time "2022-08-30" \
         --input_file "./control_messages/azure_payload_inference.json"
@@ -595,7 +590,6 @@ To run the DFP pipelines with the example datasets within the container, run the
     ```bash
     python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
-        --use_cpp=true \
         --source azure \
         --start_time "2022-08-01" \
         --duration "60d" \
