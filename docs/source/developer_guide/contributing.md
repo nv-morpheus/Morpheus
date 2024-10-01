@@ -153,14 +153,12 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
 
 If a Conda environment on the host machine is preferred over Docker, it is relatively easy to install the necessary dependencies (In reality, the Docker workflow creates a Conda environment inside the container).
 
-Note: These instructions assume the user is using `mamba` instead of `conda` since its improved solver speed is very helpful when working with a large number of dependencies. If you are not familiar with `mamba` you can install it with `conda install -n base -c conda-forge mamba` (Make sure to only install into the base environment). `mamba` is a drop in replacement for `conda` and all Conda commands are compatible between the two.
-
 #### Prerequisites
 
 - Volta architecture GPU or better
 - [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-0-download-archive)
-- `conda` and `mamba`
-  - If `conda` and `mamba` are not installed, we recommend using the MiniForge install guide which is located [here](https://github.com/conda-forge/miniforge). This will install both `conda` and `mamba` and set the channel default to use `conda-forge`.
+- `conda`
+  - If `conda` is not installed, we recommend using the [MiniForge install guide](https://github.com/conda-forge/miniforge). This will install `conda` and set the channel default to use `conda-forge`.
 
 1. Set up environment variables and clone the repo:
    ```bash
@@ -168,13 +166,10 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT
    ```
-
-2. Ensure all submodules are checked out:
-
-```bash
-git submodule update --init --recursive
-```
-
+1. Ensure all submodules are checked out:
+   ```bash
+   git submodule update --init --recursive
+   ```
 1. Create the Morpheus Conda environment
    ```bash
    conda env create --solver=libmamba -n morpheus --file conda/environments/dev_cuda-121_arch-x86_64.yaml
@@ -182,18 +177,18 @@ git submodule update --init --recursive
    ```
 
    This creates a new environment named `morpheus`, and activates that environment.
+
+   > **Note**: The `dev_cuda-121_arch-x86_64.yaml` Conda environment file specifies all of the dependences required to build Morpheus and run Morpheus. However many of the examples, and optional packages such as `morpheus_llm` require additional dependencies. Alternately the following command can be used to create the Conda environment:
+   ```bash
+   conda env create --solver=libmamba -n morpheus --file conda/environments/all_cuda-121_arch-x86_64.yaml
+   conda activate morpheus
+   ```
 1. Build Morpheus
    ```bash
    ./scripts/compile.sh
    ```
-   This script will run both CMake Configure with default options and CMake build.
-1. Install Morpheus
-   ```bash
-   pip install -e ${MORPHEUS_ROOT}/python/morpheus
-   pip install -e ${MORPHEUS_ROOT}/python/morpheus_llm
-   ```
-   Once Morpheus has been built, it can be installed into the current virtual environment.
-1. Test the build (Note: some tests will be skipped)\
+   This script will build and install Morpheus into the conda environment.
+1. Test the build (Note: some tests will be skipped)
    Some of the tests will rely on external data sets.
    ```bash
    MORPHEUS_ROOT=${PWD}
@@ -212,15 +207,26 @@ git submodule update --init --recursive
       npm install -g camouflage-server@0.15
       ```
 
-   Run all tests:
-   ```bash
-   pytest --run_slow
-   ```
-1. Optional: Install cuML
-   - Many users may wish to install cuML. Due to the complex dependency structure and versioning requirements, we need to specify exact versions of each package. The command to accomplish this is:
+   - Run end-to-end (aka slow) tests:
       ```bash
-      mamba install -c rapidsai -c nvidia -c conda-forge cuml=23.06
+      pytest --run_slow
       ```
+1. Optional: Run Kafka and Milvus tests
+   - Download Kafka:
+      ```bash
+      python ./ci/scripts/download_kafka.py
+      ```
+
+   - Run all tests (this will skip over tests that require optional dependencies which are not installed):
+      ```bash
+      pytest --run_slow --run_kafka --run_milvus
+      ```
+
+   - Run all tests including those that require optional dependencies:
+      ```bash
+      pytest --fail_missing --run_slow --run_kafka --run_milvus
+      ```
+
 1. Run Morpheus
    ```bash
    morpheus run pipeline-nlp ...
@@ -400,7 +406,7 @@ Third-party code included in the source tree (that is not pulled in as an extern
 Ex:
 ```
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2018-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) <year>, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
