@@ -27,7 +27,7 @@ All environments require additional Conda packages which can be installed with e
 
 ## Requirements
 
-Prior to running the GNN fraud detection pipeline, additional requirements must be installed in to your Conda environment. A supplemental requirements file has been provided in this example directory.
+Prior to running the GNN fraud detection pipeline, additional requirements must be installed in to your Conda environment.
 
 ```bash
 conda env update --solver=libmamba \
