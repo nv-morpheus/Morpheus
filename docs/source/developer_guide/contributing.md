@@ -406,6 +406,7 @@ Due to the large number of dependencies, it's common to run into build issues. T
       USE_GPU=1 ci/scripts/run_ci_local.sh bash
       ```
 
+Refer to the [troubleshooting guide](../extra_info/troubleshooting.md) for more information on common issues and how to resolve them.
 
 ## Licensing
 Morpheus is licensed under the Apache v2.0 license. All new source files including CMake and other build scripts should contain the Apache v2.0 license header. Any edits to existing source code should update the date range of the copyright to the current year. The format for the license header is:
