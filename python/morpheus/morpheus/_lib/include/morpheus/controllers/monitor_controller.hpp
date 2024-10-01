@@ -49,29 +49,39 @@ namespace morpheus {
  * @{
  * @file
  */
+
 // See customize_streambuf()
 struct LineInsertingFilter : boost::iostreams::line_filter
 {
     std::string do_filter(const std::string& line)
     {
+        // adding "\n" (new line) "\033[A" (move cursor up) and "\033[1L" (insert line) before each line
         return "\n\033[A\033[1L" + line;
     }
 };
 
-class MultiProgressBarContext
+// A singleton that manages the lifetime of progress bars from any MonitorController<T> instances
+// and customized streambuf
+class ProgressBarContextManager
 {
   public:
-    static MultiProgressBarContext& get_instance()
+    static ProgressBarContextManager& get_instance()
     {
-        static MultiProgressBarContext instance;
+        static ProgressBarContextManager instance;
         return instance;
     }
-    MultiProgressBarContext(MultiProgressBarContext const&)            = delete;
-    MultiProgressBarContext& operator=(MultiProgressBarContext const&) = delete;
+    ProgressBarContextManager(ProgressBarContextManager const&)            = delete;
+    ProgressBarContextManager& operator=(ProgressBarContextManager const&) = delete;
 
     size_t add_progress_bar(std::unique_ptr<indicators::IndeterminateProgressBar> bar)
     {
         m_progress_bars.push_back(std::move(bar));
+
+        // DynamicProgress should take ownership over progressbars: https://github.com/p-ranav/indicators/issues/134
+        // The fix to this issue is not yet released, so we need to:
+        //     - Maintain the lifetime of the progress bar in MultiProgressBarContext while it is being used
+        //     - Push the underlying progress bar object to the DynamicProgress container, since it accepts
+        //        `Indicator &bar` rather than `std::unique_ptr<Indicator> bar` before the fix
         return m_dynamic_progress_bars.push_back(*m_progress_bars.back());
     }
 
@@ -86,11 +96,9 @@ class MultiProgressBarContext
     }
 
   private:
-    MultiProgressBarContext() : m_filtering_buf(), m_monitor_os(customize_streambuf())
-    {
-        // m_dynamic_progress_bars.set_option(indicators::option::Stream{m_monitor_os});
-    }
-    ~MultiProgressBarContext() = default;
+    ProgressBarContextManager() : m_filtering_buf(), m_monitor_os(customize_streambuf()) {}
+    ~ProgressBarContextManager() = default;
+
     std::streambuf* customize_streambuf()
     {
         // Create a customized streambuf that inserts a newline before each output of progressbar
@@ -103,6 +111,7 @@ class MultiProgressBarContext
 
         return stdout_buf;
     }
+
     indicators::DynamicProgress<indicators::IndeterminateProgressBar> m_dynamic_progress_bars;
     std::vector<std::unique_ptr<indicators::IndeterminateProgressBar>> m_progress_bars;
     boost::iostreams::filtering_ostreambuf m_filtering_buf;
@@ -127,7 +136,7 @@ class MonitorController
 
   private:
     std::unique_ptr<indicators::IndeterminateProgressBar> initialize_progress_bar();
-    std::streambuf* customize_streambuf();
+
     static std::string format_duration(std::chrono::seconds duration);
     static std::string format_throughput(std::chrono::seconds duration, size_t count, const std::string& unit);
 
@@ -159,12 +168,50 @@ MonitorController<MessageT>::MonitorController(const std::string& description,
         }
     }
 
-    // DynamicProgress should take ownership over progressbars: https://github.com/p-ranav/indicators/issues/134
-    // The fix to this issue is not yet released, so we need to:
-    //     - Maintain the lifetime of the progress bar in MultiProgressBarContext while it is being used
-    //     - Push the underlying progress bar object to the DynamicProgress container, since it accepts
-    //        `Indicator &bar` rather than `std::unique_ptr<Indicator> bar` before the fix
-    m_bar_id = MultiProgressBarContext::get_instance().add_progress_bar(initialize_progress_bar());
+    m_bar_id = ProgressBarContextManager::get_instance().add_progress_bar(initialize_progress_bar());
+}
+
+template <typename MessageT>
+std::unique_ptr<indicators::IndeterminateProgressBar> MonitorController<MessageT>::initialize_progress_bar()
+{
+    auto progress_bar = std::make_unique<indicators::IndeterminateProgressBar>(
+        indicators::option::BarWidth{30},
+        indicators::option::Start{"["},
+        indicators::option::Fill{"."},
+        indicators::option::Lead{"o"},
+        indicators::option::End("]"),
+        indicators::option::PrefixText{m_description}
+        // Redirect monitor output to the customized streambuf
+        // indicators::option::Stream{ProgressBarContextManager::get_instance().monitor_os()}
+    );
+
+    return std::move(progress_bar);
+}
+
+template <typename MessageT>
+MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
+{
+    if (!m_time_started)
+    {
+        m_start_time   = std::chrono::system_clock::now();
+        m_time_started = true;
+    }
+    m_count += (*m_determine_count_fn)(msg);
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - m_start_time);
+
+    auto& dynamic_progress_bars = ProgressBarContextManager::get_instance().dynamic_progress_bars();
+    dynamic_progress_bars[m_bar_id].set_option(
+        indicators::option::PostfixText{format_throughput(duration, m_count, m_unit)});
+    dynamic_progress_bars[m_bar_id].tick();
+
+    return msg;
+}
+
+template <typename MessageT>
+void MonitorController<MessageT>::sink_on_completed()
+{
+    auto& dynamic_progress_bars = ProgressBarContextManager::get_instance().dynamic_progress_bars();
+    dynamic_progress_bars[m_bar_id].mark_as_completed();
 }
 
 template <typename MessageT>
@@ -189,43 +236,6 @@ std::string MonitorController<MessageT>::format_throughput(std::chrono::seconds 
     oss << count << " " << unit << " in " << format_duration(duration) << ", " << "Throughput: " << std::fixed
         << std::setprecision(2) << throughput << " " << unit << "/s";
     return oss.str();
-}
-
-template <typename MessageT>
-std::unique_ptr<indicators::IndeterminateProgressBar> MonitorController<MessageT>::initialize_progress_bar()
-{
-    auto progress_bar = std::make_unique<indicators::IndeterminateProgressBar>(
-        indicators::option::BarWidth{30},
-        indicators::option::Start{"["},
-        indicators::option::Fill{"."},
-        indicators::option::Lead{"o"},
-        indicators::option::End("]"),
-        indicators::option::PrefixText{m_description},
-        // indicators::option::Stream{MultiProgressBarContext::get_instance().monitor_os()},
-        // The font options do not take effect when using the customized streambuf
-        indicators::option::ForegroundColor{indicators::Color::yellow},
-        indicators::option::FontStyles{std::vector<indicators::FontStyle>{indicators::FontStyle::bold}});
-
-    return std::move(progress_bar);
-}
-
-template <typename MessageT>
-MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
-{
-    if (!m_time_started)
-    {
-        m_start_time   = std::chrono::system_clock::now();
-        m_time_started = true;
-    }
-    m_count += (*m_determine_count_fn)(msg);
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - m_start_time);
-
-    auto& dynamic_progress_bars = MultiProgressBarContext::get_instance().dynamic_progress_bars();
-    dynamic_progress_bars[m_bar_id].set_option(
-        indicators::option::PostfixText{format_throughput(duration, m_count, m_unit)});
-    dynamic_progress_bars[m_bar_id].tick();
-
-    return msg;
 }
 
 template <typename MessageT>
@@ -278,13 +288,6 @@ auto MonitorController<MessageT>::auto_count_fn() -> std::optional<std::function
     }
 
     return std::nullopt;
-}
-
-template <typename MessageT>
-void MonitorController<MessageT>::sink_on_completed()
-{
-    auto& dynamic_progress_bars = MultiProgressBarContext::get_instance().dynamic_progress_bars();
-    dynamic_progress_bars[m_bar_id].mark_as_completed();
 }
 
 /** @} */  // end of group

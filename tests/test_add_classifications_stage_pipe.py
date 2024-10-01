@@ -24,6 +24,7 @@ from _utils.stages.conv_msg import ConvMsg
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
+from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage

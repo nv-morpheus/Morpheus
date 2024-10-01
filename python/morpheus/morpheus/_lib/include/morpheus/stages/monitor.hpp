@@ -25,6 +25,7 @@
 #include <pymrc/node.hpp>           // for PythonNode
 #include <rxcpp/rx.hpp>             // for trace_activity, decay_t, from
 
+#include <optional>
 #include <string>
 
 namespace morpheus {
@@ -50,21 +51,22 @@ class MORPHEUS_EXPORT MonitorStage : public mrc::pymrc::PythonNode<std::shared_p
     using typename base_t::subscribe_fn_t;
 
     MonitorStage(const std::string& description,
-                 std::optional<std::function<int(MessageT)>> determine_count_fn = std::nullopt);
+                 const std::string& unit                                           = "messages",
+                 std::optional<std::function<int(sink_type_t)>> determine_count_fn = std::nullopt);
 
   private:
     subscribe_fn_t build_operator();
 
-    MonitorController<MessageT> m_monitor_controller;
+    MonitorController<sink_type_t> m_monitor_controller;
 };
 
 template <typename MessageT>
 MonitorStage<MessageT>::MonitorStage(const std::string& description,
-                                     std::optional<std::function<int(MessageT)>> determine_count_fn) :
-  base_t(base_t::op_factory_from_sub_fn(build_operator()))
-{
-    m_monitor_controller = MonitorController<MessageT>(description, determine_count_fn);
-}
+                                     const std::string& unit,
+                                     std::optional<std::function<int(sink_type_t)>> determine_count_fn) :
+  base_t(base_t::op_factory_from_sub_fn(build_operator())),
+  m_monitor_controller(MonitorController<sink_type_t>(description, unit, determine_count_fn))
+{}
 
 template <typename MessageT>
 MonitorStage<MessageT>::subscribe_fn_t MonitorStage<MessageT>::build_operator()
@@ -73,7 +75,7 @@ MonitorStage<MessageT>::subscribe_fn_t MonitorStage<MessageT>::build_operator()
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t msg) {
                 m_monitor_controller.progress_sink(msg);
-                output.on_next(msg);
+                output.on_next(std::move(msg));
             },
             [&](std::exception_ptr error_ptr) {
                 output.on_error(error_ptr);
@@ -92,14 +94,17 @@ MonitorStage<MessageT>::subscribe_fn_t MonitorStage<MessageT>::build_operator()
 template <typename MessageT>
 struct MORPHEUS_EXPORT MonitorStageInterfaceProxy
 {
-    static std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>> init(mrc::segment::Builder& builder);
+    static std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>> init(mrc::segment::Builder& builder,
+                                                                              const std::string& name,
+                                                                              const std::string& description,
+                                                                              const std::string& unit);
 };
 
 template <typename MessageT>
 std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>> MonitorStageInterfaceProxy<MessageT>::init(
-    mrc::segment::Builder& builder)
+    mrc::segment::Builder& builder, const std::string& name, const std::string& description, const std::string& unit)
 {
-    auto stage = builder.construct_object<MonitorStage<MessageT>>();
+    auto stage = builder.construct_object<MonitorStage<MessageT>>(name, description, unit, std::nullopt);
 
     return stage;
 }

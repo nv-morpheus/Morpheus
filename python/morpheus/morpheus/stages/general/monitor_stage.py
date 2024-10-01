@@ -19,9 +19,11 @@ import mrc
 from mrc.core import operators as ops
 from tqdm import tqdm
 
+import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.controllers.monitor_controller import MonitorController
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.logger import LogLevels
@@ -119,14 +121,26 @@ class MonitorStage(PassThruTypeMixin, SinglePortStage):
             self._mc.progress.close()
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        if not self._mc.is_enabled():
-            return input_node
+        if self._build_cpp_node():
+            if self._schema.input_type == ControlMessage:
+                node = _stages.ControlMessageMonitorStage(builder,
+                                                          self.unique_name,
+                                                          self._mc._description,
+                                                          self._mc._unit)
+                node.launch_options.pe_count = self._config.num_threads
+            else:
+                node = _stages.MessageMetaMonitorStage(builder, self.unique_name, self._mc._description, self._mc._unit)
+                node.launch_options.pe_count = self._config.num_threads
 
-        # Use a component so we track progress using the upstream progress engine. This will provide more accurate
-        # results
-        node = builder.make_node_component(self.unique_name,
-                                           ops.map(self._mc.progress_sink),
-                                           ops.on_completed(self._mc.sink_on_completed))
+        else:
+            if not self._mc.is_enabled():
+                return input_node
+
+            # Use a component so we track progress using the upstream progress engine. This will provide more accurate
+            # results
+            node = builder.make_node_component(self.unique_name,
+                                               ops.map(self._mc.progress_sink),
+                                               ops.on_completed(self._mc.sink_on_completed))
 
         builder.make_edge(input_node, node)
 

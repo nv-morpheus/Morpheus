@@ -28,11 +28,24 @@
         "compounds": [],
         "configurations": [
             {
+                "name": "pytest test_phishing",
+                "type": "debugpy",
+                "request": "launch",
+                "module": "pytest",
+                "args": [
+                    "-s",
+                    "--run_slow",
+                    "${workspaceFolder}/tests/test_phishing.py::test_email_cpp"
+                ],
+                "console": "integratedTerminal",
+                "justMyCode": true
+            },
+            {
                 "name": "Debug test_controllers.x",
                 "type": "cppdbg",
                 "request": "launch",
                 "program": "${workspaceFolder}/build/python/morpheus/morpheus/_lib/tests/test_controllers.x",
-                "args": ["--gtest_filter=TestMonitorController.TestProgressBar"],
+                "args": ["--gtest_filter=TestMonitorController.TestAutoCountFn"],
                 "stopAtEntry": false,
                 "cwd": "${workspaceFolder}",
                 "environment": [],
