@@ -175,7 +175,7 @@ template <typename MessageT>
 std::unique_ptr<indicators::IndeterminateProgressBar> MonitorController<MessageT>::initialize_progress_bar()
 {
     auto progress_bar = std::make_unique<indicators::IndeterminateProgressBar>(
-        indicators::option::BarWidth{30},
+        indicators::option::BarWidth{20},
         indicators::option::Start{"["},
         indicators::option::Fill{"."},
         indicators::option::Lead{"o"},
