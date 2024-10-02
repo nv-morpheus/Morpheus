@@ -26,6 +26,16 @@ from _utils.llm import mk_mock_openai_response
 from morpheus_llm.llm import LLMNodeBase
 from morpheus_llm.llm.nodes.langchain_agent_node import LangChainAgentNode
 
+try:
+    from langchain.agents import AgentType
+    from langchain.agents import Tool
+    from langchain.agents import initialize_agent
+    from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
+    from langchain.callbacks.manager import CallbackManagerForToolRun
+    from langchain_community.chat_models.openai import ChatOpenAI
+except ImportError:
+    pass
+
 if typing.TYPE_CHECKING:
     from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
     from langchain.callbacks.manager import CallbackManagerForToolRun
@@ -81,11 +91,6 @@ def test_execute(
 
 
 def test_execute_tools(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
-    from langchain.agents import AgentType
-    from langchain.agents import Tool
-    from langchain.agents import initialize_agent
-    from langchain_community.chat_models.openai import ChatOpenAI
-
     # Tests the execute method of the LangChainAgentNode with a a mocked tools and chat completion
     (_, mock_async_client) = mock_chat_completion
     chat_responses = [
@@ -128,11 +133,6 @@ def test_execute_tools(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
 
 
 def test_execute_error(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
-    from langchain.agents import AgentType
-    from langchain.agents import Tool
-    from langchain.agents import initialize_agent
-    from langchain_community.chat_models.openai import ChatOpenAI
-
     # Tests the execute method of the LangChainAgentNode with a a mocked tools and chat completion
     (_, mock_async_client) = mock_chat_completion
     chat_responses = [
@@ -181,10 +181,6 @@ def test_execute_error(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
                          }],
                          ids=["single-metadata", "single-metadata-list", "multiple-metadata-list"])
 def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], metadata: dict):
-    from langchain.agents import AgentType
-    from langchain.agents import initialize_agent
-    from langchain_community.chat_models.openai import ChatOpenAI
-    from langchain_core.tools import BaseTool
 
     class MetadataSaverTool(BaseTool):
         # The base class defines *args and **kwargs in the signature for _run and _arun requiring the arguments-differ

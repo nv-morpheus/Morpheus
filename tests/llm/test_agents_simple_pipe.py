@@ -35,6 +35,16 @@ from morpheus_llm.llm.nodes.langchain_agent_node import LangChainAgentNode
 from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
+try:
+    from langchain.agents import AgentType
+    from langchain.agents import initialize_agent
+    from langchain.agents import load_tools
+    from langchain.agents.tools import Tool
+    from langchain_community.llms import OpenAI  # pylint: disable=no-name-in-module
+    from langchain_community.utilities import serpapi
+except ImportError:
+    pass
+
 
 @pytest.fixture(name="questions")
 def questions_fixture():
@@ -42,13 +52,6 @@ def questions_fixture():
 
 
 def _build_agent_executor(model_name: str):
-    from langchain.agents import AgentType
-    from langchain.agents import initialize_agent
-    from langchain.agents import load_tools
-    from langchain.agents.tools import Tool
-    from langchain_community.llms import OpenAI  # pylint: disable=no-name-in-module
-    from langchain_community.utilities import serpapi
-
     llm = OpenAI(model=model_name, temperature=0, cache=False)
 
     # Explicitly construct the serpapi tool, loading it via load_tools makes it too difficult to mock
@@ -131,10 +134,6 @@ def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
                             config: Config,
                             questions: list[str]):
     os.environ.update({'OPENAI_API_KEY': 'test_api_key', 'SERPAPI_API_KEY': 'test_api_key'})
-
-    from langchain.schema import Generation
-    from langchain.schema import LLMResult
-    from langchain_community.utilities import serpapi
 
     assert serpapi.SerpAPIWrapper().aresults is mock_serpapi_aresults
 
