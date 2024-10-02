@@ -34,14 +34,14 @@ def setup_and_teardown():
 
     pool = SharedProcessPool()
 
-    # Since SharedProcessPool might be used in other tests, terminate and reset the pool before the test starts
-    pool.terminate()
+    # Since SharedProcessPool might be used in other tests, stop and reset the pool before the test starts
+    pool.stop()
     pool.join()
     pool.reset()
     yield
 
-    # Terminate the pool after all tests are done
-    pool.terminate()
+    # Stop the pool after all tests are done
+    pool.stop()
     pool.join()
 
 
@@ -290,32 +290,3 @@ def test_task_completion_with_early_stop(shared_process_pool):
     assert len(tasks) == 3 * task_num
     for task in tasks:
         assert task.done()
-
-
-def test_terminate_running_tasks(shared_process_pool):
-
-    pool = shared_process_pool
-    pool.set_usage("test_stage_1", 0.1)
-    pool.set_usage("test_stage_2", 0.3)
-    pool.set_usage("test_stage_3", 0.5)
-
-    manager = mp.Manager()
-    queue = manager.Queue()
-
-    tasks = []
-
-    task_num = 50
-
-    for _ in range(task_num):
-        tasks.append(pool.submit_task("test_stage_1", _blocked_until_signaled_task, queue))
-        tasks.append(pool.submit_task("test_stage_2", _blocked_until_signaled_task, queue))
-        tasks.append(pool.submit_task("test_stage_3", _blocked_until_signaled_task, queue))
-
-    for i in range(len(tasks)):
-        queue.put(i)
-
-    pool.terminate()
-    pool.join()
-
-    # As pool.terminate() is called, at least some of the tasks are not finished
-    assert any(not task.done() for task in tasks)
