@@ -228,7 +228,7 @@ class NeMoLLMService(LLMService):
         """
 
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='nemollm')) from IMPORT_EXCEPTION
 
         super().__init__()
 
