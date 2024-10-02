@@ -42,7 +42,6 @@
 #include <vector>
 
 namespace morpheus {
-/****** Component public implementations *******************/
 /******************* MonitorController**********************/
 
 /**
@@ -51,8 +50,7 @@ namespace morpheus {
  * @file
  */
 
-// A singleton that manages the lifetime of progress bars from any MonitorController<T> instances
-// and customized streambuf
+// A singleton that manages the lifetime of progress bars related to any MonitorController<T> instances
 class ProgressBarContextManager
 {
   public:
@@ -70,7 +68,7 @@ class ProgressBarContextManager
 
         // DynamicProgress should take ownership over progressbars: https://github.com/p-ranav/indicators/issues/134
         // The fix to this issue is not yet released, so we need to:
-        //     - Maintain the lifetime of the progress bar in MultiProgressBarContext while it is being used
+        //     - Maintain the lifetime of the progress bar in m_progress_bars
         //     - Push the underlying progress bar object to the DynamicProgress container, since it accepts
         //        Indicator &bar rather than std::unique_ptr<Indicator> bar before the fix
         return m_dynamic_progress_bars.push_back(*m_progress_bars.back());
@@ -90,12 +88,19 @@ class ProgressBarContextManager
 };
 
 /**
- * @brief
+ * @brief A controller class that manages the display of progress bars that used by MonitorStage.
  */
 template <typename MessageT>
 class MonitorController
 {
   public:
+    /**
+     * @brief Construct a new Monitor Controller object
+     *
+     * @param description : A text label displayed on the left side of the progress bars
+     * @param unit : the unit of message count
+     * @param determine_count_fn : A function that computes the count for each incoming message
+     */
     MonitorController(const std::string& description,
                       std::string unit                                                  = "messages",
                       std::optional<std::function<size_t(MessageT)>> determine_count_fn = std::nullopt);

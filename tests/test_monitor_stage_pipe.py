@@ -36,15 +36,6 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
-def build_expected(df: pd.DataFrame, threshold: float, class_labels: typing.List[str]):
-    """
-    Generate the expected output of an add class by filtering by a threshold and applying the class labels
-    """
-    df = (df > threshold)
-    # Replace input columns with the class labels
-    return df.rename(columns=dict(zip(df.columns, class_labels)))
-
-
 def sample_message_meta_generator(df_rows: int, df_cols: int, count: int) -> Generator[MessageMeta, None, None]:
     data = {f'col_{i}': range(df_rows) for i in range(df_cols)}
     df = cudf.DataFrame(data)

@@ -106,30 +106,3 @@ TEST_F(TestMonitorController, TestAutoCountFn)
     // Test invalid message type
     EXPECT_THROW(MonitorController<int>("invalid message type"), std::runtime_error);
 }
-
-TEST_F(TestMonitorController, TestProgressBar)
-{
-    auto message_meta_mc   = MonitorController<std::shared_ptr<MessageMeta>>("test_message_meta");
-    auto meta              = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(10, 2)));
-    auto message_meta_mc_2 = MonitorController<std::shared_ptr<MessageMeta>>("test_message_meta_2");
-    auto meta_2            = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(10, 2)));
-    auto message_meta_mc_3 = MonitorController<std::shared_ptr<MessageMeta>>("test_message_meta_3");
-    auto meta_3            = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(10, 2)));
-
-    auto control_message_mc = MonitorController<std::shared_ptr<ControlMessage>>("test_control_message");
-    auto control_message    = std::make_shared<ControlMessage>();
-    auto cm_meta            = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(20, 3)));
-    control_message->payload(cm_meta);
-
-    for (int i = 0; i < 10; i++)
-    {
-        // std::cout << "log message" << std::endl;
-        message_meta_mc.progress_sink(meta);
-        // std::cout << "log message 2" << std::endl;
-        message_meta_mc_2.progress_sink(meta_2);
-        // std::cout << "log message 3" << std::endl;
-        message_meta_mc_3.progress_sink(meta_3);
-        control_message_mc.progress_sink(control_message);
-        std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(100));
-    }
-}

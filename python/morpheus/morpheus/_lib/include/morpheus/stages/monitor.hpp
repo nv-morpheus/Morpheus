@@ -29,8 +29,8 @@
 #include <string>
 
 namespace morpheus {
-/****** Component public implementations *******************/
-/****** MonitorStage********************************/
+/*************** Component public implementations ***************/
+/******************** MonitorStage ********************/
 
 /**
  * @addtogroup controllers
@@ -39,7 +39,7 @@ namespace morpheus {
  */
 
 /**
- * @brief
+ * @brief Displays descriptive progress bars including throughput metrics for the messages passing through the pipeline.
  */
 template <typename MessageT>
 class MORPHEUS_EXPORT MonitorStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
@@ -50,6 +50,13 @@ class MORPHEUS_EXPORT MonitorStage : public mrc::pymrc::PythonNode<std::shared_p
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
+    /**
+     * @brief Construct a new Monitor Stage object
+     *
+     * @param description : A text label displayed on the left side of the progress bars
+     * @param unit : the unit of message count
+     * @param determine_count_fn : A function that computes the count for each incoming message
+     */
     MonitorStage(const std::string& description,
                  const std::string& unit                                           = "messages",
                  std::optional<std::function<int(sink_type_t)>> determine_count_fn = std::nullopt);
@@ -94,6 +101,16 @@ MonitorStage<MessageT>::subscribe_fn_t MonitorStage<MessageT>::build_operator()
 template <typename MessageT>
 struct MORPHEUS_EXPORT MonitorStageInterfaceProxy
 {
+    /**
+     * @brief Create and initialize a MonitorStage, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param description : A text label displayed on the left side of the progress bars
+     * @param unit : the unit of message count
+     * @param determine_count_fn : A function that computes the count for each incoming message
+     * @return std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>>
+     */
     static std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>> init(
         mrc::segment::Builder& builder,
         const std::string& name,
