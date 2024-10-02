@@ -111,7 +111,7 @@ def test_pool_status(shared_process_pool):
     assert pool._total_usage == 0.5
     _check_pool_stage_settings(pool, "test_stage", 0.5)
 
-    pool.terminate()
+    pool.stop()
     pool.join()
     assert pool.status == PoolStatus.SHUTDOWN
 
