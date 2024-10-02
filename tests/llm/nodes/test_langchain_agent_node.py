@@ -171,32 +171,6 @@ def test_execute_error(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
     assert isinstance(execute_node(node, input="input1"), RuntimeError)
 
 
-class MetadataSaverTool(BaseTool):
-    # The base class defines *args and **kwargs in the signature for _run and _arun requiring the arguments-differ
-    # pylint: disable=arguments-differ
-    name: str = "MetadataSaverTool"
-    description: str = "useful for when you need to know the name of a reptile"
-
-    saved_metadata: list[dict] = []
-
-    def _run(
-        self,
-        query: str,
-        run_manager: typing.Optional["CallbackManagerForToolRun"] = None,
-    ) -> str:
-        raise NotImplementedError("This tool only supports async")
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: typing.Optional["AsyncCallbackManagerForToolRun"] = None,
-    ) -> str:
-        assert query is not None  # avoiding unused-argument
-        assert run_manager is not None
-        self.saved_metadata.append(run_manager.metadata.copy())
-        return "frog"
-
-
 @pytest.mark.parametrize("metadata",
                          [{
                              "morpheus": "unittest"
@@ -210,6 +184,32 @@ def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], m
     from langchain.agents import AgentType
     from langchain.agents import initialize_agent
     from langchain_community.chat_models.openai import ChatOpenAI
+    from langchain_core.tools import BaseTool
+
+    class MetadataSaverTool(BaseTool):
+        # The base class defines *args and **kwargs in the signature for _run and _arun requiring the arguments-differ
+        # pylint: disable=arguments-differ
+        name: str = "MetadataSaverTool"
+        description: str = "useful for when you need to know the name of a reptile"
+
+        saved_metadata: list[dict] = []
+
+        def _run(
+            self,
+            query: str,
+            run_manager: typing.Optional["CallbackManagerForToolRun"] = None,
+        ) -> str:
+            raise NotImplementedError("This tool only supports async")
+
+        async def _arun(
+            self,
+            query: str,
+            run_manager: typing.Optional["AsyncCallbackManagerForToolRun"] = None,
+        ) -> str:
+            assert query is not None  # avoiding unused-argument
+            assert run_manager is not None
+            self.saved_metadata.append(run_manager.metadata.copy())
+            return "frog"
 
     if isinstance(metadata['morpheus'], list):
         num_meta = len(metadata['morpheus'])
@@ -316,6 +316,8 @@ def test_execute_replaces_exceptions(
     replace_value: str,
     expected_output: list,
 ):
+    # We couldn't import OutputParserException at the module level, so we need to replace instances of
+    # OutputParserExceptionStandin with OutputParserException
     from langchain_core.exceptions import OutputParserException
 
     arun_return_tmp = []
