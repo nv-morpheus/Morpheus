@@ -62,7 +62,8 @@ def test_generate_batch_exception(mock_nemollm: mock.MagicMock):
     def mock_post_process_generate_response(*args, **_):
         if ("error" in args[0]):
             raise RuntimeError("unittest")
-        elif ("fail" in args[0]):
+
+        if ("fail" in args[0]):
             return {"status": "fail", "msg": "unittest"}
 
         return {"status": "success", "text": args[0]}
@@ -119,7 +120,8 @@ async def test_generate_batch_async_exception(mock_nemollm: mock.MagicMock):
     def mock_post_process_generate_response(*args, **_):
         if ("error" in args[0]):
             raise RuntimeError("unittest")
-        elif ("fail" in args[0]):
+
+        if ("fail" in args[0]):
             return {"status": "fail", "msg": "unittest"}
 
         return {"status": "success", "text": args[0]}

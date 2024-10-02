@@ -210,34 +210,14 @@ class OpenAIChatClient(LLMClient):
 
         return content
 
-    @typing.overload
-    def _generate(self, prompt: str, assistant: str | None,
-                  return_exceptions: typing.Literal[True]) -> str | BaseException:
-        ...
+    def _generate(self, prompt: str, assistant: str = None) -> str:
 
-    @typing.overload
-    def _generate(self, prompt: str, assistant: str | None, return_exceptions: typing.Literal[False]) -> str:
-        ...
+        messages = self._create_messages(prompt, assistant)
 
-    @typing.overload
-    def _generate(self, prompt: str, assistant: str | None, return_exceptions: bool) -> str | BaseException:
-        ...
+        output: openai.types.chat.chat_completion.ChatCompletion = self._client.chat.completions.create(
+            model=self._model_name, messages=messages, **self._model_kwargs)
 
-    def _generate(self, prompt: str, assistant: str = None, return_exceptions=False) -> str | BaseException:
-
-        try:
-            messages = self._create_messages(prompt, assistant)
-
-            output: openai.types.chat.chat_completion.ChatCompletion = self._client.chat.completions.create(
-                model=self._model_name, messages=messages, **self._model_kwargs)
-
-            return self._extract_completion(output)
-        except BaseException as e:
-
-            if return_exceptions:
-                return e
-
-            raise
+        return self._extract_completion(output)
 
     def generate(self, **input_dict) -> str:
         """
@@ -250,9 +230,9 @@ class OpenAIChatClient(LLMClient):
         """
 
         prompt: str = input_dict[self._prompt_key]
-        assistant: str = input_dict[self._assistant_key]
+        assistant: str = input_dict.get(self._assistant_key, None)
 
-        return self._generate(prompt=prompt, assistant=assistant, return_exceptions=False)
+        return self._generate(prompt=prompt, assistant=assistant)
 
     async def _generate_async(self, prompt: str, assistant: str = None) -> str:
 
@@ -281,7 +261,7 @@ class OpenAIChatClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        return await self._generate_async(input_dict[self._prompt_key], input_dict.get(self._assistant_key))
+        return await self._generate_async(input_dict[self._prompt_key], input_dict.get(self._assistant_key, None))
 
     @typing.overload
     def generate_batch(self, inputs: dict[str, list],
@@ -293,7 +273,9 @@ class OpenAIChatClient(LLMClient):
         ...
 
     @typing.overload
-    def generate_batch(self, inputs: dict[str, list], return_exceptions: bool=False) -> list[str] | list[str | BaseException]:
+    def generate_batch(self,
+                       inputs: dict[str, list],
+                       return_exceptions: bool = False) -> list[str] | list[str | BaseException]:
         ...
 
     def generate_batch(self, inputs: dict[str, list], return_exceptions=False) -> list[str] | list[str | BaseException]:
@@ -318,10 +300,15 @@ class OpenAIChatClient(LLMClient):
         for (i, prompt) in enumerate(prompts):
             p: str = prompt
             assistant: str | None = assistants[i] if assistants is not None else None
-            if (return_exceptions):
-                results.append(self._generate(p, assistant, return_exceptions=True))
-            else:
-                results.append(self._generate(p, assistant, return_exceptions=False))
+
+            try:
+                results.append(self._generate(p, assistant))
+            except BaseException as e:
+
+                if return_exceptions:
+                    results.append(e)
+                else:
+                    raise
 
         return results
 
@@ -336,8 +323,9 @@ class OpenAIChatClient(LLMClient):
         ...
 
     @typing.overload
-    async def generate_batch_async(self, inputs: dict[str, list],
-                                   return_exceptions: bool=False) -> list[str] | list[str | BaseException]:
+    async def generate_batch_async(self,
+                                   inputs: dict[str, list],
+                                   return_exceptions: bool = False) -> list[str] | list[str | BaseException]:
         ...
 
     async def generate_batch_async(self,

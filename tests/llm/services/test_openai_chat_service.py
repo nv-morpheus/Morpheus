@@ -209,9 +209,9 @@ def test_generate_batch_exception(mock_chat_completion: tuple[mock.MagicMock, mo
     from openai.types.chat.chat_completion import Choice
     from openai.types.chat.chat_completion_message import ChatCompletionMessage
 
-    (mock_client, mock_async_client) = mock_chat_completion
+    (mock_client, _) = mock_chat_completion
 
-    def mock_create(*args, messages, **kwargs):
+    def mock_create(*_, messages, **__):
 
         choices = []
 
@@ -235,7 +235,7 @@ def test_generate_batch_exception(mock_chat_completion: tuple[mock.MagicMock, mo
     client = OpenAIChatService().get_client(model_name="test_model")
 
     # Return_exceptions=True
-    results = client.generate_batch({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=True)
+    results = list(client.generate_batch({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=True))
     assert isinstance(results[1], RuntimeError)
 
     # Test exceptions, return_exceptions=False
@@ -249,9 +249,9 @@ async def test_generate_batch_async_exception(mock_chat_completion: tuple[mock.M
     from openai.types.chat.chat_completion import Choice
     from openai.types.chat.chat_completion_message import ChatCompletionMessage
 
-    (mock_client, mock_async_client) = mock_chat_completion
+    (_, mock_async_client) = mock_chat_completion
 
-    async def mock_create(*args, messages, **kwargs):
+    async def mock_create(*_, messages, **__):
 
         choices = []
 

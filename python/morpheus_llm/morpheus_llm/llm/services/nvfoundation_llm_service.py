@@ -150,9 +150,9 @@ class NVFoundationLLMClient(LLMClient):
         # As soon as one of the requests fails, the entire batch fails. Instead, we need to implement the functionality
         # listed in issue #1555 For now, we generate a warning if `return_exceptions` is True.
         if (return_exceptions):
-            warnings.warn(
-                "return_exceptions==True is not currently supported by the NVFoundationLLMClient.generate_batch() method. "
-                "If an exception is raised for any item, the function will exit and raise that exception.")
+            warnings.warn("return_exceptions==True is not currently supported by the "
+                          f"{type(self).__name__}.generate_batch() method. "
+                          "If an exception is raised for any item, the function will exit and raise that exception.")
 
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
         final_kwargs = self._model_kwargs
@@ -201,9 +201,9 @@ class NVFoundationLLMClient(LLMClient):
         # As soon as one of the requests fails, the entire batch fails. Instead, we need to implement the functionality
         # listed in issue #1555 For now, we generate a warning if `return_exceptions` is True.
         if (return_exceptions):
-            warnings.warn(
-                "return_exceptions==True is not currently supported by the NVFoundationLLMClient.generate_batch_async() method"
-                ". If an exception is raised for any item, the function will exit and raise that exception.")
+            warnings.warn("return_exceptions==True is not currently supported by the "
+                          f"{type(self).__name__}.generate_batch_async() method. "
+                          "If an exception is raised for any item, the function will exit and raise that exception.")
 
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
         final_kwargs = self._model_kwargs

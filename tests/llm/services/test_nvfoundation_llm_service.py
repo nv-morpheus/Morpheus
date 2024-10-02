@@ -106,8 +106,8 @@ def test_generate_batch_exception():
             for x in kwargs["prompts"]:
                 if "error" in x.text:
                     raise RuntimeError("unittest")
-                else:
-                    generations.append([ChatGeneration(message=ChatMessage(content=x.text, role="assistant"))])
+
+                generations.append([ChatGeneration(message=ChatMessage(content=x.text, role="assistant"))])
 
             return LLMResult(generations=generations)
 
@@ -165,8 +165,8 @@ async def test_generate_batch_async_exception():
             for x in kwargs["prompts"]:
                 if "error" in x.text:
                     raise RuntimeError("unittest")
-                else:
-                    generations.append([ChatGeneration(message=ChatMessage(content=x.text, role="assistant"))])
+
+                generations.append([ChatGeneration(message=ChatMessage(content=x.text, role="assistant"))])
 
             return LLMResult(generations=generations)
 
