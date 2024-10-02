@@ -30,14 +30,12 @@ try:
     from langchain.agents import AgentType
     from langchain.agents import Tool
     from langchain.agents import initialize_agent
+    from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
+    from langchain.callbacks.manager import CallbackManagerForToolRun
     from langchain_community.chat_models.openai import ChatOpenAI
     from langchain_core.tools import BaseTool
 except ImportError:
     pass
-
-if typing.TYPE_CHECKING:
-    from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
-    from langchain.callbacks.manager import CallbackManagerForToolRun
 
 
 class OutputParserExceptionStandin(Exception):
@@ -192,14 +190,14 @@ def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], m
         def _run(
             self,
             query: str,
-            run_manager: typing.Optional["CallbackManagerForToolRun"] = None,
+            run_manager: typing.Optional[CallbackManagerForToolRun] = None,
         ) -> str:
             raise NotImplementedError("This tool only supports async")
 
         async def _arun(
             self,
             query: str,
-            run_manager: typing.Optional["AsyncCallbackManagerForToolRun"] = None,
+            run_manager: typing.Optional[AsyncCallbackManagerForToolRun] = None,
         ) -> str:
             assert query is not None  # avoiding unused-argument
             assert run_manager is not None
