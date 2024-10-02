@@ -27,6 +27,7 @@ source:
 outputs:
   ############################### morpheus-core #############################
   - name: morpheus-core
+    type: conda_v2
     build:
       number: {{ GIT_DESCRIBE_NUMBER }}
       string: cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
@@ -131,6 +132,7 @@ outputs:
 
   ############################### morpheus-dfp #############################
   - name: morpheus-dfp
+    type: conda_v2
     build:
       number: {{ GIT_DESCRIBE_NUMBER }}
       string: cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
@@ -160,6 +162,7 @@ outputs:
 
   ############################### morpheus-llm #############################
   - name: morpheus-llm
+    type: conda_v2
     build:
       number: {{ GIT_DESCRIBE_NUMBER }}
       string: cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
