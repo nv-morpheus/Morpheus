@@ -25,7 +25,6 @@ import time
 import types
 import typing
 import warnings
-import sys
 from pathlib import Path
 from unittest import mock
 
