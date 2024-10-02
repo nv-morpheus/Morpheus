@@ -30,8 +30,6 @@ try:
     from langchain.agents import AgentType
     from langchain.agents import Tool
     from langchain.agents import initialize_agent
-    from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
-    from langchain.callbacks.manager import CallbackManagerForToolRun
     from langchain_community.chat_models.openai import ChatOpenAI
     from langchain_core.tools import BaseTool
 except ImportError:
