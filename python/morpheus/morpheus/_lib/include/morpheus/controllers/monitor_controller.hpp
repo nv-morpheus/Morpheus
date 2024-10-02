@@ -38,6 +38,7 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace morpheus {
@@ -49,16 +50,6 @@ namespace morpheus {
  * @{
  * @file
  */
-
-// See customize_streambuf()
-struct LineInsertingFilter : boost::iostreams::line_filter
-{
-    std::string do_filter(const std::string& line)
-    {
-        // adding "\n" (new line) "\033[A" (move cursor up) and "\033[1L" (insert line) before each line
-        return "\n\033[A\033[1L" + line;
-    }
-};
 
 // A singleton that manages the lifetime of progress bars from any MonitorController<T> instances
 // and customized streambuf
@@ -90,32 +81,12 @@ class ProgressBarContextManager
         return m_dynamic_progress_bars;
     }
 
-    std::ostream& monitor_os()
-    {
-        return m_monitor_os;
-    }
-
   private:
-    ProgressBarContextManager() : m_filtering_buf(), m_monitor_os(customize_streambuf()) {}
+    ProgressBarContextManager()  = default;
     ~ProgressBarContextManager() = default;
-
-    std::streambuf* customize_streambuf()
-    {
-        // Create a customized streambuf that inserts a newline before each output of progressbar
-        // This enables logging and progressbar output in the same terminal
-        // See https://github.com/p-ranav/indicators/issues/107
-        auto* stdout_buf = std::cout.rdbuf();
-        // m_filtering_buf.push(LineInsertingFilter());
-        // m_filtering_buf.push(*stdout_buf);
-        // std::cout.rdbuf(&m_filtering_buf);
-
-        return stdout_buf;
-    }
 
     indicators::DynamicProgress<indicators::IndeterminateProgressBar> m_dynamic_progress_bars;
     std::vector<std::unique_ptr<indicators::IndeterminateProgressBar>> m_progress_bars;
-    boost::iostreams::filtering_ostreambuf m_filtering_buf;
-    std::ostream m_monitor_os;
 };
 
 /**
@@ -126,7 +97,7 @@ class MonitorController
 {
   public:
     MonitorController(const std::string& description,
-                      const std::string& unit                                           = "messages",
+                      std::string unit                                                  = "messages",
                       std::optional<std::function<size_t(MessageT)>> determine_count_fn = std::nullopt);
 
     auto auto_count_fn() -> std::optional<std::function<size_t(MessageT)>>;
@@ -142,22 +113,20 @@ class MonitorController
 
     const std::string& m_description;
     int m_bar_id;
-    std::string m_unit;
+    const std::string m_unit;
     std::optional<std::function<int(MessageT)>> m_determine_count_fn;
-    size_t m_count;
+    size_t m_count{0};
     time_point_t m_start_time;
-    bool m_time_started;
+    bool m_time_started{false};
 };
 
 template <typename MessageT>
 MonitorController<MessageT>::MonitorController(const std::string& description,
-                                               const std::string& unit,
+                                               std::string unit,
                                                std::optional<std::function<size_t(MessageT)>> determine_count_fn) :
   m_description(description),
-  m_unit(unit),
-  m_determine_count_fn(determine_count_fn),
-  m_count(0),
-  m_time_started(false)
+  m_unit(std::move(unit)),
+  m_determine_count_fn(determine_count_fn)
 {
     if (!m_determine_count_fn)
     {
@@ -174,16 +143,13 @@ MonitorController<MessageT>::MonitorController(const std::string& description,
 template <typename MessageT>
 std::unique_ptr<indicators::IndeterminateProgressBar> MonitorController<MessageT>::initialize_progress_bar()
 {
-    auto progress_bar = std::make_unique<indicators::IndeterminateProgressBar>(
-        indicators::option::BarWidth{20},
-        indicators::option::Start{"["},
-        indicators::option::Fill{"."},
-        indicators::option::Lead{"o"},
-        indicators::option::End("]"),
-        indicators::option::PrefixText{m_description}
-        // Redirect monitor output to the customized streambuf
-        // indicators::option::Stream{ProgressBarContextManager::get_instance().monitor_os()}
-    );
+    auto progress_bar =
+        std::make_unique<indicators::IndeterminateProgressBar>(indicators::option::BarWidth{20},
+                                                               indicators::option::Start{"["},
+                                                               indicators::option::Fill{"."},
+                                                               indicators::option::Lead{"o"},
+                                                               indicators::option::End("]"),
+                                                               indicators::option::PrefixText{m_description});
 
     return std::move(progress_bar);
 }
