@@ -22,7 +22,7 @@ from _utils import require_env_variable
 
 
 @pytest.fixture(name="nemollm", scope='session', autouse=True)
-def nemollm_fixture(nemollm: types.ModuleType, fail_missing: bool):
+def nemollm_fixture(nemollm: types.ModuleType):
     """
     Fixture to ensure nemollm is installed
     """
@@ -30,7 +30,7 @@ def nemollm_fixture(nemollm: types.ModuleType, fail_missing: bool):
 
 
 @pytest.fixture(name="openai", scope='session', autouse=True)
-def openai_fixture(openai: types.ModuleType, fail_missing: bool):
+def openai_fixture(openai: types.ModuleType):
     """
     Fixture to ensure openai is installed
     """
@@ -38,7 +38,7 @@ def openai_fixture(openai: types.ModuleType, fail_missing: bool):
 
 
 @pytest.fixture(name="langchain", scope='session', autouse=True)
-def langchain_fixture(langchain: types.ModuleType, fail_missing: bool):
+def langchain_fixture(langchain: types.ModuleType):
     """
     Fixture to ensure langchain is installed
     """
@@ -46,7 +46,7 @@ def langchain_fixture(langchain: types.ModuleType, fail_missing: bool):
 
 
 @pytest.fixture(name="langchain_core", scope='session', autouse=True)
-def langchain_core_fixture(langchain_core: types.ModuleType, fail_missing: bool):
+def langchain_core_fixture(langchain_core: types.ModuleType):
     """
     Fixture to ensure langchain_core is installed
     """
@@ -54,7 +54,7 @@ def langchain_core_fixture(langchain_core: types.ModuleType, fail_missing: bool)
 
 
 @pytest.fixture(name="langchain_community", scope='session', autouse=True)
-def langchain_community_fixture(langchain_community: types.ModuleType, fail_missing: bool):
+def langchain_community_fixture(langchain_community: types.ModuleType):
     """
     Fixture to ensure langchain_community is installed
     """
@@ -62,7 +62,7 @@ def langchain_community_fixture(langchain_community: types.ModuleType, fail_miss
 
 
 @pytest.fixture(name="langchain_nvidia_ai_endpoints", scope='session', autouse=True)
-def langchain_nvidia_ai_endpoints_fixture(langchain_nvidia_ai_endpoints: types.ModuleType, fail_missing: bool):
+def langchain_nvidia_ai_endpoints_fixture(langchain_nvidia_ai_endpoints: types.ModuleType):
     """
     Fixture to ensure langchain_nvidia_ai_endpoints is installed
     """

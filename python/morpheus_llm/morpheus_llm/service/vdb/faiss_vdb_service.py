@@ -21,6 +21,7 @@ import pandas as pd
 
 import cudf
 
+from morpheus_llm.error import IMPORT_ERROR_MESSAGE
 from morpheus_llm.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus_llm.service.vdb.vector_db_service import VectorDBService
 

@@ -26,8 +26,8 @@ IMPORT_EXCEPTION = None
 
 try:
     from langchain_core.exceptions import OutputParserException
-except ImportError as e:
-    IMPORT_EXCEPTION = e
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 if typing.TYPE_CHECKING:
     from langchain.agents import AgentExecutor
