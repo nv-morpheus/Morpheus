@@ -112,8 +112,9 @@ outputs:
         - watchdog =3.0.*
         - websockets
     test:
+      imports:
+        - morpheus
       requires:
-        # test that cuml can be installed in the env
         - cuml {{ rapids_version }}.*
         - pynvml
         - pytest-asyncio
@@ -123,10 +124,8 @@ outputs:
       source_files:
         - pyproject.toml
         - scripts/fetch_data.py
-      imports:
-        - morpheus
-      commands:
-          - echo # pytest will be added post re-factoring
+        - tests/*
+      script: morpheus_core_test.sh
 
   ############################### morpheus-dfp #############################
   - name: morpheus-dfp
@@ -156,7 +155,21 @@ outputs:
       run:
         - {{ pin_subpackage('morpheus-core', exact=True) }}
 
-    #test: Tests will be added post test refactoring
+    test:
+      imports:
+        - morpheus_dfp
+      requires:
+        - cuml {{ rapids_version }}.*
+        - pynvml
+        - pytest-asyncio
+        - pytest-benchmark
+        - pytest-cov
+        - pytest =7.4.4
+      source_files:
+        - pyproject.toml
+        - scripts/fetch_data.py
+        - tests/*
+      script: morpheus_dfp_test.sh
 
   ############################### morpheus-llm #############################
   - name: morpheus-llm
@@ -197,7 +210,21 @@ outputs:
       run:
         - {{ pin_subpackage('morpheus-core', exact=True) }}
 
-    #test: Tests will be added post test refactoring
+    test:
+      imports:
+        - morpheus_llm
+      requires:
+        - cuml {{ rapids_version }}.*
+        - pynvml
+        - pytest-asyncio
+        - pytest-benchmark
+        - pytest-cov
+        - pytest =7.4.4
+      source_files:
+        - pyproject.toml
+        - scripts/fetch_data.py
+        - tests/*
+      script: morpheus_llm_test.sh
  
 about:
   home: https://github.com/nv-morpheus/Morpheus
