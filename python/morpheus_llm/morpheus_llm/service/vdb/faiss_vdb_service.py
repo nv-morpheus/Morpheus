@@ -21,8 +21,8 @@ import pandas as pd
 
 import cudf
 
-from morpheus.service.vdb.vector_db_service import VectorDBResourceService
-from morpheus.service.vdb.vector_db_service import VectorDBService
+from morpheus_llm.service.vdb.vector_db_service import VectorDBResourceService
+from morpheus_llm.service.vdb.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
 

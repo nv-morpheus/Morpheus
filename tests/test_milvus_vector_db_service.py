@@ -27,9 +27,9 @@ from pymilvus import MilvusException
 import cudf
 
 from _utils.dataset_manager import DatasetManager
-from morpheus.service.vdb.milvus_vector_db_service import MAX_STRING_LENGTH_BYTES
-from morpheus.service.vdb.milvus_vector_db_service import FieldSchemaEncoder
-from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
+from morpheus_llm.service.vdb.milvus_vector_db_service import MAX_STRING_LENGTH_BYTES
+from morpheus_llm.service.vdb.milvus_vector_db_service import FieldSchemaEncoder
+from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 
 # Milvus data type mapping dictionary
 MILVUS_DATA_TYPE_MAP = {

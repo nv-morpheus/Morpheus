@@ -225,7 +225,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                                  content_type=MimeTypes.TEXT.value,
                                  body=err_msg)
 
-    def _generate_frames(self) -> typing.Iterator[MessageMeta]:
+    def _generate_frames(self, subscription: mrc.Subscription) -> typing.Iterator[MessageMeta]:
         from morpheus.common import FiberQueue
         from morpheus.common import HttpEndpoint
         from morpheus.common import HttpServer
@@ -252,10 +252,10 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                     df = self._queue.get(block=False)
                     self._queue_size -= 1
                 except queue.Empty:
-                    if (not self._http_server.is_running() or self.is_stop_requested()):
+                    if (not self._http_server.is_running() or self.is_stop_requested()
+                            or not subscription.is_subscribed()):
                         self._processing = False
                     else:
-                        logger.debug("Queue empty, sleeping ...")
                         time.sleep(self._sleep_time)
                 except Closed:
                     logger.error("Queue closed unexpectedly, shutting down")
@@ -288,7 +288,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                                                  lines=self._lines,
                                                  stop_after=self._stop_after)
         else:
-            node = builder.make_source(self.unique_name, self._generate_frames())
+            node = builder.make_source(self.unique_name, self._generate_frames)
 
         return node
 

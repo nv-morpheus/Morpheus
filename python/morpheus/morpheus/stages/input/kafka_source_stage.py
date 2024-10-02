@@ -176,7 +176,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return message_meta
 
-    def _source_generator(self):
+    def _source_generator(self, subscription: mrc.Subscription):
         consumer = None
         try:
             consumer = ck.Consumer(self._consumer_params)
@@ -184,7 +184,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
             batch = []
 
-            while not self.is_stop_requested():
+            while not self.is_stop_requested() and subscription.is_subscribed():
                 do_process_batch = False
                 do_sleep = False
 

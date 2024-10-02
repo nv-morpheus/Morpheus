@@ -20,11 +20,11 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.modules.output.write_to_vector_db import WriteToVectorDBLoaderFactory
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.service.vdb.vector_db_service import VectorDBService
 from morpheus.utils.module_utils import ModuleLoader
+from morpheus_llm.modules.output.write_to_vector_db import WriteToVectorDBLoaderFactory
+from morpheus_llm.service.vdb.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
 

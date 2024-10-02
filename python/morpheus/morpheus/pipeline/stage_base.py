@@ -275,7 +275,7 @@ class StageBase(ABC, collections.abc.Hashable):
         return [x.parent for x in self.get_all_outputs()]
 
     @abstractmethod
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         """
         Specifies whether this Stage is capable of creating C++ nodes. During the build phase, this value will be
         combined with `CppConfig.get_should_use_cpp()` to determine whether or not a C++ node is created. This is an
