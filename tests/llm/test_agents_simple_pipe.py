@@ -18,12 +18,6 @@ import re
 from unittest import mock
 
 import pytest
-from langchain.agents import AgentType
-from langchain.agents import initialize_agent
-from langchain.agents import load_tools
-from langchain.agents.tools import Tool
-from langchain_community.llms import OpenAI  # pylint: disable=no-name-in-module
-from langchain_community.utilities import serpapi
 
 import cudf
 
@@ -48,6 +42,12 @@ def questions_fixture():
 
 
 def _build_agent_executor(model_name: str):
+    from langchain.agents import AgentType
+    from langchain.agents import initialize_agent
+    from langchain.agents import load_tools
+    from langchain.agents.tools import Tool
+    from langchain_community.llms import OpenAI  # pylint: disable=no-name-in-module
+    from langchain_community.utilities import serpapi
 
     llm = OpenAI(model=model_name, temperature=0, cache=False)
 
@@ -134,6 +134,7 @@ def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
 
     from langchain.schema import Generation
     from langchain.schema import LLMResult
+    from langchain_community.utilities import serpapi
 
     assert serpapi.SerpAPIWrapper().aresults is mock_serpapi_aresults
 

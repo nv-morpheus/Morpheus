@@ -13,11 +13,60 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
 from unittest import mock
 
 import pytest
 
 from _utils import require_env_variable
+
+
+@pytest.fixture(name="nemollm", scope='session', autouse=True)
+def nemollm_fixture(nemollm: types.ModuleType, fail_missing: bool):
+    """
+    Fixture to ensure nemollm is installed
+    """
+    yield nemollm
+
+
+@pytest.fixture(name="openai", scope='session', autouse=True)
+def openai_fixture(openai: types.ModuleType, fail_missing: bool):
+    """
+    Fixture to ensure openai is installed
+    """
+    yield openai
+
+
+@pytest.fixture(name="langchain", scope='session', autouse=True)
+def langchain_fixture(langchain: types.ModuleType, fail_missing: bool):
+    """
+    Fixture to ensure langchain is installed
+    """
+    yield langchain
+
+
+@pytest.fixture(name="langchain_core", scope='session', autouse=True)
+def langchain_core_fixture(langchain_core: types.ModuleType, fail_missing: bool):
+    """
+    Fixture to ensure langchain_core is installed
+    """
+    yield langchain_core
+
+
+@pytest.fixture(name="langchain_community", scope='session', autouse=True)
+def langchain_community_fixture(langchain_community: types.ModuleType, fail_missing: bool):
+    """
+    Fixture to ensure langchain_community is installed
+    """
+    yield langchain_community
+
+
+@pytest.fixture(name="langchain_nvidia_ai_endpoints", scope='session', autouse=True)
+def langchain_nvidia_ai_endpoints_fixture(langchain_nvidia_ai_endpoints: types.ModuleType, fail_missing: bool):
+    """
+    Fixture to ensure langchain_nvidia_ai_endpoints is installed
+    """
+    yield langchain_nvidia_ai_endpoints
 
 
 @pytest.fixture(name="countries")
