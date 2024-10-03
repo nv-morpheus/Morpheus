@@ -24,9 +24,8 @@ from morpheus.utils.module_ids import FILTER_CONTROL_MESSAGE
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
-
-from ..utils.module_ids import DFP_PREPROC
-from ..utils.module_ids import DFP_SPLIT_USERS
+from morpheus_dfp.utils.module_ids import DFP_PREPROC
+from morpheus_dfp.utils.module_ids import DFP_SPLIT_USERS
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 

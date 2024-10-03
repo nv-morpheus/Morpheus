@@ -25,9 +25,8 @@ from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
-
-from ..utils.model_cache import ModelCache
-from ..utils.model_cache import ModelManager
+from morpheus_dfp.utils.model_cache import ModelCache
+from morpheus_dfp.utils.model_cache import ModelManager
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 

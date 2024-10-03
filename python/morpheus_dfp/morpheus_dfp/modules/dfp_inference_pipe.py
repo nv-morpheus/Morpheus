@@ -23,13 +23,12 @@ from morpheus.utils.module_ids import SERIALIZE
 from morpheus.utils.module_ids import WRITE_TO_FILE
 from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
-
-from ..utils.module_ids import DFP_DATA_PREP
-from ..utils.module_ids import DFP_INFERENCE
-from ..utils.module_ids import DFP_INFERENCE_PIPE
-from ..utils.module_ids import DFP_POST_PROCESSING
-from ..utils.module_ids import DFP_PREPROC
-from ..utils.module_ids import DFP_ROLLING_WINDOW
+from morpheus_dfp.utils.module_ids import DFP_DATA_PREP
+from morpheus_dfp.utils.module_ids import DFP_INFERENCE
+from morpheus_dfp.utils.module_ids import DFP_INFERENCE_PIPE
+from morpheus_dfp.utils.module_ids import DFP_POST_PROCESSING
+from morpheus_dfp.utils.module_ids import DFP_PREPROC
+from morpheus_dfp.utils.module_ids import DFP_ROLLING_WINDOW
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 

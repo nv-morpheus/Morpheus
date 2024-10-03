@@ -26,10 +26,9 @@ from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
-
-from ..messages.dfp_message_meta import DFPMessageMeta
-from ..utils.cached_user_window import CachedUserWindow
-from ..utils.logging_timer import log_time
+from morpheus_dfp.messages.dfp_message_meta import DFPMessageMeta
+from morpheus_dfp.utils.cached_user_window import CachedUserWindow
+from morpheus_dfp.utils.logging_timer import log_time
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 

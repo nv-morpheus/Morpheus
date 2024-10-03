@@ -21,12 +21,11 @@ from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
-
-from ..utils.module_ids import DFP_DATA_PREP
-from ..utils.module_ids import DFP_PREPROC
-from ..utils.module_ids import DFP_ROLLING_WINDOW
-from ..utils.module_ids import DFP_TRAINING
-from ..utils.module_ids import DFP_TRAINING_PIPE
+from morpheus_dfp.utils.module_ids import DFP_DATA_PREP
+from morpheus_dfp.utils.module_ids import DFP_PREPROC
+from morpheus_dfp.utils.module_ids import DFP_ROLLING_WINDOW
+from morpheus_dfp.utils.module_ids import DFP_TRAINING
+from morpheus_dfp.utils.module_ids import DFP_TRAINING_PIPE
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 

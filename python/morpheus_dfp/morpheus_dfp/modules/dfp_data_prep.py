@@ -24,8 +24,7 @@ from morpheus.messages import MessageMeta
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
-
-from ..utils.module_ids import DFP_DATA_PREP
+from morpheus_dfp.utils.module_ids import DFP_DATA_PREP
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 

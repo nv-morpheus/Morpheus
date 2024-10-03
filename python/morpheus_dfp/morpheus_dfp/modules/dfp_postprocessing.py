@@ -22,8 +22,7 @@ from mrc.core import operators as ops
 from morpheus.messages import ControlMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
-
-from ..utils.module_ids import DFP_POST_PROCESSING
+from morpheus_dfp.utils.module_ids import DFP_POST_PROCESSING
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 

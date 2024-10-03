@@ -21,12 +21,11 @@ from morpheus.config import CppConfig
 from morpheus.messages import ControlMessage
 from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
-
-from .dfp_arg_parser import DFPArgParser
-from .dfp_arg_parser import pyobj2str
-from .module_ids import DFP_DEPLOYMENT
-from .regex_utils import iso_date_regex_pattern
-from .schema_utils import Schema
+from morpheus_dfp.utils.dfp_arg_parser import DFPArgParser
+from morpheus_dfp.utils.dfp_arg_parser import pyobj2str
+from morpheus_dfp.utils.module_ids import DFP_DEPLOYMENT
+from morpheus_dfp.utils.regex_utils import iso_date_regex_pattern
+from morpheus_dfp.utils.schema_utils import Schema
 
 
 class ConfigGenerator:

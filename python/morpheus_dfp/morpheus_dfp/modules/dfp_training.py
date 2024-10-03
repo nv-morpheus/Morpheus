@@ -24,9 +24,8 @@ from morpheus.messages import ControlMessage
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
-
-from ..messages.dfp_message_meta import DFPMessageMeta
-from ..utils.module_ids import DFP_TRAINING
+from morpheus_dfp.messages.dfp_message_meta import DFPMessageMeta
+from morpheus_dfp.utils.module_ids import DFP_TRAINING
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 

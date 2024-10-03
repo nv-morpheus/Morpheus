@@ -22,10 +22,9 @@ from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
-
-from ..utils.module_ids import DFP_DEPLOYMENT
-from ..utils.module_ids import DFP_INFERENCE_PIPE
-from ..utils.module_ids import DFP_TRAINING_PIPE
+from morpheus_dfp.utils.module_ids import DFP_DEPLOYMENT
+from morpheus_dfp.utils.module_ids import DFP_INFERENCE_PIPE
+from morpheus_dfp.utils.module_ids import DFP_TRAINING_PIPE
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
