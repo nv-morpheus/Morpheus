@@ -41,12 +41,10 @@ fi
 
 BUILD_DIR="build-conda-dfp"
 
-# Check if the build directory already exists. And if so, delete the
-# CMakeCache.txt and CMakeFiles to ensure a clean configuration
+# remove the old build directory
 if [[ -d "./${BUILD_DIR}" ]]; then
-   echo "Deleting old CMake files at ./${BUILD_DIR}"
-   rm -rf "./${BUILD_DIR}/CMakeCache.txt"
-   rm -rf "./${BUILD_DIR}/CMakeFiles"
+   echo "Deleting old build dir at ./${BUILD_DIR}"
+   rm -rf "./${BUILD_DIR}/"
 fi
 
 # Run configure
