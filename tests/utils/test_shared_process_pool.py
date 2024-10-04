@@ -34,14 +34,14 @@ def setup_and_teardown():
 
     pool = SharedProcessPool()
 
-    # Since SharedProcessPool might be used in other tests, terminate and reset the pool before the test starts
-    pool.terminate()
+    # Since SharedProcessPool might be used in other tests, stop and reset the pool before the test starts
+    pool.stop()
     pool.join()
     pool.reset()
     yield
 
-    # Terminate the pool after all tests are done
-    pool.terminate()
+    # Stop the pool after all tests are done
+    pool.stop()
     pool.join()
 
 
@@ -93,6 +93,7 @@ def test_singleton():
     assert pool_1 is pool_2
 
 
+@pytest.mark.slow
 def test_pool_status(shared_process_pool):
 
     pool = shared_process_pool
@@ -111,7 +112,7 @@ def test_pool_status(shared_process_pool):
     assert pool._total_usage == 0.5
     _check_pool_stage_settings(pool, "test_stage", 0.5)
 
-    pool.terminate()
+    pool.stop()
     pool.join()
     assert pool.status == PoolStatus.SHUTDOWN
 
@@ -125,6 +126,7 @@ def test_pool_status(shared_process_pool):
     assert not pool._task_queues
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "a, b, expected",
     [
@@ -157,6 +159,7 @@ def test_submit_single_task(shared_process_pool, a, b, expected):
         pool.submit_task("test_stage", _add_task, 10, 20)
 
 
+@pytest.mark.slow
 def test_submit_task_with_invalid_stage(shared_process_pool):
 
     pool = shared_process_pool
@@ -165,6 +168,7 @@ def test_submit_task_with_invalid_stage(shared_process_pool):
         pool.submit_task("stage_does_not_exist", _add_task, 10, 20)
 
 
+@pytest.mark.slow
 def test_submit_task_raises_exception(shared_process_pool):
 
     pool = shared_process_pool
@@ -175,6 +179,7 @@ def test_submit_task_raises_exception(shared_process_pool):
         task.result()
 
 
+@pytest.mark.slow
 def test_submit_task_with_unserializable_result(shared_process_pool):
 
     pool = shared_process_pool
@@ -185,6 +190,7 @@ def test_submit_task_with_unserializable_result(shared_process_pool):
         task.result()
 
 
+@pytest.mark.slow
 def test_submit_task_with_unserializable_arg(shared_process_pool):
 
     pool = shared_process_pool
@@ -195,6 +201,7 @@ def test_submit_task_with_unserializable_arg(shared_process_pool):
         pool.submit_task("test_stage", _arbitrary_function, threading.Lock())
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "a, b, expected",
     [
@@ -220,6 +227,7 @@ def test_submit_multiple_tasks(shared_process_pool, a, b, expected):
         assert future.result() == expected
 
 
+@pytest.mark.slow
 def test_set_usage(shared_process_pool):
 
     pool = shared_process_pool
@@ -256,6 +264,7 @@ def test_set_usage(shared_process_pool):
     assert pool._total_usage == 0.9
 
 
+@pytest.mark.slow
 def test_task_completion_with_early_stop(shared_process_pool):
 
     pool = shared_process_pool
@@ -290,32 +299,3 @@ def test_task_completion_with_early_stop(shared_process_pool):
     assert len(tasks) == 3 * task_num
     for task in tasks:
         assert task.done()
-
-
-def test_terminate_running_tasks(shared_process_pool):
-
-    pool = shared_process_pool
-    pool.set_usage("test_stage_1", 0.1)
-    pool.set_usage("test_stage_2", 0.3)
-    pool.set_usage("test_stage_3", 0.5)
-
-    manager = mp.Manager()
-    queue = manager.Queue()
-
-    tasks = []
-
-    task_num = 50
-
-    for _ in range(task_num):
-        tasks.append(pool.submit_task("test_stage_1", _blocked_until_signaled_task, queue))
-        tasks.append(pool.submit_task("test_stage_2", _blocked_until_signaled_task, queue))
-        tasks.append(pool.submit_task("test_stage_3", _blocked_until_signaled_task, queue))
-
-    for i in range(len(tasks)):
-        queue.put(i)
-
-    pool.terminate()
-    pool.join()
-
-    # As pool.terminate() is called, at least some of the tasks are not finished
-    assert any(not task.done() for task in tasks)

@@ -27,7 +27,7 @@ from morpheus.utils.logger import set_log_level
 
 
 def test_constructor(config: Config):
-    from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
+    from morpheus_dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
     stage = DFPPostprocessingStage(config)
     assert isinstance(stage, SinglePortStage)
     assert stage._needed_columns['event_time'] == TypeId.STRING
@@ -36,13 +36,13 @@ def test_constructor(config: Config):
 @pytest.mark.usefixtures("reset_loglevel")
 @pytest.mark.parametrize('use_on_data', [True, False])
 @pytest.mark.parametrize('log_level', [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
-@mock.patch('dfp.stages.dfp_postprocessing_stage.datetime')
+@mock.patch('morpheus_dfp.stages.dfp_postprocessing_stage.datetime')
 def test_process_events_on_data(mock_datetime: mock.MagicMock,
                                 config: Config,
                                 control_message: ControlMessage,
                                 use_on_data: bool,
                                 log_level: int):
-    from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
+    from morpheus_dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 
     mock_dt_obj = mock.MagicMock()
     mock_dt_obj.strftime.return_value = '2021-01-01T00:00:00Z'
@@ -68,7 +68,7 @@ def test_process_events_on_data(mock_datetime: mock.MagicMock,
 
 
 def test_on_data_none(config: Config):
-    from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
+    from morpheus_dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
     stage = DFPPostprocessingStage(config)
     assert stage.on_data(None) is None
     mock_payload = mock.MagicMock()

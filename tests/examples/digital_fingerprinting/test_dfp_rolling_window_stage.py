@@ -47,7 +47,7 @@ def build_mock_user_cache(user_id: str = 'test_user',
 
 
 def test_constructor(config: Config):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
     assert isinstance(stage, SinglePortStage)
@@ -59,7 +59,7 @@ def test_constructor(config: Config):
 
 
 def test_get_user_cache_hit(config: Config):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -71,8 +71,8 @@ def test_get_user_cache_hit(config: Config):
 
 
 def test_get_user_cache_miss(config: Config):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
-    from dfp.utils.cached_user_window import CachedUserWindow
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.utils.cached_user_window import CachedUserWindow
 
     config.ae.timestamp_column_name = 'test_timestamp_col'
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
