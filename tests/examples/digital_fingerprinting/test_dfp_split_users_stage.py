@@ -27,7 +27,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
 def test_constructor(config: Config):
-    from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
+    from morpheus_dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
 
     stage = DFPSplitUsersStage(config, include_generic=False, include_individual=True)
     assert isinstance(stage, SinglePortStage)
@@ -64,7 +64,7 @@ def test_extract_users(config: Config,
                        include_individual: bool,
                        skip_users: typing.List[str],
                        only_users: typing.List[str]):
-    from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
+    from morpheus_dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
     config.ae.userid_column_name = "From"
     config.ae.fallback_username = "testy_testerson"
 
@@ -120,7 +120,7 @@ def test_extract_users(config: Config,
 
 
 def test_extract_users_none_to_empty(config: Config):
-    from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
+    from morpheus_dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
 
     stage = DFPSplitUsersStage(config, include_generic=True, include_individual=True)
     assert not stage.extract_users(None)

@@ -36,12 +36,12 @@ def openai_fixture(openai):
     yield openai
 
 
-@pytest.fixture(name="nvfoundationllm", autouse=True, scope='session')
-def nvfoundationllm_fixture(nvfoundationllm):
+@pytest.fixture(name="langchain_nvidia_ai_endpoints", autouse=True, scope='session')
+def langchain_nvidia_ai_endpoints_fixture(langchain_nvidia_ai_endpoints):
     """
-    All of the tests in this subdir require nvfoundationllm
+    All of the tests in this subdir require langchain_nvidia_ai_endpoints
     """
-    yield nvfoundationllm
+    yield langchain_nvidia_ai_endpoints
 
 
 @pytest.fixture(name="mock_chat_completion", autouse=True)

@@ -18,16 +18,13 @@ import typing
 import warnings
 
 from morpheus.utils.env_config_value import EnvConfigValue
+from morpheus_llm.error import IMPORT_ERROR_MESSAGE
 from morpheus_llm.llm.services.llm_service import LLMClient
 from morpheus_llm.llm.services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
-IMPORT_ERROR_MESSAGE = (
-    "NemoLLM not found. Install it and other additional dependencies by running the following command:\n"
-    "`conda env update --solver=libmamba -n morpheus "
-    "--file conda/environments/examples_cuda-121_arch-x86_64.yaml --prune`")
 
 try:
     import nemollm
@@ -53,7 +50,7 @@ class NeMoLLMClient(LLMClient):
 
     def __init__(self, parent: "NeMoLLMService", *, model_name: str, **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='nemollm')) from IMPORT_EXCEPTION
 
         super().__init__()
 
@@ -231,7 +228,7 @@ class NeMoLLMService(LLMService):
         """
 
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='nemollm')) from IMPORT_EXCEPTION
 
         super().__init__()
 

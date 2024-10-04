@@ -17,12 +17,16 @@ import os
 from unittest import mock
 
 import pytest
-from langchain_core.messages import ChatMessage
-from langchain_core.outputs import ChatGeneration
-from langchain_core.outputs import LLMResult
 
 from morpheus_llm.llm.services.nvfoundation_llm_service import NVFoundationLLMClient
 from morpheus_llm.llm.services.nvfoundation_llm_service import NVFoundationLLMService
+
+try:
+    from langchain_core.messages import ChatMessage
+    from langchain_core.outputs import ChatGeneration
+    from langchain_core.outputs import LLMResult
+except ImportError:
+    pass
 
 
 @pytest.fixture(name="set_default_nvidia_api_key", autouse=True, scope="function")
@@ -34,7 +38,7 @@ def set_default_nvidia_api_key_fixture():
 
 @pytest.mark.parametrize("api_key", ["nvapi-12345", None])
 @pytest.mark.parametrize("base_url", ["http://test.nvidia.com/v1", None])
-def test_constructor(api_key: str, base_url: bool):
+def test_constructor(api_key: str | None, base_url: bool | None):
 
     service = NVFoundationLLMService(api_key=api_key, base_url=base_url)
 
