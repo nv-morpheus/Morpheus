@@ -88,7 +88,7 @@ def test_get_user_cache_miss(config: Config):
 
 
 def test_build_window_no_new(config: Config, control_message: ControlMessage):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -99,7 +99,7 @@ def test_build_window_no_new(config: Config, control_message: ControlMessage):
 
 
 def test_build_window_not_enough_data(config: Config, control_message: ControlMessage):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -109,7 +109,7 @@ def test_build_window_not_enough_data(config: Config, control_message: ControlMe
 
 
 def test_build_window_min_increment(config: Config, control_message: ControlMessage):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -119,7 +119,7 @@ def test_build_window_min_increment(config: Config, control_message: ControlMess
 
 
 def test_build_window_invalid(config: Config, control_message: ControlMessage, train_df: pd.DataFrame):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -134,7 +134,7 @@ def test_build_window_invalid(config: Config, control_message: ControlMessage, t
 
 
 def test_build_window_overlap(config: Config, control_message: ControlMessage, train_df: pd.DataFrame):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
@@ -155,7 +155,7 @@ def test_build_window(config: Config,
                       control_message: ControlMessage,
                       dataset_pandas: DatasetManager,
                       train_df: pd.DataFrame):
-    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 
     stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
 
