@@ -160,8 +160,8 @@ The following are the available Conda environment files, all are located in the 
 | Environment | File | Description |
 | --- | --- | --- |
 | `all` | `all_cuda-121_arch-x86_64.yaml` | All dependencies required to build, run and test Morpheus, along with all of the examples. This is a superset of the `dev`, `runtime` and `examples` environments. |
-| `dev` | `dev_cuda-121_arch-x86_64.yaml` | Dependencies required to build, run and test Morpheus. This is a super-set of the `runtime` environment. |
-| `examples` | `examples_cuda-121_arch-x86_64.yaml` | Dependencies required to run all examples. This is a super-set of the `runtime` environment. |
+| `dev` | `dev_cuda-121_arch-x86_64.yaml` | Dependencies required to build, run and test Morpheus. This is a superset of the `runtime` environment. |
+| `examples` | `examples_cuda-121_arch-x86_64.yaml` | Dependencies required to run all examples. This is a superset of the `runtime` environment. |
 | `model-utils` | `model-utils_cuda-121_arch-x86_64.yaml` | Dependencies required to train models independent of Morpheus. |
 | `runtime` | `runtime_cuda-121_arch-x86_64.yaml` | Minimal set of dependencies strictly required to run Morpheus. |
 
