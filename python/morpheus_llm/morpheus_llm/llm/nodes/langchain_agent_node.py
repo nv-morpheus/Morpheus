@@ -16,12 +16,18 @@ import asyncio
 import logging
 import typing
 
-from langchain_core.exceptions import OutputParserException
-
+from morpheus_llm.error import IMPORT_ERROR_MESSAGE
 from morpheus_llm.llm import LLMContext
 from morpheus_llm.llm import LLMNodeBase
 
 logger = logging.getLogger(__name__)
+
+IMPORT_EXCEPTION = None
+
+try:
+    from langchain_core.exceptions import OutputParserException
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 if typing.TYPE_CHECKING:
     from langchain.agents import AgentExecutor
@@ -47,6 +53,9 @@ class LangChainAgentNode(LLMNodeBase):
                  agent_executor: "AgentExecutor",
                  replace_exceptions: bool = False,
                  replace_exceptions_value: typing.Optional[str] = None):
+        if IMPORT_EXCEPTION is not None:
+            raise ImportError(IMPORT_ERROR_MESSAGE.format('langchain_core')) from IMPORT_EXCEPTION
+
         super().__init__()
 
         self._agent_executor = agent_executor
