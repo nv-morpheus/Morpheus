@@ -98,8 +98,8 @@ jobs:
       # Run morpheus conda package, with all components. This is done for main/dev
       # branches and for PRs with the conda-build label.
       conda_run_build: ${{ !fromJSON(needs.prepare.outputs.is_pr) || fromJSON(needs.prepare.outputs.has_conda_build_label) }}
-      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-240614
-      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-240614
+      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-241004
+      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-241004
     secrets:
       CONDA_TOKEN: ${{ secrets.CONDA_TOKEN }}
       NGC_API_KEY: ${{ secrets.NGC_API_KEY }}
