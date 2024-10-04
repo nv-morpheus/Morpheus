@@ -25,7 +25,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
 def test_constructor(config: Config):
-    from dfp.stages.dfp_training import DFPTraining
+    from morpheus_dfp.stages.dfp_training import DFPTraining
 
     stage = DFPTraining(config, model_kwargs={'test': 'this'}, epochs=40, validation_size=0.5)
     assert isinstance(stage, SinglePortStage)
@@ -36,24 +36,23 @@ def test_constructor(config: Config):
 
 @pytest.mark.parametrize('validation_size', [-1, -0.2, 1, 5])
 def test_constructor_bad_validation_size(config: Config, validation_size: float):
-    from dfp.stages.dfp_training import DFPTraining
+    from morpheus_dfp.stages.dfp_training import DFPTraining
 
     with pytest.raises(ValueError):
         DFPTraining(config, validation_size=validation_size)
 
 
 @pytest.mark.parametrize('validation_size', [0., 0.2])
-@mock.patch('dfp.stages.dfp_training.AutoEncoder')
-@mock.patch('dfp.stages.dfp_training.train_test_split')
+@mock.patch('morpheus_dfp.stages.dfp_training.AutoEncoder')
+@mock.patch('morpheus_dfp.stages.dfp_training.train_test_split')
 def test_on_data(mock_train_test_split: mock.MagicMock,
                  mock_ae: mock.MagicMock,
                  config: Config,
                  dataset_pandas: DatasetManager,
                  validation_size: float):
-    from dfp.messages.dfp_message_meta import DFPMessageMeta
-    from dfp.stages.dfp_training import DFPTraining
-
     from morpheus.messages import ControlMessage
+    from morpheus_dfp.messages.dfp_message_meta import DFPMessageMeta
+    from morpheus_dfp.stages.dfp_training import DFPTraining
 
     mock_ae.return_value = mock_ae
 

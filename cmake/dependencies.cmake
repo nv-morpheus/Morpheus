@@ -75,36 +75,13 @@ if(MORPHEUS_BUILD_TESTS)
   )
 endif()
 
-# cccl -- get an explicit cccl build, matx tries to pull a tag that doesn't exist.
-# =========
-morpheus_utils_configure_cccl()
+# Include dependencies based on components being built
+if(MORPHEUS_BUILD_MORPHEUS_CORE)
+  include(dependencies_core)
+endif()
 
-# matx
-# ====
-morpheus_utils_configure_matx()
-
-# pybind11
-# =========
-morpheus_utils_configure_pybind11()
-
-# RD-Kafka
-# =====
-morpheus_utils_configure_rdkafka()
-
-# RxCpp
-# =====
-morpheus_utils_configure_rxcpp()
-
-# MRC (Should come after all third party but before NVIDIA repos)
-# =====
-morpheus_utils_configure_mrc()
-
-# CuDF
-# =====
-morpheus_utils_configure_cudf()
-
-# Triton-client
-# =====
-morpheus_utils_configure_tritonclient()
+if(MORPHEUS_BUILD_MORPHEUS_LLM)
+  include(dependencies_llm)
+endif()
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

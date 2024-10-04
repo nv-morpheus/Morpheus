@@ -18,7 +18,6 @@
 
 # Need to ensure this value is set before checking it in the if block
 MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
-MORPHEUS_BUILD_MORPHEUS_LLM=${MORPHEUS_BUILD_MORPHEUS_LLM:-OFF}
 
 # This will store all of the cmake args. Make sure to prepend args to allow
 # incoming values to overwrite them
@@ -45,9 +44,10 @@ if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
    echo "MORPHEUS_SUPPORT_DOCA is ON. Setting CMAKE_CUDA_ARCHITECTURES to supported values: '${CMAKE_CUDA_ARCHITECTURES}'"
 fi
 
-if [[ ${MORPHEUS_BUILD_MORPHEUS_LLM} == @(TRUE|ON) ]]; then
-   CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_LLM=ON ${CMAKE_ARGS}"
-fi
+# enable all functional blocks
+CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_CORE=ON ${CMAKE_ARGS}"
+CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_LLM=ON ${CMAKE_ARGS}"
+CMAKE_ARGS="-DMORPHEUS_BUILD_MORPHEUS_DFP=ON ${CMAKE_ARGS}"
 
 CMAKE_ARGS="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON ${CMAKE_ARGS}"
 CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=$PREFIX ${CMAKE_ARGS}"
@@ -100,3 +100,4 @@ cmake --build ${BUILD_DIR} -j${PARALLEL_LEVEL:-$(nproc)} --target install
 # Install just the python wheel components
 ${PYTHON} -m pip install -vv ${BUILD_DIR}/python/morpheus/dist/*.whl
 ${PYTHON} -m pip install -vv ${BUILD_DIR}/python/morpheus_llm/dist/*.whl
+${PYTHON} -m pip install -vv ${BUILD_DIR}/python/morpheus_dfp/dist/*.whl

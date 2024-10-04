@@ -91,7 +91,8 @@ def dfp_prod_in_sys_path(
 @pytest.fixture(name="dfp_message_meta")
 def dfp_message_meta_fixture(config, dataset_pandas: DatasetManager):
     import pandas as pd
-    from dfp.messages.dfp_message_meta import DFPMessageMeta
+
+    from morpheus_dfp.messages.dfp_message_meta import DFPMessageMeta
 
     user_id = 'test_user'
     df = dataset_pandas['filter_probs.csv']
