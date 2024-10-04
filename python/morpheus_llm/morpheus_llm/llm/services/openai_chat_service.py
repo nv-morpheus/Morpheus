@@ -23,16 +23,13 @@ from textwrap import dedent
 import appdirs
 
 from morpheus.utils.env_config_value import EnvConfigValue
+from morpheus_llm.error import IMPORT_ERROR_MESSAGE
 from morpheus_llm.llm.services.llm_service import LLMClient
 from morpheus_llm.llm.services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
-IMPORT_ERROR_MESSAGE = ("OpenAIChatService & OpenAIChatClient require the openai package to be installed. "
-                        "Install it by running the following command:\n"
-                        "`conda env update --solver=libmamba -n morpheus "
-                        "--file conda/environments/examples_cuda-125_arch-x86_64.yaml --prune`")
 
 try:
     import openai
@@ -107,7 +104,7 @@ class OpenAIChatClient(LLMClient):
                  json=False,
                  **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='openai')) from IMPORT_EXCEPTION
 
         super().__init__()
 
@@ -400,7 +397,7 @@ class OpenAIChatService(LLMService):
                  default_model_kwargs: dict = None) -> None:
 
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='openai')) from IMPORT_EXCEPTION
 
         super().__init__()
 

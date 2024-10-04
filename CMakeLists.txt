@@ -22,6 +22,8 @@ option(BUILD_SHARED_LIBS "Default value for whether or not to build shared or st
 option(MORPHEUS_BUILD_BENCHMARKS "Whether or not to build benchmarks" OFF)
 option(MORPHEUS_BUILD_DOCS "Enable building of API documentation" OFF)
 option(MORPHEUS_BUILD_EXAMPLES "Whether or not to build examples" OFF)
+option(MORPHEUS_BUILD_MORPHEUS_CORE "Whether or not to build morpheus_core" ON)
+option(MORPHEUS_BUILD_MORPHEUS_DFP "Whether or not to build morpheus_dfp" ON)
 option(MORPHEUS_BUILD_MORPHEUS_LLM "Whether or not to build morpheus_llm" ON)
 option(MORPHEUS_BUILD_TESTS "Whether or not to build tests" OFF)
 option(MORPHEUS_ENABLE_DEBUG_INFO "Enable printing debug information" OFF)

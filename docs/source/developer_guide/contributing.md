@@ -191,6 +191,7 @@ git submodule update --init --recursive
    ```bash
    pip install -e ${MORPHEUS_ROOT}/python/morpheus
    pip install -e ${MORPHEUS_ROOT}/python/morpheus_llm
+   pip install -e ${MORPHEUS_ROOT}/python/morpheus_dfp
    ```
    Once Morpheus has been built, it can be installed into the current virtual environment.
 1. Test the build (Note: some tests will be skipped)\

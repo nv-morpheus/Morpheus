@@ -60,7 +60,6 @@ RUN rapids-dependency-file-generator \
     rm -rf /tmp/conda
 
 ENV MORPHEUS_SUPPORT_DOCA=ON
-ENV MORPHEUS_BUILD_MORPHEUS_LLM=ON
 
 COPY ./.devcontainer/docker/optional_deps/doca.sh /tmp/doca/
 

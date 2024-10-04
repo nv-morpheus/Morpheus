@@ -110,7 +110,7 @@ def mock_mlflow():
 
 
 def test_constructor(config: Config):
-    from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+    from morpheus_dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
 
     stage = DFPMLFlowModelWriterStage(config,
                                       model_name_formatter="test_model_name-{user_id}-{user_md5}",
@@ -131,7 +131,7 @@ def test_constructor(config: Config):
      ("test_model_name-{user_id}-{user_md5}", 'test_城安宮川', "test_model_name-test_城安宮川-c9acc3dec97777c8b6fd8ae70a744ea8")
      ])
 def test_user_id_to_model(config: Config, model_name_formatter: str, user_id: str, expected_val: str):
-    from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+    from morpheus_dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
 
     stage = DFPMLFlowModelWriterStage(config, model_name_formatter=model_name_formatter)
     assert stage._controller.user_id_to_model(user_id) == expected_val
@@ -149,7 +149,7 @@ def test_user_id_to_model(config: Config, model_name_formatter: str, user_id: st
                            'test_城安宮川',
                            "/test/expr/dfp-test_城安宮川-test_城安宮川-c9acc3dec97777c8b6fd8ae70a744ea8")])
 def test_user_id_to_experiment(config: Config, experiment_name_formatter: str, user_id: str, expected_val: str):
-    from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+    from morpheus_dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
 
     stage = DFPMLFlowModelWriterStage(config,
                                       model_name_formatter="dfp-{user_id}",
@@ -178,7 +178,7 @@ def verify_apply_model_permissions(mock_requests: MockedRequests,
 
 
 def test_apply_model_permissions(config: Config, databricks_env: dict, mock_requests: MockedRequests):
-    from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+    from morpheus_dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     databricks_permissions = OrderedDict([('group1', 'CAN_READ'), ('group2', 'CAN_WRITE')])
     stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions, timeout=10)
     stage._controller._apply_model_permissions("test_experiment")
@@ -206,7 +206,7 @@ def test_apply_model_permissions_no_perms_error(config: Config,
     else:
         os.environ.pop("DATABRICKS_TOKEN", None)
 
-    from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+    from morpheus_dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     stage = DFPMLFlowModelWriterStage(config)
     with pytest.raises(RuntimeError):
         stage._controller._apply_model_permissions("test_experiment")
@@ -217,7 +217,7 @@ def test_apply_model_permissions_no_perms_error(config: Config,
 
 @pytest.mark.usefixtures("databricks_env")
 def test_apply_model_permissions_requests_error(config: Config, mock_requests: MockedRequests):
-    from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+    from morpheus_dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     mock_requests.get.side_effect = RuntimeError("test error")
 
     stage = DFPMLFlowModelWriterStage(config, timeout=10)
@@ -238,9 +238,9 @@ def test_on_data(
         databricks_env: dict,
         databricks_permissions: dict,
         tracking_uri: str):
-    from dfp.messages.dfp_message_meta import DFPMessageMeta
-    from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
-    from dfp.stages.dfp_mlflow_model_writer import conda_env
+    from morpheus_dfp.messages.dfp_message_meta import DFPMessageMeta
+    from morpheus_dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+    from morpheus_dfp.stages.dfp_mlflow_model_writer import conda_env
 
     should_apply_permissions = (databricks_permissions is not None and tracking_uri == "databricks")
 
