@@ -42,7 +42,7 @@ cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL}
 log_sccache_stats
 
 rapids-logger "Archiving results"
-tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" ${BUILD_DIR}/python/morpheus/dist ${BUILD_DIR}/python/morpheus_llm/dist
+tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" ${BUILD_DIR}/python/morpheus/dist ${BUILD_DIR}/python/morpheus_llm/dist ${BUILD_DIR}/python/morpheus_dfp/dist
 
 MORPHEUS_LIBS=($(find ${MORPHEUS_ROOT}/${BUILD_DIR}/python/morpheus/morpheus/_lib -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;) \
                 $(find ${MORPHEUS_ROOT}/${BUILD_DIR}/python/morpheus_llm/morpheus_llm/_lib -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;) \

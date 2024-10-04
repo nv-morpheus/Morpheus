@@ -24,13 +24,13 @@ from morpheus.io.utils import cudf_string_cols_exceed_max_bytes
 from morpheus.io.utils import truncate_string_cols_by_bytes
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import is_cudf_type
+from morpheus_llm.error import IMPORT_ERROR_MESSAGE
 from morpheus_llm.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus_llm.service.vdb.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
-IMPORT_ERROR_MESSAGE = "MilvusVectorDBResourceService requires the milvus and pymilvus packages to be installed."
 
 # Milvus has a max string length in bytes of 65,535. Multi-byte characters like "ñ" will have a string length of 1, the
 # byte length encoded as UTF-8 will be 2
@@ -233,7 +233,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
     def __init__(self, name: str, client: "MilvusClient", truncate_long_strings: bool = False) -> None:
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='pymilvus')) from IMPORT_EXCEPTION
 
         super().__init__()
 

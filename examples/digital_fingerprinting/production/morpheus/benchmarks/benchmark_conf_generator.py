@@ -25,10 +25,11 @@ from os import path
 
 import mlflow
 import pandas as pd
-from dfp.utils.config_generator import ConfigGenerator
-from dfp.utils.config_generator import generate_ae_config
-from dfp.utils.dfp_arg_parser import DFPArgParser
-from dfp.utils.schema_utils import SchemaBuilder
+
+from morpheus_dfp.utils.config_generator import ConfigGenerator
+from morpheus_dfp.utils.config_generator import generate_ae_config
+from morpheus_dfp.utils.dfp_arg_parser import DFPArgParser
+from morpheus_dfp.utils.schema_utils import SchemaBuilder
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 

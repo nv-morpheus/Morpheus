@@ -32,6 +32,7 @@ tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
 
 pip install ${MORPHEUS_ROOT}/${BUILD_DIR}/python/morpheus/dist/*.whl
 pip install ${MORPHEUS_ROOT}/${BUILD_DIR}/python/morpheus_llm/dist/*.whl
+pip install ${MORPHEUS_ROOT}/${BUILD_DIR}/python/morpheus_dfp/dist/*.whl
 
 rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}

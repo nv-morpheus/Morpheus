@@ -23,17 +23,6 @@ from datetime import timezone
 import click
 import mlflow
 import pandas as pd
-from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
-from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
-from dfp.stages.dfp_inference_stage import DFPInferenceStage
-from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
-from dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
-from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
-from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
-from dfp.stages.dfp_training import DFPTraining
-from dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
-from dfp.stages.multi_file_source import MultiFileSource
-from dfp.utils.regex_utils import iso_date_regex
 
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_package_relative_file
@@ -54,6 +43,17 @@ from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
+from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+from morpheus_dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+from morpheus_dfp.stages.dfp_inference_stage import DFPInferenceStage
+from morpheus_dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+from morpheus_dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
+from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+from morpheus_dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
+from morpheus_dfp.stages.dfp_training import DFPTraining
+from morpheus_dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
+from morpheus_dfp.stages.multi_file_source import MultiFileSource
+from morpheus_dfp.utils.regex_utils import iso_date_regex
 
 
 @click.command()

@@ -18,13 +18,13 @@ import time
 import typing
 
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus_llm.error import IMPORT_ERROR_MESSAGE
 from morpheus_llm.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus_llm.service.vdb.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
-IMPORT_ERROR_MESSAGE = "FaissDBResourceService requires the FAISS library to be installed."
 
 try:
     from langchain.embeddings.base import Embeddings
@@ -47,7 +47,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
 
     def __init__(self, parent: "FaissVectorDBService", *, name: str) -> None:
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='langchain and faiss-gpu')) from IMPORT_EXCEPTION
 
         super().__init__()
 
@@ -282,7 +282,7 @@ class FaissVectorDBService(VectorDBService):
     def __init__(self, local_dir: str, embeddings: "Embeddings"):
 
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='langchain and faiss-gpu')) from IMPORT_EXCEPTION
 
         self._local_dir = local_dir
         self._embeddings = embeddings

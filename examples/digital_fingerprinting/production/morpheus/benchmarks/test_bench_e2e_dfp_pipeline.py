@@ -20,23 +20,11 @@ import shutil
 import typing
 
 import boto3
-import dfp.modules  # noqa: F401 # pylint:disable=unused-import
 import pytest
-from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
-from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
-from dfp.stages.dfp_inference_stage import DFPInferenceStage
-from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
-from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
-from dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
-from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
-from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
-from dfp.stages.dfp_training import DFPTraining
-from dfp.stages.multi_file_source import MultiFileSource
-from dfp.utils.regex_utils import iso_date_regex
-from dfp.utils.schema_utils import Schema
 
 import morpheus.loaders  # noqa: F401 # pylint:disable=unused-import
 import morpheus.modules  # noqa: F401 # pylint:disable=unused-import
+import morpheus_dfp.modules  # noqa: F401 # pylint:disable=unused-import
 from benchmarks.benchmark_conf_generator import BenchmarkConfGenerator
 from benchmarks.benchmark_conf_generator import load_json
 from benchmarks.benchmark_conf_generator import set_mlflow_tracking_uri
@@ -53,6 +41,18 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
+from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+from morpheus_dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+from morpheus_dfp.stages.dfp_inference_stage import DFPInferenceStage
+from morpheus_dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+from morpheus_dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
+from morpheus_dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
+from morpheus_dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+from morpheus_dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
+from morpheus_dfp.stages.dfp_training import DFPTraining
+from morpheus_dfp.stages.multi_file_source import MultiFileSource
+from morpheus_dfp.utils.regex_utils import iso_date_regex
+from morpheus_dfp.utils.schema_utils import Schema
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
