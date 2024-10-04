@@ -19,13 +19,17 @@ import os
 import typing
 from unittest import mock
 
-import langchain
 import pytest
-from langchain.agents import AgentType
-from langchain.agents import initialize_agent
-from langchain.agents import load_tools
-from langchain.agents.tools import Tool
-from langchain.utilities import serpapi
+
+try:
+    import langchain
+    from langchain.agents import AgentType
+    from langchain.agents import initialize_agent
+    from langchain.agents import load_tools
+    from langchain.agents.tools import Tool
+    from langchain.utilities import serpapi
+except ImportError:
+    print("langchain is not installed")
 
 import cudf
 

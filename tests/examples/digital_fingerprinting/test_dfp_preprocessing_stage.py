@@ -28,7 +28,7 @@ from morpheus.utils.logger import set_log_level
 
 
 def test_constructor(config: Config):
-    from dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
+    from morpheus_dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
 
     schema = DataFrameInputSchema()
     stage = DFPPreprocessingStage(config, input_schema=schema)
@@ -43,7 +43,7 @@ def test_process_features(
         control_message: "ControlMessage",  # noqa: F821
         dataset_pandas: DatasetManager,
         log_level: int):
-    from dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
+    from morpheus_dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
 
     set_log_level(log_level)
 

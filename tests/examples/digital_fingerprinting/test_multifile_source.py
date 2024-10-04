@@ -25,7 +25,7 @@ from morpheus.pipeline.single_output_source import SingleOutputSource
 
 
 def test_constructor(config: Config):
-    from dfp.stages.multi_file_source import MultiFileSource
+    from morpheus_dfp.stages.multi_file_source import MultiFileSource
 
     batch_size = 1234
     n_threads = 13
@@ -43,7 +43,7 @@ def test_constructor(config: Config):
 
 
 def test_generate_frames_fsspec(config: Config, tmp_path: str):
-    from dfp.stages.multi_file_source import MultiFileSource
+    from morpheus_dfp.stages.multi_file_source import MultiFileSource
 
     file_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', '*.json')
     temp_glob = os.path.join(tmp_path, '*.json')  # this won't match anything
@@ -65,7 +65,7 @@ def test_generate_frames_fsspec(config: Config, tmp_path: str):
 
 @mock.patch('time.sleep')
 def test_polling_generate_frames_fsspec(amock_time: mock.MagicMock, config: Config, tmp_path: str):
-    from dfp.stages.multi_file_source import MultiFileSource
+    from morpheus_dfp.stages.multi_file_source import MultiFileSource
 
     file_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', '*.json')
     temp_glob = os.path.join(tmp_path, '*.json')  # this won't match anything
@@ -88,7 +88,7 @@ def test_polling_generate_frames_fsspec(amock_time: mock.MagicMock, config: Conf
 
 
 def test_generate_frames_fsspec_no_files(config: Config, tmp_path: str):
-    from dfp.stages.multi_file_source import MultiFileSource
+    from morpheus_dfp.stages.multi_file_source import MultiFileSource
 
     assert os.listdir(tmp_path) == []
 

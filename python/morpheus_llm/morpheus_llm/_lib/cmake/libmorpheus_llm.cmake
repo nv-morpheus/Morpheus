@@ -27,42 +27,32 @@ add_library(morpheus_llm
 
 add_library(${PROJECT_NAME}::morpheus_llm ALIAS morpheus_llm)
 
-# fixme check if all these are needed
+# morpheus_llm can be built two ways -
+# 1. For development purposes (eg. scripts/compile.sh) all the functional blocks are built.
+#    This includes morpheus (core), morpheus_llm, morpheus_dfp etc. In this case we
+#    set dependencies on build targets across components.
+# 2. For conda packaging purposes morpheus_llm is built on its own. In this case
+#    the dependencies (including morpheus-core) are loaded from the conda enviroment.
+if (MORPHEUS_BUILD_MORPHEUS_CORE)
+  # Add a dependency on the morpheus cpython libraries
+  get_property(py_morpheus_target GLOBAL PROPERTY py_morpheus_target_property)
+  add_dependencies(morpheus_llm ${py_morpheus_target})
+else()
+  rapids_find_package(morpheus REQUIRED)
+endif()
+
 target_link_libraries(morpheus_llm
   PRIVATE
-    matx::matx
     $<$<CONFIG:Debug>:ZLIB::ZLIB>
   PUBLIC
     $<TARGET_NAME_IF_EXISTS:conda_env>
     cudf::cudf
-    CUDA::nvtx3
     mrc::pymrc
     ${PROJECT_NAME}::morpheus
-
 )
 
-# Add the include directories of the cudf_helpers_project since we dont want to link directly to it
-get_property(cudf_helpers_target GLOBAL PROPERTY cudf_helpers_target_property)
-get_target_property(cudf_helpers_include ${cudf_helpers_target} INTERFACE_INCLUDE_DIRECTORIES)
-
-target_include_directories(morpheus
-  PRIVATE
-     ${cudf_helpers_include}
-)
-
-# Also add a dependency to the target so that the headers are generated before the target is built
-add_dependencies(morpheus_llm ${cudf_helpers_target})
-message("add_dependencies morpheus_llm ${cudf_helpers_target}")
-
-# Add a dependency on the morpheus cpython libraries
-get_property(py_morpheus_target GLOBAL PROPERTY py_morpheus_target_property)
-add_dependencies(morpheus_llm ${py_morpheus_target})
-message("add_dependencies morpheus_llm ${py_morpheus_target}")
-
-# fixme: find another way to include morpheus headers
 target_include_directories(morpheus_llm
   PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/morpheus/_lib/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )

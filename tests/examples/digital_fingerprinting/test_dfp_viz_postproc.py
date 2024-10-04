@@ -54,7 +54,7 @@ def expected_df_fixture(config: Config, control_message: "ControlMessage"):  # n
 
 
 def test_constructor(config: Config):
-    from dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
+    from morpheus_dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
     stage = DFPVizPostprocStage(config, period='M', output_dir='/fake/test/dir', output_prefix='test_prefix')
 
     assert isinstance(stage, SinglePortStage)
@@ -72,7 +72,7 @@ def test_postprocess(
         control_message: "ControlMessage",  # noqa: F821
         expected_df: pd.DataFrame,
         dataset_pandas: DatasetManager):
-    from dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
+    from morpheus_dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
 
     # _postprocess doesn't write to disk, so the fake output_dir, shouldn't be an issue
     stage = DFPVizPostprocStage(config, period='min', output_dir='/fake/test/dir', output_prefix='test_prefix')
@@ -88,7 +88,7 @@ def test_write_to_files(
         control_message: "ControlMessage",  # noqa: F821
         expected_df: pd.DataFrame,
         dataset_pandas: DatasetManager):
-    from dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
+    from morpheus_dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
 
     stage = DFPVizPostprocStage(config, period='min', output_dir=tmp_path, output_prefix='test_prefix_')
     assert stage._write_to_files(control_message) is control_message

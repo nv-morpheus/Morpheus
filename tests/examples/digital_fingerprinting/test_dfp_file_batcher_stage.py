@@ -48,7 +48,7 @@ def file_specs_fixture(test_data_dir: str):
 
 
 def test_constructor(config: Config):
-    from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+    from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 
     def date_conversion_func(x):
         return x
@@ -71,7 +71,7 @@ def test_constructor(config: Config):
 def test_constructor_deprecated_args(config: Config):
     """Test that the deprecated sampling_rate_s arg is still supported"""
 
-    from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+    from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 
     with pytest.deprecated_call():
         stage = DFPFileBatcherStage(config, lambda x: x, sampling_rate_s=55)
@@ -82,14 +82,14 @@ def test_constructor_deprecated_args(config: Config):
 
 def test_constructor_both_sample_args_error(config: Config):
     """Test that an error is raised if both sampling and sampling_rate_s are specified"""
-    from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+    from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 
     with pytest.raises(AssertionError):
         DFPFileBatcherStage(config, lambda x: x, sampling=55, sampling_rate_s=20)
 
 
 def test_on_data(config: Config, date_conversion_func: typing.Callable, file_specs: typing.List[fsspec.core.OpenFile]):
-    from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+    from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
     stage = DFPFileBatcherStage(config, date_conversion_func)
 
     assert not stage.on_data([])
@@ -108,7 +108,7 @@ def test_on_data_two_batches(config: Config,
                              file_specs: typing.List[fsspec.core.OpenFile],
                              test_data_dir: str):
     # Test with a one-minute window which should split the data into two batches
-    from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+    from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
     stage = DFPFileBatcherStage(config, date_conversion_func, period='min')
     batches = stage.on_data(file_specs)
     assert len(batches) == 2
@@ -131,7 +131,7 @@ def test_on_data_start_time(config: Config,
                             file_specs: typing.List[fsspec.core.OpenFile],
                             test_data_dir: str):
     # Test with a start time that excludes some files
-    from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+    from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
     stage = DFPFileBatcherStage(config,
                                 date_conversion_func,
                                 period='min',
@@ -151,7 +151,7 @@ def test_on_data_end_time(config: Config,
                           file_specs: typing.List[fsspec.core.OpenFile],
                           test_data_dir: str):
     # Test with a end time that excludes some files
-    from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+    from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
     stage = DFPFileBatcherStage(config,
                                 date_conversion_func,
                                 period='min',
@@ -172,7 +172,7 @@ def test_on_data_start_time_end_time(config: Config,
                                      file_specs: typing.List[fsspec.core.OpenFile],
                                      test_data_dir: str):
     # Test with a start & end time that excludes some files
-    from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+    from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
     stage = DFPFileBatcherStage(config,
                                 date_conversion_func,
                                 period='min',
