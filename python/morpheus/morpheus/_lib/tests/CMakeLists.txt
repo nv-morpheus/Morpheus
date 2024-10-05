@@ -152,6 +152,12 @@ add_morpheus_test(
 )
 
 add_morpheus_test(
+  NAME controllers
+  FILES
+    controllers/test_monitor_controller.cpp
+)
+
+add_morpheus_test(
   NAME stages
   FILES
     stages/test_preprocess_nlp.cpp
