@@ -51,7 +51,7 @@ class FakeEmbedder(Embeddings):
 
 
 @pytest.fixture(scope="function", name="faiss_simple_store_dir")
-def faiss_simple_store_dir_fixture(tmpdir_path: Path):
+def faiss_simple_store_dir_fixture(tmp_path: Path):
 
     from langchain_community.vectorstores.faiss import FAISS
 
@@ -60,15 +60,15 @@ def faiss_simple_store_dir_fixture(tmpdir_path: Path):
     # create FAISS docstore for testing
     index_store = FAISS.from_texts([str(x) * x for x in range(3)], embeddings, ids=[chr(x + 97) for x in range(3)])
 
-    index_store.save_local(str(tmpdir_path), index_name="index")
+    index_store.save_local(str(tmp_path), index_name="index")
 
     # create a second index for testing
     other_store = FAISS.from_texts([str(x) * x for x in range(3, 8)],
                                    embeddings,
                                    ids=[chr(x + 97) for x in range(3, 8)])
-    other_store.save_local(str(tmpdir_path), index_name="other_index")
+    other_store.save_local(str(tmp_path), index_name="other_index")
 
-    return str(tmpdir_path)
+    return str(tmp_path)
 
 
 @pytest.fixture(scope="function", name="faiss_service")
