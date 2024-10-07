@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+try:
+    import databricks.connect # pylint: disable=unused-import
+except ImportError:
+    import pytest
+    pytest.skip("databricks-connect not installed", allow_module_level=True)
+
 from unittest.mock import patch
 
 from _utils import assert_results
