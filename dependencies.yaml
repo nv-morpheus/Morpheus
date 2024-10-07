@@ -214,10 +214,12 @@ dependencies:
               - cuda-nvml-dev=12.5
               - cuda-nvrtc-dev=12.5
               - cuda-nvtx-dev=12.5
-              # - cuda-tools=12.5
-              - cuda-version=12.5
-              - libcufft-dev # required by matx
               - cuda-sanitizer-api
+              - cuda-version=12.5
+              - libcublas-dev # required by matx
+              - libcufft-dev # required by matx
+              - libcusolver-dev # required by matx
+              - libcurand-dev # required by matx
 
 
 
