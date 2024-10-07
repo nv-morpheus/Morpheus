@@ -54,46 +54,50 @@ namespace morpheus {
 
 struct LineInsertingFilter : boost::iostreams::line_filter
 {
-    std::string do_filter(const std::string& line)
-    {
-        // return "\n\033[A\033[1L" + line;
-        return "\033[A" + line;
-    }
-};
-
-// See customize_streambuf()
-struct LineTransformingFilter : boost::iostreams::line_filter
-{
   public:
-    LineTransformingFilter(size_t num_new_lines) : m_num_new_lines(num_new_lines) {}
-    // LineInsertingFilter() = default;
-
+    LineInsertingFilter(size_t num_new_lines) : m_num_new_lines(num_new_lines) {}
     std::string do_filter(const std::string& line)
     {
-        // adding "\n" (new line) "\033[A" (move cursor up) and "\033[1L" (insert line) before each line
-        // std::stringstream filtered_line;
-        // for (size_t i = 0; i < m_num_new_lines; i++)
+        std::stringstream new_line;
+        // for (size_t i = 0; i < m_num_new_lines; ++i)
         // {
-        //     filtered_line << "\n";
+        //     new_line << "\n";
         // }
-        // filtered_line << "\033[" << m_num_new_lines << "A\033[1L" << line;
-        // return "\033[4A\033[3L" + line;
-        std::string new_line(line);
-        size_t found = 0;
-        while (found != std::string::npos)
-        {
-            found = new_line.find("\r\r", found);
-            if (found != std::string::npos)
-            {
-                new_line.insert(found + 1, "\n");
-                found += 6;
-            }
-        }
-        return new_line + "\n\033[4A";
+        // new_line << "\033[" << m_num_new_lines << "A" << "\033[1L" << line;
+        new_line << "\n\033[A\033[1L" << line;
+        return new_line.str();
     }
 
   private:
-    size_t m_num_new_lines{1};
+    size_t m_num_new_lines;
+};
+
+// See customize_streambuf()
+struct LineParsingFilter : boost::iostreams::line_filter
+{
+  public:
+    LineParsingFilter(size_t num_new_lines) : m_num_new_lines(num_new_lines) {}
+
+    std::string do_filter(const std::string& line)
+    {
+        std::string parsed_line(line);
+        size_t found = 0;
+        while (found != std::string::npos)
+        {
+            found = parsed_line.find("\r\r", found);
+            if (found != std::string::npos)
+            {
+                parsed_line.insert(found + 1, "\n");
+                found += 6;
+            }
+        }
+        std::stringstream new_line;
+        new_line << parsed_line << "\n\033[" << m_num_new_lines << "A";
+        return new_line.str();
+    }
+
+  private:
+    size_t m_num_new_lines;
 };
 
 // A singleton that manages the lifetime of progress bars related to any MonitorController<T> instances
@@ -111,6 +115,8 @@ class ProgressBarContextManager
     size_t add_progress_bar(const std::string& description)
     {
         m_progress_bars.push_back(std::move(initialize_progress_bar(description)));
+        init_log_buf();
+        // init_monitor_buf();
 
         // DynamicProgress should take ownership over progressbars: https://github.com/p-ranav/indicators/issues/134
         // The fix to this issue is not yet released, so we need to:
@@ -125,22 +131,12 @@ class ProgressBarContextManager
         return m_dynamic_progress_bars;
     }
 
-    std::ostream& monitor_os()
+    boost::iostreams::filtering_istreambuf& monitoring_ibuf()
     {
-        return m_monitor_os;
-    }
-
-    std::stringbuf& monitor_buf()
-    {
-        return m_monitor_buf;
-    }
-
-    boost::iostreams::filtering_istreambuf& filtering_buf()
-    {
-        m_filtering_buf.reset();
-        m_filtering_buf.push(LineTransformingFilter(1));
-        m_filtering_buf.push(m_monitor_buf);
-        return m_filtering_buf;
+        m_monitor_ibuf.reset();
+        m_monitor_ibuf.push(LineParsingFilter(m_progress_bars.size()));
+        m_monitor_ibuf.push(m_monitor_buf);
+        return m_monitor_ibuf;
     }
 
     bool is_started()
@@ -153,29 +149,28 @@ class ProgressBarContextManager
         return result;
     }
 
+    size_t num_progress_bars() const
+    {
+        return m_progress_bars.size();
+    }
+
   private:
-    ProgressBarContextManager() : m_monitor_os(&m_monitor_buf), m_monitor_os2(customize_streambuf()) {}
+    ProgressBarContextManager() : m_monitor_os(&m_monitor_buf)
+    {
+        init_log_buf();
+    }
     ~ProgressBarContextManager() = default;
 
-    std::streambuf* customize_streambuf()
+    void init_log_buf()
     {
-        // Create a customized streambuf that inserts a newline before each output of progressbar
-        // This enables logging and progressbar output in the same terminal
-        // See https://github.com/p-ranav/indicators/issues/107
-        auto* stdout_buf = std::cout.rdbuf();
-        // // boost::iostreams::filtering_ostreambuf m_filtering_buf2{};
-        // m_filtering_buf2.push(LineInsertingFilter());
-        // m_filtering_buf2.push(*stdout_buf);
-
-        // std::cout.rdbuf(&m_filtering_buf2);
-        return stdout_buf;
+        m_log_buf.reset();
+        m_log_buf.push(LineInsertingFilter(m_progress_bars.size()));
+        m_log_buf.push(*m_std_out_buf);
+        std::cout.rdbuf(&m_log_buf);
     }
 
     std::unique_ptr<indicators::IndeterminateProgressBar> initialize_progress_bar(const std::string& description)
     {
-        // m_monitor_oss.push_back(std::make_unique<std::ostream>(customize_streambuf(m_progress_bars.size() + 1)));
-        // std::ostream& monitor_os = *m_monitor_oss.back();
-
         auto progress_bar =
             std::make_unique<indicators::IndeterminateProgressBar>(indicators::option::BarWidth{20},
                                                                    indicators::option::Start{"["},
@@ -190,13 +185,14 @@ class ProgressBarContextManager
 
     indicators::DynamicProgress<indicators::IndeterminateProgressBar> m_dynamic_progress_bars;
     std::vector<std::unique_ptr<indicators::IndeterminateProgressBar>> m_progress_bars;
-    boost::iostreams::filtering_istreambuf m_filtering_buf;
-    boost::iostreams::filtering_istreambuf m_filtering_buf2;
+
+    std::streambuf* m_std_out_buf{std::cout.rdbuf()};
+    boost::iostreams::filtering_ostreambuf m_log_buf;
+
     std::stringbuf m_monitor_buf;
     std::ostream m_monitor_os;
-    std::ostream m_monitor_os2;
-    std::vector<std::unique_ptr<std::ostream>> m_monitor_oss;
-    std::vector<std::unique_ptr<boost::iostreams::filtering_ostreambuf>> m_filtering_bufs;
+    boost::iostreams::filtering_istreambuf m_monitor_ibuf;
+
     bool m_is_started{false};
 };
 
@@ -260,20 +256,6 @@ MonitorController<MessageT>::MonitorController(const std::string& description,
 }
 
 template <typename MessageT>
-std::unique_ptr<indicators::IndeterminateProgressBar> MonitorController<MessageT>::initialize_progress_bar()
-{
-    auto progress_bar =
-        std::make_unique<indicators::IndeterminateProgressBar>(indicators::option::BarWidth{20},
-                                                               indicators::option::Start{"["},
-                                                               indicators::option::Fill{"."},
-                                                               indicators::option::Lead{"o"},
-                                                               indicators::option::End("]"),
-                                                               indicators::option::PrefixText{m_description});
-
-    return std::move(progress_bar);
-}
-
-template <typename MessageT>
 MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
 {
     if (!m_time_started)
@@ -289,13 +271,13 @@ MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
     pbar.set_option(indicators::option::PostfixText{format_throughput(duration, m_count, m_unit)});
     pbar.tick();
 
-    if (!ProgressBarContextManager::get_instance().is_started())
+    auto& manager = ProgressBarContextManager::get_instance();
+    if (!manager.is_started())
     {
-        std::cout << "\033[4A\r";
+        std::cout << "\033[" << std::to_string(manager.num_progress_bars()) << "A\r";
     }
-    // std::cout << "\033[L";
-    auto& filtering_buf = ProgressBarContextManager::get_instance().filtering_buf();
-    boost::iostreams::copy(filtering_buf, std::cout);
+    auto& monitor_ibuf = manager.monitoring_ibuf();
+    boost::iostreams::copy(monitor_ibuf, std::cout);
 
     return msg;
 }
