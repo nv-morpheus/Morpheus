@@ -20,9 +20,9 @@ import morpheus
 
 class TestDirectories:
 
-    def __init__(self, cur_file=__file__) -> None:
-        self.tests_dir = os.path.dirname(os.path.dirname(cur_file))
-        self.morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.dirname(self.tests_dir))
+    def __init__(self) -> None:
+        self.morpheus_root = os.environ.get('MORPHEUS_ROOT')
+        self.tests_dir = self.morpheus_root + "/tests"
         self.data_dir = morpheus.DATA_DIR
         self.examples_dir = os.path.join(self.morpheus_root, 'examples')
         self.models_dir = os.path.join(self.morpheus_root, 'models')
@@ -32,3 +32,4 @@ class TestDirectories:
         self.tests_data_dir = os.path.join(self.tests_dir, 'tests_data')
         self.mock_triton_servers_dir = os.path.join(self.tests_dir, 'mock_triton_server')
         self.mock_rest_server = os.path.join(self.tests_dir, 'mock_rest_server')
+        print(self)
