@@ -29,7 +29,7 @@ DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:?"Must set \$DOCKER_IMAGE_TAG. ${_UNDEF_VAR_
 
 # DOCKER_ARGS are set by the dev/release scripts
 # DOCKER_EXTRA_ARGS are optionally set by the user
-DOCKER_ARGS=${DOCKER_ARGS:?"Must set \$DOCKER_ARGS. ${_UNDEF_VAR_ERROR_MSG}"}
+DOCKER_ARGS=${DOCKER_ARGS:-""}
 DOCKER_ARGS="${DOCKER_ARGS} --net=host --cap-add=sys_nice ${DOCKER_EXTRA_ARGS}"
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 

@@ -16,10 +16,10 @@
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"morpheus"}
-DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"dev-$(date +'%y%m%d')"}
+export DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"morpheus"}
+export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"dev-$(date +'%y%m%d')"}
 
-DOCKER_ARGS=" --env WORKSPACE_VOLUME=${PWD} -v $PWD:/workspace -v /dev/hugepages:/dev/hugepages --privileged"
+export DOCKER_ARGS="-v $PWD:/workspace -v /dev/hugepages:/dev/hugepages --privileged"
 
 # Call the general run script
 ${SCRIPT_DIR}/run_container.sh

@@ -21,13 +21,13 @@ pushd ${SCRIPT_DIR} &> /dev/null
 
 MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
 
-DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"nvcr.io/nvidia/morpheus/morpheus"}
-DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"$(git describe --tags --abbrev=0)-runtime"}
+export DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"nvcr.io/nvidia/morpheus/morpheus"}
+export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"$(git describe --tags --abbrev=0)-runtime"}
 
 popd &> /dev/null
 
 # DPDK (and thus DOCA) requires hugepage and privileged container
-DOCKER_ARGS=""
+export DOCKER_ARGS=""
 if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
    echo -e "Enabling DOCA Support. Mounting /dev/hugepages and running in privileged mode"
 
