@@ -64,8 +64,9 @@ struct LineInsertingFilter : boost::iostreams::line_filter
         //     new_line << "\n";
         // }
         // new_line << "\033[" << m_num_new_lines << "A" << "\033[1L" << line;
-        new_line << "\n\033[A\033[1L" << line;
-        return new_line.str();
+        // new_line << "\033[1L" << line;
+        // return new_line.str();
+        return "\n\033[A\033[1L" + line;
     }
 
   private:
@@ -139,6 +140,11 @@ class ProgressBarContextManager
         return m_monitor_ibuf;
     }
 
+    std::ostream& original_os()
+    {
+        return m_original_os;
+    }
+
     bool is_started()
     {
         bool result = m_is_started;
@@ -155,7 +161,7 @@ class ProgressBarContextManager
     }
 
   private:
-    ProgressBarContextManager() : m_monitor_os(&m_monitor_buf)
+    ProgressBarContextManager() : m_monitor_os(&m_monitor_buf), m_original_os(m_std_out_buf)
     {
         init_log_buf();
     }
@@ -187,6 +193,7 @@ class ProgressBarContextManager
     std::vector<std::unique_ptr<indicators::IndeterminateProgressBar>> m_progress_bars;
 
     std::streambuf* m_std_out_buf{std::cout.rdbuf()};
+    std::ostream m_original_os;
     boost::iostreams::filtering_ostreambuf m_log_buf;
 
     std::stringbuf m_monitor_buf;
@@ -277,7 +284,7 @@ MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
         std::cout << "\033[" << std::to_string(manager.num_progress_bars()) << "A\r";
     }
     auto& monitor_ibuf = manager.monitoring_ibuf();
-    boost::iostreams::copy(monitor_ibuf, std::cout);
+    boost::iostreams::copy(monitor_ibuf, manager.original_os());
 
     return msg;
 }
