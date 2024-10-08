@@ -36,8 +36,8 @@
 #include "morpheus/utilities/http_server.hpp"            // for DefaultMaxPayloadSize
 #include "morpheus/version.hpp"                          // for morpheus_VERSION_MAJOR, morpheus_VERSION_MINOR, morp...
 
-#include <indicators/color.hpp>        // for Color
-#include <indicators/font_style.hpp>   // for FontStyle
+#include <indicators/color.hpp>       // for Color
+#include <indicators/font_style.hpp>  // for FontStyle
 #include <mrc/segment/builder.hpp>     // for Builder
 #include <mrc/segment/object.hpp>      // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>  // for MRC_CONCAT_STR

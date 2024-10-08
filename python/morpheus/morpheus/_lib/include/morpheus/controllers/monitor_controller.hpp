@@ -61,7 +61,7 @@ namespace morpheus {
 // This keeps the progress bars always display as the last line of console output
 struct LineInsertingFilter : boost::iostreams::line_filter
 {
-    std::string do_filter(const std::string& line)
+    std::string do_filter(const std::string& line) override
     {
         return "\n\033[A\033[1L" + line;
     }
