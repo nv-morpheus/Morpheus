@@ -17,11 +17,11 @@
 import typing
 from unittest import mock
 
-import pytest
-
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
 import modules.multiplexer  # noqa: F401 # pylint:disable=unused-import
+import pytest
+
 from morpheus.stages.general.multi_port_modules_stage import MultiPortModulesStage
 
 

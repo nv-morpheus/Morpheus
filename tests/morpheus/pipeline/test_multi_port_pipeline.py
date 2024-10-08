@@ -14,13 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# When segment modules are imported, they're added to the module registry.
+# To avoid flake8 warnings about unused code, the noqa flag is used during import.
+import modules.multiplexer  # noqa: F401 # pylint: disable=unused-import
 import pytest
 
 import cudf
 
-# When segment modules are imported, they're added to the module registry.
-# To avoid flake8 warnings about unused code, the noqa flag is used during import.
-import modules.multiplexer  # noqa: F401 # pylint: disable=unused-import
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline

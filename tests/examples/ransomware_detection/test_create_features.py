@@ -43,9 +43,10 @@ class TestCreateFeaturesRWStage:
             rwd_conf: dict,
             interested_plugins: typing.List[str]):
         mock_dask_client.return_value = mock_dask_client
+        from stages.create_features import CreateFeaturesRWStage
+
         from common.data_models import FeatureConfig
         from common.feature_extractor import FeatureExtractor
-        from stages.create_features import CreateFeaturesRWStage
 
         n_workers = 12
         threads_per_worker = 8
