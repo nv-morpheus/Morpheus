@@ -344,11 +344,9 @@ dependencies:
           - networkx=2.8.8
           - numpydoc=1.5
           - pydantic
-          # - python ##
+          - python
           - python-confluent-kafka>=1.9.2,<1.10.0a0
           - python-graphviz
-          # - pytorch-cuda
-          # - pytorch=*=*cuda*
           - pluggy=1.3
           - rapids-dask-dependency=24.10 # provides dask and distributed
           - requests
