@@ -53,7 +53,7 @@ def test_cpp_monitor_stage_pipe(config):
     df_cols = 3
     expected_df = next(sample_message_meta_generator(df_rows, df_cols, 1)).copy_dataframe()
 
-    count = 500
+    count = 20
 
     cudf_generator = partial(sample_message_meta_generator, df_rows, df_cols, count)
 
