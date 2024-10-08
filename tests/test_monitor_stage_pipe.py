@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 from functools import partial
 from typing import Generator
 
@@ -23,6 +24,8 @@ import pytest
 import cudf
 
 from _utils import assert_results
+from morpheus.common import IndicatorsFontColor
+from morpheus.common import IndicatorsFontStyle
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
@@ -32,6 +35,22 @@ from morpheus.stages.input.in_memory_data_generation_stage import InMemoryDataGe
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Create a StreamHandler
+console_handler = logging.StreamHandler()
+
+# Set the handler's log level
+console_handler.setLevel(logging.DEBUG)
+
+# Create a formatter and set it for the handler
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Add the handler to the logger
+logger.addHandler(console_handler)
 
 
 def sample_message_meta_generator(df_rows: int, df_cols: int, count: int) -> Generator[MessageMeta, None, None]:
@@ -57,6 +76,7 @@ def test_monitor_stage_pipe(config):
 
     @stage
     def dummy_control_message_process_stage(msg: ControlMessage) -> ControlMessage:
+        logger.exception("dummy_control_message_process_stage")
         matrix_a = np.random.rand(3000, 3000)
         matrix_b = np.random.rand(3000, 3000)
         matrix_c = np.dot(matrix_a, matrix_b)
@@ -72,9 +92,19 @@ def test_monitor_stage_pipe(config):
     pipe = LinearPipeline(config)
     pipe.set_source(InMemoryDataGenStage(config, cudf_generator, output_data_type=MessageMeta))
     pipe.add_stage(DeserializeStage(config, ensure_sliceable_index=True))
-    pipe.add_stage(MonitorStage(config, description="preprocess", unit="records"))
+    pipe.add_stage(
+        MonitorStage(config,
+                     description="preprocess",
+                     unit="records",
+                     font_color=IndicatorsFontColor.green,
+                     font_style=IndicatorsFontStyle.underline))
     pipe.add_stage(dummy_control_message_process_stage(config))
-    pipe.add_stage(MonitorStage(config, description="postprocess", unit="records"))
+    pipe.add_stage(
+        MonitorStage(config,
+                     description="postprocess",
+                     unit="records",
+                     font_color=IndicatorsFontColor.blue,
+                     font_style=IndicatorsFontStyle.italic))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
         MonitorStage(config, description="sink", unit="MessageMeta", determine_count_fn=customized_determine_count_fn))

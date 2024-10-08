@@ -20,6 +20,8 @@ from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
 from morpheus._lib.common import HttpEndpoint
 from morpheus._lib.common import HttpServer
+from morpheus._lib.common import IndicatorsFontColor
+from morpheus._lib.common import IndicatorsFontStyle
 from morpheus._lib.common import Tensor
 from morpheus._lib.common import TypeId
 from morpheus._lib.common import determine_file_type
@@ -35,6 +37,8 @@ __all__ = [
     "FilterSource",
     "HttpEndpoint",
     "HttpServer",
+    "IndicatorsFontColor",
+    "IndicatorsFontStyle",
     "read_file_to_df",
     "Tensor",
     "typeid_is_fully_supported",

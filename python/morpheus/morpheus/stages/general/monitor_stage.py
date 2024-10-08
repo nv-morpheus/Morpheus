@@ -21,6 +21,8 @@ from tqdm import tqdm
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import IndicatorsFontColor
+from morpheus.common import IndicatorsFontStyle
 from morpheus.config import Config
 from morpheus.controllers.monitor_controller import MonitorController
 from morpheus.messages import ControlMessage
@@ -67,8 +69,10 @@ class MonitorStage(PassThruTypeMixin, SinglePortStage):
                  description: str = "Progress",
                  smoothing: float = 0.05,
                  unit: str = "messages",
-                 delayed_start: bool = False,
+                 delayed_start: bool = True,
                  determine_count_fn: typing.Callable[[typing.Any], int] = None,
+                 font_color: IndicatorsFontColor = IndicatorsFontColor.cyan,
+                 font_style: IndicatorsFontStyle = IndicatorsFontStyle.bold,
                  log_level: LogLevels = LogLevels.INFO):
         super().__init__(c)
 
@@ -79,6 +83,8 @@ class MonitorStage(PassThruTypeMixin, SinglePortStage):
                                      unit=unit,
                                      delayed_start=delayed_start,
                                      determine_count_fn=determine_count_fn,
+                                     font_color=font_color,
+                                     font_style=font_style,
                                      log_level=log_level)
         MonitorController.controller_count += 1
 
@@ -127,6 +133,8 @@ class MonitorStage(PassThruTypeMixin, SinglePortStage):
                                                           self.unique_name,
                                                           self._mc._description,
                                                           self._mc._unit,
+                                                          self._mc._font_color,
+                                                          self._mc._font_style,
                                                           self._mc._determine_count_fn)
                 node.launch_options.pe_count = self._config.num_threads
             else:
@@ -134,6 +142,8 @@ class MonitorStage(PassThruTypeMixin, SinglePortStage):
                                                        self.unique_name,
                                                        self._mc._description,
                                                        self._mc._unit,
+                                                       self._mc._font_color,
+                                                       self._mc._font_style,
                                                        self._mc._determine_count_fn)
                 node.launch_options.pe_count = self._config.num_threads
 

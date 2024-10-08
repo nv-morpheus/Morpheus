@@ -203,6 +203,8 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("description"),
              py::arg("unit")               = "messages",
+             py::arg("font_color")         = indicators::Color::cyan,
+             py::arg("font_style")         = indicators::FontStyle::bold,
              py::arg("determine_count_fn") = py::none());
 
     py::class_<mrc::segment::Object<MonitorStage<ControlMessage>>,
@@ -214,6 +216,8 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("description"),
              py::arg("unit")               = "messages",
+             py::arg("font_color")         = indicators::Color::cyan,
+             py::arg("font_style")         = indicators::FontStyle::bold,
              py::arg("determine_count_fn") = py::none());
 
     py::class_<mrc::segment::Object<PreallocateStage<ControlMessage>>,

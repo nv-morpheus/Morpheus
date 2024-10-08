@@ -130,6 +130,6 @@ TEST_F(TestMonitorController, TestProgressBar)
         std::cout << "log message 3: " << i << std::endl;
         message_meta_mc_3.progress_sink(meta_3);
         control_message_mc.progress_sink(control_message);
-        std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(1000));
+        std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(100));
     }
 }

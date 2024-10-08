@@ -24,7 +24,9 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/line.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
+#include <indicators/color.hpp>
 #include <indicators/dynamic_progress.hpp>
+#include <indicators/font_style.hpp>
 #include <indicators/indeterminate_progress_bar.hpp>
 #include <indicators/progress_bar.hpp>
 #include <mrc/segment/builder.hpp>  // for Builder
@@ -54,51 +56,10 @@ namespace morpheus {
 
 struct LineInsertingFilter : boost::iostreams::line_filter
 {
-  public:
-    LineInsertingFilter(size_t num_new_lines) : m_num_new_lines(num_new_lines) {}
     std::string do_filter(const std::string& line)
     {
-        std::stringstream new_line;
-        // for (size_t i = 0; i < m_num_new_lines; ++i)
-        // {
-        //     new_line << "\n";
-        // }
-        // new_line << "\033[" << m_num_new_lines << "A" << "\033[1L" << line;
-        // new_line << "\033[1L" << line;
-        // return new_line.str();
         return "\n\033[A\033[1L" + line;
     }
-
-  private:
-    size_t m_num_new_lines;
-};
-
-// See customize_streambuf()
-struct LineParsingFilter : boost::iostreams::line_filter
-{
-  public:
-    LineParsingFilter(size_t num_new_lines) : m_num_new_lines(num_new_lines) {}
-
-    std::string do_filter(const std::string& line)
-    {
-        std::string parsed_line(line);
-        size_t found = 0;
-        while (found != std::string::npos)
-        {
-            found = parsed_line.find("\r\r", found);
-            if (found != std::string::npos)
-            {
-                parsed_line.insert(found + 1, "\n");
-                found += 6;
-            }
-        }
-        std::stringstream new_line;
-        new_line << parsed_line << "\n\033[" << m_num_new_lines << "A";
-        return new_line.str();
-    }
-
-  private:
-    size_t m_num_new_lines;
 };
 
 // A singleton that manages the lifetime of progress bars related to any MonitorController<T> instances
@@ -113,11 +74,11 @@ class ProgressBarContextManager
     ProgressBarContextManager(ProgressBarContextManager const&)            = delete;
     ProgressBarContextManager& operator=(ProgressBarContextManager const&) = delete;
 
-    size_t add_progress_bar(const std::string& description)
+    size_t add_progress_bar(const std::string& description,
+                            indicators::Color font_color     = indicators::Color::cyan,
+                            indicators::FontStyle font_style = indicators::FontStyle::bold)
     {
-        m_progress_bars.push_back(std::move(initialize_progress_bar(description)));
-        init_log_buf();
-        // init_monitor_buf();
+        m_progress_bars.push_back(std::move(initialize_progress_bar(description, font_color, font_style)));
 
         // DynamicProgress should take ownership over progressbars: https://github.com/p-ranav/indicators/issues/134
         // The fix to this issue is not yet released, so we need to:
@@ -127,11 +88,6 @@ class ProgressBarContextManager
         return m_dynamic_progress_bars.push_back(*m_progress_bars.back());
     }
 
-    // indicators::DynamicProgress<indicators::IndeterminateProgressBar>& dynamic_progress_bars()
-    // {
-    //     return m_dynamic_progress_bars;
-    // }
-
     std::vector<std::unique_ptr<indicators::IndeterminateProgressBar>>& progress_bars()
     {
         return m_progress_bars;
@@ -139,67 +95,52 @@ class ProgressBarContextManager
 
     void display()
     {
+        m_std_os.iword(termcolor::_internal::colorize_index()) = 1;
         for (auto& pbar : m_progress_bars)
         {
             pbar->print_progress(true);
-            m_original_os << "\n";
+            m_std_os << termcolor::reset;
+            m_std_os << "\n";
         }
-        m_original_os << "\033[" << m_progress_bars.size() << "A";
+        m_std_os << "\033[" << m_progress_bars.size() << "A";
     }
 
-    boost::iostreams::filtering_istreambuf& monitoring_ibuf()
+    std::ostream& std_os()
     {
-        m_monitor_ibuf.reset();
-        m_monitor_ibuf.push(LineParsingFilter(m_progress_bars.size()));
-        m_monitor_ibuf.push(m_monitor_buf);
-        return m_monitor_ibuf;
-    }
-
-    std::ostream& original_os()
-    {
-        return m_original_os;
-    }
-
-    bool is_started()
-    {
-        bool result = m_is_started;
-        if (!m_is_started)
-        {
-            m_is_started = true;
-        }
-        return result;
-    }
-
-    size_t num_progress_bars() const
-    {
-        return m_progress_bars.size();
+        return m_std_os;
     }
 
   private:
-    ProgressBarContextManager() : m_monitor_os(&m_monitor_buf), m_original_os(m_std_out_buf)
+    ProgressBarContextManager() : m_std_streambuf(std::cout.rdbuf()), m_std_os(m_std_streambuf)
     {
         init_log_buf();
     }
-    ~ProgressBarContextManager() = default;
+    ~ProgressBarContextManager()
+    {
+        std::cout.rdbuf(m_std_streambuf);
+    }
 
     void init_log_buf()
     {
-        m_log_buf.reset();
-        m_log_buf.push(LineInsertingFilter(m_progress_bars.size()));
-        m_log_buf.push(*m_std_out_buf);
-        std::cout.rdbuf(&m_log_buf);
+        m_log_streambuf.push(LineInsertingFilter());
+        m_log_streambuf.push(*m_std_streambuf);
+        std::cout.rdbuf(&m_log_streambuf);
     }
 
-    std::unique_ptr<indicators::IndeterminateProgressBar> initialize_progress_bar(const std::string& description)
+    std::unique_ptr<indicators::IndeterminateProgressBar> initialize_progress_bar(const std::string& description,
+                                                                                  indicators::Color font_color,
+                                                                                  indicators::FontStyle font_style)
     {
-        auto progress_bar =
-            std::make_unique<indicators::IndeterminateProgressBar>(indicators::option::BarWidth{20},
-                                                                   indicators::option::Start{"["},
-                                                                   indicators::option::Fill{"."},
-                                                                   indicators::option::Lead{"o"},
-                                                                   indicators::option::End("]"),
-                                                                   indicators::option::PrefixText{description},
-                                                                   indicators::option::Stream{m_original_os});
+        auto progress_bar = std::make_unique<indicators::IndeterminateProgressBar>(
+            indicators::option::BarWidth{10},
+            indicators::option::Start{"["},
+            indicators::option::Fill{" "},
+            indicators::option::Lead{"#"},
+            indicators::option::End("]"),
+            indicators::option::PrefixText{description},
+            indicators::option::ForegroundColor{font_color},
+            indicators::option::FontStyles{std::vector<indicators::FontStyle>{font_style}},
+            indicators::option::Stream{m_std_os});
 
         return std::move(progress_bar);
     }
@@ -207,15 +148,9 @@ class ProgressBarContextManager
     indicators::DynamicProgress<indicators::IndeterminateProgressBar> m_dynamic_progress_bars;
     std::vector<std::unique_ptr<indicators::IndeterminateProgressBar>> m_progress_bars;
 
-    std::streambuf* m_std_out_buf{std::cout.rdbuf()};
-    std::ostream m_original_os;
-    boost::iostreams::filtering_ostreambuf m_log_buf;
-
-    std::stringbuf m_monitor_buf;
-    std::ostream m_monitor_os;
-    boost::iostreams::filtering_istreambuf m_monitor_ibuf;
-
-    bool m_is_started{false};
+    std::streambuf* m_std_streambuf;
+    std::ostream m_std_os;
+    boost::iostreams::filtering_ostreambuf m_log_streambuf;
 };
 
 /**
@@ -234,6 +169,8 @@ class MonitorController
      */
     MonitorController(const std::string& description,
                       std::string unit                                                  = "messages",
+                      indicators::Color font_color                                      = indicators::Color::cyan,
+                      indicators::FontStyle font_style                                  = indicators::FontStyle::bold,
                       std::optional<std::function<size_t(MessageT)>> determine_count_fn = std::nullopt);
 
     auto auto_count_fn() -> std::optional<std::function<size_t(MessageT)>>;
@@ -242,26 +179,23 @@ class MonitorController
     void sink_on_completed();
 
   private:
-    std::unique_ptr<indicators::IndeterminateProgressBar> initialize_progress_bar();
-
     static std::string format_duration(std::chrono::seconds duration);
     static std::string format_throughput(std::chrono::seconds duration, size_t count, const std::string& unit);
 
-    const std::string& m_description;
     int m_bar_id;
     const std::string m_unit;
     std::optional<std::function<int(MessageT)>> m_determine_count_fn;
     size_t m_count{0};
     time_point_t m_start_time;
-    bool m_time_started{false};
-    bool is_started{false};
+    bool m_is_started{false};
 };
 
 template <typename MessageT>
 MonitorController<MessageT>::MonitorController(const std::string& description,
                                                std::string unit,
+                                               indicators::Color font_color,
+                                               indicators::FontStyle font_style,
                                                std::optional<std::function<size_t(MessageT)>> determine_count_fn) :
-  m_description(description),
   m_unit(std::move(unit)),
   m_determine_count_fn(determine_count_fn)
 {
@@ -274,23 +208,22 @@ MonitorController<MessageT>::MonitorController(const std::string& description,
         }
     }
 
-    m_bar_id = ProgressBarContextManager::get_instance().add_progress_bar(m_description);
+    m_bar_id = ProgressBarContextManager::get_instance().add_progress_bar(description, font_color, font_style);
 }
 
 template <typename MessageT>
 MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
 {
-    if (!m_time_started)
+    if (!m_is_started)
     {
-        m_start_time   = std::chrono::system_clock::now();
-        m_time_started = true;
+        m_start_time = std::chrono::system_clock::now();
+        m_is_started = true;
     }
     m_count += (*m_determine_count_fn)(msg);
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - m_start_time);
 
-    auto& manager       = ProgressBarContextManager::get_instance();
-    auto& progress_bars = manager.progress_bars();
-    auto& pbar          = progress_bars[m_bar_id];
+    auto& manager = ProgressBarContextManager::get_instance();
+    auto& pbar    = manager.progress_bars()[m_bar_id];
     pbar->set_option(indicators::option::PostfixText{format_throughput(duration, m_count, m_unit)});
     pbar->tick();
 
@@ -302,8 +235,9 @@ MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
 template <typename MessageT>
 void MonitorController<MessageT>::sink_on_completed()
 {
-    // auto& dynamic_progress_bars = ProgressBarContextManager::get_instance().dynamic_progress_bars();
-    // dynamic_progress_bars[m_bar_id].mark_as_completed();
+    auto& manager = ProgressBarContextManager::get_instance();
+    auto& pbar    = manager.progress_bars()[m_bar_id];
+    pbar->mark_as_completed();
 }
 
 template <typename MessageT>

@@ -151,6 +151,7 @@ def test_progress_sink(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.update.assert_called_once_with(n=12)
 
 
+@pytest.mark.use_python
 @pytest.mark.usefixtures("reset_loglevel")
 @pytest.mark.parametrize('log_level', [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
 @mock.patch('morpheus.stages.general.monitor_stage.MonitorController.sink_on_completed', autospec=True)

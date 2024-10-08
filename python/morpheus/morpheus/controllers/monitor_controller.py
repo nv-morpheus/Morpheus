@@ -21,6 +21,8 @@ from tqdm import tqdm
 
 import cudf
 
+from morpheus.common import IndicatorsFontColor
+from morpheus.common import IndicatorsFontStyle
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.utils.logger import LogLevels
@@ -66,6 +68,8 @@ class MonitorController:
                  unit: str,
                  delayed_start: bool,
                  determine_count_fn: typing.Callable[[typing.Any], int],
+                 font_color: IndicatorsFontColor,
+                 font_style: IndicatorsFontStyle,
                  log_level: LogLevels,
                  tqdm_class: tqdm = None):
 
@@ -76,6 +80,8 @@ class MonitorController:
         self._unit = unit
         self._delayed_start = delayed_start
         self._determine_count_fn = determine_count_fn
+        self._font_color = font_color
+        self._font_style = font_style
         self._tqdm_class = tqdm_class if tqdm_class else MorpheusTqdm
 
         if isinstance(log_level, LogLevels):  # pylint: disable=isinstance-second-argument-not-valid-type
