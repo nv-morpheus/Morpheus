@@ -281,8 +281,8 @@ std::string MonitorController<MessageT>::format_throughput(std::chrono::seconds 
 {
     double throughput = static_cast<double>(count) / duration.count();
     std::ostringstream oss;
-    oss << count << " " << unit << " in " << format_duration(duration) << ", " << "Throughput: " << std::fixed
-        << std::setprecision(2) << throughput << " " << unit << "/s";
+    oss << count << " " << unit << " in " << format_duration(duration) << ", "
+        << "Throughput: " << std::fixed << std::setprecision(2) << throughput << " " << unit << "/s";
     return oss.str();
 }
 
