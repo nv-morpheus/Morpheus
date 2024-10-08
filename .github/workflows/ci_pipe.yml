@@ -204,13 +204,17 @@ jobs:
     name: Conda Package
     if: ${{ inputs.conda_run_build }}
     needs: [documentation, test]
-    runs-on: linux-amd64-cpu16
+    runs-on: linux-amd64-gpu-v100-latest-1
     timeout-minutes: 60
     container:
       credentials:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
       image: ${{ inputs.container }}
+      options: --cap-add=sys_nice
+      env:
+        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
+        PARALLEL_LEVEL: '10'
     strategy:
       fail-fast: true
 
