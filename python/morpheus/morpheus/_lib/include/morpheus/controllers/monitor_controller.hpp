@@ -107,7 +107,7 @@ class ProgressBarContextManager
         // A bit of hack here to make the font settings work. Indicators enables the font options only if the bars are
         // output to standard streams (see is_colorized() in <indicators/termcolor.hpp>), but since we are still using
         // the ostream (m_stdout_os) that is connected to the console terminal, the font options should be enabled.
-        // The internal function here can be used to manually enable the font display.
+        // The internal function here is used to manually enable the font display.
         m_stdout_os.iword(termcolor::_internal::colorize_index()) = 1;
 
         for (auto& pbar : m_progress_bars)
@@ -135,7 +135,7 @@ class ProgressBarContextManager
 
     void init_log_streambuf()
     {
-        // Configure all output to std::cout to use LineInsertingFilter
+        // Configure all std::cout output to use LineInsertingFilter
         m_log_streambuf.push(LineInsertingFilter());
         m_log_streambuf.push(*m_stdout_streambuf);
         std::cout.rdbuf(&m_log_streambuf);
@@ -164,7 +164,7 @@ class ProgressBarContextManager
     std::mutex m_mutex;
 
     // To ensure progress bars are displayed alongside other log outputs, we use two distinct stream buffers:
-    //  - Progress bars are directed to m_stdout_os, which points to the original standard output stream.
+    //  - Progress bars are redirected to m_stdout_os, which points to the original standard output stream.
     //  - All std::cout output is redirected to m_log_streambuf, which incorporates a LineInsertingFilter to continually
     //  shift the progress bar display downward.
     std::streambuf* m_stdout_streambuf;  // Stores the original std::cout.rdbuf()
@@ -281,8 +281,8 @@ std::string MonitorController<MessageT>::format_throughput(std::chrono::seconds 
 {
     double throughput = static_cast<double>(count) / duration.count();
     std::ostringstream oss;
-    oss << count << " " << unit << " in " << format_duration(duration) << ", "
-        << "Throughput: " << std::fixed << std::setprecision(2) << throughput << " " << unit << "/s";
+    oss << count << " " << unit << " in " << format_duration(duration) << ", " << "Throughput: " << std::fixed
+        << std::setprecision(2) << throughput << " " << unit << "/s";
     return oss.str();
 }
 
