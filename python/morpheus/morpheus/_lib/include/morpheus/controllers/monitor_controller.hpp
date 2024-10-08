@@ -127,9 +127,24 @@ class ProgressBarContextManager
         return m_dynamic_progress_bars.push_back(*m_progress_bars.back());
     }
 
-    indicators::DynamicProgress<indicators::IndeterminateProgressBar>& dynamic_progress_bars()
+    // indicators::DynamicProgress<indicators::IndeterminateProgressBar>& dynamic_progress_bars()
+    // {
+    //     return m_dynamic_progress_bars;
+    // }
+
+    std::vector<std::unique_ptr<indicators::IndeterminateProgressBar>>& progress_bars()
     {
-        return m_dynamic_progress_bars;
+        return m_progress_bars;
+    }
+
+    void display()
+    {
+        for (auto& pbar : m_progress_bars)
+        {
+            pbar->print_progress(true);
+            m_original_os << "\n";
+        }
+        m_original_os << "\033[" << m_progress_bars.size() << "A";
     }
 
     boost::iostreams::filtering_istreambuf& monitoring_ibuf()
@@ -184,7 +199,7 @@ class ProgressBarContextManager
                                                                    indicators::option::Lead{"o"},
                                                                    indicators::option::End("]"),
                                                                    indicators::option::PrefixText{description},
-                                                                   indicators::option::Stream{m_monitor_os});
+                                                                   indicators::option::Stream{m_original_os});
 
         return std::move(progress_bar);
     }
@@ -273,18 +288,13 @@ MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
     m_count += (*m_determine_count_fn)(msg);
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - m_start_time);
 
-    auto& dynamic_progress_bars = ProgressBarContextManager::get_instance().dynamic_progress_bars();
-    auto& pbar                  = dynamic_progress_bars[m_bar_id];
-    pbar.set_option(indicators::option::PostfixText{format_throughput(duration, m_count, m_unit)});
-    pbar.tick();
+    auto& manager       = ProgressBarContextManager::get_instance();
+    auto& progress_bars = manager.progress_bars();
+    auto& pbar          = progress_bars[m_bar_id];
+    pbar->set_option(indicators::option::PostfixText{format_throughput(duration, m_count, m_unit)});
+    pbar->tick();
 
-    auto& manager = ProgressBarContextManager::get_instance();
-    if (!manager.is_started())
-    {
-        std::cout << "\033[" << std::to_string(manager.num_progress_bars()) << "A\r";
-    }
-    auto& monitor_ibuf = manager.monitoring_ibuf();
-    boost::iostreams::copy(monitor_ibuf, manager.original_os());
+    manager.display();
 
     return msg;
 }
@@ -292,8 +302,8 @@ MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
 template <typename MessageT>
 void MonitorController<MessageT>::sink_on_completed()
 {
-    auto& dynamic_progress_bars = ProgressBarContextManager::get_instance().dynamic_progress_bars();
-    dynamic_progress_bars[m_bar_id].mark_as_completed();
+    // auto& dynamic_progress_bars = ProgressBarContextManager::get_instance().dynamic_progress_bars();
+    // dynamic_progress_bars[m_bar_id].mark_as_completed();
 }
 
 template <typename MessageT>
