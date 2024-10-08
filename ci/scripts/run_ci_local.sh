@@ -88,8 +88,13 @@ for STAGE in "${STAGES[@]}"; do
     DOCKER_RUN_ARGS+=("-v" "${LOCAL_CI_TMP}:/ci_tmp")
     DOCKER_RUN_ARGS+=("${ENV_LIST[@]}")
     DOCKER_RUN_ARGS+=("--env STAGE=${STAGE}")
-    if [[ "${STAGE}" == "test" || "${USE_GPU}" == "1" ]]; then
+    if [[ "${STAGE}" == "test" ]]; then
         CONTAINER="${TEST_CONTAINER}"
+    fi
+    if [[ "${STAGE}" == "conda_libs" || "${USE_GPU}" == "1" ]]; then
+        CONTAINER="${BUILD_CONTAINER}"
+    fi
+    if [[ "${STAGE}" == "test" ||  "${STAGE}" == "conda_libs" || "${USE_GPU}" == "1" ]]; then
         DOCKER_RUN_ARGS+=("--runtime=nvidia")
         DOCKER_RUN_ARGS+=("--gpus all")
         DOCKER_RUN_ARGS+=("--cap-add=sys_nice")

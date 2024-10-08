@@ -54,6 +54,9 @@ rapids-logger "Listing LFS-known files"
 git lfs ls-files
 rapids-logger "Building Morpheus Libraries"
 
+# Run nvidia-smi to check the test env
+/usr/bin/nvidia-smi
+
 # Run the conda build, and upload to conda forge if requested
 export MORPHEUS_PYTHON_BUILD_STUBS=OFF
 export CONDA_ARGS="--skip-existing"
