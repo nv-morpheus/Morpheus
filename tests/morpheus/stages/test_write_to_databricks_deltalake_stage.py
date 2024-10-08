@@ -13,7 +13,7 @@
 # limitations under the License.
 
 try:
-    import databricks.connect  # pylint: disable=unused-import
+    import databricks.connect  # pylint: disable=unused-import # noqa
 except ImportError:
     import pytest
     pytest.skip("databricks-connect not installed", allow_module_level=True)
