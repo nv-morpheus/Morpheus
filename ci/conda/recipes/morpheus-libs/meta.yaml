@@ -92,6 +92,7 @@ outputs:
         - elasticsearch ==8.9.0
         - feedparser =6.0.*
         - grpcio =1.62.*
+        - lxml
         - mlflow>=2.10.0,<3
         - mrc
         - networkx=2.8.8
