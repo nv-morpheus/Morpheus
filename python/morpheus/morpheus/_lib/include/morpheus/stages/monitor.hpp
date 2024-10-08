@@ -72,11 +72,11 @@ class MORPHEUS_EXPORT MonitorStage : public mrc::pymrc::PythonNode<std::shared_p
 template <typename MessageT>
 MonitorStage<MessageT>::MonitorStage(const std::string& description,
                                      const std::string& unit,
-                                     indicators::Color font_color,
+                                     indicators::Color text_color,
                                      indicators::FontStyle font_style,
                                      std::optional<std::function<int(sink_type_t)>> determine_count_fn) :
   base_t(base_t::op_factory_from_sub_fn(build_operator())),
-  m_monitor_controller(MonitorController<sink_type_t>(description, unit, font_color, font_style, determine_count_fn))
+  m_monitor_controller(MonitorController<sink_type_t>(description, unit, text_color, font_style, determine_count_fn))
 {}
 
 template <typename MessageT>
@@ -112,6 +112,8 @@ struct MORPHEUS_EXPORT MonitorStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param description : A text label displayed on the left side of the progress bars
      * @param unit : the unit of message count
+     * @param text_color : the text color of progress bars
+     * @param font_style : the font style of progress bars
      * @param determine_count_fn : A function that computes the count for each incoming message
      * @return std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>>
      */
@@ -120,7 +122,7 @@ struct MORPHEUS_EXPORT MonitorStageInterfaceProxy
         const std::string& name,
         const std::string& description,
         const std::string& unit,
-        indicators::Color                = indicators::Color::cyan,
+        indicators::Color color          = indicators::Color::cyan,
         indicators::FontStyle font_style = indicators::FontStyle::bold,
         std::optional<std::function<int(typename MonitorStage<MessageT>::sink_type_t)>> determine_count_fn =
             std::nullopt);
@@ -132,12 +134,12 @@ std::shared_ptr<mrc::segment::Object<MonitorStage<MessageT>>> MonitorStageInterf
     const std::string& name,
     const std::string& description,
     const std::string& unit,
-    indicators::Color font_color,
+    indicators::Color text_color,
     indicators::FontStyle font_style,
     std::optional<std::function<int(typename MonitorStage<MessageT>::sink_type_t)>> determine_count_fn)
 {
     auto stage = builder.construct_object<MonitorStage<MessageT>>(
-        name, description, unit, font_color, font_style, determine_count_fn);
+        name, description, unit, text_color, font_style, determine_count_fn);
 
     return stage;
 }

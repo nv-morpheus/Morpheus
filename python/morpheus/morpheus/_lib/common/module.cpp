@@ -171,7 +171,7 @@ PYBIND11_MODULE(common, _module)
         .def("__enter__", &HttpServerInterfaceProxy::enter, py::return_value_policy::reference)
         .def("__exit__", &HttpServerInterfaceProxy::exit);
 
-    py::enum_<indicators::Color>(_module, "IndicatorsFontColor")
+    py::enum_<indicators::Color>(_module, "IndicatorsTextColor")
         .value("grey", indicators::Color::grey)
         .value("red", indicators::Color::red)
         .value("green", indicators::Color::green)

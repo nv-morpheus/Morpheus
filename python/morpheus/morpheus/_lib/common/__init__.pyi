@@ -15,8 +15,8 @@ __all__ = [
     "FilterSource",
     "HttpEndpoint",
     "HttpServer",
-    "IndicatorsFontColor",
     "IndicatorsFontStyle",
+    "IndicatorsTextColor",
     "Tensor",
     "TypeId",
     "determine_file_type",
@@ -122,58 +122,6 @@ class HttpServer():
     def start(self) -> None: ...
     def stop(self) -> None: ...
     pass
-class IndicatorsFontColor():
-    """
-    Members:
-
-      grey
-
-      red
-
-      green
-
-      yellow
-
-      blue
-
-      magenta
-
-      cyan
-
-      white
-
-      unspecified
-    """
-    def __eq__(self, other: object) -> bool: ...
-    def __getstate__(self) -> int: ...
-    def __hash__(self) -> int: ...
-    def __index__(self) -> int: ...
-    def __init__(self, value: int) -> None: ...
-    def __int__(self) -> int: ...
-    def __ne__(self, other: object) -> bool: ...
-    def __repr__(self) -> str: ...
-    def __setstate__(self, state: int) -> None: ...
-    @property
-    def name(self) -> str:
-        """
-        :type: str
-        """
-    @property
-    def value(self) -> int:
-        """
-        :type: int
-        """
-    __members__: dict # value = {'grey': <IndicatorsFontColor.grey: 0>, 'red': <IndicatorsFontColor.red: 1>, 'green': <IndicatorsFontColor.green: 2>, 'yellow': <IndicatorsFontColor.yellow: 3>, 'blue': <IndicatorsFontColor.blue: 4>, 'magenta': <IndicatorsFontColor.magenta: 5>, 'cyan': <IndicatorsFontColor.cyan: 6>, 'white': <IndicatorsFontColor.white: 7>, 'unspecified': <IndicatorsFontColor.unspecified: 8>}
-    blue: morpheus._lib.common.IndicatorsFontColor # value = <IndicatorsFontColor.blue: 4>
-    cyan: morpheus._lib.common.IndicatorsFontColor # value = <IndicatorsFontColor.cyan: 6>
-    green: morpheus._lib.common.IndicatorsFontColor # value = <IndicatorsFontColor.green: 2>
-    grey: morpheus._lib.common.IndicatorsFontColor # value = <IndicatorsFontColor.grey: 0>
-    magenta: morpheus._lib.common.IndicatorsFontColor # value = <IndicatorsFontColor.magenta: 5>
-    red: morpheus._lib.common.IndicatorsFontColor # value = <IndicatorsFontColor.red: 1>
-    unspecified: morpheus._lib.common.IndicatorsFontColor # value = <IndicatorsFontColor.unspecified: 8>
-    white: morpheus._lib.common.IndicatorsFontColor # value = <IndicatorsFontColor.white: 7>
-    yellow: morpheus._lib.common.IndicatorsFontColor # value = <IndicatorsFontColor.yellow: 3>
-    pass
 class IndicatorsFontStyle():
     """
     Members:
@@ -222,6 +170,58 @@ class IndicatorsFontStyle():
     italic: morpheus._lib.common.IndicatorsFontStyle # value = <IndicatorsFontStyle.italic: 2>
     reverse: morpheus._lib.common.IndicatorsFontStyle # value = <IndicatorsFontStyle.reverse: 5>
     underline: morpheus._lib.common.IndicatorsFontStyle # value = <IndicatorsFontStyle.underline: 3>
+    pass
+class IndicatorsTextColor():
+    """
+    Members:
+
+      grey
+
+      red
+
+      green
+
+      yellow
+
+      blue
+
+      magenta
+
+      cyan
+
+      white
+
+      unspecified
+    """
+    def __eq__(self, other: object) -> bool: ...
+    def __getstate__(self) -> int: ...
+    def __hash__(self) -> int: ...
+    def __index__(self) -> int: ...
+    def __init__(self, value: int) -> None: ...
+    def __int__(self) -> int: ...
+    def __ne__(self, other: object) -> bool: ...
+    def __repr__(self) -> str: ...
+    def __setstate__(self, state: int) -> None: ...
+    @property
+    def name(self) -> str:
+        """
+        :type: str
+        """
+    @property
+    def value(self) -> int:
+        """
+        :type: int
+        """
+    __members__: dict # value = {'grey': <IndicatorsTextColor.grey: 0>, 'red': <IndicatorsTextColor.red: 1>, 'green': <IndicatorsTextColor.green: 2>, 'yellow': <IndicatorsTextColor.yellow: 3>, 'blue': <IndicatorsTextColor.blue: 4>, 'magenta': <IndicatorsTextColor.magenta: 5>, 'cyan': <IndicatorsTextColor.cyan: 6>, 'white': <IndicatorsTextColor.white: 7>, 'unspecified': <IndicatorsTextColor.unspecified: 8>}
+    blue: morpheus._lib.common.IndicatorsTextColor # value = <IndicatorsTextColor.blue: 4>
+    cyan: morpheus._lib.common.IndicatorsTextColor # value = <IndicatorsTextColor.cyan: 6>
+    green: morpheus._lib.common.IndicatorsTextColor # value = <IndicatorsTextColor.green: 2>
+    grey: morpheus._lib.common.IndicatorsTextColor # value = <IndicatorsTextColor.grey: 0>
+    magenta: morpheus._lib.common.IndicatorsTextColor # value = <IndicatorsTextColor.magenta: 5>
+    red: morpheus._lib.common.IndicatorsTextColor # value = <IndicatorsTextColor.red: 1>
+    unspecified: morpheus._lib.common.IndicatorsTextColor # value = <IndicatorsTextColor.unspecified: 8>
+    white: morpheus._lib.common.IndicatorsTextColor # value = <IndicatorsTextColor.white: 7>
+    yellow: morpheus._lib.common.IndicatorsTextColor # value = <IndicatorsTextColor.yellow: 3>
     pass
 class Tensor():
     @staticmethod

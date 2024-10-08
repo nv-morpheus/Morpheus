@@ -15,28 +15,30 @@
  * limitations under the License.
  */
 
-#include "../test_utils/common.hpp"  // for get_morpheus_root, TEST_CLASS_WITH_PYTHON, morpheus
+#include "../test_utils/common.hpp"  // for TEST_CLASS_WITH_PYTHON, morpheus
 
 #include "morpheus/controllers/monitor_controller.hpp"  // for MonitorController
 #include "morpheus/messages/control.hpp"                // for ControlMessage
+#include "morpheus/messages/meta.hpp"                   // for MessageMeta
 
-#include <cudf/column/column.hpp>
-#include <cudf/column/column_factories.hpp>
-#include <cudf/column/column_view.hpp>
-#include <cudf/filling.hpp>
-#include <cudf/io/types.hpp>
-#include <cudf/scalar/scalar.hpp>
-#include <cudf/table/table.hpp>
-#include <cudf/types.hpp>
-#include <gtest/gtest.h>
-#include <rmm/device_buffer.hpp>
-#include <rmm/device_uvector.hpp>
+#include <cuda_runtime.h>                    // for cudaMemcpy, cudaMemcpyKind
+#include <cudf/column/column.hpp>            // for column
+#include <cudf/column/column_factories.hpp>  // for make_numeric_column
+#include <cudf/column/column_view.hpp>       // for mutable_column_view
+#include <cudf/io/types.hpp>                 // for column_name_info, table_with_metadata, table_metadata
+#include <cudf/table/table.hpp>              // for table
+#include <cudf/types.hpp>                    // for type_id, data_type
+#include <gtest/gtest.h>                     // for Message, TestPartResult, EXPECT_EQ, TestInfo, EXPECT_...
 
-#include <memory>
-#include <numeric>
-#include <stdexcept>
-#include <thread>
-#include <vector>
+#include <cstdint>        // for int32_t
+#include <functional>     // for function
+#include <memory>         // for unique_ptr, shared_ptr, allocator, make_shared, make_...
+#include <numeric>        // for iota
+#include <optional>       // for optional
+#include <stdexcept>      // for runtime_error
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+#include <vector>         // for vector
 
 using namespace morpheus;
 
@@ -81,55 +83,6 @@ TEST_F(TestMonitorController, TestAutoCountFn)
     control_message->payload(cm_meta);
     EXPECT_EQ((*control_message_auto_count_fn)(control_message), 20);
 
-    auto message_meta_vector_mc =
-        MonitorController<std::vector<std::shared_ptr<MessageMeta>>>("test_message_meta_vector");
-    auto message_meta_vector_auto_count_fn = message_meta_vector_mc.auto_count_fn();
-    std::vector<std::shared_ptr<MessageMeta>> meta_vector;
-    for (int i = 0; i < 5; ++i)
-    {
-        meta_vector.emplace_back(MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(5, 2))));
-    }
-    EXPECT_EQ((*message_meta_vector_auto_count_fn)(meta_vector), 25);
-
-    auto control_message_vector_mc =
-        MonitorController<std::vector<std::shared_ptr<ControlMessage>>>("test_control_message_vector");
-    auto control_message_vector_auto_count_fn = control_message_vector_mc.auto_count_fn();
-    std::vector<std::shared_ptr<ControlMessage>> control_message_vector;
-    for (int i = 0; i < 5; ++i)
-    {
-        auto cm = std::make_shared<ControlMessage>();
-        cm->payload(MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(6, 2))));
-        control_message_vector.emplace_back(cm);
-    }
-    EXPECT_EQ((*control_message_vector_auto_count_fn)(control_message_vector), 30);
-
     // Test invalid message type
     EXPECT_THROW(MonitorController<int>("invalid message type"), std::runtime_error);
-}
-
-TEST_F(TestMonitorController, TestProgressBar)
-{
-    auto message_meta_mc   = MonitorController<std::shared_ptr<MessageMeta>>("test_message_meta");
-    auto meta              = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(10, 2)));
-    auto message_meta_mc_2 = MonitorController<std::shared_ptr<MessageMeta>>("test_message_meta_2");
-    auto meta_2            = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(10, 2)));
-    auto message_meta_mc_3 = MonitorController<std::shared_ptr<MessageMeta>>("test_message_meta_3");
-    auto meta_3            = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(10, 2)));
-
-    auto control_message_mc = MonitorController<std::shared_ptr<ControlMessage>>("test_control_message");
-    auto control_message    = std::make_shared<ControlMessage>();
-    auto cm_meta            = MessageMeta::create_from_cpp(std::move(create_cudf_table_with_metadata(20, 3)));
-    control_message->payload(cm_meta);
-
-    for (int i = 0; i < 1000; i++)
-    {
-        std::cout << "log message 1: " << i << std::endl;
-        message_meta_mc.progress_sink(meta);
-        std::cout << "log message 2: " << i << std::endl;
-        message_meta_mc_2.progress_sink(meta_2);
-        std::cout << "log message 3: " << i << std::endl;
-        message_meta_mc_3.progress_sink(meta_3);
-        control_message_mc.progress_sink(control_message);
-        std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(100));
-    }
 }

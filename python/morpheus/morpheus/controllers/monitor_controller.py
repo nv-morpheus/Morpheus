@@ -21,8 +21,8 @@ from tqdm import tqdm
 
 import cudf
 
-from morpheus.common import IndicatorsFontColor
 from morpheus.common import IndicatorsFontStyle
+from morpheus.common import IndicatorsTextColor
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.utils.logger import LogLevels
@@ -61,17 +61,19 @@ class MonitorController:
 
     controller_count: int = 0
 
-    def __init__(self,
-                 position: int,
-                 description: str,
-                 smoothing: float,
-                 unit: str,
-                 delayed_start: bool,
-                 determine_count_fn: typing.Callable[[typing.Any], int],
-                 font_color: IndicatorsFontColor,
-                 font_style: IndicatorsFontStyle,
-                 log_level: LogLevels,
-                 tqdm_class: tqdm = None):
+    def __init__(
+        self,
+        position: int,
+        description: str,
+        smoothing: float,
+        unit: str,
+        delayed_start: bool,
+        determine_count_fn: typing.Callable[[typing.Any], int],
+        log_level: LogLevels,
+        tqdm_class: tqdm = None,
+        text_color: IndicatorsTextColor = IndicatorsTextColor.cyan,
+        font_style: IndicatorsFontStyle = IndicatorsFontStyle.bold,
+    ):
 
         self._progress: tqdm = None
         self._position = position
@@ -80,7 +82,7 @@ class MonitorController:
         self._unit = unit
         self._delayed_start = delayed_start
         self._determine_count_fn = determine_count_fn
-        self._font_color = font_color
+        self._text_color = text_color
         self._font_style = font_style
         self._tqdm_class = tqdm_class if tqdm_class else MorpheusTqdm
 

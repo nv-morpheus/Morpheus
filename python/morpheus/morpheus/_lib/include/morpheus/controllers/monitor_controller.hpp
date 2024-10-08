@@ -36,6 +36,7 @@
 #include <chrono>
 #include <cstddef>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <ostream>
 #include <sstream>
@@ -54,6 +55,10 @@ namespace morpheus {
  * @file
  */
 
+// Workaround to display progress bars and other logs in the same terminal:
+// https://github.com/p-ranav/indicators/issues/107
+// Adding "\n" (new line) "\033[A" (move cursor up) and "\033[1L" (insert line) before each log output line.
+// This keeps the progress bars always display as the last line of console output
 struct LineInsertingFilter : boost::iostreams::line_filter
 {
     std::string do_filter(const std::string& line)
@@ -62,7 +67,8 @@ struct LineInsertingFilter : boost::iostreams::line_filter
     }
 };
 
-// A singleton that manages the lifetime of progress bars related to any MonitorController<T> instances
+// A singleton manager class that manages the lifetime of progress bars related to any MonitorController<T> instances
+// Meyer's singleton is guaranteed thread-safe after C++11
 class ProgressBarContextManager
 {
   public:
@@ -75,10 +81,11 @@ class ProgressBarContextManager
     ProgressBarContextManager& operator=(ProgressBarContextManager const&) = delete;
 
     size_t add_progress_bar(const std::string& description,
-                            indicators::Color font_color     = indicators::Color::cyan,
+                            indicators::Color text_color     = indicators::Color::cyan,
                             indicators::FontStyle font_style = indicators::FontStyle::bold)
     {
-        m_progress_bars.push_back(std::move(initialize_progress_bar(description, font_color, font_style)));
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_progress_bars.push_back(std::move(initialize_progress_bar(description, text_color, font_style)));
 
         // DynamicProgress should take ownership over progressbars: https://github.com/p-ranav/indicators/issues/134
         // The fix to this issue is not yet released, so we need to:
@@ -93,42 +100,49 @@ class ProgressBarContextManager
         return m_progress_bars;
     }
 
-    void display()
+    void display_all()
     {
-        m_std_os.iword(termcolor::_internal::colorize_index()) = 1;
+        std::lock_guard<std::mutex> lock(m_mutex);
+
+        // A bit of hack here to make the font settings work. Indicators enables the font options only if the bars are
+        // output to standard streams (see is_colorized() in <indicators/termcolor.hpp>), but since we are still using
+        // the ostream (m_stdout_os) that is connected to the console terminal, the font options should be enabled.
+        // The internal function here can be used to manually enable the font display.
+        m_stdout_os.iword(termcolor::_internal::colorize_index()) = 1;
+
         for (auto& pbar : m_progress_bars)
         {
             pbar->print_progress(true);
-            m_std_os << termcolor::reset;
-            m_std_os << "\n";
+            m_stdout_os << termcolor::reset;  // The font option only works for the current bar
+            m_stdout_os << "\n";
         }
-        m_std_os << "\033[" << m_progress_bars.size() << "A";
-    }
 
-    std::ostream& std_os()
-    {
-        return m_std_os;
+        // After each round of display, move cursor up ("\033[A") to the beginning of the first bar
+        m_stdout_os << "\033[" << m_progress_bars.size() << "A";
     }
 
   private:
-    ProgressBarContextManager() : m_std_streambuf(std::cout.rdbuf()), m_std_os(m_std_streambuf)
+    ProgressBarContextManager() : m_stdout_streambuf(std::cout.rdbuf()), m_stdout_os(m_stdout_streambuf)
     {
-        init_log_buf();
-    }
-    ~ProgressBarContextManager()
-    {
-        std::cout.rdbuf(m_std_streambuf);
+        init_log_streambuf();
     }
 
-    void init_log_buf()
+    ~ProgressBarContextManager()
     {
+        // Reset std::cout to use the normal streambuf when exit
+        std::cout.rdbuf(m_stdout_streambuf);
+    }
+
+    void init_log_streambuf()
+    {
+        // Configure all output to std::cout to use LineInsertingFilter
         m_log_streambuf.push(LineInsertingFilter());
-        m_log_streambuf.push(*m_std_streambuf);
+        m_log_streambuf.push(*m_stdout_streambuf);
         std::cout.rdbuf(&m_log_streambuf);
     }
 
     std::unique_ptr<indicators::IndeterminateProgressBar> initialize_progress_bar(const std::string& description,
-                                                                                  indicators::Color font_color,
+                                                                                  indicators::Color text_color,
                                                                                   indicators::FontStyle font_style)
     {
         auto progress_bar = std::make_unique<indicators::IndeterminateProgressBar>(
@@ -138,18 +152,23 @@ class ProgressBarContextManager
             indicators::option::Lead{"#"},
             indicators::option::End("]"),
             indicators::option::PrefixText{description},
-            indicators::option::ForegroundColor{font_color},
+            indicators::option::ForegroundColor{text_color},
             indicators::option::FontStyles{std::vector<indicators::FontStyle>{font_style}},
-            indicators::option::Stream{m_std_os});
+            indicators::option::Stream{m_stdout_os});
 
         return std::move(progress_bar);
     }
 
     indicators::DynamicProgress<indicators::IndeterminateProgressBar> m_dynamic_progress_bars;
     std::vector<std::unique_ptr<indicators::IndeterminateProgressBar>> m_progress_bars;
+    std::mutex m_mutex;
 
-    std::streambuf* m_std_streambuf;
-    std::ostream m_std_os;
+    // To ensure progress bars are displayed alongside other log outputs, we use two distinct stream buffers:
+    //  - Progress bars are directed to m_stdout_os, which points to the original standard output stream.
+    //  - All std::cout output is redirected to m_log_streambuf, which incorporates a LineInsertingFilter to continually
+    //  shift the progress bar display downward.
+    std::streambuf* m_stdout_streambuf;  // Stores the original std::cout.rdbuf()
+    std::ostream m_stdout_os;
     boost::iostreams::filtering_ostreambuf m_log_streambuf;
 };
 
@@ -169,7 +188,7 @@ class MonitorController
      */
     MonitorController(const std::string& description,
                       std::string unit                                                  = "messages",
-                      indicators::Color font_color                                      = indicators::Color::cyan,
+                      indicators::Color text_color                                      = indicators::Color::cyan,
                       indicators::FontStyle font_style                                  = indicators::FontStyle::bold,
                       std::optional<std::function<size_t(MessageT)>> determine_count_fn = std::nullopt);
 
@@ -187,13 +206,13 @@ class MonitorController
     std::optional<std::function<int(MessageT)>> m_determine_count_fn;
     size_t m_count{0};
     time_point_t m_start_time;
-    bool m_is_started{false};
+    bool m_is_started{false};  // Set to true after the first call to progress_sink()
 };
 
 template <typename MessageT>
 MonitorController<MessageT>::MonitorController(const std::string& description,
                                                std::string unit,
-                                               indicators::Color font_color,
+                                               indicators::Color text_color,
                                                indicators::FontStyle font_style,
                                                std::optional<std::function<size_t(MessageT)>> determine_count_fn) :
   m_unit(std::move(unit)),
@@ -208,7 +227,7 @@ MonitorController<MessageT>::MonitorController(const std::string& description,
         }
     }
 
-    m_bar_id = ProgressBarContextManager::get_instance().add_progress_bar(description, font_color, font_style);
+    m_bar_id = ProgressBarContextManager::get_instance().add_progress_bar(description, text_color, font_style);
 }
 
 template <typename MessageT>
@@ -224,10 +243,12 @@ MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
 
     auto& manager = ProgressBarContextManager::get_instance();
     auto& pbar    = manager.progress_bars()[m_bar_id];
+
+    // Update the progress bar
     pbar->set_option(indicators::option::PostfixText{format_throughput(duration, m_count, m_unit)});
     pbar->tick();
 
-    manager.display();
+    manager.display_all();
 
     return msg;
 }
@@ -237,6 +258,7 @@ void MonitorController<MessageT>::sink_on_completed()
 {
     auto& manager = ProgressBarContextManager::get_instance();
     auto& pbar    = manager.progress_bars()[m_bar_id];
+
     pbar->mark_as_completed();
 }
 
@@ -259,8 +281,8 @@ std::string MonitorController<MessageT>::format_throughput(std::chrono::seconds 
 {
     double throughput = static_cast<double>(count) / duration.count();
     std::ostringstream oss;
-    oss << count << " " << unit << " in " << format_duration(duration) << ", " << "Throughput: " << std::fixed
-        << std::setprecision(2) << throughput << " " << unit << "/s";
+    oss << count << " " << unit << " in " << format_duration(duration) << ", "
+        << "Throughput: " << std::fixed << std::setprecision(2) << throughput << " " << unit << "/s";
     return oss.str();
 }
 
@@ -274,18 +296,6 @@ auto MonitorController<MessageT>::auto_count_fn() -> std::optional<std::function
         };
     }
 
-    if constexpr (std::is_same_v<MessageT, std::vector<std::shared_ptr<MessageMeta>>>)
-    {
-        return [](std::vector<std::shared_ptr<MessageMeta>> msg) {
-            auto item_count_fn = [](std::shared_ptr<MessageMeta> msg) {
-                return msg->count();
-            };
-            return std::accumulate(msg.begin(), msg.end(), 0, [&](int sum, const auto& item) {
-                return sum + (*item_count_fn)(item);
-            });
-        };
-    }
-
     if constexpr (std::is_same_v<MessageT, std::shared_ptr<ControlMessage>>)
     {
         return [](std::shared_ptr<ControlMessage> msg) {
@@ -294,22 +304,6 @@ auto MonitorController<MessageT>::auto_count_fn() -> std::optional<std::function
                 return 0;
             }
             return msg->payload()->count();
-        };
-    }
-
-    if constexpr (std::is_same_v<MessageT, std::vector<std::shared_ptr<ControlMessage>>>)
-    {
-        return [](std::vector<std::shared_ptr<ControlMessage>> msg) {
-            auto item_count_fn = [](std::shared_ptr<ControlMessage> msg) {
-                if (!msg->payload())
-                {
-                    return 0;
-                }
-                return msg->payload()->count();
-            };
-            return std::accumulate(msg.begin(), msg.end(), 0, [&](int sum, const auto& item) {
-                return sum + (*item_count_fn)(item);
-            });
         };
     }
 

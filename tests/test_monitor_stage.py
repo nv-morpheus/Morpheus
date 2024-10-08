@@ -59,11 +59,12 @@ def test_constructor(config: Config):
     assert stage._mc._determine_count_fn is two_x
 
 
+@pytest.mark.use_python
 @mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
 def test_start_async(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
-    stage = MonitorStage(config, log_level=logging.WARNING)
+    stage = MonitorStage(config, delayed_start=False, log_level=logging.WARNING)
     assert stage._mc._progress is None
 
     asyncio.run(stage.start_async())
@@ -72,11 +73,12 @@ def test_start_async(mock_morph_tqdm: mock.MagicMock, config: Config):
     assert stage._mc._progress is mock_morph_tqdm
 
 
+@pytest.mark.use_python
 @mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
 async def test_join(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
-    stage = MonitorStage(config, log_level=logging.WARNING)
+    stage = MonitorStage(config, delayed_start=False, log_level=logging.WARNING)
     assert stage._mc._progress is None
 
     # Calling join is a noop if we are stopped
@@ -88,11 +90,12 @@ async def test_join(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.close.assert_called_once()
 
 
+@pytest.mark.use_python
 @mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
 def test_refresh(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
-    stage = MonitorStage(config, log_level=logging.WARNING)
+    stage = MonitorStage(config, delayed_start=False, log_level=logging.WARNING)
     assert stage._mc._progress is None
 
     asyncio.run(stage.start_async())

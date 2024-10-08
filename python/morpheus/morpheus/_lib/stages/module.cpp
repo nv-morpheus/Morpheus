@@ -36,6 +36,8 @@
 #include "morpheus/utilities/http_server.hpp"            // for DefaultMaxPayloadSize
 #include "morpheus/version.hpp"                          // for morpheus_VERSION_MAJOR, morpheus_VERSION_MINOR, morp...
 
+#include <indicators/color.hpp>        // for Color
+#include <indicators/font_style.hpp>   // for FontStyle
 #include <mrc/segment/builder.hpp>     // for Builder
 #include <mrc/segment/object.hpp>      // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>  // for MRC_CONCAT_STR
@@ -44,7 +46,7 @@
 #include <pybind11/pybind11.h>         // for arg, init, class_, module_, overload_cast, overload_...
 #include <pybind11/pytypes.h>          // for none, dict, str_attr
 #include <pybind11/stl/filesystem.h>   // IWYU pragma: keep
-#include <pymrc/utils.hpp>             // for from_import, import
+#include <pymrc/utils.hpp>             // for import, from_import
 #include <rxcpp/rx.hpp>                // for trace_activity, decay_t
 
 #include <filesystem>  // for path
@@ -52,7 +54,6 @@
 #include <sstream>     // for operator<<, basic_ostringstream
 #include <string>      // for string
 #include <vector>      // for vector
-
 namespace morpheus {
 namespace py = pybind11;
 
@@ -203,7 +204,7 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("description"),
              py::arg("unit")               = "messages",
-             py::arg("font_color")         = indicators::Color::cyan,
+             py::arg("text_color")         = indicators::Color::cyan,
              py::arg("font_style")         = indicators::FontStyle::bold,
              py::arg("determine_count_fn") = py::none());
 
@@ -216,7 +217,7 @@ PYBIND11_MODULE(stages, _module)
              py::arg("name"),
              py::arg("description"),
              py::arg("unit")               = "messages",
-             py::arg("font_color")         = indicators::Color::cyan,
+             py::arg("text_color")         = indicators::Color::cyan,
              py::arg("font_style")         = indicators::FontStyle::bold,
              py::arg("determine_count_fn") = py::none());
 
