@@ -19,20 +19,32 @@ from operator import itemgetter
 from unittest import mock
 
 import pytest
-from langchain.agents import AgentType
-from langchain.agents import Tool
-from langchain.agents import initialize_agent
-from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain_community.chat_models.openai import ChatOpenAI
-from langchain_core.exceptions import OutputParserException
-from langchain_core.tools import BaseTool
 
 from _utils.llm import execute_node
 from _utils.llm import mk_mock_langchain_tool
 from _utils.llm import mk_mock_openai_response
 from morpheus_llm.llm import LLMNodeBase
 from morpheus_llm.llm.nodes.langchain_agent_node import LangChainAgentNode
+
+try:
+    from langchain.agents import AgentType
+    from langchain.agents import Tool
+    from langchain.agents import initialize_agent
+    from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
+    from langchain.callbacks.manager import CallbackManagerForToolRun
+    from langchain_community.chat_models.openai import ChatOpenAI
+    from langchain_core.tools import BaseTool
+except ImportError:
+    pass
+
+
+class OutputParserExceptionStandin(Exception):
+    """
+    Stand-in for the OutputParserException class to avoid importing the actual class from the langchain_core.exceptions.
+    There is a need to have OutputParserException objects appear in test parameters, but we don't want to import
+    langchain_core at the top of the test as it is an optional dependency.
+    """
+    pass
 
 
 def test_constructor(mock_agent_executor: mock.MagicMock):
@@ -156,32 +168,6 @@ def test_execute_error(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMoc
     assert isinstance(execute_node(node, input="input1"), RuntimeError)
 
 
-class MetadataSaverTool(BaseTool):
-    # The base class defines *args and **kwargs in the signature for _run and _arun requiring the arguments-differ
-    # pylint: disable=arguments-differ
-    name: str = "MetadataSaverTool"
-    description: str = "useful for when you need to know the name of a reptile"
-
-    saved_metadata: list[dict] = []
-
-    def _run(
-        self,
-        query: str,
-        run_manager: typing.Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        raise NotImplementedError("This tool only supports async")
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: typing.Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        assert query is not None  # avoiding unused-argument
-        assert run_manager is not None
-        self.saved_metadata.append(run_manager.metadata.copy())
-        return "frog"
-
-
 @pytest.mark.parametrize("metadata",
                          [{
                              "morpheus": "unittest"
@@ -192,6 +178,32 @@ class MetadataSaverTool(BaseTool):
                          }],
                          ids=["single-metadata", "single-metadata-list", "multiple-metadata-list"])
 def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], metadata: dict):
+
+    class MetadataSaverTool(BaseTool):
+        # The base class defines *args and **kwargs in the signature for _run and _arun requiring the arguments-differ
+        # pylint: disable=arguments-differ
+        name: str = "MetadataSaverTool"
+        description: str = "useful for when you need to know the name of a reptile"
+
+        saved_metadata: list[dict] = []
+
+        def _run(
+            self,
+            query: str,
+            run_manager: typing.Optional[CallbackManagerForToolRun] = None,
+        ) -> str:
+            raise NotImplementedError("This tool only supports async")
+
+        async def _arun(
+            self,
+            query: str,
+            run_manager: typing.Optional[AsyncCallbackManagerForToolRun] = None,
+        ) -> str:
+            assert query is not None  # avoiding unused-argument
+            assert run_manager is not None
+            self.saved_metadata.append(run_manager.metadata.copy())
+            return "frog"
+
     if isinstance(metadata['morpheus'], list):
         num_meta = len(metadata['morpheus'])
         input_data = [f"input_{i}" for i in range(num_meta)]
@@ -271,7 +283,7 @@ def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], m
     "arun_return,replace_value,expected_output",
     [
         (
-            [[OutputParserException("Parsing Error"), "A valid result."]],
+            [[OutputParserExceptionStandin("Parsing Error"), "A valid result."]],
             "Default error message.",
             [["Default error message.", "A valid result."]],
         ),
@@ -282,7 +294,7 @@ def test_metadata(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock], m
         ),
         (
             [
-                ["A valid result.", OutputParserException("Parsing Error")],
+                ["A valid result.", OutputParserExceptionStandin("Parsing Error")],
                 [Exception("General error"), "Another valid result."],
             ],
             None,
@@ -297,6 +309,22 @@ def test_execute_replaces_exceptions(
     replace_value: str,
     expected_output: list,
 ):
+    # We couldn't import OutputParserException at the module level, so we need to replace instances of
+    # OutputParserExceptionStandin with OutputParserException
+    from langchain_core.exceptions import OutputParserException
+
+    arun_return_tmp = []
+    for values in arun_return:
+        values_tmp = []
+        for value in values:
+            if isinstance(value, OutputParserExceptionStandin):
+                values_tmp.append(OutputParserException(*value.args))
+            else:
+                values_tmp.append(value)
+        arun_return_tmp.append(values_tmp)
+
+    arun_return = arun_return_tmp
+
     placeholder_input_values = {"foo": "bar"}  # a non-empty placeholder input for the context
     mock_agent_executor.arun.return_value = arun_return
 

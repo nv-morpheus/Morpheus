@@ -77,7 +77,7 @@ def test_single_object_to_dataframe_timeout():
 
 @pytest.mark.usefixtures("restore_environ")
 def test_constructor(config: Config):
-    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+    from morpheus_dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
 
     # The user may have this already set, ensure it is undefined
     os.environ.pop('MORPHEUS_FILE_DOWNLOAD_TYPE', None)
@@ -118,7 +118,7 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
                                                        tmp_path: str,
                                                        single_file_obj: fsspec.core.OpenFile,
                                                        dataset_pandas: DatasetManager):
-    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+    from morpheus_dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     config.ae.timestamp_column_name = 'v1'
     mock_dask_cluster.return_value = mock_dask_cluster
     mock_dask_client.return_value = mock_dask_client
@@ -195,7 +195,7 @@ def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.Magic
                                                       use_convert_to_dataframe: bool,
                                                       tmp_path: str,
                                                       dataset_pandas: DatasetManager):
-    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+    from morpheus_dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     config.ae.timestamp_column_name = 'v1'
     mock_dask_cluster.return_value = mock_dask_cluster
     mock_dask_client.return_value = mock_dask_client
@@ -253,7 +253,7 @@ def test_get_or_create_dataframe_from_batch_none_noop(mock_obf_to_df: mock.Magic
                                                       dl_type: str,
                                                       use_convert_to_dataframe: bool,
                                                       tmp_path: str):
-    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+    from morpheus_dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     mock_dask_cluster.return_value = mock_dask_cluster
     mock_dask_client.return_value = mock_dask_client
 
