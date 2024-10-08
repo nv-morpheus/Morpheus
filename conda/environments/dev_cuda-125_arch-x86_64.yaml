@@ -78,7 +78,6 @@ dependencies:
 - pytest-benchmark=4.0
 - pytest-cov
 - pytest=7.4.4
-- python
 - python-confluent-kafka>=1.9.2,<1.10.0a0
 - python-docx==1.1.0
 - python-graphviz

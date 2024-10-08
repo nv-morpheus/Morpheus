@@ -49,7 +49,7 @@ if PYTEST_KAFKA_AVAIL:
 
 OPT_DEP_SKIP_REASON = (
     "This test requires the {package} package to be installed, to install this run:\n"
-    "`conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-121_arch-x86_64.yaml`")
+    "`conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-125_arch-x86_64.yaml`")
 
 
 def pytest_addoption(parser: pytest.Parser):

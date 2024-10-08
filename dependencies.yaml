@@ -345,7 +345,6 @@ dependencies:
           - networkx=2.8.8
           - numpydoc=1.5
           - pydantic
-          - python
           - python-confluent-kafka>=1.9.2,<1.10.0a0
           - python-graphviz
           - pluggy=1.3
