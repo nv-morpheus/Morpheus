@@ -20,8 +20,9 @@ import morpheus
 
 class TestDirectories:
 
-    def __init__(self) -> None:
-        self.morpheus_root = os.environ.get('MORPHEUS_ROOT')
+    def __init__(self, tests_dir) -> None:
+        self.tests_dir = tests_dir
+        self.morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.dirname(self.tests_dir))
         self.tests_dir = self.morpheus_root + "/tests"
         self.data_dir = morpheus.DATA_DIR
         self.examples_dir = os.path.join(self.morpheus_root, 'examples')
