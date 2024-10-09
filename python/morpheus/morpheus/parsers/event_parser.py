@@ -98,7 +98,7 @@ class EventParser(ABC):
         # Applies regex pattern for each expected output column to raw data
         for col in event_specific_columns:
             regex_pattern = event_regex.get(col)
-            extracted_gdf = text.str.extract(regex_pattern)
+            extracted_gdf = text.str.extract(regex_pattern).reset_index()
             if not extracted_gdf.empty:
                 parsed_gdf[col] = extracted_gdf[0]
 

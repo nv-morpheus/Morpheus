@@ -19,6 +19,8 @@ import typing
 import urllib.parse
 
 import mlflow
+import mlflow.types
+import pandas as pd
 import requests
 from mlflow.exceptions import MlflowException
 from mlflow.models.signature import ModelSignature
@@ -28,7 +30,7 @@ from mlflow.store.artifact.runs_artifact_repo import RunsArtifactRepository
 from mlflow.tracking import MlflowClient
 from mlflow.types import ColSpec
 from mlflow.types import Schema
-from mlflow.types.utils import _infer_pandas_column
+from mlflow.types.utils import _infer_pandas_column as _mlflow_infer_pandas_column
 from mlflow.types.utils import _infer_schema
 
 import cudf
@@ -37,6 +39,19 @@ from morpheus.messages import ControlMessage
 from morpheus.models.dfencoder import AutoEncoder
 
 logger = logging.getLogger(__name__)
+
+
+def _infer_pandas_column(col: pd.Series):
+    try:
+        return _mlflow_infer_pandas_column(col)
+    except MlflowException as ex:
+        # mlflow internally calls `pd.api.types.is_string_dtype(col)` which was changed in Pandas 2.
+        # passing the series such as `[None]` will return False when the dtype is string, so
+        # it is necessary to pass the dtype of the series rather than the series itself for backwards
+        # compatibility.
+        if "Failed to infer schema for pandas.Series" in ex.message and pd.api.types.is_string_dtype(col.dtype):
+            return mlflow.types.DataType.string
+        raise ex
 
 
 class MLFlowModelWriterController:
