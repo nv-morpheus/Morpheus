@@ -23,7 +23,7 @@ repos:
         -DMORPHEUS_PYTHON_INPLACE_BUILD=ON
   python:
     - name: morpheus
-      sub_dir: ""
+      sub_dir: python/morpheus
   git:
     host: github
     tag: branch-24.10

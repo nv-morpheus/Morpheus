@@ -46,7 +46,7 @@ class ClassificationStage(SinglePortStage):
 
         super().__init__(c)
 
-        self._xgb_model = cuml.ForestInference.load(model_xgb_file, output_class=True)
+        self._xgb_model = cuml.ForestInference.load(model_xgb_file, output_class=True, model_type="xgboost")
         self._needed_columns.update({'node_id': TypeId.INT64, 'prediction': TypeId.FLOAT32})
 
     @property
