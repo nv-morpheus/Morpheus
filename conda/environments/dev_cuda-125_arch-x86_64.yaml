@@ -19,14 +19,14 @@ dependencies:
 - clangdev=16
 - click>=8
 - cmake=3.27
-- cuda-cudart-dev=12.1
-- cuda-nvcc=12.1
-- cuda-nvml-dev=12.1
-- cuda-nvrtc-dev=12.1
-- cuda-nvtx-dev=12.1
-- cuda-tools=12.1
-- cuda-version=12.1
-- cudf=24.02
+- cuda-cudart-dev=12.5
+- cuda-nvcc=12.5
+- cuda-nvml-dev=12.5
+- cuda-nvrtc-dev=12.5
+- cuda-nvtx-dev=12.5
+- cuda-sanitizer-api
+- cuda-version=12.5
+- cudf=24.10
 - cupy
 - cxx-compiler
 - cython=3.0
@@ -38,20 +38,25 @@ dependencies:
 - exhale=0.3.6
 - feedparser=6.0
 - flake8
-- gcc_linux-64=11.2
 - git-lfs
-- glog=0.6
-- grpcio-status=1.59
-- grpcio=1.59
-- gxx_linux-64=11.2
+- glog>=0.7.1,<0.8
+- grpcio
+- grpcio-status
+- gtest=1.14
+- gxx=12.1
 - include-what-you-use=0.20
 - ipython
 - isort
-- libcudf=24.02
+- libcublas-dev
+- libcudf=24.10
+- libcufft-dev
+- libcurand-dev
+- libcusolver-dev
 - librdkafka>=1.9.2,<1.10.0a0
 - libtool
 - libwebp=1.3.2
-- mlflow>=2.10.0,<3
+- libzlib >=1.3.1,<2
+- mlflow
 - mrc=24.10
 - myst-parser=0.18.1
 - nbsphinx
@@ -66,6 +71,7 @@ dependencies:
 - pre-commit
 - pybind11-stubgen=0.10.5
 - pydantic
+- pylibcudf=24.10
 - pylint=3.0.3
 - pypdfium2=4.30
 - pytest-asyncio
@@ -76,10 +82,8 @@ dependencies:
 - python-docx==1.1.0
 - python-graphviz
 - python=3.10
-- pytorch-cuda
-- pytorch=*=*cuda*
 - rapidjson=1.1.0
-- rapids-dask-dependency=24.02
+- rapids-dask-dependency=24.10
 - rdma-core>=48
 - requests
 - requests-cache=1.1
@@ -88,7 +92,7 @@ dependencies:
 - sphinx
 - sphinx_rtd_theme
 - sqlalchemy<2.0
-- sysroot_linux-64=2.17
+- sysroot_linux-64>=2.28
 - tqdm=4
 - tritonclient=2.34
 - typing_utils=0.1
@@ -100,11 +104,12 @@ dependencies:
 - watchdog=3.0
 - websockets
 - yapf=0.40.1
-- zlib=1.2.13
 - pip:
+  - --extra-index-url https://download.pytorch.org/whl/cu124
   - databricks-cli < 0.100
   - databricks-connect
   - milvus==2.3.5
   - pymilvus==2.3.6
   - pytest-kafka==0.6.0
-name: dev_cuda-121_arch-x86_64
+  - torch==2.4.0+cu124
+name: dev_cuda-125_arch-x86_64
