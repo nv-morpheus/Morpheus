@@ -14,12 +14,10 @@
 # limitations under the License.
 
 # llm library and tests are dependent on a number of pypi packages - fixme
-pip install --no-input milvus==2.3.5
-pip install --no-input pymilvus==2.3.6
-pip install --no-input langchain==0.1.16
-pip install --no-input langchain-nvidia-ai-endpoints==0.0.11
-pip install --no-input faiss-gpu==1.7.*
-pip install --no-input google-search-results==2.4
-pip install --no-input nemollm==0.3.5
+rapids-dependency-file-generator \
+  --output requirements \
+  --file_key morpheus_llm --matrix "" | tee "llm_requirements.txt"
+
+pip install -r llm_requirements.txt
 
 pytest tests/morpheus_llm

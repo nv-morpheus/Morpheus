@@ -175,6 +175,12 @@ files:
       - checks
       - python
 
+  # pip dependencies that are used during the conda test stage for morpheus-llm output
+  morpheus_llm:
+    output: none
+    includes:
+      - test_morpheus_llm_pip
+
 channels:
   - conda-forge
   - huggingface
@@ -381,6 +387,18 @@ dependencies:
           - pip
           - pip:
               - pytest-kafka==0.6.0
+
+  test_morpheus_llm_pip:
+    common:
+      - output_types: [requirements]
+        packages:
+           - milvus==2.3.5 # update to match pymilvus when available
+           - pymilvus==2.3.6
+           - langchain==0.1.16
+           - langchain-nvidia-ai-endpoints==0.0.11
+           - faiss-gpu==1.7.*
+           - google-search-results==2.4
+            - nemollm==0.3.5
 
   example-dfp-prod:
     common:
