@@ -232,6 +232,7 @@ outputs:
         - pytest-cov
         - pytest =7.4.4
       source_files:
+        - dependencies.yaml
         - pyproject.toml
         - scripts/fetch_data.py
         - tests/*
