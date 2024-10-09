@@ -47,6 +47,10 @@ if PYTEST_KAFKA_AVAIL:
     from _utils.kafka import kafka_server  # noqa: F401  pylint:disable=unused-import
     from _utils.kafka import zookeeper_proc  # noqa: F401  pylint:disable=unused-import
 
+OPT_DEP_SKIP_REASON = (
+    "This test requires the {package} package to be installed, to install this run:\n"
+    "`conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-125_arch-x86_64.yaml`")
+
 
 def pytest_addoption(parser: pytest.Parser):
     """
@@ -1064,22 +1068,7 @@ def nemollm_fixture(fail_missing: bool):
     """
     Fixture to ensure nemollm is installed
     """
-    skip_reason = ("Tests for the NeMoLLMService require the nemollm package to be installed, to install this run:\n"
-                   "`conda env update --solver=libmamba -n morpheus "
-                   "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
-    yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
-
-
-@pytest.fixture(name="nvfoundationllm", scope='session')
-def nvfoundationllm_fixture(fail_missing: bool):
-    """
-    Fixture to ensure nvfoundationllm is installed
-    """
-    skip_reason = (
-        "Tests for NVFoundation require the langchain-nvidia-ai-endpoints package to be installed, to install this "
-        "run:\n `conda env update --solver=libmamba -n morpheus "
-        "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
-    yield import_or_skip("langchain_nvidia_ai_endpoints", reason=skip_reason, fail_missing=fail_missing)
+    yield import_or_skip("nemollm", reason=OPT_DEP_SKIP_REASON.format(package="nemollm"), fail_missing=fail_missing)
 
 
 @pytest.fixture(name="openai", scope='session')
@@ -1087,10 +1076,45 @@ def openai_fixture(fail_missing: bool):
     """
     Fixture to ensure openai is installed
     """
-    skip_reason = ("Tests for the OpenAIChatService require the openai package to be installed, to install this run:\n"
-                   "`conda env update --solver=libmamba -n morpheus "
-                   "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
-    yield import_or_skip("openai", reason=skip_reason, fail_missing=fail_missing)
+    yield import_or_skip("openai", reason=OPT_DEP_SKIP_REASON.format(package="openai"), fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain", scope='session')
+def langchain_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain is installed
+    """
+    yield import_or_skip("langchain", reason=OPT_DEP_SKIP_REASON.format(package="langchain"), fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain_core", scope='session')
+def langchain_core_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain_core is installed
+    """
+    yield import_or_skip("langchain_core",
+                         reason=OPT_DEP_SKIP_REASON.format(package="langchain_core"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain_community", scope='session')
+def langchain_community_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain_community is installed
+    """
+    yield import_or_skip("langchain_community",
+                         reason=OPT_DEP_SKIP_REASON.format(package="langchain_community"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain_nvidia_ai_endpoints", scope='session')
+def langchain_nvidia_ai_endpoints_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain_nvidia_ai_endpoints is installed
+    """
+    yield import_or_skip("langchain_nvidia_ai_endpoints",
+                         reason=OPT_DEP_SKIP_REASON.format(package="langchain_nvidia_ai_endpoints"),
+                         fail_missing=fail_missing)
 
 
 @pytest.mark.usefixtures("openai")

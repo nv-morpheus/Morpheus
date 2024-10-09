@@ -23,7 +23,7 @@ from morpheus.config import Config
 
 @pytest.fixture(name="dfp_arg_parser")
 def dfp_arg_parser_fixture():
-    from dfp.utils.dfp_arg_parser import DFPArgParser
+    from morpheus_dfp.utils.dfp_arg_parser import DFPArgParser
     dfp_arg_parser = DFPArgParser(skip_user=["unittest-skip-user"],
                                   only_user=["unittest-only-user"],
                                   start_time=datetime(1993, 4, 5, 6, 7, 8),
@@ -43,13 +43,13 @@ def dfp_arg_parser_fixture():
 
 @pytest.fixture(name="schema")
 def schema_fixture(config: Config):
-    from dfp.utils.schema_utils import SchemaBuilder
+    from morpheus_dfp.utils.schema_utils import SchemaBuilder
     schema_builder = SchemaBuilder(config, "duo")
     yield schema_builder.build_schema()
 
 
 def test_constructor(config: Config, dfp_arg_parser: "DFPArgParser", schema: "Schema"):  # noqa: F821
-    from dfp.utils.config_generator import ConfigGenerator
+    from morpheus_dfp.utils.config_generator import ConfigGenerator
 
     config_generator = ConfigGenerator(config=config, dfp_arg_parser=dfp_arg_parser, schema=schema, encoding="latin1")
 

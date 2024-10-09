@@ -16,8 +16,8 @@
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/ci-conda"
 ARG CUDA_PKG_VER=12-0
-ARG CUDA_SHORT_VER=12.1
-ARG CUDA_VER=12.1.1
+ARG CUDA_SHORT_VER=12.5
+ARG CUDA_VER=12.5.1
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=22.04
 ARG PROJ_NAME=morpheus
@@ -60,7 +60,6 @@ RUN rapids-dependency-file-generator \
     rm -rf /tmp/conda
 
 ENV MORPHEUS_SUPPORT_DOCA=ON
-ENV MORPHEUS_BUILD_MORPHEUS_LLM=ON
 
 COPY ./.devcontainer/docker/optional_deps/doca.sh /tmp/doca/
 

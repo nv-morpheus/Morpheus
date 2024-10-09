@@ -20,7 +20,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
 def test_constructor(config: Config):
-    from dfp.stages.write_to_s3_stage import WriteToS3Stage
+    from morpheus_dfp.stages.write_to_s3_stage import WriteToS3Stage
 
     mock_s3_writer = mock.MagicMock()
     stage = WriteToS3Stage(config, s3_writer=mock_s3_writer)

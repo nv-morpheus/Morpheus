@@ -17,17 +17,13 @@ import typing
 import warnings
 
 from morpheus.utils.env_config_value import EnvConfigValue
+from morpheus_llm.error import IMPORT_ERROR_MESSAGE
 from morpheus_llm.llm.services.llm_service import LLMClient
 from morpheus_llm.llm.services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
-IMPORT_ERROR_MESSAGE = (
-    "The `langchain-nvidia-ai-endpoints` package was not found. Install it and other additional dependencies by "
-    "running the following command:"
-    "`conda env update --solver=libmamba -n morpheus "
-    "--file conda/environments/examples_cuda-121_arch-x86_64.yaml`")
 
 try:
     from langchain_core.prompt_values import StringPromptValue
@@ -53,7 +49,8 @@ class NVFoundationLLMClient(LLMClient):
 
     def __init__(self, parent: "NVFoundationLLMService", *, model_name: str, **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+            raise ImportError(
+                IMPORT_ERROR_MESSAGE.format(package='langchain-nvidia-ai-endpoints')) from IMPORT_EXCEPTION
 
         super().__init__()
 
@@ -242,7 +239,8 @@ class NVFoundationLLMService(LLMService):
 
     def __init__(self, *, api_key: APIKey | str = None, base_url: BaseURL | str = None, **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+            raise ImportError(
+                IMPORT_ERROR_MESSAGE.format(package='langchain-nvidia-ai-endpoints')) from IMPORT_EXCEPTION
 
         super().__init__()
 
