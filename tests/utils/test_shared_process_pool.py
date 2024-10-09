@@ -15,6 +15,7 @@
 
 import logging
 import multiprocessing as mp
+import os
 import threading
 from decimal import Decimal
 from fractions import Fraction
@@ -31,6 +32,8 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_and_teardown():
+    # Set lower CPU usage for unit test to avoid slowing down the test
+    os.environ["MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE"] = "0.1"
 
     pool = SharedProcessPool()
 
@@ -43,6 +46,7 @@ def setup_and_teardown():
     # Stop the pool after all tests are done
     pool.stop()
     pool.join()
+    os.environ.pop("MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE", None)
 
 
 @pytest.fixture(name="shared_process_pool")
