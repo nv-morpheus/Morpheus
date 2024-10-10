@@ -36,4 +36,5 @@ def test_execute(mock_llm_client: mock.MagicMock):
 
     node = LLMGenerateNode(llm_client=mock_llm_client)
     assert execute_node(node, prompt=["prompt1", "prompt2"]) == expected_output
-    mock_llm_client.generate_batch_async.assert_called_once_with({'prompt': ["prompt1", "prompt2"]})
+    mock_llm_client.generate_batch_async.assert_called_once_with({'prompt': ["prompt1", "prompt2"]},
+                                                                 return_exceptions=False)
