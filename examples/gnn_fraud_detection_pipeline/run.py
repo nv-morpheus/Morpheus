@@ -16,10 +16,6 @@ import logging
 import os
 
 import click
-# pylint: disable=no-name-in-module
-from stages.classification_stage import ClassificationStage
-from stages.graph_construction_stage import FraudGraphConstructionStage
-from stages.graph_sage_stage import GraphSAGEStage
 
 from morpheus.config import Config
 from morpheus.config import CppConfig
@@ -31,6 +27,11 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
+
+# pylint: disable=no-name-in-module
+from .stages.classification_stage import ClassificationStage
+from .stages.graph_construction_stage import FraudGraphConstructionStage
+from .stages.graph_sage_stage import GraphSAGEStage
 
 CUR_DIR = os.path.dirname(__file__)
 

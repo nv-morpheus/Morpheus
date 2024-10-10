@@ -18,8 +18,6 @@ import typing
 
 import click
 import yaml
-from stages.create_features import CreateFeaturesRWStage
-from stages.preprocessing import PreprocessingRWStage
 
 from morpheus.config import Config
 from morpheus.config import CppConfig
@@ -32,6 +30,9 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
+
+from .stages.create_features import CreateFeaturesRWStage
+from .stages.preprocessing import PreprocessingRWStage
 
 CUR_DIR = os.path.dirname(__file__)
 
