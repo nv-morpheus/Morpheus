@@ -33,6 +33,7 @@ OutputT = typing.TypeVar('OutputT')
 class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT]):
     """
     Base class for all MultiProcessing stages that make use of the SharedProcessPool.
+
     Parameters
     ----------
     c : `morpheus.config.Config`
@@ -43,8 +44,10 @@ class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT])
         The number of progress engines used by the stage. If None, it will be set to 1.5 times the total
         number of process pool workers
 
-    Raises:
-        ValueError: If the process pool usage is not between 0 and 1.
+    Raises
+    ------
+    ValueError
+        If the process pool usage is not between 0 and 1.
     """
 
     def __init__(self, *, c: Config, process_pool_usage: float, max_in_flight_messages: int = None):
@@ -68,11 +71,15 @@ class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT])
         """
         Accepted input types for this stage are returned.
 
-        Raises:
-            RuntimeError: if the accepted cannot be deducted from either __orig_class__ or __orig_bases__
+        Raises
+        ------
+        RuntimeError
+            if the accepted cannot be deducted from either __orig_class__ or __orig_bases__
 
-        Returns:
-            typing.Tuple: accepted input types
+        Returns
+        ------
+        typing.Tuple
+            accepted input types
         """
 
         # There are two approaches to inherit from this class:
@@ -116,11 +123,15 @@ class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT])
         """
         Compute the output schema for the stage.
 
-        Args:
-            schema (StageSchema): StageSchema
+        Parameters
+        ----------
+        schema : StageSchema
+            The schema for the stage.
 
-        Raises:
-            RuntimeError: if the output type cannot be deducted from either __orig_class__ or __orig_bases__
+        Raises
+        ------
+        RuntimeError
+            If the output type cannot be deduced from either __orig_class__ or __orig_bases__.
         """
 
         # See the comment on `accepted_types` for more information on accessing the input and output types.
@@ -235,17 +246,19 @@ class MultiProcessingStage(MultiProcessingBaseStage[InputT, OutputT]):
 
         Parameters
         ----------
-        c : `morpheus.config.Config`
+        c : morpheus.config.Config
             Pipeline configuration instance.
         unique_name : str
             A unique name for the stage.
-        process_fn:  typing.Callable[[InputT], OutputT]
+        process_fn : typing.Callable[[InputT], OutputT]
             The function that will be executed in the process pool.
         process_pool_usage : float
             The fraction of the process pool workers that this stage could use. Should be between 0 and 1.
 
-        Returns:
-            MultiProcessingStage[InputT, OutputT]: A MultiProcessingStage instance with deduced input and output types.
+        Returns
+        -------
+        MultiProcessingStage[InputT, OutputT]
+            A MultiProcessingStage instance with deduced input and output types.
         """
 
         input_t, output_t = _get_func_signature(process_fn)
