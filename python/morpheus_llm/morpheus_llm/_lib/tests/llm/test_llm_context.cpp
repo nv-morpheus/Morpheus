@@ -21,9 +21,9 @@
 
 #include "morpheus/_lib/tests/test_utils/common.hpp"  // IWYU pragma: associated
 #include "morpheus/messages/control.hpp"              // for ControlMessage
+#include "morpheus/utilities/json_types.hpp"          // for PythonByteContainer
 
 #include <gtest/gtest.h>
-#include <mrc/channel/forward.hpp>
 #include <nlohmann/json.hpp>
 
 #include <memory>
@@ -32,7 +32,6 @@
 
 using namespace morpheus;
 using namespace morpheus::test;
-using namespace mrc;
 
 TEST_CLASS(LLMContext);
 

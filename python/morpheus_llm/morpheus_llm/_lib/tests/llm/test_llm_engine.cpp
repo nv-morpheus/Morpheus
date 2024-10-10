@@ -22,12 +22,13 @@
 
 #include "morpheus/_lib/tests/test_utils/common.hpp"  // IWYU pragma: associated
 #include "morpheus/types.hpp"
+#include "morpheus/utilities/json_types.hpp"  // for PythonByteContainer
 
 #include <gtest/gtest.h>
-#include <mrc/channel/forward.hpp>
 #include <mrc/coroutines/event.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
 #include <mrc/coroutines/task.hpp>
+#include <pymrc/utilities/object_wrappers.hpp>  // for mrc
 
 #include <atomic>
 #include <coroutine>

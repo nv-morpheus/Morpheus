@@ -21,6 +21,7 @@
 #include "morpheus_llm/llm/llm_node_base.hpp"
 #include "pymrc/coro.hpp"
 
+#include "morpheus/utilities/json_types.hpp"  // for cast_from_json, cast_from_pyobject
 #include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>           // for DCHECK_EQ
@@ -30,7 +31,6 @@
 #include <pybind11/stl.h>
 #include <pymrc/coro.hpp>  // IWYU pragma: keep
 #include <pymrc/types.hpp>
-#include <pymrc/utilities/json_values.hpp>
 
 #include <coroutine>
 #include <sstream>

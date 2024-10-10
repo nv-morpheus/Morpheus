@@ -25,7 +25,6 @@
 #include "morpheus/utilities/json_types.hpp"
 
 #include <mrc/types.hpp>
-#include <pymrc/utilities/json_values.hpp>
 
 #include <memory>
 #include <string>

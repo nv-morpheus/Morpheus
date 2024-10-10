@@ -40,6 +40,7 @@
 #include <mrc/segment/object.hpp>  // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>
 #include <nlohmann/detail/exceptions.hpp>  // for nlohmann::detail::out_of_range
+#include <nlohmann/json.hpp>               // for basic_json
 #include <pybind11/functional.h>           // IWYU pragma: keep
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/stl.h>       // IWYU pragma: keep

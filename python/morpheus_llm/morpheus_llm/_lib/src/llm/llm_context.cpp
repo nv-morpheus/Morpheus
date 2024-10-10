@@ -17,7 +17,10 @@
 
 #include "morpheus_llm/llm/llm_context.hpp"
 
-#include "morpheus/messages/control.hpp"  // IWYU pragma: keep
+#include "morpheus/messages/control.hpp"       // IWYU pragma: keep
+#include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
+
+#include <nlohmann/json.hpp>  // for basic_json, json
 
 #include <algorithm>
 #include <memory>
