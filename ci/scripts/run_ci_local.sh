@@ -59,11 +59,12 @@ GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
 
 LOCAL_CI_TMP=${LOCAL_CI_TMP:-${MORPHEUS_ROOT}/.tmp/local_ci_tmp}
 CONTAINER_VER=${CONTAINER_VER:-241004}
-CUDA_VER=${CUDA_VER:-12.1}
+CUDA_VER=${CUDA_VER:-12.5}
+CUDA_FULL_VER=12.5.1
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 # Configure the base docker img
-CONDA_CONTAINER="rapidsai/ci-conda:cuda12.1.1-ubuntu22.04-py3.10"
+CONDA_CONTAINER="rapidsai/ci-conda:cuda${CUDA_FULL_VER}-ubuntu22.04-py3.10"
 BUILD_CONTAINER="nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-${CONTAINER_VER}"
 TEST_CONTAINER="nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-${CONTAINER_VER}"
 

@@ -16,7 +16,7 @@
 # llm library and tests are dependent on a number of pypi packages - fixme
 rapids-dependency-file-generator \
   --output requirements \
-  --file_key morpheus_llm --matrix "" | tee "llm_requirements.txt"
+  --file-key morpheus_llm --matrix "" | tee "llm_requirements.txt"
 
 pip install -r llm_requirements.txt
 
