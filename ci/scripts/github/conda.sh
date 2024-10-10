@@ -18,6 +18,7 @@ set -e
 
 CI_SCRIPT_ARGS="$@"
 source ${WORKSPACE}/ci/scripts/github/common.sh
+source ${WORKSPACE}/ci/scripts/github/morpheus_env.sh
 source ${WORKSPACE}/ci/scripts/github/cmake_all.sh
 
 cd ${MORPHEUS_ROOT}

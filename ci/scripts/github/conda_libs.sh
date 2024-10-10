@@ -17,31 +17,35 @@
 set -e
 
 CI_SCRIPT_ARGS="$@"
+
 source ${WORKSPACE}/ci/scripts/github/common.sh
+
+# Its important that we are in the base environment for the build
+rapids-logger "Activating Base Conda Environment"
+conda activate base
 
 cd ${MORPHEUS_ROOT}
 
 fetch_base_branch
 
-# Its important that we are in the base environment for the build
-rapids-logger "Activating Base Conda Environment"
-
-# Deactivate any extra environments (There can be a few on the stack)
-while [[ "${CONDA_SHLVL:-0}" -gt 1 ]]; do
-   echo "Deactivating conda environment ${CONDA_DEFAULT_ENV}"
-   conda deactivate
-done
-
-# Ensure at least base is activated
-if [[ "${CONDA_DEFAULT_ENV}" != "base" ]]; then
-   echo "Activating base conda environment"
-   conda activate base
-fi
-
 # Print the info just to be sure base is active
 conda info
 
+# Pull down data needed for running the per-library unit tests
+rapids-logger "Pulling LFS assets"
+
+conda install git-lfs
+git lfs install
+${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
+
+# Listing LFS-known files
+rapids-logger "Listing LFS-known files"
+
+git lfs ls-files
 rapids-logger "Building Morpheus Libraries"
+
+# Run nvidia-smi to check the test env
+/usr/bin/nvidia-smi
 
 # Run the conda build, and upload to conda forge if requested
 export MORPHEUS_PYTHON_BUILD_STUBS=OFF
