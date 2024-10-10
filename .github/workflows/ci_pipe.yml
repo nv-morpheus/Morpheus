@@ -29,6 +29,9 @@ on:
         description: 'Runs the conda-build stage to build the morpheus conda packages'
         required: true
         type: boolean
+      base_container:
+        required: true
+        type: string
       container:
         required: true
         type: string
@@ -210,7 +213,7 @@ jobs:
       credentials:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
-      image: ${{ inputs.container }}
+      image: ${{ inputs.base_container }}
       options: --cap-add=sys_nice
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
