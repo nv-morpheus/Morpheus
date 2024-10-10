@@ -136,7 +136,7 @@ class SharedProcessPool:
         self._total_max_workers = math.floor(max(1, len(os.sched_getaffinity(0)) * cpu_usage))
         self._processes = []
 
-        self._context = mp.get_context("fork")
+        self._context = mp.get_context("forkserver")
         self._manager = self._context.Manager()
         self._task_queues = self._manager.dict()
         self._stage_semaphores = self._manager.dict()
