@@ -29,10 +29,31 @@ from morpheus.messages import TensorMemory
 # pylint: disable=unsubscriptable-object
 
 
-@pytest.mark.usefixtures("config_only_cpp")
-def test_control_message_init():
-    messages.ControlMessage()  # noqa: F841
-    messages.ControlMessage({"test": "test"})  # noqa: F841
+def _verify_metadata(msg: messages.ControlMessage, metadata: dict):
+    assert msg.get_metadata() == metadata
+    for (key, value) in metadata.items():
+        assert msg.get_metadata(key) == value
+
+
+def test_control_message_init(dataset: DatasetManager):
+    # Explicitly performing copies of the metadata, config and the dataframe, to ensure tha the original data is not
+    # being modified in place in some way.
+    msg = messages.ControlMessage()
+    assert msg.get_metadata() == {}  # pylint: disable=use-implicit-booleaness-not-comparison
+    assert msg.payload() is None
+
+    metadata = {"test_key": "test_value"}
+    cm_config = {"metadata": metadata.copy()}
+
+    msg = messages.ControlMessage(cm_config.copy())
+    _verify_metadata(msg, metadata)
+
+    payload = messages.MessageMeta(dataset["filter_probs.csv"])
+
+    msg_w_payload = messages.ControlMessage(payload, cm_config.copy())
+    _verify_metadata(msg_w_payload, metadata)
+
+    dataset.assert_df_equal(msg_w_payload.payload().df, dataset["filter_probs.csv"])
 
 
 @pytest.mark.usefixtures("config_only_cpp")
