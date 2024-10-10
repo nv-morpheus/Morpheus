@@ -33,7 +33,6 @@
 
 #include "morpheus/messages/control.hpp"  // IWYU pragma: keep
 #include "morpheus/pybind11/json.hpp"     // IWYU pragma: keep
-#include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/json_types.hpp"
 #include "morpheus/version.hpp"
 
