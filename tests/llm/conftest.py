@@ -169,6 +169,11 @@ def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
 
         prompts: list[str] = kwargs["prompts"]
 
+        # Raise a runtime error if the prompt contains the word "error"
+        for p in prompts:
+            if ("error" in p):
+                raise RuntimeError("unittest")
+
         return list(prompts)
 
     mock_nemollm.generate_multiple.side_effect = generate_multiple_mock

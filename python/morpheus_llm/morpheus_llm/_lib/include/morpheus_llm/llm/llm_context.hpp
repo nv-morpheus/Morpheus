@@ -22,9 +22,9 @@
 #include "morpheus_llm/llm/llm_task.hpp"
 
 #include "morpheus/export.h"
+#include "morpheus/utilities/json_types.hpp"
 
 #include <mrc/types.hpp>
-#include <pymrc/utilities/json_values.hpp>
 
 #include <memory>
 #include <string>
@@ -111,9 +111,9 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     /**
      * @brief Get all outputs for this context.
      *
-     * @return const mrc::pymrc::JSONValues&
+     * @return const utilities::json_t&
      */
-    const mrc::pymrc::JSONValues& all_outputs() const;
+    const utilities::json_t& all_outputs() const;
 
     /**
      * @brief Get full name of context containing parents up to root.
@@ -141,31 +141,31 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     /**
      * @brief Get the input value from parent context corresponding to first internal input of this context.
      *
-     * @return mrc::pymrc::JSONValues
+     * @return utilities::json_t
      */
-    mrc::pymrc::JSONValues get_input() const;
+    const utilities::json_t& get_input() const;
 
     /**
      * @brief Get the parent output value corresponding to given internal input name.
      *
      * @param node_name internal input name
-     * @return mrc::pymrc::JSONValues
+     * @return utilities::json_t
      */
-    mrc::pymrc::JSONValues get_input(const std::string& node_name) const;
+    const utilities::json_t& get_input(const std::string& node_name) const;
 
     /**
      * @brief Get parent output values corresponding to all internal input names.
      *
-     * @return mrc::pymrc::JSONValues
+     * @return utilities::json_t
      */
-    mrc::pymrc::JSONValues get_inputs() const;
+    utilities::json_t get_inputs() const;
 
     /**
      * @brief Set output mappings for this context.
      *
      * @param outputs output mappings
      */
-    void set_output(mrc::pymrc::JSONValues&& outputs);
+    void set_output(utilities::json_t outputs);
 
     /**
      * @brief Set an output value for this context.
@@ -173,7 +173,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
      * @param output_name output name
      * @param output output value
      */
-    void set_output(const std::string& output_name, mrc::pymrc::JSONValues&& output);
+    void set_output(const std::string& output_name, utilities::json_t output);
 
     /**
      * @brief Set the output names to propagate from this context when using pop.
@@ -187,9 +187,9 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     /**
      * @brief Get all outputs for this context.
      *
-     * @return const mrc::pymrc::JSONValues&
+     * @return const utilities::json_t&
      */
-    const mrc::pymrc::JSONValues& view_outputs() const;
+    const utilities::json_t& view_outputs() const;
 
   private:
     input_mappings_t::const_iterator find_input(const std::string& node_name, bool throw_if_not_found = true) const;
@@ -201,7 +201,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     std::shared_ptr<LLMContextState> m_state;
 
-    mrc::pymrc::JSONValues m_outputs;
+    utilities::json_t m_outputs;
 
     mrc::Promise<void> m_outputs_promise;
     mrc::SharedFuture<void> m_outputs_future;

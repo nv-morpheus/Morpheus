@@ -23,11 +23,10 @@
 
 #include "morpheus/_lib/tests/test_utils/common.hpp"  // IWYU pragma: associated
 #include "morpheus/types.hpp"
+#include "morpheus/utilities/json_types.hpp"  // for PythonByteContainer
 
 #include <gtest/gtest.h>
-#include <mrc/channel/forward.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
-#include <pymrc/utilities/json_values.hpp>  // for JSONValues
 
 #include <coroutine>
 #include <memory>
@@ -37,7 +36,6 @@
 
 using namespace morpheus;
 using namespace morpheus::test;
-using namespace mrc;
 
 TEST_CLASS(LLMNode);
 
@@ -61,10 +59,10 @@ TEST_F(TestLLMNode, NoNodes)
 
     auto context = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
 
-    auto out_context = coroutines::sync_wait(node.execute(context));
+    auto out_context = mrc::coroutines::sync_wait(node.execute(context));
 
     ASSERT_EQ(out_context, context);
-    ASSERT_EQ(out_context->view_outputs().view_json().size(), 0);
+    ASSERT_EQ(out_context->view_outputs().size(), 0);
 }
 
 TEST_F(TestLLMNode, AddNode)
@@ -161,7 +159,7 @@ TEST_F(TestLLMNode, AddChildNode)
     ASSERT_EQ(node.get_output_node_names(), std::vector<std::string>{"Root3"});
 
     auto context     = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
-    auto out_context = coroutines::sync_wait(node.execute(context));
+    auto out_context = mrc::coroutines::sync_wait(node.execute(context));
 
-    ASSERT_EQ(out_context->view_outputs().view_json()["Root3"], 3);
+    ASSERT_EQ(out_context->view_outputs()["Root3"], 3);
 }
