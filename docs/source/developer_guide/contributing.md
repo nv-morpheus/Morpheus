@@ -172,7 +172,7 @@ If a Conda environment on the host machine is preferred over Docker, it is relat
    ```
 1. Create the Morpheus Conda environment
    ```bash
-   conda env create --solver=libmamba -n morpheus --file conda/environments/dev_cuda-121_arch-x86_64.yaml
+   conda env create --solver=libmamba -n morpheus --file conda/environments/dev_cuda-125_arch-x86_64.yaml
    conda activate morpheus
    ```
 

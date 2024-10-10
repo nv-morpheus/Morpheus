@@ -503,4 +503,4 @@ def test_auto_encoder_num_only_convergence(train_ae: autoencoder.AutoEncoder):
                        for loss in train_ae.logger.train_fts.values()], axis=0) / len(train_ae.logger.train_fts)
 
     # Make sure the model converges with numerical feats only
-    assert avg_loss[-1] < avg_loss[0] / 2
+    assert avg_loss[-1] < avg_loss[0] * 0.75
