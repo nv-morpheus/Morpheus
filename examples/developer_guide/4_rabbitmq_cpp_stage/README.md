@@ -23,7 +23,7 @@ This example builds upon the `examples/developer_guide/2_2_rabbitmq` example add
 |-------------|-----------|-------|
 | Conda | ✔ | |
 | Morpheus Docker Container | ✔ | Requires launching the RabbitMQ container on the host |
-| Morpheus Release Container | ✔ | Requires launching the RabbitMQ container on the host, and adding development packages to the container's Conda environment via `conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-121_arch-x86_64.yaml` |
+| Morpheus Release Container | ✔ | Requires launching the RabbitMQ container on the host, and adding development packages to the container's Conda environment via `conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-125_arch-x86_64.yaml` |
 | Dev Container | ✘ |  |
 
 ## Installing Pika

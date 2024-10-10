@@ -22,6 +22,7 @@ import mrc
 import mrc.core.operators as ops
 
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.shared_process_pool import SharedProcessPool
@@ -179,6 +180,12 @@ class MultiProcessingStage(MultiProcessingBaseStage[InputT, OutputT]):
     @property
     def name(self) -> str:
         return self._name
+
+    def supported_execution_modes(self) -> tuple[ExecutionMode]:
+        """
+        Returns a tuple of supported execution modes of this stage.
+        """
+        return (ExecutionMode.GPU, ExecutionMode.CPU)
 
     def _on_data(self, data: InputT) -> OutputT:
         task = self._shared_process_pool.submit_task(self.name, self._process_fn, data)
