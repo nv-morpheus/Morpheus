@@ -32,17 +32,20 @@
 #include "py_llm_lambda_node.hpp"
 
 #include "morpheus/messages/control.hpp"  // IWYU pragma: keep
+#include "morpheus/pybind11/json.hpp"     // IWYU pragma: keep
+#include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/utilities/json_types.hpp"
 #include "morpheus/version.hpp"
 
 #include <mrc/segment/object.hpp>  // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>
 #include <nlohmann/detail/exceptions.hpp>  // for nlohmann::detail::out_of_range
+#include <nlohmann/json.hpp>               // for basic_json
 #include <pybind11/functional.h>           // IWYU pragma: keep
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/stl.h>       // IWYU pragma: keep
 #include <pymrc/coro.hpp>       // IWYU pragma: keep
-#include <pymrc/utilities/json_values.hpp>  // for JSONValues
-#include <pymrc/utils.hpp>                  // for pymrc::import
+#include <pymrc/utils.hpp>      // for pymrc::import
 
 #include <memory>
 #include <sstream>
@@ -194,9 +197,9 @@ PYBIND11_MODULE(llm, _module)
              py::overload_cast<const std::string&>(&LLMContext::get_input, py::const_),
              py::arg("node_name"))
         .def("get_inputs", &LLMContext::get_inputs)
-        .def("set_output", py::overload_cast<mrc::pymrc::JSONValues&&>(&LLMContext::set_output), py::arg("outputs"))
+        .def("set_output", py::overload_cast<utilities::json_t>(&LLMContext::set_output), py::arg("outputs"))
         .def("set_output",
-             py::overload_cast<const std::string&, mrc::pymrc::JSONValues&&>(&LLMContext::set_output),
+             py::overload_cast<const std::string&, utilities::json_t>(&LLMContext::set_output),
              py::arg("output_name"),
              py::arg("output"))
         .def("push", &LLMContext::push, py::arg("name"), py::arg("inputs"));
