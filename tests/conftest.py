@@ -1155,7 +1155,8 @@ def mock_subscription_fixture():
 
 
 # ==== SharedProcessPool Fixtures ====
-@pytest.fixture(scope="session")
+# Any tests that use the SharedProcessPool should use this fixture
+@pytest.fixture(scope="module")
 def shared_process_pool_setup_and_teardown():
     # Set lower CPU usage for unit test to avoid slowing down the test
     os.environ["MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE"] = "0.1"
@@ -1166,7 +1167,7 @@ def shared_process_pool_setup_and_teardown():
     pool.stop()
     pool.join()
     pool.reset()
-    yield
+    yield pool
 
     # Stop the pool after all tests are done
     pool.stop()

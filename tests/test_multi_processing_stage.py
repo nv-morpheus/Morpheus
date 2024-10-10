@@ -40,7 +40,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def setup_and_teardown(shared_process_pool_setup_and_teardown):  # pylint: disable=unused-argument
     pass
 

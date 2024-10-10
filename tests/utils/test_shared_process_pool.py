@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 # This test has issues with joining processes when testing with pytest `-s` option. Run pytest without `-s` flag
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def setup_and_teardown(shared_process_pool_setup_and_teardown):  # pylint: disable=unused-argument
     pass
 

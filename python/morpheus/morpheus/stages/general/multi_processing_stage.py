@@ -74,12 +74,12 @@ class MultiProcessingBaseStage(SinglePortStage, typing.Generic[InputT, OutputT])
         Raises
         ------
         RuntimeError
-            if the accepted cannot be deducted from either __orig_class__ or __orig_bases__
+            If the accepted types cannot be deduced from either __orig_class__ or __orig_bases__.
 
         Returns
-        ------
+        -------
         typing.Tuple
-            accepted input types
+            Accepted input types.
         """
 
         # There are two approaches to inherit from this class:
