@@ -1117,6 +1117,16 @@ def langchain_nvidia_ai_endpoints_fixture(fail_missing: bool):
                          fail_missing=fail_missing)
 
 
+@pytest.fixture(name="databricks", scope='session')
+def databricks_fixture(fail_missing: bool):
+    """
+    Fixture to ensure databricks is installed
+    """
+    yield import_or_skip("databricks.connect",
+                         reason=OPT_DEP_SKIP_REASON.format(package="databricks-connect"),
+                         fail_missing=fail_missing)
+
+
 @pytest.mark.usefixtures("openai")
 @pytest.fixture(name="mock_chat_completion")
 def mock_chat_completion_fixture():
