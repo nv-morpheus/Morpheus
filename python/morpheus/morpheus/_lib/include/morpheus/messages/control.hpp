@@ -24,12 +24,15 @@
 #include <pybind11/pytypes.h>  // for object, dict, list
 #include <pybind11/stl.h>      // IWYU pragma: keep
 
-#include <chrono>    // for system_clock, time_point
+// for system_clock, time_point
+#include <chrono>    // IWYU pragma: keep
 #include <map>       // for map
 #include <memory>    // for shared_ptr
 #include <optional>  // for optional
 #include <string>    // for string
 #include <vector>    // for vector
+
+// IWYU pragma: no_include <bits/chrono.h>
 
 namespace morpheus {
 
