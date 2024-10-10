@@ -18,15 +18,14 @@ import threading
 import typing
 import warnings
 
-import cupy as cp
 import numpy as np
 import pandas as pd
 
-import cudf
-
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
+from morpheus.utils import logger as morpheus_logger
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import SeriesType
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +48,7 @@ class MutableTableCtxMgr:
     def __init__(self, meta) -> None:
         self.__dict__['__meta'] = meta
 
-    def __enter__(self) -> pd.DataFrame:
+    def __enter__(self) -> DataFrameType:
         meta = self.__dict__['__meta']
         meta._mutex.acquire()
         return meta._df
@@ -206,7 +205,7 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
 
         idx = self._df.index[mess_offset:mess_offset + message_count]
 
-        if (isinstance(idx, cudf.RangeIndex)):
+        if (isinstance(idx, pd.RangeIndex)):
             idx = slice(idx.start, idx.stop - 1, idx.step)
 
         if (columns is None):
@@ -216,15 +215,15 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         return self._df.loc[idx, columns]
 
     @typing.overload
-    def get_data(self) -> cudf.DataFrame:
+    def get_data(self) -> DataFrameType:
         ...
 
     @typing.overload
-    def get_data(self, columns: str) -> cudf.Series:
+    def get_data(self, columns: str) -> SeriesType:
         ...
 
     @typing.overload
-    def get_data(self, columns: typing.List[str]) -> cudf.DataFrame:
+    def get_data(self, columns: typing.List[str]) -> DataFrameType:
         ...
 
     def get_data(self, columns: typing.Union[None, str, typing.List[str]] = None):
@@ -277,10 +276,6 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
             # First try to set the values on just our slice if the columns exist
             column_indexer = self._get_col_indexers(df, columns=columns)
 
-            # Check if the value is a cupy array and we have a pandas dataframe, convert to numpy
-            if (isinstance(value, cp.ndarray) and isinstance(df, pd.DataFrame)):
-                value = value.get()
-
             # Check to see if we are adding a column. If so, we need to use df.loc instead of df.iloc
             if (-1 not in column_indexer):
 
@@ -299,35 +294,8 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
                 # Columns should never be empty if we get here
                 assert columns is not None
 
-                # cudf is really bad at adding new columns
-                if (isinstance(df, cudf.DataFrame)):
-
-                    # TODO(morpheus#1487): This logic no longer works in CUDF 24.04.
-                    # We should find a way to reinable the no-dropped-index path as
-                    # that should be more performant than dropping the index.
-                    # # saved_index = None
-
-                    # # # Check to see if we can use slices
-                    # # if (not (df.index.is_unique and
-                    # #          (df.index.is_monotonic_increasing or df.index.is_monotonic_decreasing))):
-                    # #     # Save the index and reset
-                    # #     saved_index = df.index
-                    # #     df.reset_index(drop=True, inplace=True)
-
-                    # # # Perform the update via slices
-                    # # df.loc[df.index[row_indexer], columns] = value
-
-                    # # # Reset the index if we changed it
-                    # # if (saved_index is not None):
-                    # #     df.set_index(saved_index, inplace=True)
-
-                    saved_index = df.index
-                    df.reset_index(drop=True, inplace=True)
-                    df.loc[df.index[:], columns] = value
-                    df.set_index(saved_index, inplace=True)
-                else:
-                    # Now set the slice
-                    df.loc[:, columns] = value
+                # Now set the slice
+                df.loc[:, columns] = value
 
     def get_slice(self, start, stop):
         """
@@ -350,12 +318,7 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
             return MessageMeta(df.iloc[start:stop])
 
     def _ranges_to_mask(self, df, ranges):
-        if isinstance(df, cudf.DataFrame):
-            zeros_fn = cp.zeros
-        else:
-            zeros_fn = np.zeros
-
-        mask = zeros_fn(len(df), bool)
+        mask = np.zeros(len(df), bool)
 
         for range_ in ranges:
             mask[range_[0]:range_[1]] = True
@@ -399,6 +362,8 @@ class UserMessageMeta(MessageMeta, cpp_class=None):
     user_id: str = dataclasses.field(init=False)
 
     def __init__(self, df: pd.DataFrame, user_id: str) -> None:
+        from morpheus.messages.control_message import ControlMessage
+        morpheus_logger.deprecated_message_warning(UserMessageMeta, ControlMessage)
         super().__init__(df)
         self.user_id = user_id
 
@@ -418,5 +383,7 @@ class AppShieldMessageMeta(MessageMeta, cpp_class=None):
     source: str = dataclasses.field(init=False)
 
     def __init__(self, df: pd.DataFrame, source: str) -> None:
+        from morpheus.messages.control_message import ControlMessage
+        morpheus_logger.deprecated_message_warning(AppShieldMessageMeta, ControlMessage)
         super().__init__(df)
         self.source = source

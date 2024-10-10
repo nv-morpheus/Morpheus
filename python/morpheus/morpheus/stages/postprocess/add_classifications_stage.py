@@ -63,7 +63,7 @@ class AddClassificationsStage(AddScoresStageBase):
     def name(self) -> str:
         return "add-class"
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         # Enable support by default
         return True
 

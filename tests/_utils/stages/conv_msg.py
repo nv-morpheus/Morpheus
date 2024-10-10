@@ -15,23 +15,24 @@
 
 import typing
 
-import cupy as cp
 import mrc
-import pandas as pd
 from mrc.core import operators as ops
 
-import cudf
-
-import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import TensorMemory
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import get_array_pkg
+from morpheus.utils.type_utils import get_df_pkg
+from morpheus.utils.type_utils import get_df_pkg_from_obj
 
 
 @register_stage("unittest-conv-msg", ignore_args=["expected_data"])
-class ConvMsg(SinglePortStage):
+class ConvMsg(GpuAndCpuMixin, SinglePortStage):
     """
     Simple test stage to convert a ControlMessage to a ControlMessage with probs tensor.
     Basically a cheap replacement for running an inference stage.
@@ -45,17 +46,20 @@ class ConvMsg(SinglePortStage):
 
     def __init__(self,
                  c: Config,
-                 expected_data: typing.Union[pd.DataFrame, cudf.DataFrame] = None,
+                 expected_data: DataFrameType = None,
                  columns: typing.List[str] = None,
                  order: str = 'K',
                  probs_type: str = 'f4',
                  empty_probs: bool = False):
         super().__init__(c)
 
-        if expected_data is not None:
-            assert isinstance(expected_data, (pd.DataFrame, cudf.DataFrame))
+        self._df_pkg = get_df_pkg(c.execution_mode)
+        self._array_pkg = get_array_pkg(c.execution_mode)
 
-        self._expected_data = expected_data
+        if expected_data is not None:
+            assert isinstance(expected_data, self._df_pkg.DataFrame)
+
+        self._expected_data: DataFrameType | None = expected_data
         self._columns = columns
         self._order = order
         self._probs_type = probs_type
@@ -76,20 +80,21 @@ class ConvMsg(SinglePortStage):
 
     def _conv_message(self, message: ControlMessage) -> ControlMessage:
         if self._expected_data is not None:
-            if (isinstance(self._expected_data, cudf.DataFrame)):
+            df_pkg = get_df_pkg_from_obj(self._expected_data)
+            if (isinstance(self._expected_data, self._df_pkg.DataFrame)):
                 df = self._expected_data.copy(deep=True)
             else:
-                df = cudf.DataFrame(self._expected_data)
+                df = df_pkg.DataFrame(self._expected_data)
 
         else:
-            df: cudf.DataFrame = message.payload().get_data(self._columns)  # type: ignore
+            df: DataFrameType = message.payload().get_data(self._columns)  # type: ignore
 
         if self._empty_probs:
-            probs = cp.zeros([len(df), 3], 'float')
+            probs = self._array_pkg.zeros([len(df), 3], 'float')
         else:
-            probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
+            probs = self._array_pkg.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
 
-        message.tensors(_messages.TensorMemory(count=len(probs), tensors={'probs': probs}))
+        message.tensors(TensorMemory(count=len(probs), tensors={'probs': probs}))
         return message
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:

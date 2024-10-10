@@ -23,6 +23,7 @@ from _utils.stages.check_pre_alloc import CheckPreAlloc
 from _utils.stages.conv_msg import ConvMsg
 from morpheus.common import TypeId
 from morpheus.common import typeid_to_numpy_str
+from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
@@ -32,10 +33,12 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.utils.type_aliases import DataFrameType
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize('probs_type', [TypeId.FLOAT32, TypeId.FLOAT64])
-def test_preallocation(config, filter_probs_df, probs_type):
+def test_preallocation(config: Config, filter_probs_df: DataFrameType, probs_type: TypeId):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     probs_np_type = typeid_to_numpy_str(probs_type)
     expected_df = pd.DataFrame(
@@ -61,8 +64,9 @@ def test_preallocation(config, filter_probs_df, probs_type):
     assert_results(comp_stage.get_results())
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize('probs_type', [TypeId.FLOAT32, TypeId.FLOAT64])
-def test_preallocation_multi_segment_pipe(config, filter_probs_df, probs_type):
+def test_preallocation_multi_segment_pipe(config: Config, filter_probs_df: DataFrameType, probs_type: TypeId):
     """
     Test ensures that when columns are needed for preallocation in a multi-segment pipeline, the preallocagtion will
     always be performed on the closest source to the stage that requested preallocation. Which in cases where the
@@ -99,7 +103,7 @@ def test_preallocation_multi_segment_pipe(config, filter_probs_df, probs_type):
     assert_results(comp_stage.get_results())
 
 
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 def test_preallocation_error(config, filter_probs_df):
     """
     Verify that we get a raised exception when add_scores attempts to use columns that don't exist

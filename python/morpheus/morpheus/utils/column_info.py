@@ -22,7 +22,8 @@ from functools import partial
 
 import pandas as pd
 
-import cudf
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import is_cudf_type
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -30,7 +31,7 @@ DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
 
 
 # Note(Devin): Proxying this for backwards compatibility. Had to move the primary definition to avoid circular imports.
-def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame], input_schema) -> pd.DataFrame:
+def process_dataframe(df_in: DataFrameType, input_schema) -> pd.DataFrame:
     """
     Processes a dataframe according to the given schema.
 
@@ -83,7 +84,7 @@ def create_increment_col(df: pd.DataFrame,
     """
 
     # Ensure we are pandas for this
-    if (isinstance(df, cudf.DataFrame)):
+    if (not isinstance(df, pd.DataFrame)):
         df = df.to_pandas()
 
     time_col = df[timestamp_column].fillna(pd.to_datetime(DEFAULT_DATE))
@@ -595,16 +596,16 @@ class PreparedDFInfo:
 
     Attributes
     ----------
-    df : typing.Union[pd.DataFrame, cudf.DataFrame]
+    df : DataFrameType
         The prepared DataFrame.
-    columns_to_preserve : typing.List[str]
+    columns_to_preserve : list[str]
         A list of column names that are to be preserved.
     """
-    df: typing.Union[pd.DataFrame, cudf.DataFrame]
-    columns_to_preserve: typing.List[str]
+    df: DataFrameType
+    columns_to_preserve: list[str]
 
 
-def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
+def _json_flatten(df_input: DataFrameType,
                   input_columns: dict[str, str],
                   json_cols: list[str],
                   preserve_re: re.Pattern = None):
@@ -614,7 +615,7 @@ def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
 
     Parameters
     ----------
-    df_input : typing.Union[pd.DataFrame, cudf.DataFrame]
+    df_input : DataFrameType
         DataFrame to process.
     input_columns : dict[str, str]
         The final input columns that are needed for processing. All other columns will be removed
@@ -625,7 +626,7 @@ def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
 
     Returns
     -------
-    typing.Union[pd.DataFrame, cudf.DataFrame]
+    DataFrameType
         The processed DataFrame.
     """
 
@@ -640,10 +641,9 @@ def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
 
     # Check if we even have any JSON columns to flatten
     if (not df_input.columns.intersection(json_cols).empty):
-        convert_to_cudf = False
+        is_cudf = is_cudf_type(df_input)
 
-        if (isinstance(df_input, cudf.DataFrame)):
-            convert_to_cudf = True
+        if (is_cudf):
             df_input = df_input.to_pandas()
 
         json_normalized = []
@@ -672,7 +672,8 @@ def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
         # Combine the original DataFrame with the normalized JSON columns
         df_input = pd.concat([df_input[columns_to_keep]] + json_normalized, axis=1)
 
-        if (convert_to_cudf):
+        if (is_cudf):
+            import cudf
             df_input = cudf.from_pandas(df_input).reset_index(drop=True)
 
     # Remove all columns that are not in the input columns list. Ensure the correct types

@@ -15,6 +15,7 @@
 import logging
 
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus_llm.llm import LLMContext
 from morpheus_llm.llm import LLMTaskHandler
 
@@ -48,7 +49,8 @@ class SimpleTaskHandler(LLMTaskHandler):
 
         input_dict = context.get_inputs()
 
-        with context.message().payload().mutable_dataframe() as df:
+        meta: MessageMeta = context.message().get_metadata("llm_message_meta")
+        with meta.mutable_dataframe() as df:
             # Write the values to the dataframe
             for key, value in input_dict.items():
                 df[key] = value

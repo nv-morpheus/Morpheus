@@ -75,7 +75,7 @@ MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
     default="phishing-bert-onnx",
     help="The name of the model that is deployed on Tritonserver.",
 )
-@click.option("--server_url", default='localhost:8001', help="Tritonserver url.")
+@click.option("--server_url", default='localhost:8000', help="Tritonserver url.")
 @click.option(
     "--output_file",
     default=os.path.join(tempfile.gettempdir(), "detections.jsonlines"),

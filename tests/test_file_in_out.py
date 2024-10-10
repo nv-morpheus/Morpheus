@@ -41,6 +41,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
 @pytest.mark.slow
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("input_type", ["csv", "jsonlines", "parquet"])
 @pytest.mark.parametrize("use_pathlib", [False, True])
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
@@ -91,6 +92,7 @@ def test_file_rw_pipe(tmp_path: pathlib.Path,
     assert output_data.tolist() == validation_data.tolist()
 
 
+@pytest.mark.gpu_and_cpu_mode
 def test_file_read_json(config: Config):
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "simple.json")
 
@@ -110,7 +112,7 @@ def test_file_read_json(config: Config):
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.usefixtures("chdir_tmpdir")
 def test_to_file_no_path(tmp_path: pathlib.Path, config: Config):
     """
@@ -131,6 +133,7 @@ def test_to_file_no_path(tmp_path: pathlib.Path, config: Config):
 
 
 @pytest.mark.slow
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("input_type", ["csv", "jsonlines", "parquet"])
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_file_rw_multi_segment_pipe(tmp_path: pathlib.Path, config: Config, input_type: str, output_type: str):
@@ -165,6 +168,7 @@ def test_file_rw_multi_segment_pipe(tmp_path: pathlib.Path, config: Config, inpu
 
 
 @pytest.mark.slow
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("input_file",
                          [
                              os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"),
@@ -189,6 +193,7 @@ def test_file_rw_index_pipe(tmp_path: pathlib.Path, config: Config, input_file: 
     assert output_data.tolist() == validation_data.tolist()
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("input_file,extra_kwargs",
                          [(os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"), {
                              "include_header": True, "include_index_col": False
@@ -196,7 +201,6 @@ def test_file_rw_index_pipe(tmp_path: pathlib.Path, config: Config, input_file: 
                              "include_header": True
                          }), (os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines"), {})],
                          ids=["CSV", "CSV_ID", "JSON"])
-@pytest.mark.usefixtures("use_cpp")
 def test_file_roundtrip(tmp_path: pathlib.Path, input_file: str, extra_kwargs: dict[str, typing.Any]):
 
     # Output file should be same type as input
@@ -235,6 +239,7 @@ def test_read_cpp_compare(input_file: str):
 
 
 @pytest.mark.slow
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_file_rw_serialize_deserialize_pipe(tmp_path: pathlib.Path, config: Config, output_type: str):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")

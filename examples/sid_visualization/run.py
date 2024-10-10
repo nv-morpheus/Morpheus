@@ -21,7 +21,6 @@ import mrc
 
 from morpheus.common import FileTypes
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
@@ -120,7 +119,6 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
 
 @click.command()
 @click.option("--debug/--no-debug", default=False)
-@click.option('--use_cpp', default=True)
 @click.option(
     "--num_threads",
     default=len(os.sched_getaffinity(0)),
@@ -148,15 +146,13 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
     default="sid-minibert-onnx",
     help="The name of the model that is deployed on Tritonserver.",
 )
-@click.option("--triton_server_url", default="localhost:8001", required=True, help="Tritonserver url.")
-def run_pipeline(debug, use_cpp, num_threads, input_file, max_batch_size, model_name, triton_server_url):
+@click.option("--triton_server_url", default="localhost:8000", required=True, help="Tritonserver url.")
+def run_pipeline(debug, num_threads, input_file, max_batch_size, model_name, triton_server_url):
 
     if debug:
         configure_logging(log_level=logging.DEBUG)
     else:
         configure_logging(log_level=logging.INFO)
-
-    CppConfig.set_should_use_cpp(use_cpp)
 
     # Its necessary to get the global config object and configure it for FIL mode.
     config = Config()

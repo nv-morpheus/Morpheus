@@ -54,6 +54,7 @@ If no exchange named 'logs' exists in RabbitMQ it will be created. By default th
 ## Launch the writer
 In a third terminal from the root of the Morpheus repo execute:
 ```bash
+export MORPHEUS_ROOT=$(pwd)
 python examples/developer_guide/2_2_rabbitmq/write_simple.py
 ```
 
@@ -61,6 +62,7 @@ This will read JSON data from the `examples/data/email.jsonlines` file and publi
 
 The `write_simple.py` script will exit as soon as the message is written to the queue. The `read_simple.py` script will continue reading from the queue until explicitly shut down with a control-C.
 
+> **Note**: Both the `read_simple.py` and `write_simple.py` scripts will launch independent Morpheus pipelines, both of which can optionally execute in CPU-only mode by setting the `--use_cpu_only` flag.
 
 ## Alternate Morpheus CLI usage
 In the above examples we defined the pipeline using the Python API in the `read_simple.py` and `write_simple.py` scripts. Alternately, we could have defined the same pipelines using the Morpheus CLI tool.
