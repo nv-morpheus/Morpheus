@@ -24,6 +24,7 @@ from morpheus.cli.utils import str_to_file_type
 from morpheus.controllers.file_to_df_controller import FileToDFController
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.utils.downloader import DownloadMethods
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.loader_utils import register_loader
 
@@ -97,7 +98,8 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
                                         file_type=file_type,
                                         parser_kwargs=parser_kwargs,
                                         cache_dir=cache_dir,
-                                        timestamp_column_name=timestamp_column_name)
+                                        timestamp_column_name=timestamp_column_name,
+                                        download_method=DownloadMethods.SINGLE_THREAD)
         pdf = controller.convert_to_dataframe(file_object_batch=(fsspec.open_files(files), n_groups))
         df = cudf.from_pandas(pdf)
 
