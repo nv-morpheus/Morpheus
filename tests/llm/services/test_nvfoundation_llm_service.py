@@ -100,6 +100,35 @@ def test_generate_batch():
         assert client.generate_batch({'prompt': ["prompt1", "prompt2"]}) == ["prompt1", "prompt2"]
 
 
+def test_generate_batch_exception():
+
+    with mock.patch("langchain_nvidia_ai_endpoints.ChatNVIDIA.generate_prompt", autospec=True) as mock_nvfoundationllm:
+
+        def mock_generation_side_effect(*_, **kwargs):
+            generations = []
+
+            for x in kwargs["prompts"]:
+                if "error" in x.text:
+                    raise RuntimeError("unittest")
+
+                generations.append([ChatGeneration(message=ChatMessage(content=x.text, role="assistant"))])
+
+            return LLMResult(generations=generations)
+
+        mock_nvfoundationllm.side_effect = mock_generation_side_effect
+
+        client = NVFoundationLLMService().get_client(model_name="test_model")
+
+        # Test with return_exceptions=True
+        with pytest.warns(UserWarning):
+            assert client.generate_batch({'prompt': ["prompt1", "prompt2"]},
+                                         return_exceptions=True) == ["prompt1", "prompt2"]
+
+        # Test with return_exceptions=False
+        with pytest.raises(RuntimeError, match="unittest"):
+            client.generate_batch({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=False)
+
+
 async def test_generate_async():
 
     with mock.patch("langchain_nvidia_ai_endpoints.ChatNVIDIA.agenerate_prompt", autospec=True) as mock_nvfoundationllm:
@@ -128,6 +157,35 @@ async def test_generate_batch_async():
         client = NVFoundationLLMService().get_client(model_name="test_model")
 
         assert await client.generate_batch_async({'prompt': ["prompt1", "prompt2"]})
+
+
+async def test_generate_batch_async_exception():
+
+    with mock.patch("langchain_nvidia_ai_endpoints.ChatNVIDIA.agenerate_prompt", autospec=True) as mock_nvfoundationllm:
+
+        async def mock_generation_side_effect(*_, **kwargs):
+            generations = []
+
+            for x in kwargs["prompts"]:
+                if "error" in x.text:
+                    raise RuntimeError("unittest")
+
+                generations.append([ChatGeneration(message=ChatMessage(content=x.text, role="assistant"))])
+
+            return LLMResult(generations=generations)
+
+        mock_nvfoundationllm.side_effect = mock_generation_side_effect
+
+        client = NVFoundationLLMService().get_client(model_name="test_model")
+
+        # Test with return_exceptions=True
+        with pytest.warns(UserWarning):
+            assert (await client.generate_batch_async({'prompt': ["prompt1", "prompt2"]},
+                                                      return_exceptions=True)) == ["prompt1", "prompt2"]
+
+        # Test with return_exceptions=False
+        with pytest.raises(RuntimeError, match="unittest"):
+            await client.generate_batch_async({'prompt': ["prompt1", "error", "prompt3"]}, return_exceptions=False)
 
 
 async def test_generate_batch_async_error():
