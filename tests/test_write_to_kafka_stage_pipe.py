@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
 import typing
 
 import pytest
-
-import cudf
 
 from _utils.dataset_manager import DatasetManager
 from _utils.kafka import KafkaTopics
@@ -33,9 +32,10 @@ if (typing.TYPE_CHECKING):
 
 
 @pytest.mark.kafka
-@pytest.mark.use_cudf
+@pytest.mark.gpu_and_cpu_mode
 def test_write_to_kafka_stage_pipe(config,
-                                   dataset_cudf: DatasetManager,
+                                   df_pkg: types.ModuleType,
+                                   dataset: DatasetManager,
                                    kafka_bootstrap_servers: str,
                                    kafka_consumer: "KafkaConsumer",
                                    kafka_topics: KafkaTopics) -> None:
@@ -44,7 +44,7 @@ def test_write_to_kafka_stage_pipe(config,
     to ensure it works just as well with the C++ impls of the message classes.
     """
 
-    filter_probs_df = dataset_cudf['filter_probs.csv']
+    filter_probs_df = dataset['filter_probs.csv']
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
@@ -59,9 +59,8 @@ def test_write_to_kafka_stage_pipe(config,
     kafka_messages = list(kafka_consumer)
     assert len(kafka_messages) == len(filter_probs_df)
 
-    output_df = cudf.io.read_json("\n".join(rec.value.decode("utf-8") for rec in kafka_messages),
-                                  lines=True).to_pandas()
+    output_df = df_pkg.read_json("\n".join(rec.value.decode("utf-8") for rec in kafka_messages), lines=True)
 
     assert len(output_df) == len(filter_probs_df)
 
-    dataset_cudf.assert_compare_df(filter_probs_df, output_df)
+    dataset.assert_compare_df(filter_probs_df, output_df)

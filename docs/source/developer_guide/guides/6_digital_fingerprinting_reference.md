@@ -88,7 +88,7 @@ Defines a single column and type-cast.
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the column |
-| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
 
 #### Custom Column (`CustomColumn`)
 Subclass of `ColumnInfo`, defines a column to be computed by a user-defined function `process_column_fn`.
@@ -96,7 +96,7 @@ Subclass of `ColumnInfo`, defines a column to be computed by a user-defined func
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the column |
-| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
 | `process_column_fn` | `function` | Function which receives the entire `DataFrame` as its only input, returning a new [`pandas.Series`](https://pandas.pydata.org/docs/reference/api/pandas.Series.html) object to be stored in column `name`. |
 | `input_column_types` | `dict[str, str]` | The input columns and the expected [`dtype` strings](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) that are needed for this Column to successfully process. Setting this as `None` will pass all columns. Specifying which columns are needed improves performance. |
 
@@ -139,7 +139,7 @@ Subclass of `RenameColumn`, specific to casting UTC localized `datetime` values.
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the destination column |
-| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
 | `input_name` | `str` | Original column name |
 
 #### String-Join Column (`StringJoinColumn`)
@@ -148,7 +148,7 @@ Subclass of `RenameColumn`, converts incoming `list` values to string by joining
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the destination column |
-| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
 | `input_name` | `str` | Original column name |
 | `sep` | `str` | Separator string to use for the join |
 
@@ -158,7 +158,7 @@ Subclass of `ColumnInfo`, concatenates values from multiple columns into a new s
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the destination column |
-| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
 | `input_columns` | `List[str]` | List of columns to concatenate |
 | `sep` | `str` | Separator string |
 

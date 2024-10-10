@@ -14,13 +14,14 @@
 """Abstract class for all event log parsers."""
 
 import logging
-import typing
 from abc import ABC
 from abc import abstractmethod
 
 import yaml
 
-import cudf
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import SeriesType
+from morpheus.utils.type_utils import get_df_pkg_from_obj
 
 log = logging.getLogger(__name__)
 
@@ -31,13 +32,13 @@ class EventParser(ABC):
 
     Parameters
     ----------
-    columns: typing.Set[str]
+    columns: set[str]
         Event column names
     event_name: str
         Event name
     """
 
-    def __init__(self, columns: typing.Set[str], event_name: str):
+    def __init__(self, columns: set[str], event_name: str):
         self._columns = columns
         self._event_name = event_name
 
@@ -48,7 +49,7 @@ class EventParser(ABC):
 
         Returns
         -------
-        typing.Set[str]
+        set[str]
             Event column names
         """
         return self._columns
@@ -66,7 +67,7 @@ class EventParser(ABC):
         return self._event_name
 
     @abstractmethod
-    def parse(self, text: cudf.Series) -> cudf.Series:
+    def parse(self, text: SeriesType) -> SeriesType:
         """
         Abstract method 'parse' triggers the parsing functionality. Subclasses are required to implement
         and execute any parsing pre-processing steps.
@@ -74,25 +75,26 @@ class EventParser(ABC):
         log.info("Begin parsing of dataframe")
         pass
 
-    def parse_raw_event(self, text: cudf.Series, event_regex: typing.Dict[str, any]) -> cudf.DataFrame:
+    def parse_raw_event(self, text: SeriesType, event_regex: dict[str, str]) -> DataFrameType:
         """
         Processes parsing of a specific type of raw event records received as a dataframe.
 
         Parameters
         ----------
-        text : cudf.Series
+        text : SeriesType
             Raw event log text to be parsed.
-        event_regex: typing.Dict[str, any]
+        event_regex: typing.Dict[str, str]
             Required regular expressions for a given event type.
 
         Returns
         -------
-        cudf.DataFrame
+        DataFrameType
             Parsed logs dataframe
         """
         log.debug("Parsing raw events. Event type: %s", self.event_name)
 
-        parsed_gdf = cudf.DataFrame({col: [""] for col in self.columns})
+        df_pkg = get_df_pkg_from_obj(text)
+        parsed_gdf = df_pkg.DataFrame({col: [""] for col in self.columns})
         parsed_gdf = parsed_gdf[:0]
         event_specific_columns = event_regex.keys()
         # Applies regex pattern for each expected output column to raw data
@@ -109,7 +111,7 @@ class EventParser(ABC):
 
         return parsed_gdf
 
-    def _load_regex_yaml(self, yaml_file) -> typing.Dict[str, any]:
+    def _load_regex_yaml(self, yaml_file) -> dict[str, str]:
         """Returns a dictionary of event regexes contained in the given yaml file."""
         with open(yaml_file, encoding='UTF-8') as yaml_file_h:
             regex_dict = yaml.safe_load(yaml_file_h)

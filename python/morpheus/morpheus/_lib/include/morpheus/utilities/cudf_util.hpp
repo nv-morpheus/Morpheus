@@ -40,7 +40,7 @@ namespace morpheus {
 struct CudfHelper
 {
   public:
-    __attribute__((visibility("default"))) static void load();
+    static void load();
 
     /**
      * @brief Converts a C++ table to a Python DataTable object
@@ -67,6 +67,9 @@ struct CudfHelper
      * @return TableInfoData
      */
     static TableInfoData table_info_data_from_table(pybind11::object table);
+
+  private:
+    CudfHelper();
 };
 
 /** @} */  // end of group
