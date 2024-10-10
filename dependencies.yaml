@@ -181,6 +181,18 @@ files:
     includes:
       - test_morpheus_llm_pip
 
+  # pip dependencies that are used during the conda test stage for morpheus-core output
+  morpheus_core:
+    output: none
+    includes:
+      - test_morpheus_core_pip
+
+  # pip dependencies that are used during the conda test stage for morpheus-dfp output
+  morpheus_dfp:
+    output: none
+    includes:
+      - test_morpheus_core_pip
+
 channels:
   - conda-forge
   - huggingface
@@ -388,6 +400,13 @@ dependencies:
           - pip:
               - pytest-kafka==0.6.0
 
+  test_morpheus_core_pip:
+    common:
+      - output_types: [requirements]
+        packages:
+           - --extra-index-url https://download.pytorch.org/whl/cu124
+           - torch==2.4.0+cu124
+
   test_morpheus_llm_pip:
     common:
       - output_types: [requirements]
@@ -396,7 +415,7 @@ dependencies:
            - pymilvus==2.3.6
            - langchain==0.1.16
            - langchain-nvidia-ai-endpoints==0.0.11
-           - faiss-gpu==1.7.*
+           - faiss-cpu
            - google-search-results==2.4
             - nemollm==0.3.5
 
