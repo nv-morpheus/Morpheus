@@ -180,6 +180,7 @@ files:
     output: none
     includes:
       - test_morpheus_llm_pip
+      - test_morpheus_core_pip
 
   # pip dependencies that are used during the conda test stage for morpheus-core output
   morpheus_core:
