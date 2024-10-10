@@ -44,6 +44,7 @@ from morpheus.utils.shared_process_pool import SharedProcessPool
 (PYTEST_KAFKA_AVAIL, PYTEST_KAFKA_ERROR) = _init_pytest_kafka()
 if PYTEST_KAFKA_AVAIL:
     # Pull out the fixtures into this namespace
+    # pylint: disable=ungrouped-imports
     from _utils.kafka import _kafka_consumer  # noqa: F401  pylint:disable=unused-import
     from _utils.kafka import kafka_server  # noqa: F401  pylint:disable=unused-import
     from _utils.kafka import zookeeper_proc  # noqa: F401  pylint:disable=unused-import
