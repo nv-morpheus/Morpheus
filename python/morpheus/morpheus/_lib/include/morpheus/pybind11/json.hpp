@@ -37,7 +37,7 @@ struct type_caster<nlohmann::json>
     /**
      * This macro establishes a local variable 'value' of type nlohmann::json
      */
-    PYBIND11_TYPE_CASTER(nlohmann::json, _("object"));
+    PYBIND11_TYPE_CASTER(nlohmann::json, _("dict[str, typing.Any] | list | str | bool | int | float | None"));
 
     /**
      * Conversion part 1 (Python->C++): convert a PyObject into an nlohmann::json
@@ -83,7 +83,7 @@ struct type_caster<nlohmann::json_dict>
     /**
      * This macro establishes a local variable 'value' of type nlohmann::json_dict
      */
-    PYBIND11_TYPE_CASTER(nlohmann::json_dict, _("dict[str, typing.Any]"));
+    PYBIND11_TYPE_CASTER(nlohmann::json_dict, _("dict[str, typing.Any] | None"));
 
     /**
      * Conversion part 1 (Python->C++): convert a PyObject into an nlohmann::json_dict
@@ -92,18 +92,25 @@ struct type_caster<nlohmann::json_dict>
      */
     bool load(handle src, bool convert)
     {
-        if (!src || src.is_none())
+        if (!src)
         {
             return false;
         }
 
-        if (!PyDict_Check(src.ptr()))
+        if (src.is_none())
         {
-            return false;
+            value = nlohmann::json_dict(nullptr);
         }
+        else
+        {
+            if (!PyDict_Check(src.ptr()))
+            {
+                return false;
+            }
 
-        value = static_cast<const nlohmann::json_dict>(
-            mrc::pymrc::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
+            value = static_cast<const nlohmann::json_dict>(
+                mrc::pymrc::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
+        }
 
         return true;
     }
@@ -128,7 +135,7 @@ struct type_caster<nlohmann::json_list>
     /**
      * This macro establishes a local variable 'value' of type nlohmann::json_list
      */
-    PYBIND11_TYPE_CASTER(nlohmann::json_list, _("list[typing.Any]"));
+    PYBIND11_TYPE_CASTER(nlohmann::json_list, _("list"));
 
     /**
      * Conversion part 1 (Python->C++): convert a PyObject into an nlohmann::json_list
@@ -137,18 +144,25 @@ struct type_caster<nlohmann::json_list>
      */
     bool load(handle src, bool convert)
     {
-        if (!src || src.is_none())
+        if (!src)
         {
             return false;
         }
 
-        if (!PyList_Check(src.ptr()))
+        if (src.is_none())
         {
-            return false;
+            value = nlohmann::json_list(nullptr);
         }
+        else
+        {
+            if (!PyList_Check(src.ptr()))
+            {
+                return false;
+            }
 
-        value = static_cast<const nlohmann::json_list>(
-            mrc::pymrc::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
+            value = static_cast<const nlohmann::json_list>(
+                mrc::pymrc::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
+        }
 
         return true;
     }
@@ -173,7 +187,7 @@ struct type_caster<morpheus::utilities::json_t>
     /**
      * This macro establishes a local variable 'value' of type morpheus::utilities::json_t
      */
-    PYBIND11_TYPE_CASTER(morpheus::utilities::json_t, _("object"));
+    PYBIND11_TYPE_CASTER(morpheus::utilities::json_t, _("object | None"));
 
     /**
      * Conversion part 1 (Python->C++): convert a PyObject into an morpheus::utilities::json_t
@@ -219,7 +233,7 @@ struct type_caster<morpheus::utilities::json_dict_t>
     /**
      * This macro establishes a local variable 'value' of type morpheus::utilities::json_t_dict
      */
-    PYBIND11_TYPE_CASTER(morpheus::utilities::json_dict_t, _("dict[str, typing.Any]"));
+    PYBIND11_TYPE_CASTER(morpheus::utilities::json_dict_t, _("dict[str, typing.Any] | None"));
 
     /**
      * Conversion part 1 (Python->C++): convert a PyObject into an morpheus::utilities::json_t_dict
@@ -228,18 +242,25 @@ struct type_caster<morpheus::utilities::json_dict_t>
      */
     bool load(handle src, bool convert)
     {
-        if (!src || src.is_none())
+        if (!src)
         {
             return false;
         }
 
-        if (!PyDict_Check(src.ptr()))
+        if (src.is_none())
         {
-            return false;
+            value = morpheus::utilities::json_dict_t(nullptr);
         }
+        else
+        {
+            if (!PyDict_Check(src.ptr()))
+            {
+                return false;
+            }
 
-        value = static_cast<const morpheus::utilities::json_dict_t>(
-            morpheus::utilities::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
+            value = static_cast<const morpheus::utilities::json_dict_t>(
+                morpheus::utilities::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
+        }
 
         return true;
     }
@@ -264,7 +285,7 @@ struct type_caster<morpheus::utilities::json_list_t>
     /**
      * This macro establishes a local variable 'value' of type morpheus::utilities::json_t_list
      */
-    PYBIND11_TYPE_CASTER(morpheus::utilities::json_list_t, _("list[typing.Any]"));
+    PYBIND11_TYPE_CASTER(morpheus::utilities::json_list_t, _("list | None"));
 
     /**
      * Conversion part 1 (Python->C++): convert a PyObject into an morpheus::utilities::json_t_list
@@ -273,18 +294,25 @@ struct type_caster<morpheus::utilities::json_list_t>
      */
     bool load(handle src, bool convert)
     {
-        if (!src || src.is_none())
+        if (!src)
         {
             return false;
         }
 
-        if (!PyList_Check(src.ptr()))
+        if (src.is_none())
         {
-            return false;
+            value = morpheus::utilities::json_list_t(nullptr);
         }
+        else
+        {
+            if (!PyList_Check(src.ptr()))
+            {
+                return false;
+            }
 
-        value = static_cast<const morpheus::utilities::json_list_t>(
-            morpheus::utilities::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
+            value = static_cast<const morpheus::utilities::json_list_t>(
+                morpheus::utilities::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
+        }
 
         return true;
     }

@@ -14,6 +14,7 @@
 
 import logging
 import typing
+import warnings
 
 from morpheus.utils.env_config_value import EnvConfigValue
 from morpheus_llm.error import IMPORT_ERROR_MESSAGE
@@ -113,12 +114,24 @@ class NVFoundationLLMClient(LLMClient):
 
         input_dict.pop(self._prompt_key)
 
-        return (await self.generate_batch_async(inputs=inputs, **input_dict))[0]
+        return (await self.generate_batch_async(inputs=inputs, **input_dict, return_exceptions=False))[0]
 
+    @typing.overload
+    def generate_batch(self, inputs: dict[str, list],
+                       return_exceptions: typing.Literal[True]) -> list[str | BaseException]:
+        ...
+
+    @typing.overload
+    def generate_batch(self, inputs: dict[str, list], return_exceptions: typing.Literal[False]) -> list[str]:
+        ...
+
+    @typing.overload
     def generate_batch(self,
                        inputs: dict[str, list],
-                       return_exceptions: typing.Literal[True] = True,
-                       **kwargs) -> list[str] | list[str | BaseException]:
+                       return_exceptions: bool = False) -> list[str] | list[str | BaseException]:
+        ...
+
+    def generate_batch(self, inputs: dict[str, list], return_exceptions=False) -> list[str] | list[str | BaseException]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -128,41 +141,48 @@ class NVFoundationLLMClient(LLMClient):
             Inputs containing prompt data.
         return_exceptions : bool
             Whether to return exceptions in the output list or raise them immediately.
-        **kwargs
-            Additional keyword arguments for generate batch.
         """
 
+        # Note: We dont want to use the generate_multiple implementation from nemollm because there is no retry logic.
+        # As soon as one of the requests fails, the entire batch fails. Instead, we need to implement the functionality
+        # listed in issue #1555 For now, we generate a warning if `return_exceptions` is True.
+        if (return_exceptions):
+            warnings.warn("return_exceptions==True is not currently supported by the "
+                          f"{type(self).__name__}.generate_batch() method. "
+                          "If an exception is raised for any item, the function will exit and raise that exception.")
+
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
-        final_kwargs = {**self._model_kwargs, **kwargs}
+        final_kwargs = self._model_kwargs
 
         responses = []
         try:
             generated_responses = self._client.generate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
             responses = [g[0].text for g in generated_responses.generations]
         except Exception as e:
-            if return_exceptions:
-                responses.append(e)
-            else:
-                raise e
+            # Leave this in here for debugging purposes
+            raise e
 
         return responses
 
     @typing.overload
-    async def generate_batch_async(self,
-                                   inputs: dict[str, list],
-                                   return_exceptions: typing.Literal[True] = True) -> list[str | BaseException]:
+    async def generate_batch_async(self, inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[True]) -> list[str | BaseException]:
+        ...
+
+    @typing.overload
+    async def generate_batch_async(self, inputs: dict[str, list],
+                                   return_exceptions: typing.Literal[False]) -> list[str]:
         ...
 
     @typing.overload
     async def generate_batch_async(self,
                                    inputs: dict[str, list],
-                                   return_exceptions: typing.Literal[False] = False) -> list[str]:
+                                   return_exceptions: bool = False) -> list[str] | list[str | BaseException]:
         ...
 
     async def generate_batch_async(self,
                                    inputs: dict[str, list],
-                                   return_exceptions=True,
-                                   **kwargs) -> list[str] | list[str | BaseException]:
+                                   return_exceptions=False) -> list[str] | list[str | BaseException]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -172,22 +192,26 @@ class NVFoundationLLMClient(LLMClient):
             Inputs containing prompt data.
         return_exceptions : bool
             Whether to return exceptions in the output list or raise them immediately.
-        **kwargs
-            Additional keyword arguments for generate batch async.
         """
 
+        # Note: We dont want to use the generate_multiple implementation from nemollm because there is no retry logic.
+        # As soon as one of the requests fails, the entire batch fails. Instead, we need to implement the functionality
+        # listed in issue #1555 For now, we generate a warning if `return_exceptions` is True.
+        if (return_exceptions):
+            warnings.warn("return_exceptions==True is not currently supported by the "
+                          f"{type(self).__name__}.generate_batch_async() method. "
+                          "If an exception is raised for any item, the function will exit and raise that exception.")
+
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
-        final_kwargs = {**self._model_kwargs, **kwargs}
+        final_kwargs = self._model_kwargs
 
         responses = []
         try:
             generated_responses = await self._client.agenerate_prompt(prompts=prompts, **final_kwargs)  # type: ignore
             responses = [g[0].text for g in generated_responses.generations]
         except Exception as e:
-            if return_exceptions:
-                responses.append(e)
-            else:
-                raise e
+            # Leave this in here for debugging purposes
+            raise e
 
         return responses
 
@@ -207,11 +231,11 @@ class NVFoundationLLMService(LLMService):
     """
 
     class APIKey(EnvConfigValue):
-        _ENV_KEY: str = "NVIDIA_API_KEY"
+        _ENV_KEY = "NVIDIA_API_KEY"
 
     class BaseURL(EnvConfigValue):
-        _ENV_KEY: str = "NVIDIA_API_BASE"
-        _ALLOW_NONE: bool = True
+        _ENV_KEY = "NVIDIA_API_BASE"
+        _ALLOW_NONE = True
 
     def __init__(self, *, api_key: APIKey | str = None, base_url: BaseURL | str = None, **model_kwargs) -> None:
         if IMPORT_EXCEPTION is not None:
