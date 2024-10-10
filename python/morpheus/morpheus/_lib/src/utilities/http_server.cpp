@@ -49,6 +49,7 @@
 #include <pymrc/utilities/function_wrappers.hpp>  // for PyFuncWrapper
 #include <pymrc/utils.hpp>                        // for cast_from_json
 
+#include <algorithm>  // for max
 #include <exception>  // for exception
 #include <memory>
 #include <ostream>      // needed for glog
