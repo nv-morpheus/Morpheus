@@ -18,6 +18,9 @@ CMake
 Conda
 CPython
 [Cc]ryptocurrenc[y|ies]
+cuDF
+cuML
+CuPy
 [Cc]yber
 [Cc]ybersecurity
 Cython
@@ -51,7 +54,9 @@ NeMo
 nginx
 NIC
 NIM(s?)
+NumPy
 NVIDIA
+pandas
 [Pp]arallelization
 [Pp]arsable
 PCIe

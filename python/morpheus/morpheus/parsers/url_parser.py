@@ -13,21 +13,15 @@
 # limitations under the License.
 
 import os
-
-import cudf
+import types
 
 import morpheus
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import SeriesType
+from morpheus.utils.type_utils import get_df_pkg_from_obj
+from morpheus.utils.type_utils import is_cudf_type
 
-
-def _load_suffix_file():
-    suffix_list_path = os.path.join(morpheus.DATA_DIR, "public_suffix_list.dat")
-    # Read suffix list csv file
-    suffix_df = cudf.io.csv.read_csv(suffix_list_path, names=["suffix"], header=None, dtype=["str"])
-    suffix_df = suffix_df[suffix_df["suffix"].str.contains("^[^//]+$")]
-    return suffix_df
-
-
-_SUFFIX_DF = _load_suffix_file()
+_SUFFIX_DF_CACHE = {}
 _ALLOWED_OUTPUT_COLS = {
     "hostname",
     "subdomain",
@@ -36,7 +30,24 @@ _ALLOWED_OUTPUT_COLS = {
 }
 
 
-def _handle_unknown_suffix(unknown_suffix_df, col_dict):
+def _get_suffix_df(df_pkg: types.ModuleType) -> DataFrameType:
+    suffix_df = _SUFFIX_DF_CACHE.get(df_pkg)
+    if suffix_df is None:
+        suffix_list_path = os.path.join(morpheus.DATA_DIR, "public_suffix_list.dat")
+        # Read suffix list csv file, ignore comments and empty lines.
+        suffix_df = df_pkg.read_csv(suffix_list_path,
+                                    names=["suffix"],
+                                    header=None,
+                                    dtype={'suffix': "str"},
+                                    comment='/',
+                                    skip_blank_lines=True)
+        suffix_df = suffix_df[suffix_df["suffix"].str.contains("^[^//]+$")]
+        _SUFFIX_DF_CACHE[df_pkg] = suffix_df
+
+    return suffix_df
+
+
+def _handle_unknown_suffix(unknown_suffix_df: DataFrameType, col_dict: dict[str, bool]) -> DataFrameType:
     if col_dict["hostname"]:
         unknown_suffix_df = unknown_suffix_df[["idx", "tld0"]]
         unknown_suffix_df = unknown_suffix_df.rename(columns={"tld0": "hostname"})
@@ -53,7 +64,8 @@ def _handle_unknown_suffix(unknown_suffix_df, col_dict):
     return unknown_suffix_df
 
 
-def _extract_tld(input_df, suffix_df, col_len, col_dict):
+def _extract_tld(input_df: DataFrameType, suffix_df: DataFrameType, col_len: int,
+                 col_dict: dict[str, bool]) -> DataFrameType:
     tmp_dfs = []
     # Left join on single column dataframe does not provide expected results hence adding dummy column.
     suffix_df["dummy"] = ""
@@ -109,12 +121,14 @@ def _extract_tld(input_df, suffix_df, col_len, col_dict):
                 tmp_dfs.append(unknown_suffix_df)
             else:
                 continue
+
     # Concat all temporary output dataframes
-    output_df = cudf.concat(tmp_dfs)
+    df_pkg = get_df_pkg_from_obj(input_df)
+    output_df = df_pkg.concat(tmp_dfs)
     return output_df
 
 
-def _create_col_dict(allowed_output_cols, req_cols):
+def _create_col_dict(allowed_output_cols: set[str], req_cols: set[str]) -> dict[str, bool]:
     """Creates dictionary to apply check condition while extracting tld.
     """
     col_dict = {col: True for col in allowed_output_cols}
@@ -124,7 +138,7 @@ def _create_col_dict(allowed_output_cols, req_cols):
     return col_dict
 
 
-def _verify_req_cols(req_cols, allowed_output_cols):
+def _verify_req_cols(req_cols: set[str], allowed_output_cols: set[str]) -> set[str]:
     """Verify user requested columns against allowed output columns.
     """
     if req_cols is not None:
@@ -135,7 +149,7 @@ def _verify_req_cols(req_cols, allowed_output_cols):
     return req_cols
 
 
-def _generate_tld_cols(hostname_split_df, hostnames, col_len):
+def _generate_tld_cols(hostname_split_df: DataFrameType, hostnames: SeriesType, col_len: int) -> DataFrameType:
     hostname_split_df = hostname_split_df.fillna("")
     hostname_split_df["tld" + str(col_len)] = hostname_split_df[col_len]
     # Add all other elements of hostname_split_df
@@ -147,25 +161,25 @@ def _generate_tld_cols(hostname_split_df, hostnames, col_len):
     return hostname_split_df
 
 
-def _extract_hostnames(urls):
+def _extract_hostnames(urls: SeriesType) -> SeriesType:
     hostnames = urls.str.extract("([\\w]+[\\.].*[^/]|[\\-\\w]+[\\.].*[^/])")[0].str.extract("([\\w\\.\\-]+)")[0]
     return hostnames
 
 
-def parse(urls, req_cols=None):
+def parse(urls: SeriesType, req_cols: set[str] = None) -> DataFrameType:
     """
     Extract hostname, domain, subdomain and suffix from URLs.
 
     Parameters
     ----------
-    urls : cudf.Series
+    urls : SeriesType
         URLs to be parsed.
     req_cols : typing.Set[str]
         Selected columns to extract. Can be subset of (hostname, domain, subdomain and suffix).
 
     Returns
     -------
-    cudf.DataFrame
+    DataFrameType
         Parsed dataframe with selected columns to extract.
 
     Examples
@@ -196,6 +210,7 @@ def parse(urls, req_cols=None):
     2  github    com
     3  pydata    org
     """
+    df_pkg = get_df_pkg_from_obj(urls)
     req_cols = _verify_req_cols(req_cols, _ALLOWED_OUTPUT_COLS)
     col_dict = _create_col_dict(req_cols, _ALLOWED_OUTPUT_COLS)
     hostnames = _extract_hostnames(urls)
@@ -203,14 +218,21 @@ def parse(urls, req_cols=None):
     del urls
     hostname_split_ser = hostnames.str.findall("([^.]+)")
     hostname_split_df = hostname_split_ser.to_frame()
-    hostname_split_df = cudf.DataFrame(hostname_split_df[0].to_arrow().to_pylist())
+
+    if is_cudf_type(hostname_split_df):
+        hostname_split_df = df_pkg.DataFrame(hostname_split_df[0].to_arrow().to_pylist())
+    else:
+        hostname_split_df = df_pkg.DataFrame(hostname_split_df[0].to_list())
+
     col_len = len(hostname_split_df.columns) - 1
     hostname_split_df = _generate_tld_cols(hostname_split_df, hostnames, col_len)
     # remove hostnames since they are available in hostname_split_df
     del hostnames
     # Assign input index to idx column.
     hostname_split_df["idx"] = url_index
-    output_df = _extract_tld(hostname_split_df, _SUFFIX_DF, col_len, col_dict)
+
+    suffix_df = _get_suffix_df(df_pkg)
+    output_df = _extract_tld(hostname_split_df, suffix_df, col_len, col_dict)
     # Sort index based on given input index order.
     output_df = output_df.sort_values("idx", ascending=True)
     # Drop temp columns.

@@ -45,7 +45,7 @@ def get_test_df(num_input_rows):
 
 
 @pytest.mark.milvus
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize("use_instance, num_input_rows, expected_num_output_rows, resource_kwargs, recreate",
                          [(True, 5, 5, {
                              "partition_name": "age_partition"

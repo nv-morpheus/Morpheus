@@ -22,6 +22,7 @@ import pika
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("to-rabbitmq")
-class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
+class WriteToRabbitMQStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
     """
     Source stage used to load messages from a RabbitMQ queue.
 

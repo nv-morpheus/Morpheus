@@ -252,7 +252,7 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
     auto cudf_df_cls = py::module_::import("cudf").attr("DataFrame");
     if (!py::isinstance(data_frame, cudf_df_cls))
     {
-        // Convert to cudf if it's a Pandas DF, thrown an error otherwise
+        // Check if we received a Pandas DF or the Python impl of MessageMeta, throw an error otherwise
         auto pd_df_cls = py::module_::import("pandas").attr("DataFrame");
         if (py::isinstance(data_frame, pd_df_cls))
         {
@@ -265,6 +265,7 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
             auto msg_meta_cls = py::module_::import("morpheus.messages").attr("MessageMeta");
             if (py::isinstance(data_frame, msg_meta_cls))
             {
+                DVLOG(10) << "Converting from a Python impl of MessageMeta to C++ impl";
                 return init_python_meta(data_frame);
             }
             else
