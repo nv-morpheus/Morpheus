@@ -630,6 +630,7 @@ def test_windows_event_parser():
         test_logs = fh.readlines()
     test_input = cudf.Series(test_logs)
     test_output_df = wep.parse(test_input)
+
     for parsed_rec in test_output_df.to_records():
         eventcode = parsed_rec["eventcode"]
         validate_func = VALIDATE_DICT.get(eventcode, unknown_record_type)

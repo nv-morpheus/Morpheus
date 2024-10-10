@@ -23,12 +23,12 @@ import pytest
 
 from _utils import TEST_DIRS
 from _utils import calc_error_val
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage
@@ -45,7 +45,7 @@ from morpheus.stages.preprocess import train_ae_stage
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.gpu_mode
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
@@ -97,7 +97,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock, config: Config, tmp_path: str, morph
             sort_glob=True))
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
-    pipe.add_stage(AddScoresStage(config))
+    pipe.add_stage(AddScoresStage(config, probs_type=TypeId.FLOAT64))
     pipe.add_stage(
         TimeSeriesStage(config,
                         resolution="1m",
@@ -131,7 +131,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock, config: Config, tmp_path: str, morph
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.gpu_mode
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
@@ -181,7 +181,7 @@ def test_dfp_user123(mock_ae: mock.MagicMock, config: Config, tmp_path: str, mor
             sort_glob=True))
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
-    pipe.add_stage(AddScoresStage(config))
+    pipe.add_stage(AddScoresStage(config, probs_type=TypeId.FLOAT64))
     pipe.add_stage(
         TimeSeriesStage(config,
                         resolution="1m",
@@ -214,7 +214,7 @@ def test_dfp_user123(mock_ae: mock.MagicMock, config: Config, tmp_path: str, mor
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.gpu_mode
 @pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
@@ -255,7 +255,7 @@ def test_dfp_user123_multi_segment(mock_ae: mock.MagicMock, config: Config, tmp_
 
     pipe = LinearPipeline(config)
     pipe.set_source(CloudTrailSourceStage(config, input_glob=input_glob, sort_glob=True))
-    pipe.add_segment_boundary(UserMessageMeta)  # Boundary 1
+    pipe.add_segment_boundary(ControlMessage)  # Boundary 1
     pipe.add_stage(
         train_ae_stage.TrainAEStage(
             config,
@@ -268,7 +268,7 @@ def test_dfp_user123_multi_segment(mock_ae: mock.MagicMock, config: Config, tmp_
     pipe.add_segment_boundary(ControlMessage)  # Boundary 3
     pipe.add_stage(AutoEncoderInferenceStage(config))
     pipe.add_segment_boundary(ControlMessage)  # Boundary 4
-    pipe.add_stage(AddScoresStage(config))
+    pipe.add_stage(AddScoresStage(config, probs_type=TypeId.FLOAT64))
     pipe.add_segment_boundary(ControlMessage)  # Boundary 5
     pipe.add_stage(
         TimeSeriesStage(config,

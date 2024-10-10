@@ -27,7 +27,6 @@
 #include "morpheus/stages/inference_client_stage.hpp"  // for TensorModelMapping, InferenceClientStage, IInferenceCl...
 #include "morpheus/stages/triton_inference.hpp"        // for TritonInferenceClient, TritonInferInput, TritonInferRe...
 #include "morpheus/types.hpp"                          // for TensorMap
-#include "morpheus/utilities/cudf_util.hpp"            // for CudfHelper
 #include "morpheus/utilities/matx_util.hpp"            // for MatxUtil
 
 #include <cuda_runtime.h>                         // for cudaMemcpy, cudaMemcpyKind
@@ -43,7 +42,6 @@
 #include <http_client.h>                          // for Error, InferOptions, InferenceServerHttpClient, InferR...
 #include <mrc/coroutines/task.hpp>                // for Task
 #include <mrc/coroutines/test_scheduler.hpp>      // for TestScheduler
-#include <pybind11/gil.h>                         // for gil_scoped_acquire
 #include <rmm/cuda_stream_view.hpp>               // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>                  // for device_buffer
 #include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
@@ -291,20 +289,7 @@ class ErrorProneTritonClient : public FakeTritonClient
 };
 
 class TestTritonInferenceStage : public morpheus::test::TestWithPythonInterpreter
-{
-  protected:
-    void SetUp() override
-    {
-        morpheus::test::TestWithPythonInterpreter::SetUp();
-        {
-            pybind11::gil_scoped_acquire gil;
-
-            // Initially I ran into an issue bootstrapping cudf, I was able to work-around the issue, details in:
-            // https://github.com/rapidsai/cudf/issues/12862
-            morpheus::CudfHelper::load();
-        }
-    }
-};
+{};
 
 cudf::io::table_with_metadata create_test_table_with_metadata(uint32_t rows)
 {

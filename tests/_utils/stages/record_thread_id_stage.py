@@ -19,11 +19,12 @@ import typing
 import mrc
 
 from morpheus.config import Config
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-class RecordThreadIdStage(PassThruTypeMixin, SinglePortStage):
+class RecordThreadIdStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     """
     Forwarding stage that records the thread id of the progress engine
     """

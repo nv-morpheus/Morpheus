@@ -12,60 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import base64
-import json
 import logging
-import typing
-from functools import partial
 
-import cupy as cp
 import mrc
-import numpy as np
 
-import cudf
-
-import morpheus._lib.messages as _messages
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import ControlMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
-from morpheus.utils.cudf_subword_helper import tokenize_text_series
 
 logger = logging.getLogger(__name__)
-
-
-def cupyarray_to_base64(cupy_array):
-    array_bytes = cupy_array.get().tobytes()
-    array_shape = cupy_array.shape
-    array_dtype = str(cupy_array.dtype)
-
-    # Create a dictionary to store bytes, shape, and dtype
-    encoded_dict = {'bytes': base64.b64encode(array_bytes).decode("utf-8"), 'shape': array_shape, 'dtype': array_dtype}
-
-    # Convert dictionary to JSON string for storage
-    return json.dumps(encoded_dict)
-
-
-def base64_to_cupyarray(base64_str):
-    # Convert JSON string back to dictionary
-    encoded_dict = json.loads(base64_str)
-
-    # Extract bytes, shape, and dtype
-    array_bytes = base64.b64decode(encoded_dict['bytes'])
-    array_shape = tuple(encoded_dict['shape'])
-    array_dtype = encoded_dict['dtype']
-
-    # Convert bytes back to a NumPy array and reshape
-    np_array = np.frombuffer(array_bytes, dtype=array_dtype).reshape(array_shape)
-
-    # Convert NumPy array to CuPy array
-    cp_array = cp.array(np_array)
-
-    return cp_array
 
 
 @register_stage(
@@ -133,64 +91,11 @@ class PreprocessNLPStage(PreprocessBaseStage):
     def name(self) -> str:
         return "preprocess-nlp"
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return True
 
-    @staticmethod
-    def pre_process_batch(message: ControlMessage,
-                          vocab_hash_file: str,
-                          do_lower_case: bool,
-                          seq_len: int,
-                          stride: int,
-                          truncation: bool,
-                          add_special_tokens: bool,
-                          column: str) -> ControlMessage:
-        """
-        For NLP category use cases, this function performs pre-processing.
-
-        [parameters are the same as the original function]
-
-        Returns
-        -------
-        `morpheus.messages.ControlMessage`
-
-        """
-        with message.payload().mutable_dataframe() as mdf:
-            text_series = cudf.Series(mdf[column])
-
-        tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
-                                         do_lower_case=do_lower_case,
-                                         text_ser=text_series,
-                                         seq_len=seq_len,
-                                         stride=stride,
-                                         truncation=truncation,
-                                         add_special_tokens=add_special_tokens)
-
-        del text_series
-
-        # We need the C++ impl of TensorMemory until #1646 is resolved
-        message.tensors(
-            _messages.TensorMemory(count=tokenized.input_ids.shape[0],
-                                   tensors={
-                                       "input_ids": tokenized.input_ids,
-                                       "input_mask": tokenized.input_mask,
-                                       "seq_ids": tokenized.segment_ids
-                                   }))
-
-        message.set_metadata("inference_memory_params", {"inference_type": "nlp"})
-        return message
-
-    def _get_preprocess_fn(self) -> typing.Callable[[ControlMessage], ControlMessage]:
-        return partial(PreprocessNLPStage.pre_process_batch,
-                       vocab_hash_file=self._vocab_hash_file,
-                       do_lower_case=self._do_lower_case,
-                       stride=self._stride,
-                       seq_len=self._seq_length,
-                       truncation=self._truncation,
-                       add_special_tokens=self._add_special_tokens,
-                       column=self._column)
-
     def _get_preprocess_node(self, builder: mrc.Builder):
+        import morpheus._lib.stages as _stages
         return _stages.PreprocessNLPStage(builder,
                                           self.unique_name,
                                           self._vocab_hash_file,

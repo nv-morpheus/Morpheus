@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib
-import os
-
 import cupy as cp
 import pytest
 
@@ -23,6 +20,7 @@ import cudf
 
 import morpheus._lib.messages as _messages
 import morpheus.config
+import morpheus.utils.type_utils
 from morpheus import messages
 from morpheus.messages.memory import tensor_memory
 
@@ -96,18 +94,6 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     check_message(messages.ResponseMemoryAE, None, should_be_cpp, no_cpp_class, **{"count": 1, "probs": cp_array})
 
 
+@pytest.mark.gpu_mode
 def test_constructor_cpp():
     check_all_messages(morpheus.config.CppConfig.get_should_use_cpp(), False)
-
-
-@pytest.mark.reload_modules(morpheus.config)
-@pytest.mark.usefixtures("reload_modules", "restore_environ")
-def test_constructor_env():
-    # Set the NO_CPP flag which should disable C++ regardless
-    os.environ['MORPHEUS_NO_CPP'] = '1'
-
-    # Reload the CppConfig class just in case
-    importlib.reload(morpheus.config)
-
-    # Check all messages. Should be False regardless due to the environment variable
-    check_all_messages(False, False)

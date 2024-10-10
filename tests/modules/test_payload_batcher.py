@@ -83,7 +83,7 @@ def test_get_module():
     assert isinstance(module_instance, mrc.core.segment.SegmentModule)
 
 
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize(
     "max_batch_size, raise_on_failure, group_by_columns, disable_max_batch_size, timestamp_column_name, "
     "timestamp_pattern, period, expected_count, expected_exception",
@@ -193,7 +193,7 @@ def test_custom_params(config,
         assert len(sink_stage.get_messages()) == expected_count
 
 
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 def test_default_params(config, filter_probs_df):
 
     pipe = Pipeline(config)

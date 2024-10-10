@@ -19,7 +19,6 @@ import click
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.messages import RawPacketMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
@@ -89,8 +88,6 @@ def run_pipeline(nic_addr: str,
                  output_file: str | None):
     # Enable the default logger
     configure_logging(log_level=log_level)
-
-    CppConfig.set_should_use_cpp(True)
 
     config = Config()
     config.mode = PipelineModes.NLP

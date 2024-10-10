@@ -38,7 +38,7 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils.type_aliases import DataFrameType
 
 
-class SourceTestStage(InMemorySourceStage):
+class SourceTestStage(InMemorySourceStage):  # pylint: disable=too-many-ancestors
 
     def __init__(self,
                  config,

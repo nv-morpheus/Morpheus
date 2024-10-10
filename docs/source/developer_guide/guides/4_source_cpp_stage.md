@@ -36,6 +36,8 @@ For this example, we are going to add a C++ implementation for the `RabbitMQSour
 
 For communicating with [RabbitMQ](https://www.rabbitmq.com/) we will be using the [SimpleAmqpClient](https://github.com/alanxz/SimpleAmqpClient) library, and [libcudf](https://docs.rapids.ai/api/libcudf/stable/index.html) for constructing the `DataFrame`.
 
+> **Note**: Since the C++ implementation will only be used when the execution mode is set to GPU. It is safe to assume the C++ implementation will always interact with cuDF DataFrames, and the Python implementation will always interact with pandas DataFrames.
+
 ## Header Definition
 
 Our includes:
@@ -477,7 +479,8 @@ PYBIND11_MODULE(rabbitmq_cpp_stage, m)
 
 ## Python Changes
 
-Previously, our stage connected to the RabbitMQ server in the constructor. This is no longer advantageous to us when C++ execution is enabled. Instead, we will record our constructor arguments and move the connection code to a new `connect` method. Our new constructor and `connect` methods are updated to:
+Previously, our stage connected to the RabbitMQ server in the constructor. This is no longer advantageous to us when C++ execution is enabled. Instead, we will record our constructor arguments and move the connection code to a new `connect` method. Since this stage's C++ implementation will always be used when running in GPU mode, we can assume the Python implementation will always interact with pandas DataFrames.
+Our new constructor and `connect` methods are updated to:
 
 ```python
 def __init__(self,
@@ -513,7 +516,7 @@ def connect(self):
     self._channel.queue_bind(exchange=self._exchange, queue=self._queue_name)
 ```
 
-Lastly, our `_build_source` method needs to be updated to build a C++ node when `morpheus.config.CppConfig.get_should_use_cpp()` is configured to `True` by using the `self._build_cpp_node()` method.
+Lastly, our `_build_source` method needs to be updated to build a C++ node when `self._build_cpp_node()` returns `True`.
 
 ```python
 def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:

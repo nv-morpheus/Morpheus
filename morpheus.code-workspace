@@ -305,6 +305,18 @@
                 "type": "debugpy"
             },
             {
+                "args": [
+                    "-x"
+                ],
+                "console": "integratedTerminal",
+                "cwd": "${workspaceFolder}",
+                "justMyCode": false,
+                "module": "pytest",
+                "name": "Python: tests",
+                "request": "launch",
+                "type": "debugpy"
+            },
+            {
                 "MIMode": "gdb",
                 "args": [
                     "./python/morpheus/morpheus/cli.py",

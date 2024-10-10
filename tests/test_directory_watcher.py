@@ -22,7 +22,6 @@ from _utils import TEST_DIRS
 from morpheus.utils.directory_watcher import DirectoryWatcher
 
 
-@pytest.mark.use_python
 @pytest.mark.parametrize('watch_directory', [True])
 @pytest.mark.parametrize('max_files', [-1])
 @pytest.mark.parametrize('sort_glob', [True])
