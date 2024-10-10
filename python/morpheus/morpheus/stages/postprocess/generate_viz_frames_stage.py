@@ -281,8 +281,8 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
                 out_df = cudf.DataFrame()
 
                 out_df["dt"] = (df["timestamp"] - time0).astype(np.int32)
-                out_df["src"] = df["src_ip"].str.ip_to_int().astype(np.int32)
-                out_df["dst"] = df["dest_ip"].str.ip_to_int().astype(np.int32)
+                out_df["src"] = df["src_ip"].str.ip_to_int().astype(np.uint32)
+                out_df["dst"] = df["dest_ip"].str.ip_to_int().astype(np.uint32)
                 out_df["lvl"] = df["secret_keys"].astype(np.int32)
                 out_df["data"] = df["data"]
 

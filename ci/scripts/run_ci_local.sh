@@ -21,13 +21,13 @@ case "$1" in
         STAGES=("bash")
         ;;
     "all" )
-        STAGES=("checks" "build" "docs" "test" "conda_core" "conda")
+        STAGES=("checks" "build" "docs" "test" "conda_libs" "conda")
         ;;
-    "checks" | "build" | "docs" | "test" | "conda_core" | "conda" | "bash" )
+    "checks" | "build" | "docs" | "test" | "conda_libs" | "conda" | "bash" )
         STAGES=("$1")
         ;;
     * )
-        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build\", \"docs\", \"test\", \"conda_core\", \"conda\", or \"bash\""
+        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build\", \"docs\", \"test\", \"conda_libs\", \"conda\", or \"bash\""
         exit 1
         ;;
 esac
@@ -58,7 +58,7 @@ GIT_BRANCH=$(git branch --show-current)
 GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
 
 LOCAL_CI_TMP=${LOCAL_CI_TMP:-${MORPHEUS_ROOT}/.tmp/local_ci_tmp}
-CONTAINER_VER=${CONTAINER_VER:-240614}
+CONTAINER_VER=${CONTAINER_VER:-241004}
 CUDA_VER=${CUDA_VER:-12.1}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 

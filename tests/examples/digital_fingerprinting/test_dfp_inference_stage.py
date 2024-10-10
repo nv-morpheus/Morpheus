@@ -30,20 +30,20 @@ from morpheus.utils.logger import set_log_level
 
 @pytest.fixture(name="mock_mlflow_client", autouse=True)
 def mock_mlflow_client_fixture():
-    with mock.patch("dfp.stages.dfp_inference_stage.MlflowClient") as mock_mlflow_client:
+    with mock.patch("morpheus_dfp.stages.dfp_inference_stage.MlflowClient") as mock_mlflow_client:
         mock_mlflow_client.return_value = mock_mlflow_client
         yield mock_mlflow_client
 
 
 @pytest.fixture(name="mock_model_manager", autouse=True)
 def mock_model_manager_fixture():
-    with mock.patch("dfp.stages.dfp_inference_stage.ModelManager") as mock_model_manager:
+    with mock.patch("morpheus_dfp.stages.dfp_inference_stage.ModelManager") as mock_model_manager:
         mock_model_manager.return_value = mock_model_manager
         yield mock_model_manager
 
 
 def test_constructor(config: Config, mock_mlflow_client: mock.MagicMock, mock_model_manager: mock.MagicMock):
-    from dfp.stages.dfp_inference_stage import DFPInferenceStage
+    from morpheus_dfp.stages.dfp_inference_stage import DFPInferenceStage
 
     stage = DFPInferenceStage(config, model_name_formatter="test_model_name-{user_id}-{user_md5}")
 
@@ -58,7 +58,7 @@ def test_constructor(config: Config, mock_mlflow_client: mock.MagicMock, mock_mo
 
 
 def test_get_model(config: Config, mock_mlflow_client: mock.MagicMock, mock_model_manager: mock.MagicMock):
-    from dfp.stages.dfp_inference_stage import DFPInferenceStage
+    from morpheus_dfp.stages.dfp_inference_stage import DFPInferenceStage
 
     mock_model_cache = mock.MagicMock()
     mock_model_manager.load_user_model.return_value = mock_model_cache
@@ -80,7 +80,7 @@ def test_on_data(
         control_message: "ControlMessage",  # noqa: F821
         log_level: int,
         dataset_pandas: DatasetManager):
-    from dfp.stages.dfp_inference_stage import DFPInferenceStage
+    from morpheus_dfp.stages.dfp_inference_stage import DFPInferenceStage
 
     set_log_level(log_level)
 
@@ -116,7 +116,7 @@ def test_on_data_get_model_error(
         mock_model_manager: mock.MagicMock,
         control_message: "ControlMessage",  # noqa: F821
         raise_error: bool):
-    from dfp.stages.dfp_inference_stage import DFPInferenceStage
+    from morpheus_dfp.stages.dfp_inference_stage import DFPInferenceStage
 
     # There are two error conditions that can occur in get_model can return None or raise an error
     if raise_error:

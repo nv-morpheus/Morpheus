@@ -277,7 +277,6 @@ class HttpServerSourceStage(PreallocatorMixin, ConfigurableOutputSource):
                             or not subscription.is_subscribed()):
                         self._processing = False
                     else:
-                        logger.debug("Queue empty, sleeping ...")
                         time.sleep(self._sleep_time)
                 except Closed:
                     logger.error("Queue closed unexpectedly, shutting down")

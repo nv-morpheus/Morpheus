@@ -22,7 +22,9 @@ option(BUILD_SHARED_LIBS "Default value for whether or not to build shared or st
 option(MORPHEUS_BUILD_BENCHMARKS "Whether or not to build benchmarks" OFF)
 option(MORPHEUS_BUILD_DOCS "Enable building of API documentation" OFF)
 option(MORPHEUS_BUILD_EXAMPLES "Whether or not to build examples" OFF)
-option(MORPHEUS_BUILD_MORPHEUS_LLM "Whether or not to build morpheus_llm" OFF)
+option(MORPHEUS_BUILD_MORPHEUS_CORE "Whether or not to build morpheus_core" ON)
+option(MORPHEUS_BUILD_MORPHEUS_DFP "Whether or not to build morpheus_dfp" ON)
+option(MORPHEUS_BUILD_MORPHEUS_LLM "Whether or not to build morpheus_llm" ON)
 option(MORPHEUS_BUILD_TESTS "Whether or not to build tests" OFF)
 option(MORPHEUS_ENABLE_DEBUG_INFO "Enable printing debug information" OFF)
 option(MORPHEUS_PYTHON_BUILD_STUBS "Whether or not to generated .pyi stub files for C++ Python modules. Disable to avoid requiring loading the NVIDIA GPU Driver during build" ON)
@@ -37,7 +39,7 @@ option(MORPHEUS_USE_IWYU "Enable running include-what-you-use as part of the bui
 
 set(MORPHEUS_PY_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/wheel" CACHE STRING "Location to install the python directory")
 
-set(MORPHEUS_RAPIDS_VERSION "24.02" CACHE STRING "Sets default versions for RAPIDS libraries.")
+set(MORPHEUS_RAPIDS_VERSION "24.10" CACHE STRING "Sets default versions for RAPIDS libraries.")
 set(MORPHEUS_CACHE_DIR "${CMAKE_SOURCE_DIR}/.cache" CACHE PATH "Directory to contain all CPM and CCache data")
 mark_as_advanced(MORPHEUS_CACHE_DIR)
 
