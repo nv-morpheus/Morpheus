@@ -23,4 +23,4 @@ from _utils import TEST_DIRS
 
 @pytest.fixture(autouse=True)
 def morpheus_sys_path():
-    sys.path.append(TEST_DIRS.tests_dir + "/morpheus")
+    sys.path.append(os.path.join(TEST_DIRS.tests_dir, "morpheus"))
