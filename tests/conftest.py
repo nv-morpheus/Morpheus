@@ -36,6 +36,7 @@ from _utils.kafka import _init_pytest_kafka
 from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
 from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
 from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
+from morpheus.utils.shared_process_pool import SharedProcessPool
 
 # Don't let pylint complain about pytest fixtures
 # pylint: disable=redefined-outer-name,unused-argument
@@ -43,6 +44,7 @@ from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unuse
 (PYTEST_KAFKA_AVAIL, PYTEST_KAFKA_ERROR) = _init_pytest_kafka()
 if PYTEST_KAFKA_AVAIL:
     # Pull out the fixtures into this namespace
+    # pylint: disable=ungrouped-imports
     from _utils.kafka import _kafka_consumer  # noqa: F401  pylint:disable=unused-import
     from _utils.kafka import kafka_server  # noqa: F401  pylint:disable=unused-import
     from _utils.kafka import zookeeper_proc  # noqa: F401  pylint:disable=unused-import
@@ -1150,3 +1152,24 @@ def mock_subscription_fixture():
     ms = mock.MagicMock()
     ms.is_subscribed.return_value = True
     return ms
+
+
+# ==== SharedProcessPool Fixtures ====
+# Any tests that use the SharedProcessPool should use this fixture
+@pytest.fixture(scope="module")
+def shared_process_pool_setup_and_teardown():
+    # Set lower CPU usage for unit test to avoid slowing down the test
+    os.environ["MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE"] = "0.1"
+
+    pool = SharedProcessPool()
+
+    # SharedProcessPool might be configured and used in other tests, stop and reset the pool before the test starts
+    pool.stop()
+    pool.join()
+    pool.reset()
+    yield pool
+
+    # Stop the pool after all tests are done
+    pool.stop()
+    pool.join()
+    os.environ.pop("MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE", None)
