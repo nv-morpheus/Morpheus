@@ -25,6 +25,7 @@ from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.pipeline.control_message_stage import ControlMessageStage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 @register_stage("deserialize",
                 modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
                 ignore_args=["task_type", "task_payload"])
-class DeserializeStage(ControlMessageStage):
+class DeserializeStage(GpuAndCpuMixin, ControlMessageStage):
     """
     Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
 
@@ -77,15 +78,6 @@ class DeserializeStage(ControlMessageStage):
         if ((self._task_type is None) != (self._task_payload is None)):
             raise ValueError("Both `task_type` and `task_payload` must be specified if either is specified.")
 
-        self._module_config = {
-            "ensure_sliceable_index": self._ensure_sliceable_index,
-            "task_type": self._task_type,
-            "task_payload": self._task_payload,
-            "batch_size": self._batch_size,
-            "max_concurrency": self._max_concurrent,
-            "should_log_timestamp": self._should_log_timestamps
-        }
-
     @property
     def name(self) -> str:
         return "deserialize"
@@ -116,8 +108,17 @@ class DeserializeStage(ControlMessageStage):
 
             builder.make_edge(input_node, out_node)
         else:
+            module_config = {
+                "ensure_sliceable_index": self._ensure_sliceable_index,
+                "task_type": self._task_type,
+                "task_payload": self._task_payload,
+                "batch_size": self._batch_size,
+                "max_concurrency": self._max_concurrent,
+                "should_log_timestamp": self._should_log_timestamps
+            }
+
             module_loader = DeserializeLoaderFactory.get_instance(module_name=f"deserialize_{self.unique_name}",
-                                                                  module_config=self._module_config)
+                                                                  module_config=module_config)
 
             module = module_loader.load(builder=builder)
             mod_in_node = module.input_port("input")

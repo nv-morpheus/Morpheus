@@ -83,7 +83,6 @@ class SinglePortStage(_pipeline.Stage):
     def _post_build_single(self, _: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
         return out_node
 
-    @typing.final
     def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
         ret_val = self._post_build_single(builder, out_ports_nodes[0])

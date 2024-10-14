@@ -22,17 +22,17 @@ import confluent_kafka as ck
 import mrc
 import pandas as pd
 
-import cudf
-
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.config import auto_determine_bootstrap
+from morpheus.io.utils import get_json_reader
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class AutoOffsetReset(Enum):
 
 
 @register_stage("from-kafka", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
-class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
+class KafkaSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource):
     """
     Load messages from a Kafka cluster.
 
@@ -128,6 +128,9 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         self._poll_interval = pd.Timedelta(poll_interval).total_seconds()
         self._started = False
 
+        # Defined lated if in CPU mode
+        self._json_reader: typing.Callable[..., DataFrameType] = None
+
         self._records_emitted = 0
         self._num_messages = 0
 
@@ -155,7 +158,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             df = None
             try:
                 buffer.seek(0)
-                df = cudf.io.read_json(buffer, engine='cudf', lines=True, orient='records')
+                df = self._json_reader(buffer, lines=True, orient='records')
             except Exception as e:
                 logger.error("Error parsing payload into a dataframe : %s", e)
             finally:
@@ -226,6 +229,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if (self._build_cpp_node()):
+            import morpheus._lib.stages as _stages
             source = _stages.KafkaSourceStage(builder,
                                               self.unique_name,
                                               self._max_batch_size,
@@ -241,6 +245,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             # multiple threads
             source.launch_options.pe_count = self._max_concurrent
         else:
+            self._json_reader = get_json_reader(self._config.execution_mode)
             source = builder.make_source(self.unique_name, self._source_generator)
 
         return source

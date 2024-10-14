@@ -17,6 +17,7 @@ import typing
 
 import numpy as np
 
+from morpheus.messages import MessageMeta
 from morpheus_llm.llm import LLMContext
 from morpheus_llm.llm import LLMNodeBase
 
@@ -59,7 +60,9 @@ class ExtracterNode(LLMNodeBase):
         # Get the keys from the task
         input_keys: list[str] = typing.cast(list[str], context.task()["input_keys"])
 
-        with context.message().payload().mutable_dataframe() as df:
+        meta: MessageMeta = context.message().get_metadata("llm_message_meta")
+
+        with meta.mutable_dataframe() as df:
             input_dict: list[dict] = df[input_keys].to_dict(orient="list")
 
         input_dict = _array_to_list(input_dict)
@@ -95,7 +98,8 @@ class ManualExtracterNode(LLMNodeBase):
     async def execute(self, context: LLMContext) -> LLMContext:  # pylint: disable=invalid-overridden-method
 
         # Get the data from the DataFrame
-        with context.message().payload().mutable_dataframe() as df:
+        meta: MessageMeta = context.message().get_metadata("llm_message_meta")
+        with meta.mutable_dataframe() as df:
             input_dict: list[dict] = df[self._input_names].to_dict(orient="list")
 
         input_dict = _array_to_list(input_dict)

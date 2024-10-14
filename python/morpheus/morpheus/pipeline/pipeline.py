@@ -60,6 +60,7 @@ class Pipeline():
     """
 
     def __init__(self, config: Config):
+        config.freeze()
 
         self._mutex = threading.RLock()
 
@@ -90,6 +91,8 @@ class Pipeline():
 
         # Future that allows post_start to propagate exceptions back to pipeline
         self._post_start_future: asyncio.Future = None
+
+        self._execution_mode = config.execution_mode
 
     @property
     def state(self) -> PipelineState:

@@ -18,11 +18,12 @@ import typing
 import mrc
 
 from morpheus.config import Config
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.source_stage import SourceStage
 from morpheus.pipeline.stage_schema import StageSchema
 
 
-class InMemoryMultiSourceStage(SourceStage):
+class InMemoryMultiSourceStage(GpuAndCpuMixin, SourceStage):
     """
     In memory multi-source stage for testing purposes, accepts a 2d array `data`.
     The first dimenion represents the number of output ports, and the second represents the data for each port, and

@@ -14,13 +14,12 @@
 
 import pandas as pd
 
-import cudf
-
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.utils.type_utils import is_cudf_type
 
 
-def concat_dataframes(messages: list[ControlMessage] | list[MessageMeta]) -> pd.DataFrame:
+def concat_dataframes(messages: list[ControlMessage | MessageMeta]) -> pd.DataFrame:
     """
     Concatinate the DataFrame associated with the collected messages into a single Pandas DataFrame.
 
@@ -43,7 +42,7 @@ def concat_dataframes(messages: list[ControlMessage] | list[MessageMeta]) -> pd.
         else:
             raise ValueError("Invalid message type")
 
-        if isinstance(df, cudf.DataFrame):
+        if is_cudf_type(df):
             df = df.to_pandas()
 
         all_meta.append(df)

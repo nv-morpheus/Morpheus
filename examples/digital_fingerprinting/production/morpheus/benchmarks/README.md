@@ -38,14 +38,9 @@ In the `/workspace` directory of the container, run the following to compile Mor
 ./scripts/compile.sh
 ```
 
-Now install Morpheus:
-```bash
-pip install -e /workspace
-```
-
 Install additional required dependencies:
 ```bash
-mamba env update \
+conda env update --solver=libmamba \
   -n ${CONDA_DEFAULT_ENV} \
   --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
 ```
@@ -87,8 +82,7 @@ Morpheus pipeline configurations for each workflow are managed using [pipelines_
 		"duration": "60d",
 		"userid_column_name": "username",
 		"timestamp_column_name": "timestamp",
-		"source": "duo",
-		"use_cpp": true
+		"source": "duo"
 },
 ...
 ```

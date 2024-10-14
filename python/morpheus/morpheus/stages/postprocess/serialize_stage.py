@@ -19,12 +19,12 @@ from functools import partial
 import mrc
 from mrc.core import operators as ops
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.controllers.serialize_controller import SerializeController
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("serialize")
-class SerializeStage(SinglePortStage):
+class SerializeStage(GpuAndCpuMixin, SinglePortStage):
     """
     Includes & excludes columns from messages.
 
@@ -91,6 +91,7 @@ class SerializeStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if (self._build_cpp_node()):
+            import morpheus._lib.stages as _stages
             node = _stages.SerializeStage(builder,
                                           self.unique_name,
                                           self._controller.include_columns or [],
