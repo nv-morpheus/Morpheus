@@ -196,8 +196,7 @@ class SharedProcessPool:
                     continue
 
                 if task is None:
-                    logger.warning("SharedProcessPool._worker: Worker process %s has received a None task.",
-                                   os.getpid())
+                    logger.debug("SharedProcessPool._worker: Worker process %s has received a None task.", os.getpid())
                     semaphore.release()
                     continue
 
@@ -316,7 +315,7 @@ class SharedProcessPool:
             If the SharedProcessPool is not shutdown.
         """
         if self._status == PoolStatus.RUNNING:
-            logger.warning("SharedProcessPool.start(): process pool is already running.")
+            logger.debug("SharedProcessPool.start(): process pool is already running.")
             return
 
         process_launcher = threading.Thread(target=self._launch_workers)
@@ -373,7 +372,7 @@ class SharedProcessPool:
         Stop receiving any new tasks.
         """
         if self._status not in (PoolStatus.RUNNING, PoolStatus.INITIALIZING):
-            logger.warning("SharedProcessPool.stop(): Cannot stop a SharedProcessPool that is not running.")
+            logger.debug("SharedProcessPool.stop(): Cannot stop a SharedProcessPool that is not running.")
             return
 
         # No new tasks will be accepted from this point
@@ -400,7 +399,7 @@ class SharedProcessPool:
 
         if self._status != PoolStatus.STOPPED:
             if self._status == PoolStatus.SHUTDOWN:
-                logging.warning("SharedProcessPool.join(): process pool is already shut down.")
+                logger.debug("SharedProcessPool.join(): process pool is already shut down.")
                 return
 
             raise RuntimeError("Cannot join SharedProcessPool that is not stopped.")

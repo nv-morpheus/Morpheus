@@ -20,11 +20,11 @@ import click
 # after_pipeline is, and thus is executed after after_pipeline is invoked. This avoids memory leak warnings at shutdown.
 # https://github.com/nv-morpheus/Morpheus/issues/1864
 import pypdfium2  # pylint: disable=unused-import # noqa: F401
-
 from llm.agents import run as run_agents
 from llm.completion import run as run_completion
 from llm.rag import run as run_rag
 from llm.vdb_upload import run as run_vdb_upload
+
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 

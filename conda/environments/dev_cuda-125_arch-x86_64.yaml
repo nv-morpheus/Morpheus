@@ -82,6 +82,7 @@ dependencies:
 - python-docx==1.1.0
 - python-graphviz
 - python=3.10
+- pytorch=2.4.0=cuda120*
 - rapidjson=1.1.0
 - rapids-dask-dependency=24.10
 - rdma-core>=48
@@ -105,11 +106,9 @@ dependencies:
 - websockets
 - yapf=0.40.1
 - pip:
-  - --extra-index-url https://download.pytorch.org/whl/cu124
   - databricks-cli < 0.100
   - databricks-connect
   - milvus==2.3.5
   - pymilvus==2.3.6
   - pytest-kafka==0.6.0
-  - torch==2.4.0+cu124
 name: dev_cuda-125_arch-x86_64

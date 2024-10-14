@@ -29,7 +29,7 @@ from morpheus.io.deserializers import read_file_to_df
 
 from .test_directories import TestDirectories
 
-TEST_DIRS = TestDirectories()
+TEST_DIRS = TestDirectories(os.path.dirname(os.path.dirname(__file__)))
 
 Results = collections.namedtuple('Results', ['total_rows', 'diff_rows', 'error_pct'])
 
