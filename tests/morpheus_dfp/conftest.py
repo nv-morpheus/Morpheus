@@ -61,12 +61,11 @@ def ae_feature_cols_fixture():
 
 
 @pytest.fixture(name="config")
-def config_fixture(config_no_cpp: Config, ae_feature_cols: typing.List[str]):
+def config_fixture(config: Config, ae_feature_cols: typing.List[str]):
     """
     The digital_fingerprinting production example utilizes the Auto Encoder config, and requires C++ execution disabled.
     """
     from morpheus.config import ConfigAutoEncoder
-    config = config_no_cpp
     config.ae = ConfigAutoEncoder()
     config.ae.feature_columns = ae_feature_cols
     yield config

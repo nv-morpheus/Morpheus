@@ -15,7 +15,6 @@
 
 import logging
 import multiprocessing as mp
-import os
 import threading
 from decimal import Decimal
 from fractions import Fraction
@@ -30,26 +29,12 @@ logger = logging.getLogger(__name__)
 # This test has issues with joining processes when testing with pytest `-s` option. Run pytest without `-s` flag
 
 
-@pytest.fixture(scope="session", autouse=True)
-def setup_and_teardown():
-    # Set lower CPU usage for unit test to avoid slowing down the test
-    os.environ["MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE"] = "0.1"
-
-    pool = SharedProcessPool()
-
-    # Since SharedProcessPool might be used in other tests, stop and reset the pool before the test starts
-    pool.stop()
-    pool.join()
-    pool.reset()
-    yield
-
-    # Stop the pool after all tests are done
-    pool.stop()
-    pool.join()
-    os.environ.pop("MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE", None)
+@pytest.fixture(scope="module", autouse=True)
+def setup_and_teardown(shared_process_pool_setup_and_teardown):  # pylint: disable=unused-argument
+    pass
 
 
-@pytest.fixture(name="shared_process_pool")
+@pytest.fixture(name="shared_process_pool", scope="function")
 def shared_process_pool_fixture():
 
     pool = SharedProcessPool()
