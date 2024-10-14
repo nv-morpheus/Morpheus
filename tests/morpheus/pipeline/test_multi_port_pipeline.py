@@ -18,15 +18,16 @@ import pytest
 
 import cudf
 
-# When segment modules are imported, they're added to the module registry.
-# To avoid flake8 warnings about unused code, the noqa flag is used during import.
-import modules.multiplexer  # noqa: F401 # pylint: disable=unused-import
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.multi_port_modules_stage import MultiPortModulesStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+
+# When segment modules are imported, they're added to the module registry.
+# To avoid flake8 warnings about unused code, the noqa flag is used during import.
+import _modules.multiplexer  # noqa: F401 # pylint: disable=unused-import # isort:skip
 
 
 def _run_pipeline(config: Config, source_df: cudf.DataFrame, module_conf: dict,
