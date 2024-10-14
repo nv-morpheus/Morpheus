@@ -26,8 +26,10 @@
 #include "morpheus/objects/tensor.hpp"      // for Tensor
 #include "morpheus/types.hpp"               // for RangeType
 
-#include <gtest/gtest.h>             // for TestInfo, TEST_F
-#include <pybind11/gil.h>            // for gil_scoped_release
+#include <gtest/gtest.h>   // for TestInfo, TEST_F
+#include <pybind11/gil.h>  // for gil_scoped_release
+#include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
@@ -38,6 +40,7 @@
 
 using namespace morpheus;
 using namespace morpheus::test;
+using namespace pybind11::literals;
 
 using TestMessageMeta = morpheus::test::TestMessages;  // NOLINT(readability-identifier-naming)
 
@@ -81,4 +84,26 @@ TEST_F(TestMessageMeta, CopyRangeAndSlicing)
     std::vector<double> sliced_expected_double = {3.3, 4.4};
     assert_eq_device_to_host(sliced_meta->get_info().get_column(0), sliced_expected_int);
     assert_eq_device_to_host(sliced_meta->get_info().get_column(1), sliced_expected_double);
+}
+
+TEST_F(TestMessageMeta, Issue1934)
+{
+    // Reproduce issue 1934 (https://github.com/nv-morpheus/Morpheus/issues/1934)
+    // The bug causes a segfault when calling `get_data_frame` on a message meta object
+    namespace py = pybind11;
+    py::gil_scoped_acquire gil;
+
+    auto cudf_mod = py::module_::import("cudf");
+    auto a_col    = py::list();
+    auto v1       = py::list();
+    v1.append(py::str("a"));
+    a_col.attr("append")(std::move(v1));
+    a_col.attr("append")(py::none());
+
+    auto df = cudf_mod.attr("DataFrame")(py::dict("a"_a = std::move(a_col)));
+    df.attr("drop")(0, "inplace"_a = true);
+
+    auto msg = MessageMetaInterfaceProxy::init_python(std::move(df));
+
+    auto df_copy = MessageMetaInterfaceProxy::get_data_frame(*msg);
 }
