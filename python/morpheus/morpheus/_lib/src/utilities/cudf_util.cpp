@@ -71,16 +71,13 @@ pybind11::object CudfHelper::table_from_table_with_metadata(cudf::io::table_with
 
 pybind11::object CudfHelper::table_from_table_info(const TableInfoBase& table_info)
 {
-    // Get the table info data from the table_into
-    auto table_info_data = table_info.get_data();
-
     auto py_object_parent = table_info.get_parent()->get_py_object();
 
     // Need to guarantee that we have the gil here
     pybind11::gil_scoped_acquire gil;
+    using namespace pybind11::literals;
 
-    return pybind11::reinterpret_steal<pybind11::object>(
-        (PyObject*)make_table_from_table_info_data(std::move(table_info_data), py_object_parent.ptr()));
+    return py_object_parent.attr("copy")("deep"_a = true);
 }
 
 TableInfoData CudfHelper::table_info_data_from_table(pybind11::object table)
