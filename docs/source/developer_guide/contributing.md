@@ -153,14 +153,12 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
 
 If a Conda environment on the host machine is preferred over Docker, it is relatively easy to install the necessary dependencies (In reality, the Docker workflow creates a Conda environment inside the container).
 
-Note: These instructions assume the user is using `mamba` instead of `conda` since its improved solver speed is very helpful when working with a large number of dependencies. If you are not familiar with `mamba` you can install it with `conda install -n base -c conda-forge mamba` (Make sure to only install into the base environment). `mamba` is a drop in replacement for `conda` and all Conda commands are compatible between the two.
-
 #### Prerequisites
 
 - Volta architecture GPU or better
 - [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-0-download-archive)
-- `conda` and `mamba`
-  - If `conda` and `mamba` are not installed, we recommend using the MiniForge install guide which is located [here](https://github.com/conda-forge/miniforge). This will install both `conda` and `mamba` and set the channel default to use `conda-forge`.
+- `conda`
+  - If `conda` is not installed, we recommend using the [MiniForge install guide](https://github.com/conda-forge/miniforge). This will install `conda` and set the channel default to use `conda-forge`.
 
 1. Set up environment variables and clone the repo:
    ```bash
@@ -168,13 +166,10 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT
    ```
-
-2. Ensure all submodules are checked out:
-
-```bash
-git submodule update --init --recursive
-```
-
+1. Ensure all submodules are checked out:
+   ```bash
+   git submodule update --init --recursive
+   ```
 1. Create the Morpheus Conda environment
    ```bash
    conda env create --solver=libmamba -n morpheus --file conda/environments/dev_cuda-125_arch-x86_64.yaml
@@ -182,19 +177,18 @@ git submodule update --init --recursive
    ```
 
    This creates a new environment named `morpheus`, and activates that environment.
+
+   > **Note**: The `dev_cuda-121_arch-x86_64.yaml` Conda environment file specifies all of the dependencies required to build Morpheus and run Morpheus. However many of the examples, and optional packages such as `morpheus_llm` require additional dependencies. Alternately the following command can be used to create the Conda environment:
+   ```bash
+   conda env create --solver=libmamba -n morpheus --file conda/environments/all_cuda-121_arch-x86_64.yaml
+   conda activate morpheus
+   ```
 1. Build Morpheus
    ```bash
    ./scripts/compile.sh
    ```
-   This script will run both CMake Configure with default options and CMake build.
-1. Install Morpheus
-   ```bash
-   pip install -e ${MORPHEUS_ROOT}/python/morpheus
-   pip install -e ${MORPHEUS_ROOT}/python/morpheus_llm
-   pip install -e ${MORPHEUS_ROOT}/python/morpheus_dfp
-   ```
-   Once Morpheus has been built, it can be installed into the current virtual environment.
-1. Test the build (Note: some tests will be skipped)\
+   This script will build and install Morpheus into the Conda environment.
+1. Test the build (Note: some tests will be skipped)
    Some of the tests will rely on external data sets.
    ```bash
    MORPHEUS_ROOT=${PWD}
@@ -213,15 +207,26 @@ git submodule update --init --recursive
       npm install -g camouflage-server@0.15
       ```
 
-   Run all tests:
-   ```bash
-   pytest --run_slow
-   ```
-1. Optional: Install cuML
-   - Many users may wish to install cuML. Due to the complex dependency structure and versioning requirements, we need to specify exact versions of each package. The command to accomplish this is:
+   - Run end-to-end (aka slow) tests:
       ```bash
-      mamba install -c rapidsai -c nvidia -c conda-forge cuml=23.06
+      pytest --run_slow
       ```
+1. Optional: Run Kafka and Milvus tests
+   - Download Kafka:
+      ```bash
+      python ./ci/scripts/download_kafka.py
+      ```
+
+   - Run all tests (this will skip over tests that require optional dependencies which are not installed):
+      ```bash
+      pytest --run_slow --run_kafka --run_milvus
+      ```
+
+   - Run all tests including those that require optional dependencies:
+      ```bash
+      pytest --fail_missing --run_slow --run_kafka --run_milvus
+      ```
+
 1. Run Morpheus
    ```bash
    morpheus run pipeline-nlp ...
@@ -372,6 +377,36 @@ Due to the large number of dependencies, it's common to run into build issues. T
  - Message indicating `git apply ...` failed
    - Many of the dependencies require small patches to make them work. These patches must be applied once and only once. If this error displays, try deleting the offending package from the `build/_deps/<offending_package>` directory or from `.cache/cpm/<offending_package>`.
    - If all else fails, delete the entire `build/` directory and `.cache/` directory.
+ - Older build artifacts when performing an in-place build.
+   - When built with `MORPHEUS_PYTHON_INPLACE_BUILD=ON` compiled libraries will be deployed in-place in the source tree, and older build artifacts exist in the source tree. Remove these with:
+       ```bash
+       find ./python -name "*.so" -delete
+       find ./examples -name "*.so" -delete
+       ```
+ - Issues building documentation
+   - Intermediate documentation build artifacts can cause errors for Sphinx. To remove these, run:
+       ```bash
+       rm -rf build/docs/ docs/source/_modules docs/source/_lib
+       ```
+ - CI Issues
+   - To run CI locally, the `ci/scripts/run_ci_local.sh` script can be used. For example to run a local CI build:
+      ```bash
+      ci/scripts/run_ci_local.sh build
+      ```
+      - Build artifacts resulting from a local CI run can be found in the `.tmp/local_ci_tmp/` directory.
+   - To troubleshoot a particular CI stage it can be helpful to run:
+      ```bash
+      ci/scripts/run_ci_local.sh bash
+      ```
+
+      This will open a bash shell inside the CI container with all of the environment variables typically set during a CI run. From here you can run the commands that would typically be run by one of the CI scripts in `ci/scripts/github`.
+
+      To run a CI stage requiring a GPU (ex: `test`), set the `USE_GPU` environment variable to `1`:
+      ```bash
+      USE_GPU=1 ci/scripts/run_ci_local.sh bash
+      ```
+
+Refer to the [troubleshooting guide](../extra_info/troubleshooting.md) for more information on common issues and how to resolve them.
 
 ## Licensing
 Morpheus is licensed under the Apache v2.0 license. All new source files including CMake and other build scripts should contain the Apache v2.0 license header. Any edits to existing source code should update the date range of the copyright to the current year. The format for the license header is:
@@ -401,7 +436,7 @@ Third-party code included in the source tree (that is not pulled in as an extern
 Ex:
 ```
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2018-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) <year>, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

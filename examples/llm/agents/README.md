@@ -104,7 +104,7 @@ export SERPAPI_API_KEY="<YOUR_SERPAPI_API_KEY>"
 Install the required dependencies.
 
 ```bash
-mamba env update \
+conda env update --solver=libmamba \
   -n ${CONDA_DEFAULT_ENV} \
   --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
 ```
@@ -131,6 +131,10 @@ python examples/llm/main.py agents simple [OPTIONS]
 ```
 
 ### Options:
+- `--use_cpu_only`
+    - **Description**: Run in CPU only mode
+    - **Default**: `False`
+
 - `--num_threads INTEGER RANGE`
     - **Description**: Number of internal pipeline threads to use.
     - **Default**: `12`

@@ -71,13 +71,13 @@ def _test_filter_detections_stage_pipe(config: Config,
 
 
 def _test_filter_detections_control_message_stage_multi_segment_pipe(config: Config,
-                                                                     dataset_pandas: DatasetManager,
+                                                                     dataset: DatasetManager,
                                                                      copy: bool = True):
     threshold = 0.75
 
-    input_df = dataset_pandas["filter_probs.csv"]
+    input_df = dataset["filter_probs.csv"]
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    pipe.set_source(InMemorySourceStage(config, [input_df]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(data_type=ControlMessage)
@@ -87,8 +87,7 @@ def _test_filter_detections_control_message_stage_multi_segment_pipe(config: Con
     pipe.add_segment_boundary(ControlMessage)
     pipe.add_stage(SerializeStage(config))
     pipe.add_segment_boundary(MessageMeta)
-    comp_stage = pipe.add_stage(
-        CompareDataFrameStage(config, build_expected(dataset_pandas["filter_probs.csv"], threshold)))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, build_expected(dataset["filter_probs.csv"], threshold)))
     pipe.run()
 
     assert_results(comp_stage.get_results())
@@ -108,6 +107,7 @@ def test_filter_detections_stage_pipe(config: Config,
     return _test_filter_detections_stage_pipe(config, dataset_pandas, do_copy, order, pipeline_batch_size, repeat)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('do_copy', [True, False])
 def test_filter_detections_control_message_stage_multi_segment_pipe(config: Config,
                                                                     dataset_pandas: DatasetManager,

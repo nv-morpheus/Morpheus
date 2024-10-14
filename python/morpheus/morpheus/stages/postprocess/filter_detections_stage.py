@@ -18,12 +18,12 @@ import typing
 import mrc
 from mrc.core import operators as ops
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.controllers.filter_detections_controller import FilterDetectionsController
 from morpheus.messages import ControlMessage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("filter")
-class FilterDetectionsStage(SinglePortStage):
+class FilterDetectionsStage(GpuAndCpuMixin, SinglePortStage):
     """
     Filter message by a classification threshold.
 
@@ -113,6 +113,7 @@ class FilterDetectionsStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node():
+            import morpheus._lib.stages as _stages
             node = _stages.FilterDetectionsStage(builder,
                                                  self.unique_name,
                                                  self._controller.threshold,

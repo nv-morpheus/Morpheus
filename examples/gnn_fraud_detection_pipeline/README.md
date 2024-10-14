@@ -27,10 +27,10 @@ All environments require additional Conda packages which can be installed with e
 
 ## Requirements
 
-Prior to running the GNN fraud detection pipeline, additional requirements must be installed in to your Conda environment. A supplemental requirements file has been provided in this example directory.
+Prior to running the GNN fraud detection pipeline, additional requirements must be installed in to your Conda environment.
 
 ```bash
-mamba env update \
+conda env update --solver=libmamba \
   -n ${CONDA_DEFAULT_ENV} \
   --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
 ```
@@ -117,7 +117,7 @@ From the root of the Morpheus repo, run:
 PYTHONPATH="examples" \
 morpheus --log_level INFO \
 	--plugin "gnn_fraud_detection_pipeline" \
-	run --use_cpp False --pipeline_batch_size 1024 --model_max_batch_size 32 --edge_buffer_size 4 \
+	run --pipeline_batch_size 1024 --model_max_batch_size 32 --edge_buffer_size 4 \
 	pipeline-other --model_fea_length 70 --label=probs \
 	from-file --filename examples/gnn_fraud_detection_pipeline/validation.csv --filter_null False \
 	deserialize \

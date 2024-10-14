@@ -186,11 +186,14 @@ docker compose build
 > This is most likely due to using an older version of the `docker-compose` command, instead re-run the build with `docker compose`. Refer to [Migrate to Compose V2](https://docs.docker.com/compose/migrate/) for more information.
 
 #### Downloading the example datasets
-First, we will need to install `s3fs` and then run the `examples/digital_fingerprinting/fetch_example_data.py` script. This will download the example data into the `examples/data/dfp` dir.
+First, we will need to install additional requirements in to the Conda environment. Then run the `examples/digital_fingerprinting/fetch_example_data.py` script. This will download the example data into the `examples/data/dfp` dir.
 
 From the Morpheus repo, run:
 ```bash
-pip install s3fs
+conda env update --solver=libmamba \
+  -n ${CONDA_DEFAULT_ENV} \
+  --file ./conda/environments/examples_cuda-121_arch-x86_64.yaml
+
 python examples/digital_fingerprinting/fetch_example_data.py all
 ```
 

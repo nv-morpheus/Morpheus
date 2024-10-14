@@ -33,7 +33,6 @@ from morpheus.common import FileTypes
 from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage
@@ -141,7 +140,6 @@ def config_warning_fixture():
 
 @pytest.mark.reload_modules(commands)
 @pytest.mark.usefixtures("chdir_tmpdir", "reload_modules")
-@pytest.mark.use_python
 class TestCLI:
 
     @pytest.mark.parametrize('cmd',
@@ -211,15 +209,14 @@ class TestCLI:
 
         config = obj["config"]
         assert config.mode == PipelineModes.AE
-        assert not CppConfig.get_should_use_cpp()
         assert config.class_labels == ["reconstruct_loss", "zscore"]
         assert config.model_max_batch_size == 1024
         assert config.pipeline_batch_size == 1024
         assert config.num_threads == 12
 
         assert isinstance(config.ae, ConfigAutoEncoder)
-        config.ae.userid_column_name = "user_col"
-        config.ae.userid_filter = "user321"
+        assert config.ae.userid_column_name == "user_col"
+        assert config.ae.userid_filter == "user321"
 
         expected_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
         assert config.ae.feature_columns == expected_columns

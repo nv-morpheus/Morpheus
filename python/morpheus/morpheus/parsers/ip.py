@@ -12,24 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ipaddress
+
 import numpy as np
+import pandas as pd
 
-import cudf
+from morpheus.utils.type_aliases import SeriesType
+from morpheus.utils.type_utils import get_df_pkg_from_obj
+from morpheus.utils.type_utils import is_cudf_type
 
 
-def ip_to_int(values):
+def ip_to_int(values: SeriesType) -> SeriesType:
     """
     Convert string column of IP addresses to integer values.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    values : cudf.Series
+    values : SeriesType
         IPv4 addresses to be converted
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Integer representations of IP addresses
 
     Examples
@@ -41,22 +46,26 @@ def ip_to_int(values):
     1    167772161
     dtype: uint32
     """
-    return values.str.ip2int()
+    if (is_cudf_type(values)):
+        return values.str.ip2int()
+
+    # Pandas does not have an ip2int method
+    return values.apply(lambda x: int(ipaddress.IPv4Address(x)))
 
 
-def int_to_ip(values):
+def int_to_ip(values: SeriesType) -> SeriesType:
     """
     Convert integer column to IP addresses.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    values : cudf.Series
+    values : SeriesType
         uint32 representations of IP addresses
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         IPv4 addresses
 
     Examples
@@ -68,22 +77,27 @@ def int_to_ip(values):
     1    10.0.0.1
     dtype: object
     """
-    return cudf.Series._from_column(values._column.int2ip())
+    if (is_cudf_type(values)):
+        import cudf
+        return cudf.Series._from_column(values._column.int2ip())
+
+    # Pandas does not have an int2ip method
+    return values.apply(lambda x: str(ipaddress.IPv4Address(x)))
 
 
-def is_ip(ips: str):
+def is_ip(ips: SeriesType) -> SeriesType:
     """
     Indicates whether each address is an ip string.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    ips : cudf.Series
+    ips : SeriesType
         IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Boolean values true or false
 
     Examples
@@ -95,23 +109,26 @@ def is_ip(ips: str):
     1    False
     dtype: bool
     """
+    if (is_cudf_type(ips)):
+        return ips.str.isipv4()
+
     is_ip_regex = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-    return ips.str.match(is_ip_regex)
+    return ips.str.fullmatch(is_ip_regex)
 
 
-def is_reserved(ips):
+def is_reserved(ips: SeriesType) -> SeriesType:
     """
     Indicates whether each address is reserved.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    ips : cudf.Series
+    ips : SeriesType
         IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Boolean values true or false
 
     Examples
@@ -129,19 +146,19 @@ def is_reserved(ips):
     return ips.str.match(reserved_ipv4_regex)
 
 
-def is_loopback(ips):
+def is_loopback(ips: SeriesType) -> SeriesType:
     """
     Indicates whether each address is loopback.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    ips : cudf.Series
+    ips : SeriesType
         IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Boolean values true or false
 
     Examples
@@ -159,19 +176,19 @@ def is_loopback(ips):
     return ips.str.match(loopback_ipv4_regex)
 
 
-def is_link_local(ips):
+def is_link_local(ips: SeriesType) -> SeriesType:
     """
     Indicates whether each address is link local.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    ips : cudf.Series
+    ips : SeriesType
         IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Boolean values true or false
 
     Examples
@@ -189,19 +206,19 @@ def is_link_local(ips):
     return ips.str.match(link_local_ipv4_regex)
 
 
-def is_unspecified(ips):
+def is_unspecified(ips: SeriesType) -> SeriesType:
     """
     Indicates whether each address is unspecified.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    ips : cudf.Series
+    ips : SeriesType
         IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Boolean values true or false
 
     Examples
@@ -217,19 +234,19 @@ def is_unspecified(ips):
     return ips.str.match(unspecified_regex)
 
 
-def is_multicast(ips):
+def is_multicast(ips: SeriesType) -> SeriesType:
     """
     Indicates whether each address is multicast.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    ips : cudf.Series
+    ips : SeriesType
         IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Boolean values true or false
 
     Examples
@@ -247,19 +264,19 @@ def is_multicast(ips):
     return ips.str.match(is_multicast_ipv4_regex)
 
 
-def is_private(ips):
+def is_private(ips: SeriesType) -> SeriesType:
     """
     Indicates whether each address is private.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    ips : cudf.Series
+    ips : SeriesType
         IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Boolean values true or false
 
     Examples
@@ -290,19 +307,19 @@ def is_private(ips):
     return ips.str.match(private_regex)
 
 
-def is_global(ips):
+def is_global(ips: SeriesType) -> SeriesType:
     """
     Indicates whether each address is global.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    ips : cudf.Series
+    ips : SeriesType
         IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Boolean values true or false
 
     Examples
@@ -323,7 +340,7 @@ def is_global(ips):
     return result
 
 
-def _netmask_kernel(idx, out1, out2, out3, out4, kwarg1):
+def _mask_kernel(idx, out1, out2, out3, out4, kwarg1):
     for i, _ in enumerate(idx):
         out1[i] = int(kwarg1 / 16777216) % 256
         out2[i] = int(kwarg1 / 65536) % 256
@@ -331,21 +348,52 @@ def _netmask_kernel(idx, out1, out2, out3, out4, kwarg1):
         out4[i] = int(kwarg1) % 256
 
 
-def netmask(ips, prefixlen=16):
+def _mask_pandas(df_cols: tuple[int], mask_: int, series_name: str) -> pd.Series:
+    outputs = [int(mask_ / 16777216) % 256, int(mask_ / 65536) % 256, int(mask_ / 256) % 256, int(mask_) % 256]
+    return pd.Series([df_cols.idx, ".".join(map(str, outputs))], index=["idx", series_name])
+
+
+def _compute_mask_impl(ips: SeriesType, mask_: int, series_name: str) -> SeriesType:
+    df_pkg = get_df_pkg_from_obj(ips)
+    if is_cudf_type(ips):
+        df = df_pkg.DataFrame()
+        df["idx"] = ips.index
+        x = df.apply_rows(
+            _mask_kernel,
+            incols=["idx"],
+            outcols={
+                "out1": np.int64, "out2": np.int64, "out3": np.int64, "out4": np.int64
+            },
+            kwargs={"kwarg1": mask_},
+        )
+
+        out1 = x["out1"].astype(str)
+        out2 = x["out2"].astype(str)
+        out3 = x["out3"].astype(str)
+        out4 = x["out4"].astype(str)
+        df[series_name] = out1.str.cat(out2, sep=".").str.cat(out3, sep=".").str.cat(out4, sep=".")
+    else:
+        df = df_pkg.DataFrame({"idx": ips.index})
+        df = df.apply(_mask_pandas, axis=1, args=(mask_, series_name))
+
+    return df[series_name]
+
+
+def netmask(ips: SeriesType, prefixlen: int = 16) -> SeriesType:
     """
     Compute a column of netmasks for a column of IP addresses.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    ips : cudf.Series
+    ips : SeriesType
         IPv4 addresses to be checked
     prefixlen: int
         Length of the network prefix, in bits, for IPv4 addresses
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Netmask ouput from set of IP address
 
 
@@ -360,48 +408,24 @@ def netmask(ips, prefixlen=16):
     """
     all_ones = (2**32) - 1
     mask_int = all_ones ^ (all_ones >> prefixlen)
-    df = cudf.DataFrame()
-    df["idx"] = ips.index
-    x = df.apply_rows(
-        _netmask_kernel,
-        incols=["idx"],
-        outcols={
-            "out1": np.int64, "out2": np.int64, "out3": np.int64, "out4": np.int64
-        },
-        kwargs={"kwarg1": mask_int},
-    )
-
-    out1 = x["out1"].astype(str)
-    out2 = x["out2"].astype(str)
-    out3 = x["out3"].astype(str)
-    out4 = x["out4"].astype(str)
-    df["net_mask"] = out1.str.cat(out2, sep=".").str.cat(out3, sep=".").str.cat(out4, sep=".")
-    return df["net_mask"]
+    return _compute_mask_impl(ips, mask_int, "net_mask")
 
 
-def _hostmask_kernel(idx, out1, out2, out3, out4, kwarg1):
-    for i, _ in enumerate(idx):
-        out1[i] = int(kwarg1 / 16777216) % 256
-        out2[i] = int(kwarg1 / 65536) % 256
-        out3[i] = int(kwarg1 / 256) % 256
-        out4[i] = int(kwarg1) % 256
-
-
-def hostmask(ips, prefixlen=16):
+def hostmask(ips: SeriesType, prefixlen: int = 16) -> SeriesType:
     """
     Compute a column of hostmasks for a column of IP addresses.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    ips : cudf.Series
+    ips : SeriesType
         IPv4 addresses to be checked
     prefixlen: integer
         Length of the network prefix, in bits, for IPv4 addresses
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Hostmask ouput from set of IP address
 
     Examples
@@ -415,24 +439,10 @@ def hostmask(ips, prefixlen=16):
     """
     all_ones = (2**32) - 1
     host_mask_int = int(all_ones ^ (all_ones >> prefixlen)) ^ all_ones
-    df = cudf.DataFrame()
-    df["idx"] = ips.index
-    x = df.apply_rows(_hostmask_kernel,
-                      incols=["idx"],
-                      outcols={
-                          "out1": np.int64, "out2": np.int64, "out3": np.int64, "out4": np.int64
-                      },
-                      kwargs={"kwarg1": host_mask_int})
-
-    out1 = x["out1"].astype(str)
-    out2 = x["out2"].astype(str)
-    out3 = x["out3"].astype(str)
-    out4 = x["out4"].astype(str)
-    df["hostmask"] = out1.str.cat(out2, sep=".").str.cat(out3, sep=".").str.cat(out4, sep=".")
-    return df["hostmask"]
+    return _compute_mask_impl(ips, host_mask_int, "hostmask")
 
 
-def _mask_kernel(masked_ip_int, out1, out2, out3, out4, kwarg1):  # pylint: disable=unused-argument
+def _mask_series_kernel(masked_ip_int, out1, out2, out3, out4, kwarg1):  # pylint: disable=unused-argument
     for i, ipnum in enumerate(masked_ip_int):
         out1[i] = int(ipnum / 16777216) % 256
         out2[i] = int(ipnum / 65536) % 256
@@ -440,21 +450,25 @@ def _mask_kernel(masked_ip_int, out1, out2, out3, out4, kwarg1):  # pylint: disa
         out4[i] = int(ipnum) % 256
 
 
-def mask(ips, masks):
+def _mask_series_pandas(df_cols: tuple[int], mask_series_name: str, output_series_name: str) -> pd.Series:
+    return _mask_pandas(df_cols, df_cols[mask_series_name], output_series_name)
+
+
+def mask(ips: SeriesType, masks: SeriesType) -> SeriesType:
     """
     Apply a mask to a column of IP addresses.
     **Addresses must be IPv4. IPv6 not yet supported.**
 
     Parameters
     ----------
-    ips : cudf.Series
+    ips : SeriesType
         IPv4 addresses to be checked
-    masks: cudf.Series
+    masks: SeriesType
         The host or subnet masks to be applied
 
     Returns
     -------
-    rtype : cudf.Series
+    rtype : SeriesType
         Masked IP address from list of IPs
 
     Examples
@@ -468,21 +482,28 @@ def mask(ips, masks):
     1       10.0.0.0
     Name: mask, dtype: object
     """
-    df = cudf.DataFrame()
-    df["int_mask"] = masks.str.ip2int()
-    df["int_ip"] = ips.str.ip2int()
+    df_pkg = get_df_pkg_from_obj(ips)
+
+    df = df_pkg.DataFrame()
+    df["int_mask"] = ip_to_int(masks)
+    df["int_ip"] = ip_to_int(ips)
     df["masked_ip_int"] = df["int_mask"] & df["int_ip"]
 
-    x = df.apply_rows(_mask_kernel,
-                      incols=["masked_ip_int"],
-                      outcols={
-                          "out1": np.int64, "out2": np.int64, "out3": np.int64, "out4": np.int64
-                      },
-                      kwargs={"kwarg1": 0})
+    if (is_cudf_type(df)):
+        x = df.apply_rows(_mask_series_kernel,
+                          incols=["masked_ip_int"],
+                          outcols={
+                              "out1": np.int64, "out2": np.int64, "out3": np.int64, "out4": np.int64
+                          },
+                          kwargs={"kwarg1": 0})
 
-    out1 = x["out1"].astype(str)
-    out2 = x["out2"].astype(str)
-    out3 = x["out3"].astype(str)
-    out4 = x["out4"].astype(str)
-    df["mask"] = out1.str.cat(out2, sep=".").str.cat(out3, sep=".").str.cat(out4, sep=".")
+        out1 = x["out1"].astype(str)
+        out2 = x["out2"].astype(str)
+        out3 = x["out3"].astype(str)
+        out4 = x["out4"].astype(str)
+        df["mask"] = out1.str.cat(out2, sep=".").str.cat(out3, sep=".").str.cat(out4, sep=".")
+    else:
+        df["idx"] = ips.index
+        df = df.apply(_mask_series_pandas, axis=1, args=("masked_ip_int", "mask"))
+
     return df["mask"]
