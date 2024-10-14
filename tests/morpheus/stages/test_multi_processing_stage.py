@@ -40,6 +40,11 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
+@pytest.fixture(scope="module", autouse=True)
+def setup_and_teardown(shared_process_pool_setup_and_teardown):  # pylint: disable=unused-argument
+    pass
+
+
 def _create_df(count: int) -> pd.DataFrame:
     return pd.DataFrame({"a": range(count)}, {"b": range(count)})
 
