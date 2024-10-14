@@ -19,12 +19,13 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
 @register_stage("pass-thru")
-class PassThruStage(PassThruTypeMixin, SinglePortStage):
+class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
     """
     A Simple Pass Through Stage
     """

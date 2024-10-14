@@ -18,23 +18,24 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.messages import ControlMessage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-class ControlMessagePassThruStage(PassThruTypeMixin, SinglePortStage):
+class ControlMessagePassThruStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
 
     @property
     def name(self) -> str:
         return "mm-pass-thru"
 
-    def accepted_types(self):
+    def accepted_types(self) -> tuple:
         return (ControlMessage, )
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
-    def on_data(self, message: ControlMessage):
+    def on_data(self, message: ControlMessage) -> ControlMessage:
         return message
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:

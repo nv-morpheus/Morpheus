@@ -33,10 +33,11 @@ from mlflow.types import Schema
 from mlflow.types.utils import _infer_pandas_column as _mlflow_infer_pandas_column
 from mlflow.types.utils import _infer_schema
 
-import cudf
-
 from morpheus.messages import ControlMessage
-from morpheus.models.dfencoder import AutoEncoder
+from morpheus.utils.type_utils import is_cudf_type
+
+if typing.TYPE_CHECKING:
+    from morpheus.models.dfencoder import AutoEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -235,7 +236,7 @@ class MLFlowModelWriterController:
 
         user = message.get_metadata("user_id")
 
-        model: AutoEncoder = message.get_metadata("model")
+        model: "AutoEncoder" = message.get_metadata("model")
 
         model_path = "dfencoder"
         reg_model_name = self.user_id_to_model(user_id=user)
@@ -283,7 +284,7 @@ class MLFlowModelWriterController:
                 # prepare_df to show the actual inputs to the model (any extra are discarded)
                 input_df = message.payload().get_data().iloc[0:1]
 
-                if isinstance(input_df, cudf.DataFrame):
+                if is_cudf_type(input_df):
                     input_df = input_df.to_pandas()
 
                 prepared_df = model.prepare_df(input_df)

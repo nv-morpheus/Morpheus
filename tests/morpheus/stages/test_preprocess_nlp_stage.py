@@ -14,23 +14,17 @@
 # limitations under the License.
 
 import typing
-from unittest.mock import Mock
-from unittest.mock import patch
 
-import cupy as cp
 import pytest
 import typing_utils
 
-import cudf
-
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import MessageMeta
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 
 @pytest.fixture(name='config')
-def fixture_config(config: Config, use_cpp: bool):  # pylint: disable=unused-argument
+def fixture_config(config: Config):
     config.class_labels = [
         "address",
         "bank_acct",
@@ -64,31 +58,3 @@ def test_constructor(config: Config):
 
     accepted_union = typing.Union[stage.accepted_types()]
     assert typing_utils.issubtype(ControlMessage, accepted_union)
-
-
-@patch("morpheus.stages.preprocess.preprocess_nlp_stage.tokenize_text_series")
-def test_process_control_message(mock_tokenize_text_series, config: Config):
-    mock_tokenized = Mock()
-    mock_tokenized.input_ids = cp.array([[1, 2], [1, 2]])
-    mock_tokenized.input_mask = cp.array([[3, 4], [3, 4]])
-    mock_tokenized.segment_ids = cp.array([[0, 0], [1, 1]])
-    mock_tokenize_text_series.return_value = mock_tokenized
-
-    stage = PreprocessNLPStage(config)
-    input_cm = ControlMessage()
-    df = cudf.DataFrame({"data": ["a", "b", "c"]})
-    meta = MessageMeta(df)
-    input_cm.payload(meta)
-
-    output_cm = stage.pre_process_batch(input_cm,
-                                        stage._vocab_hash_file,
-                                        stage._do_lower_case,
-                                        stage._seq_length,
-                                        stage._stride,
-                                        stage._truncation,
-                                        stage._add_special_tokens,
-                                        stage._column)
-    assert output_cm.get_metadata("inference_memory_params") == {"inference_type": "nlp"}
-    assert cp.array_equal(output_cm.tensors().get_tensor("input_ids"), mock_tokenized.input_ids)
-    assert cp.array_equal(output_cm.tensors().get_tensor("input_mask"), mock_tokenized.input_mask)
-    assert cp.array_equal(output_cm.tensors().get_tensor("seq_ids"), mock_tokenized.segment_ids)

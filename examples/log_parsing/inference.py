@@ -19,7 +19,6 @@ import numpy as np
 import tritonclient.grpc as tritonclient
 from scipy.special import softmax
 
-import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -62,7 +61,7 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
         seq_ids[:, 0] = cp.arange(0, msg.tensors().count, dtype=cp.uint32)
         seq_ids[:, 2] = msg.tensors().get_tensor('seq_ids')[:, 2]
 
-        memory = _messages.TensorMemory(
+        memory = TensorMemory(
             count=msg.tensors().count,
             tensors={
                 'confidences': cp.zeros((msg.tensors().count, self._inputs[list(self._inputs.keys())[0]].shape[1])),

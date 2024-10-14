@@ -46,6 +46,7 @@ def test_try_handle(dataset_cudf: DatasetManager):
 
     message = ControlMessage()
     message.payload(MessageMeta(df))
+    message.set_metadata("llm_message_meta", message.payload())
 
     task_handler = SimpleTaskHandler(['reptiles'])
 
