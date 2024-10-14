@@ -3,7 +3,7 @@
     "context": "${localWorkspaceFolder}/.devcontainer",
     "dockerfile": "${localWorkspaceFolder}/.devcontainer/Dockerfile",
     "args": {
-      "CUDA": "12.1",
+      "CUDA": "12.5",
       "PYTHON_PACKAGE_MANAGER": "conda",
       "BASE": "rapidsai/devcontainers:24.10-cpp-mambaforge-ubuntu22.04"
     }
@@ -47,7 +47,7 @@
   "initializeCommand": [
     "/bin/bash",
     "-c",
-    "${localWorkspaceFolder}/.devcontainer/initialize-command.sh && mkdir -m 0755 -p ${localWorkspaceFolder}/../.{aws,cache,config,conda/pkgs,conda/${localWorkspaceFolderBasename}-cuda12.1-envs}"
+    "${localWorkspaceFolder}/.devcontainer/initialize-command.sh && mkdir -m 0755 -p ${localWorkspaceFolder}/../.{aws,cache,config,conda/pkgs,conda/${localWorkspaceFolderBasename}-cuda12.5-envs}"
   ],
   "postAttachCommand": [
     "/bin/bash",
@@ -66,7 +66,7 @@
     "source=${localWorkspaceFolder}/../.cache,target=/home/coder/.cache,type=bind,consistency=consistent",
     "source=${localWorkspaceFolder}/../.config,target=/home/coder/.config,type=bind,consistency=consistent",
     "source=${localWorkspaceFolder}/../.conda/pkgs,target=/home/coder/.conda/pkgs,type=bind,consistency=consistent",
-    "source=${localWorkspaceFolder}/../.conda/${localWorkspaceFolderBasename}-cuda12.1-envs,target=/home/coder/.conda/envs,type=bind,consistency=consistent"
+    "source=${localWorkspaceFolder}/../.conda/${localWorkspaceFolderBasename}-cuda12.5-envs,target=/home/coder/.conda/envs,type=bind,consistency=consistent"
   ],
   "customizations": {
     "vscode": {
@@ -102,9 +102,9 @@
         "C_Cpp.intelliSenseEngine": "disabled",
         "python.terminal.activateEnvironment": false,
         "files.watcherExclude": {
-            "**/.git/objects/**": true,
-            "**/.git/subtree-cache/**": true,
-            "**/.cache/**": true
+          "**/.git/objects/**": true,
+          "**/.git/subtree-cache/**": true,
+          "**/.cache/**": true
         }
       }
     }
