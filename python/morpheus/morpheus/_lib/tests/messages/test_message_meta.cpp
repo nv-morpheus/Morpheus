@@ -36,6 +36,7 @@
 #include <cstdint>     // for int64_t
 #include <filesystem>  // for operator/, path
 #include <memory>      // for allocator, __shared_ptr_access, shared_ptr, make_shared
+#include <utility>     // for move
 #include <vector>      // for vector
 
 using namespace morpheus;
