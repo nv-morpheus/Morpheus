@@ -19,17 +19,31 @@ from cudf.core.dtypes import StructDtype
 from libcpp.string cimport string
 from libcpp.utility cimport move
 from libcpp.vector cimport vector
+from pylibcudf.libcudf.io.types cimport column_name_info
+from pylibcudf.libcudf.io.types cimport table_metadata
+from pylibcudf.libcudf.io.types cimport table_with_metadata
+from pylibcudf.libcudf.table.table_view cimport table_view
+from pylibcudf.libcudf.types cimport size_type
 
 from cudf._lib.column cimport Column
-from cudf._lib.cpp.io.types cimport column_name_info
-from cudf._lib.cpp.io.types cimport table_metadata
-from cudf._lib.cpp.io.types cimport table_with_metadata
-from cudf._lib.cpp.table.table_view cimport table_view
-from cudf._lib.cpp.types cimport size_type
 from cudf._lib.utils cimport data_from_unique_ptr
-from cudf._lib.utils cimport get_column_names
 from cudf._lib.utils cimport table_view_from_table
 
+
+cdef vector[string] get_column_names(object tbl, object index):
+    cdef vector[string] column_names
+    if index is not False:
+        if isinstance(tbl._index, cudf.core.multiindex.MultiIndex):
+            for idx_name in tbl._index.names:
+                column_names.push_back(str.encode(idx_name))
+        else:
+            if tbl._index.name is not None:
+                column_names.push_back(str.encode(tbl._index.name))
+
+    for col_name in tbl._column_names:
+        column_names.push_back(str.encode(col_name))
+
+    return column_names
 
 cdef extern from "morpheus/objects/table_info.hpp" namespace "morpheus" nogil:
 

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import typing
 
 from morpheus_llm.llm import LLMContext
 from morpheus_llm.llm import LLMNodeBase
@@ -25,20 +26,23 @@ class LLMGenerateNode(LLMNodeBase):
     """
     Generates responses from an LLM using the provided `llm_client` instance based on prompts provided as input from
     upstream nodes.
-
-    Parameters
-    ----------
-    llm_client : LLMClient
-        The client instance to use to generate responses.
-
-    input_names : list[str], optional
-        The names of the inputs to this node. Defaults to `["prompt"]`.
     """
 
-    def __init__(self, llm_client: LLMClient) -> None:
+    def __init__(self, llm_client: LLMClient, return_exceptions=False) -> None:
+        """
+        Parameters
+        ----------
+        llm_client: LLMClient
+            The client instance to use to generate responses.
+        return_exceptions: bool, optional
+            Whether to return exceptions when generating responses. If set to False, the first exception that is
+            returned will stop all other items in the batch from processing Defaults to `False`.
+        """
+
         super().__init__()
 
         self._llm_client = llm_client
+        self._return_exceptions: typing.Literal[True] | typing.Literal[False] = return_exceptions
 
     def get_input_names(self) -> list[str]:
         return self._llm_client.get_input_names()
@@ -46,9 +50,9 @@ class LLMGenerateNode(LLMNodeBase):
     async def execute(self, context: LLMContext) -> LLMContext:  # pylint: disable=invalid-overridden-method
 
         # Get the inputs
-        inputs: dict[str, list[str]] = context.get_inputs()
+        inputs: dict[str, list[str]] = context.get_inputs()  # type: ignore
 
-        results = await self._llm_client.generate_batch_async(inputs)
+        results = await self._llm_client.generate_batch_async(inputs, return_exceptions=self._return_exceptions)
 
         context.set_output(results)
 
