@@ -44,9 +44,6 @@ class CSVConverterSchema(BaseModel):
     chunk_size: int = 1024
     text_column_names: List[str]
 
-    class Config:
-        extra = "forbid"
-
 
 class ContentExtractorSchema(BaseModel):
     batch_size: int = 32
@@ -65,9 +62,6 @@ class ContentExtractorSchema(BaseModel):
             else:
                 validated_meta[key] = value
         return validated_meta
-
-    class Config:
-        extra = "forbid"
 
 
 logger = logging.getLogger(__name__)

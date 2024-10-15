@@ -26,6 +26,3 @@ class MultiFileSourceSchema(BaseModel):
     watch_dir: bool = False
     watch_interval: float = 1.0
     batch_size: int = 128
-
-    class Config:
-        extra = "forbid"

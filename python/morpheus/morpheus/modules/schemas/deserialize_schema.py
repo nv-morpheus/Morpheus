@@ -17,14 +17,12 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 
-from pydantic import ConfigDict
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass(config=ConfigDict(extra="forbid"))
-class DeserializeSchema:
+class DeserializeSchema(BaseModel):
     ensure_sliceable_index: bool = True
     message_type: str = "ControlMessage"
     task_type: Optional[str] = None
