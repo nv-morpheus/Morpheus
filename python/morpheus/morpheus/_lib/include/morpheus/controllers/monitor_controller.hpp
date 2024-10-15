@@ -203,7 +203,7 @@ class MonitorController
 
     int m_bar_id;
     const std::string m_unit;
-    std::optional<std::function<int(MessageT)>> m_determine_count_fn;
+    std::optional<std::function<size_t(MessageT)>> m_determine_count_fn;
     size_t m_count{0};
     time_point_t m_start_time;
     bool m_is_started{false};  // Set to true after the first call to progress_sink()
@@ -281,8 +281,8 @@ std::string MonitorController<MessageT>::format_throughput(std::chrono::seconds 
 {
     double throughput = static_cast<double>(count) / duration.count();
     std::ostringstream oss;
-    oss << count << " " << unit << " in " << format_duration(duration) << ", "
-        << "Throughput: " << std::fixed << std::setprecision(2) << throughput << " " << unit << "/s";
+    oss << count << " " << unit << " in " << format_duration(duration) << ", " << "Throughput: " << std::fixed
+        << std::setprecision(2) << throughput << " " << unit << "/s";
     return oss.str();
 }
 
