@@ -68,7 +68,7 @@ struct LineInsertingFilter : boost::iostreams::line_filter
 };
 
 // A singleton manager class that manages the lifetime of progress bars related to any MonitorController<T> instances
-// Meyer's singleton is guaranteed thread-safe after C++11
+// Meyer's singleton is guaranteed thread-safe
 class ProgressBarContextManager
 {
   public:
@@ -281,8 +281,8 @@ std::string MonitorController<MessageT>::format_throughput(std::chrono::seconds 
 {
     double throughput = static_cast<double>(count) / duration.count();
     std::ostringstream oss;
-    oss << count << " " << unit << " in " << format_duration(duration) << ", "
-        << "Throughput: " << std::fixed << std::setprecision(2) << throughput << " " << unit << "/s";
+    oss << count << " " << unit << " in " << format_duration(duration) << ", " << "Throughput: " << std::fixed
+        << std::setprecision(2) << throughput << " " << unit << "/s";
     return oss.str();
 }
 
