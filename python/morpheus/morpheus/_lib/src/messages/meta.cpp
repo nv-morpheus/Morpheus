@@ -461,19 +461,8 @@ py::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
 
     auto py_object = info.get_parent()->get_py_object();
     py::gil_scoped_acquire gil;
-    auto py_column_names = py::cast(column_names);
-    py::print(py_column_names);
-    std::cerr << num_rows << std::endl;
-    auto [row_indexer, column_indexer] = get_indexers(self, py_object, py_column_names, num_rows);
-    py::object py_df_slice             = py_object[py_column_names];
-    // try
-    // {
-    //     py_df_slice = py_object.attr("iloc")[py::make_tuple(row_indexer, column_indexer)];
-    // } catch (py::error_already_set& e)
-    // {
-    //     std::cerr << e.what() << std::endl;
-    //     py_df_slice = py_object[py_column_names].attr("iloc")[row_indexer];
-    // }
+    auto py_column_names   = py::cast(column_names);
+    py::object py_df_slice = py_object[py_column_names];
     return py_df_slice.attr("copy")("deep"_a = true);
 }
 
