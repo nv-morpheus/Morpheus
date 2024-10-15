@@ -108,12 +108,12 @@ struct MORPHEUS_EXPORT TableInfoBase
      */
     bool has_sliceable_index() const;
 
+    const std::shared_ptr<const IDataTable>& get_parent() const;
+
   protected:
     TableInfoBase() = default;
 
     TableInfoBase(std::shared_ptr<const IDataTable> parent, TableInfoData data);
-
-    const std::shared_ptr<const IDataTable>& get_parent() const;
 
     TableInfoData& get_data();
     const TableInfoData& get_data() const;
