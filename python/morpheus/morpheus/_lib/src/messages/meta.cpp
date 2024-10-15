@@ -457,7 +457,6 @@ py::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
     }
 
     auto column_names = info.get_column_names();
-    auto num_rows     = info.num_rows();
 
     auto py_object = info.get_parent()->get_py_object();
     py::gil_scoped_acquire gil;
