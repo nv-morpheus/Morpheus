@@ -41,7 +41,9 @@ filterwarnings = [
 
 testpaths = ["tests"]
 
-addopts = "--benchmark-disable"
+# Don't run the benchmarks by default, don't search for tests in the tests/_utils directory which will trigger false
+# alarms
+addopts = "--benchmark-disable --ignore=tests/_utils"
 
 asyncio_mode = "auto"
 
