@@ -19,13 +19,14 @@ import mrc
 import pandas as pd
 
 import morpheus._lib.messages as _messages
-from common.data_models import SnapshotData  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
+
+from common.data_models import SnapshotData  # pylint: disable=no-name-in-module #isort:skip
 
 
 @register_stage("ransomware-preprocess", modes=[PipelineModes.FIL])

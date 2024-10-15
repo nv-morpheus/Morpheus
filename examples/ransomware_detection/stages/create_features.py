@@ -19,14 +19,15 @@ from mrc.core import operators as ops
 
 from dask.distributed import Client
 
-from common.data_models import FeatureConfig  # pylint: disable=no-name-in-module
-from common.feature_extractor import FeatureExtractor  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
+
+from common.data_models import FeatureConfig  # pylint: disable=no-name-in-module # isort: skip
+from common.feature_extractor import FeatureExtractor  # pylint: disable=no-name-in-module # isort: skip
 
 
 @register_stage("create-features", modes=[PipelineModes.FIL])

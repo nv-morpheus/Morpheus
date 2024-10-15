@@ -116,9 +116,8 @@ class TestPreprocessingRWStage:
         assert len(stage._snapshot_dict) == 0
 
     def test_merge_curr_and_prev_snapshots(self, config: Config, rwd_conf: dict, dataset_pandas: DatasetManager):
-        from stages.preprocessing import PreprocessingRWStage
-
         from common.data_models import SnapshotData
+        from stages.preprocessing import PreprocessingRWStage
 
         snapshot_ids = [5, 8, 10, 13]
         source_pid_process = "123_test.exe"
