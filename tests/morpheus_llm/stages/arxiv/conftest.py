@@ -42,6 +42,14 @@ def langchain_fixture(fail_missing: bool):
     yield import_or_skip("langchain", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
+@pytest.fixture(name="langchain_community", autouse=True, scope='session')
+def langchain_fixture(fail_missing: bool):
+    """
+    All of the tests in this subdir require langchain
+    """
+    yield import_or_skip("langchain_community", reason=SKIP_REASON, fail_missing=fail_missing)
+
+
 @pytest.fixture(name="pypdf", autouse=True, scope='session')
 def pypdf_fixture(fail_missing: bool):
     """
