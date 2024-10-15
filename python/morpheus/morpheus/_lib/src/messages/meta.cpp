@@ -457,11 +457,11 @@ py::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
     }
 
     auto column_names = info.get_column_names();
+    auto py_df        = info.get_parent()->get_py_object();
 
-    auto py_object = info.get_parent()->get_py_object();
     py::gil_scoped_acquire gil;
     auto py_column_names   = py::cast(column_names);
-    py::object py_df_slice = py_object[py_column_names];
+    py::object py_df_slice = py_df[py_column_names];
     return py_df_slice.attr("copy")("deep"_a = true);
 }
 
