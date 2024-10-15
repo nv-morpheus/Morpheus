@@ -37,9 +37,9 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <pybind11/stl.h>
-#include <pyerrors.h>  // for PyExc_DeprecationWarning
-#include <warnings.h>  // for PyErr_WarnEx
+#include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pyerrors.h>      // for PyExc_DeprecationWarning
+#include <warnings.h>      // for PyErr_WarnEx
 
 #include <cstddef>  // for size_t
 #include <cstdint>  // for uint8_t
