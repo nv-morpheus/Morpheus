@@ -37,6 +37,7 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
+#include <pybind11/stl.h>
 #include <pyerrors.h>  // for PyExc_DeprecationWarning
 #include <warnings.h>  // for PyErr_WarnEx
 
@@ -444,19 +445,36 @@ std::vector<std::string> MessageMetaInterfaceProxy::get_column_names(MessageMeta
 
 py::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
 {
+    namespace py = pybind11;
     TableInfo info;
 
     {
         // Need to release the GIL before calling `get_info()`
-        pybind11::gil_scoped_release no_gil;
+        py::gil_scoped_release no_gil;
 
         // Get the column and convert to cudf
         info = self.get_info();
     }
 
+    auto column_names = info.get_column_names();
+    auto num_rows     = info.num_rows();
+
     auto py_object = info.get_parent()->get_py_object();
-    pybind11::gil_scoped_acquire gil;
-    return py_object.attr("copy")("deep"_a = true);
+    py::gil_scoped_acquire gil;
+    auto py_column_names = py::cast(column_names);
+    py::print(py_column_names);
+    std::cerr << num_rows << std::endl;
+    auto [row_indexer, column_indexer] = get_indexers(self, py_object, py_column_names, num_rows);
+    py::object py_df_slice             = py_object[py_column_names];
+    // try
+    // {
+    //     py_df_slice = py_object.attr("iloc")[py::make_tuple(row_indexer, column_indexer)];
+    // } catch (py::error_already_set& e)
+    // {
+    //     std::cerr << e.what() << std::endl;
+    //     py_df_slice = py_object[py_column_names].attr("iloc")[row_indexer];
+    // }
+    return py_df_slice.attr("copy")("deep"_a = true);
 }
 
 py::object MessageMetaInterfaceProxy::df_property(MessageMeta& self)
