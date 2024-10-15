@@ -20,10 +20,12 @@ This script is used as test input for morpheus_namespace_update.py script.
 # Disable all checkers
 # flake8: noqa
 # isort: skip_file
+# yapf: disable
+# pylint: skip-file
 
 # old DFP import patterns
 from dfp.utils.config_generator import ConfigGenerator
-from dfp.stages.dfp_rolling_window_stage
+from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 from morpheus_dfp.stages.dfp_split_users_stage import DFPSplitUsersStage # no update
 import dfp.stages.dfp_training
 import dfp.stages.dfp_inference_stage as inference_stage
