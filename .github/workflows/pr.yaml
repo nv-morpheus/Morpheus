@@ -94,6 +94,7 @@ jobs:
       conda_run_build: ${{ !fromJSON(needs.prepare.outputs.is_pr) || fromJSON(needs.prepare.outputs.has_conda_build_label) }}
       # Upload morpheus conda packages only for non PR branches. Use 'main' for main branch and 'dev' for all other branches
       conda_upload_label: ${{ !fromJSON(needs.prepare.outputs.is_pr) && (fromJSON(needs.prepare.outputs.is_main_branch) && 'main' || 'dev') || '' }}
+      base_container: rapidsai/ci-conda:cuda12.5.1-ubuntu22.04-py3.10
       container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-241004
       test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-241004
     secrets:

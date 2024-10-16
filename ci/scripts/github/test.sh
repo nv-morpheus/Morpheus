@@ -17,6 +17,7 @@
 set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
+source ${WORKSPACE}/ci/scripts/github/morpheus_env.sh
 source ${WORKSPACE}/ci/scripts/github/cmake_all.sh
 /usr/bin/nvidia-smi
 

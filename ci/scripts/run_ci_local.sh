@@ -59,9 +59,12 @@ GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
 
 LOCAL_CI_TMP=${LOCAL_CI_TMP:-${MORPHEUS_ROOT}/.tmp/local_ci_tmp}
 CONTAINER_VER=${CONTAINER_VER:-241004}
-CUDA_VER=${CUDA_VER:-12.1}
+CUDA_VER=${CUDA_VER:-12.5}
+CUDA_FULL_VER=${CUDA_FULL_VER:-12.5.1}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
+# Configure the base docker img
+CONDA_CONTAINER="rapidsai/ci-conda:cuda${CUDA_FULL_VER}-ubuntu22.04-py3.10"
 BUILD_CONTAINER="nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-${CONTAINER_VER}"
 TEST_CONTAINER="nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-${CONTAINER_VER}"
 
@@ -88,13 +91,18 @@ for STAGE in "${STAGES[@]}"; do
     DOCKER_RUN_ARGS+=("-v" "${LOCAL_CI_TMP}:/ci_tmp")
     DOCKER_RUN_ARGS+=("${ENV_LIST[@]}")
     DOCKER_RUN_ARGS+=("--env STAGE=${STAGE}")
-    if [[ "${STAGE}" == "test" || "${USE_GPU}" == "1" ]]; then
+    if [[ "${STAGE}" == "conda_libs" || "${USE_BASE}" == "1" ]]; then
+        CONTAINER="${CONDA_CONTAINER}"
+    elif [[ "${STAGE}" == "test" || "${USE_GPU}" == "1" ]]; then
         CONTAINER="${TEST_CONTAINER}"
+    else
+        CONTAINER="${BUILD_CONTAINER}"
+    fi
+    if [[ "${STAGE}" == "test" ||  "${STAGE}" == "conda_libs" || "${USE_GPU}" == "1" ]]; then
         DOCKER_RUN_ARGS+=("--runtime=nvidia")
         DOCKER_RUN_ARGS+=("--gpus all")
         DOCKER_RUN_ARGS+=("--cap-add=sys_nice")
     else
-        CONTAINER="${BUILD_CONTAINER}"
         DOCKER_RUN_ARGS+=("--runtime=runc")
     fi
 
