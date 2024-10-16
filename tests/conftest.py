@@ -1080,6 +1080,32 @@ def openai_fixture(fail_missing: bool):
     yield import_or_skip("openai", reason=OPT_DEP_SKIP_REASON.format(package="openai"), fail_missing=fail_missing)
 
 
+@pytest.fixture(scope='session')
+def dask_distributed(fail_missing: bool):
+    """
+    Mark tests requiring dask.distributed
+    """
+    yield import_or_skip("dask.distributed",
+                         reason=OPT_DEP_SKIP_REASON.format(package="dask.distributed"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(scope='session')
+def dask_cuda(fail_missing: bool):
+    """
+    Mark tests requiring dask_cuda
+    """
+    yield import_or_skip("dask_cuda", reason=OPT_DEP_SKIP_REASON.format(package="dask_cuda"), fail_missing=fail_missing)
+
+
+@pytest.fixture(scope='session')
+def mlflow(fail_missing: bool):
+    """
+    Mark tests requiring mlflow
+    """
+    yield import_or_skip("mlflow", reason=OPT_DEP_SKIP_REASON.format(package="mlflow"), fail_missing=fail_missing)
+
+
 @pytest.fixture(name="langchain", scope='session')
 def langchain_fixture(fail_missing: bool):
     """
