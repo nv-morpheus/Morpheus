@@ -33,4 +33,3 @@ class TestDirectories:
         self.tests_data_dir = os.path.join(self.tests_dir, 'tests_data')
         self.mock_triton_servers_dir = os.path.join(self.tests_dir, 'mock_triton_server')
         self.mock_rest_server = os.path.join(self.tests_dir, 'mock_rest_server')
-        print(self)

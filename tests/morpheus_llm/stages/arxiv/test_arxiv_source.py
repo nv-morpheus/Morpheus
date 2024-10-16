@@ -116,7 +116,7 @@ def test_process_pages_error(config: Config, tmp_path: str):
         stage._process_pages(bad_pdf_filename)
 
 
-@mock.patch("langchain.document_loaders.PyPDFLoader")
+@mock.patch("langchain_community.document_loaders.PyPDFLoader")
 def test_process_pages_retry(mock_pdf_loader: mock.MagicMock, config: Config, pypdf: types.ModuleType):
     call_count = 0
 
@@ -144,7 +144,7 @@ def test_process_pages_retry(mock_pdf_loader: mock.MagicMock, config: Config, py
 @pytest.mark.parametrize("chunk_size", [200, 1000])
 def test_splitting_pages(config: Config,
                          pdf_file: str,
-                         langchain: types.ModuleType,
+                         langchain_community: types.ModuleType,
                          chunk_size: int,
                          dataset_cudf: DatasetManager):
     chunk_overlap = 100
@@ -179,7 +179,7 @@ def test_splitting_pages(config: Config,
         "page_content": page_content_col, "source": source_col, "page": page_col, "type": type_col
     })
 
-    loader = langchain.document_loaders.PyPDFLoader(pdf_file)
+    loader = langchain_community.document_loaders.PyPDFLoader(pdf_file)
     documents = loader.load()
     assert len(documents) == 1
 
@@ -194,7 +194,7 @@ def test_splitting_pages(config: Config,
 
 def test_splitting_pages_no_chunks(config: Config,
                                    pdf_file: str,
-                                   langchain: types.ModuleType,
+                                   langchain_community: types.ModuleType,
                                    dataset_cudf: DatasetManager):
     content = "Morpheus\nunittest"
     page_content_col = [content]
@@ -206,7 +206,7 @@ def test_splitting_pages_no_chunks(config: Config,
         "page_content": page_content_col, "source": source_col, "page": page_col, "type": type_col
     })
 
-    loader = langchain.document_loaders.PyPDFLoader(pdf_file)
+    loader = langchain_community.document_loaders.PyPDFLoader(pdf_file)
     documents = loader.load()
     assert len(documents) == 1
 
