@@ -29,7 +29,7 @@ import pandas as pd
 import pypdfium2 as libpdfium
 from docx import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import ValidationError
