@@ -32,6 +32,7 @@ from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import PreparedDFInfo
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.downloader import Downloader
+from morpheus.utils.downloader import DownloadMethods
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,9 @@ class FileToDFController:
         Directory where cache will be stored.
     timestamp_column_name : str
         Name of the timestamp column.
+    download_method : typing.Union[DownloadMethods, str], optional, default = DownloadMethods.DASK_THREAD
+        The download method to use, if the `MORPHEUS_FILE_DOWNLOAD_TYPE` environment variable is set, it takes
+        presedence.
     """
 
     def __init__(self,
@@ -113,7 +117,8 @@ class FileToDFController:
                  file_type: FileTypes,
                  parser_kwargs: dict,
                  cache_dir: str,
-                 timestamp_column_name: str):
+                 timestamp_column_name: str,
+                 download_method: typing.Union[DownloadMethods, str] = DownloadMethods.DASK_THREAD):
 
         self._schema = schema
         self._file_type = file_type
@@ -122,7 +127,7 @@ class FileToDFController:
         self._cache_dir = os.path.join(cache_dir, "file_cache")
         self._timestamp_column_name = timestamp_column_name
 
-        self._downloader = Downloader()
+        self._downloader = Downloader(download_method=download_method)
 
     def _get_or_create_dataframe_from_batch(
             self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[cudf.DataFrame, bool]:
