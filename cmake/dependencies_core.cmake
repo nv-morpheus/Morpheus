@@ -19,6 +19,10 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "dep_core")
 # =========
 morpheus_utils_configure_cccl()
 
+# indicators
+# ==========
+morpheus_utils_configure_indicators()
+
 # matx
 # ====
 morpheus_utils_configure_matx()

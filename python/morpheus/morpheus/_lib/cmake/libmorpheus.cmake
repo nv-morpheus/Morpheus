@@ -79,6 +79,7 @@ add_library(${PROJECT_NAME}::morpheus ALIAS morpheus)
 
 target_link_libraries(morpheus
   PRIVATE
+    indicators::indicators
     matx::matx
     $<$<CONFIG:Debug>:ZLIB::ZLIB>
   PUBLIC

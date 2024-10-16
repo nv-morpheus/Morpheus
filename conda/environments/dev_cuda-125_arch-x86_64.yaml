@@ -45,6 +45,7 @@ dependencies:
 - gtest=1.14
 - gxx=12.1
 - include-what-you-use=0.20
+- indicators=2.3
 - ipython
 - isort
 - libcublas-dev
