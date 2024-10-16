@@ -37,8 +37,9 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <pyerrors.h>  // for PyExc_DeprecationWarning
-#include <warnings.h>  // for PyErr_WarnEx
+#include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pyerrors.h>      // for PyExc_DeprecationWarning
+#include <warnings.h>      // for PyErr_WarnEx
 
 #include <cstddef>  // for size_t
 #include <cstdint>  // for uint8_t
@@ -444,17 +445,24 @@ std::vector<std::string> MessageMetaInterfaceProxy::get_column_names(MessageMeta
 
 py::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
 {
+    namespace py = pybind11;
     TableInfo info;
 
     {
-        // Need to release the GIL before calling `get_meta()`
-        pybind11::gil_scoped_release no_gil;
+        // Need to release the GIL before calling `get_info()`
+        py::gil_scoped_release no_gil;
 
         // Get the column and convert to cudf
         info = self.get_info();
     }
 
-    return CudfHelper::table_from_table_info(info);
+    auto column_names = info.get_column_names();
+    auto py_df        = info.get_parent()->get_py_object();
+
+    py::gil_scoped_acquire gil;
+    auto py_column_names   = py::cast(column_names);
+    py::object py_df_slice = py_df[py_column_names];
+    return py_df_slice.attr("copy")("deep"_a = true);
 }
 
 py::object MessageMetaInterfaceProxy::df_property(MessageMeta& self)
