@@ -30,6 +30,7 @@ import pypdfium2 as libpdfium
 from docx import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import ValidationError
 from pydantic import field_validator
@@ -43,9 +44,7 @@ class CSVConverterSchema(BaseModel):
     chunk_overlap: int = 102  # Example default value
     chunk_size: int = 1024
     text_column_names: List[str]
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra='forbid')
 
 
 class ContentExtractorSchema(BaseModel):
@@ -54,6 +53,7 @@ class ContentExtractorSchema(BaseModel):
     chunk_size: int = 512
     converters_meta: Dict[str, Dict] = Field(default_factory=dict)
     num_threads: int = 10
+    model_config = ConfigDict(extra='forbid')
 
     @field_validator('converters_meta', mode="before")
     @classmethod
@@ -65,9 +65,6 @@ class ContentExtractorSchema(BaseModel):
             else:
                 validated_meta[key] = value
         return validated_meta
-
-    class Config:
-        extra = "forbid"
 
 
 logger = logging.getLogger(__name__)

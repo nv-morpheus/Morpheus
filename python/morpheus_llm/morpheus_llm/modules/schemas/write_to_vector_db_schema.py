@@ -15,6 +15,7 @@
 import logging
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import field_validator
 
@@ -38,6 +39,7 @@ class WriteToVDBSchema(BaseModel):
     service_kwargs: dict = Field(default_factory=dict)
     batch_size: int = 1024
     write_time_interval: float = 1.0
+    model_config = ConfigDict(extra='forbid')
 
     @field_validator('service')
     def validate_service(cls, to_validate):  # pylint: disable=no-self-argument
@@ -50,6 +52,3 @@ class WriteToVDBSchema(BaseModel):
         if not to_validate:
             raise ValueError("Resource name must not be None or Empty.")
         return to_validate
-
-    class Config:
-        extra = "forbid"
