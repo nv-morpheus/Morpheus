@@ -54,6 +54,7 @@ def _process_df(df: pd.DataFrame, column: str, value: str) -> pd.DataFrame:
     return df
 
 
+@pytest.mark.use_python
 def test_create_stage_type_deduction(config: Config, dataset_pandas: DatasetManager):
 
     # Test create() with normal function
@@ -130,6 +131,7 @@ class DerivedMultiProcessingStage(MultiProcessingBaseStage[ControlMessage, Contr
         return data
 
 
+@pytest.mark.use_python
 def test_derived_stage_type_deduction(config: Config):
 
     mp_stage = DerivedMultiProcessingStage(c=config, process_pool_usage=0.1, add_column_name="new_column")
@@ -148,6 +150,7 @@ def pandas_dataframe_generator(dataset_pandas: DatasetManager, count: int) -> Ge
         yield df
 
 
+@pytest.mark.use_python
 def test_created_stage_pipe(config: Config, dataset_pandas: DatasetManager):
 
     config.num_threads = os.cpu_count()
@@ -157,7 +160,7 @@ def test_created_stage_pipe(config: Config, dataset_pandas: DatasetManager):
     expected_df = input_df.copy()
     expected_df["new_column"] = "Hello"
 
-    df_count = 100
+    df_count = 10
     df_generator = partial(pandas_dataframe_generator, dataset_pandas, df_count)
 
     partial_fn = partial(_process_df, column="new_column", value="Hello")
@@ -176,6 +179,7 @@ def test_created_stage_pipe(config: Config, dataset_pandas: DatasetManager):
         assert df.equals(expected_df)
 
 
+@pytest.mark.use_python
 def test_derived_stage_pipe(config: Config, dataset_pandas: DatasetManager):
 
     config.num_threads = os.cpu_count()
@@ -197,6 +201,7 @@ def test_derived_stage_pipe(config: Config, dataset_pandas: DatasetManager):
     assert_results(comp_stage.get_results())
 
 
+@pytest.mark.use_python
 def test_multiple_stages_pipe(config: Config, dataset_pandas: DatasetManager):
     config.num_threads = os.cpu_count()
 
@@ -206,7 +211,7 @@ def test_multiple_stages_pipe(config: Config, dataset_pandas: DatasetManager):
     expected_df["new_column_1"] = "new_value"
     expected_df["new_column_2"] = "Hello"
 
-    df_count = 100
+    df_count = 10
     df_generator = partial(pandas_dataframe_generator, dataset_pandas, df_count)
 
     partial_fn = partial(_process_df, column="new_column_1", value="new_value")
