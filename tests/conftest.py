@@ -1034,6 +1034,13 @@ def milvus_data_fixture():
     yield inital_data
 
 
+@pytest.fixture(scope="session", name="milvus_service")
+def milvus_service_fixture(milvus_server_uri: str):
+    from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBService
+    service = MilvusVectorDBService(uri=milvus_server_uri)
+    yield service
+
+
 @pytest.fixture(scope="session", name="idx_part_collection_config")
 def idx_part_collection_config_fixture():
     from _utils import load_json_file

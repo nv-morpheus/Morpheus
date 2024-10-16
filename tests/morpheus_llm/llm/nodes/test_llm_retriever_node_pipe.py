@@ -34,12 +34,6 @@ from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBServ
 from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
 
-@pytest.fixture(scope="module", name="milvus_service")
-def milvus_service_fixture(milvus_server_uri: str):
-    service = MilvusVectorDBService(uri=milvus_server_uri)
-    yield service
-
-
 def _build_engine(vdb_service, **similarity_search_kwargs) -> LLMEngine:
     mock_embedding = mock.AsyncMock(return_value=[[1.2, 2.3, 3.4], [4.5, 5.6, 6.7]])
     engine = LLMEngine()
