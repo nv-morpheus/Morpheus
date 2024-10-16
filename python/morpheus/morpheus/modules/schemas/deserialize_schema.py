@@ -17,14 +17,13 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 
+from pydantic import BaseModel
 from pydantic import ConfigDict
-from pydantic.dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass(config=ConfigDict(extra="forbid"))
-class DeserializeSchema:
+class DeserializeSchema(BaseModel):
     ensure_sliceable_index: bool = True
     message_type: str = "ControlMessage"
     task_type: Optional[str] = None
@@ -32,3 +31,4 @@ class DeserializeSchema:
     batch_size: int = 1024
     max_concurrency: int = 1
     should_log_timestamp: bool = True
+    model_config = ConfigDict(extra='forbid')
