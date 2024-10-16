@@ -42,6 +42,9 @@ class WebScraperSchema(BaseModel):
     cache_path: str = "./.cache/http/RSSDownloadStage.sqlite"
     cache_dir: str = "./.cache/llm/rss"
 
+    class Config:
+        extra = "forbid"
+
 
 WebScraperLoaderFactory = ModuleLoaderFactory("web_scraper", "morpheus_examples_llm", WebScraperSchema)
 

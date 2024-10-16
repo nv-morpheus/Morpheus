@@ -32,3 +32,6 @@ class RSSSourceSchema(BaseModel):
     interval_sec: int = 600
     stop_after_rec: int = 0
     strip_markup: bool = True
+
+    class Config:
+        extra = "forbid"

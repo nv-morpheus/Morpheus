@@ -49,6 +49,9 @@ class FileSourcePipeSchema(BaseModel):
     watch: bool = False  # Flag to watch file changes
     watch_interval: float = -5.0  # Interval to watch file changes
 
+    class Config:
+        extra = "forbid"
+
 
 FileSourcePipeLoaderFactory = ModuleLoaderFactory("file_source_pipe", "morpheus_examples_llm", FileSourcePipeSchema)
 

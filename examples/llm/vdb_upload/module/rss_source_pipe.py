@@ -63,6 +63,9 @@ class RSSSourcePipeSchema(BaseModel):
 
         raise ValueError('feed_input must be a string or a list of strings')
 
+    class Config:
+        extra = "forbid"
+
 
 RSSSourcePipeLoaderFactory = ModuleLoaderFactory("rss_source_pipe", "morpheus_examples_llm", RSSSourcePipeSchema)
 

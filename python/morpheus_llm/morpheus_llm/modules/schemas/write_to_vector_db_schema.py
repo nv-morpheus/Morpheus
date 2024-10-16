@@ -50,3 +50,6 @@ class WriteToVDBSchema(BaseModel):
         if not to_validate:
             raise ValueError("Resource name must not be None or Empty.")
         return to_validate
+
+    class Config:
+        extra = "forbid"
