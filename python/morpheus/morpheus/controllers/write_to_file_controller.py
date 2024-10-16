@@ -16,6 +16,7 @@ import os
 
 import mrc
 import mrc.core.operators as ops
+import pyarrow.parquet as pq
 
 from morpheus.common import FileTypes
 from morpheus.common import determine_file_type
@@ -124,9 +125,12 @@ class WriteToFileController:
 
             def write_to_file(x: MessageMeta):
 
-                lines = self._convert_to_strings(x.df)
-
-                out_file.writelines(lines)
+                if self._file_type == FileTypes.PARQUET:
+                    table = x.df.to_arrow()
+                    pq.write_table(table, out_file)
+                else:
+                    lines = self._convert_to_strings(x.df)
+                    out_file.writelines(lines)
 
                 if self._flush:
                     out_file.flush()
