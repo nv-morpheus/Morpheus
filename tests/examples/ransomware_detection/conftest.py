@@ -48,22 +48,27 @@ def config_fixture(config, use_cpp: bool):  # pylint: disable=unused-argument
     yield config
 
 
-@pytest.fixture(name="example_dir")
+@pytest.fixture(name="example_dir", scope='session')
 def example_dir_fixture():
     yield os.path.join(TEST_DIRS.examples_dir, 'ransomware_detection')
 
 
-@pytest.fixture(name="conf_file")
+@pytest.fixture(name="conf_file", scope='session')
 def conf_file_fixture(example_dir):
     yield os.path.join(example_dir, 'config/ransomware_detection.yaml')
 
 
-@pytest.fixture
-def rwd_conf(conf_file):
+@pytest.fixture(scope='session')
+def _rwd_conf(conf_file):
     with open(conf_file, encoding='UTF-8') as fh:
         conf = yaml.safe_load(fh)
 
     yield conf
+
+
+@pytest.fixture(scope='function')
+def rwd_conf(_rwd_conf):
+    yield _rwd_conf.copy()
 
 
 @pytest.fixture
