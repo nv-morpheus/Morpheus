@@ -14,7 +14,9 @@
 # limitations under the License.
 """Mimic the examples/llm/rag/standalone_pipeline.py example"""
 
+import importlib
 import os
+import sys
 import types
 from unittest import mock
 
@@ -29,6 +31,7 @@ from _utils.llm import mk_mock_openai_response
 from _utils.milvus import populate_milvus
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -50,6 +53,31 @@ Text: {{ c.page_content }}
 
 Please answer the following question: \n{{ query }}"""
 EXPECTED_RESPONSE = "Ransomware, Phishing, Malware, Denial of Service, SQL injection, and Password Attacks"
+
+
+@pytest.fixture(name="milvus_rss_collection", scope="module")
+def fixture_milvus_rss_collection(milvus_server_uri: str):
+    collection_name = "milvus_rss_collection"
+
+    llm_common_path = os.path.join(TEST_DIRS.examples_dir, 'llm/common')
+    needs_sys_path_append = llm_common_path not in sys.path
+    if needs_sys_path_append:
+        sys.path.append(llm_common_path)
+
+    import utils
+
+    df_path = os.path.join(TEST_DIRS.tests_data_dir, 'service/milvus_rss_data.json')
+    df = read_file_to_df(df_path, df_type="cudf")
+    populate_milvus(milvus_server_uri=milvus_server_uri,
+                    collection_name=collection_name,
+                    resource_kwargs=utils.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
+                    df=df,
+                    overwrite=True)
+    yield collection_name
+
+    sys.modules.pop('utils', None)
+    if needs_sys_path_append:
+        sys.path.remove(llm_common_path)
 
 
 def _build_engine(llm_service_name: str,
@@ -130,23 +158,17 @@ def _run_pipeline(config: Config,
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
 def test_rag_standalone_pipe_nemo(config: Config,
                                   mock_nemollm: mock.MagicMock,
-                                  dataset: DatasetManager,
                                   milvus_server_uri: str,
                                   repeat_count: int,
+                                  milvus_rss_collection: str,
                                   import_mod: types.ModuleType):
-    collection_name = "test_rag_standalone_pipe_nemo"
-    populate_milvus(milvus_server_uri=milvus_server_uri,
-                    collection_name=collection_name,
-                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
-                    df=dataset["service/milvus_rss_data.json"],
-                    overwrite=True)
     mock_nemollm.post_process_generate_response.side_effect = [{"text": EXPECTED_RESPONSE} for _ in range(repeat_count)]
     results = _run_pipeline(
         config=config,
         llm_service_name="nemollm",
         model_name="test_model",
         milvus_server_uri=milvus_server_uri,
-        collection_name=collection_name,
+        collection_name=milvus_rss_collection,
         repeat_count=repeat_count,
         utils_mod=import_mod,
     )
@@ -160,9 +182,9 @@ def test_rag_standalone_pipe_nemo(config: Config,
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
 def test_rag_standalone_pipe_openai(config: Config,
                                     mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
-                                    dataset: DatasetManager,
                                     milvus_server_uri: str,
                                     repeat_count: int,
+                                    milvus_rss_collection: str,
                                     import_mod: types.ModuleType):
     os.environ['OPENAI_API_KEY'] = "test"
 
@@ -171,19 +193,12 @@ def test_rag_standalone_pipe_openai(config: Config,
         mk_mock_openai_response([EXPECTED_RESPONSE]) for _ in range(repeat_count)
     ]
 
-    collection_name = "test_rag_standalone_pipe_openai"
-    populate_milvus(milvus_server_uri=milvus_server_uri,
-                    collection_name=collection_name,
-                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
-                    df=dataset["service/milvus_rss_data.json"],
-                    overwrite=True)
-
     results = _run_pipeline(
         config=config,
         llm_service_name="openai",
         model_name="test_model",
         milvus_server_uri=milvus_server_uri,
-        collection_name=collection_name,
+        collection_name=milvus_rss_collection,
         repeat_count=repeat_count,
         utils_mod=import_mod,
     )
@@ -199,22 +214,17 @@ def test_rag_standalone_pipe_openai(config: Config,
 @pytest.mark.parametrize("repeat_count", [5])
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
 def test_rag_standalone_pipe_integration_nemo(config: Config,
-                                              dataset: DatasetManager,
                                               milvus_server_uri: str,
                                               repeat_count: int,
+                                              milvus_rss_collection: str,
                                               import_mod: types.ModuleType):
-    collection_name = "test_rag_standalone_pipe__integration_nemo"
-    populate_milvus(milvus_server_uri=milvus_server_uri,
-                    collection_name=collection_name,
-                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
-                    df=dataset["service/milvus_rss_data.json"],
-                    overwrite=True)
+
     results = _run_pipeline(
         config=config,
         llm_service_name="nemollm",
         model_name="gpt-43b-002",
         milvus_server_uri=milvus_server_uri,
-        collection_name=collection_name,
+        collection_name=milvus_rss_collection,
         repeat_count=repeat_count,
         utils_mod=import_mod,
     )
@@ -231,23 +241,17 @@ def test_rag_standalone_pipe_integration_nemo(config: Config,
 @pytest.mark.parametrize("repeat_count", [5])
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
 def test_rag_standalone_pipe_integration_openai(config: Config,
-                                                dataset: DatasetManager,
                                                 milvus_server_uri: str,
                                                 repeat_count: int,
+                                                milvus_rss_collection: str,
                                                 import_mod: types.ModuleType):
-    collection_name = "test_rag_standalone_pipe_integration_openai"
-    populate_milvus(milvus_server_uri=milvus_server_uri,
-                    collection_name=collection_name,
-                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
-                    df=dataset["service/milvus_rss_data.json"],
-                    overwrite=True)
 
     results = _run_pipeline(
         config=config,
         llm_service_name="openai",
         model_name="gpt-3.5-turbo",
         milvus_server_uri=milvus_server_uri,
-        collection_name=collection_name,
+        collection_name=milvus_rss_collection,
         repeat_count=repeat_count,
         utils_mod=import_mod,
     )
