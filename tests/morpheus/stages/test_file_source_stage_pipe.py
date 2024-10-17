@@ -25,6 +25,7 @@ from _utils import assert_results
 from morpheus.common import FileTypes
 from morpheus.common import determine_file_type
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
@@ -47,7 +48,7 @@ def test_file_source_stage_pipe(config: Config, input_file: str, filter_null: bo
     parser_kwargs = {}
     if determine_file_type(input_file) == FileTypes.JSON:
         # kwarg specific to pandas.read_json
-        parser_kwargs['convert_dates'] = False
+        parser_kwargs['convert_dates'] = config.execution_mode == ExecutionMode.CPU
 
     expected_df = read_file_to_df(file_name=input_file,
                                   filter_nulls=filter_null,
