@@ -42,11 +42,15 @@ zookeeper_proc = None
 
 @pytest.fixture(name='kafka_topics', scope='function')
 def kafka_topics_fixture():
-    yield KafkaTopics(f'morpheus_unittest_input_{time.time()}', f'morpheus_unittest_output_{time.time()}')
+    """
+    Every test receives a unique pair of Kafka topics
+    """
+    ts = time.time()
+    yield KafkaTopics(f'morpheus_unittest_input_{ts}', f'morpheus_unittest_output_{ts}')
 
 
 @pytest.fixture(name='kafka_bootstrap_servers', scope="function")
-def kafka_bootstrap_servers_fixture(kafka_server: (subprocess.Popen, int)):  # pylint: disable=redefined-outer-name
+def kafka_bootstrap_servers_fixture(kafka_server: tuple[subprocess.Popen, int]):  # pylint: disable=redefined-outer-name
     """
     Used by tests that require both an input and an output topic
     """
