@@ -19,14 +19,13 @@ import typing
 
 import mrc
 
-# pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.cli import register_stage
 from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
@@ -35,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("from-file", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
-class FileSourceStage(PreallocatorMixin, SingleOutputSource):
+class FileSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Load messages from a file.
 
@@ -140,17 +139,14 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
             filter_nulls=self._filter_null,
             filter_null_columns=self._filter_null_columns,
             parser_kwargs=self._parser_kwargs,
-            df_type="cudf",
+            df_type=self.df_type_str,
         )
 
         for i in range(self._repeat_count):
             if not subscription.is_subscribed():
                 break
 
-            if (self._build_cpp_node()):
-                x = CppMessageMeta(df)
-            else:
-                x = MessageMeta(df)
+            x = MessageMeta(df)
 
             # If we are looping, copy the object. Do this before we push the object in case it changes
             if (i + 1 < self._repeat_count):

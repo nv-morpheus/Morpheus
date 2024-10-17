@@ -24,8 +24,6 @@ from functools import partial
 import fsspec
 import pandas as pd
 
-import cudf
-
 from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import DataFrameInputSchema
@@ -130,7 +128,7 @@ class FileToDFController:
         self._downloader = Downloader(download_method=download_method)
 
     def _get_or_create_dataframe_from_batch(
-            self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[cudf.DataFrame, bool]:
+            self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[pd.DataFrame, bool]:
 
         if (not file_object_batch):
             raise RuntimeError("No file objects to process")
@@ -209,7 +207,7 @@ class FileToDFController:
 
         Returns
         -------
-        cudf.DataFrame
+        pd.DataFrame
             The resulting DataFrame.
         """
 

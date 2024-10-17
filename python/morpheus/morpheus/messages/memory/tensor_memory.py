@@ -16,30 +16,30 @@
 import dataclasses
 import typing
 
-import cupy as cp
-
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageData
+from morpheus.utils.type_aliases import NDArrayType
+from morpheus.utils.type_aliases import TensorMapType
 
 
 @dataclasses.dataclass(init=False)
 class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
     """
     This is a base container class for data that will be used for inference stages. This class is designed to
-    hold generic tensor data in cupy arrays.
+    hold generic tensor data in either CuPy or NumPy arrays.
 
     Parameters
     ----------
     count : int
         Length of each tensor contained in `tensors`.
-    tensors : typing.Dict[str, cupy.ndarray]
+    tensors : TensorMapType
         Collection of tensors uniquely identified by a name.
 
     """
     count: int
-    tensors: typing.Dict[str, cp.ndarray] = dataclasses.field(repr=False)
+    tensors: TensorMapType = dataclasses.field(repr=False)
 
-    def __init__(self, *, count: int = None, tensors: typing.Dict[str, cp.ndarray] = None):
+    def __init__(self, *, count: int = None, tensors: TensorMapType = None):
 
         self.count = count
 
@@ -50,11 +50,11 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         self._tensors = tensors
 
-    def _check_tensors(self, tensors: typing.Dict[str, cp.ndarray]):
+    def _check_tensors(self, tensors: TensorMapType):
         for tensor in tensors.values():
             self._check_tensor(tensor)
 
-    def _check_tensor(self, tensor: cp.ndarray):
+    def _check_tensor(self, tensor: NDArrayType):
         if (tensor.shape[0] != self.count):
             class_name = type(self).__name__
             raise ValueError(
@@ -96,18 +96,18 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         Returns
         -------
-        typing.Dict[str, cp.ndarray]
+        TensorMapType
         """
         return self._tensors
 
-    def set_tensors(self, tensors: typing.Dict[str, cp.ndarray]):
+    def set_tensors(self, tensors: TensorMapType):
         """
         Overwrite the tensors stored by this instance. If the length of the tensors has changed, then the `count`
         property should also be updated.
 
         Parameters
         ----------
-        tensors : typing.Dict[str, cupy.ndarray]
+        tensors : TensorMapType
             Collection of tensors uniquely identified by a name.
         """
         self._check_tensors(tensors)
@@ -124,7 +124,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         Returns
         -------
-        cupy.ndarray
+        NDArrayType
             Tensor.
 
         Raises
@@ -145,7 +145,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         Returns
         -------
-        cupy.ndarray
+        NDArrayType
             Tensor.
 
         Raises
@@ -158,7 +158,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         except KeyError as e:
             raise AttributeError from e
 
-    def set_tensor(self, name: str, tensor: cp.ndarray):
+    def set_tensor(self, name: str, tensor: NDArrayType):
         """
         Update the tensor identified by `name`.
 
@@ -166,15 +166,13 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         ----------
         name : str
             Tensor key name.
-        tensor : cupy.ndarray
-            Tensor as a CuPy array.
+        tensor : NDArrayType
+            Tensor as either a CuPy or NumPy array.
 
         Raises
         ------
         ValueError
             If the number of rows in `tensor` does not match `count`
         """
-        # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-        reshaped_tensor = tensor if tensor.ndim == 2 else cp.reshape(tensor, (tensor.shape[0], -1))
-        self._check_tensor(reshaped_tensor)
-        self._tensors[name] = reshaped_tensor
+        self._check_tensor(tensor)
+        self._tensors[name] = tensor

@@ -27,9 +27,10 @@ import mrc
 import requests
 import requests_cache
 
-import cudf
-
 from morpheus.messages import MessageMeta
+from morpheus.utils.type_aliases import DataFrameModule
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import get_df_class
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +106,8 @@ class RSSController:
                  strip_markup: bool = False,
                  stop_after: int = 0,
                  interval_secs: float = 600,
-                 should_stop_fn: Callable[[], bool] = None):
+                 should_stop_fn: Callable[[], bool] = None,
+                 df_type: DataFrameModule = "cudf"):
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
@@ -141,6 +143,7 @@ class RSSController:
         self._run_indefinitely = run_indefinitely
         self._interval_secs = interval_secs
         self._interval_td = timedelta(seconds=self._interval_secs)
+        self._df_class: type[DataFrameType] = get_df_class(df_type)
 
         self._enable_cache = enable_cache
 
@@ -349,7 +352,7 @@ class RSSController:
 
         Yeilds
         ------
-        cudf.DataFrame
+        DataFrameType
             A DataFrame containing feed entry data.
 
         Raises
@@ -374,14 +377,14 @@ class RSSController:
                         entry_accumulator.append(entry)
 
                         if self._batch_size > 0 and len(entry_accumulator) >= self._batch_size:
-                            yield cudf.DataFrame(entry_accumulator)
+                            yield self._df_class(entry_accumulator)
                             entry_accumulator.clear()
 
             self._previous_entries = current_entries
 
             # Yield any remaining entries.
             if entry_accumulator:
-                yield cudf.DataFrame(entry_accumulator)
+                yield self._df_class(entry_accumulator)
             else:
                 logger.debug("No new entries found.")
 

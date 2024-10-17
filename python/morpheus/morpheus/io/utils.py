@@ -14,14 +14,21 @@
 # limitations under the License.
 """IO utilities."""
 
+import functools
 import logging
+import typing
 
 import pandas as pd
 
-import cudf
-
+from morpheus.config import ExecutionMode
+from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import SeriesType
+from morpheus.utils.type_utils import df_type_str_to_exec_mode
+from morpheus.utils.type_utils import is_cudf_type
+
+if typing.TYPE_CHECKING:
+    import cudf
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +51,7 @@ def filter_null_data(x: DataFrameType, column_name: str = "data") -> DataFrameTy
     return x[~x[column_name].isna()]
 
 
-def cudf_string_cols_exceed_max_bytes(df: cudf.DataFrame, column_max_bytes: dict[str, int]) -> bool:
+def cudf_string_cols_exceed_max_bytes(df: "cudf.DataFrame", column_max_bytes: dict[str, int]) -> bool:
     """
     Checks a cudf DataFrame for string columns that exceed a maximum number of bytes and thus need to be truncated by
     calling `truncate_string_cols_by_bytes`.
@@ -64,6 +71,7 @@ def cudf_string_cols_exceed_max_bytes(df: cudf.DataFrame, column_max_bytes: dict
     bool
         True if truncation is needed, False otherwise.
     """
+    import cudf
     if not isinstance(df, cudf.DataFrame):
         raise ValueError("Expected cudf DataFrame")
 
@@ -101,7 +109,7 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
     """
 
     performed_truncation = False
-    is_cudf = isinstance(df, cudf.DataFrame)
+    is_cudf = is_cudf_type(df)
 
     for (col, max_bytes) in column_max_bytes.items():
         series: SeriesType = df[col]
@@ -124,8 +132,90 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
             decoded_series = truncated_series.str.decode(encoding='utf-8', errors='ignore')
 
             if is_cudf:
+                import cudf
                 df[col] = cudf.Series.from_pandas(decoded_series)
             else:
                 df[col] = decoded_series
 
     return performed_truncation
+
+
+def _selector_to_exec_mode(selector: DataFrameModule | ExecutionMode) -> ExecutionMode:
+    if not isinstance(selector, ExecutionMode):
+        execution_mode = df_type_str_to_exec_mode(selector)
+    else:
+        execution_mode = selector
+
+    return execution_mode
+
+
+def _get_df_method(selector: DataFrameModule | ExecutionMode, method_name: str) -> typing.Callable[..., DataFrameType]:
+    """
+    Return the appropriate DataFrame method based on the execution mode.
+    """
+    execution_mode = _selector_to_exec_mode(selector)
+
+    if (execution_mode == ExecutionMode.GPU):
+        import cudf
+        method = getattr(cudf, method_name)
+    else:
+        method = getattr(pd, method_name)
+
+    return method
+
+
+@typing.overload
+def get_csv_reader(selector: DataFrameModule) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+@typing.overload
+def get_csv_reader(selector: ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+def get_csv_reader(selector: DataFrameModule | ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    """
+    Return the appropriate CSV reader based on the execution mode.
+    """
+    return _get_df_method(selector, 'read_csv')
+
+
+@typing.overload
+def get_json_reader(selector: DataFrameModule) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+@typing.overload
+def get_json_reader(selector: ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+def get_json_reader(selector: DataFrameModule | ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    """
+    Return the appropriate JSON reader based on the execution mode.
+    """
+    execution_mode = _selector_to_exec_mode(selector)
+    reader = _get_df_method(execution_mode, 'read_json')
+
+    if (execution_mode == ExecutionMode.GPU):
+        reader = functools.partial(reader, engine='cudf')
+
+    return reader
+
+
+@typing.overload
+def get_parquet_reader(selector: DataFrameModule) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+@typing.overload
+def get_parquet_reader(selector: ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+def get_parquet_reader(selector: DataFrameModule | ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    """
+    Return the appropriate Parquet reader based on the execution mode.
+    """
+    return _get_df_method(selector, 'read_parquet')

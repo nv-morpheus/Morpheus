@@ -17,6 +17,14 @@ import types
 import typing
 from collections import defaultdict
 
+import numpy as np
+import pandas as pd
+
+from morpheus.config import CppConfig
+from morpheus.config import ExecutionMode
+from morpheus.utils.type_aliases import DataFrameModule
+from morpheus.utils.type_aliases import DataFrameType
+
 # pylint: disable=invalid-name
 T_co = typing.TypeVar("T_co", covariant=True)
 
@@ -162,3 +170,129 @@ def get_full_qualname(klass: type) -> str:
     if module == '__builtin__':
         return klass.__qualname__
     return module + '.' + klass.__qualname__
+
+
+def df_type_str_to_exec_mode(df_type_str: DataFrameModule) -> ExecutionMode:
+    """
+    Return the appropriate execution mode based on the DataFrame type string.
+    """
+    if df_type_str == "cudf":
+        return ExecutionMode.GPU
+    if df_type_str == "pandas":
+        return ExecutionMode.CPU
+
+    valid_values = ", ".join(typing.get_args(DataFrameModule))
+    raise ValueError(f"Invalid DataFrame type string: {df_type_str}, valid values are: {valid_values}")
+
+
+def exec_mode_to_df_type_str(execution_mode: ExecutionMode) -> DataFrameModule:
+    if execution_mode == ExecutionMode.GPU:
+        return "cudf"
+
+    return "pandas"
+
+
+def cpp_mode_to_exec_mode() -> ExecutionMode:
+    if CppConfig.get_should_use_cpp():
+        return ExecutionMode.GPU
+    return ExecutionMode.CPU
+
+
+def df_type_str_to_pkg(df_type_str: DataFrameModule) -> types.ModuleType:
+    """
+    Return the appropriate DataFrame package based on the DataFrame type string.
+    """
+    if df_type_str == "cudf":
+        import cudf
+        return cudf
+    if df_type_str == "pandas":
+        return pd
+
+    valid_values = ", ".join(typing.get_args(DataFrameModule))
+    raise ValueError(f"Invalid DataFrame type string: {df_type_str}, valid values are: {valid_values}")
+
+
+@typing.overload
+def get_df_pkg(selector: DataFrameModule = None) -> types.ModuleType:
+    ...
+
+
+@typing.overload
+def get_df_pkg(selector: ExecutionMode = None) -> types.ModuleType:
+    ...
+
+
+def get_df_pkg(selector: ExecutionMode | DataFrameModule = None) -> types.ModuleType:
+    """
+    Return the appropriate DataFrame package based on the execution mode.
+    """
+    if selector is None:
+        execution_mode = cpp_mode_to_exec_mode()
+    elif not isinstance(selector, ExecutionMode):
+        execution_mode = df_type_str_to_exec_mode(selector)
+    else:
+        execution_mode = selector
+
+    if execution_mode == ExecutionMode.GPU:
+        import cudf
+        return cudf
+
+    return pd
+
+
+@typing.overload
+def get_df_class(selector: DataFrameModule = None) -> type[DataFrameType]:
+    ...
+
+
+@typing.overload
+def get_df_class(selector: ExecutionMode = None) -> type[DataFrameType]:
+    ...
+
+
+def get_df_class(selector: ExecutionMode | DataFrameModule = None) -> type[DataFrameType]:
+    """
+    Return the appropriate DataFrame class based on the execution mode.
+    """
+    df_pkg = get_df_pkg(selector)
+    return df_pkg.DataFrame
+
+
+def is_cudf_type(obj: typing.Any) -> bool:
+    """
+    Check if a given object (DataFrame, Series, RangeIndex etc...) is a cuDF type.
+    """
+    return "cudf" in str(type(obj))
+
+
+def get_df_pkg_from_obj(obj: typing.Any) -> types.ModuleType:
+    """
+    Return the appropriate DataFrame package based on the DataFrame object.
+    """
+    if is_cudf_type(obj):
+        import cudf
+        return cudf
+
+    return pd
+
+
+def is_dataframe(obj: typing.Any) -> bool:
+    """
+    Check if a given object is a pandas or cudf DataFrame.
+    """
+    df_pkg = get_df_pkg_from_obj(obj)
+    return isinstance(obj, df_pkg.DataFrame)
+
+
+def get_array_pkg(execution_mode: ExecutionMode = None) -> types.ModuleType:
+    """
+    Return the appropriate array package (CuPy for GPU, NumPy for CPU) based on the execution mode.
+    """
+    if execution_mode is None:
+        execution_mode = cpp_mode_to_exec_mode()
+
+    if execution_mode == ExecutionMode.GPU:
+        import cupy
+        return cupy
+
+    return np

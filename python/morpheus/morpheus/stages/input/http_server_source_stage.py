@@ -23,11 +23,11 @@ from io import StringIO
 
 import mrc
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.io.utils import get_json_reader
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
@@ -35,6 +35,7 @@ from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import HttpParseResponse
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.producer_consumer_queue import Closed
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ HEALTH_SUPPORTED_METHODS = (HTTPMethod.GET, HTTPMethod.POST)
 
 
 @register_stage("from-http")
-class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
+class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Source stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
 
@@ -81,7 +82,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     payload_to_df_fn : callable, default None
         A callable that takes the HTTP payload string as the first argument and the `lines` parameter is passed in as
-        the second argument and returns a cudf.DataFrame. When supplied, the C++ implementation of this stage is
+        the second argument and returns a DataFrame. When supplied, the C++ implementation of this stage is
         disabled, and the Python impl is used.
     """
 
@@ -104,7 +105,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                  request_timeout_secs: int = 30,
                  lines: bool = False,
                  stop_after: int = 0,
-                 payload_to_df_fn: typing.Callable[[str, bool], cudf.DataFrame] = None):
+                 payload_to_df_fn: typing.Callable[[str, bool], DataFrameType] = None):
         super().__init__(config)
         self._bind_address = bind_address
         self._port = port
@@ -123,8 +124,10 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         self._request_timeout_secs = request_timeout_secs
         self._lines = lines
         self._stop_after = stop_after
-        self._payload_to_df_fn = payload_to_df_fn
         self._http_server = None
+
+        # Leave this as None so we can check if it's set later
+        self._payload_to_df_fn = payload_to_df_fn
 
         # These are only used when C++ mode is disabled
         self._queue = None
@@ -163,12 +166,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def _parse_payload(self, payload: str) -> HttpParseResponse:
         try:
-            if self._payload_to_df_fn is not None:
-                df = self._payload_to_df_fn(payload, self._lines)
-            else:
-                # engine='cudf' is needed when lines=False to avoid using pandas
-                df = cudf.read_json(StringIO(initial_value=payload), lines=self._lines, engine='cudf')
-
+            df = self._payload_to_df_fn(payload, self._lines)
         except Exception as e:
             err_msg = "Error occurred converting HTTP payload to Dataframe"
             logger.error("%s: %s", err_msg, e)
@@ -270,6 +268,10 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                     if self._stop_after > 0 and self._records_emitted >= self._stop_after:
                         self._processing = False
 
+    def _set_default_payload_to_df_fn(self):
+        reader = get_json_reader(self._config.execution_mode)
+        self._payload_to_df_fn = lambda payload, lines: reader(StringIO(initial_value=payload), lines=lines)
+
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node() and self._payload_to_df_fn is None:
             import morpheus._lib.stages as _stages
@@ -289,6 +291,9 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                                                  lines=self._lines,
                                                  stop_after=self._stop_after)
         else:
+            if self._payload_to_df_fn is None:
+                self._set_default_payload_to_df_fn()
+
             node = builder.make_source(self.unique_name, self._generate_frames)
 
         return node

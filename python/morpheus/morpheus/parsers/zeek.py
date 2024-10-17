@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
+from morpheus.io.utils import get_csv_reader
+from morpheus.utils.type_aliases import DataFrameModule
+from morpheus.utils.type_aliases import DataFrameType
 
 TYPE_DICT = {
     "bool": "bool",
@@ -36,7 +38,7 @@ TYPE_DICT = {
 }
 
 
-def parse(filepath: str) -> cudf.DataFrame:
+def parse(filepath: str, df_type: DataFrameModule = "cudf") -> DataFrameType:
     """
     Parse Zeek log file and return cuDF dataframe. Uses header comments to get column names/types
     and configure parser.
@@ -45,20 +47,23 @@ def parse(filepath: str) -> cudf.DataFrame:
     ----------
     filepath : str
         File path of Zeek log file
+    df_type : DataFrameTypeStr, default 'cudf'
+        Type of dataframe to return. Either 'cudf' or 'pandas'
 
     Returns
     -------
-    cudf.DataFrame
+    DataFrameType
         Parsed Zeek log dataframe
     """
-    header_gdf = cudf.read_csv(filepath, names=["line"], nrows=8)
+    csv_reader = get_csv_reader(df_type)
+    header_gdf = csv_reader(filepath, names=["line"], nrows=8)
     lines_gdf = header_gdf["line"].str.split()
 
     column_names = lines_gdf.iloc[6][1:]
     column_types = lines_gdf.iloc[7][1:]
     column_dtypes = list(map(lambda x: TYPE_DICT.get(x, "str"), column_types))
 
-    log_gdf = cudf.read_csv(
+    log_gdf = csv_reader(
         filepath,
         delimiter="\t",
         dtype=column_dtypes,

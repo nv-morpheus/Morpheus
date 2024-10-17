@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("validate")
-class ValidationStage(CompareDataFrameStage):
+class ValidationStage(CompareDataFrameStage):  # pylint: disable=too-many-ancestors
     """
     Validate pipeline output for testing.
 
