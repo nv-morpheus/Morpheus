@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from morpheus.utils.io.utils import get_csv_reader
 from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import get_df_pkg
@@ -55,15 +56,15 @@ def parse(filepath: str, df_type: DataFrameModule = "cudf") -> DataFrameType:
     DataFrameType
         Parsed Zeek log dataframe
     """
-    df_pkg = get_df_pkg(df_type)
-    header_gdf = df_pkg.read_csv(filepath, names=["line"], nrows=8)
+    csv_reader = get_csv_reader(df_type)
+    header_gdf = csv_reader(filepath, names=["line"], nrows=8)
     lines_gdf = header_gdf["line"].str.split()
 
     column_names = lines_gdf.iloc[6][1:]
     column_types = lines_gdf.iloc[7][1:]
     column_dtypes = list(map(lambda x: TYPE_DICT.get(x, "str"), column_types))
 
-    log_gdf = df_pkg.read_csv(
+    log_gdf = csv_reader(
         filepath,
         delimiter="\t",
         dtype=column_dtypes,
