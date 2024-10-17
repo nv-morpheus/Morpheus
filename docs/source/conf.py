@@ -199,6 +199,7 @@ linkcheck_ignore = [
     r'^http://$',
     r'^https://$',
     r'https://(platform\.)?openai.com',
+    r'https://code.visualstudio.com'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
