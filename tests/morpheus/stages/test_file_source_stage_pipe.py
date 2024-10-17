@@ -32,6 +32,7 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
 
 @pytest.mark.slow
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.parametrize("input_file",
                          [
                              os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"),
