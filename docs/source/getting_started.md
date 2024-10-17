@@ -19,6 +19,7 @@ limitations under the License.
 
 There are three ways to get started with Morpheus:
 - [Using pre-built Docker containers](#using-pre-built-docker-containers)
+- [Using the morpheus conda packages](#using-morpheus-conda-packages)
 - [Building the Morpheus Docker container](#building-the-morpheus-container)
 - [Building Morpheus from source](./developer_guide/contributing.md#building-from-source)
 
@@ -77,6 +78,9 @@ Once launched, users wishing to launch Triton using the included Morpheus models
 ```
 
 Skip ahead to the [Acquiring the Morpheus Models Container](#acquiring-the-morpheus-models-container) section.
+
+## Using Morpheus Conda Packages
+TBD
 
 ## Building the Morpheus Container
 ### Clone the Repository
