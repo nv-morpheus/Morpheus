@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from morpheus.utils.io.utils import get_csv_reader
+from morpheus.io.utils import get_csv_reader
 from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_utils import get_df_pkg
 
 TYPE_DICT = {
     "bool": "bool",
