@@ -29,7 +29,6 @@ from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.directory_watcher import DirectoryWatcher
-from morpheus.utils.type_utils import get_df_class
 
 
 class AutoencoderSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource):
@@ -99,7 +98,7 @@ class AutoencoderSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSour
         # is good for interleaving source stages.
         self._repeat_count = repeat
 
-        self._df_class = get_df_class(c.execution_mode)
+        self._df_class = self.get_df_class()
 
         self._watcher = DirectoryWatcher(input_glob=input_glob,
                                          watch_directory=watch_directory,
