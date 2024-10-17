@@ -141,16 +141,21 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
 
 
 @typing.overload
-def get_json_reader(df_type_str: DataFrameModule) -> typing.Callable[..., DataFrameType]:
+def get_json_reader(selector: DataFrameModule) -> typing.Callable[..., DataFrameType]:
     ...
 
+@typing.overload
+def get_json_reader(selector: ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    ...
 
-def get_json_reader(execution_mode: ExecutionMode) -> typing.Callable[..., DataFrameType]:
+def get_json_reader(selector: DataFrameModule| ExecutionMode) -> typing.Callable[..., DataFrameType]:
     """
     Return the appropriate JSON reader based on the execution mode.
     """
-    if not isinstance(execution_mode, ExecutionMode):
-        execution_mode = df_type_str_to_exec_mode(execution_mode)
+    if not isinstance(selector, ExecutionMode):
+        execution_mode = df_type_str_to_exec_mode(selector)
+    else:
+        execution_mode = selector
 
     if (execution_mode == ExecutionMode.GPU):
         import cudf
