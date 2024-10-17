@@ -16,8 +16,6 @@
 import dataclasses
 import typing
 
-import numpy as np
-
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageData
 from morpheus.utils.type_aliases import NDArrayType

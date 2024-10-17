@@ -371,10 +371,10 @@ def test_update_individual_tensor(config: Config):
 
     # Check updated tensor
     assert array_pkg.allclose(retrieved_tensors.get_tensor("input_ids"),
-                       update_data["input_ids"]), "Input IDs update mismatch."
+                              update_data["input_ids"]), "Input IDs update mismatch."
     # Ensure other tensor remains unchanged
     assert array_pkg.allclose(retrieved_tensors.get_tensor("input_mask"),
-                       initial_data["input_mask"]), "Input mask should remain unchanged after updating input_ids."
+                              initial_data["input_mask"]), "input_mask should be unchanged after updating input_ids."
 
 
 @pytest.mark.gpu_and_cpu_mode
@@ -406,9 +406,9 @@ def test_consistency_after_multiple_operations(config: Config):
     retrieved_tensors = message.tensors()
     assert retrieved_tensors.count == 3, "Tensor count mismatch after multiple operations."
     assert array_pkg.allclose(retrieved_tensors.get_tensor("input_ids"),
-                       array_pkg.array([4, 5, 6])), "Mismatch in input_ids after update."
+                              array_pkg.array([4, 5, 6])), "Mismatch in input_ids after update."
     assert array_pkg.allclose(retrieved_tensors.get_tensor("new_tensor"),
-                       new_tensor["new_tensor"]), "New tensor data mismatch."
+                              new_tensor["new_tensor"]), "New tensor data mismatch."
 
 
 class NonSerializablePyClass():

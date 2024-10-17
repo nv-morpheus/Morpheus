@@ -29,15 +29,16 @@ from morpheus.io.utils import get_json_reader
 from morpheus.io.utils import get_parquet_reader
 from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_utils import df_type_str_to_pkg
 
 
 def get_reader(file_type: FileTypes, df_type: DataFrameModule) -> typing.Callable[..., DataFrameType]:
     if (file_type == FileTypes.CSV):
         return get_csv_reader(df_type)
-    elif (file_type == FileTypes.JSON):
+
+    if (file_type == FileTypes.JSON):
         return get_json_reader(df_type)
-    elif (file_type == FileTypes.PARQUET):
+
+    if (file_type == FileTypes.PARQUET):
         return get_parquet_reader(df_type)
 
     raise ValueError(f"Unsupported file type: {file_type}")
