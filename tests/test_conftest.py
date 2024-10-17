@@ -191,13 +191,8 @@ def test_fixture_neither(execution_mode: ExecutionMode):
 
 
 # === Config Fixture ===
-@pytest.mark.usefixtures("config_no_cpp")
-def test_config_fixture_no_cpp():
-    assert not CppConfig.get_should_use_cpp()
-
-
-@pytest.mark.usefixtures("config_only_cpp")
-def test_config_fixture_only_cpp():
+@pytest.mark.usefixtures("config")
+def test_config_fixture():
     assert CppConfig.get_should_use_cpp()
 
 

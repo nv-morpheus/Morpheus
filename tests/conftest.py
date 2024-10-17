@@ -194,39 +194,6 @@ def pytest_runtest_teardown(item, nextitem):
 
 
 @pytest.fixture(scope="function")
-def config_only_cpp():
-    """
-    Use this fixture in unittest style tests to indicate a lack of support for C++. Use via
-    `@pytest.mark.usefixtures("config_only_cpp")`
-    """
-
-    from morpheus.config import Config
-    from morpheus.config import CppConfig
-
-    CppConfig.set_should_use_cpp(True)
-
-    yield Config()
-
-
-@pytest.fixture(scope="function")
-def config_no_cpp():
-    """
-    Use this fixture in unittest style tests to indicate support for C++. Use via
-    `@pytest.mark.usefixtures("config_no_cpp")`
-    """
-
-    from morpheus.config import Config
-    from morpheus.config import CppConfig
-    from morpheus.config import ExecutionMode
-
-    CppConfig.set_should_use_cpp(False)
-    config = Config()
-    config.execution_mode = ExecutionMode.CPU
-
-    yield config
-
-
-@pytest.fixture(scope="function")
 def df_type(request: pytest.FixtureRequest):
 
     df_type_str: typing.Literal["cudf", "pandas"]
