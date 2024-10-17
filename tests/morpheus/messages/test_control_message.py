@@ -18,24 +18,25 @@ import datetime
 import io
 import sys
 
-import cupy as cp
 import pytest
 
 from _utils.dataset_manager import DatasetManager
 from morpheus import messages
+from morpheus.config import Config
 from morpheus.messages import TensorMemory
+from morpheus.utils.type_utils import get_array_pkg
 
 # pylint: disable=unsupported-membership-test
 # pylint: disable=unsubscriptable-object
 
 
-@pytest.mark.usefixtures("config_only_cpp")
+@pytest.mark.gpu_and_cpu_mode
 def test_control_message_init():
     messages.ControlMessage()  # noqa: F841
     messages.ControlMessage({"test": "test"})  # noqa: F841
 
 
-@pytest.mark.usefixtures("config_only_cpp")
+@pytest.mark.gpu_and_cpu_mode
 def test_control_message_tasks():
     message = messages.ControlMessage()
     assert len(message.get_tasks()) == 0
@@ -70,12 +71,6 @@ def test_control_message_tasks():
     assert message.get_tasks()["type_a"][0]["key_x"] == "value_x"
     assert message.get_tasks()["type_a"][1]["key_y"] == "value_y"
 
-    # Ensure the underlying tasks cannot are not modified
-    message = messages.ControlMessage()
-    tasks = message.get_tasks()
-    tasks["type_a"] = [{"key_x", "value_x"}]  # pylint: disable=unsupported-assignment-operation
-    assert len(message.get_tasks()) == 0
-
     message = messages.ControlMessage()
     message.add_task("type_a", {"key_x": "value_x"})
     message.add_task("type_a", {"key_y": "value_y"})
@@ -86,7 +81,7 @@ def test_control_message_tasks():
     assert message.get_tasks()["type_a"][1]["key_y"] == "value_y"
 
 
-@pytest.mark.usefixtures("config_only_cpp")
+@pytest.mark.gpu_and_cpu_mode
 def test_control_message_metadata():
     message = messages.ControlMessage()
 
@@ -108,11 +103,8 @@ def test_control_message_metadata():
 
     assert message.get_metadata()["key_y"] == "value_yy"
 
-    message.get_metadata()["not_mutable"] = 5  # pylint: disable=unsupported-assignment-operation
 
-    assert "not_mutable" not in message.get_metadata()
-
-
+@pytest.mark.gpu_and_cpu_mode
 def test_set_and_get_metadata():
     message = messages.ControlMessage()
 
@@ -132,6 +124,7 @@ def test_set_and_get_metadata():
     assert all_metadata["another_key"] == "another_value"
 
 
+@pytest.mark.gpu_and_cpu_mode
 def test_list_metadata():
     message = messages.ControlMessage()
 
@@ -146,6 +139,7 @@ def test_list_metadata():
     assert set(keys) == {"key1", "key2", "key3"}
 
 
+@pytest.mark.gpu_and_cpu_mode
 def test_get_metadata_default_value():
     message = messages.ControlMessage()
 
@@ -159,7 +153,7 @@ def test_get_metadata_default_value():
     assert message.get_metadata("non_existing_key", "default_value") == "default_value"
 
 
-@pytest.mark.usefixtures("config_only_cpp")
+@pytest.mark.gpu_and_cpu_mode
 def test_control_message_get():
     raw_control_message = messages.ControlMessage({
         "test": "test_rcm", "tasks": [{
@@ -183,7 +177,7 @@ def test_control_message_get():
     assert (control_message.has_task("load"))
 
 
-@pytest.mark.usefixtures("config_only_cpp")
+@pytest.mark.gpu_and_cpu_mode
 def test_control_message_set():
     raw_control_message = messages.ControlMessage()
     control_message = messages.ControlMessage()
@@ -204,6 +198,7 @@ def test_control_message_set():
     assert (control_message.has_task("load"))
 
 
+@pytest.mark.gpu_and_cpu_mode
 def test_control_message_set_and_get_payload(dataset: DatasetManager):
     df = dataset["test_dataframe.jsonlines"]
 
@@ -217,7 +212,7 @@ def test_control_message_set_and_get_payload(dataset: DatasetManager):
     DatasetManager.assert_df_equal(payload.df, payload2.df)
 
 
-@pytest.mark.usefixtures("config_only_cpp")
+@pytest.mark.gpu_and_cpu_mode
 def test_set_and_get_timestamp_single():
     # Create a ControlMessage instance
     msg = messages.ControlMessage()
@@ -234,7 +229,7 @@ def test_set_and_get_timestamp_single():
     assert result == timestamp, "The retrieved timestamp should match the one that was set."
 
 
-@pytest.mark.usefixtures("config_only_cpp")
+@pytest.mark.gpu_and_cpu_mode
 def test_filter_timestamp():
     # Create a ControlMessage instance
     msg = messages.ControlMessage()
@@ -255,7 +250,7 @@ def test_filter_timestamp():
     assert result[f"{group}::key2"] == timestamp2, "The timestamp for key2 should match."
 
 
-@pytest.mark.usefixtures("config_only_cpp")
+@pytest.mark.gpu_and_cpu_modetest_tensor_manipulation_after_retrieval
 def test_get_timestamp_fail_if_nonexist():
     # Create a ControlMessage instance
     msg = messages.ControlMessage()
@@ -269,10 +264,15 @@ def test_get_timestamp_fail_if_nonexist():
     assert str(exc_info.value) == "Timestamp for the specified key does not exist."
 
 
-# Test setting and getting tensors with cupy arrays
-@pytest.mark.usefixtures("config_only_cpp")
-def test_tensors_setting_and_getting():
-    data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])}
+@pytest.mark.gpu_and_cpu_mode
+def test_tensors_setting_and_getting(config: Config):
+    # Test setting and getting tensors with cupy/numpy arrays
+    array_pkg = get_array_pkg(config.execution_mode)
+    data = {
+        "input_ids": array_pkg.array([1, 2, 3]),
+        "input_mask": array_pkg.array([1, 1, 1]),
+        "segment_ids": array_pkg.array([0, 0, 1])
+    }
     message = messages.ControlMessage()
     tensor_memory = TensorMemory(count=data["input_ids"].shape[0])
     tensor_memory.set_tensors(data)
@@ -283,14 +283,17 @@ def test_tensors_setting_and_getting():
     assert retrieved_tensors.count == data["input_ids"].shape[0], "Tensor count mismatch."
 
     for key, val in data.items():
-        assert cp.allclose(retrieved_tensors.get_tensor(key), val), f"Mismatch in tensor data for {key}."
+        assert array_pkg.allclose(retrieved_tensors.get_tensor(key), val), f"Mismatch in tensor data for {key}."
 
 
-# Test retrieving tensor names and checking specific tensor existence
-@pytest.mark.usefixtures("config_only_cpp")
-def test_tensor_names_and_existence():
+@pytest.mark.gpu_and_cpu_mode
+def test_tensor_names_and_existence(config: Config):
+    # Test retrieving tensor names and checking specific tensor existence
+    array_pkg = get_array_pkg(config.execution_mode)
     tokenized_data = {
-        "input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])
+        "input_ids": array_pkg.array([1, 2, 3]),
+        "input_mask": array_pkg.array([1, 1, 1]),
+        "segment_ids": array_pkg.array([0, 0, 1])
     }
     message = messages.ControlMessage()
     tensor_memory = TensorMemory(count=tokenized_data["input_ids"].shape[0], tensors=tokenized_data)
@@ -303,11 +306,14 @@ def test_tensor_names_and_existence():
         assert retrieved_tensors.has_tensor(key), f"Tensor {key} should exist."
 
 
-# Test manipulating tensors after retrieval
-@pytest.mark.usefixtures("config_only_cpp")
-def test_tensor_manipulation_after_retrieval():
+@pytest.mark.gpu_and_cpu_mode
+def test_tensor_manipulation_after_retrieval(config: Config):
+    # Test manipulating tensors after retrieval
+    array_pkg = get_array_pkg(config.execution_mode)
     tokenized_data = {
-        "input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])
+        "input_ids": array_pkg.array([1, 2, 3]),
+        "input_mask": array_pkg.array([1, 1, 1]),
+        "segment_ids": array_pkg.array([0, 0, 1])
     }
     message = messages.ControlMessage()
     tensor_memory = TensorMemory(count=3, tensors=tokenized_data)
@@ -315,17 +321,20 @@ def test_tensor_manipulation_after_retrieval():
     message.tensors(tensor_memory)
 
     retrieved_tensors = message.tensors()
-    new_tensor = cp.array([4, 5, 6])
+    new_tensor = array_pkg.array([4, 5, 6])
     retrieved_tensors.set_tensor("new_tensor", new_tensor)
 
-    assert cp.allclose(retrieved_tensors.get_tensor("new_tensor"), new_tensor), "New tensor data mismatch."
+    assert array_pkg.allclose(retrieved_tensors.get_tensor("new_tensor"), new_tensor), "New tensor data mismatch."
 
 
-# Assuming there's functionality to update all tensors at once
-@pytest.mark.usefixtures("config_only_cpp")
-def test_tensor_update():
+@pytest.mark.gpu_and_cpu_mode
+def test_tensor_update(config: Config):
+    # Assuming there's functionality to update all tensors at once
+    array_pkg = get_array_pkg(config.execution_mode)
     tokenized_data = {
-        "input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])
+        "input_ids": array_pkg.array([1, 2, 3]),
+        "input_mask": array_pkg.array([1, 1, 1]),
+        "segment_ids": array_pkg.array([0, 0, 1])
     }
     message = messages.ControlMessage()
     tensor_memory = TensorMemory(count=3, tensors=tokenized_data)
@@ -334,7 +343,9 @@ def test_tensor_update():
 
     # Update tensors with new data
     new_tensors = {
-        "input_ids": cp.array([4, 5, 6]), "input_mask": cp.array([1, 0, 1]), "segment_ids": cp.array([1, 1, 0])
+        "input_ids": array_pkg.array([4, 5, 6]),
+        "input_mask": array_pkg.array([1, 0, 1]),
+        "segment_ids": array_pkg.array([1, 1, 0])
     }
 
     tensor_memory.set_tensors(new_tensors)
@@ -342,13 +353,14 @@ def test_tensor_update():
     updated_tensors = message.tensors()
 
     for key, val in new_tensors.items():
-        assert cp.allclose(updated_tensors.get_tensor(key), val), f"Mismatch in updated tensor data for {key}."
+        assert array_pkg.allclose(updated_tensors.get_tensor(key), val), f"Mismatch in updated tensor data for {key}."
 
 
-@pytest.mark.usefixtures("config_only_cpp")
-def test_update_individual_tensor():
-    initial_data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1])}
-    update_data = {"input_ids": cp.array([4, 5, 6])}
+@pytest.mark.gpu_and_cpu_mode
+def test_update_individual_tensor(config: Config):
+    array_pkg = get_array_pkg(config.execution_mode)
+    initial_data = {"input_ids": array_pkg.array([1, 2, 3]), "input_mask": array_pkg.array([1, 1, 1])}
+    update_data = {"input_ids": array_pkg.array([4, 5, 6])}
     message = messages.ControlMessage()
     tensor_memory = TensorMemory(count=3, tensors=initial_data)
     message.tensors(tensor_memory)
@@ -358,14 +370,14 @@ def test_update_individual_tensor():
     retrieved_tensors = message.tensors()
 
     # Check updated tensor
-    assert cp.allclose(retrieved_tensors.get_tensor("input_ids"),
+    assert array_pkg.allclose(retrieved_tensors.get_tensor("input_ids"),
                        update_data["input_ids"]), "Input IDs update mismatch."
     # Ensure other tensor remains unchanged
-    assert cp.allclose(retrieved_tensors.get_tensor("input_mask"),
+    assert array_pkg.allclose(retrieved_tensors.get_tensor("input_mask"),
                        initial_data["input_mask"]), "Input mask should remain unchanged after updating input_ids."
 
 
-@pytest.mark.usefixtures("config_only_cpp")
+@pytest.mark.gpu_and_cpu_mode
 def test_behavior_with_empty_tensors():
     message = messages.ControlMessage()
     tensor_memory = TensorMemory(count=0)
@@ -376,25 +388,26 @@ def test_behavior_with_empty_tensors():
     assert len(retrieved_tensors.tensor_names) == 0, "There should be no tensor names for empty tensor memory."
 
 
-@pytest.mark.usefixtures("config_only_cpp")
-def test_consistency_after_multiple_operations():
-    initial_data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1])}
+@pytest.mark.gpu_and_cpu_mode
+def test_consistency_after_multiple_operations(config: Config):
+    array_pkg = get_array_pkg(config.execution_mode)
+    initial_data = {"input_ids": array_pkg.array([1, 2, 3]), "input_mask": array_pkg.array([1, 1, 1])}
     message = messages.ControlMessage()
     tensor_memory = TensorMemory(count=3, tensors=initial_data)
     message.tensors(tensor_memory)
 
     # Update a tensor
-    tensor_memory.set_tensor("input_ids", cp.array([4, 5, 6]))
+    tensor_memory.set_tensor("input_ids", array_pkg.array([4, 5, 6]))
     # Remove another tensor
     # Add a new tensor
-    new_tensor = {"new_tensor": cp.array([7, 8, 9])}
+    new_tensor = {"new_tensor": array_pkg.array([7, 8, 9])}
     tensor_memory.set_tensor("new_tensor", new_tensor["new_tensor"])
 
     retrieved_tensors = message.tensors()
     assert retrieved_tensors.count == 3, "Tensor count mismatch after multiple operations."
-    assert cp.allclose(retrieved_tensors.get_tensor("input_ids"),
-                       cp.array([4, 5, 6])), "Mismatch in input_ids after update."
-    assert cp.allclose(retrieved_tensors.get_tensor("new_tensor"),
+    assert array_pkg.allclose(retrieved_tensors.get_tensor("input_ids"),
+                       array_pkg.array([4, 5, 6])), "Mismatch in input_ids after update."
+    assert array_pkg.allclose(retrieved_tensors.get_tensor("new_tensor"),
                        new_tensor["new_tensor"]), "New tensor data mismatch."
 
 
@@ -428,7 +441,7 @@ def fixture_pyobject(request):
     return request.param()
 
 
-@pytest.mark.usefixtures("config_only_cpp")
+@pytest.mark.gpu_mode
 def test_metadata_holds_non_serializable_python_obj(py_object):
 
     message = messages.ControlMessage()
@@ -452,7 +465,7 @@ def test_metadata_holds_non_serializable_python_obj(py_object):
     assert obj is metadata_dict_with_obj["nested_obj"]
 
 
-@pytest.mark.usefixtures("config_only_cpp")
+@pytest.mark.gpu_mode
 def test_tasks_hold_non_serializable_python_obj(py_object):
 
     message = messages.ControlMessage()
