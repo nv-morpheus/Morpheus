@@ -28,8 +28,6 @@ from morpheus.utils.type_utils import is_dataframe
 
 logger = logging.getLogger(__name__)
 
-SupportedTypes = typing.Union[DataFrameType, MessageMeta, ControlMessage, list]
-
 
 class MonitorController:
     """
@@ -59,6 +57,7 @@ class MonitorController:
         Custom implementation of tqdm if required.
     """
 
+    SupportedTypes = typing.Union[DataFrameType, MessageMeta, ControlMessage, list]
     controller_count: int = 0
 
     def __init__(self,
