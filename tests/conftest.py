@@ -1006,6 +1006,26 @@ def bert_cased_vocab_fixture():
     yield os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-vocab.txt')
 
 
+@pytest.fixture(name="morpheus_dfp", scope='session')
+def morpheus_dfp_fixture(fail_missing: bool):
+    """
+    Fixture to ensure morpheus_dfp is installed
+    """
+    yield import_or_skip("morpheus_dfp",
+                         reason=OPT_DEP_SKIP_REASON.format(package="morpheus_dfp"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(name="morpheus_llm", scope='session')
+def morpheus_llm_fixture(fail_missing: bool):
+    """
+    Fixture to ensure morpheus_llm is installed
+    """
+    yield import_or_skip("morpheus_llm",
+                         reason=OPT_DEP_SKIP_REASON.format(package="morpheus_llm"),
+                         fail_missing=fail_missing)
+
+
 @pytest.fixture(name="nemollm", scope='session')
 def nemollm_fixture(fail_missing: bool):
     """
