@@ -18,6 +18,7 @@ from typing import Dict
 from typing import Optional
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,4 @@ class DeserializeSchema(BaseModel):
     batch_size: int = 1024
     max_concurrency: int = 1
     should_log_timestamp: bool = True
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra='forbid')

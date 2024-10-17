@@ -19,6 +19,7 @@ import queue
 import time
 import typing
 from http import HTTPStatus
+from io import StringIO
 
 import mrc
 
@@ -269,7 +270,7 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
 
     def _set_default_payload_to_df_fn(self):
         reader = get_json_reader(self._config.execution_mode)
-        self._payload_to_df_fn = lambda payload, lines: reader(payload, lines=lines)
+        self._payload_to_df_fn = lambda payload, lines: reader(StringIO(initial_value=payload), lines=lines)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node() and self._payload_to_df_fn is None:

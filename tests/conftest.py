@@ -36,7 +36,6 @@ from _utils.kafka import _init_pytest_kafka
 from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
 from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
 from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
-from morpheus.utils.shared_process_pool import SharedProcessPool
 
 if typing.TYPE_CHECKING:
     from morpheus.config import ExecutionMode
@@ -1057,6 +1056,32 @@ def openai_fixture(fail_missing: bool):
     yield import_or_skip("openai", reason=OPT_DEP_SKIP_REASON.format(package="openai"), fail_missing=fail_missing)
 
 
+@pytest.fixture(scope='session')
+def dask_distributed(fail_missing: bool):
+    """
+    Mark tests requiring dask.distributed
+    """
+    yield import_or_skip("dask.distributed",
+                         reason=OPT_DEP_SKIP_REASON.format(package="dask.distributed"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(scope='session')
+def dask_cuda(fail_missing: bool):
+    """
+    Mark tests requiring dask_cuda
+    """
+    yield import_or_skip("dask_cuda", reason=OPT_DEP_SKIP_REASON.format(package="dask_cuda"), fail_missing=fail_missing)
+
+
+@pytest.fixture(scope='session')
+def mlflow(fail_missing: bool):
+    """
+    Mark tests requiring mlflow
+    """
+    yield import_or_skip("mlflow", reason=OPT_DEP_SKIP_REASON.format(package="mlflow"), fail_missing=fail_missing)
+
+
 @pytest.fixture(name="langchain", scope='session')
 def langchain_fixture(fail_missing: bool):
     """
@@ -1156,6 +1181,8 @@ def mock_subscription_fixture():
 # Any tests that use the SharedProcessPool should use this fixture
 @pytest.fixture(scope="module")
 def shared_process_pool_setup_and_teardown():
+    from morpheus.utils.shared_process_pool import SharedProcessPool
+
     # Set lower CPU usage for unit test to avoid slowing down the test
     os.environ["MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE"] = "0.1"
 

@@ -16,6 +16,7 @@ import logging
 from typing import List
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -26,6 +27,4 @@ class MultiFileSourceSchema(BaseModel):
     watch_dir: bool = False
     watch_interval: float = 1.0
     batch_size: int = 128
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra='forbid')

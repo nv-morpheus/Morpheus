@@ -21,7 +21,6 @@ from unittest import mock
 import pytest
 
 from _utils import TEST_DIRS
-from _utils import import_or_skip
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 
@@ -30,28 +29,28 @@ SKIP_REASON = (
     "Morpheus development environment.")
 
 
-@pytest.fixture(autouse=True, scope='session')
-def dask_distributed(fail_missing: bool):
+@pytest.fixture(name="dask_distributed", autouse=True, scope='session')
+def dask_distributed_fixture(dask_distributed):
     """
     Mark tests requiring dask.distributed
     """
-    yield import_or_skip("dask.distributed", reason=SKIP_REASON, fail_missing=fail_missing)
+    yield dask_distributed
 
 
-@pytest.fixture(autouse=True, scope='session')
-def dask_cuda(fail_missing: bool):
+@pytest.fixture(name="dask_cuda", autouse=True, scope='session')
+def dask_cuda_fixture(dask_cuda):
     """
-    Mark tests requiring dask.distributed
+    Mark tests requiring dask_cuda
     """
-    yield import_or_skip("dask_cuda", reason=SKIP_REASON, fail_missing=fail_missing)
+    yield dask_cuda
 
 
-@pytest.fixture(autouse=True, scope='session')
-def mlflow(fail_missing: bool):
+@pytest.fixture(name="mlflow", autouse=True, scope='session')
+def mlflow_fixture(mlflow):
     """
     Mark tests requiring mlflow
     """
-    yield import_or_skip("mlflow", reason=SKIP_REASON, fail_missing=fail_missing)
+    yield mlflow
 
 
 @pytest.fixture(name='ae_feature_cols', scope='session')

@@ -20,7 +20,6 @@ import pytest
 import yaml
 
 from _utils import TEST_DIRS
-from _utils import import_or_skip
 from _utils import remove_module
 
 # pylint: disable=redefined-outer-name
@@ -30,12 +29,12 @@ SKIP_REASON = ("Tests for the ransomware_detection example require a number of p
                "for details on installing these additional dependencies")
 
 
-@pytest.fixture(autouse=True, scope='session')
-def dask_distributed(fail_missing: bool):
+@pytest.fixture(name="dask_distributed", autouse=True, scope='session')
+def dask_distributed_fixture(dask_distributed):
     """
     All of the tests in this subdir requires dask.distributed
     """
-    yield import_or_skip("dask.distributed", reason=SKIP_REASON, fail_missing=fail_missing)
+    yield dask_distributed
 
 
 @pytest.fixture(name="config")
@@ -48,22 +47,27 @@ def config_fixture(config):
     yield config
 
 
-@pytest.fixture(name="example_dir")
+@pytest.fixture(name="example_dir", scope='session')
 def example_dir_fixture():
     yield os.path.join(TEST_DIRS.examples_dir, 'ransomware_detection')
 
 
-@pytest.fixture(name="conf_file")
+@pytest.fixture(name="conf_file", scope='session')
 def conf_file_fixture(example_dir):
     yield os.path.join(example_dir, 'config/ransomware_detection.yaml')
 
 
-@pytest.fixture
-def rwd_conf(conf_file):
+@pytest.fixture(scope='session')
+def _rwd_conf(conf_file):
     with open(conf_file, encoding='UTF-8') as fh:
         conf = yaml.safe_load(fh)
 
     yield conf
+
+
+@pytest.fixture(scope='function')
+def rwd_conf(_rwd_conf):
+    yield _rwd_conf.copy()
 
 
 @pytest.fixture
