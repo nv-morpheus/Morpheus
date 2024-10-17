@@ -140,6 +140,47 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
     return performed_truncation
 
 
+def _selector_to_exec_mode(selector: DataFrameModule | ExecutionMode) -> ExecutionMode:
+    if not isinstance(selector, ExecutionMode):
+        execution_mode = df_type_str_to_exec_mode(selector)
+    else:
+        execution_mode = selector
+
+    return execution_mode
+
+
+def _get_df_method(selector: DataFrameModule | ExecutionMode, method_name: str) -> typing.Callable[..., DataFrameType]:
+    """
+    Return the appropriate DataFrame method based on the execution mode.
+    """
+    execution_mode = _selector_to_exec_mode(selector)
+
+    if (execution_mode == ExecutionMode.GPU):
+        import cudf
+        method = getattr(cudf, method_name)
+    else:
+        method = getattr(pd, method_name)
+
+    return method
+
+
+@typing.overload
+def get_csv_reader(selector: DataFrameModule) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+@typing.overload
+def get_csv_reader(selector: ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+def get_csv_reader(selector: DataFrameModule | ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    """
+    Return the appropriate CSV reader based on the execution mode.
+    """
+    return _get_df_method(selector, 'read_csv')
+
+
 @typing.overload
 def get_json_reader(selector: DataFrameModule) -> typing.Callable[..., DataFrameType]:
     ...
@@ -154,15 +195,27 @@ def get_json_reader(selector: DataFrameModule | ExecutionMode) -> typing.Callabl
     """
     Return the appropriate JSON reader based on the execution mode.
     """
-    if not isinstance(selector, ExecutionMode):
-        execution_mode = df_type_str_to_exec_mode(selector)
-    else:
-        execution_mode = selector
+    execution_mode = _selector_to_exec_mode(selector)
+    reader = _get_df_method(execution_mode, 'read_json')
 
     if (execution_mode == ExecutionMode.GPU):
-        import cudf
-        reader = functools.partial(cudf.read_json, engine='cudf')
-    else:
-        reader = pd.read_json
+        reader = functools.partial(reader, engine='cudf')
 
     return reader
+
+
+@typing.overload
+def get_parquet_reader(selector: DataFrameModule) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+@typing.overload
+def get_parquet_reader(selector: ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+def get_parquet_reader(selector: DataFrameModule | ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    """
+    Return the appropriate Parquet reader based on the execution mode.
+    """
+    return _get_df_method(selector, 'read_parquet')
