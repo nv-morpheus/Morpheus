@@ -30,7 +30,7 @@ from _utils import assert_results
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils import compare_df
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_aliases import DataFrameTypeStr
+from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_aliases import SeriesType
 
 
@@ -44,15 +44,15 @@ class DatasetManager:
         Type of DataFrame to return unless otherwise explicitly specified.
     """
 
-    __df_cache: dict[tuple[DataFrameTypeStr, str], DataFrameType] = {}
+    __df_cache: dict[tuple[DataFrameModule, str], DataFrameType] = {}
 
     # Values in `__instances` are instances of `DatasetLoader`
-    __instances: dict[DataFrameTypeStr, "DatasetManager"] = {}
+    __instances: dict[DataFrameModule, "DatasetManager"] = {}
 
     # Explicitly using __new__ instead of of an __init__ to implement this as a singleton for each dataframe type.
     # Initialization is also being performed here instead of an __init__ method as an __init__ method would be re-run
     # the __init__ on the singleton instance for each cache hit.
-    def __new__(cls, df_type: DataFrameTypeStr):
+    def __new__(cls, df_type: DataFrameModule):
         """Returns the singleton instance of `DatasetManager` for the specified `df_type`."""
         try:
             return cls.__instances[df_type]
@@ -63,7 +63,7 @@ class DatasetManager:
             return instance
 
     @staticmethod
-    def get_alt_df_type(df_type: DataFrameTypeStr) -> DataFrameTypeStr:
+    def get_alt_df_type(df_type: DataFrameModule) -> DataFrameModule:
         """Returns the other possible df type."""
         return 'cudf' if df_type == 'pandas' else 'pandas'
 
@@ -73,7 +73,7 @@ class DatasetManager:
 
     def get_df(self,
                file_path: str,
-               df_type: DataFrameTypeStr = None,
+               df_type: DataFrameModule = None,
                no_cache: bool = False,
                **reader_kwargs) -> DataFrameType:
         """
@@ -125,7 +125,7 @@ class DatasetManager:
 
         return df.copy(deep=True)
 
-    def __getitem__(self, item: str | tuple[str] | tuple[str, DataFrameTypeStr]) -> DataFrameType:
+    def __getitem__(self, item: str | tuple[str] | tuple[str, DataFrameModule]) -> DataFrameType:
         """Implements `__getitem__` to allow for fetching DataFrames using the `[]` operator."""
         if not isinstance(item, tuple):
             item = (item, )

@@ -26,7 +26,7 @@ from morpheus.config import CppConfig
 from morpheus.io.utils import filter_null_data
 from morpheus.io.utils import get_json_reader
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_aliases import DataFrameTypeStr
+from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_utils import df_type_str_to_pkg
 
 
@@ -34,7 +34,7 @@ def _read_file_to_df_py(*,
                         file_name: typing.Union[str, io.IOBase],
                         file_type: FileTypes,
                         parser_kwargs: dict,
-                        df_type: DataFrameTypeStr) -> DataFrameType:
+                        df_type: DataFrameModule) -> DataFrameType:
     if (parser_kwargs is None):
         parser_kwargs = {}
 
@@ -93,7 +93,7 @@ def read_file_to_df(file_name: typing.Union[str, io.IOBase],
                     parser_kwargs: dict = None,
                     filter_nulls: bool = True,
                     filter_null_columns: list[str] | str = 'data',
-                    df_type: DataFrameTypeStr = "pandas") -> DataFrameType:
+                    df_type: DataFrameModule = "pandas") -> DataFrameType:
     """
     Reads a file into a dataframe and performs any of the necessary cleanup.
 

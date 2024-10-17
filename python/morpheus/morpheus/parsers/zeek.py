@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_aliases import DataFrameTypeStr
+from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_utils import get_df_pkg
 
 TYPE_DICT = {
@@ -38,7 +38,7 @@ TYPE_DICT = {
 }
 
 
-def parse(filepath: str, df_type: DataFrameTypeStr = "cudf") -> DataFrameType:
+def parse(filepath: str, df_type: DataFrameModule = "cudf") -> DataFrameType:
     """
     Parse Zeek log file and return cuDF dataframe. Uses header comments to get column names/types
     and configure parser.

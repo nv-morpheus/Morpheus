@@ -23,7 +23,7 @@ import pandas as pd
 from morpheus.config import CppConfig
 from morpheus.config import ExecutionMode
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_aliases import DataFrameTypeStr
+from morpheus.utils.type_aliases import DataFrameModule
 
 # pylint: disable=invalid-name
 T_co = typing.TypeVar("T_co", covariant=True)
@@ -172,7 +172,7 @@ def get_full_qualname(klass: type) -> str:
     return module + '.' + klass.__qualname__
 
 
-def df_type_str_to_exec_mode(df_type_str: DataFrameTypeStr) -> ExecutionMode:
+def df_type_str_to_exec_mode(df_type_str: DataFrameModule) -> ExecutionMode:
     """
     Return the appropriate execution mode based on the DataFrame type string.
     """
@@ -181,11 +181,11 @@ def df_type_str_to_exec_mode(df_type_str: DataFrameTypeStr) -> ExecutionMode:
     if df_type_str == "pandas":
         return ExecutionMode.CPU
 
-    valid_values = ", ".join(typing.get_args(DataFrameTypeStr))
+    valid_values = ", ".join(typing.get_args(DataFrameModule))
     raise ValueError(f"Invalid DataFrame type string: {df_type_str}, valid values are: {valid_values}")
 
 
-def exec_mode_to_df_type_str(execution_mode: ExecutionMode) -> DataFrameTypeStr:
+def exec_mode_to_df_type_str(execution_mode: ExecutionMode) -> DataFrameModule:
     if execution_mode == ExecutionMode.GPU:
         return "cudf"
 
@@ -198,7 +198,7 @@ def cpp_mode_to_exec_mode() -> ExecutionMode:
     return ExecutionMode.CPU
 
 
-def df_type_str_to_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
+def df_type_str_to_pkg(df_type_str: DataFrameModule) -> types.ModuleType:
     """
     Return the appropriate DataFrame package based on the DataFrame type string.
     """
@@ -208,12 +208,12 @@ def df_type_str_to_pkg(df_type_str: DataFrameTypeStr) -> types.ModuleType:
     if df_type_str == "pandas":
         return pd
 
-    valid_values = ", ".join(typing.get_args(DataFrameTypeStr))
+    valid_values = ", ".join(typing.get_args(DataFrameModule))
     raise ValueError(f"Invalid DataFrame type string: {df_type_str}, valid values are: {valid_values}")
 
 
 @typing.overload
-def get_df_pkg(selector: DataFrameTypeStr = None) -> types.ModuleType:
+def get_df_pkg(selector: DataFrameModule = None) -> types.ModuleType:
     ...
 
 
@@ -222,7 +222,7 @@ def get_df_pkg(selector: ExecutionMode = None) -> types.ModuleType:
     ...
 
 
-def get_df_pkg(selector: ExecutionMode | DataFrameTypeStr = None) -> types.ModuleType:
+def get_df_pkg(selector: ExecutionMode | DataFrameModule = None) -> types.ModuleType:
     """
     Return the appropriate DataFrame package based on the execution mode.
     """
@@ -241,7 +241,7 @@ def get_df_pkg(selector: ExecutionMode | DataFrameTypeStr = None) -> types.Modul
 
 
 @typing.overload
-def get_df_class(selector: DataFrameTypeStr = None) -> type[DataFrameType]:
+def get_df_class(selector: DataFrameModule = None) -> type[DataFrameType]:
     ...
 
 
@@ -250,7 +250,7 @@ def get_df_class(selector: ExecutionMode = None) -> type[DataFrameType]:
     ...
 
 
-def get_df_class(selector: ExecutionMode | DataFrameTypeStr = None) -> type[DataFrameType]:
+def get_df_class(selector: ExecutionMode | DataFrameModule = None) -> type[DataFrameType]:
     """
     Return the appropriate DataFrame class based on the execution mode.
     """
