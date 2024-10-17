@@ -14,7 +14,6 @@
 # limitations under the License.
 """Mimic the examples/llm/rag/standalone_pipeline.py example"""
 
-import importlib
 import os
 import sys
 import types
@@ -26,7 +25,6 @@ import cudf
 
 from _utils import TEST_DIRS
 from _utils import assert_results
-from _utils.dataset_manager import DatasetManager
 from _utils.llm import mk_mock_openai_response
 from _utils.milvus import populate_milvus
 from morpheus.config import Config
