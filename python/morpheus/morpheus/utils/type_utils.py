@@ -22,8 +22,8 @@ import pandas as pd
 
 from morpheus.config import CppConfig
 from morpheus.config import ExecutionMode
-from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import DataFrameModule
+from morpheus.utils.type_aliases import DataFrameType
 
 # pylint: disable=invalid-name
 T_co = typing.TypeVar("T_co", covariant=True)

@@ -25,8 +25,8 @@ from morpheus.common import read_file_to_df as read_file_to_df_cpp
 from morpheus.config import CppConfig
 from morpheus.io.utils import filter_null_data
 from morpheus.io.utils import get_json_reader
-from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import DataFrameModule
+from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import df_type_str_to_pkg
 
 

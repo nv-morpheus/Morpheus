@@ -28,8 +28,8 @@ import requests
 import requests_cache
 
 from morpheus.messages import MessageMeta
-from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import DataFrameModule
+from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import get_df_class
 
 logger = logging.getLogger(__name__)

@@ -25,8 +25,8 @@ import cudf
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import ExecutionMode
 from morpheus.io import utils as io_utils
-from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_aliases import DataFrameModule
+from morpheus.utils.type_aliases import DataFrameType
 
 MULTI_BYTE_STRINGS = ["ñäμɛ", "Moρφέας", "taç"]
 
