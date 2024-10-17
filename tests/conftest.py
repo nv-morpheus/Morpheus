@@ -209,7 +209,7 @@ def df_type(request: pytest.FixtureRequest):
         use_cudf = request.node.get_closest_marker("use_cudf") is not None
 
         if (use_pandas and use_cudf):
-            raise RuntimeError(f"Both markers (gpu_mode and cpu_mode) were added to function {request.node.nodeid}. "
+            raise RuntimeError(f"Both markers (use_pandas and use_cudf) were added to function {request.node.nodeid}. "
                                "Remove markers to support both.")
 
         # This will default to "cudf" or follow use_pandas
@@ -235,7 +235,6 @@ def _get_execution_mode(request: pytest.FixtureRequest) -> "ExecutionMode":
 
         # if both are undefined, infer based on the df_type
         if (not gpu_mode and not cpu_mode):
-            gpu_mode = request.node.get_closest_marker("use_cudf") is not None
             cpu_mode = request.node.get_closest_marker("use_pandas") is not None
 
         # This will default to True or follow gpu_mode
