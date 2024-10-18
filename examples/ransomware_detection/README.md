@@ -88,7 +88,6 @@ Usage: run.py [OPTIONS]
 
 Options:
   --debug BOOLEAN
-  --use_cpp BOOLEAN
   --num_threads INTEGER RANGE     Number of internal pipeline threads to use
                                   [x>=1]
   --n_dask_workers INTEGER RANGE  Number of dask workers  [x>=2]

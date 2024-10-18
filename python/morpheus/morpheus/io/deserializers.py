@@ -107,7 +107,7 @@ def read_file_to_df(file_name: typing.Union[str, io.IOBase],
         Whether to filter null rows after loading, by default True.
     filter_null_columns : list[str]|str, default = 'data'
         Column or columns to filter null values from. Ignored when `filter_null` is False.
-    df_type : typing.Literal[, optional
+    df_type : typing.Literal["cudf", "pandas"], optional
         What type of parser to use. Options are 'cudf' and 'pandas', by default "pandas".
 
     Returns
