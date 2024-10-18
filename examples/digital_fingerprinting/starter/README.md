@@ -31,69 +31,60 @@ DFP pipelines can be constructed and run using the Morpheus CLI command `morpheu
 Use `--help` to display information about the autoencoder pipeline command line options:
 
 ```
-morpheus run pipeline-ae --help
+Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
-Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
-                                [ARGS]...]...
+  Configure and run the pipeline. To configure the pipeline, list the stages in the order that data should flow. The output of each stage will become the input for the next
+  stage. For example, to read, classify and write to a file, the following stages could be used
 
-  Configure and run the pipeline. To configure the pipeline, list the stages
-  in the order that data should flow. The output of each stage will become the
-  input for the next stage. For example, to read, classify and write to a
-  file, the following stages could be used
+  pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model --server_url=localhost:8001 filter --threshold=0.5 to-file
+  --filename=classifications.json
 
-  pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
-  --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
-
-  Pipelines must follow a few rules:
-  1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
-  2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
-  3. Only one inference stage can be used. Zero is also fine
-  4. The following stages must come after an inference stage: `add-class`, `filter`, `gen-viz`
+  Pipelines must follow a few rules: 1. Data must originate in a source stage. Current options are `from-file` or `from-kafka` 2. A `deserialize` stage must be placed
+  between the source stages and the rest of the pipeline 3. Only one inference stage can be used. Zero is also fine 4. The following stages must come after an inference
+  stage: `add-class`, `filter`, `gen-viz`
 
 Options:
-  --columns_file FILE             [default: ./morpheus/data/columns_ae_cloudtrail.txt]
-  --labels_file FILE              Specifies a file to read labels from in
-                                  order to convert class IDs into labels. A
-                                  label file is a simple text file where each
-                                  line corresponds to a label. If unspecified,
-                                  only a single output label is created for
-                                  FIL
-  --userid_column_name TEXT       Which column to use as the User ID.
-                                  [default: userIdentityaccountId; required]
-  --userid_filter TEXT            Specifying this value will filter all
-                                  incoming data to only use rows with matching
-                                  User IDs. Which column is used for the User
-                                  ID is specified by `userid_column_name`
-  --feature_scaler TEXT           Autoencoder feature scaler  [default:
-                                  standard]
-  --use_generic_model BOOLEAN     Whether to use a generic model when user does
-                                  not have minimum number of training rows
-                                  [default: False]
-  --viz_file FILE                 Save a visualization of the pipeline at the
-                                  specified location
+  --columns_file DATA FILE        Specifies a file to read column features.  [required]
+  --labels_file DATA FILE         Specifies a file to read labels from in order to convert class IDs into labels. A label file is a simple text file where each line
+                                  corresponds to a label.
+  --userid_column_name TEXT       Which column to use as the User ID.  [default: userIdentityaccountId; required]
+  --userid_filter TEXT            Specifying this value will filter all incoming data to only use rows with matching User IDs. Which column is used for the User ID is
+                                  specified by `userid_column_name`
+  --feature_scaler [NONE|STANDARD|GAUSSRANK]
+                                  Autoencoder feature scaler  [default: STANDARD]
+  --use_generic_model             Whether to use a generic model when user does not have minimum number of training rows
+  --viz_file FILE                 Save a visualization of the pipeline at the specified location
+  --viz_direction [BT|LR|RL|TB]   Set the direction for the Graphviz pipeline diagram, ignored unless --viz_file is also specified.  [default: LR]
+  --timestamp_column_name TEXT    Which column to use as the timestamp.  [default: timestamp; required]
   --help                          Show this message and exit.
 
 Commands:
-  add-class        Add detected classifications to each message
-  add-scores       Add probability scores to each message
-  buffer           (Deprecated) Buffer results
-  delay            (Deprecated) Delay results for a certain duration
-  filter           Filter message by a classification threshold
-  from-azure       Source stage is used to load Azure Active Directory messages.
-  from-cloudtrail  Load messages from a CloudTrail directory
-  from-duo         Source stage is used to load Duo Authentication messages.
-  gen-viz          (Deprecated) Write out visualization data frames
-  inf-pytorch      Perform inference with PyTorch
-  inf-triton       Perform inference with Triton
-  monitor          Display throughput numbers at a specific point in the
-                   pipeline
-  preprocess       Convert messages to tokens
-  serialize        Include & exclude columns from messages
-  timeseries       Perform time series anomaly detection and add prediction.
-  to-file          Write all messages to a file
-  to-kafka         Write all messages to a Kafka cluster
-  train-ae         Deserialize source data from JSON
-  validate         Validates pipeline output against an expected output
+  add-class                  Add detected classifications to each message.
+  add-scores                 Add probability scores to each message.
+  buffer                     (Deprecated) Buffer results.
+  delay                      (Deprecated) Delay results for a certain duration.
+  filter                     Filter message by a classification threshold.
+  from-arxiv                 Source stage that downloads PDFs from arxiv and converts them to dataframes.
+  from-azure                 Source stage is used to load Azure Active Directory messages.
+  from-cloudtrail            Load messages from a CloudTrail directory.
+  from-databricks-deltalake  Source stage used to load messages from a DeltaLake table.
+  from-duo                   Source stage is used to load Duo Authentication messages.
+  from-http                  Source stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
+  from-http-client           Source stage that polls a remote HTTP server for incoming data.
+  from-rss                   Load RSS feed items into a DataFrame.
+  inf-pytorch                Perform inference with PyTorch.
+  monitor                    Display throughput numbers at a specific point in the pipeline.
+  preprocess                 Prepare Autoencoder input DataFrames for inference.
+  serialize                  Includes & excludes columns from messages.
+  timeseries                 Perform time series anomaly detection and add prediction.
+  to-elasticsearch           This class writes the messages as documents to Elasticsearch.
+  to-file                    Write all messages to a file.
+  to-http                    Write all messages to an HTTP endpoint.
+  to-http-server             Sink stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
+  to-kafka                   Write all messages to a Kafka cluster.
+  train-ae                   Train an Autoencoder model on incoming data.
+  trigger                    Buffer data until the previous stage has completed.
+  validate                   Validate pipeline output for testing.
 ```
 The commands above correspond to the Morpheus stages that can be used to construct your DFP pipeline. Options are available to configure pipeline and stages.
 The following table shows mapping between the main Morpheus CLI commands and underlying Morpheus Python stage classes:
@@ -160,9 +151,9 @@ Run the following in your Morpheus container to start the CloudTrail DFP pipelin
 
 ```
 morpheus --log_level=DEBUG \
-  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
+  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
   pipeline-ae \
-  --columns_file=morpheus/data/columns_ae_cloudtrail.txt \
+  --columns_file=data/columns_ae_cloudtrail.txt \
   --userid_column_name=userIdentitysessionContextsessionIssueruserName \
   --userid_filter=user123 \
   --feature_scaler=standard \
@@ -186,9 +177,9 @@ The following pipeline trains user models from downloaded training data and save
 on downloaded inference data. Inference results are written to `duo-detections.csv`.
 ```
 morpheus --log_level=DEBUG \
-  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
+  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
   pipeline-ae \
-  --columns_file=morpheus/data/columns_ae_duo.txt \
+  --columns_file=data/columns_ae_duo.txt \
   --userid_column_name=username \
   --feature_scaler=standard \
   from-duo \
@@ -211,9 +202,9 @@ morpheus --log_level=DEBUG \
 The following example shows how we can load pre-trained user models from the file (`models/dfp-models/duo_ae_user_models.pkl`) we created in the previous example. Pipeline then uses these models to run inference on validation data in `models/datasets/validation-data/duo`. Inference results are written to `duo-detections.csv`.
 ```
 morpheus --log_level=DEBUG \
-  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
+  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
   pipeline-ae \
-  --columns_file=morpheus/data/columns_ae_duo.txt \
+  --columns_file=data/columns_ae_duo.txt \
   --userid_column_name=username \
   --feature_scaler=standard \
   from-duo \
@@ -260,9 +251,9 @@ morpheus --log_level=DEBUG \
 The following example shows how we can load pre-trained user models from the file (`models/dfp-models/azure_ae_user_models.pkl`) we created in the previous example. Pipeline then uses these models to run inference on validation data in `models/datasets/validation-data/azure`. Inference results are written to `azure-detections.csv`.
 ```
 morpheus --log_level=DEBUG \
-  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
+  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
   pipeline-ae \
-  --columns_file=morpheus/data/columns_ae_azure.txt \
+  --columns_file=data/columns_ae_azure.txt \
   --userid_column_name=userPrincipalName \
   --feature_scaler=standard \
   from-azure \
@@ -287,7 +278,7 @@ run the example.
 Train user models from files in `models/datasets/training-data/dfp-cloudtrail-*.csv` and saves user models to file. Pipeline then uses these models to run inference on CloudTrail validation data in `models/datasets/validation-data/dfp-cloudtrail-*-input.csv`. Inference results are written to `cloudtrail-dfp-results.csv`.
 ```
 python ./examples/digital_fingerprinting/starter/run_cloudtrail_dfp.py \
-    --columns_file=morpheus/data/columns_ae_cloudtrail.txt \
+    --columns_file=data/columns_ae_cloudtrail.txt \
     --input_glob=models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
     --train_data_glob=models/datasets/training-data/dfp-*.csv \
     --models_output_filename=models/dfp-models/cloudtrail_ae_user_models.pkl \
@@ -297,7 +288,7 @@ python ./examples/digital_fingerprinting/starter/run_cloudtrail_dfp.py \
 Here we load pre-trained user models from the file (`models/dfp-models/cloudtrail_ae_user_models.pkl`) we created in the previous example. Pipeline then uses these models to run inference on validation data in `models/datasets/validation-data/dfp-cloudtrail-*-input.csv`. Inference results are written to `cloudtrail-dfp-results.csv`.
 ```
 python ./examples/digital_fingerprinting/starter/run_cloudtrail_dfp.py \
-    --columns_file=morpheus/data/columns_ae_cloudtrail.txt \
+    --columns_file=data/columns_ae_cloudtrail.txt \
     --input_glob=models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
     --pretrained_filename=models/dfp-models/cloudtrail_ae_user_models.pkl \
     --output_file=./cloudtrail-dfp-results.csv

@@ -40,6 +40,7 @@ if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.kafka
 def test_kafka_source_stage_pipe(config: Config, kafka_bootstrap_servers: str, kafka_topics: KafkaTopics) -> None:
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
@@ -64,6 +65,7 @@ def test_kafka_source_stage_pipe(config: Config, kafka_bootstrap_servers: str, k
     assert_results(comp_stage.get_results())
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.kafka
 def test_multi_topic_kafka_source_stage_pipe(config: Config, kafka_bootstrap_servers: str) -> None:
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
@@ -96,6 +98,7 @@ def test_multi_topic_kafka_source_stage_pipe(config: Config, kafka_bootstrap_ser
     assert_results(comp_stage.get_results())
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.kafka
 @pytest.mark.parametrize('async_commits', [True, False])
 @pytest.mark.parametrize('num_records', [10, 1000])

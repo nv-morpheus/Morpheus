@@ -29,7 +29,9 @@ from _utils import TEST_DIRS
 from _utils import assert_results
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils import compare_df
+from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_aliases import SeriesType
 
 
 class DatasetManager:
@@ -38,19 +40,19 @@ class DatasetManager:
 
     Parameters
     ----------
-    df_type : typing.Literal['cudf', 'pandas']
+    df_type : DataFrameTypeStr
         Type of DataFrame to return unless otherwise explicitly specified.
     """
 
-    __df_cache: typing.Dict[typing.Tuple[typing.Literal['cudf', 'pandas'], str], DataFrameType] = {}
+    __df_cache: dict[tuple[DataFrameModule, str], DataFrameType] = {}
 
     # Values in `__instances` are instances of `DatasetLoader`
-    __instances: typing.Dict[typing.Literal['cudf', 'pandas'], typing.Any] = {}
+    __instances: dict[DataFrameModule, "DatasetManager"] = {}
 
     # Explicitly using __new__ instead of of an __init__ to implement this as a singleton for each dataframe type.
     # Initialization is also being performed here instead of an __init__ method as an __init__ method would be re-run
     # the __init__ on the singleton instance for each cache hit.
-    def __new__(cls, df_type: typing.Literal['cudf', 'pandas']):
+    def __new__(cls, df_type: DataFrameModule):
         """Returns the singleton instance of `DatasetManager` for the specified `df_type`."""
         try:
             return cls.__instances[df_type]
@@ -61,7 +63,7 @@ class DatasetManager:
             return instance
 
     @staticmethod
-    def get_alt_df_type(df_type: typing.Literal['cudf', 'pandas']) -> typing.Literal['cudf', 'pandas']:
+    def get_alt_df_type(df_type: DataFrameModule) -> DataFrameModule:
         """Returns the other possible df type."""
         return 'cudf' if df_type == 'pandas' else 'pandas'
 
@@ -71,7 +73,7 @@ class DatasetManager:
 
     def get_df(self,
                file_path: str,
-               df_type: typing.Literal['cudf', 'pandas'] = None,
+               df_type: DataFrameModule = None,
                no_cache: bool = False,
                **reader_kwargs) -> DataFrameType:
         """
@@ -123,9 +125,7 @@ class DatasetManager:
 
         return df.copy(deep=True)
 
-    def __getitem__(
-        self, item: typing.Union[str, typing.Tuple[str], typing.Tuple[str, typing.Literal['cudf',
-                                                                                          'pandas']]]) -> DataFrameType:
+    def __getitem__(self, item: str | tuple[str] | tuple[str, DataFrameModule]) -> DataFrameType:
         """Implements `__getitem__` to allow for fetching DataFrames using the `[]` operator."""
         if not isinstance(item, tuple):
             item = (item, )
@@ -172,7 +172,7 @@ class DatasetManager:
         return repeated_df
 
     @staticmethod
-    def replace_index(df: DataFrameType, replace_ids: typing.Dict[int, int]) -> DataFrameType:
+    def replace_index(df: DataFrameType, replace_ids: dict[int, int]) -> DataFrameType:
         """Return a new DataFrame's where we replace some index values with others."""
         return df.rename(index=replace_ids)
 
@@ -192,7 +192,7 @@ class DatasetManager:
         return cls.replace_index(df, replace_dict)
 
     @staticmethod
-    def _value_as_pandas(val: typing.Union[pd.DataFrame, cdf.DataFrame, cdf.Series], assert_is_pandas=True):
+    def _value_as_pandas(val: DataFrameType | SeriesType, assert_is_pandas=True):
         if (isinstance(val, (cdf.DataFrame, cdf.Series))):
             return val.to_pandas()
 
@@ -202,7 +202,15 @@ class DatasetManager:
         return val
 
     @classmethod
-    def df_equal(cls, df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame], val_to_check: typing.Any):
+    def _value_as_pandas_df(cls, val: DataFrameType | SeriesType, assert_is_pandas=True):
+        pval = cls._value_as_pandas(val, assert_is_pandas=assert_is_pandas)
+        if isinstance(pval, pd.Series):
+            pval = pval.to_frame()
+
+        return pval
+
+    @classmethod
+    def df_equal(cls, df_to_check: DataFrameType, val_to_check: typing.Any):
         """
         Compare a DataFrame against a validation dataset which can either be a DataFrame, Series or CuPy array. Returns
         True if they are equal.
@@ -224,7 +232,7 @@ class DatasetManager:
 
     @classmethod
     def assert_df_equal(cls,
-                        df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame],
+                        df_to_check: DataFrameType,
                         val_to_check: typing.Any,
                         assert_msg="Dataframes are not equal."):
         """
@@ -234,20 +242,14 @@ class DatasetManager:
         assert cls.df_equal(df_to_check=df_to_check, val_to_check=val_to_check), assert_msg
 
     @classmethod
-    def compare_df(cls,
-                   dfa: typing.Union[pd.DataFrame, cdf.DataFrame],
-                   dfb: typing.Union[pd.DataFrame, cdf.DataFrame],
-                   **compare_args):
+    def compare_df(cls, dfa: DataFrameType, dfb: DataFrameType, **compare_args):
         """Wrapper for `morpheus.utils.compare_df.compare_df`."""
         with warnings.catch_warnings():
             # Ignore performance warnings from pandas triggered by the comparison
             warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
-            return compare_df.compare_df(cls._value_as_pandas(dfa), cls._value_as_pandas(dfb), **compare_args)
+            return compare_df.compare_df(cls._value_as_pandas_df(dfa), cls._value_as_pandas_df(dfb), **compare_args)
 
     @classmethod
-    def assert_compare_df(cls,
-                          dfa: typing.Union[pd.DataFrame, cdf.DataFrame],
-                          dfb: typing.Union[pd.DataFrame, cdf.DataFrame],
-                          **compare_args):
+    def assert_compare_df(cls, dfa: DataFrameType, dfb: DataFrameType, **compare_args):
         """Convenience method for calling `compare_df` and asserting that the results are equivalent."""
         assert_results(cls.compare_df(dfa, dfb, **compare_args))

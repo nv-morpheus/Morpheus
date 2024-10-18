@@ -15,9 +15,16 @@
 
 import typing
 
-import pandas as pd
+if typing.TYPE_CHECKING:
+    import cupy
+    import numpy
+    import pandas
 
-import cudf
+    import cudf
 
-DataFrameType = typing.Union[pd.DataFrame, cudf.DataFrame]
-SeriesType = typing.Union[pd.Series, cudf.Series]
+DataFrameModule = typing.Literal["cudf", "pandas"]
+DataFrameType = typing.Union["pandas.DataFrame", "cudf.DataFrame"]
+SeriesType = typing.Union["pandas.Series", "cudf.Series"]
+
+NDArrayType = typing.Union["numpy.ndarray", "cupy.ndarray"]
+TensorMapType = dict[str, NDArrayType]

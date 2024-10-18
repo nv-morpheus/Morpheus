@@ -28,7 +28,6 @@ from morpheus.utils.module_utils import verify_module_registration
 # pylint: disable=unused-argument,too-many-function-args
 
 
-@pytest.mark.use_python
 def test_mrc_version():
     assert len(mrc_version) == 3
     assert isinstance(mrc_version, list)

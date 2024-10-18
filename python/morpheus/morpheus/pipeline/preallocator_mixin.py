@@ -17,18 +17,16 @@ import logging
 from abc import ABC
 from collections import OrderedDict
 
-import cupy as cp
 import mrc
 import numpy as np
 import pandas as pd
 from mrc.core import operators as ops
 
-import cudf
-
 from morpheus.common import TypeId
 from morpheus.common import typeid_is_fully_supported
 from morpheus.common import typeid_to_numpy_str
 from morpheus.config import CppConfig
+from morpheus.config import ExecutionMode
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.utils.type_aliases import DataFrameType
@@ -40,7 +38,7 @@ logger = logging.getLogger(__name__)
 class PreallocatorMixin(ABC):
     """
     Mixin intented to be added to stages, typically source stages,  which are emitting newly constructed DataFrame or
-    MessageMeta instances into the segment. During segment build, if the `_needed_columns` addtribut is not empty an
+    MessageMeta instances into the segment. During segment build, if the `_needed_columns` addtribute is not empty an
     additional node will be inserted into the graph after the derived class' node which will perform the allocation.
 
     The exceptions would be non-source stages like DFP's `DFPFileToDataFrameStage` which are not sources but are
@@ -59,7 +57,9 @@ class PreallocatorMixin(ABC):
     def _preallocate_df(self, df: DataFrameType) -> DataFrameType:
         missing_columns = [col for col in self._needed_columns.keys() if col not in df.columns]
         if len(missing_columns) > 0:
-            if isinstance(df, cudf.DataFrame):
+            if not isinstance(df, pd.DataFrame):
+                # assume cudf.DataFrame
+                import cupy as cp
                 alloc_func = cp.zeros
             else:
                 alloc_func = np.zeros
@@ -118,12 +118,19 @@ class PreallocatorMixin(ABC):
                         node = builder.make_node(node_name, ops.map(self._preallocate_meta))
                     else:
                         raise RuntimeError(f"Unsupported output type {pretty_type}")
-            elif issubclass(out_type, (cudf.DataFrame, pd.DataFrame)):
-                node = builder.make_node(node_name, ops.map(self._preallocate_df))
+
             else:
-                msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type "
-                       f"{pretty_type} isn't a supported type")
-                raise RuntimeError(msg)
+                supported_df_types = [pd.DataFrame]
+                if self._config.execution_mode == ExecutionMode.GPU:
+                    import cudf
+                    supported_df_types.append(cudf.DataFrame)
+
+                if issubclass(out_type, tuple(supported_df_types)):
+                    node = builder.make_node(node_name, ops.map(self._preallocate_df))
+                else:
+                    msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type "
+                           f"{pretty_type} isn't a supported type")
+                    raise RuntimeError(msg)
 
             builder.make_edge(out_node, node)
             out_node = node

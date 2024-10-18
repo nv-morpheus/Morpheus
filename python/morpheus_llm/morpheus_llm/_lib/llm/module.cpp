@@ -33,7 +33,6 @@
 
 #include "morpheus/messages/control.hpp"  // IWYU pragma: keep
 #include "morpheus/pybind11/json.hpp"     // IWYU pragma: keep
-#include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/json_types.hpp"
 #include "morpheus/version.hpp"
 
@@ -69,9 +68,6 @@ PYBIND11_MODULE(llm, _module)
            :toctree: _generate
 
         )pbdoc";
-
-    // Load the cudf helpers
-    CudfHelper::load();
 
     // Import the mrc coro module
     mrc::pymrc::import(_module, "mrc.core.coro");

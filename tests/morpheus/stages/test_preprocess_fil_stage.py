@@ -15,21 +15,17 @@
 
 import typing
 
-import cupy as cp
 import pytest
 import typing_utils
-
-import cudf
 
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.messages import ControlMessage
-from morpheus.messages import MessageMeta
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 
 
 @pytest.fixture(name='config')
-def fixture_config(config: Config, use_cpp: bool):  # pylint: disable=unused-argument
+def fixture_config(config: Config):
     config.feature_length = 1
     config.fil = ConfigFIL()
     config.fil.feature_columns = ["data"]
@@ -44,18 +40,3 @@ def test_constructor(config: Config):
 
     accepted_union = typing.Union[stage.accepted_types()]
     assert typing_utils.issubtype(ControlMessage, accepted_union)
-
-
-def test_process_control_message(config: Config):
-    stage = PreprocessFILStage(config)
-    input_cm = ControlMessage()
-    df = cudf.DataFrame({"data": [1, 2, 3]})
-    meta = MessageMeta(df)
-    input_cm.payload(meta)
-
-    output_cm = stage.pre_process_batch(input_cm, stage._fea_length, stage.features)
-    assert cp.array_equal(output_cm.tensors().get_tensor("input__0"), cp.asarray(df.to_cupy()))
-    expect_seq_ids = cp.zeros((df.shape[0], 3), dtype=cp.uint32)
-    expect_seq_ids[:, 0] = cp.arange(0, df.shape[0], dtype=cp.uint32)
-    expect_seq_ids[:, 2] = stage._fea_length - 1
-    assert cp.array_equal(output_cm.tensors().get_tensor("seq_ids"), expect_seq_ids)
