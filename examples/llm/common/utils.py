@@ -15,7 +15,7 @@
 import logging
 
 import pymilvus
-from langchain.embeddings import HuggingFaceEmbeddings  # pylint: disable=no-name-in-module
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from morpheus_llm.llm.services.llm_service import LLMService
 from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService

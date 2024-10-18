@@ -21,8 +21,8 @@ import typing
 import pandas as pd
 
 from morpheus.config import ExecutionMode
+from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_aliases import DataFrameTypeStr
 from morpheus.utils.type_aliases import SeriesType
 from morpheus.utils.type_utils import df_type_str_to_exec_mode
 from morpheus.utils.type_utils import is_cudf_type
@@ -140,22 +140,82 @@ def truncate_string_cols_by_bytes(df: DataFrameType,
     return performed_truncation
 
 
-@typing.overload
-def get_json_reader(df_type_str: DataFrameTypeStr) -> typing.Callable[..., DataFrameType]:
-    ...
+def _selector_to_exec_mode(selector: DataFrameModule | ExecutionMode) -> ExecutionMode:
+    if not isinstance(selector, ExecutionMode):
+        execution_mode = df_type_str_to_exec_mode(selector)
+    else:
+        execution_mode = selector
+
+    return execution_mode
 
 
-def get_json_reader(execution_mode: ExecutionMode) -> typing.Callable[..., DataFrameType]:
+def _get_df_method(selector: DataFrameModule | ExecutionMode, method_name: str) -> typing.Callable[..., DataFrameType]:
     """
-    Return the appropriate JSON reader based on the execution mode.
+    Return the appropriate DataFrame method based on the execution mode.
     """
-    if not isinstance(execution_mode, ExecutionMode):
-        execution_mode = df_type_str_to_exec_mode(execution_mode)
+    execution_mode = _selector_to_exec_mode(selector)
 
     if (execution_mode == ExecutionMode.GPU):
         import cudf
-        reader = functools.partial(cudf.read_json, engine='cudf')
+        method = getattr(cudf, method_name)
     else:
-        reader = pd.read_json
+        method = getattr(pd, method_name)
+
+    return method
+
+
+@typing.overload
+def get_csv_reader(selector: DataFrameModule) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+@typing.overload
+def get_csv_reader(selector: ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+def get_csv_reader(selector: DataFrameModule | ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    """
+    Return the appropriate CSV reader based on the execution mode.
+    """
+    return _get_df_method(selector, 'read_csv')
+
+
+@typing.overload
+def get_json_reader(selector: DataFrameModule) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+@typing.overload
+def get_json_reader(selector: ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+def get_json_reader(selector: DataFrameModule | ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    """
+    Return the appropriate JSON reader based on the execution mode.
+    """
+    execution_mode = _selector_to_exec_mode(selector)
+    reader = _get_df_method(execution_mode, 'read_json')
+
+    if (execution_mode == ExecutionMode.GPU):
+        reader = functools.partial(reader, engine='cudf')
 
     return reader
+
+
+@typing.overload
+def get_parquet_reader(selector: DataFrameModule) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+@typing.overload
+def get_parquet_reader(selector: ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    ...
+
+
+def get_parquet_reader(selector: DataFrameModule | ExecutionMode) -> typing.Callable[..., DataFrameType]:
+    """
+    Return the appropriate Parquet reader based on the execution mode.
+    """
+    return _get_df_method(selector, 'read_parquet')

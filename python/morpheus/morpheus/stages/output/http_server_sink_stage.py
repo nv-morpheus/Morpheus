@@ -35,7 +35,6 @@ from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import HttpParseResponse
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_utils import get_df_pkg
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +114,7 @@ class HttpServerSinkStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
 
         self._df_serializer_fn = df_serializer_fn or self._default_df_serializer
 
-        self._df_pkg = get_df_pkg(config.execution_mode)
+        self._df_pkg = self.get_df_pkg()
 
         # FiberQueue doesn't have a way to check the size, nor does it have a way to check if it's empty without
         # attempting to perform a read. We'll keep track of the size ourselves.
