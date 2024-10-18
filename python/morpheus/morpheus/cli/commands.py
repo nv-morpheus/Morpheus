@@ -27,7 +27,7 @@ from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_config_from_ctx
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_pipeline_from_ctx
-from morpheus.cli.utils import load_labels_file
+from morpheus.cli.utils import parse_enum
 from morpheus.cli.utils import parse_log_level
 from morpheus.cli.utils import prepare_command
 from morpheus.config import Config
@@ -35,6 +35,7 @@ from morpheus.config import ConfigFIL
 from morpheus.config import ConfigOnnxToTRT
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
+from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
 
 # pylint: disable=line-too-long, import-outside-toplevel, invalid-name, global-at-module-level, unused-argument

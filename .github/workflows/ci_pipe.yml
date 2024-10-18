@@ -21,18 +21,17 @@ on:
       run_check:
         required: true
         type: boolean
-      conda_core_run_build:
-        description: 'Runs the stage to build the morpheus-core conda package'
-        required: true
-        type: boolean
       conda_upload_label:
         description: 'The label to use when uploading the morpheus conda packages. Leave empty to disable uploading'
         required: true
         type: string
       conda_run_build:
-        description: 'Runs the conda-build stage to build the conda package with all morpheus components'
+        description: 'Runs the conda-build stage to build the morpheus conda packages'
         required: true
         type: boolean
+      base_container:
+        required: true
+        type: string
       container:
         required: true
         type: string
@@ -138,7 +137,8 @@ jobs:
   test:
     name: Test
     runs-on: linux-amd64-gpu-v100-latest-1
-    timeout-minutes: 60
+    # Consider lowering this back down to 60 minutes per https://github.com/nv-morpheus/Morpheus/issues/1948
+    timeout-minutes: 90
     container:
       credentials:
         username: '$oauthtoken'
@@ -204,17 +204,18 @@ jobs:
         shell: bash
         run: ./morpheus/ci/scripts/github/docs.sh
 
-  package-core:
-    name: Package Core
-    if: ${{ inputs.conda_core_run_build }}
+  package:
+    name: Conda Package
+    if: ${{ inputs.conda_run_build }}
     needs: [documentation, test]
-    runs-on: linux-amd64-cpu16
+    runs-on: linux-amd64-gpu-v100-latest-1
     timeout-minutes: 60
     container:
-      credentials:
-        username: '$oauthtoken'
-        password: ${{ secrets.NGC_API_KEY }}
-      image: ${{ inputs.container }}
+      image: ${{ inputs.base_container }}
+      options: --cap-add=sys_nice
+      env:
+        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
+        PARALLEL_LEVEL: '10'
     strategy:
       fail-fast: true
 
@@ -240,38 +241,4 @@ jobs:
           CONDA_TOKEN: "${{ secrets.CONDA_TOKEN }}"
           SCRIPT_ARGS: "${{ inputs.conda_upload_label != '' && 'upload' || '' }}"
           CONDA_PKG_LABEL: "${{ inputs.conda_upload_label }}"
-        run: ./morpheus/ci/scripts/github/conda_core.sh $SCRIPT_ARGS
-
-  package:
-    name: Package All
-    if: ${{ inputs.conda_run_build }}
-    needs: [check, documentation, test]
-    runs-on: linux-amd64-cpu16
-    timeout-minutes: 60
-    container:
-      credentials:
-        username: '$oauthtoken'
-        password: ${{ secrets.NGC_API_KEY }}
-      image: ${{ inputs.container }}
-    strategy:
-      fail-fast: true
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          lfs: false
-          path: 'morpheus'
-          fetch-depth: 0
-          submodules: 'recursive'
-
-      - name: Get AWS credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@v1-node16
-        with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-          role-duration-seconds: 43200 # 12h
-
-      - name: conda
-        shell: bash
-        run: ./morpheus/ci/scripts/github/conda.sh
+        run: ./morpheus/ci/scripts/github/conda_libs.sh $SCRIPT_ARGS

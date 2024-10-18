@@ -39,9 +39,9 @@ def ip_to_int(values):
     >>> ip.ip_to_int(cudf.Series(["192.168.0.1","10.0.0.1"]))
     0    3232235521
     1    167772161
-    dtype: int64
+    dtype: uint32
     """
-    return cudf.Series(values.str.ip2int())
+    return values.str.ip2int()
 
 
 def int_to_ip(values):
@@ -52,7 +52,7 @@ def int_to_ip(values):
     Parameters
     ----------
     values : cudf.Series
-        Integer representations of IP addresses
+        uint32 representations of IP addresses
 
     Returns
     -------
@@ -63,12 +63,12 @@ def int_to_ip(values):
     --------
     >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> ip.int_to_ip(cudf.Series([3232235521, 167772161]))
+    >>> ip.int_to_ip(cudf.Series([3232235521, 167772161], dtype=cudf.api.types.dtype("uint32")))
     0    192.168.0.1
     1    10.0.0.1
     dtype: object
     """
-    return cudf.Series(values._column.int2ip())
+    return cudf.Series._from_column(values._column.int2ip())
 
 
 def is_ip(ips: str):

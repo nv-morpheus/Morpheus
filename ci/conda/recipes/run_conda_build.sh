@@ -126,7 +126,7 @@ CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}defa
 if [[ ${NUMARGS} == 0 ]]; then
    echo -e "${r}ERROR: No arguments were provided. Please provide at least one package to build. Available packages:${x}"
    echo -e "${r}   morpheus${x}"
-   echo -e "${r}   morpheus-core${x}"
+   echo -e "${r}   morpheus-libs${x}"
    echo -e "${r}   pydebug${x}"
    echo -e "${r}Exiting...${x}"
    exit 12
@@ -134,7 +134,6 @@ fi
 
 if hasArg morpheus; then
    export MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
-   export MORPHEUS_BUILD_MORPHEUS_LLM=${MORPHEUS_BUILD_MORPHEUS_LLM:-ON}
    # Set GIT_VERSION to set the project version inside of meta.yaml
    export GIT_VERSION="$(get_version)"
 
@@ -144,15 +143,13 @@ if hasArg morpheus; then
    set +x
 fi
 
-if hasArg morpheus-core; then
-   export MORPHEUS_SUPPORT_DOCA=-OFF
-   export MORPHEUS_BUILD_MORPHEUS_LLM=-OFF
+if hasArg morpheus-libs; then
    # Set GIT_VERSION to set the project version inside of meta.yaml
    export GIT_VERSION="$(get_version)"
 
-   echo "Running conda-build for morpheus-core v${GIT_VERSION}..."
+   echo "Running conda-build for morpheus libraries v${GIT_VERSION}..."
    set -x
-   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus-core
+   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus-libs
    set +x
 fi
 

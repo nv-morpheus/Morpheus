@@ -19,6 +19,7 @@ import queue
 import time
 import typing
 from http import HTTPStatus
+from io import StringIO
 
 import mrc
 
@@ -166,7 +167,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                 df = self._payload_to_df_fn(payload, self._lines)
             else:
                 # engine='cudf' is needed when lines=False to avoid using pandas
-                df = cudf.read_json(payload, lines=self._lines, engine='cudf')
+                df = cudf.read_json(StringIO(initial_value=payload), lines=self._lines, engine='cudf')
 
         except Exception as e:
             err_msg = "Error occurred converting HTTP payload to Dataframe"
@@ -256,7 +257,6 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                             or not subscription.is_subscribed()):
                         self._processing = False
                     else:
-                        logger.debug("Queue empty, sleeping ...")
                         time.sleep(self._sleep_time)
                 except Closed:
                     logger.error("Queue closed unexpectedly, shutting down")

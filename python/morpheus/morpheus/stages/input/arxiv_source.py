@@ -37,7 +37,7 @@ if typing.TYPE_CHECKING:
 IMPORT_ERROR_MESSAGE = (
     "ArxivSource requires additional dependencies to be installed. Install them by running the following command: "
     "`conda env update --solver=libmamba -n morpheus"
-    "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
+    "--file conda/environments/all_cuda-125_arch-x86_64.yaml --prune`")
 
 
 @register_stage("from-arxiv")
@@ -47,7 +47,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
     This stage requires several additional dependencies to be installed. Install them by running the following command:
     `conda env update --solver=libmamba -n morpheus "
-    "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`
+    "--file conda/environments/all_cuda-125_arch-x86_64.yaml --prune`
 
     Parameters
     ----------
@@ -160,7 +160,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
     def _process_pages(self, pdf_path: str):
         try:
-            from langchain.document_loaders import PyPDFLoader
+            from langchain_community.document_loaders import PyPDFLoader
             from pypdf.errors import PdfStreamError
         except ImportError as exc:
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc

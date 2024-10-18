@@ -35,7 +35,7 @@ from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
 from morpheus.cli.utils import get_package_relative_file
-from morpheus.cli.utils import load_labels_file
+from morpheus.utils.file_utils import load_labels_file
 ```
 ```python
 CppConfig.set_should_use_cpp(False)
@@ -209,7 +209,7 @@ For input files containing an ISO 8601 formatted date string the `iso_date_regex
 from functools import partial
 
 from morpheus.utils.file_utils import date_extractor
-from dfp.utils.regex_utils import iso_date_regex
+from morpheus_dfp.utils.regex_utils import iso_date_regex
 ```
 ```python
 # Batch files into buckets by time. Use the default ISO date extractor from the filename

@@ -16,9 +16,9 @@ import pickle
 
 # pylint: disable=no-name-in-module
 from langchain.document_loaders.rss import RSSFeedLoader
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores.milvus import Milvus
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from examples.llm.vdb_upload.vdb_utils import DEFAULT_RSS_URLS
 from morpheus.utils.logging_timer import log_time

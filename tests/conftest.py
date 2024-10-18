@@ -43,9 +43,14 @@ from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unuse
 (PYTEST_KAFKA_AVAIL, PYTEST_KAFKA_ERROR) = _init_pytest_kafka()
 if PYTEST_KAFKA_AVAIL:
     # Pull out the fixtures into this namespace
+    # pylint: disable=ungrouped-imports
     from _utils.kafka import _kafka_consumer  # noqa: F401  pylint:disable=unused-import
     from _utils.kafka import kafka_server  # noqa: F401  pylint:disable=unused-import
     from _utils.kafka import zookeeper_proc  # noqa: F401  pylint:disable=unused-import
+
+OPT_DEP_SKIP_REASON = (
+    "This test requires the {package} package to be installed, to install this run:\n"
+    "`conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-125_arch-x86_64.yaml`")
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -1064,22 +1069,7 @@ def nemollm_fixture(fail_missing: bool):
     """
     Fixture to ensure nemollm is installed
     """
-    skip_reason = ("Tests for the NeMoLLMService require the nemollm package to be installed, to install this run:\n"
-                   "`conda env update --solver=libmamba -n morpheus "
-                   "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
-    yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
-
-
-@pytest.fixture(name="nvfoundationllm", scope='session')
-def nvfoundationllm_fixture(fail_missing: bool):
-    """
-    Fixture to ensure nvfoundationllm is installed
-    """
-    skip_reason = (
-        "Tests for NVFoundation require the langchain-nvidia-ai-endpoints package to be installed, to install this "
-        "run:\n `conda env update --solver=libmamba -n morpheus "
-        "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
-    yield import_or_skip("langchain_nvidia_ai_endpoints", reason=skip_reason, fail_missing=fail_missing)
+    yield import_or_skip("nemollm", reason=OPT_DEP_SKIP_REASON.format(package="nemollm"), fail_missing=fail_missing)
 
 
 @pytest.fixture(name="openai", scope='session')
@@ -1087,10 +1077,81 @@ def openai_fixture(fail_missing: bool):
     """
     Fixture to ensure openai is installed
     """
-    skip_reason = ("Tests for the OpenAIChatService require the openai package to be installed, to install this run:\n"
-                   "`conda env update --solver=libmamba -n morpheus "
-                   "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
-    yield import_or_skip("openai", reason=skip_reason, fail_missing=fail_missing)
+    yield import_or_skip("openai", reason=OPT_DEP_SKIP_REASON.format(package="openai"), fail_missing=fail_missing)
+
+
+@pytest.fixture(scope='session')
+def dask_distributed(fail_missing: bool):
+    """
+    Mark tests requiring dask.distributed
+    """
+    yield import_or_skip("dask.distributed",
+                         reason=OPT_DEP_SKIP_REASON.format(package="dask.distributed"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(scope='session')
+def dask_cuda(fail_missing: bool):
+    """
+    Mark tests requiring dask_cuda
+    """
+    yield import_or_skip("dask_cuda", reason=OPT_DEP_SKIP_REASON.format(package="dask_cuda"), fail_missing=fail_missing)
+
+
+@pytest.fixture(scope='session')
+def mlflow(fail_missing: bool):
+    """
+    Mark tests requiring mlflow
+    """
+    yield import_or_skip("mlflow", reason=OPT_DEP_SKIP_REASON.format(package="mlflow"), fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain", scope='session')
+def langchain_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain is installed
+    """
+    yield import_or_skip("langchain", reason=OPT_DEP_SKIP_REASON.format(package="langchain"), fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain_core", scope='session')
+def langchain_core_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain_core is installed
+    """
+    yield import_or_skip("langchain_core",
+                         reason=OPT_DEP_SKIP_REASON.format(package="langchain_core"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain_community", scope='session')
+def langchain_community_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain_community is installed
+    """
+    yield import_or_skip("langchain_community",
+                         reason=OPT_DEP_SKIP_REASON.format(package="langchain_community"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain_nvidia_ai_endpoints", scope='session')
+def langchain_nvidia_ai_endpoints_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain_nvidia_ai_endpoints is installed
+    """
+    yield import_or_skip("langchain_nvidia_ai_endpoints",
+                         reason=OPT_DEP_SKIP_REASON.format(package="langchain_nvidia_ai_endpoints"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(name="databricks", scope='session')
+def databricks_fixture(fail_missing: bool):
+    """
+    Fixture to ensure databricks is installed
+    """
+    yield import_or_skip("databricks.connect",
+                         reason=OPT_DEP_SKIP_REASON.format(package="databricks-connect"),
+                         fail_missing=fail_missing)
 
 
 @pytest.mark.usefixtures("openai")
@@ -1126,3 +1187,26 @@ def mock_subscription_fixture():
     ms = mock.MagicMock()
     ms.is_subscribed.return_value = True
     return ms
+
+
+# ==== SharedProcessPool Fixtures ====
+# Any tests that use the SharedProcessPool should use this fixture
+@pytest.fixture(scope="module")
+def shared_process_pool_setup_and_teardown():
+    from morpheus.utils.shared_process_pool import SharedProcessPool
+
+    # Set lower CPU usage for unit test to avoid slowing down the test
+    os.environ["MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE"] = "0.1"
+
+    pool = SharedProcessPool()
+
+    # SharedProcessPool might be configured and used in other tests, stop and reset the pool before the test starts
+    pool.stop()
+    pool.join()
+    pool.reset()
+    yield pool
+
+    # Stop the pool after all tests are done
+    pool.stop()
+    pool.join()
+    os.environ.pop("MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE", None)
