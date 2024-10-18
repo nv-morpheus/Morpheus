@@ -61,7 +61,7 @@ def test_get_module():
     assert isinstance(module_instance, mrc.core.segment.SegmentModule)
 
 
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize("expected_count", [1, 2])
 def test_to_control_message_module(config, filter_probs_df, expected_count):
     dataframes = [filter_probs_df for _ in range(expected_count)]

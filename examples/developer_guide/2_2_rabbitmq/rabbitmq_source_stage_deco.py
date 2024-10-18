@@ -22,15 +22,15 @@ import mrc
 import pandas as pd
 import pika
 
-import cudf
-
+from morpheus.config import ExecutionMode
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.stage_decorator import source
+from morpheus.utils.type_utils import get_df_pkg
 
 logger = logging.getLogger(__name__)
 
 
-@source(name="from-rabbitmq")
+@source(name="from-rabbitmq", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
 def rabbitmq_source(subscription: mrc.Subscription,
                     host: str,
                     exchange: str,
@@ -69,13 +69,15 @@ def rabbitmq_source(subscription: mrc.Subscription,
 
     poll_interval = pd.Timedelta(poll_interval)
 
+    df_pkg = get_df_pkg()
+
     try:
         while subscription.is_subscribed():
             (method_frame, _, body) = channel.basic_get(queue_name)
             if method_frame is not None:
                 try:
                     buffer = StringIO(body.decode("utf-8"))
-                    df = cudf.io.read_json(buffer, orient='records', lines=True)
+                    df = df_pkg.read_json(buffer, orient='records', lines=True)
                     yield MessageMeta(df=df)
                 except Exception as ex:
                     logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)

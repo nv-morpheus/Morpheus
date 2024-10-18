@@ -21,13 +21,14 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
 
 @register_stage("pass-thru")
-class PassThruStage(PassThruTypeMixin, SinglePortStage):
+class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 
     def __init__(self, config: Config):
         super().__init__(config)

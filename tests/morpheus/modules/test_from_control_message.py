@@ -71,7 +71,7 @@ def test_get_module():
     fn_constructor("FromControlMessageTest", config)  # pylint: disable=not-callable
 
 
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize("filename, expected_count", [("train_infer.json", 0), ("train.json", 0)],
                          indirect=["filename"])
 def test_cm_with_no_payload(config, filename, expected_count):
@@ -97,7 +97,7 @@ def test_cm_with_no_payload(config, filename, expected_count):
     assert len(sink_stage.get_messages()) == expected_count
 
 
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize("filename, expected_count", [("train_infer.json", 2), ("train.json", 1)],
                          indirect=["filename"])
 def test_cm_with_with_payload(config, filename, expected_count):

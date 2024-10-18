@@ -17,10 +17,9 @@
 
 #include "../test_utils/common.hpp"  // IWYU pragma: associated
 
-#include "morpheus/messages/control.hpp"     // for ControlMessage
-#include "morpheus/messages/meta.hpp"        // for MessageMeta
-#include "morpheus/objects/table_info.hpp"   // for MutableTableInfo
-#include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
+#include "morpheus/messages/control.hpp"    // for ControlMessage
+#include "morpheus/messages/meta.hpp"       // for MessageMeta
+#include "morpheus/objects/table_info.hpp"  // for MutableTableInfo
 
 #include <gtest/gtest.h>
 #include <pybind11/gil.h>       // for gil_scoped_release, gil_scoped_acquire
@@ -34,20 +33,7 @@ using namespace morpheus;
 using namespace morpheus::test;
 
 class TestDevDocEx3 : public morpheus::test::TestWithPythonInterpreter
-{
-  protected:
-    void SetUp() override
-    {
-        morpheus::test::TestWithPythonInterpreter::SetUp();
-        {
-            pybind11::gil_scoped_acquire gil;
-
-            // Initially I ran into an issue bootstrapping cudf, I was able to work-around the issue, details in:
-            // https://github.com/rapidsai/cudf/issues/12862
-            CudfHelper::load();
-        }
-    }
-};
+{};
 
 TEST_F(TestDevDocEx3, TestPyObjFromMultiMesg)
 {

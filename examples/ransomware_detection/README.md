@@ -68,7 +68,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 Run the following from the root of the Morpheus repo to start the ransomware detection pipeline:
 
 ```bash
-python examples/ransomware_detection/run.py --server_url=localhost:8001 \
+python examples/ransomware_detection/run.py --server_url=localhost:8000 \
               --sliding_window=3 \
               --model_name=ransomw-model-short-rf \
               --input_glob=./examples/data/appshield/*/snapshot-*/*.json \

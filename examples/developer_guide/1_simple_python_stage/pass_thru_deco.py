@@ -15,10 +15,11 @@
 
 import typing
 
+from morpheus.config import ExecutionMode
 from morpheus.pipeline.stage_decorator import stage
 
 
-@stage
+@stage(execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
 def pass_thru_stage(message: typing.Any) -> typing.Any:
     # Return the message for the next stage
     return message

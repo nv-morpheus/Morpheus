@@ -25,6 +25,7 @@ import cudf
 
 from _utils import assert_results
 from _utils import mk_async_infer
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
@@ -122,16 +123,16 @@ def test_resource_pool_create_raises_error():
     assert pool.borrow_obj() == 20
 
 
-@pytest.mark.use_python
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
 def test_stage_constructor_worker_class(config: Config, pipeline_mode: PipelineModes):
     config.mode = pipeline_mode
-    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000')
+    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', use_shared_memory=True)
     worker = stage._get_inference_worker(ProducerConsumerQueue())
     assert isinstance(worker, TritonInferenceWorker)
 
 
-@pytest.mark.use_python
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
 @pytest.mark.parametrize("needs_logits", [True, False, None])
 def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes, needs_logits: bool | None):
@@ -142,7 +143,11 @@ def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes
 
     config.mode = pipeline_mode
 
-    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', needs_logits=needs_logits)
+    stage = TritonInferenceStage(config,
+                                 model_name='test',
+                                 server_url='test:0000',
+                                 needs_logits=needs_logits,
+                                 use_shared_memory=True)
 
     worker = stage._get_inference_worker(ProducerConsumerQueue())
     assert isinstance(worker, TritonInferenceWorker)
@@ -150,8 +155,7 @@ def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
-# @pytest.mark.parametrize('num_records', [1000, 2000, 4000])
+@pytest.mark.gpu_mode
 @pytest.mark.parametrize('num_records', [10])
 @mock.patch('tritonclient.grpc.InferenceServerClient')
 def test_triton_stage_pipe(mock_triton_client, config, num_records):
@@ -196,8 +200,13 @@ def test_triton_stage_pipe(mock_triton_client, config, num_records):
     pipe_cm.add_stage(DeserializeStage(config))
     pipe_cm.add_stage(PreprocessFILStage(config))
     pipe_cm.add_stage(
-        TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='test:0000', force_convert_inputs=True))
-    pipe_cm.add_stage(AddScoresStage(config, prefix="score_"))
+        # Intentionally using use_shared_memory=True as this is the only way to use the Python impl
+        TritonInferenceStage(config,
+                             model_name='abp-nvsmi-xgb',
+                             server_url='test:0000',
+                             force_convert_inputs=True,
+                             use_shared_memory=True))
+    pipe_cm.add_stage(AddScoresStage(config, prefix="score_", probs_type=TypeId.FLOAT64))
     pipe_cm.add_stage(SerializeStage(config))
     comp_stage = pipe_cm.add_stage(CompareDataFrameStage(config, expected_df))
 

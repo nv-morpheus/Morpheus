@@ -97,7 +97,7 @@ def _run_pipeline(config: Config, source_dfs: list[cudf.DataFrame], model_name: 
 
 
 @pytest.mark.usefixtures("openai", "restore_environ")
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.benchmark
 @mock.patch("langchain.utilities.serpapi.SerpAPIWrapper.aresults")
 @mock.patch("langchain.OpenAI._agenerate", autospec=True)  # autospec is needed as langchain will inspect the function

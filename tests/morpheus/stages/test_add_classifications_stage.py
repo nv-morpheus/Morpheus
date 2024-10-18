@@ -16,23 +16,21 @@
 
 import typing
 
-import cupy as cp
+import numpy as np
+import pandas as pd
 import pytest
 import typing_utils
 
-import cudf
-
 from _utils.dataset_manager import DatasetManager
-# pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 
 
 @pytest.fixture(name="config")
-def config_fixture(config: Config, use_cpp: bool):  # pylint: disable=unused-argument
+def config_fixture(config: Config):
     config.class_labels = ['frogs', 'lizards', 'toads']
     yield config
 
@@ -60,20 +58,20 @@ def test_constructor_errors(config: Config):
         AddClassificationsStage(config, labels=['missing'])
 
 
-@pytest.mark.use_python
-def test_add_labels():
+@pytest.mark.cpu_mode
+def test_add_labels_with_contgrol_message():
 
     class_labels = {0: "frogs", 1: "lizards", 2: "toads"}
 
     threshold = 0.6
 
-    df = cudf.DataFrame([0, 1], columns=["dummy"])
-    probs_array = cp.array([[0.1, 0.6, 0.8], [0.3, 0.61, 0.9]])
+    df = pd.DataFrame([0, 1], columns=["dummy"])
+    probs_array = np.array([[0.1, 0.6, 0.8], [0.3, 0.61, 0.9]])
     probs_array_bool = probs_array > threshold
 
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(CppTensorMemory(count=2, tensors={"probs": probs_array}))
+    cm.tensors(TensorMemory(count=2, tensors={"probs": probs_array}))
 
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=threshold)
 
@@ -84,7 +82,7 @@ def test_add_labels():
     # Too small of a probs array
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(CppTensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
+    cm.tensors(TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
 
     with pytest.raises(RuntimeError):
         AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=threshold)

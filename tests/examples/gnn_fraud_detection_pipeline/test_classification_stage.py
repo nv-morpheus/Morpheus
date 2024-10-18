@@ -25,7 +25,7 @@ from morpheus.messages import MessageMeta
 # pylint: disable=no-name-in-module
 
 
-@pytest.mark.use_python
+@pytest.mark.gpu_mode
 class TestClassificationStage:
 
     def test_constructor(self, config: Config, xgb_model: str, cuml: types.ModuleType):

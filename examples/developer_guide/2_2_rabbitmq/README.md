@@ -54,6 +54,7 @@ If no exchange named 'logs' exists in RabbitMQ it will be created. By default th
 ## Launch the writer
 In a third terminal from the root of the Morpheus repo execute:
 ```bash
+export MORPHEUS_ROOT=$(pwd)
 python examples/developer_guide/2_2_rabbitmq/write_simple.py
 ```
 
