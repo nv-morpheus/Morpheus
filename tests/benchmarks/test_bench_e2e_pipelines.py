@@ -21,7 +21,6 @@ import pytest
 
 from _utils import TEST_DIRS
 from morpheus.config import Config
-from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
@@ -41,7 +40,7 @@ from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 from morpheus.utils.file_utils import load_labels_file
-from morpheus.utils.logger import configure_logging
+from morpheus.utils.logger import set_log_level
 
 E2E_CONFIG_FILE = os.path.join(TEST_DIRS.morpheus_root, "tests/benchmarks/e2e_test_configs.json")
 with open(E2E_CONFIG_FILE, 'r', encoding='UTF-8') as f:
@@ -50,7 +49,7 @@ with open(E2E_CONFIG_FILE, 'r', encoding='UTF-8') as f:
 
 def nlp_pipeline(config: Config, input_file, repeat, vocab_hash_file, output_file, model_name):
 
-    configure_logging(log_level=logging.INFO)
+    set_log_level(log_level=logging.DEBUG)
 
     pipeline = LinearPipeline(config)
     pipeline.set_source(FileSourceStage(config, filename=input_file, repeat=repeat))
@@ -77,7 +76,7 @@ def nlp_pipeline(config: Config, input_file, repeat, vocab_hash_file, output_fil
 
 def fil_pipeline(config: Config, input_file, repeat, output_file, model_name):
 
-    configure_logging(log_level=logging.INFO)
+    set_log_level(log_level=logging.DEBUG)
 
     pipeline = LinearPipeline(config)
     pipeline.set_source(FileSourceStage(config, filename=input_file, repeat=repeat))
@@ -99,7 +98,8 @@ def fil_pipeline(config: Config, input_file, repeat, output_file, model_name):
 
 def ae_pipeline(config: Config, input_glob, repeat, train_data_glob, output_file):
 
-    configure_logging(log_level=logging.INFO)
+    set_log_level(log_level=logging.DEBUG)
+
     pipeline = LinearPipeline(config)
     pipeline.set_source(CloudTrailSourceStage(config, input_glob=input_glob, max_files=200, repeat=repeat))
     pipeline.add_stage(
@@ -196,30 +196,3 @@ def test_phishing_nlp_e2e(benchmark, tmp_path):
     model_name = "phishing-bert-onnx"
 
     benchmark(nlp_pipeline, config, input_filepath, repeat, vocab_filepath, output_filepath, model_name)
-
-
-@pytest.mark.benchmark
-def test_cloudtrail_ae_e2e(benchmark, tmp_path):
-
-    config = Config()
-    config.mode = PipelineModes.AE
-    config.num_threads = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["num_threads"]
-    config.pipeline_batch_size = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["pipeline_batch_size"]
-    config.model_max_batch_size = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["model_max_batch_size"]
-    config.feature_length = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["feature_length"]
-    config.edge_buffer_size = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["edge_buffer_size"]
-    config.class_labels = ["reconstruct_loss", "zscore"]
-
-    config.ae = ConfigAutoEncoder()
-    config.ae.userid_column_name = "userIdentityaccountId"
-    config.ae.userid_filter = "Account-123456789"
-    ae_cols_filepath = os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')
-    config.ae.feature_columns = load_labels_file(ae_cols_filepath)
-    CppConfig.set_should_use_cpp(False)
-
-    input_glob = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["input_glob_path"]
-    repeat = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["repeat"]
-    train_glob = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["train_glob_path"]
-    output_filepath = os.path.join(tmp_path, "cloudtrail_ae_e2e_output.csv")
-
-    benchmark(ae_pipeline, config, input_glob, repeat, train_glob, output_filepath)

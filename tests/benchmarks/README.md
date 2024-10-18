@@ -48,32 +48,20 @@ Once Triton server finishes starting up, it will display the status of all loade
 
 ### Set up Morpheus Dev Container
 
-If you don't already have the Morpheus Dev container, run the following to build it:
+Follow the instructions [here](../../docs/source/developer_guide/contributing.md#build-in-docker-container) to set up your development environment in either a Docker container or Conda environment.
+
+##### Install the required dependencies
+
+Run the following in the `/workspace` directory of your dev container:
 ```bash
-./docker/build_container_dev.sh
+mamba env update \
+  -n ${CONDA_DEFAULT_ENV} \
+  --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
 ```
 
-Now run the container:
-```bash
-./docker/run_container_dev.sh
-```
+##### Fetch input data for benchmarks
 
-Note that Morpheus containers are tagged by date. By default, `run_container_dev.sh` will try to use current date as tag. Therefore, if you are trying to run a container that was not built on the current date, you must set the `DOCKER_IMAGE_TAG` environment variable. For example,
-```bash
-DOCKER_IMAGE_TAG=dev-221003 ./docker/run_container_dev.sh
-```
-
-In the `/workspace` directory of the container, run the following to compile Morpheus:
-```bash
-./scripts/compile.sh
-```
-
-Now install Morpheus:
-```bash
-pip install -e /workspace
-```
-
-Fetch input data for benchmarks:
+Run the following in the `/workspace` directory of your dev container:
 ```bash
 ./scripts/fetch_data.py fetch validation
 ```
@@ -124,7 +112,6 @@ The `test_bench_e2e_pipelines.py` script contains several benchmarks within it.
 - `test_sid_nlp_e2e`
 - `test_abp_fil_e2e`
 - `test_phishing_nlp_e2e`
-- `test_cloudtrail_ae_e2e`
 
 For example, to run E2E benchmarks on the SID NLP workflow:
 ```bash
@@ -138,11 +125,10 @@ pytest -s --run_benchmark --benchmark-enable --benchmark-warmup=on --benchmark-w
 
 The console output should look like this:
 ```
---------------------------------------------------------------------------------- benchmark: 4 tests --------------------------------------------------------------------------------
+--------------------------------------------------------------------------------- benchmark: 3 tests --------------------------------------------------------------------------------
 Name (time in s)              Min               Max              Mean            StdDev            Median               IQR            Outliers     OPS            Rounds  Iterations
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 test_sid_nlp_e2e           1.8907 (1.0)      1.9817 (1.0)      1.9400 (1.0)      0.0325 (2.12)     1.9438 (1.0)      0.0297 (1.21)          2;0  0.5155 (1.0)           5           1
-test_cloudtrail_ae_e2e     3.3403 (1.77)     3.3769 (1.70)     3.3626 (1.73)     0.0153 (1.0)      3.3668 (1.73)     0.0245 (1.0)           1;0  0.2974 (0.58)          5           1
 test_abp_fil_e2e           5.1271 (2.71)     5.3044 (2.68)     5.2083 (2.68)     0.0856 (5.59)     5.1862 (2.67)     0.1653 (6.75)          1;0  0.1920 (0.37)          5           1
 test_phishing_nlp_e2e      5.6629 (3.00)     6.0987 (3.08)     5.8835 (3.03)     0.1697 (11.08)    5.8988 (3.03)     0.2584 (10.55)         2;0  0.1700 (0.33)          5           1
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -193,7 +179,7 @@ Additional benchmark stats for each workflow:
 
 ### Production DFP E2E Benchmarks
 
-Note that the `test_cloudtrail_ae_e2e` benchmarks measure performance of a pipeline built using [Starter DFP](../../examples/digital_fingerprinting/starter/README.md) stages. Separate benchmark tests are also provided to measure performance of the example [Production DFP](../../examples/digital_fingerprinting/production/README.md) pipelines. More information about running those benchmarks can be found [here](../../examples/digital_fingerprinting/production/morpheus/benchmarks/README.md).
+Separate benchmark tests are provided to measure performance of the example [Production DFP](../../examples/digital_fingerprinting/production/README.md) pipelines. More information about running those benchmarks can be found [here](../../examples/digital_fingerprinting/production/morpheus/benchmarks/README.md).
 
 You can use the same Dev container created here to run the Production DFP benchmarks. You would just need to install additional dependencies as follows:
 
