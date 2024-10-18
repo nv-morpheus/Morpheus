@@ -24,7 +24,7 @@ from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import ExecutionMode
-from morpheus.utils.type_aliases import DataFrameTypeStr
+from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_utils import exec_mode_to_df_type_str
 
 
@@ -191,13 +191,8 @@ def test_fixture_neither(execution_mode: ExecutionMode):
 
 
 # === Config Fixture ===
-@pytest.mark.usefixtures("config_no_cpp")
-def test_config_fixture_no_cpp():
-    assert not CppConfig.get_should_use_cpp()
-
-
-@pytest.mark.usefixtures("config_only_cpp")
-def test_config_fixture_only_cpp():
+@pytest.mark.usefixtures("config")
+def test_config_fixture():
     assert CppConfig.get_should_use_cpp()
 
 
@@ -258,7 +253,7 @@ def test_df_type_no_marks(df_type, df_type_from_marker):
     assert df_type == df_type_from_marker
 
 
-def test_df_type_matches_execution_mode(df_type: DataFrameTypeStr, execution_mode: ExecutionMode):
+def test_df_type_matches_execution_mode(df_type: DataFrameModule, execution_mode: ExecutionMode):
     assert df_type == exec_mode_to_df_type_str(execution_mode)
 
 

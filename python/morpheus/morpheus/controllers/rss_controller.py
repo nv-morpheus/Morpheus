@@ -28,8 +28,8 @@ import requests
 import requests_cache
 
 from morpheus.messages import MessageMeta
+from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_aliases import DataFrameTypeStr
 from morpheus.utils.type_utils import get_df_class
 
 logger = logging.getLogger(__name__)
@@ -107,7 +107,7 @@ class RSSController:
                  stop_after: int = 0,
                  interval_secs: float = 600,
                  should_stop_fn: Callable[[], bool] = None,
-                 df_type: DataFrameTypeStr = "cudf"):
+                 df_type: DataFrameModule = "cudf"):
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 

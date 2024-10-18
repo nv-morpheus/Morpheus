@@ -29,7 +29,6 @@ from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.utils.type_utils import exec_mode_to_df_type_str
 
 logger = logging.getLogger(__name__)
 
@@ -99,8 +98,6 @@ class FileSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
         self._iterative = iterative
         self._repeat_count = repeat
 
-        self._df_type = exec_mode_to_df_type_str(c.execution_mode)
-
     @property
     def name(self) -> str:
         """Return the name of the stage"""
@@ -142,7 +139,7 @@ class FileSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
             filter_nulls=self._filter_null,
             filter_null_columns=self._filter_null_columns,
             parser_kwargs=self._parser_kwargs,
-            df_type=self._df_type,
+            df_type=self.df_type_str,
         )
 
         for i in range(self._repeat_count):

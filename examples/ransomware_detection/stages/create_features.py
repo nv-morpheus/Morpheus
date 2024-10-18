@@ -20,8 +20,6 @@ from dask.distributed import Client
 
 import cudf
 
-from common.data_models import FeatureConfig  # pylint: disable=no-name-in-module
-from common.feature_extractor import FeatureExtractor  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -29,6 +27,9 @@ from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
+
+from common.data_models import FeatureConfig  # pylint: disable=no-name-in-module # isort: skip
+from common.feature_extractor import FeatureExtractor  # pylint: disable=no-name-in-module # isort: skip
 
 
 @register_stage("create-features", modes=[PipelineModes.FIL])
