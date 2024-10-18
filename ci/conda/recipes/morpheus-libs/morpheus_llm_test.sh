@@ -20,4 +20,16 @@ rapids-dependency-file-generator \
 
 pip install -r llm_requirements.txt
 
+# Install requirements if they are included in the package
+python3 <<EOF
+import pkgutil
+import subprocess
+try:
+    data = pkgutil.get_data("morpheus_llm", "requirements.txt")
+    requirements = data.decode("utf-8")
+    subprocess.call(f"pip install {requirements}".split())
+except FileNotFoundError:
+    pass
+EOF
+
 pytest tests/morpheus_llm
