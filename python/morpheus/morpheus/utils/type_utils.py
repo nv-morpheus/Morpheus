@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Utility functions for working with types."""
 
 import inspect
 import types
@@ -240,7 +241,7 @@ def df_type_str_to_pkg(df_type_str: DataFrameModule) -> types.ModuleType:
 
     Returns
     -------
-    types.ModuleType
+    `types.ModuleType`
         The associated DataFrame package based on the DataFrame type string.
     """
     if df_type_str == "cudf":
@@ -285,7 +286,7 @@ def get_df_pkg(selector: ExecutionMode | DataFrameModule = None) -> types.Module
 
     Returns
     -------
-    types.ModuleType
+    `types.ModuleType`
         The associated DataFrame package based on the selector.
     """
     if selector is None:
@@ -333,7 +334,7 @@ def get_df_class(selector: ExecutionMode | DataFrameModule = None) -> type[DataF
 
     Returns
     -------
-    type[DataFrameType]
+    `type[DataFrameType]`
     """
     df_pkg = get_df_pkg(selector)
     return df_pkg.DataFrame
@@ -345,12 +346,12 @@ def is_cudf_type(obj: typing.Any) -> bool:
 
     Parameters
     ----------
-    obj : typing.Any
+    obj : `typing.Any`
         The object to check.
 
     Returns
     -------
-    bool
+    `bool`
         `True` if the object is a cuDF type, `False` otherwise.
     """
     return "cudf" in str(type(obj))
@@ -362,12 +363,12 @@ def get_df_pkg_from_obj(obj: typing.Any) -> types.ModuleType:
 
     Parameters
     ----------
-    obj : typing.Any
+    obj : `typing.Any`
         The object to check.
 
     Returns
     -------
-    types.ModuleType
+    `types.ModuleType`
         The associated DataFrame package based on the object.
     """
     if is_cudf_type(obj):
@@ -383,12 +384,12 @@ def is_dataframe(obj: typing.Any) -> bool:
 
     Parameters
     ----------
-    obj : typing.Any
+    obj : `typing.Any`
         The object to check.
 
     Returns
     -------
-    bool
+    `bool`
         `True` if the object is a DataFrame, `False` otherwise.
     """
     df_pkg = get_df_pkg_from_obj(obj)
@@ -408,7 +409,7 @@ def get_array_pkg(execution_mode: ExecutionMode = None) -> types.ModuleType:
 
     Returns
     -------
-    types.ModuleType
+    `types.ModuleType`
         The associated array package based on the execution mode.
     """
     if execution_mode is None:
