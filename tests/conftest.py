@@ -502,13 +502,11 @@ def disable_gc():
     gc.enable()
 
 
-def wait_for_camouflage(host="localhost", port=8000, timeout=30):
+def wait_for_server(url: str, timeout: int, parse_fn: typing.Callable[[requests.Response], bool]) -> bool:
 
     start_time = time.time()
     cur_time = start_time
     end_time = start_time + timeout
-
-    url = f"http://{host}:{port}/ping"
 
     while cur_time - start_time <= timeout:
         timeout_epoch = min(cur_time + 2.0, end_time)
@@ -518,12 +516,8 @@ def wait_for_camouflage(host="localhost", port=8000, timeout=30):
             resp = requests.get(url, timeout=request_timeout)
 
             if (resp.status_code == 200):
-                if (resp.json()['message'] == 'I am alive.'):
+                if parse_fn(resp):
                     return True
-
-                warnings.warn(("Camoflage returned status 200 but had incorrect response JSON. Continuing to wait. "
-                               "Response JSON:\n%s"),
-                              resp.json())
 
         except Exception:
             pass
@@ -535,6 +529,31 @@ def wait_for_camouflage(host="localhost", port=8000, timeout=30):
         cur_time = time.time()
 
     return False
+
+
+def wait_for_camouflage(host: str = "localhost", port: int = 8000, timeout: int = 30):
+    url = f"http://{host}:{port}/ping"
+
+    def parse_fn(resp: requests.Response) -> bool:
+        if (resp.json()['message'] == 'I am alive.'):
+            return True
+
+        warnings.warn(("Camoflage returned status 200 but had incorrect response JSON. Continuing to wait. "
+                       "Response JSON:\n%s"),
+                      resp.json())
+        return False
+
+    return wait_for_server(url, timeout=timeout, parse_fn=parse_fn)
+
+
+def wait_for_milvus(host: str = "localhost", port: int = 19530, timeout: int = 180):
+    url = f'http://{host}:{port}/healthz'
+
+    def parse_fn(resp: requests.Response) -> bool:
+        content = resp.content.decode('utf-8')
+        return 'OK' in content
+
+    return wait_for_server(url, timeout=timeout, parse_fn=parse_fn)
 
 
 def _set_pdeathsig(sig=signal.SIGTERM):
@@ -954,18 +973,21 @@ def milvus_server_uri(tmp_path_factory):
         yield uri
 
     else:
-        from milvus import default_server
+        from milvus import MilvusServer
+
+        milvus_server = MilvusServer(wait_for_started=False)
 
         # Milvus checks for already bound ports but it doesnt seem to work for webservice_port. Use a random one
-        default_server.webservice_port = _get_random_port()
-        with default_server:
-            default_server.set_base_dir(tmp_path_factory.mktemp("milvus_store"))
-
-            host = default_server.server_address
-            port = default_server.listen_port
+        webservice_port = _get_random_port()
+        milvus_server.webservice_port = webservice_port
+        milvus_server.set_base_dir(tmp_path_factory.mktemp("milvus_store"))
+        with milvus_server:
+            host = milvus_server.server_address
+            port = milvus_server.listen_port
             uri = f"http://{host}:{port}"
 
             logger.info("Started Milvus at: %s", uri)
+            wait_for_milvus(host=host, port=webservice_port, timeout=180)
 
             yield uri
 
@@ -974,6 +996,13 @@ def milvus_server_uri(tmp_path_factory):
 def milvus_data_fixture():
     inital_data = [{"id": i, "embedding": [i / 10.0] * 3, "age": 25 + i} for i in range(10)]
     yield inital_data
+
+
+@pytest.fixture(scope="session", name="milvus_service")
+def milvus_service_fixture(milvus_server_uri: str):
+    from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBService
+    service = MilvusVectorDBService(uri=milvus_server_uri)
+    yield service
 
 
 @pytest.fixture(scope="session", name="idx_part_collection_config")
