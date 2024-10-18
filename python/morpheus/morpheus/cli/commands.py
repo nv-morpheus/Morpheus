@@ -27,7 +27,6 @@ from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_config_from_ctx
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_pipeline_from_ctx
-from morpheus.cli.utils import parse_enum
 from morpheus.cli.utils import parse_log_level
 from morpheus.cli.utils import prepare_command
 from morpheus.config import Config
