@@ -107,7 +107,7 @@ morpheus --log_level=DEBUG run pipeline-other \
 
 Then the following error displays:
 ```
-RuntimeError: The to-file stage cannot handle input of <class 'morpheus._lib.messages.ControlMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
+RuntimeError: The to-file stage cannot handle input of <class 'morpheus.messages.control_message.ControlMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
 ```
 
 This indicates that the ``to-file`` stage cannot accept the input type of `morpheus.messages.ControlMessage`. This is because the ``to-file`` stage has no idea how to write that class to a file; it only knows how to write instances of `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `ControlMessage`, to `MessageMeta`, which is exactly what the `serialize` stage does.
@@ -207,7 +207,7 @@ This example shows an NLP Pipeline which uses several stages available in Morphe
 #### Launching Triton
 Run the following to launch Triton and load the `sid-minibert` model:
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
 ```
 
 #### Launching Kafka
@@ -216,15 +216,15 @@ Follow steps 1-8 in [Quick Launch Kafka Cluster](../developer_guide/contributing
 ![../img/nlp_kitchen_sink.png](../img/nlp_kitchen_sink.png)
 
 ```bash
-morpheus  --log_level=INFO run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+morpheus  --log_level=INFO run  --pipeline_batch_size=1024 --model_max_batch_size=32 \
    pipeline-nlp --viz_file=.tmp/nlp_kitchen_sink.png  \
    from-file --filename examples/data/pcap_dump.jsonlines \
    deserialize \
    preprocess \
-   inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8001 \
+   inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8000 \
    monitor --description "Inference Rate" --smoothing=0.001 --unit "inf" \
    add-class \
-   filter --threshold=0.8 \
+   filter --filter_source=TENSOR --threshold=0.8 \
    serialize --include 'timestamp' --exclude '^_ts_' \
    to-kafka --bootstrap_servers localhost:9092 --output_topic "inference_output" \
    monitor --description "ToKafka Rate" --smoothing=0.001 --unit "msg"

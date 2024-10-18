@@ -39,16 +39,22 @@ run:
    $ morpheus run --help
    Usage: morpheus run [OPTIONS] COMMAND [ARGS]...
 
+   Run subcommand, used for running a pipeline
+
    Options:
-   --num_threads INTEGER RANGE     Number of internal pipeline threads to use  [default: 12; x>=1]
+   --num_threads INTEGER RANGE     Number of internal pipeline threads to use  [default: 64; x>=1]
    --pipeline_batch_size INTEGER RANGE
                                     Internal batch size for the pipeline. Can be much larger than the model batch size. Also used for Kafka consumers  [default: 256; x>=1]
    --model_max_batch_size INTEGER RANGE
                                     Max batch size to use for the model  [default: 8; x>=1]
    --edge_buffer_size INTEGER RANGE
-                                    The size of buffered channels to use between nodes in a pipeline. Larger values reduce backpressure at the cost of memory. Smaller values will push
-                                    messages through the pipeline quicker. Must be greater than 1 and a power of 2 (i.e. 2, 4, 8, 16, etc.)  [default: 128; x>=2]
-   --use_cpp BOOLEAN               Whether or not to use C++ node and message types or to prefer python. Only use as a last resort if bugs are encountered  [default: True]
+                                    The size of buffered channels to use between nodes in a pipeline. Larger values reduce backpressure at the cost of memory. Smaller
+                                    values will push messages through the pipeline quicker. Must be greater than 1 and a power of 2 (i.e. 2, 4, 8, 16, etc.)  [default:
+                                    128; x>=2]
+   --use_cpp BOOLEAN               [Deprecated] Whether or not to use C++ node and message types or to prefer python. Only use as a last resort if bugs are encountered.
+                                    Cannot be used with --use_cpu_only  [default: True]
+   --use_cpu_only                  Whether or not to run in CPU only mode, setting this to True will disable C++ mode. Cannot be used with --use_cpp
+   --manual_seed INTEGER RANGE     Manually seed the random number generators used by Morpheus, useful for testing.  [x>=1]
    --help                          Show this message and exit.
 
    Commands:
@@ -56,6 +62,7 @@ run:
    pipeline-fil    Run the inference pipeline with a FIL model
    pipeline-nlp    Run the inference pipeline with a NLP model
    pipeline-other  Run a custom inference pipeline without a specific model type
+
 
 Currently, Morpheus pipeline can be operated in four different modes.
 

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Utility functions for working with types."""
 
 import inspect
 import types
@@ -175,6 +176,16 @@ def get_full_qualname(klass: type) -> str:
 def df_type_str_to_exec_mode(df_type_str: DataFrameModule) -> ExecutionMode:
     """
     Return the appropriate execution mode based on the DataFrame type string.
+
+    Parameters
+    ----------
+    df_type_str : `morpheus.utils.type_aliases.DataFrameModule`
+        The DataFrame type string.
+
+    Returns
+    -------
+    `morpheus.config.ExecutionMode`
+        The associated execution mode based on the DataFrame type string.
     """
     if df_type_str == "cudf":
         return ExecutionMode.GPU
@@ -186,6 +197,19 @@ def df_type_str_to_exec_mode(df_type_str: DataFrameModule) -> ExecutionMode:
 
 
 def exec_mode_to_df_type_str(execution_mode: ExecutionMode) -> DataFrameModule:
+    """
+    Return the appropriate DataFrame type string based on the execution mode.
+
+    Parameters
+    ----------
+    execution_mode : `morpheus.config.ExecutionMode`
+        The execution mode.
+
+    Returns
+    -------
+    `morpheus.utils.type_aliases.DataFrameModule`
+        The associated DataFrame type string based on the execution mode.
+    """
     if execution_mode == ExecutionMode.GPU:
         return "cudf"
 
@@ -193,6 +217,14 @@ def exec_mode_to_df_type_str(execution_mode: ExecutionMode) -> DataFrameModule:
 
 
 def cpp_mode_to_exec_mode() -> ExecutionMode:
+    """
+    Return the execution mode based on the configuration of the global `morpheus.config.CppConfig` singleton.
+
+    Returns
+    -------
+    `morpheus.config.ExecutionMode`
+        The execution mode.
+    """
     if CppConfig.get_should_use_cpp():
         return ExecutionMode.GPU
     return ExecutionMode.CPU
@@ -200,7 +232,17 @@ def cpp_mode_to_exec_mode() -> ExecutionMode:
 
 def df_type_str_to_pkg(df_type_str: DataFrameModule) -> types.ModuleType:
     """
-    Return the appropriate DataFrame package based on the DataFrame type string.
+    Import and return the appropriate DataFrame package based on the DataFrame type string.
+
+    Parameters
+    ----------
+    df_type_str : `morpheus.utils.type_aliases.DataFrameModule`
+        The DataFrame type string.
+
+    Returns
+    -------
+    `types.ModuleType`
+        The associated DataFrame package based on the DataFrame type string.
     """
     if df_type_str == "cudf":
         import cudf
@@ -224,7 +266,28 @@ def get_df_pkg(selector: ExecutionMode = None) -> types.ModuleType:
 
 def get_df_pkg(selector: ExecutionMode | DataFrameModule = None) -> types.ModuleType:
     """
-    Return the appropriate DataFrame package based on the execution mode.
+    Return the appropriate DataFrame package based on `selector` which can be either an `ExecutionMode` instance, a
+    DataFrame type string, or `None`.
+
+    When `None` the execution mode is determined by the global `morpheus.config.CppConfig` singleton.
+
+    This method is best used within code which needs to operate in both CPU and GPU modes, where simply importing `cudf`
+    would cause an import error if the user is not using a GPU.
+    Example usage::
+
+        from morpheus.utils.type_utils import get_df_pkg
+        df_pkg = get_df_pkg()
+        ser = df_pkg.Series([1,2,3])
+
+    Parameters
+    ----------
+    selector : `morpheus.utils.type_aliases.DataFrameModule` | `morpheus.config.ExecutionMode` | None, optional
+        The selector to determine the DataFrame package, by default None.
+
+    Returns
+    -------
+    `types.ModuleType`
+        The associated DataFrame package based on the selector.
     """
     if selector is None:
         execution_mode = cpp_mode_to_exec_mode()
@@ -252,7 +315,26 @@ def get_df_class(selector: ExecutionMode = None) -> type[DataFrameType]:
 
 def get_df_class(selector: ExecutionMode | DataFrameModule = None) -> type[DataFrameType]:
     """
-    Return the appropriate DataFrame class based on the execution mode.
+    Return the appropriate DataFrame `selector` which can be either an `ExecutionMode` instance, a
+    DataFrame type string, or `None`.
+
+    When `None` the execution mode is determined by the global `morpheus.config.CppConfig` singleton.
+
+    This method is best used within code which needs to construct a DataFrame in both CPU and GPU modes.
+    Example usage::
+
+        from morpheus.utils.type_utils import get_df_class
+        df_class = get_df_class()
+        df = df_class({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+
+    Parameters
+    ----------
+    selector : `morpheus.utils.type_aliases.DataFrameModule` | `morpheus.config.ExecutionMode` | None, optional
+        The selector to determine the DataFrame class, by default None.
+
+    Returns
+    -------
+    `type[DataFrameType]`
     """
     df_pkg = get_df_pkg(selector)
     return df_pkg.DataFrame
@@ -261,13 +343,33 @@ def get_df_class(selector: ExecutionMode | DataFrameModule = None) -> type[DataF
 def is_cudf_type(obj: typing.Any) -> bool:
     """
     Check if a given object (DataFrame, Series, RangeIndex etc...) is a cuDF type.
+
+    Parameters
+    ----------
+    obj : `typing.Any`
+        The object to check.
+
+    Returns
+    -------
+    `bool`
+        `True` if the object is a cuDF type, `False` otherwise.
     """
     return "cudf" in str(type(obj))
 
 
 def get_df_pkg_from_obj(obj: typing.Any) -> types.ModuleType:
     """
-    Return the appropriate DataFrame package based on the DataFrame object.
+    Return the appropriate DataFrame package based on a given object (DataFrame, Series, RangeIndex etc...).
+
+    Parameters
+    ----------
+    obj : `typing.Any`
+        The object to check.
+
+    Returns
+    -------
+    `types.ModuleType`
+        The associated DataFrame package based on the object.
     """
     if is_cudf_type(obj):
         import cudf
@@ -279,6 +381,16 @@ def get_df_pkg_from_obj(obj: typing.Any) -> types.ModuleType:
 def is_dataframe(obj: typing.Any) -> bool:
     """
     Check if a given object is a pandas or cudf DataFrame.
+
+    Parameters
+    ----------
+    obj : `typing.Any`
+        The object to check.
+
+    Returns
+    -------
+    `bool`
+        `True` if the object is a DataFrame, `False` otherwise.
     """
     df_pkg = get_df_pkg_from_obj(obj)
     return isinstance(obj, df_pkg.DataFrame)
@@ -287,6 +399,18 @@ def is_dataframe(obj: typing.Any) -> bool:
 def get_array_pkg(execution_mode: ExecutionMode = None) -> types.ModuleType:
     """
     Return the appropriate array package (CuPy for GPU, NumPy for CPU) based on the execution mode.
+
+    When `None` the execution mode is determined by the global `morpheus.config.CppConfig` singleton.
+
+    Parameters
+    ----------
+    execution_mode : `morpheus.config.ExecutionMode`, optional
+        The execution mode, by default `None`.
+
+    Returns
+    -------
+    `types.ModuleType`
+        The associated array package based on the execution mode.
     """
     if execution_mode is None:
         execution_mode = cpp_mode_to_exec_mode()
