@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# morpheus tests are dependent on some pypi packages
-rapids-dependency-file-generator \
-  --output requirements \
-  --file-key morpheus_core --matrix "" | tee "core_requirements.txt"
-
-pip install -r core_requirements.txt
+python3 <<EOF
+import pkgutil
+import subprocess
+data = pkgutil.get_data("morpheus", "requirements_morpheus_core.txt")
+requirements = data.decode("utf-8")
+subprocess.call(f"pip install {requirements}".split())
+EOF
 
 pytest tests/morpheus

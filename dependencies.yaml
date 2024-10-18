@@ -176,23 +176,27 @@ files:
       - checks
       - python
 
-  # pip dependencies that are used during the conda test stage for morpheus-llm output
-  morpheus_llm:
-    output: none
-    includes:
-      - test_morpheus_core_pip
-
-  # pip dependencies that are used during the conda test stage for morpheus-core output
+  # morpheus-core pip dependencies are published as a morpheus package data file
   morpheus_core:
-    output: none
+    output: requirements
+    requirements_dir: python/morpheus/morpheus
     includes:
-      - test_morpheus_core_pip
+      - morpheus_core_pip
 
-  # pip dependencies that are used during the conda test stage for morpheus-dfp output
+  # morpheus-dfp pip dependencies are published as a morpheus_dfp package data file
   morpheus_dfp:
-    output: none
+    output: requirements
+    requirements_dir: python/morpheus_dfp/morpheus_dfp
     includes:
-      - test_morpheus_core_pip
+      - morpheus_core_pip
+
+  # morpheus-llm pip dependencies are published as a morpheus_llm package data file
+  morpheus_llm:
+    output: requirements
+    requirements_dir: python/morpheus_llm/morpheus_llm
+    includes:
+      - morpheus_core_pip
+      - morpheus_llm_pip
 
 channels:
   - conda-forge
@@ -401,13 +405,12 @@ dependencies:
           - pip:
               - pytest-kafka==0.6.0
 
-  test_morpheus_core_pip:
+  morpheus_core_pip:
     common:
       - output_types: [requirements]
         packages:
            - --extra-index-url https://download.pytorch.org/whl/cu124
            - torch==2.4.0+cu124
-
 
   morpheus_llm_pip:
     common:

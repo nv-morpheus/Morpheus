@@ -13,23 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# llm library and tests are dependent on a number of pypi packages - fixme
-rapids-dependency-file-generator \
-  --output requirements \
-  --file-key morpheus_llm --matrix "" | tee "llm_requirements.txt"
-
-pip install -r llm_requirements.txt
-
 # Install requirements if they are included in the package
 python3 <<EOF
 import pkgutil
 import subprocess
-try:
-    data = pkgutil.get_data("morpheus_llm", "requirements.txt")
-    requirements = data.decode("utf-8")
-    subprocess.call(f"pip install {requirements}".split())
-except FileNotFoundError:
-    pass
+data = pkgutil.get_data("morpheus_llm", "requirements_morpheus_llm.txt")
+requirements = data.decode("utf-8")
+subprocess.call(f"pip install {requirements}".split())
 EOF
 
 pytest tests/morpheus_llm
