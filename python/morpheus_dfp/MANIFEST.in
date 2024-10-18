@@ -1,2 +1,3 @@
 include morpheus_dfp/_version.py
+include morpheus_dfp/requirements_morpheus_dfp.txt
 recursive-include morpheus_dfp py.typed
