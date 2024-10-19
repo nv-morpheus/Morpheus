@@ -311,6 +311,7 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - pylint=3.0.3
+          - pynvml=11.4.1
           - vale=3.7
           - vale-styles-microsoft
           - vale-styles-write-good
