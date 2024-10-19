@@ -19,12 +19,13 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.config import Config
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.atomic_integer import AtomicInteger
 
 
-class ErrorRaiserStage(PassThruTypeMixin, SinglePortStage):
+class ErrorRaiserStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     """
     Stage that raises an exception in the on_data method
     """

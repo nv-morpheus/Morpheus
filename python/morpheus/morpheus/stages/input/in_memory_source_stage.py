@@ -16,13 +16,12 @@ import typing
 
 import mrc
 
-import cudf
-
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.input.in_memory_data_generation_stage import InMemoryDataGenStage
+from morpheus.utils.type_aliases import DataFrameType
 
 
 class InMemorySourceStage(PreallocatorMixin, InMemoryDataGenStage):
@@ -33,13 +32,13 @@ class InMemorySourceStage(PreallocatorMixin, InMemoryDataGenStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    dataframes : typing.List[cudf.DataFrame]
+    dataframes : list[DataFrameType]
         List of dataframes to emit wrapped in `MessageMeta` instances in order.
     repeat : int, default = 1, min = 1
         Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
     """
 
-    def __init__(self, c: Config, dataframes: typing.List[cudf.DataFrame], repeat: int = 1):
+    def __init__(self, c: Config, dataframes: list[DataFrameType], repeat: int = 1):
         # Prepare a generator function based on the provided dataframes and repeat count
         self._dataframes = dataframes
         self._repeat_count = repeat

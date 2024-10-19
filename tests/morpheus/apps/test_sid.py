@@ -169,7 +169,7 @@ def _run_minibert(*,
 
 
 @pytest.mark.slow
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.usefixtures("launch_mock_triton")
 def test_minibert_no_trunc(config: Config, tmp_path: str, morpheus_log_level: int):
 

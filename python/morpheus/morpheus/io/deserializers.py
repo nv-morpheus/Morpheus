@@ -17,23 +17,38 @@
 import io
 import typing
 
-import pandas as pd
-
-import cudf
+import numpy as np
 
 from morpheus.common import FileTypes
 from morpheus.common import determine_file_type
 from morpheus.common import read_file_to_df as read_file_to_df_cpp
 from morpheus.config import CppConfig
 from morpheus.io.utils import filter_null_data
+from morpheus.io.utils import get_csv_reader
+from morpheus.io.utils import get_json_reader
+from morpheus.io.utils import get_parquet_reader
+from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_aliases import DataFrameType
+
+
+def get_reader(file_type: FileTypes, df_type: DataFrameModule) -> typing.Callable[..., DataFrameType]:
+    if (file_type == FileTypes.CSV):
+        return get_csv_reader(df_type)
+
+    if (file_type == FileTypes.JSON):
+        return get_json_reader(df_type)
+
+    if (file_type == FileTypes.PARQUET):
+        return get_parquet_reader(df_type)
+
+    raise ValueError(f"Unsupported file type: {file_type}")
 
 
 def _read_file_to_df_py(*,
                         file_name: typing.Union[str, io.IOBase],
                         file_type: FileTypes,
                         parser_kwargs: dict,
-                        df_type: typing.Literal["cudf", "pandas"]) -> DataFrameType:
+                        df_type: DataFrameModule) -> DataFrameType:
     if (parser_kwargs is None):
         parser_kwargs = {}
 
@@ -59,28 +74,14 @@ def _read_file_to_df_py(*,
 
     # Update with any args set by the user. User values overwrite defaults
     kwargs.update(parser_kwargs)
+    reader = get_reader(mode, df_type)
 
-    df_class = cudf if df_type == "cudf" else pd
-
-    df = None
-    if (mode == FileTypes.JSON):
-        df = df_class.read_json(file_name, **kwargs)
-
-    elif (mode == FileTypes.CSV):
-        df: pd.DataFrame = df_class.read_csv(file_name, **kwargs)
-
-        if (len(df.columns) > 1 and df.columns[0] == "Unnamed: 0" and df.iloc[:, 0].dtype == cudf.dtype(int)):
+    df: DataFrameType = reader(file_name, **kwargs)
+    if (mode == FileTypes.CSV):
+        if (len(df.columns) > 1 and df.columns[0] == "Unnamed: 0" and df.iloc[:, 0].dtype == np.dtype(int)):
             df.set_index("Unnamed: 0", drop=True, inplace=True)
             df.index.name = ""
             df.sort_index(inplace=True)
-
-    elif (mode == FileTypes.PARQUET):
-        df = df_class.read_parquet(file_name, **kwargs)
-
-    else:
-        assert False, f"Unsupported file type mode: {mode}"
-
-    assert df is not None
 
     return df
 
@@ -90,7 +91,7 @@ def read_file_to_df(file_name: typing.Union[str, io.IOBase],
                     parser_kwargs: dict = None,
                     filter_nulls: bool = True,
                     filter_null_columns: list[str] | str = 'data',
-                    df_type: typing.Literal["cudf", "pandas"] = "pandas") -> DataFrameType:
+                    df_type: DataFrameModule = "pandas") -> DataFrameType:
     """
     Reads a file into a dataframe and performs any of the necessary cleanup.
 
@@ -106,7 +107,7 @@ def read_file_to_df(file_name: typing.Union[str, io.IOBase],
         Whether to filter null rows after loading, by default True.
     filter_null_columns : list[str]|str, default = 'data'
         Column or columns to filter null values from. Ignored when `filter_null` is False.
-    df_type : typing.Literal[, optional
+    df_type : typing.Literal["cudf", "pandas"], optional
         What type of parser to use. Options are 'cudf' and 'pandas', by default "pandas".
 
     Returns

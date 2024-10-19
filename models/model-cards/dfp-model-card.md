@@ -52,7 +52,7 @@ The model architecture consists of an Autoencoder, where the reconstruction loss
 * Reconstruction loss (per feature)
 
 **Output Parameters:**
-* Pandas DataFrame
+* pandas DataFrame
 
 ## Software Integration:
 **Runtime:**

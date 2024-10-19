@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import typing
-from abc import abstractmethod
 
 import mrc
 from mrc.core import operators as ops
@@ -38,7 +37,6 @@ class PreprocessBaseStage(ControlMessageStage):
     def __init__(self, c: Config):
         super().__init__(c)
 
-        self._preprocess_fn = None
         self._should_log_timestamps = True
 
     def accepted_types(self) -> typing.Tuple:
@@ -49,24 +47,27 @@ class PreprocessBaseStage(ControlMessageStage):
         return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):
-        self._preprocess_fn = self._get_preprocess_fn()
         schema.output_schema.set_type(ControlMessage)
 
-    @abstractmethod
     def _get_preprocess_fn(self) -> typing.Callable[[ControlMessage], ControlMessage]:
-        pass
+        """
+        This method should be implemented by any subclasses with a Python implementation.
+        """
+        raise NotImplementedError("No Python implementation provided by this stage")
 
-    @abstractmethod
     def _get_preprocess_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        pass
+        """
+        This method should be implemented by any subclasses with a C++ implementation.
+        """
+        raise NotImplementedError("No C++ implementation provided by this stage")
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        assert self._preprocess_fn is not None, "Preprocess function not set"
         if self._build_cpp_node():
             node = self._get_preprocess_node(builder)
             node.launch_options.pe_count = self._config.num_threads
         else:
-            node = builder.make_node(self.unique_name, ops.map(self._preprocess_fn))
+            preprocess_fn = self._get_preprocess_fn()
+            node = builder.make_node(self.unique_name, ops.map(preprocess_fn))
 
         builder.make_edge(input_node, node)
 

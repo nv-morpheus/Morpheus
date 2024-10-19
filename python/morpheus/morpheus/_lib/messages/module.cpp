@@ -29,8 +29,7 @@
 #include "morpheus/messages/raw_packet.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
-#include "morpheus/pybind11/json.hpp"  // IWYU pragma: keep
-#include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/pybind11/json.hpp"         // IWYU pragma: keep
 #include "morpheus/utilities/json_types.hpp"  // for json_t
 #include "morpheus/utilities/string_util.hpp"
 #include "morpheus/version.hpp"
@@ -127,10 +126,7 @@ PYBIND11_MODULE(messages, _module)
 
         )pbdoc";
 
-    // Load the cudf helpers
-    CudfHelper::load();
-
-    mrc::pymrc::import(_module, "cupy");
+    mrc::pymrc::import(_module, "cupy");  // It should be safe to import cupy in CPU only mode
     mrc::pymrc::import(_module, "morpheus._lib.common");
 
     // Required for SegmentObject
@@ -259,6 +255,7 @@ PYBIND11_MODULE(messages, _module)
         .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)))
         .def(py::init(py::overload_cast<const py::object&, py::dict&>(&ControlMessageProxy::create)))
         .def(py::init(py::overload_cast<std::shared_ptr<ControlMessage>>(&ControlMessageProxy::create)))
+        .def(py::init(py::overload_cast<py::object&>(&ControlMessageProxy::create)))
         .def("add_task", &ControlMessage::add_task, py::arg("task_type"), py::arg("task"))
         .def(
             "config", py::overload_cast<const morpheus::utilities::json_t&>(&ControlMessage::config), py::arg("config"))

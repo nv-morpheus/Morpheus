@@ -24,12 +24,15 @@
 #include <pybind11/pytypes.h>  // for object, dict, list
 #include <pybind11/stl.h>      // IWYU pragma: keep
 
-#include <chrono>    // for system_clock, time_point
+// for system_clock, time_point
+#include <chrono>    // IWYU pragma: keep
 #include <map>       // for map
 #include <memory>    // for shared_ptr
 #include <optional>  // for optional
 #include <string>    // for string
 #include <vector>    // for vector
+
+// IWYU pragma: no_include <bits/chrono.h>
 
 namespace morpheus {
 
@@ -248,6 +251,8 @@ class MORPHEUS_EXPORT ControlMessage
     static const std::string s_config_schema;                          // NOLINT
     static std::map<std::string, ControlMessageType> s_task_type_map;  // NOLINT
 
+    ControlMessageType to_task_type(const std::string& task_type, bool throw_on_error) const;
+
     ControlMessageType m_cm_type{ControlMessageType::NONE};
     std::shared_ptr<MessageMeta> m_payload{nullptr};
     std::shared_ptr<TensorMemory> m_tensors{nullptr};
@@ -261,11 +266,13 @@ class MORPHEUS_EXPORT ControlMessage
 struct MORPHEUS_EXPORT ControlMessageProxy
 {
     /**
-     * @brief Creates a new ControlMessage instance from a configuration dictionary.
-     * @param config A pybind11::dict representing the configuration for the ControlMessage.
+     * @brief Creates a new ControlMessage instance from either a Python instance of a ControlMessage or a configuration
+     * dictionary.
+     * @param config_or_message Either a Python instance of a ControlMessage or a dict representing the configuration
+     * for the ControlMessage.
      * @return A shared_ptr to a newly created ControlMessage instance.
      */
-    static std::shared_ptr<ControlMessage> create(pybind11::dict& config);
+    static std::shared_ptr<ControlMessage> create(pybind11::object& config_or_message);
 
     /**
      * @brief Creates a new ControlMessage instance from a Python MessageMeta and a configuration dictionary.

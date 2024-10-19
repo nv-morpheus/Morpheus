@@ -18,14 +18,15 @@ import cupy as cp
 import mrc
 import pandas as pd
 
-import morpheus._lib.messages as _messages
-from common.data_models import SnapshotData  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
+from morpheus.messages import InferenceMemoryFIL
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
+
+from common.data_models import SnapshotData  # pylint: disable=no-name-in-module #isort:skip
 
 
 @register_stage("ransomware-preprocess", modes=[PipelineModes.FIL])
@@ -38,13 +39,13 @@ class PreprocessingRWStage(PreprocessBaseStage):
     ----------
     c : morpheus.config.Config
         Pipeline configuration instance
-    feature_columns : typing.List[str]
+    feature_columns : list[str]
         List of features needed to be extracted.
     sliding_window: int, default = 3
         Window size to arrange the sanpshots in seequential order.
     """
 
-    def __init__(self, c: Config, feature_columns: typing.List[str], sliding_window: int = 3):
+    def __init__(self, c: Config, feature_columns: list[str], sliding_window: int = 3):
 
         super().__init__(c)
 
@@ -53,7 +54,7 @@ class PreprocessingRWStage(PreprocessBaseStage):
         self._features_len = len(self._feature_columns)
 
         # Stateful member to hold unprocessed snapshots.
-        self._snapshot_dict: typing.Dict[str, typing.List[SnapshotData]] = {}
+        self._snapshot_dict: dict[str, list[SnapshotData]] = {}
 
         # Padding data to map inference response with input messages.
         self._padding_data = [0 for i in range(self._features_len * sliding_window)]
@@ -63,11 +64,10 @@ class PreprocessingRWStage(PreprocessBaseStage):
     def name(self) -> str:
         return "preprocess-rw"
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
-    def _sliding_window_offsets(self, ids: typing.List[int], ids_len: int,
-                                window: int) -> typing.List[typing.Tuple[int]]:
+    def _sliding_window_offsets(self, ids: list[int], ids_len: int, window: int) -> list[tuple[int]]:
         """
         Create snapshot_id's sliding sequence for a given window
         """
@@ -85,10 +85,7 @@ class PreprocessingRWStage(PreprocessBaseStage):
 
         return sliding_window_offsets
 
-    def _rollover_pending_snapshots(self,
-                                    snapshot_ids: typing.List[int],
-                                    source_pid_process: str,
-                                    snapshot_df: pd.DataFrame):
+    def _rollover_pending_snapshots(self, snapshot_ids: list[int], source_pid_process: str, snapshot_df: pd.DataFrame):
         """
         Store the unprocessed snapshots from current run to a stateful member to process them in the next run.
         """
@@ -129,7 +126,9 @@ class PreprocessingRWStage(PreprocessBaseStage):
         Current run's unprocessed snapshots will be rolled over to the next.
         """
 
-        snapshot_df = msg.payload().df
+        meta = msg.payload()
+        snapshot_df = meta.copy_dataframe().to_pandas()
+
         curr_snapshots_size = len(snapshot_df)
 
         # Set snapshot_id as index this is used to get ordered snapshots based on sliding window.
@@ -173,19 +172,18 @@ class PreprocessingRWStage(PreprocessBaseStage):
         self._rollover_pending_snapshots(snapshot_ids, source_pid_process, snapshot_df)
 
         # This column is used to identify whether sequence is genuine or dummy
-        msg.payload().set_data('sequence', sequence)
+        meta.set_data('sequence', sequence)
 
         # Convert data to cupy array
         data = cp.asarray(data)
 
-        seg_ids = cp.zeros((curr_snapshots_size, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(0, curr_snapshots_size, dtype=cp.uint32)
-        seg_ids[:, 2] = self._features_len * 3
+        seq_ids = cp.zeros((curr_snapshots_size, 3), dtype=cp.uint32)
+        seq_ids[:, 0] = cp.arange(0, curr_snapshots_size, dtype=cp.uint32)
+        seq_ids[:, 2] = self._features_len * 3
 
-        memory = _messages.InferenceMemoryFIL(count=curr_snapshots_size, input__0=data, seq_ids=seg_ids)
-        msg.tensors(memory)
+        memory = InferenceMemoryFIL(count=curr_snapshots_size, input__0=data, seq_ids=seq_ids)
         msg.set_metadata("inference_memory_params", {"inference_type": "fil"})
-
+        msg.tensors(memory)
         return msg
 
     def _get_preprocess_fn(self) -> typing.Callable[[ControlMessage], ControlMessage]:

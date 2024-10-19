@@ -21,7 +21,6 @@ from unittest import mock
 import pytest
 
 from _utils import TEST_DIRS
-from _utils import import_or_skip
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 
@@ -30,28 +29,28 @@ SKIP_REASON = (
     "Morpheus development environment.")
 
 
-@pytest.fixture(autouse=True, scope='session')
-def dask_distributed(fail_missing: bool):
+@pytest.fixture(name="dask_distributed", autouse=True, scope='session')
+def dask_distributed_fixture(dask_distributed):
     """
     Mark tests requiring dask.distributed
     """
-    yield import_or_skip("dask.distributed", reason=SKIP_REASON, fail_missing=fail_missing)
+    yield dask_distributed
 
 
-@pytest.fixture(autouse=True, scope='session')
-def dask_cuda(fail_missing: bool):
+@pytest.fixture(name="dask_cuda", autouse=True, scope='session')
+def dask_cuda_fixture(dask_cuda):
     """
-    Mark tests requiring dask.distributed
+    Mark tests requiring dask_cuda
     """
-    yield import_or_skip("dask_cuda", reason=SKIP_REASON, fail_missing=fail_missing)
+    yield dask_cuda
 
 
-@pytest.fixture(autouse=True, scope='session')
-def mlflow(fail_missing: bool):
+@pytest.fixture(name="mlflow", autouse=True, scope='session')
+def mlflow_fixture(mlflow):
     """
     Mark tests requiring mlflow
     """
-    yield import_or_skip("mlflow", reason=SKIP_REASON, fail_missing=fail_missing)
+    yield mlflow
 
 
 @pytest.fixture(name='ae_feature_cols', scope='session')
@@ -61,12 +60,11 @@ def ae_feature_cols_fixture():
 
 
 @pytest.fixture(name="config")
-def config_fixture(config_no_cpp: Config, ae_feature_cols: typing.List[str]):
+def config_fixture(config: Config, ae_feature_cols: typing.List[str]):
     """
     The digital_fingerprinting production example utilizes the Auto Encoder config, and requires C++ execution disabled.
     """
     from morpheus.config import ConfigAutoEncoder
-    config = config_no_cpp
     config.ae = ConfigAutoEncoder()
     config.ae.feature_columns = ae_feature_cols
     yield config
@@ -88,25 +86,22 @@ def dfp_prod_in_sys_path(
     sys.path.append(example_dir)
 
 
-@pytest.fixture(name="dfp_message_meta")
-def dfp_message_meta_fixture(config, dataset_pandas: DatasetManager):
-    import pandas as pd
+@pytest.fixture
+def control_message(config, dataset_cudf: DatasetManager):
+    import cudf
 
-    from morpheus_dfp.messages.dfp_message_meta import DFPMessageMeta
+    from morpheus.messages import ControlMessage
+    from morpheus.messages import MessageMeta
 
     user_id = 'test_user'
-    df = dataset_pandas['filter_probs.csv']
-    df[config.ae.timestamp_column_name] = pd.to_datetime([1683054498 + i for i in range(0, len(df) * 30, 30)], unit='s')
+    df = dataset_cudf['filter_probs.csv']
+    timestamps = [1683054498 + i for i in range(0, len(df) * 30, 30)]
+    df[config.ae.timestamp_column_name] = cudf.to_datetime(timestamps, unit='s')
     df[config.ae.userid_column_name] = user_id
-    yield DFPMessageMeta(df, user_id)
 
-
-@pytest.fixture
-def control_message(dfp_message_meta):
-    from morpheus.messages import ControlMessage
     message = ControlMessage()
-    message.payload(dfp_message_meta)
-    message.set_metadata("user_id", dfp_message_meta.user_id)
+    message.payload(MessageMeta(df))
+    message.set_metadata("user_id", user_id)
     message.set_metadata("model", mock.MagicMock())
 
     yield message

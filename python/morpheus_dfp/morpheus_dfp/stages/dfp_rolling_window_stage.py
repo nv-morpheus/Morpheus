@@ -22,11 +22,13 @@ import mrc
 import pandas as pd
 from mrc.core import operators as ops
 
+import cudf
+
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus_dfp.messages.dfp_message_meta import DFPMessageMeta
 from morpheus_dfp.utils.cached_user_window import CachedUserWindow
 from morpheus_dfp.utils.logging_timer import log_time
 
@@ -88,7 +90,7 @@ class DFPRollingWindowStage(SinglePortStage):
 
     def accepted_types(self) -> typing.Tuple:
         """Input types accepted by this stage."""
-        return (DFPMessageMeta, )
+        return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(ControlMessage)
@@ -115,13 +117,13 @@ class DFPRollingWindowStage(SinglePortStage):
         # # When it returns, make sure to save
         # user_cache.save()
 
-    def _build_window(self, message: DFPMessageMeta) -> ControlMessage:
+    def _build_window(self, message: ControlMessage) -> ControlMessage:
 
-        user_id = message.user_id
+        user_id = message.get_metadata('user_id')
 
         with self._get_user_cache(user_id) as user_cache:
 
-            incoming_df = message.get_data()
+            incoming_df = message.payload().get_data().to_pandas()
             # existing_df = user_cache.df
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
@@ -161,12 +163,12 @@ class DFPRollingWindowStage(SinglePortStage):
 
             # Otherwise return a new message
             response_msg = ControlMessage()
-            response_msg.payload(DFPMessageMeta(df=train_df, user_id=user_id))
+            response_msg.payload(MessageMeta(df=cudf.DataFrame(train_df)))
             response_msg.set_metadata("user_id", user_id)
 
             return response_msg
 
-    def on_data(self, message: DFPMessageMeta) -> ControlMessage:
+    def on_data(self, message: ControlMessage) -> ControlMessage:
         """
         Emits a new message containing the rolling window for the user if and only if the history requirments are met,
         returns `None` otherwise.
@@ -180,10 +182,10 @@ class DFPRollingWindowStage(SinglePortStage):
                 log_info.set_log(
                     ("Rolling window complete for %s in {duration:0.2f} ms. "
                      "Input: %s rows from %s to %s. Output: %s rows from %s to %s"),
-                    message.user_id,
-                    len(message.df),
-                    message.df[self._config.ae.timestamp_column_name].min(),
-                    message.df[self._config.ae.timestamp_column_name].max(),
+                    message.get_metadata('user_id'),
+                    len(message.payload().df),
+                    message.payload().df[self._config.ae.timestamp_column_name].min(),
+                    message.payload().df[self._config.ae.timestamp_column_name].max(),
                     result.payload().count,
                     result.payload().get_data(self._config.ae.timestamp_column_name).min(),
                     result.payload().get_data(self._config.ae.timestamp_column_name).max(),

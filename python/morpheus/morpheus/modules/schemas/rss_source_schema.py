@@ -16,6 +16,7 @@ import logging
 from typing import List
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,4 @@ class RSSSourceSchema(BaseModel):
     interval_sec: int = 600
     stop_after_rec: int = 0
     strip_markup: bool = True
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra='forbid')

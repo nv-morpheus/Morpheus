@@ -20,11 +20,10 @@ import pytest
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages.message_meta import AppShieldMessageMeta
+from morpheus.messages import MessageMeta
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 
-@pytest.mark.use_python
 class TestPreprocessingRWStage:
     # pylint: disable=no-name-in-module
 
@@ -116,9 +115,8 @@ class TestPreprocessingRWStage:
         assert len(stage._snapshot_dict) == 0
 
     def test_merge_curr_and_prev_snapshots(self, config: Config, rwd_conf: dict, dataset_pandas: DatasetManager):
-        from stages.preprocessing import PreprocessingRWStage
-
         from common.data_models import SnapshotData
+        from stages.preprocessing import PreprocessingRWStage
 
         snapshot_ids = [5, 8, 10, 13]
         source_pid_process = "123_test.exe"
@@ -148,22 +146,19 @@ class TestPreprocessingRWStage:
         stage._merge_curr_and_prev_snapshots(df, source_pid_process)
         dataset_pandas.assert_compare_df(df.fillna(''), expected_df)
 
-    def test_pre_process_batch(self, config: Config, rwd_conf: dict, dataset_pandas: DatasetManager):
-
-        # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
-        # pylint: disable=no-member
-
+    def test_pre_process_batch(self, config: Config, rwd_conf: dict, dataset_cudf: DatasetManager):
         from stages.preprocessing import PreprocessingRWStage
-        df = dataset_pandas['examples/ransomware_detection/dask_results.csv']
+        df = dataset_cudf['examples/ransomware_detection/dask_results.csv']
         df['source_pid_process'] = 'appshield_' + df.pid_process
         expected_df = df.copy(deep=True).fillna('')
-        meta = AppShieldMessageMeta(df=df, source='tests')
-        control_msg = ControlMessage()
-        control_msg.payload(meta)
+        meta = MessageMeta(df)
+        cm = ControlMessage()
+        cm.payload(meta)
+        cm.set_metadata('source', 'tests')
 
         sliding_window = 4
         stage = PreprocessingRWStage(config, feature_columns=rwd_conf['model_features'], sliding_window=sliding_window)
-        results: ControlMessage = stage._pre_process_batch(control_msg)
+        results: ControlMessage = stage._pre_process_batch(cm)
         assert isinstance(results, ControlMessage)
 
         expected_df['sequence'] = ['dummy' for _ in range(len(expected_df))]
@@ -172,6 +167,9 @@ class TestPreprocessingRWStage:
         expected_seq_ids[:, 0] = cp.arange(0, len(expected_df), dtype=cp.uint32)
         expected_seq_ids[:, 2] = len(rwd_conf['model_features']) * 3
 
-        dataset_pandas.assert_compare_df(results.payload().get_data().fillna(''), expected_df)
-        assert (results.tensors().get_tensor('input__0') == expected_input__0).all()
-        assert (results.tensors().get_tensor('seq_ids') == expected_seq_ids).all()
+        actual_df = results.payload().copy_dataframe().to_pandas().fillna('')
+        dataset_cudf.assert_compare_df(actual_df, expected_df)
+
+        actual_tensors = results.tensors()
+        assert (actual_tensors.get_tensor('input__0') == expected_input__0).all()
+        assert (actual_tensors.get_tensor('seq_ids') == expected_seq_ids).all()

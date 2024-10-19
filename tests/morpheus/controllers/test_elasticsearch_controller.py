@@ -48,14 +48,12 @@ def create_controller_fixture(connection_kwargs) -> typing.Callable[..., Elastic
     yield inner_create_controller
 
 
-@pytest.mark.use_python
 def test_constructor(create_controller: typing.Callable[..., ElasticsearchController], connection_kwargs: dict):
     assert create_controller(raise_on_exception=True)._raise_on_exception is True
     assert create_controller(refresh_period_secs=1.5)._refresh_period_secs == 1.5
     assert create_controller()._connection_kwargs == connection_kwargs
 
 
-@pytest.mark.use_python
 def test_refresh_client_force(create_controller: typing.Callable[..., ElasticsearchController]):
     controller = create_controller(refresh_period_secs=1)
 
@@ -68,7 +66,6 @@ def test_refresh_client_force(create_controller: typing.Callable[..., Elasticsea
     assert controller._last_refresh_time > 0
 
 
-@pytest.mark.use_python
 def test_refresh_client_not_needed(create_controller: typing.Callable[..., ElasticsearchController]):
     controller = create_controller()
     client = controller._client
@@ -81,7 +78,6 @@ def test_refresh_client_not_needed(create_controller: typing.Callable[..., Elast
     assert is_refreshed is False
 
 
-@pytest.mark.use_python
 def test_refresh_client_needed(create_controller: typing.Callable[..., ElasticsearchController]):
 
     # Set a 1 second refresh period
@@ -98,7 +94,6 @@ def test_refresh_client_needed(create_controller: typing.Callable[..., Elasticse
     assert is_refreshed is True
 
 
-@pytest.mark.use_python
 @patch("morpheus.controllers.elasticsearch_controller.parallel_bulk", return_value=[(True, None)])
 def test_parallel_bulk_write(mock_parallel_bulk, create_controller: typing.Callable[..., ElasticsearchController]):
     # Define your mock actions
@@ -108,7 +103,6 @@ def test_parallel_bulk_write(mock_parallel_bulk, create_controller: typing.Calla
     mock_parallel_bulk.assert_called_once()
 
 
-@pytest.mark.use_python
 @patch("morpheus.controllers.elasticsearch_controller.parallel_bulk", return_value=[(True, None)])
 def test_df_to_parallel_bulk_write(mock_parallel_bulk: typing.Callable,
                                    create_controller: typing.Callable[..., ElasticsearchController]):

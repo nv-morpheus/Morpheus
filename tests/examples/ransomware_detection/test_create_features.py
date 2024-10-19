@@ -19,18 +19,15 @@ import types
 import typing
 from unittest import mock
 
-import pytest
+import pandas as pd
 
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
-from morpheus.messages import ControlMessage
-from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 
 
-@pytest.mark.use_python
 class TestCreateFeaturesRWStage:
     # pylint: disable=no-name-in-module
 
@@ -43,10 +40,9 @@ class TestCreateFeaturesRWStage:
             rwd_conf: dict,
             interested_plugins: typing.List[str]):
         mock_dask_client.return_value = mock_dask_client
-        from stages.create_features import CreateFeaturesRWStage
-
         from common.data_models import FeatureConfig
         from common.feature_extractor import FeatureExtractor
+        from stages.create_features import CreateFeaturesRWStage
 
         n_workers = 12
         threads_per_worker = 8
@@ -93,18 +89,25 @@ class TestCreateFeaturesRWStage:
         mock_dask_client.submit.return_value = mock_dask_future
 
         input_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', '*.json')
-        input_data = AppShieldSourceStage.files_to_dfs(glob.glob(input_glob),
-                                                       cols_include=rwd_conf['raw_columns'],
-                                                       cols_exclude=["SHA256"],
-                                                       plugins_include=interested_plugins,
-                                                       encoding='latin1')
+        appshield_source_stage = AppShieldSourceStage(config,
+                                                      input_glob,
+                                                      plugins_include=interested_plugins,
+                                                      cols_include=rwd_conf['raw_columns'],
+                                                      cols_exclude=["SHA256"],
+                                                      encoding='latin1')
 
-        input_metas = AppShieldSourceStage._build_metadata(input_data)
+        input_data = appshield_source_stage.files_to_dfs(glob.glob(input_glob),
+                                                         cols_include=rwd_conf['raw_columns'],
+                                                         cols_exclude=["SHA256"],
+                                                         plugins_include=interested_plugins,
+                                                         encoding='latin1')
+
+        input_messages = appshield_source_stage._build_messages(input_data)
 
         # Make sure the input test date looks the way we expect it
-        assert len(input_metas) == 1
-        input_meta = input_metas[0]
-        assert input_meta.source == 'appshield'
+        assert len(input_messages) == 1
+        input_message = input_messages[0]
+        assert input_message.get_metadata('source') == 'appshield'
 
         stage = CreateFeaturesRWStage(config,
                                       interested_plugins=interested_plugins,
@@ -116,71 +119,24 @@ class TestCreateFeaturesRWStage:
         # make sure we have a mocked dask client
         assert stage._client is mock_dask_client
 
-        meta = stage.on_next(input_meta)
-        assert isinstance(meta, AppShieldMessageMeta)
-        assert meta.source == input_meta.source
+        messages = stage.on_next(input_message)
+
+        dataframes = []
+        for message in messages:
+            assert message.get_metadata('source') == input_message.get_metadata('source')
+            dataframes.append(message.payload().copy_dataframe().to_pandas())
+
+        actual_df = pd.concat(dataframes, ignore_index=True)
+        actual_df.sort_values(by=["pid_process", "snapshot_id"], inplace=True)
+        actual_df.reset_index(drop=True, inplace=True)
 
         expected_df = dataset_pandas[os.path.join(test_data_dir, 'dask_results.csv')]
         expected_df['source_pid_process'] = 'appshield_' + expected_df.pid_process
+        expected_df['ldrmodules_df_path'] = expected_df['ldrmodules_df_path'].astype(str)  # convert to string
         expected_df.sort_values(by=["pid_process", "snapshot_id"], inplace=True)
         expected_df.reset_index(drop=True, inplace=True)
-        dataset_pandas.assert_compare_df(meta.copy_dataframe(), expected_df)
 
-    @mock.patch('stages.create_features.Client')
-    def test_create_control_messages(self,
-                                     mock_dask_client,
-                                     config: Config,
-                                     rwd_conf: dict,
-                                     interested_plugins: typing.List[str],
-                                     dataset_pandas: DatasetManager):
-        from stages.create_features import CreateFeaturesRWStage
-        mock_dask_client.return_value = mock_dask_client
-
-        pids = [75956, 118469, 1348612, 2698363, 2721362, 2788672]
-        df = dataset_pandas["filter_probs.csv"]
-        df['pid_process'] = [
-            2788672,
-            75956,
-            75956,
-            2788672,
-            2788672,
-            2698363,
-            2721362,
-            118469,
-            1348612,
-            2698363,
-            118469,
-            2698363,
-            1348612,
-            118469,
-            75956,
-            2721362,
-            75956,
-            118469,
-            118469,
-            118469
-        ]
-        df = df.sort_values(by=["pid_process"]).reset_index(drop=True)
-
-        stage = CreateFeaturesRWStage(config,
-                                      interested_plugins=interested_plugins,
-                                      feature_columns=rwd_conf['model_features'],
-                                      file_extns=rwd_conf['file_extensions'],
-                                      n_workers=5,
-                                      threads_per_worker=6)
-
-        meta = AppShieldMessageMeta(df, source='tests')
-        control_messages = stage.create_control_messages(meta)
-        assert len(control_messages) == len(pids)
-
-        prev_loc = 0
-        for (i, _control_message) in enumerate(control_messages):
-            assert isinstance(_control_message, ControlMessage)
-            pid = pids[i]
-            (_control_message.payload().get_data(['pid_process']) == pid).all()
-            prev_loc = prev_loc + _control_message.payload().count
-
-        assert prev_loc == len(df)
+        dataset_pandas.assert_compare_df(actual_df, expected_df)
 
     @mock.patch('stages.create_features.Client')
     def test_on_completed(self, mock_dask_client, config: Config, rwd_conf: dict, interested_plugins: typing.List[str]):

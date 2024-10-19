@@ -29,7 +29,7 @@ To start, we will implement a single stage that could be included in a pipeline.
 
 ### Stand-alone Function
 
-The stand-alone function approach is the simplest way to define a stage. The function should accept a single argument, which will be the input message, and return a single value, which will be the output message. The function should be decorated with the `morpheus.pipeline.stage_decorator.stage` decorator.
+The stand-alone function approach is the simplest way to define a stage. The function should accept a single argument, which will be the input message, and return a single value, which will be the output message. The function should be decorated with the {py:func}`~morpheus.pipeline.stage_decorator.stage` decorator.
 
 ```python
 import typing
@@ -52,6 +52,20 @@ def pass_thru_stage(message: typing.Any) -> typing.Any:
     return message
 ```
 
+By default, Morpheus stages are assumed to require a GPU. However since this stage doesn't perform any specific GPU operations. We can indicate that the stage does not require a GPU by passing a tuple of supported execution modes to the decorator as follows:
+```python
+import typing
+
+from morpheus.config import ExecutionMode
+from morpheus.pipeline.stage_decorator import stage
+
+
+@stage(name="pass-thru", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
+def pass_thru_stage(message: typing.Any) -> typing.Any:
+    # Return the message for the next stage
+    return message
+```
+
 We can then add our stage to a pipeline as follows:
 ```python
 config = Config()
@@ -60,7 +74,7 @@ pipeline = LinearPipeline(config)
 pipeline.add_stage(pass_thru_stage(config))
 ```
 
-It is possible to provide additional keyword arguments to the function. Consider the following example:
+It is also possible to provide additional keyword arguments to the function. Consider the following example:
 ```python
 @stage
 def multiplier(message: MessageMeta, *, column: str, value: int | float = 2.0) -> MessageMeta:
@@ -76,11 +90,13 @@ pipe.add_stage(multiplier(config, column='probs', value=5))
 
 ### Stage Class
 
-The class based approach to defining a stage offers a bit more flexibility, specifically the ability to validate constructor arguments, and perform any needed setup prior to being invoked in a pipeline. Defining this stage requires us to specify the stage type. Morpheus stages which contain a single input and a single output typically inherit from `SinglePortStage`.  Stages that act as sources of data, in that they do not take an input from a prior stage but rather produce data from a source such as a file, Kafka service, or other external sources, will need to inherit from the `SingleOutputSource` base class.
+The class based approach to defining a stage offers a bit more flexibility, specifically the ability to validate constructor arguments, and perform any needed setup prior to being invoked in a pipeline. Defining this stage requires us to specify the stage type. Morpheus stages which contain a single input and a single output typically inherit from {py:class}`~morpheus.pipeline.single_port_stage.SinglePortStage`.  Stages that act as sources of data, in that they do not take an input from a prior stage but rather produce data from a source such as a file, Kafka service, or other external sources, will need to inherit from the {py:class}`~morpheus.pipeline.single_output_source.SingleOutputSource` base class.
 
-Stages in Morpheus define what types of data they accept, and the type of data that they emit. In this example we are emitting messages of the same type that is received, this is actually quite common and Morpheus provides a mixin class, `PassThruTypeMixin`, to simplify this.
+Stages in Morpheus define what types of data they accept, and the type of data that they emit. In this example we are emitting messages of the same type that is received, this is actually quite common and Morpheus provides a mixin class, {py:class}`~morpheus.pipeline.pass_thru_type_mixin.PassThruTypeMixin`, to simplify this.
 
-Optionally, stages can be registered as a command with the Morpheus CLI using the `register_stage` decorator. This allows for pipelines to be constructed from both pre-built stages and custom user stages via the command line. Any constructor arguments will be introspected using [`numpydoc`](https://numpydoc.readthedocs.io/en/latest/) and exposed as command line flags. Similarly, the class's docstrings will be exposed in the help string of the stage on the command line.
+Similar to the function based stage, the class based stage will be not require a GPU, and we will indicate that it is able to be used in both GPU and CPU execution modes by utilizing the {py:class}`~morpheus.pipeline.execution_mode_mixins.GpuAndCpuMixin`.
+
+Optionally, stages can be registered as a command with the Morpheus CLI using the {py:func}`~morpheus.cli.register_stage.register_stage` decorator. This allows for pipelines to be constructed from both pre-built stages and custom user stages via the command line. Any constructor arguments will be introspected using [`numpydoc`](https://numpydoc.readthedocs.io/en/latest/) and exposed as command line flags. Similarly, the class's docstrings will be exposed in the help string of the stage on the command line.
 
 We start our class definition with a few basic imports:
 
@@ -91,12 +107,13 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
 @register_stage("pass-thru")
-class PassThruStage(PassThruTypeMixin, SinglePortStage):
+class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 ```
 
 There are four methods that need to be defined in our new subclass to implement the stage interface: `name`, `accepted_types`, `compute_schema`, `supports_cpp_node`, and `_build_single`. In practice, it is often necessary to define at least one more method which will perform the actual work of the stage; by convention, this method is typically named `on_data`, which we will define in our examples.
@@ -108,7 +125,7 @@ There are four methods that need to be defined in our new subclass to implement 
         return "pass-thru"
 ```
 
-The `accepted_types` method returns a tuple of message classes that this stage is able to accept as input. Morpheus uses this to validate that the parent of this stage emits a message that this stage can accept. Since our stage is a pass through, we will declare that we can accept any incoming message type. Note that production stages will often declare only a single Morpheus message class such as `MessageMeta` or `ControlMessage` (refer to the message classes defined in `morpheus.messages` for a complete list).
+The `accepted_types` method returns a tuple of message classes that this stage is able to accept as input. Morpheus uses this to validate that the parent of this stage emits a message that this stage can accept. Since our stage is a pass through, we will declare that we can accept any incoming message type. Note that production stages will often declare only a single Morpheus message class such as {py:class}`~morpheus.messages.MessageMeta` or {py:class}`~morpheus.messages.ControlMessage` (refer to the message classes defined in {py:mod}`~morpheus.messages` for a complete list).
 ```python
     def accepted_types(self) -> tuple:
         return (typing.Any,)
@@ -171,12 +188,13 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
 @register_stage("pass-thru")
-class PassThruStage(PassThruTypeMixin, SinglePortStage):
+class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
     """
     A Simple Pass Through Stage
     """
@@ -191,12 +209,11 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def on_data(self, message: typing.Any):
+    def on_data(self, message: typing.Any) -> typing.Any:
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: mrc.Builder,
-                      input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_node, node)
 

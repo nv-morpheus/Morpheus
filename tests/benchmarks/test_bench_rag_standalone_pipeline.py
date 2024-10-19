@@ -121,7 +121,7 @@ def _run_pipeline(config: Config,
 
 
 @pytest.mark.milvus
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.use_cudf
 @pytest.mark.benchmark
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))

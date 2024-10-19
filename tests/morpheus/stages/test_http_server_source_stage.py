@@ -61,7 +61,7 @@ class GetNext(threading.Thread):
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.parametrize("message_type, task_type, task_payload",
                          [(SupportedMessageTypes.MESSAGE_META, None, None),
                           (SupportedMessageTypes.CONTROL_MESSAGE, None, None),
@@ -114,6 +114,9 @@ def test_generate_frames(config: Config,
                                   message_type=message_type,
                                   task_type=task_type,
                                   task_payload=task_payload)
+
+    if not use_payload_to_df_fn:
+        stage._set_default_payload_to_df_fn()
 
     generate_frames = stage._generate_frames(mock_subscription)
     msg_queue = queue.SimpleQueue()
@@ -202,7 +205,7 @@ def test_constructor_invalid_accept_status(config: Config, invalid_accept_status
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.parametrize(
     "lines",
     [False, pytest.param(True, marks=pytest.mark.skip(reason="https://github.com/rapidsai/cudf/issues/15820"))],
