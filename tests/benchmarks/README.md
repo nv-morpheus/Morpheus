@@ -48,7 +48,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 
 ### Set up Morpheus Dev Container
 
-Follow the instructions [here](../../docs/source/developer_guide/contributing.md#build-in-docker-container) to set up your development environment in either a Docker container or Conda environment.
+Follow the instructions [here](../../docs/source/developer_guide/contributing.md#build-in-docker-container) to build your Morpheus dev container.
 
 ##### Install the required dependencies
 
