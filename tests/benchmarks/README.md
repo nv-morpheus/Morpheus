@@ -46,24 +46,14 @@ Once Triton server finishes starting up, it will display the status of all loade
 +--------------------+---------+--------+
 ```
 
-### Set up Morpheus Dev Container
+### Build Morpheus conda environment
 
-Follow the instructions [here](../../docs/source/developer_guide/contributing.md#build-in-docker-container) to build your Morpheus dev container.
+Follow the instructions [here](../../docs/source/developer_guide/contributing.md#build-in-a-conda-environment) to build your Morpheus conda environment.
 
-##### Install the required dependencies
-
-Run the following in the `/workspace` directory of your dev container:
+In step 3 of the instructions, choose the command to install all dependencies.
 ```bash
-mamba env update \
-  -n ${CONDA_DEFAULT_ENV} \
-  --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
-```
-
-##### Fetch input data for benchmarks
-
-Run the following in the `/workspace` directory of your dev container:
-```bash
-./scripts/fetch_data.py fetch validation
+conda env create --solver=libmamba -n morpheus --file conda/environments/all_cuda-125_arch-x86_64.yaml
+conda activate morpheus
 ```
 
 
