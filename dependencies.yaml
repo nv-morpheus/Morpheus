@@ -474,7 +474,7 @@ dependencies:
             - faiss-cpu
             - google-search-results==2.4
             - nemollm==0.3.5
-            - sentence-transformers==2.7
+            - sentence-transformers[onnx-gpu]==2.7
 
   model-training-tuning:
     common:
