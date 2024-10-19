@@ -161,6 +161,7 @@ def pandas_dataframe_generator(dataset_pandas: DatasetManager, count: int) -> Ge
         yield dataset_pandas["csv_sample.csv"]
 
 
+@pytest.mark.slow
 @pytest.mark.gpu_and_cpu_mode
 def test_created_stage_pipe(config: Config, dataset_pandas: DatasetManager):
 
@@ -190,6 +191,7 @@ def test_created_stage_pipe(config: Config, dataset_pandas: DatasetManager):
         assert df.equals(expected_df)
 
 
+@pytest.mark.slow
 @pytest.mark.gpu_and_cpu_mode
 def test_derived_stage_pipe(config: Config, dataset_pandas: DatasetManager):
 
@@ -212,6 +214,7 @@ def test_derived_stage_pipe(config: Config, dataset_pandas: DatasetManager):
     assert_results(comp_stage.get_results())
 
 
+@pytest.mark.slow
 @pytest.mark.gpu_and_cpu_mode
 def test_multiple_stages_pipe(config: Config, dataset_pandas: DatasetManager):
     config.num_threads = os.cpu_count()

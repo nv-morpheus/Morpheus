@@ -20,16 +20,16 @@ from morpheus.cli import register_stage
 from morpheus.config import Config
 from morpheus.controllers.rss_controller import RSSController
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.utils.type_utils import exec_mode_to_df_type_str
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("from-rss")
-class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
+class RSSSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Load RSS feed items into a DataFrame.
 
@@ -84,7 +84,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                                          stop_after=stop_after,
                                          interval_secs=interval_secs,
                                          should_stop_fn=self.is_stop_requested,
-                                         df_type=exec_mode_to_df_type_str(c.execution_mode))
+                                         df_type=self.df_type_str)
 
     @property
     def name(self) -> str:

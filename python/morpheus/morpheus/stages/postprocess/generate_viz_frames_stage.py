@@ -31,18 +31,18 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.producer_consumer_queue import AsyncIOProducerConsumerQueue
 from morpheus.utils.producer_consumer_queue import Closed
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_utils import get_df_class
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("gen-viz", modes=[PipelineModes.NLP], command_args={"deprecated": True})
-class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
+class GenerateVizFramesStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     """
     Write out visualization DataFrames.
 
@@ -81,7 +81,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
         self._server_task: asyncio.Task = None
         self._server_close_event: asyncio.Event = None
 
-        self._df_class: type[DataFrameType] = get_df_class(c.execution_mode)
+        self._df_class: type[DataFrameType] = self.get_df_class()
 
     @property
     def name(self) -> str:

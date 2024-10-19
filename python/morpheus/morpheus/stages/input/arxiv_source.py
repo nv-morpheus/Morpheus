@@ -164,7 +164,7 @@ class ArxivSource(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
 
     def _process_pages(self, pdf_path: str):
         try:
-            from langchain.document_loaders import PyPDFLoader
+            from langchain_community.document_loaders import PyPDFLoader
             from pypdf.errors import PdfStreamError
         except ImportError as exc:
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc

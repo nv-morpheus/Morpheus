@@ -25,8 +25,8 @@ import cudf
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import ExecutionMode
 from morpheus.io import utils as io_utils
+from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_aliases import DataFrameTypeStr
 
 MULTI_BYTE_STRINGS = ["ñäμɛ", "Moρφέας", "taç"]
 
@@ -141,7 +141,7 @@ def test_truncate_string_cols_by_bytes(dataset: DatasetManager,
 @pytest.mark.parametrize("mode, expected",
                          [(ExecutionMode.GPU, cudf.read_json), (ExecutionMode.CPU, pd.read_json),
                           ("cudf", cudf.read_json), ("pandas", pd.read_json)])
-def test_get_json_reader(mode: typing.Union[ExecutionMode, DataFrameTypeStr], expected: Callable[..., DataFrameType]):
+def test_get_json_reader(mode: typing.Union[ExecutionMode, DataFrameModule], expected: Callable[..., DataFrameType]):
     reader = io_utils.get_json_reader(mode)
     if hasattr(reader, "func"):
         # Unwrap partial
