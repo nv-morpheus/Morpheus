@@ -115,7 +115,7 @@ def run():
 @click.option(
     "--triton_server_url",
     type=str,
-    default="localhost:8001",
+    default="localhost:8000",
     help="Triton server URL.",
 )
 @click.option(

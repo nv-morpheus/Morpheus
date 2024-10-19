@@ -34,18 +34,13 @@ pip install ./
 ## Overview
 Morpheus offers the choice of writing pipeline stages in either Python or C++. For many use cases, a Python stage is perfectly fine. However, in the event that a Python stage becomes a bottleneck for the pipeline, then writing a C++ implementation for the stage becomes advantageous. The C++ implementations of Morpheus stages and messages utilize the [pybind11](https://pybind11.readthedocs.io/en/stable/index.html) library to provide Python bindings.
 
-We have been defining our stages in Python up to this point, the option of defining a C++ implementation is only available to stages implemented as classes. Many of the stages included with Morpheus have both a Python and a C++ implementation, and Morpheus will use the C++ implementations by default. You can explicitly disable the use of C++ stage implementations by calling `morpheus.config.CppConfig.set_should_use_cpp(False)`:
+We have been defining our stages in Python up to this point, the option of defining a C++ implementation is only available to stages implemented as classes. Many of the stages included with Morpheus have both a Python and a C++ implementation, and Morpheus will use the C++ implementations by default when running in the GPU execution mode. When running in the CPU execution mode, Morpheus will always use the Python implementation.
 
-```python
-from morpheus.config import CppConfig
-CppConfig.set_should_use_cpp(False)
-```
+If a stage does not have a C++ implementation, Morpheus will fall back to the Python implementation without any additional configuration. Morpheus stages which only contain a C++ implementation, still require a Python class to register the stage, and provide the stage's configuration.
 
-If a stage does not have a C++ implementation, Morpheus will fall back to the Python implementation without any additional configuration and operate in a hybrid execution mode.
+In addition to C++ accelerated stage implementations, Morpheus also provides a C++ implementation for message primitives. When using the GPU GPU execution mode (the default), constructing one of the Python message classes defined under {py:mod}`~morpheus.messages` will return a Python object with bindings to the underlying C++ implementation.
 
-In addition to C++ accelerated stage implementations, Morpheus also provides a C++ implementation for message primitives. When C++ execution is enabled, constructing one of the Python message classes defined under `morpheus.messages` will return a Python object with bindings to the underlying C++ implementation.
-
-Since we are defining our stages in Python, it becomes the responsibility of the Python stage to build a C++ accelerated node. This happens in the `_build_source` and `_build_single` methods. Ultimately it is the decision of a Python stage to build a Python node or a C++ node. It is perfectly acceptable to build a Python node when `morpheus.config.CppConfig.get_should_use_cpp()` is configured to `True`. It is not acceptable, however, to build a C++ node when `morpheus.config.CppConfig.get_should_use_cpp() == False`. The reason is the C++ implementations of Morpheus' messages can be consumed by Python and C++ stage implementations alike. However when `morpheus.config.CppConfig.get_should_use_cpp() == False`, the Python implementations of each message type will be used which cannot be consumed by the C++ implementations of stages.
+Since we are defining our stages in Python, it becomes the responsibility of the Python stage to build a C++ accelerated node. This happens in the `_build_source` and `_build_single` methods. The Python stage should call `self._build_cpp_node()` to determine if a C++ node should be built, and ultimately it is the decision of a Python stage to build a Python node or a C++ node. It is perfectly acceptable to build a Python node when `self._build_cpp_node()` is returns `True`. It is not acceptable, however, to build a C++ node when `self._build_cpp_node()` returns `False`. The reason is the C++ implementations of Morpheus messages can be consumed by Python and C++ stage implementations alike. However the Python implementations of Morpheus messages cannot be consumed by the C++ implementations of stages.
 
 Python stages which have a C++ implementation must advertise this functionality by returning a value of `True` from the `supports_cpp_node` method:
 
@@ -84,7 +79,7 @@ Both the `PythonSource` and `PythonNode` classes are defined in the `pymrc/node.
 
 As in our Python guide, we will start with a simple pass through stage which can be used as a starting point for future development of other stages. Note that by convention, C++ classes in Morpheus have the same name as their corresponding Python classes and are located under a directory named `_lib`. We will be following that convention. To start, we will create a `_lib` directory and a new empty `__init__.py` file.
 
-While our Python implementation accepts messages of any type (in the form of Python objects), on the C++ side we don't have that flexibility since our node is subject to C++ static typing rules. In practice, this isn't a limitation as we usually know which specific message types we need to work with. For this example we will be working with the `ControlMessage` as our input and output type, it is also a common base type for many other Morpheus message classes. This means that at build time our Python stage implementation is able to build a C++ node when the incoming type is `ControlMessage`, while falling back to the existing Python implementation otherwise.
+While our Python implementation accepts messages of any type (in the form of Python objects), on the C++ side we don't have that flexibility since our node is subject to C++ static typing rules. In practice, this isn't a limitation as we usually know which specific message types we need to work with. For this example we will be working with the `ControlMessage` as our input and output type. This means that at build time our Python stage implementation is able to build a C++ node when the incoming type is `ControlMessage`, while falling back to the existing Python implementation otherwise.
 
 To start with, we have our Morpheus and MRC-specific includes:
 
@@ -371,7 +366,7 @@ def compute_schema(self, schema: StageSchema):
 ```
 > **Note**: We are still using the `PassThruTypeMixin` to handle the requirements of setting the output type.
 
-As mentioned in the previous section, our `_build_single` method needs to be updated to build a C++ node when the input type is `ControlMessage` and when `morpheus.config.CppConfig.get_should_use_cpp()` is `True` using the `self._build_cpp_node()` method. The `_build_cpp_node()` method compares both `morpheus.config.CppConfig.get_should_use_cpp()` and `supports_cpp_node()` and returns `True` only when both methods return `True`.
+As mentioned in the previous section, our `_build_single` method needs to be updated to build a C++ node when the input type is `ControlMessage` and when `self._build_cpp_node()` returns `True`.
 
 ```python
 def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
@@ -398,13 +393,14 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
 
 @register_stage("pass-thru")
-class PassThruStage(PassThruTypeMixin, SinglePortStage):
+class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 
     def __init__(self, config: Config):
         super().__init__(config)
@@ -438,11 +434,10 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
 
         builder.make_edge(input_node, node)
         return node
-
 ```
 
 ## Testing the Stage
-To test the updated stage we will build a simple pipeline using the  Morpheus command line tool. In order to illustrate the stage building a C++ node only when the input type is a `ControlMessage` we will insert the `pass-thru` stage in twice in the pipeline. In the first instance the input type will be `MessageMeta` and the stage will fallback to using a Python node, and in the second instance the input type will be a `ControlMessage` and the stage will build a C++ node.
+To test the updated stage we will build a simple pipeline using the Morpheus command line tool. In order to illustrate the stage building a C++ node only when the input type is a `ControlMessage` we will insert the `pass-thru` stage in twice in the pipeline. In the first instance the input type will be `MessageMeta` and the stage will fallback to using a Python node, and in the second instance the input type will be a `ControlMessage` and the stage will build a C++ node.
 
 ```bash
 PYTHONPATH="examples/developer_guide/3_simple_cpp_stage/src" \

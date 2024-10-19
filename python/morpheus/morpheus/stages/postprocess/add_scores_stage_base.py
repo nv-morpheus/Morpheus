@@ -23,13 +23,14 @@ import mrc.core.operators as ops
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 logger = logging.getLogger(__name__)
 
 
-class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
+class AddScoresStageBase(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
     """
     Base class for the `AddScoresStage` and `AddClassificationStage`
 

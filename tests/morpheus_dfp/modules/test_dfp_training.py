@@ -21,6 +21,8 @@ import pytest
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
@@ -50,8 +52,6 @@ def test_on_data(mock_train_test_split: mock.MagicMock,
                  config: Config,
                  dataset_pandas: DatasetManager,
                  validation_size: float):
-    from morpheus.messages import ControlMessage
-    from morpheus_dfp.messages.dfp_message_meta import DFPMessageMeta
     from morpheus_dfp.stages.dfp_training import DFPTraining
 
     mock_ae.return_value = mock_ae
@@ -63,10 +63,9 @@ def test_on_data(mock_train_test_split: mock.MagicMock,
     mock_validation_df = mock.MagicMock()
     mock_train_test_split.return_value = (train_df, mock_validation_df)
 
-    meta = DFPMessageMeta(df, 'Account-123456789')
     msg = ControlMessage()
-    msg.payload(meta)
-    msg.set_metadata("user_id", meta.user_id)
+    msg.payload(MessageMeta(df))
+    msg.set_metadata("user_id", 'Account-123456789')
 
     stage = DFPTraining(config, validation_size=validation_size)
     results = stage.on_data(msg)

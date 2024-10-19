@@ -48,6 +48,7 @@ def test_execute():
     df = cudf.DataFrame({"insects": insects.copy(), "mammals": mammals.copy(), "reptiles": reptiles.copy()})
     message = ControlMessage()
     message.payload(MessageMeta(df))
+    message.set_metadata("llm_message_meta", message.payload())
 
     task_dict = {"input_keys": ["insects"]}
     node = ManualExtracterNode(["mammals", "reptiles"])

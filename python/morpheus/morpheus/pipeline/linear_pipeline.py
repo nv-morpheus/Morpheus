@@ -148,6 +148,7 @@ class LinearPipeline(_pipeline.Pipeline):
             raise RuntimeError("Cannot create a segment boundary, current segment is empty.")
 
         empty_config = Config()
+        empty_config.execution_mode = self._execution_mode
         boundary_egress = LinearBoundaryEgressStage(empty_config,
                                                     boundary_port_id=self._current_segment_id,
                                                     data_type=data_type)

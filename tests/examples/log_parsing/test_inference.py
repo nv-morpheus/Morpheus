@@ -22,10 +22,10 @@ import cupy as cp
 import numpy as np
 import pytest
 
-import morpheus._lib.messages as _messages
 from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
 from morpheus.messages import TensorMemory
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
@@ -52,13 +52,13 @@ def build_resp_message(df: DataFrameType, num_cols: int = 2) -> ControlMessage:
     seq_ids[:, 2] = 42
 
     meta = MessageMeta(df)
-    mem = _messages.TensorMemory(count=count,
-                                 tensors={
-                                     'confidences': cp.zeros((count, num_cols)),
-                                     'labels': cp.zeros((count, num_cols)),
-                                     'input_ids': cp.zeros((count, num_cols), dtype=cp.float32),
-                                     'seq_ids': seq_ids
-                                 })
+    mem = TensorMemory(count=count,
+                       tensors={
+                           'confidences': cp.zeros((count, num_cols)),
+                           'labels': cp.zeros((count, num_cols)),
+                           'input_ids': cp.zeros((count, num_cols), dtype=cp.float32),
+                           'seq_ids': seq_ids
+                       })
     cm = ControlMessage()
     cm.payload(meta)
     cm.tensors(mem)
@@ -78,10 +78,10 @@ def build_inf_message(df: DataFrameType, mess_count: int, count: int, num_cols: 
     seq_ids[:, 2] = 42
 
     meta = MessageMeta(df)
-    mem = _messages.InferenceMemoryNLP(count=tensor_length,
-                                       input_ids=cp.zeros((tensor_length, num_cols), dtype=cp.float32),
-                                       input_mask=cp.zeros((tensor_length, num_cols), dtype=cp.float32),
-                                       seq_ids=seq_ids)
+    mem = InferenceMemoryNLP(count=tensor_length,
+                             input_ids=cp.zeros((tensor_length, num_cols), dtype=cp.float32),
+                             input_mask=cp.zeros((tensor_length, num_cols), dtype=cp.float32),
+                             seq_ids=seq_ids)
     cm = ControlMessage()
     cm.payload(meta)
     cm.tensors(mem)

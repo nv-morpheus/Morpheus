@@ -14,14 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
 from collections.abc import Callable
 
+import pandas as pd
 import pytest
 
 import cudf
 
 from _utils.dataset_manager import DatasetManager
+from morpheus.config import ExecutionMode
 from morpheus.io import utils as io_utils
+from morpheus.utils.type_aliases import DataFrameModule
 from morpheus.utils.type_aliases import DataFrameType
 
 MULTI_BYTE_STRINGS = ["ñäμɛ", "Moρφέας", "taç"]
@@ -132,3 +136,15 @@ def test_truncate_string_cols_by_bytes(dataset: DatasetManager,
     assert isinstance(df, expected_df_class)
 
     dataset.assert_df_equal(df, expected_df)
+
+
+@pytest.mark.parametrize("mode, expected",
+                         [(ExecutionMode.GPU, cudf.read_json), (ExecutionMode.CPU, pd.read_json),
+                          ("cudf", cudf.read_json), ("pandas", pd.read_json)])
+def test_get_json_reader(mode: typing.Union[ExecutionMode, DataFrameModule], expected: Callable[..., DataFrameType]):
+    reader = io_utils.get_json_reader(mode)
+    if hasattr(reader, "func"):
+        # Unwrap partial
+        reader = reader.func
+
+    assert reader is expected

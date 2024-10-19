@@ -16,8 +16,6 @@
 
 import os
 
-import pytest
-
 from _utils import TEST_DIRS
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
@@ -39,8 +37,6 @@ def _build_engine() -> LLMEngine:
     return engine
 
 
-@pytest.mark.use_cudf
-@pytest.mark.use_python
 def test_pipeline(config: Config, dataset_cudf: DatasetManager):
     test_data = os.path.join(TEST_DIRS.validation_data_dir, 'root-cause-validation-data-input.jsonlines')
     input_df = dataset_cudf[test_data]

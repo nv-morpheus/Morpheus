@@ -25,6 +25,7 @@ from _utils import assert_path_exists
 from _utils.dataset_manager import DatasetManager
 from _utils.stages.conv_msg import ConvMsg
 from morpheus.cli.commands import RANKDIR_CHOICES
+from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.pipeline.pipeline import PipelineState
@@ -35,10 +36,8 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
-# pylint: disable=redefined-outer-name
-@pytest.mark.use_cudf
 @pytest.fixture(name="viz_pipeline", scope="function")
-def viz_pipeline_fixture(config, filter_probs_df):
+def viz_pipeline_fixture(config: Config, dataset_cudf: DatasetManager):
     """
     Creates a quick pipeline.
     """
@@ -46,9 +45,9 @@ def viz_pipeline_fixture(config, filter_probs_df):
     config.num_threads = 1
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipe.set_source(InMemorySourceStage(config, [dataset_cudf["filter_probs.csv"]]))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, filter_probs_df))
+    pipe.add_stage(ConvMsg(config, dataset_cudf["filter_probs.csv"]))
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     pipe.add_stage(InMemorySinkStage(config))

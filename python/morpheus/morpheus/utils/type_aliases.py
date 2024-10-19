@@ -15,9 +15,26 @@
 
 import typing
 
-import pandas as pd
+if typing.TYPE_CHECKING:
+    import cupy
+    import numpy
+    import pandas
 
-import cudf
+    import cudf
 
-DataFrameType = typing.Union[pd.DataFrame, cudf.DataFrame]
-SeriesType = typing.Union[pd.Series, cudf.Series]
+DataFrameModule = typing.Literal["cudf", "pandas"]
+"""Valid DataFrame modules."""
+
+DataFrameType = typing.Union["pandas.DataFrame", "cudf.DataFrame"]
+"""Alias for pandas and cuDF DataFrame types."""
+
+SeriesType = typing.Union["pandas.Series", "cudf.Series"]
+"""Alias for pandas and cuDF Series types."""
+
+NDArrayType = typing.Union["numpy.ndarray", "cupy.ndarray"]
+"""Alias for NumPy and CuPy ndarray types."""
+
+# Intentionally using `typing.Dict` instead of `dict` to avoid a Sphinx build error.
+# https://github.com/nv-morpheus/Morpheus/issues/1956
+TensorMapType = typing.Dict[str, NDArrayType]
+"""Alias for a dictionary of tensor names to tensors represented as either a NumPy or CuPy ndarray."""
