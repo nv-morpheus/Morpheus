@@ -15,11 +15,10 @@
 
 # Install requirements if they are included in the package
 python3 <<EOF
-import pkgutil
+import importlib.resources
 import subprocess
-data = pkgutil.get_data("morpheus_llm", "requirements_morpheus_llm.txt")
-requirements = data.decode("utf-8")
-subprocess.call(f"pip install {requirements}".split())
+requirements_file = importlib.resources.path("morpheus_llm", "requirements_morpheus_llm.txt")
+subprocess.call(f"pip install -r {requirements_file}".split())
 EOF
 
 pytest tests/morpheus_llm

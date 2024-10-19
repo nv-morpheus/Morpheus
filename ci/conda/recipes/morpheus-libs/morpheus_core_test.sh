@@ -14,11 +14,10 @@
 # limitations under the License.
 
 python3 <<EOF
-import pkgutil
+import importlib.resources
 import subprocess
-data = pkgutil.get_data("morpheus", "requirements_morpheus_core.txt")
-requirements = data.decode("utf-8")
-subprocess.call(f"pip install {requirements}".split())
+requirements_file = importlib.resources.path("morpheus", "requirements_morpheus_core.txt")
+subprocess.call(f"pip install -r {requirements_file}".split())
 EOF
 
 pytest tests/morpheus

@@ -14,11 +14,10 @@
 # limitations under the License.
 
 python3 <<EOF
-import pkgutil
+import importlib.resources
 import subprocess
-data = pkgutil.get_data("morpheus_dfp", "requirements_morpheus_dfp.txt")
-requirements = data.decode("utf-8")
-subprocess.call(f"pip install {requirements}".split())
+requirements_file = importlib.resources.path("morpheus_dfp", "requirements_morpheus_dfp.txt")
+subprocess.call(f"pip install -r {requirements_file}".split())
 EOF
 
 pytest tests/morpheus_dfp
