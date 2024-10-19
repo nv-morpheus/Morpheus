@@ -73,7 +73,7 @@ dependencies:
 - pydantic
 - pylibcudf=24.10
 - pylint=3.0.3
-- pynvml=11.4.1
+- pynvml=11.4
 - pypdfium2=4.30
 - pytest-asyncio
 - pytest-benchmark=4.0
@@ -114,3 +114,4 @@ dependencies:
   - pytest-kafka==0.6.0
   - torch==2.4.0+cu124
 name: dev_cuda-125_arch-x86_64
+

@@ -54,3 +54,4 @@ dependencies:
   - pymilvus==2.3.6
   - torch==2.4.0+cu124
 name: runtime_cuda-125_arch-x86_64
+

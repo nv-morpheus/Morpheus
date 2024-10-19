@@ -80,3 +80,4 @@ dependencies:
   - sentence-transformers==2.7
   - torch==2.4.0+cu124
 name: examples_cuda-125_arch-x86_64
+

@@ -88,7 +88,7 @@ dependencies:
 - pydantic
 - pylibcudf=24.10
 - pylint=3.0.3
-- pynvml=11.4.1
+- pynvml=11.4
 - pypdf=3.17.4
 - pypdfium2=4.30
 - pytest-asyncio
@@ -143,3 +143,4 @@ dependencies:
   - sentence-transformers==2.7
   - torch==2.4.0+cu124
 name: all_cuda-125_arch-x86_64
+
