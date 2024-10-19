@@ -46,9 +46,9 @@ Once Triton server finishes starting up, it will display the status of all loade
 +--------------------+---------+--------+
 ```
 
-### Build Morpheus conda environment
+### Build Morpheus Conda environment
 
-Follow the instructions [here](../../docs/source/developer_guide/contributing.md#build-in-a-conda-environment) to build your Morpheus conda environment.
+Follow the instructions [here](../../docs/source/developer_guide/contributing.md#build-in-a-conda-environment) to build your Morpheus Conda environment.
 
 In step 3 of the instructions, choose the command to install all dependencies.
 ```bash
