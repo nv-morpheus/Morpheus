@@ -135,7 +135,7 @@ def test_rag_standalone_pipe(benchmark: collections.abc.Callable[[collections.ab
                              repeat_count: int,
                              import_mod: types.ModuleType,
                              llm_service_name: str):
-    if llm_service_name=="openai":
+    if llm_service_name == "openai":
         os.environ.update({"OPENAI_API_KEY": "test_api_key"})
     collection_name = f"test_bench_rag_standalone_pipe_{llm_service_name}"
     populate_milvus(milvus_server_uri=milvus_server_uri,
