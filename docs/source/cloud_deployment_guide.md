@@ -438,11 +438,9 @@ Pipeline example to read data from a file, run inference using a `phishing-bert-
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-      --num_threads=2 \
       --edge_buffer_size=4 \
       --pipeline_batch_size=1024 \
       --model_max_batch_size=32 \
-      --use_cpp=True \
       pipeline-nlp \
         --model_seq_length=128 \
         --labels_file=data/labels_phishing.txt \
@@ -468,11 +466,9 @@ Pipeline example to read messages from an input Kafka topic, run inference using
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-      --num_threads=2 \
       --edge_buffer_size=4 \
       --pipeline_batch_size=1024 \
       --model_max_batch_size=32 \
-      --use_cpp=True \
       pipeline-nlp \
         --model_seq_length=128 \
         --labels_file=data/labels_phishing.txt \
@@ -515,9 +511,7 @@ Pipeline example to read data from a file, run inference using a `sid-minibert-o
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-      --num_threads=3 \
       --edge_buffer_size=4 \
-      --use_cpp=True \
       --pipeline_batch_size=1024 \
       --model_max_batch_size=32 \
       pipeline-nlp \
@@ -544,9 +538,7 @@ Pipeline example to read messages from an input Kafka topic, run inference using
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-        --num_threads=3 \
         --edge_buffer_size=4 \
-        --use_cpp=True \
         --pipeline_batch_size=1024 \
         --model_max_batch_size=32 \
         pipeline-nlp \
@@ -589,11 +581,9 @@ Pipeline example to read data from a file, run inference using an `abp-nvsmi-xgb
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-        --num_threads=3 \
         --edge_buffer_size=4 \
         --pipeline_batch_size=1024 \
         --model_max_batch_size=64 \
-        --use_cpp=True \
         pipeline-fil --columns_file=data/columns_fil.txt \
           from-file --filename=./examples/data/nvsmi.jsonlines \
           monitor --description 'FromFile Rate' --smoothing=0.001 \
@@ -615,10 +605,8 @@ Pipeline example to read messages from an input Kafka topic, run inference using
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-        --num_threads=3 \
         --pipeline_batch_size=1024 \
         --model_max_batch_size=64 \
-        --use_cpp=True \
         pipeline-fil --columns_file=data/columns_fil.txt \
           from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
           monitor --description 'FromKafka Rate' --smoothing=0.001 \

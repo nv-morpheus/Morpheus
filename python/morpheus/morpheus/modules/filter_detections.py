@@ -81,7 +81,7 @@ def filter_detections(builder: mrc.Builder):
     field_name = config.get("field_name", "probs")
     threshold = config.get("threshold", 0.5)
     filter_source = config.get("filter_source", "AUTO")
-    use_cpp = config.get("use_cpp", False)
+    use_cpp = config.get("use_cpp", True)
 
     filter_source_dict = {"AUTO": FilterSource.Auto, "DATAFRAME": FilterSource.DATAFRAME, "TENSOR": FilterSource.TENSOR}
 

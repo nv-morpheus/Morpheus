@@ -15,9 +15,8 @@
 import logging
 import time
 
-import cudf
-
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline.linear_pipeline import LinearPipeline
@@ -26,6 +25,8 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.concat_df import concat_dataframes
+from morpheus.utils.type_utils import exec_mode_to_df_type_str
+from morpheus.utils.type_utils import get_df_class
 from morpheus_llm.llm import LLMEngine
 from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
 from morpheus_llm.llm.nodes.llm_generate_node import LLMGenerateNode
@@ -71,7 +72,8 @@ def _build_engine(llm_service: str):
     return engine
 
 
-def pipeline(num_threads: int,
+def pipeline(use_cpu_only: bool,
+             num_threads: int,
              pipeline_batch_size: int,
              model_max_batch_size: int,
              repeat_count: int,
@@ -80,6 +82,7 @@ def pipeline(num_threads: int,
              shuffle: bool = False) -> float:
 
     config = Config()
+    config.execution_mode = ExecutionMode.CPU if use_cpu_only else ExecutionMode.GPU
 
     # Below properties are specified by the command line
     config.num_threads = num_threads
@@ -89,9 +92,10 @@ def pipeline(num_threads: int,
     config.edge_buffer_size = 128
 
     if input_file is not None:
-        source_df = read_file_to_df(input_file, df_type='cudf')
+        source_df = read_file_to_df(input_file, df_type=exec_mode_to_df_type_str(config.execution_mode))
     else:
-        source_df = cudf.DataFrame({
+        df_class = get_df_class(config.execution_mode)
+        source_df = df_class({
             "country": [
                 "France",
                 "Spain",

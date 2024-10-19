@@ -21,10 +21,10 @@ from sklearn.model_selection import train_test_split
 import cudf
 
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
-from morpheus_dfp.messages.dfp_message_meta import DFPMessageMeta
 from morpheus_dfp.utils.module_ids import DFP_TRAINING
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -97,10 +97,9 @@ def dfp_training(builder: mrc.Builder):
             model.fit(train_df, epochs=epochs, validation_data=validation_df, run_validation=run_validation)
             logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
-            dfp_mm = DFPMessageMeta(cudf.from_pandas(final_df), user_id=user_id)
-
+            meta = MessageMeta(cudf.from_pandas(final_df))
             output_message = ControlMessage()
-            output_message.payload(dfp_mm)
+            output_message.payload(meta)
             output_message.set_metadata("user_id", user_id)
             output_message.set_metadata("model", model)
             output_message.set_metadata("train_scores_mean", 0.0)

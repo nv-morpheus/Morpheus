@@ -17,7 +17,6 @@ import logging
 import click
 
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.doca.doca_convert_stage import DocaConvertStage
@@ -70,8 +69,6 @@ from morpheus.utils.logger import configure_logging
 def run_pipeline(pipeline_batch_size, model_max_batch_size, model_fea_length, out_file, nic_addr, gpu_addr):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
-
-    CppConfig.set_should_use_cpp(True)
 
     config = Config()
     config.mode = PipelineModes.NLP

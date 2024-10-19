@@ -20,7 +20,6 @@
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/io/serializers.hpp"
 #include "morpheus/messages/meta.hpp"
-#include "morpheus/utilities/cudf_util.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <gtest/gtest.h>
@@ -48,20 +47,7 @@ std::string read_file(const std::filesystem::path& file_path)
 }
 
 class TestFileInOut : public morpheus::test::TestWithPythonInterpreter
-{
-  protected:
-    void SetUp() override
-    {
-        morpheus::test::TestWithPythonInterpreter::SetUp();
-        {
-            pybind11::gil_scoped_acquire gil;
-
-            // Initially I ran into an issue bootstrapping cudf, I was able to work-around the issue, details in:
-            // https://github.com/rapidsai/cudf/issues/12862
-            CudfHelper::load();
-        }
-    }
-};
+{};
 
 TEST_F(TestFileInOut, RoundTripCSV)
 {
