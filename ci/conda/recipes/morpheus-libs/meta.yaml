@@ -88,7 +88,6 @@ outputs:
         - dill =0.3.7
         - docker-py =5.0.*
         - elasticsearch ==8.9.0
-        - faiss-cpu
         - feedparser =6.0.*
         - grpcio =1.62.*
         - lxml

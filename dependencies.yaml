@@ -416,6 +416,7 @@ dependencies:
     common:
       - output_types: [requirements]
         packages:
+           - faiss-cpu
            - milvus==2.3.5 # update to match pymilvus when available
            - pymilvus==2.3.6
            - langchain==0.1.16
@@ -458,7 +459,6 @@ dependencies:
           - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
           - anyio>=3.7
           - arxiv=1.4
-          - faiss-cpu
           - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
           - jsonpatch>=1.33
           - newspaper3k=0.2
@@ -474,6 +474,7 @@ dependencies:
           - pip:
             - langchain==0.1.16
             - langchain-nvidia-ai-endpoints==0.0.11
+            - faiss-cpu
             - google-search-results==2.4
             - nemollm==0.3.5
 

@@ -22,7 +22,6 @@ dependencies:
 - dill=0.3.7
 - docker-py=5.0
 - elasticsearch==8.9.0
-- faiss-cpu
 - feedparser=6.0
 - grpcio
 - grpcio-status
@@ -72,6 +71,7 @@ dependencies:
   - databricks-connect
   - dgl==2.0.0
   - dglgo
+  - faiss-cpu
   - google-search-results==2.4
   - langchain-nvidia-ai-endpoints==0.0.11
   - langchain==0.1.16
