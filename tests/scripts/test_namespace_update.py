@@ -57,6 +57,9 @@ def test_dfp_namespace_update(tmp_path):
     module_name = 'dfp_old_namespace_data'
     module_path = os.path.join(scripts_data_dir, f'{module_name}.py')
 
+    # check if the file exists in the tmp_path
+    assert os.path.exists(module_path), f"Failed to copy {module_name} to {scripts_data_dir}"
+
     # dfp imports expected to fail before namespace update
     spec, module = import_module_from_path(module_name, module_path)
     assert module is not None, f"Failed to import {module_name} from {module_path}"
@@ -85,6 +88,9 @@ def test_llm_namespace_update(tmp_path):
     scripts_data_dir = copy_data_to_tmp_path(tmp_path)
     module_name = 'llm_old_namespace_data'
     module_path = os.path.join(scripts_data_dir, f'{module_name}.py')
+
+    # check if the file exists in the tmp_path
+    assert os.path.exists(module_path), f"Failed to copy {module_name} to {scripts_data_dir}"
 
     # llm imports expected to fail before namespace update
     spec, module = import_module_from_path(module_name, module_path)
