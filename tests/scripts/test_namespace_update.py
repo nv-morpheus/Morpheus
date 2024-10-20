@@ -17,13 +17,10 @@
 import importlib.util
 import os
 
-import pytest
-
 from _utils import TEST_DIRS
 
 
-@pytest.fixture(name="scripts_data_dir", scope="module")
-def scripts_data_dir_fixture(tmp_path) -> str:
+def copy_data_to_tmp_path(tmp_path) -> str:
     '''
     Copy the data to a temporary directory as we will be modifying the files.
     '''
@@ -31,12 +28,8 @@ def scripts_data_dir_fixture(tmp_path) -> str:
     tmp_data_dir = tmp_path / "scripts"
     tmp_data_dir.mkdir()
     os.system(f"cp -r {data_dir} {tmp_data_dir}")
-    return os.path.join(tmp_data_dir, "data")
-
-
-@pytest.fixture(name="update_namespace_script", scope="module")
-def update_namespace_script_fixture() -> str:
-    return os.path.join(TEST_DIRS.morpheus_root, "scripts/morpheus_namespace_update.py")
+    scripts_data_dir = os.path.join(tmp_data_dir, "data")
+    return scripts_data_dir
 
 
 def import_module_from_path(module_name, path) -> tuple:
@@ -56,11 +49,11 @@ def import_module_from_path(module_name, path) -> tuple:
     return spec, module
 
 
-@pytest.mark.usefixtures("morpheus_dfp")
-def test_dfp_namespace_update(scripts_data_dir, update_namespace_script):
+def test_dfp_namespace_update(tmp_path):
     '''
     Update the DFP namespace imports and verify the imports work.
     '''
+    scripts_data_dir = copy_data_to_tmp_path(tmp_path)
     module_name = 'dfp_old_namespace_data'
     module_path = os.path.join(scripts_data_dir, f'{module_name}.py')
 
@@ -74,6 +67,7 @@ def test_dfp_namespace_update(scripts_data_dir, update_namespace_script):
         pass
 
     # update imports to the new namespace by running morpheus_namespace_update.py
+    update_namespace_script = os.path.join(TEST_DIRS.morpheus_root, "scripts/morpheus_namespace_update.py")
     os.system(f"python {update_namespace_script} --directory {scripts_data_dir} --dfp")
 
     # verify the morpheus_dfp imports work
@@ -84,11 +78,11 @@ def test_dfp_namespace_update(scripts_data_dir, update_namespace_script):
         assert False, "old dfp imports are not updated to the new namespace"
 
 
-@pytest.mark.usefixtures("morpheus_llm")
-def test_llm_namespace_update(scripts_data_dir, update_namespace_script):
+def test_llm_namespace_update(tmp_path):
     '''
     Update the LLM namespace imports and verify the imports work.
     '''
+    scripts_data_dir = copy_data_to_tmp_path(tmp_path)
     module_name = 'llm_old_namespace_data'
     module_path = os.path.join(scripts_data_dir, f'{module_name}.py')
 
@@ -102,6 +96,7 @@ def test_llm_namespace_update(scripts_data_dir, update_namespace_script):
         pass
 
     # update imports to the new namespace by running morpheus_namespace_update.py
+    update_namespace_script = os.path.join(TEST_DIRS.morpheus_root, "scripts/morpheus_namespace_update.py")
     os.system(f"python {update_namespace_script} --directory {scripts_data_dir} --llm")
 
     # verify the morpheus_llm imports work
