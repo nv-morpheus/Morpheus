@@ -16,7 +16,7 @@
 
 import cudf
 
-from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
+from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 
 
 def populate_milvus(milvus_server_uri: str,

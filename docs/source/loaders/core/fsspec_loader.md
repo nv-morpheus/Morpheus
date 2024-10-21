@@ -17,7 +17,7 @@ limitations under the License.
 
 ## Filesystem Spec Loader
 
-[DataLoader](../../modules/core/data_loader.md) module is configured to use this loader function. It is responsible for loading data from external sources using the fsspec library, and returns the updated ControlMessage object with payload as MessageMeta, which contains dataframe (with filenames).
+[DataLoader](../../modules/core/data_loader.md) module is configured to use this loader function. It is responsible for loading data from external sources using the [`fsspec`](https://filesystem-spec.readthedocs.io/en/latest/) library, and returns the updated ControlMessage object with payload as MessageMeta, which contains DataFrame (with filenames).
 
 
 ### Example Loader Configuration
@@ -38,8 +38,8 @@ The parameters that can be configured for this specific loader at load task leve
 
 | Parameter          | Type       | Description                      | Example Value                     | Default Value  |
 | ------------------ | ---------- | -------------------------------- | --------------------------------- | -------------- |
-| `files`            | array      | List of files to load            | ["/your/input/filepath"]      	 | `[]`           |
-| `loader_id`        | string     | Unique identifier for the loader | "file_to_df"                      | `[Required]`   |
+| `files`            | array      | List of files to load            | `["/your/input/filepath"]`      	 | `[]`           |
+| `loader_id`        | string     | Unique identifier for the loader | `"file_to_df"`                      | `[Required]`   |
 
 
 

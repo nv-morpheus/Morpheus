@@ -16,23 +16,34 @@
 import logging
 import os
 
+import click
 from rabbitmq_cpp_stage.write_to_rabbitmq_stage import WriteToRabbitMQStage
 
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.utils.logger import configure_logging
 
 
-def run_pipeline():
+@click.command()
+@click.option('--input_file',
+              type=click.Path(exists=True, readable=True),
+              default=os.path.join(os.environ['MORPHEUS_ROOT'], 'examples/data/email.jsonlines'))
+@click.option('--use_cpu_only', default=False, type=bool, is_flag=True, help=("Whether or not to run in CPU only mode"))
+@click.option(
+    "--num_threads",
+    default=len(os.sched_getaffinity(0)),
+    type=click.IntRange(min=1),
+    help="Number of internal pipeline threads to use",
+)
+def run_pipeline(use_cpu_only: bool, input_file: str, num_threads: int):
     # Enable the Morpheus logger
     configure_logging(log_level=logging.DEBUG)
 
-    root_dir = os.environ['MORPHEUS_ROOT']
-    input_file = os.path.join(root_dir, 'examples/data/email.jsonlines')
-
     config = Config()
-    config.num_threads = os.cpu_count()
+    config.execution_mode = ExecutionMode.CPU if use_cpu_only else ExecutionMode.GPU
+    config.num_threads = num_threads
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)

@@ -15,7 +15,7 @@
 
 import typing
 
-from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import ControlMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.stages.inference import inference_stage
 
@@ -26,9 +26,7 @@ class IW(inference_stage.InferenceWorker):
     """
 
     def calc_output_dims(self, _):
-        # Intentionally calling the abc empty method for coverage
-        super().calc_output_dims(_)
         return (1, 2)
 
-    def process(self, _: MultiInferenceMessage, __: typing.Callable[[TensorMemory], None]):
+    def process(self, _: ControlMessage, __: typing.Callable[[TensorMemory], None]):
         raise NotImplementedError

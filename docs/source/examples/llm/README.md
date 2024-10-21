@@ -17,7 +17,7 @@ limitations under the License.
 
 # LLM
 
-- [completion](./completion/README.md)
-- [vdb_upload](./vdb_upload/README.md)
-- [rag](./rag/README.md)
-- [agents](./agents/README.md)
+- [`completion`](./completion/README.md)
+- [`vdb_upload`](./vdb_upload/README.md)
+- [`rag`](./rag/README.md)
+- [`agents`](./agents/README.md)

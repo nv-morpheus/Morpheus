@@ -29,7 +29,6 @@ dependencies:
     - librdkafka
     - mlflow>=2.10.0,<3
     - nodejs=18.*
-    - nvtabular=23.06
     - papermill
     - s3fs>=2023.6
 

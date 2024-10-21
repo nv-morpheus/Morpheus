@@ -17,7 +17,6 @@ import logging
 import click
 
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.messages import RawPacketMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
@@ -41,8 +40,6 @@ def run_pipeline(nic_addr, gpu_addr):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 
-    CppConfig.set_should_use_cpp(True)
-
     config = Config()
     config.mode = PipelineModes.NLP
 
@@ -58,7 +55,11 @@ def run_pipeline(nic_addr, gpu_addr):
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, 'udp'))
     pipeline.add_stage(
-        MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts', determine_count_fn=count_raw_packets))
+        MonitorStage(config,
+                     description="DOCA GPUNetIO rate",
+                     unit='pkts',
+                     determine_count_fn=count_raw_packets,
+                     delayed_start=True))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()

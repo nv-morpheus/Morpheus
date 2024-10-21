@@ -16,11 +16,15 @@ import logging
 import time
 
 import click
-
+# pypdfium2 utilizes an atexit handler to perform cleanup, importing here to ensure that handler is registered before
+# after_pipeline is, and thus is executed after after_pipeline is invoked. This avoids memory leak warnings at shutdown.
+# https://github.com/nv-morpheus/Morpheus/issues/1864
+import pypdfium2  # pylint: disable=unused-import # noqa: F401
 from llm.agents import run as run_agents
 from llm.completion import run as run_completion
 from llm.rag import run as run_rag
 from llm.vdb_upload import run as run_vdb_upload
+
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 
@@ -31,22 +35,14 @@ from morpheus.cli.utils import parse_log_level
               type=click.Choice(get_log_levels(), case_sensitive=False),
               callback=parse_log_level,
               help="Specify the logging level to use.")
-@click.option('--use_cpp',
-              default=True,
-              type=bool,
-              help=("Whether or not to use C++ node and message types or to prefer python. "
-                    "Only use as a last resort if bugs are encountered"))
 @click.version_option()
 @click.pass_context
-def cli(ctx: click.Context, log_level: int, use_cpp: bool):
+def cli(ctx: click.Context, log_level: int):
     """Main entrypoint for the LLM Examples"""
 
-    from morpheus.config import CppConfig
     from morpheus.utils.logger import configure_logging
 
     ctx_dict = ctx.ensure_object(dict)
-
-    CppConfig.set_should_use_cpp(use_cpp)
 
     # Configure the logging
     configure_logging(log_level=log_level)

@@ -36,7 +36,7 @@ docker run --rm -it --hostname my-rabbit -p 15672:15672 -p 5672:5672 rabbitmq:3-
 The image can be verified with the web management console by opening http://localhost:15672 in a web browser. Enter "guest" for both the username and the password.
 
 ## Installing Pika
-The `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages use the [pika](https://pika.readthedocs.io/en/stable/#) RabbitMQ client for Python. To install this into the current env run:
+The `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages use the [pika](https://pika.readthedocs.io/en/stable/#) RabbitMQ client for Python. To install this into the current environment run:
 ```bash
 pip install -r examples/developer_guide/2_2_rabbitmq/requirements.txt
 ```
@@ -54,6 +54,7 @@ If no exchange named 'logs' exists in RabbitMQ it will be created. By default th
 ## Launch the writer
 In a third terminal from the root of the Morpheus repo execute:
 ```bash
+export MORPHEUS_ROOT=$(pwd)
 python examples/developer_guide/2_2_rabbitmq/write_simple.py
 ```
 
@@ -61,6 +62,7 @@ This will read JSON data from the `examples/data/email.jsonlines` file and publi
 
 The `write_simple.py` script will exit as soon as the message is written to the queue. The `read_simple.py` script will continue reading from the queue until explicitly shut down with a control-C.
 
+> **Note**: Both the `read_simple.py` and `write_simple.py` scripts will launch independent Morpheus pipelines, both of which can optionally execute in CPU-only mode by setting the `--use_cpu_only` flag.
 
 ## Alternate Morpheus CLI usage
 In the above examples we defined the pipeline using the Python API in the `read_simple.py` and `write_simple.py` scripts. Alternately, we could have defined the same pipelines using the Morpheus CLI tool.

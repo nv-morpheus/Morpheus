@@ -32,13 +32,13 @@ Control Messages are straightforward objects that contain `tasks`, `metadata`, a
 Control Messages can handle tasks such as `training`, `inference`, and a catchall category `other`. Tasks can be added, checked for existence, or removed from the Control Message using methods like `add_task`, `has_task`, and `remove_task`.
 
 ```python
-import morpheus._lib.messages as messages
+from morpheus.messages import ControlMessage
 
 task_data = {
     "....": "...."
 }
 
-msg = messages.ControlMessage()
+msg = ControlMessage()
 msg.add_task("training", task_data)
 if msg.has_task("training"):
     task = msg.remove_task("training")
@@ -49,9 +49,9 @@ if msg.has_task("training"):
 Metadata is a set of key-value pairs that offer supplementary information about the Control Message and must be JSON serializable. You can set, check, and retrieve metadata values using the `set_metadata`, `has_metadata`, and `get_metadata` methods, respectively.
 
 ```python
-import morpheus._lib.messages as messages
+from morpheus.messages import ControlMessage
 
-msg = messages.ControlMessage()
+msg = ControlMessage()
 msg.set_metadata("description", "This is a sample control message.")
 if msg.has_metadata("description"):
     description = msg.get_metadata("description")
@@ -63,12 +63,13 @@ The payload of a Control Message is a Morpheus `MessageMeta` object that can car
 
 ```python
 import cudf
-import morpheus._lib.messages as messages
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 
 data = cudf.DataFrame()  # some data
 
-msg_meta = messages.MessageMeta(data)
-msg = messages.ControlMessage()
+msg_meta = MessageMeta(data)
+msg = ControlMessage()
 
 msg.payload(msg_meta)
 
@@ -79,21 +80,21 @@ msg_meta == retrieved_payload # True
 
 ### Conversion from `MultiMessage` to `ControlMessage`
 
-Starting with version 24.06, the `MultiMessage` type will be deprecated, and all usage should transition to `ControlMessage`. Each `MultiMessage` functionality has a corresponding equivalent in `ControlMessage`, as illustrated below.
-```python
-import cudf
-from morpheus.messages import MultiMessage, ControlMessage
+**The `MultiMessage` type was deprecated in 24.06 and has been completely removed in version 24.10.**
 
-data = cudf.DataFrame()
-msg_meta = MessageMeta(data)
-```
+When upgrading to 24.10, all uses of `MultiMessage` need to be converted to `ControlMessage`. Each `MultiMessage` functionality has a corresponding equivalent in `ControlMessage`, as illustrated below.
 
-| **Functionality**                                              | **MultiMessage**                      | **ControlMessage**                                                  |
-| -------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------- |
-| Initialization                                                 | `multi_msg = MultiMessage(msg_meta)`  | `control_msg = ControlMessage()`<br>`control_msg.payload(msg_meta)` |
-| Get columns from `cudf.DataFrame`                              | `multi_msg.get_meta(col_name)`        | `control_msg.payload().get_data(col_name)`                          |
-| Set columns values to `cudf.DataFrame`                         | `multi_msg.set_meta(col_name, value)` | `control_msg.payload().set_data(col_name, value)`                   |
-| Get sliced `cudf.DataFrame` for given start and stop positions | `multi_msg.get_slice(start, stop)`    | `control_msg.payload().get_slice(start, stop)`                      |
-| Copy the `cudf.DataFrame` for given ranges of rows             | `multi_msg.copy_ranges(ranges)`       | `control_msg.payload().copy_ranges(ranges)`                         |
+| **Functionality**                                              | **MultiMessage**                           | **ControlMessage**                                                  |
+| -------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------- |
+| Initialization                                                 | `multi_msg = MultiMessage(msg_meta)`       | `control_msg = ControlMessage()`<br>`control_msg.payload(msg_meta)` |
+| Get `DataFrame`                                           | `multi_msg.get_meta()`                     | `control_msg.payload().get_data()`                                  |
+| Get columns from `DataFrame`                              | `multi_msg.get_meta(col_name)`             | `control_msg.payload().get_data(col_name)`                          |
+| Set columns values to `DataFrame`                         | `multi_msg.set_meta(col_name, value)`      | `control_msg.payload().set_data(col_name, value)`                   |
+| Get sliced `DataFrame` for given start and stop positions | `multi_msg.get_slice(start, stop)`         | `control_msg.payload().get_slice(start, stop)`                      |
+| Copy the `DataFrame` for given ranges of rows             | `multi_msg.copy_ranges(ranges)`            | `control_msg.payload().copy_ranges(ranges)`                         |
+|                                                                | **MultiTensorMessage**                     | **ControlMessage**                                                  |
+| Get the inference tensor `ndarray`                        | `multi_tensor_msg.tensor()`                | `control_msg.tensors()`                                              |
+| Get a specific inference tensor                                 | `multi_tensor_msg.get_tensor(tensor_name)` | `control_msg.tensors().get_tensor(tensor_name)`                                   |
 
-Note that the `get_slice()` and `copy_ranges()` functions in `ControlMessage` return the `MessageMeta` after slicing, whereas these functions in `MultiMessage` return a new `MultiMessage` instance.
+
+Note that in the `ControlMessage` column the `get_slice()` and `copy_ranges()` methods are being called on the `MessageMeta` payload and thus return a `MessageMeta` after slicing, whereas these functions in `MultiMessage` return a new `MultiMessage` instance.

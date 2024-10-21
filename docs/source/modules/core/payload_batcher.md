@@ -25,7 +25,7 @@ This module batches incoming control message data payload into smaller batches b
 |-----------------------------|------------|-----------------------------------|---------------------------------|---------------|
 | `max_batch_size`            | integer        | The maximum size of each batch    | 256                             | `256`        |
 | `raise_on_failure`          | boolean       | Whether to raise an exception if a failure occurs during processing | false | `false` |
-| `group_by_columns`          | list       | The column names to group by when batching | ["col1", "col2"]                     | `[]`            |
+| `group_by_columns`          | list       | The column names to group by when batching | `["col1", "col2"]`                     | `[]`            |
 | `disable_max_batch_size`    | boolean       | Whether to disable the `max_batch_size` and only batch by group     | false         | `false`         |
 | `timestamp_column_name`     | string        | The name of the timestamp column  | None                          | `None`          |
 | `timestamp_pattern`         | string        | The pattern to parse the timestamp column | None                    | `None`          |

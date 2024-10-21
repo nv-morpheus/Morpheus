@@ -19,27 +19,30 @@ import os
 import typing
 from unittest import mock
 
-import langchain
 import pytest
-from langchain.agents import AgentType
-from langchain.agents import initialize_agent
-from langchain.agents import load_tools
-from langchain.agents.tools import Tool
-from langchain.utilities import serpapi
+
+try:
+    import langchain
+    from langchain.agents import AgentType
+    from langchain.agents import initialize_agent
+    from langchain.agents import load_tools
+    from langchain.agents.tools import Tool
+    from langchain.utilities import serpapi
+except ImportError:
+    print("langchain is not installed")
 
 import cudf
 
 from morpheus.config import Config
-from morpheus.llm import LLMEngine
-from morpheus.llm.nodes.extracter_node import ExtracterNode
-from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
-from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus_llm.llm import LLMEngine
+from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
+from morpheus_llm.llm.nodes.langchain_agent_node import LangChainAgentNode
+from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
+from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
 
 def _build_agent_executor(model_name: str):
@@ -84,8 +87,7 @@ def _run_pipeline(config: Config, source_dfs: list[cudf.DataFrame], model_name: 
 
     pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs))
 
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=completion_task))
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
 
@@ -95,7 +97,7 @@ def _run_pipeline(config: Config, source_dfs: list[cudf.DataFrame], model_name: 
 
 
 @pytest.mark.usefixtures("openai", "restore_environ")
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.benchmark
 @mock.patch("langchain.utilities.serpapi.SerpAPIWrapper.aresults")
 @mock.patch("langchain.OpenAI._agenerate", autospec=True)  # autospec is needed as langchain will inspect the function

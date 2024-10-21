@@ -22,7 +22,8 @@ import requests
 import requests_cache
 from bs4 import BeautifulSoup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import ValidationError
 
 import cudf
@@ -41,9 +42,7 @@ class WebScraperSchema(BaseModel):
     enable_cache: bool = False
     cache_path: str = "./.cache/http/RSSDownloadStage.sqlite"
     cache_dir: str = "./.cache/llm/rss"
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra='forbid')
 
 
 WebScraperLoaderFactory = ModuleLoaderFactory("web_scraper", "morpheus_examples_llm", WebScraperSchema)

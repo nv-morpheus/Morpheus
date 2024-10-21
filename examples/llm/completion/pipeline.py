@@ -15,27 +15,27 @@
 import logging
 import time
 
-import cudf
-
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.llm import LLMEngine
-from morpheus.llm.nodes.extracter_node import ExtracterNode
-from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
-from morpheus.llm.nodes.prompt_template_node import PromptTemplateNode
-from morpheus.llm.services.llm_service import LLMService
-from morpheus.llm.services.nemo_llm_service import NeMoLLMService
-from morpheus.llm.services.openai_chat_service import OpenAIChatService
-from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.concat_df import concat_dataframes
+from morpheus.utils.type_utils import exec_mode_to_df_type_str
+from morpheus.utils.type_utils import get_df_class
+from morpheus_llm.llm import LLMEngine
+from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
+from morpheus_llm.llm.nodes.llm_generate_node import LLMGenerateNode
+from morpheus_llm.llm.nodes.prompt_template_node import PromptTemplateNode
+from morpheus_llm.llm.services.llm_service import LLMService
+from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService
+from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
+from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
+from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,8 @@ def _build_engine(llm_service: str):
     return engine
 
 
-def pipeline(num_threads: int,
+def pipeline(use_cpu_only: bool,
+             num_threads: int,
              pipeline_batch_size: int,
              model_max_batch_size: int,
              repeat_count: int,
@@ -81,6 +82,7 @@ def pipeline(num_threads: int,
              shuffle: bool = False) -> float:
 
     config = Config()
+    config.execution_mode = ExecutionMode.CPU if use_cpu_only else ExecutionMode.GPU
 
     # Below properties are specified by the command line
     config.num_threads = num_threads
@@ -90,9 +92,10 @@ def pipeline(num_threads: int,
     config.edge_buffer_size = 128
 
     if input_file is not None:
-        source_df = read_file_to_df(input_file, df_type='cudf')
+        source_df = read_file_to_df(input_file, df_type=exec_mode_to_df_type_str(config.execution_mode))
     else:
-        source_df = cudf.DataFrame({
+        df_class = get_df_class(config.execution_mode)
+        source_df = df_class({
             "country": [
                 "France",
                 "Spain",
@@ -116,8 +119,7 @@ def pipeline(num_threads: int,
 
     pipe.set_source(InMemorySourceStage(config, dataframes=[source_df], repeat=repeat_count))
 
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=completion_task))
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 

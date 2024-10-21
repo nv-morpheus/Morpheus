@@ -20,9 +20,10 @@ from typing import Optional
 
 import mrc
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import ValidationError
-from pydantic import validator
+from pydantic import field_validator
 
 from morpheus.modules.general.monitor import MonitorLoaderFactory
 from morpheus.modules.input.rss_source import RSSSourceLoaderFactory
@@ -52,8 +53,9 @@ class RSSSourcePipeSchema(BaseModel):
     strip_markup: bool = True
     vdb_resource_name: str
     web_scraper_config: Optional[Dict[Any, Any]] = None
+    model_config = ConfigDict(extra='forbid')
 
-    @validator('feed_input', pre=True)
+    @field_validator('feed_input')
     def validate_feed_input(cls, to_validate):  # pylint: disable=no-self-argument
         if isinstance(to_validate, str):
             return [to_validate]
@@ -62,9 +64,6 @@ class RSSSourcePipeSchema(BaseModel):
             return to_validate
 
         raise ValueError('feed_input must be a string or a list of strings')
-
-    class Config:
-        extra = "forbid"
 
 
 RSSSourcePipeLoaderFactory = ModuleLoaderFactory("rss_source_pipe", "morpheus_examples_llm", RSSSourcePipeSchema)

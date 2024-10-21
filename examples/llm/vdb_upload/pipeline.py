@@ -25,8 +25,8 @@ from morpheus.pipeline.stage_decorator import stage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
-from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
+from morpheus_llm.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 
 logger = logging.getLogger(__name__)
 

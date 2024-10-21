@@ -22,20 +22,20 @@ import mrc
 import pandas as pd
 import pika
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.utils.type_utils import get_df_pkg
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("from-rabbitmq")
-class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
+class RabbitMQSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource):
     """
     Source stage used to load messages from a RabbitMQ queue.
 
@@ -77,8 +77,8 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._poll_interval = pd.Timedelta(poll_interval)
 
-        # Flag to indicate whether or not we should stop
-        self._stop_requested = False
+        # This will return either cudf.DataFrame or pandas.DataFrame depending on the execution mode
+        self._df_pkg = get_df_pkg(config.execution_mode)
 
     @property
     def name(self) -> str:
@@ -90,23 +90,17 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def stop(self):
-        # Indicate we need to stop
-        self._stop_requested = True
-
-        return super().stop()
-
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self.source_generator)
 
-    def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
+    def source_generator(self, subscription: mrc.Subscription) -> collections.abc.Iterator[MessageMeta]:
         try:
-            while not self._stop_requested:
+            while not self.is_stop_requested() and subscription.is_subscribed():
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
                         buffer = StringIO(body.decode("utf-8"))
-                        df = cudf.io.read_json(buffer, orient='records', lines=True)
+                        df = self._df_pkg.read_json(buffer, orient='records', lines=True)
                         yield MessageMeta(df=df)
                     except Exception as ex:
                         logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)

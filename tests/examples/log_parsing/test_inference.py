@@ -24,10 +24,9 @@ import pytest
 
 from _utils import TEST_DIRS
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiInferenceNLPMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.messages import TensorMemory
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -46,7 +45,7 @@ def build_response_mem(log_test_data_dir: str) -> TensorMemory:
     return TensorMemory(count=count, tensors=tensors)
 
 
-def build_resp_message(df: DataFrameType, num_cols: int = 2) -> MultiResponseMessage:
+def build_resp_message(df: DataFrameType, num_cols: int = 2) -> ControlMessage:
     count = len(df)
     seq_ids = cp.zeros((count, 3), dtype=cp.uint32)
     seq_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
@@ -60,24 +59,21 @@ def build_resp_message(df: DataFrameType, num_cols: int = 2) -> MultiResponseMes
                            'input_ids': cp.zeros((count, num_cols), dtype=cp.float32),
                            'seq_ids': seq_ids
                        })
+    cm = ControlMessage()
+    cm.payload(meta)
+    cm.tensors(mem)
+    return cm
 
-    return MultiResponseMessage(meta=meta, mess_offset=0, mess_count=count, memory=mem, offset=0, count=count)
 
-
-def build_inf_message(df: DataFrameType,
-                      mess_offset: int,
-                      mess_count: int,
-                      offset: int,
-                      count: int,
-                      num_cols: int = 2) -> MultiInferenceNLPMessage:
+def build_inf_message(df: DataFrameType, mess_count: int, count: int, num_cols: int = 2) -> ControlMessage:
     assert count >= mess_count
-    tensor_length = offset + count
+    tensor_length = count
     seq_ids = cp.zeros((tensor_length, 3), dtype=cp.uint32)
 
-    id_range = cp.arange(mess_offset, mess_offset + mess_count, dtype=cp.uint32)
-    seq_ids[offset:offset + mess_count, 0] = id_range
+    id_range = cp.arange(0, mess_count, dtype=cp.uint32)
+    seq_ids[0:mess_count, 0] = id_range
     if (count != mess_count):  # Repeat the last id
-        seq_ids[offset + mess_count:offset + count, 0] = id_range[-1]
+        seq_ids[mess_count:count, 0] = id_range[-1]
 
     seq_ids[:, 2] = 42
 
@@ -86,13 +82,10 @@ def build_inf_message(df: DataFrameType,
                              input_ids=cp.zeros((tensor_length, num_cols), dtype=cp.float32),
                              input_mask=cp.zeros((tensor_length, num_cols), dtype=cp.float32),
                              seq_ids=seq_ids)
-
-    return MultiInferenceNLPMessage(meta=meta,
-                                    mess_offset=mess_offset,
-                                    mess_count=mess_count,
-                                    memory=mem,
-                                    offset=offset,
-                                    count=count)
+    cm = ControlMessage()
+    cm.payload(meta)
+    cm.tensors(mem)
+    return cm
 
 
 def _check_worker(inference_mod: types.ModuleType, worker: TritonInferenceWorker):
@@ -122,20 +115,14 @@ def test_log_parsing_triton_inference_log_parsing_constructor(config: Config,
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
-@pytest.mark.parametrize("mess_offset,mess_count,offset,count", [(0, 20, 0, 20), (5, 10, 5, 10)])
+@pytest.mark.parametrize("mess_count,count", [(20, 20)])
 def test_log_parsing_triton_inference_log_parsing_build_output_message(config: Config,
                                                                        filter_probs_df: DataFrameType,
                                                                        import_mod: typing.List[types.ModuleType],
-                                                                       mess_offset: int,
                                                                        mess_count: int,
-                                                                       offset: int,
                                                                        count: int):
     inference_mod = import_mod[0]
-    input_msg = build_inf_message(filter_probs_df,
-                                  mess_offset=mess_offset,
-                                  mess_count=mess_count,
-                                  offset=offset,
-                                  count=count)
+    input_msg = build_inf_message(filter_probs_df, mess_count=mess_count, count=count)
 
     worker = inference_mod.TritonInferenceLogParsing(inf_queue=ProducerConsumerQueue(),
                                                      c=config,
@@ -149,17 +136,15 @@ def test_log_parsing_triton_inference_log_parsing_build_output_message(config: C
     worker._inputs['test'] = mock_inout
 
     msg = worker.build_output_message(input_msg)
-    assert msg.meta is input_msg.meta
-    assert msg.mess_offset == mess_offset
-    assert msg.mess_count == count
-    assert msg.offset == 0
-    assert msg.count == count
+    assert msg.payload() is input_msg.payload()
+    assert msg.payload().count == mess_count
+    assert msg.tensors().count == count
 
-    assert set(msg.memory.tensor_names).issuperset(('confidences', 'labels', 'input_ids', 'seq_ids'))
-    assert msg.get_tensor('confidences').shape == (count, 2)
-    assert msg.get_tensor('labels').shape == (count, 2)
-    assert msg.get_tensor('input_ids').shape == (count, 2)
-    assert msg.get_tensor('seq_ids').shape == (count, 3)
+    assert set(msg.tensors().tensor_names).issuperset(('confidences', 'labels', 'input_ids', 'seq_ids'))
+    assert msg.tensors().get_tensor('confidences').shape == (count, 2)
+    assert msg.tensors().get_tensor('labels').shape == (count, 2)
+    assert msg.tensors().get_tensor('input_ids').shape == (count, 2)
+    assert msg.tensors().get_tensor('seq_ids').shape == (count, 3)
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
@@ -180,12 +165,10 @@ def test_log_parsing_inference_stage_get_inference_worker(config: Config, import
 @pytest.mark.use_cudf
 @pytest.mark.usefixtures("manual_seed", "config")
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py'))
-@pytest.mark.parametrize("mess_offset,mess_count,offset,count", [(0, 5, 0, 5), (5, 5, 0, 5)])
+@pytest.mark.parametrize("mess_count,count", [(5, 5)])
 def test_log_parsing_inference_stage_convert_one_response(import_mod: typing.List[types.ModuleType],
                                                           filter_probs_df: DataFrameType,
-                                                          mess_offset,
                                                           mess_count,
-                                                          offset,
                                                           count):
     inference_mod = import_mod
 
@@ -193,36 +176,20 @@ def test_log_parsing_inference_stage_convert_one_response(import_mod: typing.Lis
 
     # confidences, labels & input_ids all have the same shape
     num_cols = input_res.get_tensor('confidences').shape[1]
+
+    filter_probs_df = filter_probs_df.head(mess_count)
     resp_msg = build_resp_message(filter_probs_df, num_cols=num_cols)
 
-    orig_tensors = {k: v.copy() for (k, v) in resp_msg.memory.get_tensors().items()}
-
-    input_inf = build_inf_message(filter_probs_df,
-                                  mess_offset=mess_offset,
-                                  mess_count=mess_count,
-                                  offset=offset,
-                                  count=count,
-                                  num_cols=num_cols)
+    input_inf = build_inf_message(filter_probs_df, mess_count=mess_count, count=count, num_cols=num_cols)
 
     output_msg = inference_mod.LogParsingInferenceStage._convert_one_response(resp_msg, input_inf, input_res)
 
-    assert isinstance(output_msg, MultiResponseMessage)
-    assert output_msg.meta is input_inf.meta
-    assert output_msg.mess_offset == mess_offset
-    assert output_msg.mess_count == mess_count
-    assert output_msg.offset == offset
-    assert output_msg.count == count
+    assert isinstance(output_msg, ControlMessage)
+    assert output_msg.payload() is input_inf.payload()
+    assert output_msg.payload().count == mess_count
+    assert output_msg.tensors().count == count
 
-    assert (output_msg.get_tensor('seq_ids') == input_inf.get_tensor('seq_ids')).all()
-    assert (output_msg.get_tensor('input_ids') == input_inf.get_tensor('input_ids')).all()
-    assert (output_msg.get_tensor('confidences') == input_res.get_tensor('confidences')).all()
-    assert (output_msg.get_tensor('labels') == input_res.get_tensor('labels')).all()
-
-    # Ensure we didn't write to the memory outside of the [offset:offset+count] bounds
-    tensors = resp_msg.memory.get_tensors()
-    for (tensor_name, tensor) in tensors.items():
-        orig_tensor = orig_tensors[tensor_name]
-
-        error_msg = f"Out of bounds values for {tensor_name}"
-        assert (tensor[0:offset] == orig_tensor[0:offset]).all(), error_msg
-        assert (tensor[offset + count:] == orig_tensor[offset + count:]).all(), error_msg
+    assert (output_msg.tensors().get_tensor('seq_ids') == input_inf.tensors().get_tensor('seq_ids')).all()
+    assert (output_msg.tensors().get_tensor('input_ids') == input_inf.tensors().get_tensor('input_ids')).all()
+    assert (output_msg.tensors().get_tensor('confidences') == input_res.get_tensor('confidences')).all()
+    assert (output_msg.tensors().get_tensor('labels') == input_res.get_tensor('labels')).all()

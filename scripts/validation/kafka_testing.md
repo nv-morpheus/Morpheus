@@ -39,7 +39,7 @@ pytest --run_slow --run_kafka
     ```
 1. Launch Kafka using instructions from the [Quick Launch Kafka Cluster](../../docs/source/developer_guide/contributing.md#quick-launch-kafka-cluster) section of [contributing.md](../../docs/source/developer_guide/contributing.md) following steps 1-6.
 
-1. The testing steps below will require two separate terminal windows. Each will need to have the `KAFKA_ADVERTISED_HOST_NAME`, `BROKER_LIST` and `MORPHEUS_ROOT` environment variables set. In the example below both morpheus and kafka-docker repositories have been checked out into the `~work` directory, replacing these paths with the location of your checkouts.
+1. The testing steps below will require two separate terminal windows. Each will need to have the `KAFKA_ADVERTISED_HOST_NAME`, `BROKER_LIST` and `MORPHEUS_ROOT` environment variables set. In the example below both `morpheus` and `kafka-docker` repositories have been checked out into the `~work` directory, replacing these paths with the location of your checkouts.
     ```bash
     export MORPHEUS_ROOT=~/work/morpheus
     export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
@@ -52,7 +52,7 @@ pytest --run_slow --run_kafka
          -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
     ```
 
-    Leave this terminal open the testing steps will refer to these as the "Kafka terminal", and commands executed from this terminal will be within the kafka container.
+    Leave this terminal open the testing steps will refer to these as the "Kafka terminal" and commands executed from this terminal will be within the Kafka container.
 
 1. Open a new terminal and navigate to the root of the Morpheus repo, this will be referred to as the "Morpheus terminal" and will be used for running Morpheus pipelines and verifying output.
 
@@ -70,7 +70,7 @@ ulimit -n 4096
 ## Simple Data Copying
 ### Checking KafkaSourceStage
 #### Single Partition Topic Test
-1. From the Kafka terminal, create a topic called "morpheus-src-copy-test" with only a single partition.
+1. From the Kafka terminal, create a topic called `morpheus-src-copy-test` with only a single partition.
     ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-src-copy-test  --partitions 1 --bootstrap-server `broker-list.sh`
     ```
@@ -134,7 +134,7 @@ ulimit -n 4096
 
 ### Checking WriteToKafkaStage
 #### Single Partition Topic Test
-1. From the Kafka terminal create a topic called "morpheus-sink-copy-test" with only a single partition, and start a consumer on that topic:
+1. From the Kafka terminal create a topic called `morpheus-sink-copy-test` with only a single partition, and start a consumer on that topic:
     ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-sink-copy-test  --partitions 1 --bootstrap-server `broker-list.sh`
 
@@ -162,12 +162,12 @@ ulimit -n 4096
     ```bash
     diff -q --ignore-all-space <(cat ${MORPHEUS_ROOT}/.tmp/morpheus-sink-copy-test.jsonlines | jq --sort-keys) <(cat ${MORPHEUS_ROOT}/tests/tests_data/filter_probs.jsonlines | jq --sort-keys)
     ```
-    Note the usage of `jq --sort-keys` which will reformat the json output, sorting the keys, this ensures that `{"a": 5, "b": 6}` and `{"b": 6,   "a": 5}` are considered equivalent.
+    Note the usage of `jq --sort-keys` which will reformat the JSON output, sorting the keys, this ensures that `{"a": 5, "b": 6}` and `{"b": 6,   "a": 5}` are considered equivalent.
 
 1. Stop the consumer in the Kafka terminal.
 
 #### Partitioned Topic Test
-1. From the Kafka terminal create a new topic named "morpheus-sink-copy-test-p" with three partitions, and start a consumer on that topic:
+1. From the Kafka terminal create a new topic named `morpheus-sink-copy-test-p` with three partitions, and start a consumer on that topic:
     ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-sink-copy-test-p --partitions 3 --bootstrap-server `broker-list.sh`
 

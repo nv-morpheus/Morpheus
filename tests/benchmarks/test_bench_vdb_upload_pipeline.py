@@ -32,9 +32,9 @@ from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.rss_source_stage import RSSSourceStage
-from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
+from morpheus_llm.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 
 EMBEDDING_SIZE = 384
 MODEL_MAX_BATCH_SIZE = 64
@@ -87,7 +87,7 @@ def _run_pipeline(config: Config,
 
 
 @pytest.mark.milvus
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.use_pandas
 @pytest.mark.benchmark
 @pytest.mark.import_mod([

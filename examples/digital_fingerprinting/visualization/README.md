@@ -72,7 +72,7 @@ Duo training data will be saved to `/workspace/examples/data/dfp/duo-training-da
 
 ## Running pipeline to generate input for DFP Visualization
 
-The pipeline uses `DFPVizPostprocStage` to perform post-processing on DFP inference output. The inference output is converted to input format expected by the DFP Visualization and saves to multiple files based on specified time period. Time period to group data by must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases). The default period is one day (D). The output files will be named by appending period to prefix (e.g. `dfp-viz-2022-08-30.csv`). These are the available options used for `DFPVizPostprocStage`:
+The pipeline uses `DFPVizPostprocStage` to perform post-processing on DFP inference output. The inference output is converted to input format expected by the DFP Visualization and saves to multiple files based on specified time period. Time period to group data by must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases). The default period is one day (D). The output files will be named by appending period to prefix (for example, `dfp-viz-2022-08-30.csv`). These are the available options used for `DFPVizPostprocStage`:
 
 ```
 --period                   Time period to batch input data and save output files by. [default: `D`]

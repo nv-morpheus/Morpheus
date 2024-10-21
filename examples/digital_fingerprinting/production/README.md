@@ -100,15 +100,15 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--train_users` | One of: `all`, `generic`, `individual`, `none` | Indicates whether or not to train per user or a generic model for all users. Selecting `none` runs the inference pipeline. |
 | `--skip_user` | TEXT | User IDs to skip. Mutually exclusive with `only_user` |
 | `--only_user` | TEXT | Only users specified by this option will be included. Mutually exclusive with `skip_user` |
-| `--start_time` | TEXT | The start of the time window, if undefined start_date will be `now()-duration` |
+| `--start_time` | TEXT | The start of the time window, if undefined `start_date` will be `now()-duration` |
 | `--duration` | TEXT | The duration to run starting from now [default: 60d] |
-| `--cache_dir` | TEXT | The location to cache data such as S3 downloads and pre-processed data  [env var: `DFP_CACHE_DIR`; default: `./.cache/dfp`] |
+| `--cache_dir` | TEXT | The location to cache data such as S3 downloads and pre-processed data  [environment variable: `DFP_CACHE_DIR`; default: `./.cache/dfp`] |
 | `--log_level` | One of: `CRITICAL`, `FATAL`, `ERROR`, `WARN`, `WARNING`, `INFO`, `DEBUG` | Specify the logging level to use.  [default: `WARNING`] |
-| `--sample_rate_s` | INTEGER | Minimum time step, in milliseconds, between object logs.  [env var: `DFP_SAMPLE_RATE_S`; default: 0] |
-| `-f`, `--input_file` | TEXT | List of files to process. Can specify multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. Refer to [fsspec documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
+| `--sample_rate_s` | INTEGER | Minimum time step, in milliseconds, between object logs.  [environment variable: `DFP_SAMPLE_RATE_S`; default: 0] |
+| `-f`, `--input_file` | TEXT | List of files to process. Can specify multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. Refer to [`fsspec` documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
 | `--watch_inputs` | FLAG | Instructs the pipeline to continuously check the paths specified by `--input_file` for new files. This assumes that the at least one paths contains a wildcard. |
 | `--watch_interval` | FLOAT | Amount of time, in seconds, to wait between checks for new files. Only used if --watch_inputs is set. [default `1.0`] |
-| `--tracking_uri` | TEXT | The MLflow tracking URI to connect to the tracking backend. [default: `http://localhost:5000`] |
+| `--tracking_uri` | TEXT | The MLflow tracking URI to connect to. [default: `http://localhost:5000`] |
 | `--help` | | Show this message and exit. |
 
 ##### Steps to Run Example Pipeline
@@ -164,7 +164,7 @@ The commands in the previous section run stage-based example DFP pipelines. The 
 Commands to run equivalent module-based DFP pipelines can be found [here](../../../docs/source/developer_guide/guides/10_modular_pipeline_digital_fingerprinting.md#running-example-modular-dfp-pipelines).
 
 #### Optional MLflow Service
-Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
+Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background. For debugging purposes it can be helpful to view the logs of the running MLflow service.
 
 From the `examples/digital_fingerprinting/production` dir run:
 ```bash
@@ -188,7 +188,7 @@ MLflow for this production digital fingerprint use case can be installed from NG
 
 The deployment of the [Morpheus SDK Client](../../../docs/source/cloud_deployment_guide.md#install-morpheus-sdk-client) is also done _almost_ the same way as what's specified in the Cloud Deployment Guide. However, you would specify command arguments differently for this production DFP use case.
 
-Note: The published Morpheus image includes a minimal set of packages for launching JupyterLab but you will likely still want to update the conda environment inside the running pod with the `conda_env.yml` file in this same directory to install other use case dependencies such as boto3 and s3fs.
+Note: The published Morpheus image includes a minimal set of packages for launching JupyterLab but you will likely still want to update the Conda environment inside the running pod with the `conda_env.yml` file in this same directory to install other use case dependencies such as boto3 and s3fs.
 
 #### Notebooks
 

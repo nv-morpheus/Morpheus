@@ -47,7 +47,7 @@ def run_pipeline():
 
     pipeline.add_stage(DeserializeStage(config))
 
-    # Add a PassThruStage where the input type is MultiMessage
+    # Add a PassThruStage where the input type is ControlMessage
     pipeline.add_stage(PassThruStage(config))
 
     # Add monitor to record the performance of our new stage

@@ -36,7 +36,11 @@ FEATURE_LENGTH = 256
 MODEL_MAX_BATCH_SIZE = 32
 
 
-def _run_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[types.ModuleType]):
+def _run_pipeline(config: Config,
+                  dataset_cudf: DatasetManager,
+                  import_mod: typing.List[types.ModuleType],
+                  bert_cased_hash: str,
+                  bert_cased_vocab: str):
     """
     Runs just the Log Parsing Pipeline
     """
@@ -47,8 +51,6 @@ def _run_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typi
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
     config.feature_length = FEATURE_LENGTH
 
-    model_vocab_file = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-vocab.txt')
-    vocab_hash_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-hash.txt')
     log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing')
 
     # Not actually the real model config, just the subset that LogParsingPostProcessingStage uses
@@ -67,7 +69,7 @@ def _run_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typi
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(
         PreprocessNLPStage(config,
-                           vocab_hash_file=vocab_hash_file_name,
+                           vocab_hash_file=bert_cased_hash,
                            truncation=False,
                            do_lower_case=False,
                            stride=64,
@@ -80,7 +82,7 @@ def _run_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typi
                                                force_convert_inputs=True))
     pipe.add_stage(
         postprocessing_mod.LogParsingPostProcessingStage(config,
-                                                         vocab_path=model_vocab_file,
+                                                         vocab_path=bert_cased_vocab,
                                                          model_config_path=model_config_file))
 
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
@@ -90,7 +92,11 @@ def _run_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typi
     assert_results(comp_stage.get_results())
 
 
-def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[types.ModuleType]):
+def _run_mocked_pipeline(config: Config,
+                         dataset_cudf: DatasetManager,
+                         import_mod: typing.List[types.ModuleType],
+                         bert_cased_hash: str,
+                         bert_cased_vocab: str):
     """
     Runs the minibert pipeline and mocks the Triton Python interface
     """
@@ -122,7 +128,11 @@ def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mo
         async_infer = mk_async_infer(inf_results)
         mock_triton_client.async_infer.side_effect = async_infer
 
-        return _run_pipeline(config, dataset_cudf, import_mod)
+        return _run_pipeline(config,
+                             dataset_cudf,
+                             import_mod,
+                             bert_cased_hash=bert_cased_hash,
+                             bert_cased_vocab=bert_cased_vocab)
 
 
 @pytest.mark.slow
@@ -130,5 +140,13 @@ def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mo
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py'),
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py')
 ])
-def test_pipe(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[types.ModuleType]):
-    _run_mocked_pipeline(config, dataset_cudf, import_mod)
+def test_pipe(config: Config,
+              dataset_cudf: DatasetManager,
+              import_mod: typing.List[types.ModuleType],
+              bert_cased_hash: str,
+              bert_cased_vocab: str):
+    _run_mocked_pipeline(config,
+                         dataset_cudf,
+                         import_mod,
+                         bert_cased_hash=bert_cased_hash,
+                         bert_cased_vocab=bert_cased_vocab)

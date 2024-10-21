@@ -20,6 +20,7 @@ from typing import Optional
 import mrc
 import mrc.core.operators as ops
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import ValidationError
 
@@ -39,16 +40,12 @@ class ColumnTransformSchema(BaseModel):
     dtype: str
     op_type: str
     from_: Optional[str] = Field(None, alias="from")
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra='forbid')
 
 
 class SchemaTransformSchema(BaseModel):
     schema_transform_config: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra='forbid')
 
 
 SchemaTransformLoaderFactory = ModuleLoaderFactory("schema_transform", "morpheus_examples_llm", SchemaTransformSchema)
