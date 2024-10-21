@@ -170,9 +170,6 @@ class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, ConfigurableOutpu
         """Indicates whether or not this stage supports a C++ implementation"""
         return False
 
-    def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MessageMeta)
-
     def _parse_response(self, response: requests.Response) -> typing.Union[DataFrameType, None]:
         """
         Returns a DataFrame parsed from the response payload. If the response payload is empty, then `None` is returned.
