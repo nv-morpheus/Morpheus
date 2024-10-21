@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 '''
-This script is used to update the imports from "dfp." to "morpheus_dfp." in all the files in the given directory.
+This script is used to update imports related to DFP and LLM morpheus modules.
 Usage:
     python morpheus_namespace_update.py --directory <directory> --dfp
     python morpheus_namespace_update.py --directory <directory> --llm
@@ -129,9 +129,9 @@ def replace_imports(directory, dfp, llm):
         return
 
     for root, _, files in os.walk(directory):
-
         for file in files:
             file_path = os.path.join(root, file)
+            # Skip this script
             if os.path.abspath(file_path) == os.path.abspath(__file__):
                 continue
             if file.endswith(".py"):
