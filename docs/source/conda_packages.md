@@ -48,8 +48,8 @@ conda config --env --add channels conda-forge &&\
 conda install -c nvidia morpheus-core
 ```
 The `morpheus-core` Conda package installs the `morpheus` python package. It also pulls down all the necessary Conda runtime dependencies for the core stages including [`mrc`](https://anaconda.org/nvidia/mrc) and [`libmrc`](https://anaconda.org/nvidia/libmrc).
-### Install additional `Pypi` dependencies
-Some of the stages in the core library require additional dependencies that are hosted on `Pypi`. These dependencies are included as a requirements file in the `morpheus` python package. The requirements files can be located and installed by running the following command:
+### Install additional PyPI dependencies
+Some of the stages in the core library require additional dependencies that are hosted on PyPI. These dependencies are included as a requirements file in the `morpheus` python package. The requirements files can be located and installed by running the following command:
 ```bash
 python3 <<EOF
 import importlib.resources
@@ -80,8 +80,8 @@ conda config --env --add channels conda-forge &&\
 conda install -c nvidia morpheus-dfp
 ```
 The `morpheus-dfp` Conda package installs the `morpheus_dfp` python package. It also pulls down all the necessary Conda runtime dependencies including [`morpheus-core`](https://anaconda.org/nvidia/morpheus-core).
-### Install additional `Pypi` dependencies
-Some of the DFP stages in the library require additional dependencies that are hosted on `Pypi`. These dependencies are included as a requirements file in the `morpheus_dfp` python package. And can be installed by running the following command:
+### Install additional PyPI dependencies
+Some of the DFP stages in the library require additional dependencies that are hosted on PyPI. These dependencies are included as a requirements file in the `morpheus_dfp` python package. And can be installed by running the following command:
 ```bash
 python3 <<EOF
 import importlib.resources
@@ -113,8 +113,8 @@ conda config --env --add channels conda-forge &&\
 conda install -c nvidia morpheus-llm
 ```
 The `morpheus-llm` Conda package installs the `morpheus_llm` python package. It also pulls down all the necessary Conda packages including [`morpheus-core`](https://anaconda.org/nvidia/morpheus-core).
-### Install additional `Pypi` dependencies
-Some of the stages in the library require additional dependencies that are hosted on `Pypi`. These dependencies are included as a requirements file in the `morpheus_llm` python package. And can be installed by running the following command:
+### Install additional PyPI dependencies
+Some of the stages in the library require additional dependencies that are hosted on PyPI. These dependencies are included as a requirements file in the `morpheus_llm` python package. And can be installed by running the following command:
 ```bash
 python3 <<EOF
 import importlib.resources
