@@ -102,8 +102,8 @@ void DataLoaderModule::initialize(mrc::segment::IBuilder& builder)
             return m_data_loader.load(control_message);
         }));
 
-    register_input_port("input", loader_node);
-    register_output_port("output", loader_node);
+    builder.register_module_input("input", loader_node);
+    builder.register_module_output("output", loader_node);
 }
 
 std::string DataLoaderModule::module_type_name() const
