@@ -63,12 +63,6 @@ TEST_F(TestControlMessage, InitializationTest)
     auto msg_two = ControlMessage(config);
 
     ASSERT_EQ(msg_two.has_task("load"), true);
-
-    auto data_payload = create_mock_msg_meta({"col1", "col2", "col3"}, {"int32", "float32", "string"}, 5);
-
-    auto msg_three = ControlMessage(data_payload, config);
-    ASSERT_EQ(msg_three.has_task("load"), true);
-    ASSERT_EQ(msg_three.payload(), data_payload);
 }
 
 TEST_F(TestControlMessage, SetAndGetMetadata)

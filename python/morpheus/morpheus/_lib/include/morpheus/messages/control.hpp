@@ -60,7 +60,6 @@ class MORPHEUS_EXPORT ControlMessage
   public:
     ControlMessage();
     explicit ControlMessage(const morpheus::utilities::json_t& config);
-    explicit ControlMessage(const std::shared_ptr<MessageMeta>& payload, const morpheus::utilities::json_t& config);
 
     ControlMessage(const ControlMessage& other);  // Copies config and metadata, but not payload
 
