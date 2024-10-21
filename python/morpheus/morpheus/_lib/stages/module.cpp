@@ -230,11 +230,11 @@ PYBIND11_MODULE(stages, _module)
              py::arg("stride"),
              py::arg("column"));
 
-    py::class_<mrc::segment::Object<HttpServerSourceStage>,
+    py::class_<mrc::segment::Object<HttpServerSourceStage<MessageMeta>>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<HttpServerSourceStage>>>(
-        _module, "HttpServerSourceStage", py::multiple_inheritance())
-        .def(py::init<>(&HttpServerSourceStageInterfaceProxy::init),
+               std::shared_ptr<mrc::segment::Object<HttpServerSourceStage<MessageMeta>>>>(
+        _module, "HttpServerMessageMetaSourceStage", py::multiple_inheritance())
+        .def(py::init<>(&HttpServerSourceStageInterfaceProxy::init_meta),
              py::arg("builder"),
              py::arg("name"),
              py::arg("bind_address")       = "127.0.0.1",
@@ -254,6 +254,33 @@ PYBIND11_MODULE(stages, _module)
              py::arg("request_timeout")    = 30,
              py::arg("lines")              = false,
              py::arg("stop_after")         = 0);
+
+    py::class_<mrc::segment::Object<HttpServerSourceStage<ControlMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<HttpServerSourceStage<ControlMessage>>>>(
+        _module, "HttpServerControlMessageSourceStage", py::multiple_inheritance())
+        .def(py::init<>(&HttpServerSourceStageInterfaceProxy::init_cm),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("bind_address")       = "127.0.0.1",
+             py::arg("port")               = 8080,
+             py::arg("endpoint")           = "/message",
+             py::arg("live_endpoint")      = "/live",
+             py::arg("ready_endpoint")     = "/ready",
+             py::arg("method")             = "POST",
+             py::arg("live_method")        = "GET",
+             py::arg("ready_method")       = "GET",
+             py::arg("accept_status")      = 201u,
+             py::arg("sleep_time")         = 0.1f,
+             py::arg("queue_timeout")      = 5,
+             py::arg("max_queue_size")     = 1024,
+             py::arg("num_server_threads") = 1,
+             py::arg("max_payload_size")   = DefaultMaxPayloadSize,
+             py::arg("request_timeout")    = 30,
+             py::arg("lines")              = false,
+             py::arg("stop_after")         = 0,
+             py::arg("task_type")          = py::none(),
+             py::arg("task_payload")       = py::none());
 
     py::class_<mrc::segment::Object<SerializeStage>,
                mrc::segment::ObjectProperties,

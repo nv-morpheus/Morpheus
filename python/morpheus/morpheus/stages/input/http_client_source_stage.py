@@ -24,11 +24,12 @@ import requests
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.utils import get_json_reader
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.configurable_output_source import ConfigurableOutputSource
+from morpheus.pipeline.configurable_output_source import SupportedMessageTypes
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
-from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils import http_utils
 from morpheus.utils.type_aliases import DataFrameType
 
@@ -36,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("from-http-client", ignore_args=["query_params", "headers", "**request_kwargs"])
-class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
+class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, ConfigurableOutputSource):
     """
     Source stage that polls a remote HTTP server for incoming data.
 
@@ -85,6 +86,14 @@ class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
         A callable that takes the HTTP payload bytes as the first argument and the `lines` parameter is passed in as
         the second argument and returns a DataFrame. If unset `cudf.read_json` is used in GPU mode and
         `pandas.read_json` in CPU mode.
+    message_type : `SupportedMessageTypes`, case_sensitive = False
+        The type of message to emit.
+    task_type : str, default = None
+        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
+        is set to `CONTROL_MESSAGE`. If not `None`, `task_payload` must also be specified.
+    task_payload : dict, default = None
+        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
+        is set to `CONTROL_MESSAGE`. If not `None`, `task_type` must also be specified.
     **request_kwargs : dict
         Additional arguments to pass to the `requests.request` function.
     """
@@ -104,8 +113,11 @@ class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
                  lines: bool = False,
                  stop_after: int = 0,
                  payload_to_df_fn: typing.Callable[[bytes, bool], DataFrameType] = None,
+                 message_type: SupportedMessageTypes = SupportedMessageTypes.MESSAGE_META,
+                 task_type: str = None,
+                 task_payload: dict = None,
                  **request_kwargs):
-        super().__init__(config)
+        super().__init__(config, message_type=message_type, task_type=task_type, task_payload=task_payload)
         self._url = http_utils.prepare_url(url)
 
         if callable(query_params):
@@ -158,9 +170,6 @@ class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
         """Indicates whether or not this stage supports a C++ implementation"""
         return False
 
-    def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MessageMeta)
-
     def _parse_response(self, response: requests.Response) -> typing.Union[DataFrameType, None]:
         """
         Returns a DataFrame parsed from the response payload. If the response payload is empty, then `None` is returned.
@@ -195,18 +204,30 @@ class HttpClientSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
                 request_args['params'] = self._query_params_fn()
 
             (http_session,
-             df) = http_utils.request_with_retry(request_args,
-                                                 requests_session=http_session,
-                                                 max_retries=self._max_retries,
-                                                 sleep_time=self._error_sleep_time,
-                                                 respect_retry_after_header=self._respect_retry_after_header,
-                                                 accept_status_codes=self._accept_status_codes,
-                                                 on_success_fn=self._parse_response)
+             response) = http_utils.request_with_retry(request_args,
+                                                       requests_session=http_session,
+                                                       max_retries=self._max_retries,
+                                                       sleep_time=self._error_sleep_time,
+                                                       respect_retry_after_header=self._respect_retry_after_header,
+                                                       accept_status_codes=self._accept_status_codes)
 
+            df = self._parse_response(response)
             # Even if we didn't receive any errors, the server may not have had any data for us.
             if df is not None and len(df):
                 num_rows = len(df)
-                yield MessageMeta(df)
+                msg_meta = MessageMeta(df)
+                if self._message_type is SupportedMessageTypes.CONTROL_MESSAGE:
+                    http_fields = request_args.copy()
+                    http_fields.update(response.headers)
+
+                    out_msg = ControlMessage({"metadata": {"http_fields": http_fields}})
+                    out_msg.payload(msg_meta)
+                    if self._task_type is not None:
+                        out_msg.add_task(self._task_type, self._task_payload)
+                else:
+                    out_msg = msg_meta
+
+                yield out_msg
                 num_records_emitted += num_rows
 
             time.sleep(self._sleep_time)

@@ -57,6 +57,13 @@ ControlMessage::ControlMessage(const morpheus::utilities::json_t& _config) :
     config(_config);
 }
 
+ControlMessage::ControlMessage(const std::shared_ptr<MessageMeta>& _payload,
+                               const morpheus::utilities::json_t& config) :
+  ControlMessage(config)
+{
+    payload(_payload);
+}
+
 ControlMessage::ControlMessage(const ControlMessage& other)
 {
     m_cm_type = other.m_cm_type;
