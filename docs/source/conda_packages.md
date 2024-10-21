@@ -32,8 +32,8 @@ To set up a Conda environment with the [`morpheus-core`](https://anaconda.org/nv
 ### Create a Conda environment
 ```bash
 export CONDA_ENV_NAME=morpheus
-conda create -n $CONDA_ENV_NAME python=3.10
-conda activate $CONDA_ENV_NAME
+conda create -n ${CONDA_ENV_NAME} python=3.10
+conda activate ${CONDA_ENV_NAME}
 ```
 ### Add Conda channels
 These channel are required for installing the runtime dependencies
@@ -51,12 +51,8 @@ The `morpheus-core` Conda package installs the `morpheus` python package. It als
 ### Install additional PyPI dependencies
 Some of the stages in the core library require additional dependencies that are hosted on PyPI. These dependencies are included as a requirements file in the `morpheus` python package. The requirements files can be located and installed by running the following command:
 ```bash
-python3 <<EOF
-import importlib.resources
-import subprocess
-requirements_file = importlib.resources.path("morpheus", "requirements_morpheus_core.txt")
-subprocess.call(f"pip install -r {requirements_file}".split())
-EOF
+MORPHEUS_CORE_PKG_DIR=$(dirname $(python -c "import morpheus; print(morpheus.__file__)"))
+pip install -r ${MORPHEUS_CORE_PKG_DIR}/requirements_morpheus_core.txt
 ```
 
 ## Morpheus DFP
@@ -64,8 +60,8 @@ Digital Finger Printing (DFP) is a technique used to identify anomalous behavior
 ### Create a Conda environment
 ```bash
 export CONDA_ENV_NAME=morpheus-dfp
-conda create -n $CONDA_ENV_NAME python=3.10
-conda activate $CONDA_ENV_NAME
+conda create -n ${CONDA_ENV_NAME} python=3.10
+conda activate ${CONDA_ENV_NAME}
 ```
 ### Add Conda channels
 These channel are required for installing the runtime dependencies
@@ -83,12 +79,8 @@ The `morpheus-dfp` Conda package installs the `morpheus_dfp` python package. It 
 ### Install additional PyPI dependencies
 Some of the DFP stages in the library require additional dependencies that are hosted on PyPI. These dependencies are included as a requirements file in the `morpheus_dfp` python package. And can be installed by running the following command:
 ```bash
-python3 <<EOF
-import importlib.resources
-import subprocess
-requirements_file = importlib.resources.path("morpheus_dfp", "requirements_morpheus_dfp.txt")
-subprocess.call(f"pip install -r {requirements_file}".split())
-EOF
+MORPHEUS_DFP_PKG_DIR=$(dirname $(python -c "import morpheus_dfp; print(morpheus_dfp.__file__)"))
+pip install -r ${MORPHEUS_DFP_PKG_DIR}/requirements_morpheus_dfp.txt
 ```
 
 ## Morpheus LLM
@@ -97,8 +89,8 @@ To set up a Conda environment with the [`morpheus-llm`](https://anaconda.org/nvi
 ### Create a Conda environment
 ```bash
 export CONDA_ENV_NAME=morpheus-llm
-conda create -n $CONDA_ENV_NAME python=3.10
-conda activate $CONDA_ENV_NAME
+conda create -n ${CONDA_ENV_NAME} python=3.10
+conda activate ${CONDA_ENV_NAME}
 ```
 ### Add Conda channels
 These channel are required for installing the runtime dependencies
@@ -116,12 +108,8 @@ The `morpheus-llm` Conda package installs the `morpheus_llm` python package. It 
 ### Install additional PyPI dependencies
 Some of the stages in the library require additional dependencies that are hosted on PyPI. These dependencies are included as a requirements file in the `morpheus_llm` python package. And can be installed by running the following command:
 ```bash
-python3 <<EOF
-import importlib.resources
-import subprocess
-requirements_file = importlib.resources.path("morpheus_llm", "requirements_morpheus_llm.txt")
-subprocess.call(f"pip install -r {requirements_file}".split())
-EOF
+MORPHEUS_LLM_PKG_DIR=$(dirname $(python -c "import morpheus_llm; print(morpheus_llm.__file__)"))
+pip install -r ${MORPHEUS_LLM_PKG_DIR}/requirements_morpheus_llm.txt
 ```
 
 ## Miscellaneous
