@@ -29,20 +29,23 @@
 #include "morpheus/stages/preallocate.hpp"               // for PreallocateStage, PreallocateStageInterfaceProxy
 #include "morpheus/stages/preprocess_fil.hpp"            // for PreprocessFILStage, PreprocessFILStageInterfaceProxy
 #include "morpheus/stages/preprocess_nlp.hpp"            // for PreprocessNLPStage, PreprocessNLPStageInterfaceProxy
-#include "morpheus/stages/serialize.hpp"                 // for SerializeStage, SerializeStageInterfaceProxy
-#include "morpheus/stages/write_to_file.hpp"             // for WriteToFileStage, WriteToFileStageInterfaceProxy
-#include "morpheus/utilities/http_server.hpp"            // for DefaultMaxPayloadSize
-#include "morpheus/version.hpp"                          // for morpheus_VERSION_MAJOR, morpheus_VERSION_MINOR, morp...
+#include "morpheus/stages/router.hpp"
+#include "morpheus/stages/serialize.hpp"       // for SerializeStage, SerializeStageInterfaceProxy
+#include "morpheus/stages/write_to_file.hpp"   // for WriteToFileStage, WriteToFileStageInterfaceProxy
+#include "morpheus/utilities/http_server.hpp"  // for DefaultMaxPayloadSize
+#include "morpheus/version.hpp"                // for morpheus_VERSION_MAJOR, morpheus_VERSION_MINOR, morp...
 
 #include <mrc/segment/builder.hpp>     // for Builder
 #include <mrc/segment/object.hpp>      // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>  // for MRC_CONCAT_STR
 #include <pybind11/attr.h>             // for multiple_inheritance
-#include <pybind11/pybind11.h>         // for arg, init, class_, module_, overload_cast, overload_...
-#include <pybind11/pytypes.h>          // for none, dict, str_attr
-#include <pybind11/stl/filesystem.h>   // IWYU pragma: keep
-#include <pymrc/utils.hpp>             // for from_import, import
-#include <rxcpp/rx.hpp>                // for trace_activity, decay_t
+#include <pybind11/functional.h>
+#include <pybind11/pybind11.h>  // for arg, init, class_, module_, overload_cast, overload_...
+#include <pybind11/pytypes.h>   // for none, dict, str_attr
+#include <pybind11/stl.h>
+#include <pybind11/stl/filesystem.h>  // IWYU pragma: keep
+#include <pymrc/utils.hpp>            // for from_import, import
+#include <rxcpp/rx.hpp>               // for trace_activity, decay_t
 
 #include <filesystem>  // for path
 #include <memory>      // for shared_ptr, allocator
@@ -278,6 +281,28 @@ PYBIND11_MODULE(stages, _module)
              py::arg("file_type")         = FileTypes::Auto,
              py::arg("include_index_col") = true,
              py::arg("flush")             = false);
+
+    py::class_<mrc::segment::Object<RouterControlMessageComponentStage>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<RouterControlMessageComponentStage>>>(
+        _module, "RouterControlMessageComponentStage", py::multiple_inheritance())
+        .def(py::init<>(&RouterStageInterfaceProxy::init_cm_component),
+             py::arg("builder"),
+             py::arg("name"),
+             py::kw_only(),
+             py::arg("router_keys"),
+             py::arg("key_fn"));
+
+    py::class_<mrc::segment::Object<RouterControlMessageRunnableStage>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<RouterControlMessageRunnableStage>>>(
+        _module, "RouterControlMessageRunnableStage", py::multiple_inheritance())
+        .def(py::init<>(&RouterStageInterfaceProxy::init_cm_runnable),
+             py::arg("builder"),
+             py::arg("name"),
+             py::kw_only(),
+             py::arg("router_keys"),
+             py::arg("key_fn"));
 
     _module.attr("__version__") =
         MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
