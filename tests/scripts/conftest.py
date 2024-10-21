@@ -13,11 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-python3 <<EOF
-import importlib.resources
-import subprocess
-requirements_file = importlib.resources.path("morpheus", "requirements_morpheus_core.txt")
-subprocess.call(f"pip install -r {requirements_file}".split())
-EOF
+import types
 
-pytest tests/morpheus
+import pytest
+
+
+@pytest.fixture(name="morpheus_llm", scope='session', autouse=True)
+def morpheus_llm_fixture(morpheus_llm: types.ModuleType):
+    """
+    Fixture to ensure morpheus_llm is installed
+    """
+    yield morpheus_llm
+
+
+@pytest.fixture(name="morpheus_dfp", scope='session', autouse=True)
+def morpheus_dfp_fixture(morpheus_dfp: types.ModuleType):
+    """
+    Fixture to ensure morpheus_dfp is installed
+    """
+    yield morpheus_dfp

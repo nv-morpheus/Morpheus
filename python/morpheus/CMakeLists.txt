@@ -50,6 +50,9 @@ endif()
 file(GLOB morpheus_data_files "${CMAKE_CURRENT_SOURCE_DIR}/morpheus/data/*")
 morpheus_utils_add_python_sources(${morpheus_data_files})
 
+file(GLOB morpheus_requirement_files "${CMAKE_CURRENT_SOURCE_DIR}/morpheus/requirements*")
+morpheus_utils_add_python_sources(${morpheus_requirement_files})
+
 morpheus_utils_build_python_package(morpheus ${extra_args})
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
