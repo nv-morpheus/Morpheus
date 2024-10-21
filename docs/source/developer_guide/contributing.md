@@ -179,7 +179,7 @@ Then to generate update the individual environment files run:
 conda run -n base --live-stream rapids-dependency-file-generator
 ```
 
-When ready commit the changes to the `dependencies.yaml` file and the updated environment files.
+When ready, commit both the changes to the `dependencies.yaml` file and the updated environment files into the repo.
 
 #### Prerequisites
 
