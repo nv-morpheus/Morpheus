@@ -176,24 +176,27 @@ files:
       - checks
       - python
 
-  # pip dependencies that are used during the conda test stage for morpheus-llm output
-  morpheus_llm:
-    output: none
-    includes:
-      - test_morpheus_llm_pip
-      - test_morpheus_core_pip
-
-  # pip dependencies that are used during the conda test stage for morpheus-core output
+  # morpheus-core pip dependencies are published as a morpheus package data file
   morpheus_core:
-    output: none
+    output: requirements
+    requirements_dir: python/morpheus/morpheus
     includes:
-      - test_morpheus_core_pip
+      - morpheus_core_pip
 
-  # pip dependencies that are used during the conda test stage for morpheus-dfp output
+  # morpheus-dfp pip dependencies are published as a morpheus_dfp package data file
   morpheus_dfp:
-    output: none
+    output: requirements
+    requirements_dir: python/morpheus_dfp/morpheus_dfp
     includes:
-      - test_morpheus_core_pip
+      - morpheus_core_pip
+
+  # morpheus-llm pip dependencies are published as a morpheus_llm package data file
+  morpheus_llm:
+    output: requirements
+    requirements_dir: python/morpheus_llm/morpheus_llm
+    includes:
+      - morpheus_core_pip
+      - morpheus_llm_pip
 
 channels:
   - conda-forge
@@ -403,24 +406,24 @@ dependencies:
           - pip:
               - pytest-kafka==0.6.0
 
-  test_morpheus_core_pip:
+  morpheus_core_pip:
     common:
       - output_types: [requirements]
         packages:
            - --extra-index-url https://download.pytorch.org/whl/cu124
            - torch==2.4.0+cu124
 
-  test_morpheus_llm_pip:
+  morpheus_llm_pip:
     common:
       - output_types: [requirements]
         packages:
-           - milvus==2.3.5 # update to match pymilvus when available
-           - pymilvus==2.3.6
-           - langchain==0.1.16
-           - langchain-nvidia-ai-endpoints==0.0.11
            - faiss-cpu
            - google-search-results==2.4
-            - nemollm==0.3.5
+           - langchain==0.1.16
+           - langchain-nvidia-ai-endpoints==0.0.11
+           - milvus==2.3.5 # update to match pymilvus when available
+           - pymilvus==2.3.6
+           - nemollm==0.3.5
 
   example-dfp-prod:
     common:
@@ -467,6 +470,7 @@ dependencies:
           - *pypdfium2
           - *python-docx
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
+          - sentence-transformers=2.7
           - pip
           - pip:
             - langchain==0.1.16
@@ -474,7 +478,6 @@ dependencies:
             - faiss-cpu
             - google-search-results==2.4
             - nemollm==0.3.5
-            - sentence-transformers[onnx-gpu]==2.7
 
   model-training-tuning:
     common:
