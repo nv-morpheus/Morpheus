@@ -174,7 +174,7 @@ Install `rapids-dependency-file-generator` into the base Conda environment:
 conda run -n base --live-stream pip install rapids-dependency-file-generator
 ```
 
-To run:
+Then to generate update the individual environment files run:
 ```bash
 conda run -n base --live-stream rapids-dependency-file-generator
 ```
