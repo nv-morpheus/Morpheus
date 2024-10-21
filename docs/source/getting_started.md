@@ -80,8 +80,8 @@ Once launched, users wishing to launch Triton using the included Morpheus models
 Skip ahead to the [Acquiring the Morpheus Models Container](#acquiring-the-morpheus-models-container) section.
 
 ## Using Morpheus Conda Packages
-The Morpheus stages are available as libraries that are hosted as conda packages on the [NVIDIA](https://anancon) channel. The Morpheus conda packages are:
-[morpheus-core](https://anaconda.org/nvidia/morpheus-core), [morpheus-dfp](https://anaconda.org/nvidia/morpheus-dfp) and [morpheus-llm](https://anaconda.org/nvidia/morpheus-llm)
+The Morpheus stages are available as libraries that are hosted on the [`nvidia`](https://anaconda.org/nvidia) Conda channel. The Morpheus Conda packages are:
+[`morpheus-core`](https://anaconda.org/nvidia/morpheus-core), [`morpheus-dfp`](https://anaconda.org/nvidia/morpheus-dfp) and [`morpheus-llm`](https://anaconda.org/nvidia/morpheus-llm)
 
 For details on these libraries and how to use them, refer to the [Morpheus Conda Packages](./conda_packages.md) guide.
 
