@@ -52,6 +52,12 @@ def test_control_message_init(dataset: DatasetManager):
 
     payload = messages.MessageMeta(dataset["filter_probs.csv"])
 
+    msg_w_payload = messages.ControlMessage(cm_config.copy())
+    msg_w_payload.payload(payload)
+    _verify_metadata(msg_w_payload, metadata)
+
+    dataset.assert_df_equal(msg_w_payload.payload().df, dataset["filter_probs.csv"])
+
 
 @pytest.mark.gpu_and_cpu_mode
 def test_control_message_tasks():
