@@ -287,7 +287,8 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, ConfigurableOutpu
                     num_records = len(df)
                     msg_meta = MessageMeta(df)
                     if self._message_type is SupportedMessageTypes.CONTROL_MESSAGE:
-                        out_msg = ControlMessage(msg_meta, {"metadata": {"http_fields": headers}})
+                        out_msg = ControlMessage({"metadata": {"http_fields": headers}})
+                        out_msg.payload(msg_meta)
                         if self._task_type is not None:
                             out_msg.add_task(self._task_type, self._task_payload)
                     else:
