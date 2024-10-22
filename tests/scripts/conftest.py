@@ -1,5 +1,4 @@
-#!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e +o pipefail
-# set -x
-# set -v
+import types
+
+import pytest
 
 
-# RUN OPTIONS
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+@pytest.fixture(name="morpheus_llm", scope='session', autouse=True)
+def morpheus_llm_fixture(morpheus_llm: types.ModuleType):
+    """
+    Fixture to ensure morpheus_llm is installed
+    """
+    yield morpheus_llm
 
-# Call minibert first
-${SCRIPT_DIR}/val-hammah.sh "user123"
-${SCRIPT_DIR}/val-hammah.sh "role-g"
+
+@pytest.fixture(name="morpheus_dfp", scope='session', autouse=True)
+def morpheus_dfp_fixture(morpheus_dfp: types.ModuleType):
+    """
+    Fixture to ensure morpheus_dfp is installed
+    """
+    yield morpheus_dfp

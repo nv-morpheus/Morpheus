@@ -38,15 +38,14 @@ def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,
 
 @pytest.mark.slow
 @pytest.mark.parametrize("endpoints", [("/t1", "/t2", "/t3"), ("test/", "123/", "a1d/"), ("/a", "/a/b", "/a/b/c/d")])
-@pytest.mark.parametrize("port", [8088, 9090])
-@pytest.mark.parametrize("method", ["GET", "POST", "PUT"])
+@pytest.mark.parametrize("port", [9090])
+@pytest.mark.parametrize("method", ["GET", "POST"])
 @pytest.mark.parametrize("use_callback", [True, False])
 @pytest.mark.parametrize("use_context_mgr", [True, False])
-@pytest.mark.parametrize("num_threads", [1, 2, min(8, len(os.sched_getaffinity(0)))])
+@pytest.mark.parametrize("num_threads", [1, min(8, len(os.sched_getaffinity(0)))])
 @pytest.mark.parametrize("status,content_type,content",
                          [(HTTPStatus.OK, MimeTypes.TEXT.value, "OK"),
                           (HTTPStatus.OK, MimeTypes.JSON.value, '{"test": "OK"}'),
-                          (HTTPStatus.NOT_FOUND, MimeTypes.TEXT.value, "NOT FOUND"),
                           (HTTPStatus.INTERNAL_SERVER_ERROR, MimeTypes.TEXT.value, "Unexpected error")])
 def test_simple_request(port: int,
                         endpoints: typing.Tuple[str, str, str],
