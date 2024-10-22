@@ -62,7 +62,7 @@ Stages are the building blocks of Morpheus pipelines. Below is a list of the mos
 
 ## LLM
 
-- LLM Engine Stage {py:class}`~morpheus.stages.llm.llm_engine_stage.LLMEngineStage` Execute an LLM engine within a Morpheus pipeline.
+- LLM Engine Stage {py:class}`~morpheus_llm.stages.llm.llm_engine_stage.LLMEngineStage` Execute an LLM engine within a Morpheus pipeline.
 
 ## Output
 - HTTP Client Sink Stage {py:class}`~morpheus.stages.output.http_client_sink_stage.HttpClientSinkStage` Write all messages to an HTTP endpoint.
