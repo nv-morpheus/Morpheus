@@ -131,7 +131,10 @@ class NVFoundationLLMClient(LLMClient):
                        return_exceptions: bool = False) -> list[str] | list[str | BaseException]:
         ...
 
-    def generate_batch(self, inputs: dict[str, list], return_exceptions=False) -> list[str] | list[str | BaseException]:
+    def generate_batch(self,
+                       inputs: dict[str, list],
+                       return_exceptions=False,
+                       **kwargs) -> list[str] | list[str | BaseException]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -141,6 +144,8 @@ class NVFoundationLLMClient(LLMClient):
             Inputs containing prompt data.
         return_exceptions : bool
             Whether to return exceptions in the output list or raise them immediately.
+        **kwargs
+            Additional keyword arguments for generate batch.
         """
 
         # Note: We dont want to use the generate_multiple implementation from nemollm because there is no retry logic.
@@ -152,7 +157,7 @@ class NVFoundationLLMClient(LLMClient):
                           "If an exception is raised for any item, the function will exit and raise that exception.")
 
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
-        final_kwargs = self._model_kwargs
+        final_kwargs = {**self._model_kwargs, **kwargs}
 
         responses = []
         try:
@@ -182,7 +187,8 @@ class NVFoundationLLMClient(LLMClient):
 
     async def generate_batch_async(self,
                                    inputs: dict[str, list],
-                                   return_exceptions=False) -> list[str] | list[str | BaseException]:
+                                   return_exceptions=False,
+                                   **kwargs) -> list[str] | list[str | BaseException]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -192,6 +198,8 @@ class NVFoundationLLMClient(LLMClient):
             Inputs containing prompt data.
         return_exceptions : bool
             Whether to return exceptions in the output list or raise them immediately.
+        **kwargs
+            Additional keyword arguments for generate batch async.
         """
 
         # Note: We dont want to use the generate_multiple implementation from nemollm because there is no retry logic.
@@ -203,7 +211,7 @@ class NVFoundationLLMClient(LLMClient):
                           "If an exception is raised for any item, the function will exit and raise that exception.")
 
         prompts = [StringPromptValue(text=p) for p in inputs[self._prompt_key]]
-        final_kwargs = self._model_kwargs
+        final_kwargs = {**self._model_kwargs, **kwargs}
 
         responses = []
         try:
