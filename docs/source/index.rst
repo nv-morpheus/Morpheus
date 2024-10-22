@@ -54,6 +54,7 @@ Getting Started
 Using Morpheus
 ^^^^^^^^^^^^^^
  * :doc:`getting_started` - Using pre-built Docker containers, building Docker containers from source, and fetching models and datasets
+ * :doc:`Morpheus Conda Packages <conda_packages>`- Using Morpheus Libraries via the pre-built Conda Packages
  * :doc:`basics/overview` - Brief overview of the command line interface
  * :doc:`basics/building_a_pipeline` - Introduction to building a pipeline using the command line interface
  * :doc:`Morpheus Examples <examples>` - Example pipelines using both the Python API and command line interface
@@ -76,6 +77,7 @@ Deploying Morpheus
    :hidden:
 
    getting_started
+   conda_packages
    basics/overview
    basics/building_a_pipeline
    models_and_datasets

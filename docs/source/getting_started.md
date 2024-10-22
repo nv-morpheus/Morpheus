@@ -19,6 +19,7 @@ limitations under the License.
 
 There are three ways to get started with Morpheus:
 - [Using pre-built Docker containers](#using-pre-built-docker-containers)
+- [Using the Morpheus Conda packages](#using-morpheus-conda-packages)
 - [Building the Morpheus Docker container](#building-the-morpheus-container)
 - [Building Morpheus from source](./developer_guide/contributing.md#building-from-source)
 
@@ -77,6 +78,12 @@ Once launched, users wishing to launch Triton using the included Morpheus models
 ```
 
 Skip ahead to the [Acquiring the Morpheus Models Container](#acquiring-the-morpheus-models-container) section.
+
+## Using Morpheus Conda Packages
+The Morpheus stages are available as libraries that are hosted on the [`nvidia`](https://anaconda.org/nvidia) Conda channel. The Morpheus Conda packages are:
+[`morpheus-core`](https://anaconda.org/nvidia/morpheus-core), [`morpheus-dfp`](https://anaconda.org/nvidia/morpheus-dfp) and [`morpheus-llm`](https://anaconda.org/nvidia/morpheus-llm)
+
+For details on these libraries and how to use them, refer to the [Morpheus Conda Packages](./conda_packages.md) guide.
 
 ## Building the Morpheus Container
 ### Clone the Repository

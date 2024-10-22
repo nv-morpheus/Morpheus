@@ -51,11 +51,11 @@ def dfp_rolling_window(builder: mrc.Builder):
           met. Otherwise, continue to aggregate user's history.; Example: 'batch'; Default: 'batch'
         - trigger_on_min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
         - trigger_on_min_increment (int): Minmum increment from the last trained to new training event;
-        Example: 0; Default: 0
+          Example: 0; Default: 0
         - timestamp_column_name (str): Name of the column containing timestamps; Example: 'timestamp';
-        Default: 'timestamp'
+          Default: 'timestamp'
         - aggregation_span (str): Lookback timespan for training data in a new training event; Example: '60d';
-        Default: '60d'
+          Default: '60d'
         - cache_to_disk (bool): Whether to cache streaming data to disk; Example: false; Default: false
         - cache_dir (str): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
     """
