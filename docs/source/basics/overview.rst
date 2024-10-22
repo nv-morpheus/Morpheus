@@ -27,7 +27,7 @@ The Morpheus CLI is built on the Click Python package which allows for nested co
 together. At a high level, the CLI is broken up into two main sections:
 
  * ``run``
-    * For running AE, FIL, NLP or OTHER pipelines.
+    * For running FIL, NLP or OTHER pipelines.
  * ``tools``
     * Tools/Utilities to help set up, configure and run pipelines and external resources.
 
