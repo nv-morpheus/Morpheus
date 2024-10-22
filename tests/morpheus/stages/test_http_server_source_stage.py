@@ -16,6 +16,7 @@ import queue
 import threading
 import time
 import typing
+from collections import deque
 from http import HTTPStatus
 from io import StringIO
 from unittest import mock
@@ -172,7 +173,7 @@ def test_generate_frames(config: Config,
 
     if message_type == SupportedMessageTypes.CONTROL_MESSAGE:
         if task_type is not None:
-            expected_tasks = {task_type: [task_payload]}
+            expected_tasks = {task_type: deque([task_payload])}
         else:
             expected_tasks = {}
 
