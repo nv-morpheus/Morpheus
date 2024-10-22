@@ -46,6 +46,7 @@ LLM(s?)
 # https://github.com/logpai/loghub/
 Loghub
 Milvus
+PyPI
 [Mm]ixin
 MLflow
 Morpheus

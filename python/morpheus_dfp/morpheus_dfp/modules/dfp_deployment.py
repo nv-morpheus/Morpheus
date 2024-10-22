@@ -50,8 +50,8 @@ def dfp_deployment(builder: mrc.Builder):
         - mlflow_writer_options (dict): Options for the MLflow model writer; Example: See Below
         - preprocessing_options (dict): Options for preprocessing the data; Example: See Below
         - stream_aggregation_options (dict): Options for aggregating the data by stream; Example: See Below
-        - timestamp_column_name (str): Name of the timestamp column used in the data; Example: "my_timestamp"; Default:
-        "timestamp"
+        - timestamp_column_name (str): Name of the timestamp column used in the data; Example: "my_timestamp";
+          Default: "timestamp"
         - user_splitting_options (dict): Options for splitting the data by user; Example: See Below
 
     Inference Options Parameters:
@@ -61,10 +61,10 @@ def dfp_deployment(builder: mrc.Builder):
         - fallback_username (str): User ID to use if user ID not found; Example: "generic_user"; Default: "generic_user"
         - inference_options (dict): Options for the inference module; Example: See Below
         - model_name_formatter (str): Format string for the model name; Example: "model_{timestamp}";
-        Default: `[Required]`
+          Default: `[Required]`
         - num_output_ports (int): Number of output ports for the module; Example: 3
         - timestamp_column_name (str): Name of the timestamp column in the input data; Example: "timestamp";
-        Default: "timestamp"
+          Default: "timestamp"
         - stream_aggregation_options (dict): Options for aggregating the data by stream; Example: See Below
         - user_splitting_options (dict): Options for splitting the data by user; Example: See Below
         - write_to_file_options (dict): Options for writing the detections to a file; Example: See Below
@@ -72,7 +72,7 @@ def dfp_deployment(builder: mrc.Builder):
     batching_options:
         - end_time (datetime/str): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
         - iso_date_regex_pattern (str): Regex pattern for ISO date matching;
-        Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
+          Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
         - parser_kwargs (dict): Additional arguments for the parser; Example: {}; Default: {}
         - period (str): Time period for grouping files; Example: "1d"; Default: "1d"
         - sampling_rate_s (int):: Sampling rate in seconds; Example: 0; Default: None
@@ -82,18 +82,18 @@ def dfp_deployment(builder: mrc.Builder):
         - feature_columns (list): List of feature columns to train on; Example: ["column1", "column2", "column3"]
         - epochs (int): Number of epochs to train for; Example: 50
         - model_kwargs (dict): Keyword arguments to pass to the model; Example: {"encoder_layers": [64, 32],
-        "decoder_layers": [32, 64], "activation": "relu", "swap_p": 0.1, "lr": 0.001, "lr_decay": 0.9,
-        "batch_size": 32, "verbose": 1, "optimizer": "adam", "scalar": "min_max", "min_cats": 10,
-        "progress_bar": false, "device": "cpu"}
+          "decoder_layers": [32, 64], "activation": "relu", "swap_p": 0.1, "lr": 0.001, "lr_decay": 0.9,
+          "batch_size": 32, "verbose": 1, "optimizer": "adam", "scalar": "min_max", "min_cats": 10,
+          "progress_bar": false, "device": "cpu"}
         - validation_size (float): Size of the validation set; Example: 0.1
 
     mlflow_writer_options:
         - conda_env (str): Conda environment for the model; Example: `path/to/conda_env.yml`; Default: `[Required]`
         - databricks_permissions (dict): Permissions for the model; Example: See Below; Default: None
         - experiment_name_formatter (str): Formatter for the experiment name; Example: `experiment_name_{timestamp}`;
-         Default: `[Required]`
+          Default: `[Required]`
         - model_name_formatter (str): Formatter for the model name; Example: `model_name_{timestamp}`;
-        Default: `[Required]`
+          Default: `[Required]`
         - timestamp_column_name (str): Name of the timestamp column; Example: `timestamp`; Default: timestamp
 
     stream_aggregation_options:
@@ -101,24 +101,24 @@ def dfp_deployment(builder: mrc.Builder):
           met. Otherwise, continue to aggregate user's history.; Example: 'batch'; Default: 'batch'
         - trigger_on_min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
         - trigger_on_min_increment (int): Minmum increment from the last trained to new training event;
-        Example: 0; Default: 0
+          Example: 0; Default: 0
         - timestamp_column_name (str): Name of the column containing timestamps; Example: 'timestamp';
-        Default: 'timestamp'
+          Default: 'timestamp'
         - aggregation_span (str): Lookback timespan for training data in a new training event; Example: '60d';
-        Default: '60d'
+          Default: '60d'
         - cache_to_disk (bool): Whether to cache streaming data to disk; Example: false; Default: false
         - cache_dir (str): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
 
     user_splitting_options:
         - fallback_username (str): The user ID to use if the user ID is not found; Example: "generic_user";
-        Default: 'generic_user'
+          Default: 'generic_user'
         - include_generic (bool): Whether to include a generic user ID in the output; Example: false; Default: False
         - include_individual (bool): Whether to include individual user IDs in the output; Example: true; Default: False
         - only_users (list): List of user IDs to include; others will be excluded; Example: ["user1", "user2", "user3"];
-         Default: []
+          Default: []
         - skip_users (list): List of user IDs to exclude from the output; Example: ["user4", "user5"]; Default: []
         - timestamp_column_name (str): Name of the column containing timestamps; Example: "timestamp";
-        Default: 'timestamp'
+          Default: 'timestamp'
         - userid_column_name (str): Name of the column containing user IDs; Example: "username"; Default: 'username'
 
     detection_criteria:
@@ -127,9 +127,9 @@ def dfp_deployment(builder: mrc.Builder):
 
     inference_options:
         - model_name_formatter (str): Formatter for model names; Example: "user_{username}_model";
-        Default: `[Required]`
+          Default: `[Required]`
         - fallback_username (str): Fallback user to use if no model is found for a user; Example: "generic_user";
-        Default: generic_user
+          Default: generic_user
         - timestamp_column_name (str): Name of the timestamp column; Example: "timestamp"; Default: timestamp
 
     write_to_file_options:
@@ -141,19 +141,19 @@ def dfp_deployment(builder: mrc.Builder):
 
     monitoring_options:
         - description (str): Name to show for this Monitor Stage in the console window; Example: 'Progress';
-        Default: 'Progress'
+          Default: 'Progress'
         - silence_monitors (bool): Slience the monitors on the console; Example: True; Default: False
         - smoothing (float): Smoothing parameter to determine how much the throughput should be averaged.
-        0 = Instantaneous, 1 = Average.; Example: 0.01; Default: 0.05
+          0 = Instantaneous, 1 = Average.; Example: 0.01; Default: 0.05
         - unit (str): Units to show in the rate value.; Example: 'messages'; Default: 'messages'
         - delayed_start (bool): When delayed_start is enabled, the progress bar will not be shown until the first
-        message is received. Otherwise, the progress bar is shown on pipeline startup and will begin timing
-        immediately. In large pipelines, this option may be desired to give a more accurate timing;
-        Example: True; Default: False
+          message is received. Otherwise, the progress bar is shown on pipeline startup and will begin timing
+          immediately. In large pipelines, this option may be desired to give a more accurate timing;
+          Example: True; Default: False
         - determine_count_fn_schema (str): Custom function for determining the count in a message. Gets called for
-        each message. Allows for correct counting of batched and sliced messages.; Example: func_str; Default: None
+          each message. Allows for correct counting of batched and sliced messages.; Example: func_str; Default: None
         - log_level (str): Enable this stage when the configured log level is at `log_level` or lower;
-        Example: 'DEBUG'; Default: INFO
+          Example: 'DEBUG'; Default: INFO
     """
 
     #                                 MODULE_INPUT_PORT
