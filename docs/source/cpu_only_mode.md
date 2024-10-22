@@ -29,7 +29,8 @@ With the selection of the execution mode comes an implies selection of DataFrame
 |GPU|cuDF|CuPy|
 |CPU|pandas|NumPy|
 
-### Python API
+### CPU Only Pipelines
+#### Python API
 Execution modes are defined in the `morpheus.config.ExecutionMode` enum, which is then specified in the `execution_mode` attribute of the `morpheus.config.Config` object. The following example demonstrates how to explicitly set the execution mode of a pipeline to CPU only:
 
 ```python
@@ -44,17 +45,17 @@ config.execution_mode = ExecutionMode.CPU
 
 > **Note**: The `execution_mode` and all other attributes of the `morpheus.config.Config` object must be set prior to constructing either the pipeline or any of the stage objects. The first time an instance of a `Config` object is used to construct an object will freeze the configuration and prevent any further changes.
 
-#### Examples
+##### Examples
 The `examples/cpu_only`, `examples/developer_guide/1_simple_python_stage` and `examples/developer_guide/2_2_rabbitmq` examples demonstrate pipelines that are able to opperate in both GPU and CPU execution modes.
 
-### Command Line
+#### Command Line
 The `--use_cpu_only` flag is available as an option to the `morpheus run` subcommand.
 
 ```bash
 morpheus run --use_cpu_only pipeline-other --help
 ```
 
-#### Example
+##### Example
 The following is a simple command line example of a pipeline that can execute in CPU only mode. To begin ensure that you have fetched the examples dataset by running the following command from the root of the Morpheus repository:
 ```bash
 ./scripts/fetch_data.py fetch examples
@@ -70,3 +71,6 @@ morpheus --log_level=INFO \
   serialize \
   to-file --filename=.tmp/output.jsonlines --overwrite
 ```
+
+### Desigining Stages for CPU Execution
+place-holder
