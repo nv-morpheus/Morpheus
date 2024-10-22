@@ -19,17 +19,14 @@ import typing
 import numpy as np
 import pandas as pd
 
-from morpheus.cli import register_stage
 from morpheus.common import FileTypes
 from morpheus.common import determine_file_type
-from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.stages.input.autoencoder_source_stage import AutoencoderSourceStage
 
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-cloudtrail", modes=[PipelineModes.AE])
 class CloudTrailSourceStage(AutoencoderSourceStage):
     """
     Load messages from a CloudTrail directory.

@@ -19,15 +19,12 @@ import typing
 
 import pandas as pd
 
-from morpheus.cli import register_stage
-from morpheus.config import PipelineModes
 from morpheus.stages.input.autoencoder_source_stage import AutoencoderSourceStage
 
 DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-duo", modes=[PipelineModes.AE])
 class DuoSourceStage(AutoencoderSourceStage):
     """
     Source stage is used to load Duo Authentication messages.
