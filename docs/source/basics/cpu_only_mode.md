@@ -117,4 +117,63 @@ if __name__ == "__main__":
 ```
 
 #### CPU & GPU Source & Stage Examples
-Supporting both CPU and GPU execution modes requires writing code that can handle both types of DataFrames and tensors. In many cases code designed to work with pandas will work with cuDF, and code designed to work with Numpy will work with CuPy without requiring any changes to the code. In some cases however, the API may differ slightly and there is a need to know the payload type, care must be taken not to directly import `cudf` or any other package requiring a GPU when running in CPU mode on a system without a GPU. Morpheus provides some helper methods to assist with this in the {py:mod}`~morpheus.utils.type_utils` module, such as {py:func}`~morpheus.utils.type_utils.is_cudf_type` and {py:func}`~morpheus.utils.type_utils.get_df_pkg_from_obj`.
+Supporting both CPU and GPU execution modes requires writing code that can handle both types of DataFrames and tensors. In many cases code designed to work with pandas will work with cuDF, and code designed to work with Numpy will work with CuPy without requiring any changes to the code. In some cases however, the API may differ slightly and there is a need to know the payload type, care must be taken not to directly import `cudf` or any other package requiring a GPU when running in CPU mode on a system without a GPU. Morpheus provides some helper methods to assist with this in the {py:mod}`~morpheus.utils.type_utils` module, such as {py:func}`~morpheus.utils.type_utils.is_cudf_type` and {py:func}`~morpheus.utils.type_utils.get_df_class`.
+
+With a few simple modifications the previous example now supports both CPU and GPU execution modes. The `get_df_class` function is used to determine the DataFrame type to use, and we added a command line flag to switch between the two execution modes.
+
+```python
+import logging
+
+import click
+
+from morpheus.config import Config
+from morpheus.config import ExecutionMode
+from morpheus.messages import MessageMeta
+from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.pipeline.stage_decorator import source
+from morpheus.pipeline.stage_decorator import stage
+from morpheus.utils.logger import configure_logging
+from morpheus.utils.type_utils import get_df_class
+
+logger = logging.getLogger(f"morpheus.{__name__}")
+
+
+@source(execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
+def simple_source(num_rows: int = 10) -> MessageMeta:
+    df_class = get_df_class()  # Returns either cudf.DataFrame or pandas.DataFrame
+    df = df_class({"a": range(num_rows)})
+    message = MessageMeta(df)
+    yield message
+
+
+@stage(execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
+def print_msg(msg: MessageMeta) -> MessageMeta:
+    logger.info(f"Receive a message with a DataFrame of type: {type(msg.df)}")
+    return msg
+
+
+@click.command()
+@click.option('--use_cpu_only',
+              default=False,
+              type=bool,
+              is_flag=True,
+              help=("Whether or not to run in CPU only mode, setting this to True will disable C++ mode."))
+def main(use_cpu_only: bool):
+    configure_logging(log_level=logging.INFO)
+
+    if use_cpu_only:
+        execution_mode = ExecutionMode.CPU
+    else:
+        execution_mode = ExecutionMode.GPU
+
+    config = Config()
+    config.execution_mode = execution_mode
+    pipeline = LinearPipeline(config)
+    pipeline.set_source(simple_source(config))
+    pipeline.add_stage(print_msg(config))
+    pipeline.run()
+
+
+if __name__ == "__main__":
+    main()
+```
