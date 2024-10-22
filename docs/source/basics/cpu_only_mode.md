@@ -65,7 +65,7 @@ morpheus --log_level=INFO \
 ```
 
 ## Designing Stages for CPU Execution
-It is up to the author of each stage to decide which exectution modes are supported. Options are: CPU, GPU or both. As mentioned previously the default execution mode is GPU, authors of stages which require a GPU do not need to make any changes to their stage definitions.
+It is up to the author of each stage to decide which execution modes are supported. Options are: CPU, GPU or both. As mentioned previously the default execution mode is GPU, authors of stages which require a GPU do not need to make any changes to their stage definitions.
 
 ### DataFrames and Tensors
 With the selection of the execution mode comes an implies selection of DataFrame and tensor types. In GPU mode Morpheus will use cuDF DataFrames and CuPy tensors. In CPU mode Morpheus will use pandas DataFrames and NumPy tensors.
@@ -117,7 +117,7 @@ if __name__ == "__main__":
 ```
 
 #### CPU & GPU Source & Stage Examples
-Supporting both CPU and GPU execution modes requires writing code that can handle both types of DataFrames and tensors. In many cases code designed to work with pandas will work with cuDF, and code designed to work with Numpy will work with CuPy without requiring any changes to the code. In some cases however, the API may differ slightly and there is a need to know the payload type, care must be taken not to directly import `cudf` or any other package requiring a GPU when running in CPU mode on a system without a GPU. Morpheus provides some helper methods to assist with this in the {py:mod}`~morpheus.utils.type_utils` module, such as {py:func}`~morpheus.utils.type_utils.is_cudf_type` and {py:func}`~morpheus.utils.type_utils.get_df_class`.
+Supporting both CPU and GPU execution modes requires writing code that can handle both types of DataFrames and tensors. In many cases code designed to work with pandas will work with cuDF, and code designed to work with NumPy will work with CuPy without requiring any changes to the code. In some cases however, the API may differ slightly and there is a need to know the payload type, care must be taken not to directly import `cudf` or any other package requiring a GPU when running in CPU mode on a system without a GPU. Morpheus provides some helper methods to assist with this in the {py:mod}`~morpheus.utils.type_utils` module, such as {py:func}`~morpheus.utils.type_utils.is_cudf_type` and {py:func}`~morpheus.utils.type_utils.get_df_class`.
 
 With a few simple modifications the previous example now supports both CPU and GPU execution modes. The `get_df_class` function is used to determine the DataFrame type to use, and we added a command line flag to switch between the two execution modes.
 
