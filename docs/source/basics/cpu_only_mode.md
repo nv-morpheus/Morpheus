@@ -179,7 +179,7 @@ if __name__ == "__main__":
 ```
 
 ### Source & Stages Classes
-Similar to the `@source` and `@stage` decorators, class based sources and stages can also be defined to advertize which exection modes they support. The base class for all source and stage classes `StageBase` defines a `supported_execution_modes` for this purpose which can be overridden in a derived class. The method in the base class is defined as:
+Similar to the `@source` and `@stage` decorators, class based sources and stages can also be defined to advertise which execution modes they support. The base class for all source and stage classes `StageBase` defines a `supported_execution_modes` for this purpose which can be overridden in a derived class. The method in the base class is defined as:
 
 ```python
 def supported_execution_modes(self) -> tuple[ExecutionMode]:
@@ -204,11 +204,11 @@ class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 #### GpuAndCpuMixin
 In the previous decorators example we discussed utilizing various helper methods available in the {py:mod}`~morpheus.utils.type_utils` module to assist in writing code which is able to operate in both CPU and GPU execution modes. To simplify this further the `GpuAndCpuMixin` mixin adds these helper methods to the class. At time of writing they are:
 
-- `df_type_str` - Returns either "cudf" or "pandas".
+- `df_type_str` - Returns either `"cudf"` or `"pandas"`.
 - `get_df_pkg` - Returns either the `cudf` or `pandas` module.
 - `get_df_class` - Returns either the `cudf.DataFrame` or `pandas.DataFrame` class.
 
 ### Stages with C++ implementations
 C++ stages have the ability to interact with cuDF DataFrames via the [libcudf](https://docs.rapids.ai/api/libcudf/stable/) library, however no such C++ library exists for pandas DataFrames. As a result, any stages which contain both a Python and a C++ implementation, the Python implementation will be used in CPU mode, and the C++ implementation will be used in GPU mode. A stage which contains only a C++ implementation will not be able to run in CPU mode.
 
-For these stages, the Python implemtation is then free to assume DataFrames are of type `pandas.DataFrame` and tensors are of type `numpy.ndarray`.
+For these stages, the Python implementation is then free to assume DataFrames are of type `pandas.DataFrame` and tensors are of type `numpy.ndarray`.
