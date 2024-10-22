@@ -45,14 +45,14 @@ def dfp_split_users(builder: mrc.Builder):
     -----
     Configurable parameters:
         - fallback_username (str): The user ID to use if the user ID is not found; Example: "generic_user";
-        Default: 'generic_user'
+          Default: 'generic_user'
         - include_generic (bool): Whether to include a generic user ID in the output; Example: false; Default: False
         - include_individual (bool): Whether to include individual user IDs in the output; Example: true; Default: False
         - only_users (list): List of user IDs to include; others will be excluded; Example: ["user1", "user2", "user3"];
-         Default: []
+          Default: []
         - skip_users (list): List of user IDs to exclude from the output; Example: ["user4", "user5"]; Default: []
         - timestamp_column_name (str): Name of the column containing timestamps; Example: "timestamp";
-        Default: 'timestamp'
+          Default: 'timestamp'
         - userid_column_name (str): Name of the column containing user IDs; Example: "username"; Default: 'username'
     """
 
