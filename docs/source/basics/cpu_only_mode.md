@@ -68,7 +68,7 @@ morpheus --log_level=INFO \
 It is up to the author of each stage to decide which execution modes are supported. Options are: CPU, GPU or both. As mentioned previously the default execution mode is GPU, authors of stages which require a GPU do not need to make any changes to their stage definitions.
 
 ### DataFrames and Tensors
-With the selection of the execution mode comes an implies selection of DataFrame and tensor types. In GPU mode Morpheus will use cuDF DataFrames and CuPy tensors. In CPU mode Morpheus will use pandas DataFrames and NumPy tensors.
+With the selection of the execution mode comes an implies selection of DataFrame and tensor types. In GPU mode Morpheus will use cuDF DataFrames and tensors are represented as CuPy `cupy.ndarray`. In CPU mode Morpheus will use pandas DataFrames and NumPy `numpy.ndarray`.
 
 |Mode|DataFrame|Tensor|
 | -- | ------- | ---- |
@@ -177,3 +177,38 @@ def main(use_cpu_only: bool):
 if __name__ == "__main__":
     main()
 ```
+
+### Source & Stages Classes
+Similar to the `@source` and `@stage` decorators, class based sources and stages can also be defined to advertize which exection modes they support. The base class for all source and stage classes `StageBase` defines a `supported_execution_modes` for this purpose which can be overridden in a derived class. The method in the base class is defined as:
+
+```python
+def supported_execution_modes(self) -> tuple[ExecutionMode]:
+    return (ExecutionMode.GPU, )
+```
+
+Stage authors are free to inspect constructor arguments of the stage to determine which execution modes are supported. However for many stages the supported execution modes does not change based upon the constructor arguments. In these cases the {py:class}`~morpheus.pipeline.execution_mode_mixins.GpuAndCpuMixin` and {py:class}`~morpheus.pipeline.execution_mode_mixins.CpuOnlyMixin` mixins can be used to simplify the implementation.
+
+Example class definition:
+```python
+from morpheus.cli.register_stage import register_stage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
+from morpheus.pipeline.single_port_stage import SinglePortStage
+
+
+@register_stage("pass-thru")
+class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
+    ...
+```
+
+#### GpuAndCpuMixin
+In the previous decorators example we discussed utilizing various helper methods available in the {py:mod}`~morpheus.utils.type_utils` module to assist in writing code which is able to operate in both CPU and GPU execution modes. To simplify this further the `GpuAndCpuMixin` mixin adds these helper methods to the class. At time of writing they are:
+
+- `df_type_str` - Returns either "cudf" or "pandas".
+- `get_df_pkg` - Returns either the `cudf` or `pandas` module.
+- `get_df_class` - Returns either the `cudf.DataFrame` or `pandas.DataFrame` class.
+
+### Stages with C++ implementations
+C++ stages have the ability to interact with cuDF DataFrames via the [libcudf](https://docs.rapids.ai/api/libcudf/stable/) library, however no such C++ library exists for pandas DataFrames. As a result, any stages which contain both a Python and a C++ implementation, the Python implementation will be used in CPU mode, and the C++ implementation will be used in GPU mode. A stage which contains only a C++ implementation will not be able to run in CPU mode.
+
+For these stages, the Python implemtation is then free to assume DataFrames are of type `pandas.DataFrame` and tensors are of type `numpy.ndarray`.
