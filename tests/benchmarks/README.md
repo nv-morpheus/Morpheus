@@ -46,16 +46,37 @@ Once Triton server finishes starting up, it will display the status of all loade
 +--------------------+---------+--------+
 ```
 
-### Build Morpheus Conda environment
+### Set up Morpheus Dev Container
 
-Follow the instructions [here](../../docs/source/developer_guide/contributing.md#build-in-a-conda-environment) to build your Morpheus Conda environment.
-
-In step 3 of the instructions, choose the command to install all dependencies.
+If you don't already have the Morpheus Dev container, run the following to build it:
 ```bash
-conda env create --solver=libmamba -n morpheus --file conda/environments/all_cuda-125_arch-x86_64.yaml
-conda activate morpheus
+./docker/build_container_dev.sh
 ```
 
+Now run the container:
+```bash
+./docker/run_container_dev.sh
+```
+
+Note that Morpheus containers are tagged by date. By default, `run_container_dev.sh` will try to use current date as tag. Therefore, if you are trying to run a container that was not built on the current date, you must set the `DOCKER_IMAGE_TAG` environment variable. For example,
+```bash
+DOCKER_IMAGE_TAG=dev-221003 ./docker/run_container_dev.sh
+```
+
+In the `/workspace` directory of the container, run the following to compile Morpheus:
+```bash
+./scripts/compile.sh
+```
+
+Now install Morpheus:
+```bash
+pip install -e /workspace
+```
+
+Fetch input data for benchmarks:
+```bash
+./scripts/fetch_data.py fetch validation
+```
 
 ### Run E2E Benchmarks
 
