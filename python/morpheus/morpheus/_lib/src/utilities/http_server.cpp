@@ -133,9 +133,9 @@ class Session : public std::enable_shared_from_this<Session>
             {
                 valid_request = true;
                 std::tuple<unsigned, std::string, std::string, morpheus::on_complete_cb_fn_t> parse_status;
-                if (endpoint.m_requet_handler != nullptr)
+                if (endpoint.m_request_handler != nullptr)
                 {
-                    parse_status = (*endpoint.m_requet_handler)(m_stream.socket().remote_endpoint(), request);
+                    parse_status = (*endpoint.m_request_handler)(m_stream.socket().remote_endpoint(), request);
                 }
                 else
                 {
@@ -473,15 +473,15 @@ HttpEndpoint::HttpEndpoint(std::shared_ptr<request_handler_fn_t>&& request_handl
                            std::shared_ptr<payload_parse_fn_t>&& payload_parse_fn,
                            std::string&& url,
                            const std::string& method) :
-  m_requet_handler{std::move(request_handler_fn)},
+  m_request_handler{std::move(request_handler_fn)},
   m_parser{std::move(payload_parse_fn)},
   m_url{std::move(url)},
   m_method{http::string_to_verb(method)}
 {
-    DCHECK(m_requet_handler != nullptr || m_parser != nullptr)
+    DCHECK(m_request_handler != nullptr || m_parser != nullptr)
         << "Either request_handler_fn or payload_parse_fn must be provided";
 
-    DCHECK(m_requet_handler == nullptr || m_parser == nullptr)
+    DCHECK(m_request_handler == nullptr || m_parser == nullptr)
         << "Only one of request_handler_fn or payload_parse_fn can be provided";
 
     if (m_method == http::verb::unknown)

@@ -117,7 +117,7 @@ struct MORPHEUS_EXPORT HttpEndpoint
     HttpEndpoint(request_handler_fn_t request_handler_fn, std::string&& url, const std::string& method);
     HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string&& url, const std::string& method);
 
-    std::shared_ptr<request_handler_fn_t> m_requet_handler;
+    std::shared_ptr<request_handler_fn_t> m_request_handler;
     std::shared_ptr<payload_parse_fn_t> m_parser;
     std::string m_url;
     boost::beast::http::verb m_method;
