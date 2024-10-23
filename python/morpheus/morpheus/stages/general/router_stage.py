@@ -55,7 +55,7 @@ class RouterStage(GpuAndCpuMixin, PassThruTypeMixin, _pipeline.Stage):
         self._key_fn = key_fn
         self._is_runnable = is_runnable
 
-        self._router = None
+        self._router: mrc.core.SegmentObject | None = None
 
         self._create_ports(1, len(keys))
 
@@ -113,6 +113,9 @@ class RouterStage(GpuAndCpuMixin, PassThruTypeMixin, _pipeline.Stage):
                                                self.unique_name,
                                                router_keys=self._keys,
                                                key_fn=_key_fn_wrapper)
+
+        if (self._is_runnable):
+            self._router.launch_options.engines_per_pe = 10
 
         builder.make_edge(input_nodes[0], self._router)
 
