@@ -469,7 +469,6 @@ dependencies:
           - *pypdfium2
           - *python-docx
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
-          - sentence-transformers=2.7
           - pip
           - pip:
             - langchain==0.1.16
@@ -477,6 +476,7 @@ dependencies:
             - faiss-cpu
             - google-search-results==2.4
             - nemollm==0.3.5
+            - sentence-transformers==2.7
 
   model-training-tuning:
     common:
