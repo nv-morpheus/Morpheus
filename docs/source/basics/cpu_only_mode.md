@@ -16,13 +16,13 @@ limitations under the License.
 -->
 
 # Morpheus CPU-Only Mode
-By default Morpheus is designed to take advantage of the GPU for accelerated processing. However, there are cases where it may be necessary to run Morpheus on a system without access to a GPU. To address this need, Morpheus provides a CPU only execution mode. Many stages within Morpheus require a GPU to run while others can operate in both GPU and CPU execution mode. Attempting to add a GPU only stage to a pipeline that is configured to operate in CPU only mode will result in an error.
+By default, Morpheus is designed to take advantage of the GPU for accelerated processing. However, there are cases where it may be necessary to run Morpheus on a system without access to a GPU. To address this need, Morpheus provides a CPU-only execution mode. Many stages within Morpheus require a GPU to run, while others can operate in both GPU and CPU execution mode. Attempting to add a GPU-only stage to a pipeline that is configured to operate in CPU-only mode will result in an error.
 
 ## Execution Modes
-By default Morpheus will run in GPU execution mode. Users have the choice of specifying the execution mode with either the Python API or from the command line.
+By default, Morpheus will run in GPU execution mode. Users have the choice of specifying the execution mode with either the Python API or from the command line.
 
 ### Python API
-Execution modes are defined in the `morpheus.config.ExecutionMode` enumeration, which is then specified in the `execution_mode` attribute of the `morpheus.config.Config` object. The following example demonstrates how to set the execution mode of a pipeline to CPU only:
+Execution modes are defined in the `morpheus.config.ExecutionMode` enumeration, which is then specified in the `execution_mode` attribute of the `morpheus.config.Config` object. The following example demonstrates how to set the execution mode of a pipeline to CPU-only:
 
 ```python
 from morpheus.config import Config
@@ -47,12 +47,12 @@ morpheus run --use_cpu_only pipeline-other --help
 ```
 
 #### Example
-The following is a simple command line example of a pipeline that can execute in CPU only mode. To begin ensure that you have fetched the examples dataset by running the following command from the root of the Morpheus repository:
+The following is a simple command line example of a pipeline that can execute in CPU-only mode. To begin, ensure that you have fetched the examples dataset by running the following command from the root of the Morpheus repository:
 ```bash
 ./scripts/fetch_data.py fetch examples
 ```
 
-Then to run the pipeline run the following command:
+Then, run the following command to run the pipeline:
 ```bash
 morpheus --log_level=INFO \
   run --use_cpu_only pipeline-other \
@@ -64,18 +64,18 @@ morpheus --log_level=INFO \
 ```
 
 ## Designing Stages for CPU Execution
-It is up to the author of each stage to decide which execution modes are supported. Options are: CPU, GPU or both. As mentioned previously the default execution mode is GPU, authors of stages which require a GPU do not need to make any changes to their stage definitions.
+It is up to the author of each stage to decide which execution modes are supported. Options are: CPU, GPU, or both. As mentioned previously, the default execution mode is GPU; authors of stages which require a GPU do not need to make any changes to their stage definitions.
 
 ### DataFrames and Tensors
-With the selection of the execution mode implies selection of DataFrame and tensor types. In GPU mode Morpheus will use [cuDF](https://docs.rapids.ai/api/cudf/stable/) DataFrames and tensors are represented as [CuPy](https://cupy.dev/) `ndarray` objects. In CPU mode Morpheus will use [pandas](https://pandas.pydata.org/) DataFrames and [NumPy](https://numpy.org/) `ndarray` objects.
+The selection of the execution mode implies selection of DataFrame and tensor types. In GPU mode, Morpheus will use [cuDF](https://docs.rapids.ai/api/cudf/stable/) DataFrames and tensors are represented as [CuPy](https://cupy.dev/) `ndarray` objects. In CPU mode, Morpheus will use [pandas](https://pandas.pydata.org/) DataFrames and [NumPy](https://numpy.org/) `ndarray` objects.
 
 |Mode|DataFrame|Tensor|
 | -- | ------- | ---- |
 |GPU|[cuDF](https://docs.rapids.ai/api/cudf/stable/)|[CuPy](https://cupy.dev/)|
 |CPU|[pandas](https://pandas.pydata.org/)|[NumPy](https://numpy.org/)|
 
-### Stages defined with `@stage` and `@source` decorators
-Both the `@stage` and `@source` decorators have an optional `execution_modes` parameter that accepts a tuple of `morpheus.config.ExecutionMode` values which is used to specify the supported executions mode of the stage.
+### Stages Defined with `@stage` and `@source` Decorators
+Both the `@stage` and `@source` decorators have an optional `execution_modes` parameter that accepts a tuple of `morpheus.config.ExecutionMode` values, which is used to specify the supported execution mode of the stage.
 
 #### CPU-only Source & Stage Examples
 ```python
@@ -115,10 +115,10 @@ if __name__ == "__main__":
     main()
 ```
 
-#### CPU & GPU Source & Stage Examples
-Supporting both CPU and GPU execution modes requires writing code that can handle both types of DataFrames and `ndarray` objects. In many cases code designed to work with pandas will work with cuDF, and code designed to work with NumPy will work with CuPy without requiring any changes to the code. In some cases however, the API may differ slightly and there is a need to know the payload type, care must be taken not to directly import `cudf` or any other package requiring a GPU when running in CPU mode on a system without a GPU. Morpheus provides some helper methods to assist with this in the {py:mod}`~morpheus.utils.type_utils` module, such as {py:func}`~morpheus.utils.type_utils.is_cudf_type`, {py:func}`~morpheus.utils.type_utils.get_df_class`, and {py:func}`~morpheus.utils.type_utils.get_array_pkg`.
+#### CPU and GPU Source and Stage Examples
+Supporting both CPU and GPU execution modes requires writing code that can handle both types of DataFrames and `ndarray` objects. In many cases, code designed to work with pandas will work with cuDF, and code designed to work with NumPy will work with CuPy, without requiring any changes to the code. However, in some cases, the API may differ slightly and there is a need to know the payload type. Care must be taken not to directly import `cudf` or any other package requiring a GPU when running in CPU mode on a system without a GPU. Morpheus provides some helper methods to assist with this in the {py:mod}`~morpheus.utils.type_utils` module, such as {py:func}`~morpheus.utils.type_utils.is_cudf_type`, {py:func}`~morpheus.utils.type_utils.get_df_class`, and {py:func}`~morpheus.utils.type_utils.get_array_pkg`.
 
-With a few simple modifications the previous example now supports both CPU and GPU execution modes. The `get_df_class` function is used to determine the DataFrame type to use, and we added a command line flag to switch between the two execution modes.
+With a few simple modifications, the previous example now supports both CPU and GPU execution modes. The `get_df_class` function is used to determine the DataFrame type to use, and we added a command line flag to switch between the two execution modes.
 
 ```python
 import logging
@@ -177,15 +177,15 @@ if __name__ == "__main__":
     main()
 ```
 
-### Source & Stages Classes
-Similar to the `@source` and `@stage` decorators, class based sources and stages can also be defined to advertise which execution modes they support. The base class for all source and stage classes `StageBase` defines a `supported_execution_modes` method for this purpose which can be overridden in a derived class. The method in the base class is defined as:
+### Source and Stage Classes
+Similar to the `@source` and `@stage` decorators, class-based sources and stages can also be defined to advertise which execution modes they support. The base class for all source and stage classes, `StageBase`, defines a `supported_execution_modes` method for this purpose, which can be overridden in a derived class. The method in the base class is defined as:
 
 ```python
 def supported_execution_modes(self) -> tuple[ExecutionMode]:
     return (ExecutionMode.GPU, )
 ```
 
-Stage authors are free to inspect constructor arguments of the stage to determine which execution modes are supported. However for many stages the supported execution modes do not change based upon the constructor arguments. In these cases the {py:class}`~morpheus.pipeline.execution_mode_mixins.GpuAndCpuMixin` and {py:class}`~morpheus.pipeline.execution_mode_mixins.CpuOnlyMixin` mixins can be used to simplify the implementation.
+Stage authors are free to inspect constructor arguments of the stage to determine which execution modes are supported. However, for many stages the supported execution modes do not change based upon the constructor arguments. In these cases the {py:class}`~morpheus.pipeline.execution_mode_mixins.GpuAndCpuMixin` and {py:class}`~morpheus.pipeline.execution_mode_mixins.CpuOnlyMixin` mixins can be used to simplify the implementation.
 
 Example class definition:
 ```python
@@ -201,13 +201,13 @@ class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 ```
 
 #### GpuAndCpuMixin
-In the previous decorators example we discussed utilizing various helper methods available in the {py:mod}`~morpheus.utils.type_utils` module to assist in writing code which is able to operate in both CPU and GPU execution modes. To simplify this further the `GpuAndCpuMixin` mixin adds these helper methods to the class. At time of writing they are:
+In the previous decorators example, we discussed utilizing various helper methods available in the {py:mod}`~morpheus.utils.type_utils` module to assist in writing code that is able to operate in both CPU and GPU execution modes. To simplify this further, the `GpuAndCpuMixin` mixin adds these helper methods to the class. At the time of this writing, they are:
 
 - `df_type_str` - Returns either `"cudf"` or `"pandas"`.
 - `get_df_pkg` - Returns either the `cudf` or `pandas` module.
 - `get_df_class` - Returns either the `cudf.DataFrame` or `pandas.DataFrame` class.
 
-### Stages with C++ implementations
-C++ stages have the ability to interact with cuDF DataFrames via the [libcudf](https://docs.rapids.ai/api/libcudf/stable/) library, however no such C++ library exists for pandas DataFrames. As a result, any stages which contain both a Python and a C++ implementation, the Python implementation will be used in CPU mode, and the C++ implementation will be used in GPU mode. For these stages, the Python implementation is then free to assume DataFrames are of type `pandas.DataFrame` and tensors are of type `numpy.ndarray`.
+### Stages with C++ Implementations
+C++ stages have the ability to interact with cuDF DataFrames via the [libcudf](https://docs.rapids.ai/api/libcudf/stable/) library; however, no such C++ library exists for pandas DataFrames. As a result, any stages which contain both a Python and a C++ implementation, the Python implementation will be used in CPU mode, and the C++ implementation will be used in GPU mode. For these stages, the Python implementation is then free to assume DataFrames are of type `pandas.DataFrame` and tensors are of type `numpy.ndarray`.
 
 A stage which contains only a C++ implementation will not be able to run in CPU mode.
