@@ -1,5 +1,5 @@
 {
-    "triton_server_url": "localhost:8001",
+    "triton_server_url": "localhost:8000",
     "test_sid_nlp_e2e": {
         "file_path": "../../models/datasets/validation-data/sid-validation-data.csv",
         "repeat": 10,
