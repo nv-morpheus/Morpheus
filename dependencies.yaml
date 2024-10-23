@@ -433,6 +433,9 @@ dependencies:
           - kfp
           - papermill=2.4.0
           - s3fs
+          - pip
+          - pip:
+            - python-logging-loki
 
   example-gnn:
     common:

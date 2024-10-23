@@ -140,5 +140,6 @@ dependencies:
   - nemollm==0.3.5
   - pymilvus==2.3.6
   - pytest-kafka==0.6.0
+  - python-logging-loki
   - torch==2.4.0+cu124
 name: all_cuda-125_arch-x86_64
