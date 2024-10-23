@@ -44,19 +44,15 @@ Stages are the building blocks of Morpheus pipelines. Below is a list of the mos
 
 ## Inference
 
-- Auto Encoder Inference Stage {py:class}`~morpheus.stages.inference.auto_encoder_inference_stage.AutoEncoderInferenceStage` PyTorch inference stage used for Auto Encoder pipeline mode.
 - PyTorch Inference Stage {py:class}`~morpheus.stages.inference.pytorch_inference_stage.PyTorchInferenceStage` PyTorch inference stage used for most pipeline modes with the exception of Auto Encoder.
 - Triton Inference Stage {py:class}`~morpheus.stages.inference.triton_inference_stage.TritonInferenceStage`  Inference stage which utilizes a [Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server).
 
 ## Input
 
 - App Shield Source Stage {py:class}`~morpheus.stages.input.appshield_source_stage.AppShieldSourceStage` Load App Shield messages from one or more plugins into a DataFrame.
-- Azure Source Stage {py:class}`~morpheus.stages.input.azure_source_stage.AzureSourceStage` Load Azure Active Directory messages.
-- Cloud Trail Source Stage {py:class}`~morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage` Load messages from a CloudTrail directory.
 - Control Message File Source Stage {py:class}`~morpheus.stages.input.control_message_file_source_stage.ControlMessageFileSourceStage` Receives control messages from different sources specified by a list of (fsspec)[https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files] strings.
 - Control Message Kafka Source Stage {py:class}`~morpheus.stages.input.control_message_kafka_source_stage.ControlMessageKafkaSourceStage` Load control messages from a Kafka cluster.
 - Databricks Delta Lake Source Stage {py:class}`~morpheus.stages.input.databricks_deltalake_source_stage.DataBricksDeltaLakeSourceStage` Source stage used to load messages from a DeltaLake table.
-- Duo Source Stage {py:class}`~morpheus.stages.input.duo_source_stage.DuoSourceStage` Load Duo Authentication messages.
 - File Source Stage {py:class}`~morpheus.stages.input.file_source_stage.FileSourceStage` Load messages from a file.
 - HTTP Client Source Stage {py:class}`~morpheus.stages.input.http_client_source_stage.HttpClientSourceStage` Poll a remote HTTP server for incoming data.
 - HTTP Server Source Stage {py:class}`~morpheus.stages.input.http_server_source_stage.HttpServerSourceStage` Start an HTTP server and listens for incoming requests on a specified endpoint.
@@ -66,7 +62,7 @@ Stages are the building blocks of Morpheus pipelines. Below is a list of the mos
 
 ## LLM
 
-- LLM Engine Stage {py:class}`~morpheus.stages.llm.llm_engine_stage.LLMEngineStage` Execute an LLM engine within a Morpheus pipeline.
+- LLM Engine Stage {py:class}`~morpheus_llm.stages.llm.llm_engine_stage.LLMEngineStage` Execute an LLM engine within a Morpheus pipeline.
 
 ## Output
 - HTTP Client Sink Stage {py:class}`~morpheus.stages.output.http_client_sink_stage.HttpClientSinkStage` Write all messages to an HTTP endpoint.
@@ -92,7 +88,5 @@ Stages are the building blocks of Morpheus pipelines. Below is a list of the mos
 
 - Deserialize Stage {py:class}`~morpheus.stages.preprocess.deserialize_stage.DeserializeStage` Partition messages based on the `pipeline_batch_size` parameter of the pipeline's `morpheus.config.Config` object.
 - Drop Null Stage {py:class}`~morpheus.stages.preprocess.drop_null_stage.DropNullStage` Drop null data entries from a DataFrame.
-- Preprocess AE Stage {py:class}`~morpheus.stages.preprocess.preprocess_ae_stage.PreprocessAEStage` Prepare Autoencoder input DataFrames for inference.
 - Preprocess FIL Stage {py:class}`~morpheus.stages.preprocess.preprocess_fil_stage.PreprocessFILStage` Prepare FIL input DataFrames for inference.
 - Preprocess NLP Stage {py:class}`~morpheus.stages.preprocess.preprocess_nlp_stage.PreprocessNLPStage` Prepare NLP input DataFrames for inference.
-- Train AE Stage {py:class}`~morpheus.stages.preprocess.train_ae_stage.TrainAEStage` Train an Autoencoder model on incoming data.

@@ -19,9 +19,9 @@ limitations under the License.
 
 This example is designed to illustrate a full-scale, production-ready, DFP deployment in Morpheus. It contains all of the necessary components (such as a model store), to allow multiple Morpheus pipelines to communicate at a scale that can handle the workload of an entire company.
 
-Key Differences:
+Key Features:
  * Multiple pipelines are specialized to perform either training or inference
- * Requires setting up a model store to allow the training and inference pipelines to communicate
+ * Uses a model store to allow the training and inference pipelines to communicate
  * Organized into a `docker compose` deployment for easy startup
  * Contains a Jupyter notebook service to ease development and debugging
  * Can be deployed to Kubernetes using provided Helm charts

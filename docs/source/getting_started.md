@@ -19,6 +19,7 @@ limitations under the License.
 
 There are three ways to get started with Morpheus:
 - [Using pre-built Docker containers](#using-pre-built-docker-containers)
+- [Using the Morpheus Conda packages](#using-morpheus-conda-packages)
 - [Building the Morpheus Docker container](#building-the-morpheus-container)
 - [Building Morpheus from source](./developer_guide/contributing.md#building-from-source)
 
@@ -77,6 +78,12 @@ Once launched, users wishing to launch Triton using the included Morpheus models
 ```
 
 Skip ahead to the [Acquiring the Morpheus Models Container](#acquiring-the-morpheus-models-container) section.
+
+## Using Morpheus Conda Packages
+The Morpheus stages are available as libraries that are hosted on the [`nvidia`](https://anaconda.org/nvidia) Conda channel. The Morpheus Conda packages are:
+[`morpheus-core`](https://anaconda.org/nvidia/morpheus-core), [`morpheus-dfp`](https://anaconda.org/nvidia/morpheus-dfp) and [`morpheus-llm`](https://anaconda.org/nvidia/morpheus-llm)
+
+For details on these libraries and how to use them, refer to the [Morpheus Conda Packages](./conda_packages.md) guide.
 
 ## Building the Morpheus Container
 ### Clone the Repository
@@ -367,36 +374,6 @@ Commands:
   to-kafka        Write all messages to a Kafka cluster.
   trigger         Buffer data until the previous stage has completed.
   validate        Validate pipeline output for testing.
-```
-
-And for the AE pipeline:
-
-```
-$ morpheus run pipeline-ae --help
-Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
-
-<Help Paragraph Omitted>
-
-Commands:
-  add-class        Add detected classifications to each message.
-  add-scores       Add probability scores to each message.
-  buffer           (Deprecated) Buffer results.
-  delay            (Deprecated) Delay results for a certain duration.
-  filter           Filter message by a classification threshold.
-  from-azure       Source stage is used to load Azure Active Directory messages.
-  from-cloudtrail  Load messages from a CloudTrail directory.
-  from-duo         Source stage is used to load Duo Authentication messages.
-  inf-pytorch      Perform inference with PyTorch.
-  inf-triton       Perform inference with Triton Inference Server.
-  monitor          Display throughput numbers at a specific point in the pipeline.
-  preprocess       Prepare Autoencoder input DataFrames for inference.
-  serialize        Includes & excludes columns from messages.
-  timeseries       Perform time series anomaly detection and add prediction.
-  to-file          Write all messages to a file.
-  to-kafka         Write all messages to a Kafka cluster.
-  train-ae         Train an Autoencoder model on incoming data.
-  trigger          Buffer data until the previous stage has completed.
-  validate         Validate pipeline output for testing.
 ```
 Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Check the CLI help for the most up-to-date information during development.
 

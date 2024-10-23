@@ -46,6 +46,7 @@ LLM(s?)
 # https://github.com/logpai/loghub/
 Loghub
 Milvus
+PyPI
 [Mm]ixin
 MLflow
 Morpheus
@@ -71,6 +72,7 @@ pytest
 [Ss]ubcard(s?)
 [Ss]ubgraph(s?)
 [Ss]ubword(s?)
+[Ss]uperset(s?)
 [Tt]imestamp(s?)
 [Tt]okenization
 [Tt]okenizer(s?)

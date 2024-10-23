@@ -48,14 +48,6 @@ MILVUS_DATA_TYPE_MAP = {
 }
 
 
-@pytest.fixture(scope="module", name="milvus_service")
-def milvus_service_fixture(milvus_server_uri: str):
-    # This fixture is scoped to the function level since the WriteToVectorDBStage will close the connection on'
-    # pipeline completion
-    service = MilvusVectorDBService(uri=milvus_server_uri)
-    yield service
-
-
 @pytest.mark.milvus
 def test_list_store_objects(milvus_service: MilvusVectorDBService):
     # List all collections in the Milvus server.
