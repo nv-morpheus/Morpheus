@@ -21,9 +21,7 @@ import confluent_kafka as ck
 import mrc
 import pandas as pd
 
-from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -33,7 +31,6 @@ from morpheus.stages.input.kafka_source_stage import AutoOffsetReset
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-cm-kafka", modes=[PipelineModes.AE])
 class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Load control messages from a Kafka cluster.

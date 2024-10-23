@@ -32,14 +32,11 @@ from morpheus.cli import commands
 from morpheus.common import FileTypes
 from morpheus.common import FilterSource
 from morpheus.config import Config
-from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
 from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage
 from morpheus.stages.inference.identity_inference_stage import IdentityInferenceStage
 from morpheus.stages.inference.pytorch_inference_stage import PyTorchInferenceStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
-from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -49,14 +46,11 @@ from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.ml_flow_drift_stage import MLFlowDriftStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.drop_null_stage import DropNullStage
-from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 from morpheus.utils.file_utils import load_labels_file
 
 GENERAL_ARGS = ['run', '--num_threads=12', '--pipeline_batch_size=1024', '--model_max_batch_size=1024', '--use_cpp=0']
@@ -142,9 +136,8 @@ def config_warning_fixture():
 @pytest.mark.usefixtures("chdir_tmpdir", "reload_modules")
 class TestCLI:
 
-    @pytest.mark.parametrize('cmd',
-                             [[], ['tools'], ['run'], ['run', 'pipeline-ae'], ['run', 'pipeline-fil'],
-                              ['run', 'pipeline-nlp'], ['run', 'pipeline-other']])
+    @pytest.mark.parametrize(
+        'cmd', [[], ['tools'], ['run'], ['run', 'pipeline-fil'], ['run', 'pipeline-nlp'], ['run', 'pipeline-other']])
     def test_help(self, cmd: list[str]):
         runner = CliRunner()
         result = runner.invoke(commands.cli, cmd + ['--help'])
@@ -174,186 +167,6 @@ class TestCLI:
         result = runner.invoke(commands.cli, flags)
         assert result.exit_code == 0, result.output
         mock_manual_seed.assert_called_once_with(value)
-
-    @pytest.mark.replace_callback('pipeline_ae')
-    def test_pipeline_ae(self, config, callback_values):
-        """
-        Build a pipeline roughly ressembles the DFP validation script
-        """
-        args = (GENERAL_ARGS + [
-            'pipeline-ae',
-            '--columns_file=data/columns_ae_cloudtrail.txt',
-            '--userid_filter=user321',
-            '--userid_column_name=user_col',
-            'from-cloudtrail',
-            '--input_glob=input_glob*.csv',
-            'train-ae',
-            '--train_data_glob=train_glob*.csv',
-            '--seed',
-            '47',
-            'preprocess',
-            'inf-pytorch',
-            'add-scores',
-            'timeseries',
-            '--resolution=1m',
-            '--zscore_threshold=8.0',
-            '--hot_start'
-        ] + MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
-
-        obj = {}
-        runner = CliRunner()
-        result = runner.invoke(commands.cli, args, obj=obj)
-        assert result.exit_code == 47, result.output
-
-        # Ensure our config is populated correctly
-
-        config = obj["config"]
-        assert config.mode == PipelineModes.AE
-        assert config.class_labels == ["reconstruct_loss", "zscore"]
-        assert config.model_max_batch_size == 1024
-        assert config.pipeline_batch_size == 1024
-        assert config.num_threads == 12
-
-        assert isinstance(config.ae, ConfigAutoEncoder)
-        assert config.ae.userid_column_name == "user_col"
-        assert config.ae.userid_filter == "user321"
-
-        expected_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
-        assert config.ae.feature_columns == expected_columns
-
-        pipe = callback_values['pipe']
-        assert pipe is not None
-
-        stages = callback_values['stages']
-        # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
-        [cloud_trail, train_ae, process_ae, auto_enc, add_scores, time_series, monitor, validation, serialize,
-         to_file] = stages
-
-        assert isinstance(cloud_trail, CloudTrailSourceStage)
-        assert cloud_trail._watcher._input_glob == "input_glob*.csv"
-
-        assert isinstance(train_ae, TrainAEStage)
-        assert train_ae._train_data_glob == "train_glob*.csv"
-        assert train_ae._seed == 47
-
-        assert isinstance(process_ae, PreprocessAEStage)
-        assert isinstance(auto_enc, AutoEncoderInferenceStage)
-        assert isinstance(add_scores, AddScoresStage)
-
-        assert isinstance(time_series, TimeSeriesStage)
-        assert time_series._resolution == '1m'
-        assert time_series._zscore_threshold == 8.0
-        assert time_series._hot_start
-
-        assert isinstance(monitor, MonitorStage)
-        assert monitor._mc._description == 'Unittest'
-        assert monitor._mc._smoothing == 0.001
-        assert monitor._mc._unit == 'inf'
-
-        assert isinstance(validation, ValidationStage)
-        assert validation._results_file_name == 'results.json'
-        assert validation._index_col == '_index_'
-
-        # Click appears to be converting this into a tuple
-        assert list(validation._exclude_columns) == ['event_dt']
-        assert validation._rel_tol == 0.1
-
-        assert isinstance(serialize, SerializeStage)
-
-        assert isinstance(to_file, WriteToFileStage)
-        assert to_file._controller._output_file == 'out.csv'
-
-    @pytest.mark.replace_callback('pipeline_ae')
-    def test_pipeline_ae_all(self, callback_values):
-        """
-        Attempt to add all possible stages to the pipeline_ae, even if the pipeline doesn't
-        actually make sense, just test that cli could assemble it
-        """
-        args = (GENERAL_ARGS + [
-            'pipeline-ae',
-            '--columns_file=data/columns_ae_cloudtrail.txt',
-            '--userid_filter=user321',
-            '--userid_column_name=user_col',
-            'from-cloudtrail',
-            '--input_glob=input_glob*.csv',
-            'add-class',
-            'unittest-conv-msg',
-            'filter',
-            'train-ae',
-            '--train_data_glob=train_glob*.csv',
-            '--seed',
-            '47',
-            'preprocess',
-            'inf-pytorch',
-            'add-scores'
-        ] + ['timeseries', '--resolution=1m', '--zscore_threshold=8.0', '--hot_start'] + MONITOR_ARGS + VALIDATE_ARGS +
-                ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
-
-        runner = CliRunner()
-        result = runner.invoke(commands.cli, args)
-
-        assert result.exit_code == 47, result.output
-
-        stages = callback_values['stages']
-        # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
-        [
-            cloud_trail,
-            add_class,
-            conv_msg,
-            filter_stage,
-            train_ae,
-            process_ae,
-            auto_enc,
-            add_scores,
-            time_series,
-            monitor,
-            validation,
-            serialize,
-            to_file,
-            to_kafka
-        ] = stages
-
-        assert isinstance(cloud_trail, CloudTrailSourceStage)
-        assert cloud_trail._watcher._input_glob == "input_glob*.csv"
-
-        assert isinstance(add_class, AddClassificationsStage)
-        assert isinstance(conv_msg, ConvMsg)
-        assert isinstance(filter_stage, FilterDetectionsStage)
-
-        assert isinstance(train_ae, TrainAEStage)
-        assert train_ae._train_data_glob == "train_glob*.csv"
-        assert train_ae._seed == 47
-
-        assert isinstance(process_ae, PreprocessAEStage)
-        assert isinstance(auto_enc, AutoEncoderInferenceStage)
-        assert isinstance(add_scores, AddScoresStage)
-
-        assert isinstance(time_series, TimeSeriesStage)
-        assert time_series._resolution == '1m'
-        assert time_series._zscore_threshold == 8.0
-        assert time_series._hot_start
-
-        assert isinstance(monitor, MonitorStage)
-        assert monitor._mc._description == 'Unittest'
-        assert monitor._mc._smoothing == 0.001
-        assert monitor._mc._unit == 'inf'
-
-        assert isinstance(validation, ValidationStage)
-        assert validation._results_file_name == 'results.json'
-        assert validation._index_col == '_index_'
-
-        # Click appears to be converting this into a tuple
-        assert list(validation._exclude_columns) == ['event_dt']
-        assert validation._rel_tol == 0.1
-
-        assert isinstance(serialize, SerializeStage)
-
-        assert isinstance(to_file, WriteToFileStage)
-        assert to_file._controller._output_file == 'out.csv'
-
-        assert isinstance(to_kafka, WriteToKafkaStage)
-        assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
-        assert to_kafka._output_topic == 'test_topic'
 
     @pytest.mark.replace_callback('pipeline_fil')
     def test_pipeline_fil(self, config, callback_values):
@@ -1025,64 +838,3 @@ class TestCLI:
         assert config.class_labels == test_labels
 
         assert config.fil.feature_columns == test_columns
-
-    # pylint: disable=unused-argument
-    @pytest.mark.replace_callback('pipeline_ae')
-    def test_pipeline_ae_relative_path_precedence(self, config: Config, tmp_path: str, callback_values: dict):
-        """
-        Ensure that relative paths are choosen over the morpheus data directory paths
-        """
-
-        labels_file = "data/labels_ae.txt"
-        columns_file = "data/columns_ae_cloudtrail.txt"
-
-        labels_file_local = os.path.join(tmp_path, labels_file)
-        columns_file_local = os.path.join(tmp_path, columns_file)
-
-        os.makedirs(os.path.join(tmp_path, "data"), exist_ok=True)
-
-        # Use different labels
-        test_labels = ["label1"]
-
-        # Overwrite the copied labels
-        with open(labels_file_local, mode="w", encoding='UTF-8') as f:
-            f.writelines("\n".join(test_labels))
-
-        # Use different labels
-        test_columns = [f"column{i}" for i in range(33)]
-
-        # Overwrite the copied labels
-        with open(columns_file_local, mode="w", encoding='UTF-8') as f:
-            f.writelines("\n".join(test_columns))
-
-        args = (GENERAL_ARGS + [
-            'pipeline-ae',
-            '--userid_filter=user321',
-            '--userid_column_name=user_col',
-            f"--labels_file={labels_file}",
-            f"--columns_file={columns_file}",
-            'from-cloudtrail',
-            '--input_glob=input_glob*.csv',
-            'train-ae',
-            '--train_data_glob=train_glob*.csv',
-            '--seed',
-            '47',
-            'preprocess',
-            'inf-pytorch',
-            'add-scores',
-            'timeseries',
-            '--resolution=1m',
-            '--zscore_threshold=8.0',
-            '--hot_start'
-        ] + MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
-
-        obj = {}
-        runner = CliRunner()
-        result = runner.invoke(commands.cli, args, obj=obj)
-        assert result.exit_code == 47, result.output
-
-        # Ensure our config is populated correctly
-        config = obj["config"]
-        assert config.class_labels == test_labels
-
-        assert config.ae.feature_columns == test_columns
