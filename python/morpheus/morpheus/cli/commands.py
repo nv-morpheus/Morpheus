@@ -25,15 +25,11 @@ from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_config_from_ctx
-from morpheus.cli.utils import get_enum_keys
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_pipeline_from_ctx
-from morpheus.cli.utils import parse_enum
 from morpheus.cli.utils import parse_log_level
 from morpheus.cli.utils import prepare_command
-from morpheus.config import AEFeatureScalar
 from morpheus.config import Config
-from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
 from morpheus.config import ConfigOnnxToTRT
 from morpheus.config import CppConfig
@@ -474,103 +470,6 @@ def pipeline_fil(ctx: click.Context, **kwargs):
 
 
 @click.group(chain=True,
-             short_help="Run the inference pipeline with an AutoEncoder model",
-             no_args_is_help=True,
-             cls=PluginGroup,
-             pipeline_mode=PipelineModes.AE)
-@click.option('--columns_file',
-              required=True,
-              default=None,
-              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
-              help=("Specifies a file to read column features."))
-@click.option('--labels_file',
-              default=None,
-              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
-              help=("Specifies a file to read labels from in order to convert class IDs into labels. "
-                    "A label file is a simple text file where each line corresponds to a label. "))
-@click.option('--userid_column_name',
-              type=str,
-              default="userIdentityaccountId",
-              required=True,
-              help=("Which column to use as the User ID."))
-@click.option('--userid_filter',
-              type=str,
-              default=None,
-              help=("Specifying this value will filter all incoming data to only use rows with matching User IDs. "
-                    "Which column is used for the User ID is specified by `userid_column_name`"))
-@click.option('--feature_scaler',
-              type=click.Choice(get_enum_keys(AEFeatureScalar), case_sensitive=False),
-              default=AEFeatureScalar.STANDARD.name,
-              callback=functools.partial(parse_enum, enum_class=AEFeatureScalar, case_sensitive=False),
-              help=("Autoencoder feature scaler"))
-@click.option('--use_generic_model',
-              is_flag=True,
-              type=bool,
-              help=("Whether to use a generic model when user does not have minimum number of training rows"))
-@click.option('--viz_file',
-              default=None,
-              type=click.Path(dir_okay=False, writable=True),
-              help="Save a visualization of the pipeline at the specified location")
-@click.option('--viz_direction',
-              default="LR",
-              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
-              help=("Set the direction for the Graphviz pipeline diagram, "
-                    "ignored unless --viz_file is also specified."))
-@click.option('--timestamp_column_name',
-              type=str,
-              default="timestamp",
-              required=True,
-              help=("Which column to use as the timestamp."))
-@prepare_command()
-def pipeline_ae(ctx: click.Context, **kwargs):
-    """
-    Configure and run the pipeline. To configure the pipeline, list the stages in the order that data should flow. The
-    output of each stage will become the input for the next stage. For example, to read, classify and write to a file,
-    the following stages could be used
-
-    pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
-    --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
-
-    Pipelines must follow a few rules:
-    1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
-    2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
-    3. Only one inference stage can be used. Zero is also fine
-    4. The following stages must come after an inference stage: `add-class`, `filter`, `gen-viz`
-
-    """
-
-    click.secho("Configuring Pipeline via CLI", fg="green")
-
-    config = get_config_from_ctx(ctx)
-    config.mode = PipelineModes.AE
-    config.ae = ConfigAutoEncoder()
-    config.ae.userid_column_name = kwargs["userid_column_name"]
-    config.ae.timestamp_column_name = kwargs["timestamp_column_name"]
-    config.ae.feature_scaler = kwargs["feature_scaler"]
-    config.ae.use_generic_model = kwargs["use_generic_model"]
-    config.ae.feature_columns = load_labels_file(kwargs["columns_file"])
-    logger.debug("Loaded columns. Current columns: [%s]", str(config.ae.feature_columns))
-
-    if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
-        config.class_labels = load_labels_file(kwargs["labels_file"])
-        logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
-    else:
-        # Use default labels
-        config.class_labels = ["reconstruct_loss", "zscore"]
-
-    if ("userid_filter" in kwargs):
-        config.ae.userid_filter = kwargs["userid_filter"]
-
-        logger.info("Filtering all users except ID: '%s'", str(config.ae.userid_filter))
-
-    from morpheus.pipeline import LinearPipeline
-
-    p = ctx.obj["pipeline"] = LinearPipeline(config)
-
-    return p
-
-
-@click.group(chain=True,
              short_help="Run a custom inference pipeline without a specific model type",
              no_args_is_help=True,
              cls=PluginGroup,
@@ -642,7 +541,6 @@ def pipeline_other(ctx: click.Context, **kwargs):
 
 @pipeline_nlp.result_callback()
 @pipeline_fil.result_callback()
-@pipeline_ae.result_callback()
 @pipeline_other.result_callback()
 @click.pass_context
 def post_pipeline(ctx: click.Context, *args, **kwargs):
@@ -667,12 +565,9 @@ def post_pipeline(ctx: click.Context, *args, **kwargs):
 # Manually create the subcommands for each command (necessary since commands can be used on multiple groups)
 run.add_command(pipeline_nlp)
 run.add_command(pipeline_fil)
-run.add_command(pipeline_ae)
 run.add_command(pipeline_other)
 
-ALL = (PipelineModes.AE, PipelineModes.NLP, PipelineModes.FIL, PipelineModes.OTHER)
-NOT_AE = (PipelineModes.NLP, PipelineModes.FIL, PipelineModes.OTHER)
-AE_ONLY = (PipelineModes.AE, )
+ALL = (PipelineModes.NLP, PipelineModes.FIL, PipelineModes.OTHER)
 FIL_ONLY = (PipelineModes.FIL, )
 NLP_ONLY = (PipelineModes.NLP, )
 
@@ -681,37 +576,28 @@ add_command("add-class", "morpheus.stages.postprocess.add_classifications_stage.
 add_command("add-scores", "morpheus.stages.postprocess.add_scores_stage.AddScoresStage", modes=ALL)
 add_command("buffer", "morpheus.stages.general.buffer_stage.BufferStage", modes=ALL)
 add_command("delay", "morpheus.stages.general.delay_stage.DelayStage", modes=ALL)
-add_command("deserialize", "morpheus.stages.preprocess.deserialize_stage.DeserializeStage", modes=NOT_AE)
-add_command("dropna", "morpheus.stages.preprocess.drop_null_stage.DropNullStage", modes=NOT_AE)
+add_command("deserialize", "morpheus.stages.preprocess.deserialize_stage.DeserializeStage", modes=ALL)
+add_command("dropna", "morpheus.stages.preprocess.drop_null_stage.DropNullStage", modes=ALL)
 add_command("filter", "morpheus.stages.postprocess.filter_detections_stage.FilterDetectionsStage", modes=ALL)
 add_command("from-arxiv", "morpheus.stages.input.arxiv_source.ArxivSource", modes=ALL)
-add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
 add_command("from-appshield", "morpheus.stages.input.appshield_source_stage.AppShieldSourceStage", modes=FIL_ONLY)
-add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
-add_command("from-cloudtrail", "morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage", modes=AE_ONLY)
 add_command("from-databricks-deltalake",
             "morpheus.stages.input.databricks_deltalake_source_stage.DataBricksDeltaLakeSourceStage",
             modes=ALL)
-add_command("from-duo", "morpheus.stages.input.duo_source_stage.DuoSourceStage", modes=AE_ONLY)
-add_command("from-file", "morpheus.stages.input.file_source_stage.FileSourceStage", modes=NOT_AE)
-add_command("from-kafka", "morpheus.stages.input.kafka_source_stage.KafkaSourceStage", modes=NOT_AE)
+add_command("from-file", "morpheus.stages.input.file_source_stage.FileSourceStage", modes=ALL)
+add_command("from-kafka", "morpheus.stages.input.kafka_source_stage.KafkaSourceStage", modes=ALL)
 add_command("from-http", "morpheus.stages.input.http_server_source_stage.HttpServerSourceStage", modes=ALL)
 add_command("from-http-client", "morpheus.stages.input.http_client_source_stage.HttpClientSourceStage", modes=ALL)
 add_command("from-rss", "morpheus.stages.input.rss_source_stage.RSSSourceStage", modes=ALL)
 add_command("gen-viz", "morpheus.stages.postprocess.generate_viz_frames_stage.GenerateVizFramesStage", modes=NLP_ONLY)
-add_command("inf-identity", "morpheus.stages.inference.identity_inference_stage.IdentityInferenceStage", modes=NOT_AE)
-add_command("inf-pytorch",
-            "morpheus.stages.inference.auto_encoder_inference_stage.AutoEncoderInferenceStage",
-            modes=AE_ONLY)
-add_command("inf-pytorch", "morpheus.stages.inference.pytorch_inference_stage.PyTorchInferenceStage", modes=NOT_AE)
-add_command("inf-triton", "morpheus.stages.inference.triton_inference_stage.TritonInferenceStage", modes=NOT_AE)
-add_command("mlflow-drift", "morpheus.stages.postprocess.ml_flow_drift_stage.MLFlowDriftStage", modes=NOT_AE)
+add_command("inf-identity", "morpheus.stages.inference.identity_inference_stage.IdentityInferenceStage", modes=ALL)
+add_command("inf-pytorch", "morpheus.stages.inference.pytorch_inference_stage.PyTorchInferenceStage", modes=ALL)
+add_command("inf-triton", "morpheus.stages.inference.triton_inference_stage.TritonInferenceStage", modes=ALL)
+add_command("mlflow-drift", "morpheus.stages.postprocess.ml_flow_drift_stage.MLFlowDriftStage", modes=ALL)
 add_command("monitor", "morpheus.stages.general.monitor_stage.MonitorStage", modes=ALL)
-add_command("preprocess", "morpheus.stages.preprocess.preprocess_ae_stage.PreprocessAEStage", modes=AE_ONLY)
 add_command("preprocess", "morpheus.stages.preprocess.preprocess_fil_stage.PreprocessFILStage", modes=FIL_ONLY)
 add_command("preprocess", "morpheus.stages.preprocess.preprocess_nlp_stage.PreprocessNLPStage", modes=NLP_ONLY)
 add_command("serialize", "morpheus.stages.postprocess.serialize_stage.SerializeStage", modes=ALL)
-add_command("timeseries", "morpheus.stages.postprocess.timeseries_stage.TimeSeriesStage", modes=AE_ONLY)
 add_command("to-elasticsearch",
             "morpheus.stages.output.write_to_elasticsearch_stage.WriteToElasticsearchStage",
             modes=ALL)
@@ -719,7 +605,6 @@ add_command("to-file", "morpheus.stages.output.write_to_file_stage.WriteToFileSt
 add_command("to-kafka", "morpheus.stages.output.write_to_kafka_stage.WriteToKafkaStage", modes=ALL)
 add_command("to-http", "morpheus.stages.output.http_client_sink_stage.HttpClientSinkStage", modes=ALL)
 add_command("to-http-server", "morpheus.stages.output.http_server_sink_stage.HttpServerSinkStage", modes=ALL)
-add_command("train-ae", "morpheus.stages.preprocess.train_ae_stage.TrainAEStage", modes=AE_ONLY)
 add_command("trigger", "morpheus.stages.general.trigger_stage.TriggerStage", modes=ALL)
 add_command("validate", "morpheus.stages.postprocess.validation_stage.ValidationStage", modes=ALL)
 

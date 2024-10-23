@@ -88,7 +88,7 @@ def test_auto_encoder():
 
 
 def test_pipeline_modes():
-    expected = {"OTHER", "NLP", "FIL", "AE"}
+    expected = {"OTHER", "NLP", "FIL"}
     entries = set(pm.name for pm in morpheus.config.PipelineModes)
     assert entries.issuperset(expected)
 
