@@ -27,17 +27,10 @@ Key Features:
  * Can be deployed to Kubernetes using provided Helm charts
  * Uses many customized stages to maximize performance.
 
-## Build the Morpheus container
-This is necessary to get the latest changes needed for DFP. From the root of the Morpheus repo:
-```bash
-./docker/build_container_release.sh
-```
-
 ## Building and Running via `docker compose`
 ### Build
 ```bash
 cd examples/digital_fingerprinting/production
-export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
 docker compose build
 ```
 

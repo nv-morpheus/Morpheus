@@ -198,6 +198,15 @@ files:
       - morpheus_core_pip
       - morpheus_llm_pip
 
+  example_dfp:
+    output: conda
+    conda_dir: examples/digital_fingerprinting/production
+    matrix:
+      cuda: ["12.5"]
+      arch: [x86_64]
+    includes:
+      - example-dfp-prod
+
 channels:
   - conda-forge
   - huggingface
