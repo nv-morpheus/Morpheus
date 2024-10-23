@@ -177,6 +177,11 @@ void ControlMessage::set_timestamp(const std::string& key, time_point_t timestam
     m_timestamps[key] = timestamp_ns;
 }
 
+const std::map<std::string, time_point_t>& ControlMessage::get_timestamps() const
+{
+    return m_timestamps;
+}
+
 std::map<std::string, time_point_t> ControlMessage::filter_timestamp(const std::string& regex_filter)
 {
     std::map<std::string, time_point_t> matching_timestamps;
@@ -363,6 +368,11 @@ py::list ControlMessageProxy::list_metadata(ControlMessage& self)
         py_keys.append(py::str(key));
     }
     return py_keys;
+}
+
+py::dict ControlMessageProxy::get_timestamps(ControlMessage& self)
+{
+    return py::cast(self.get_timestamps());
 }
 
 py::dict ControlMessageProxy::filter_timestamp(ControlMessage& self, const std::string& regex_filter)

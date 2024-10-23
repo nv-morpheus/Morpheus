@@ -167,6 +167,9 @@ class ControlMessage(MessageBase, cpp_class=_messages.ControlMessage):
                 raise ValueError("Timestamp for the specified key does not exist.") from e
             return None
 
+    def get_timestamps() -> dict[str, datetime]:
+        return self._timestamps
+
     def filter_timestamp(self, regex_filter: str) -> dict[str, datetime]:
         re_obj = re.compile(regex_filter)
 
