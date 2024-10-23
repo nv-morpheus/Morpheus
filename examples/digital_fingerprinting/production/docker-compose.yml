@@ -104,9 +104,6 @@ services:
       context: ./
       dockerfile: ./Dockerfile
       target: runtime
-      args:
-        - MORPHEUS_CONTAINER=${MORPHEUS_CONTAINER:-nvcr.io/nvidia/morpheus/morpheus}
-        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v24.10.00-runtime}
     image: dfp_morpheus
     container_name: morpheus_pipeline
     deploy:
