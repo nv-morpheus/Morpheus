@@ -75,7 +75,7 @@ The selection of the execution mode implies selection of DataFrame and tensor ty
 |CPU|[pandas](https://pandas.pydata.org/)|[NumPy](https://numpy.org/)|
 
 ### Stages Defined with `@stage` and `@source` Decorators
-Both the `@stage` and `@source` decorators have an optional `execution_modes` parameter that accepts a tuple of `morpheus.config.ExecutionMode` values, which is used to specify the supported execution mode of the stage.
+Both the `@stage` and `@source` decorators have an optional `execution_modes` parameter that accepts a tuple of `morpheus.config.ExecutionMode` values, which is used to specify the supported execution modes of the stage.
 
 #### CPU-only Source & Stage Examples
 ```python
