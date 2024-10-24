@@ -8,6 +8,7 @@
 { "include": [ "\"mrc/protos/tensor_meta_data.pb.h\"", private, "<mrc/protos/tensor_meta_data.pb.h>", "public" ] },
 
 # stdlib
+{ "include": [ "<bits/chrono.h>", private, "<chrono>", "public" ] },
 { "include": [ "<bits/cxxabi_forced.h>", private, "<mutex>", "public" ] },
 { "include": [ "<bits/cxxabi_forced.h>", private, "<vector>", "public" ] },
 { "include": [ "<bits/this_thread_sleep.h>", private, "<thread>", "public" ] },

@@ -93,6 +93,10 @@ class LLMEngineStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
             for tv in task_value:
                 dst.add_task(task, tv)
 
+        timestamps = src.get_timestamps()
+        for (ts_key, ts) in timestamps.items():
+            dst.set_timestamp(key=ts_key, timestamp=ts)
+
     def _cast_to_cpp_control_message(self, py_message: ControlMessage, *,
                                      cpp_messages_lib: types.ModuleType) -> ControlMessage:
         """

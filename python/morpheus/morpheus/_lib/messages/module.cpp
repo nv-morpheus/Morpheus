@@ -274,6 +274,7 @@ PYBIND11_MODULE(messages, _module)
              "fail_if_nonexist is False.",
              py::arg("key"),
              py::arg("fail_if_nonexist") = false)
+        .def("get_timestamps", &ControlMessageProxy::get_timestamps)
         .def("set_timestamp",
              &ControlMessageProxy::set_timestamp,
              "Set a timestamp for a given key and group.",

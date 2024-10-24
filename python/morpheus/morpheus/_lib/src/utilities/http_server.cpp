@@ -15,18 +15,15 @@
  * limitations under the License.
  */
 
-// TODO(dagardner): add /health & /info endpoints
-
 #include "morpheus/utilities/http_server.hpp"
-
-#include "pymrc/utilities/function_wrappers.hpp"  // for PyFuncWrapper
 
 #include <boost/asio.hpp>  // for dispatch, make_address
 #include <boost/asio/any_io_executor.hpp>
 #include <boost/asio/basic_socket_acceptor.hpp>  // for basic_socket_acceptor<>::executor_type
 #include <boost/asio/basic_stream_socket.hpp>    // for basic_stream_socket
 #include <boost/asio/dispatch.hpp>
-#include <boost/asio/ip/tcp.hpp>       // for acceptor, endpoint, socket,
+#include <boost/asio/ip/address.hpp>  // for address
+#include <boost/asio/ip/tcp.hpp>      // for acceptor, endpoint, socket,
 #include <boost/asio/socket_base.hpp>  // for socket_base::reuse_address, socket_base, socket_base::max_listen_connections
 #include <boost/asio/strand.hpp>       // for strand, make_strand, operator==
 #include <boost/beast/core.hpp>        // for bind_front_handler, error_code, flat_buffer, tcp_stream
@@ -35,26 +32,31 @@
 #include <boost/beast/core/flat_buffer.hpp>   // for flat_buffer
 #include <boost/beast/core/rate_policy.hpp>
 #include <boost/beast/core/tcp_stream.hpp>  // for tcp_stream
-#include <boost/beast/http.hpp>             // for read_async, request, response, verb, write_async
+#include <boost/beast/http.hpp>             // for read_async, response, write_async
 #include <boost/beast/http/error.hpp>       // for error, error::end_of_stream
 #include <boost/beast/http/field.hpp>       // for field, field::content_type
 #include <boost/beast/http/fields.hpp>
-#include <boost/beast/http/message.hpp>      // for message, response, request
-#include <boost/beast/http/parser.hpp>       // for request_parser, parser
-#include <boost/beast/http/status.hpp>       // for status, status::not_found
-#include <boost/beast/http/string_body.hpp>  // for string_body, basic_string_body, basic_string_body<>::value_type
-#include <boost/beast/http/verb.hpp>         // for verb, operator<<, verb::unknown
+#include <boost/beast/http/message.hpp>  // for message, response, request
+#include <boost/beast/http/parser.hpp>   // for request_parser, parser
+#include <boost/beast/http/status.hpp>   // for status, status::not_found
+#include <boost/beast/http/verb.hpp>     // for verb, operator<<, verb::unknown
 #include <boost/core/detail/string_view.hpp>
-#include <glog/logging.h>  // for CHECK and LOG
+#include <glog/logging.h>     // for CHECK and LOG
+#include <nlohmann/json.hpp>  // for basic_json, json_ref
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
 #include <pybind11/pytypes.h>
+#include <pymrc/utilities/function_wrappers.hpp>  // for PyFuncWrapper
+#include <pymrc/utils.hpp>                        // for cast_from_json
 
-#include <exception>    // for exception
+#include <algorithm>  // for max
+#include <exception>  // for exception
+#include <memory>
 #include <ostream>      // needed for glog
 #include <stdexcept>    // for runtime_error, length_error
 #include <type_traits>  // indirectly used by pybind11 casting
 #include <utility>      // for move
+// IWYU pragma: no_include <boost/intrusive/detail/list_iterator.hpp>
 
 // loosely based on the following examples:
 // https://www.boost.org/doc/libs/1_74_0/libs/beast/example/http/server/async/http_server_async.cpp
@@ -130,8 +132,16 @@ class Session : public std::enable_shared_from_this<Session>
             if (request.target() == endpoint.m_url && request.method() == endpoint.m_method)
             {
                 valid_request = true;
-                std::string body{request.body()};
-                auto parse_status = (*endpoint.m_parser)(body);
+                std::tuple<unsigned, std::string, std::string, morpheus::on_complete_cb_fn_t> parse_status;
+                if (endpoint.m_request_handler != nullptr)
+                {
+                    parse_status = (*endpoint.m_request_handler)(m_stream.socket().remote_endpoint(), request);
+                }
+                else
+                {
+                    std::string body{request.body()};
+                    parse_status = (*endpoint.m_parser)(body);
+                }
 
                 m_response->result(std::get<0>(parse_status));
                 m_response->set(http::field::content_type, std::get<1>(parse_status));
@@ -333,19 +343,53 @@ HttpServer::~HttpServer()
     }
 }
 
+utilities::json_t request_headers_to_json(const tcp_endpoint_t& tcp_endpoint, const request_t& request)
+{
+    morpheus::utilities::json_t headers{{"method", request.method_string()},
+                                        {"endpoint", request.target()},
+                                        {"remote_address", tcp_endpoint.address().to_string()},
+                                        {"remote_port", tcp_endpoint.port()}};
+
+    for (const auto& field : request)
+    {
+        headers[field.name_string()] = field.value();
+    }
+
+    return headers;
+}
+
 /****** HttpEndpointInterfaceProxy *************************/
 using mrc::pymrc::PyFuncWrapper;
 namespace py = pybind11;
 
 std::shared_ptr<HttpEndpoint> HttpEndpointInterfaceProxy::init(pybind11::function py_parse_fn,
                                                                std::string url,
-                                                               std::string method)
+                                                               std::string method,
+                                                               bool include_headers)
 {
-    auto wrapped_parse_fn               = PyFuncWrapper(std::move(py_parse_fn));
-    payload_parse_fn_t payload_parse_fn = [wrapped_parse_fn = std::move(wrapped_parse_fn)](const std::string& payload) {
+    auto wrapped_parse_fn                   = PyFuncWrapper(std::move(py_parse_fn));
+    request_handler_fn_t request_handler_fn = [include_headers, wrapped_parse_fn = std::move(wrapped_parse_fn)](
+                                                  const tcp_endpoint_t& tcp_endpoint, const request_t& request) {
+        std::string body{request.body()};
+        std::unique_ptr<utilities::json_t> headers{nullptr};
+        if (include_headers)
+        {
+            headers = std::make_unique<utilities::json_t>(std::move(request_headers_to_json(tcp_endpoint, request)));
+        }
+
         py::gil_scoped_acquire gil;
-        auto py_payload = py::str(payload);
-        auto py_result  = wrapped_parse_fn.operator()<py::tuple, py::str>(py_payload);
+        auto py_payload = py::str(body);
+        pybind11::tuple py_result;
+        if (include_headers)
+        {
+            py::dict py_headers = mrc::pymrc::cast_from_json(*headers);
+            py_result           = wrapped_parse_fn.operator()<py::tuple, py::str, py::dict>(py_payload, py_headers);
+        }
+        else
+        {
+            py_result = wrapped_parse_fn.operator()<py::tuple, py::str>(py_payload);
+        }
+
         on_complete_cb_fn_t cb_fn{nullptr};
         if (!py_result[3].is_none())
         {
@@ -372,7 +416,7 @@ std::shared_ptr<HttpEndpoint> HttpEndpointInterfaceProxy::init(pybind11::functio
                                std::move(cb_fn));
     };
 
-    return std::make_shared<HttpEndpoint>(std::move(payload_parse_fn), url, method);
+    return std::make_shared<HttpEndpoint>(std::move(request_handler_fn), std::move(url), method);
 }
 
 /****** HttpServerInterfaceProxy *************************/
@@ -425,11 +469,21 @@ void HttpServerInterfaceProxy::exit(HttpServer& self,
     self.stop();
 }
 
-HttpEndpoint::HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url, std::string method) :
-  m_parser{std::make_shared<payload_parse_fn_t>(std::move(payload_parse_fn))},
+HttpEndpoint::HttpEndpoint(std::shared_ptr<request_handler_fn_t>&& request_handler_fn,
+                           std::shared_ptr<payload_parse_fn_t>&& payload_parse_fn,
+                           std::string&& url,
+                           const std::string& method) :
+  m_request_handler{std::move(request_handler_fn)},
+  m_parser{std::move(payload_parse_fn)},
   m_url{std::move(url)},
   m_method{http::string_to_verb(method)}
 {
+    DCHECK(m_request_handler != nullptr || m_parser != nullptr)
+        << "Either request_handler_fn or payload_parse_fn must be provided";
+
+    DCHECK(m_request_handler == nullptr || m_parser == nullptr)
+        << "Only one of request_handler_fn or payload_parse_fn can be provided";
+
     if (m_method == http::verb::unknown)
     {
         throw std::runtime_error("Invalid method: " + method);
@@ -440,6 +494,16 @@ HttpEndpoint::HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url,
         m_url.insert(m_url.begin(), '/');
     }
 }
+
+HttpEndpoint::HttpEndpoint(request_handler_fn_t request_handler_fn, std::string&& url, const std::string& method) :
+  HttpEndpoint{
+      std::move(std::make_shared<request_handler_fn_t>(std::move(request_handler_fn))), nullptr, std::move(url), method}
+{}
+
+HttpEndpoint::HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string&& url, const std::string& method) :
+  HttpEndpoint{
+      nullptr, std::move(std::make_shared<payload_parse_fn_t>(std::move(payload_parse_fn))), std::move(url), method}
+{}
 
 Listener::Listener(net::io_context& io_context,
                    const std::string& bind_address,
