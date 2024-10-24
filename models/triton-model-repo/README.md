@@ -71,11 +71,15 @@ docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD:/model
 
 ### Load `sid-minibert-trt` Model with Default Triton Image from Morpheus Repo
 
-To load a TensorRT model, it first must be compiled with the `morpheus tools onnx-to-trt` utility (See `triton-model-repo/sid-minibert-trt/1/README.md` for more info):
+To load a TensorRT model, it first must be compiled with the `morpheus tools onnx-to-trt` utility. This utility requires additional packages to be installed. From the root of the Morpheus repo, install them with:
+```bash
+conda env update --solver=libmamba -n morpheus --file conda/environments/model-utils_cuda-125_arch-x86_64.yaml
+```
 
+Then build the TensorRT model with (refer `triton-model-repo/sid-minibert-trt/1/README.md` for more info):
 ```bash
 cd models/triton-model-repo/sid-minibert-trt/1
-morpheus tools onnx-to-trt --input_model ../../sid-minibert-onnx/1/sid-minibert.onnx --output_model ./sid-minibert-trt_b1-8_b1-16_b1-32.engine --batches 1 8 --batches 1 16 --batches 1 32 --seq_length 256 --max_workspace_size 16000
+morpheus --log_level=info tools onnx-to-trt --input_model ../../sid-minibert-onnx/1/model.onnx --output_model ./model.plan --batches 1 8 --batches 1 16 --batches 1 32 --seq_length 256 --max_workspace_size 16000
 ```
 
 Then launch Triton:
