@@ -22,15 +22,13 @@ import sys
 import time
 
 LFS_DATASETS = {
-    'all': ['**'],
-    'datasets': ['models/datasets/**'],
-    'docs': ['docs/**'],
-    'examples': ['examples/**',
-                 'models/data/**',
-                 'models/training-tuning-scripts/sid-models/resources/**'],
-    'models': ['models/**'],
-    'tests': ['tests/**'],
-    'validation': ['models/datasets/validation-data/**']
+    'all': '**',
+    'datasets': 'models/datasets/**',
+    'docs': 'docs/**',
+    'examples': 'examples/**',
+    'models': 'models/**',
+    'tests': 'tests/**',
+    'validation': 'models/datasets/validation-data/**'
 }
 
 
@@ -137,9 +135,7 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     if args.subcommand == 'fetch':
-        include_paths = []
-        for p in args.data_set:
-            include_paths.extend(LFS_DATASETS[p])
+        include_paths = [LFS_DATASETS[p] for p in args.data_set]
         lfs_pull(include_paths)
     else:
         lfs_check(list_all=args.list_all)
