@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024, NVIDIA CORPORATION.
+# Copyright (c) 2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ import logging
 import typing
 
 import mrc
+import mrc.core.segment
 import typing_utils
 
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
@@ -55,7 +56,7 @@ class RouterStage(GpuAndCpuMixin, PassThruTypeMixin, _pipeline.Stage):
         self._key_fn = key_fn
         self._is_runnable = is_runnable
 
-        self._router: mrc.core.SegmentObject | None = None
+        self._router: mrc.core.segment.SegmentObject | None = None
 
         self._create_ports(1, len(keys))
 
