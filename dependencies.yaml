@@ -492,6 +492,9 @@ dependencies:
           - seaborn
           - seqeval=1.2.2
           - xgboost
+          - pip
+          - pip:
+            - tensorrt-cu12
 
   cve-mitigation:
     common:
