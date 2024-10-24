@@ -16,7 +16,6 @@ import typing
 from functools import partial
 
 import cupy as cp
-import mrc
 import numpy as np
 
 import cudf
@@ -25,10 +24,8 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages import InferenceMemoryFIL
-from morpheus.messages import MultiInferenceFILMessage
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 
@@ -81,20 +78,22 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         return False
 
     @staticmethod
-    def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str],
-                          req_cols: typing.List[str]) -> MultiInferenceFILMessage:
+    def pre_process_batch(msg: ControlMessage, fea_len: int, fea_cols: typing.List[str],
+                          req_cols: typing.List[str]) -> ControlMessage:
+        meta = msg.payload()
         # Converts the int flags field into a binary string
-        flags_bin_series = x.get_meta("flags").to_pandas().apply(lambda x: format(int(x), "05b"))
+        flags_bin_series = meta.get_data("flags").to_pandas().apply(lambda x: format(int(x), "05b"))
 
         # Expand binary string into an array
-        df = cudf.DataFrame(np.vstack(flags_bin_series.str.findall("[0-1]")).astype("int8"), index=x.get_meta().index)
+        df = cudf.DataFrame(np.vstack(flags_bin_series.str.findall("[0-1]")).astype("int8"),
+                            index=meta.get_data().index)
 
         # adding [ack, psh, rst, syn, fin] details from the binary flag
         rename_cols_dct = {0: "ack", 1: "psh", 2: "rst", 3: "syn", 4: "fin"}
         df = df.rename(columns=rename_cols_dct)
 
         df["flags_bin"] = flags_bin_series
-        df["timestamp"] = x.get_meta("timestamp").astype("int64")
+        df["timestamp"] = meta.get_data("timestamp").astype("int64")
 
         def round_time_kernel(timestamp, rollup_time, secs):
             for i, time in enumerate(timestamp):
@@ -113,8 +112,8 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         df["rollup_time"] = cudf.to_datetime(df["rollup_time"], unit="us").dt.strftime("%Y-%m-%d %H:%M")
 
         # creating flow_id "src_ip:src_port=dst_ip:dst_port"
-        df["flow_id"] = (x.get_meta("src_ip") + ":" + x.get_meta("src_port").astype("str") + "=" +
-                         x.get_meta("dest_ip") + ":" + x.get_meta("dest_port").astype("str"))
+        df["flow_id"] = (meta.get_data("src_ip") + ":" + meta.get_data("src_port").astype("str") + "=" +
+                         meta.get_data("dest_ip") + ":" + meta.get_data("dest_port").astype("str"))
         agg_dict = {
             "ack": "sum",
             "psh": "sum",
@@ -125,7 +124,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
             "flow_id": "count",
         }
 
-        df["data_len"] = x.get_meta("data_len").astype("int16")
+        df["data_len"] = meta.get_data("data_len").astype("int16")
 
         # group by operation
         grouped_df = df.groupby(["rollup_time", "flow_id"]).agg(agg_dict)
@@ -175,26 +174,25 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         count = data.shape[0]
 
         for col in req_cols:
-            x.set_meta(col, merged_df[col])
+            meta.set_data(col, merged_df[col])
 
         del merged_df
 
         seq_ids = cp.zeros((count, 3), dtype=cp.uint32)
-        seq_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
+        seq_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
         seq_ids[:, 2] = fea_len - 1
 
         # Create the inference memory. Keep in mind count here could be > than input count
         memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seq_ids)
 
-        infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
+        infer_message = ControlMessage(msg)
+        infer_message.payload(meta)
+        infer_message.tensors(memory)
 
         return infer_message
 
-    def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
+    def _get_preprocess_fn(self) -> typing.Callable[[ControlMessage], ControlMessage]:
         return partial(AbpPcapPreprocessingStage.pre_process_batch,
                        fea_len=self._fea_length,
                        fea_cols=self.features,
                        req_cols=self.req_cols)
-
-    def _get_preprocess_node(self, builder: mrc.Builder):
-        raise NotImplementedError("C++ node not implemented for this stage")

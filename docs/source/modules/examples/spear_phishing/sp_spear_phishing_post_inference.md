@@ -17,8 +17,8 @@ limitations under the License.
 
 ## Pre-inference Module
 
-Module ID: post_inference
-Module Namespace: morpheus_spear_phishing
+Module ID: `post_inference`
+Module Namespace: `morpheus_spear_phishing`
 
 This module represents the post-inference phase of the spear phishing inference pipeline. It handles the output from the
 label and score module, updates the sender sketch, and prepares the final output.
@@ -27,7 +27,7 @@ label and score module, updates the sender sketch, and prepares the final output
 
 | Parameter              | Type | Description                                                                                                  |
 |------------------------|------|--------------------------------------------------------------------------------------------------------------|
-| `scoring_config`       | dictionary | Configuration for scoring, can include custom parameters for the scoring module. See below for more details. |
+| `scoring_config`       | dictionary | Configuration for scoring, can include custom parameters for the scoring module. Refer below for more details. |
 | `sender_sketch_config` | dictionary | Configuration for sender sketch module, including parameters such as endpoint details and sketch settings.   |
 
 #### `scoring_config`
@@ -35,14 +35,14 @@ label and score module, updates the sender sketch, and prepares the final output
 | Key                | Type  | Description                                                        |
 |--------------------|-------|--------------------------------------------------------------------|
 | `threshold`        | float | Detection threshold for scoring.                                   |
-| `scoring_type`     | string   | Type of scoring to use. Currently only "probability" is supported. |
+| `scoring_type`     | string   | Type of scoring to use. Currently only `"probability"` is supported. |
 | `raise_on_failure` | boolean  | If true, raise exceptions on failures. Default is False.           |
 
 #### `sender_sketch_config`
 
 | Key                           | Type | Description                                                  | Default Value |
 |-------------------------------|------|--------------------------------------------------------------|---------------|
-| `endpoint`                    | dictionary | See `endpoint` subparameters                                 | `None`        |
+| `endpoint`                    | dictionary | See `endpoint` sub-parameters                                 | `None`        |
 | `sender_sketches`             | list | List of sender sketches                                      | `[]`          |
 | `required_intents`            | list | List of required intents                                     | `[]`          |
 | `raise_on_failure`            | boolean | If true, raise exceptions on failures                        | `False`       |

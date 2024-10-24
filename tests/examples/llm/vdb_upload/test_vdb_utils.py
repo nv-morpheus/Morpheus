@@ -28,29 +28,29 @@ def test_is_valid_service_with_mixed_case(import_vdb_update_utils_module):
     assert import_vdb_update_utils_module.is_valid_service(None, None, "MilVuS") == "milvus"
 
 
-def test_merge_configs_non_overlapping(import_vdb_update_utils_module):
+def test_merge_dicts_non_overlapping(import_vdb_update_utils_module):
     file_config = {"key1": "value1"}
     cli_config = {"key2": "value2"}
     expected = {"key1": "value1", "key2": "value2"}
-    assert import_vdb_update_utils_module.merge_configs(file_config, cli_config) == expected
+    assert import_vdb_update_utils_module.merge_dicts(file_config, cli_config) == expected
 
 
-def test_merge_configs_overlapping(import_vdb_update_utils_module):
+def test_merge_dicts_overlapping(import_vdb_update_utils_module):
     file_config = {"key1": "value1", "key2": "old_value"}
     cli_config = {"key2": "new_value"}
     expected = {"key1": "value1", "key2": "new_value"}
-    assert import_vdb_update_utils_module.merge_configs(file_config, cli_config) == expected
+    assert import_vdb_update_utils_module.merge_dicts(file_config, cli_config) == expected
 
 
-def test_merge_configs_none_in_cli(import_vdb_update_utils_module):
+def test_merge_dicts_none_in_cli(import_vdb_update_utils_module):
     file_config = {"key1": "value1", "key2": "value2"}
     cli_config = {"key2": None}
-    expected = {"key1": "value1", "key2": "value2"}
-    assert import_vdb_update_utils_module.merge_configs(file_config, cli_config) == expected
+    expected = {"key1": "value1", "key2": None}
+    assert import_vdb_update_utils_module.merge_dicts(file_config, cli_config) == expected
 
 
-def test_merge_configs_empty(import_vdb_update_utils_module):
+def test_merge_dicts_empty(import_vdb_update_utils_module):
     file_config = {}
     cli_config = {"key1": "value1"}
     expected = {"key1": "value1"}
-    assert import_vdb_update_utils_module.merge_configs(file_config, cli_config) == expected
+    assert import_vdb_update_utils_module.merge_dicts(file_config, cli_config) == expected

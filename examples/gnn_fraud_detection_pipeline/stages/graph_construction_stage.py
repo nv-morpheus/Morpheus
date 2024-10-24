@@ -13,10 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import dataclasses
 import pathlib
+import typing
 
-import dgl
 import mrc
 import torch
 from mrc.core import operators as ops
@@ -26,31 +25,12 @@ import cudf
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiMessage
-from morpheus.messages.message_meta import MessageMeta
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
 from .model import build_fsi_graph
 from .model import prepare_data
-
-
-@dataclasses.dataclass
-class FraudGraphMultiMessage(MultiMessage):
-
-    def __init__(self,
-                 *,
-                 meta: MessageMeta,
-                 mess_offset: int = 0,
-                 mess_count: int = -1,
-                 graph: dgl.DGLHeteroGraph,
-                 node_features=torch.tensor,
-                 test_index: torch.tensor):
-        super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
-
-        self.graph = graph
-        self.node_features = node_features
-        self.test_index = test_index
 
 
 @register_stage("fraud-graph-construction", modes=[PipelineModes.OTHER])
@@ -75,18 +55,19 @@ class FraudGraphConstructionStage(SinglePortStage):
     def name(self) -> str:
         return "fraud-graph-construction"
 
-    def accepted_types(self) -> (MultiMessage, ):
-        return (MultiMessage, )
+    def accepted_types(self) -> typing.Tuple:
+        return (ControlMessage, )
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(FraudGraphMultiMessage)
+        schema.output_schema.set_type(ControlMessage)
 
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _process_message(self, message: MultiMessage) -> FraudGraphMultiMessage:
+    def _process_message(self, message: ControlMessage) -> ControlMessage:
 
-        _, _, _, test_index, _, graph_data = prepare_data(self._training_data, message.get_meta(self._column_names))
+        _, _, _, test_index, _, graph_data = prepare_data(self._training_data,
+                                                          message.payload().get_data(self._column_names))
 
         # meta columns to remove as node features
         meta_cols = ['client_node', 'merchant_node', 'index']
@@ -96,10 +77,11 @@ class FraudGraphConstructionStage(SinglePortStage):
         test_index = torch.from_dlpack(test_index.values.toDlpack()).long()
         node_features = node_features.float()
 
-        return FraudGraphMultiMessage.from_message(message,
-                                                   graph=graph,
-                                                   node_features=node_features.float(),
-                                                   test_index=test_index)
+        message.set_metadata("graph", graph)
+        message.set_metadata("node_features", node_features.float())
+        message.set_metadata("test_index", test_index)
+
+        return message
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._process_message))

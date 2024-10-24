@@ -32,7 +32,6 @@ limitations under the License.
   - [Verify Model Deployment](#verify-model-deployment)
   - [Create Kafka Topics](#create-kafka-topics)
 - [Example Workflows](#example-workflows)
-  - [Run AutoEncoder Digital Fingerprinting Pipeline](#run-autoencoder-digital-fingerprinting-pipeline)
   - [Run NLP Phishing Detection Pipeline](#run-nlp-phishing-detection-pipeline)
   - [Run NLP Sensitive Information Detection Pipeline](#run-nlp-sensitive-information-detection-pipeline)
   - [Run FIL Anomalous Behavior Profiling Pipeline](#run-fil-anomalous-behavior-profiling-pipeline)
@@ -75,7 +74,7 @@ Continue with the setup steps below once the host system is installed, configure
 
 ### Set up NGC API Key and Install NGC Registry CLI
 
-First, you will need to set up your NGC API Key to access all the Morpheus components, using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1).
+First, you will need to set up your NGC API Key to access all the Morpheus components, using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/ngc/gpu-cloud/ngc-private-registry-user-guide/index.html#generating-personal-api-key).
 
 Once you've created your API key, create an environment variable containing your API key for use by the commands used further in this document:
 
@@ -83,7 +82,7 @@ Once you've created your API key, create an environment variable containing your
 export API_KEY="<NGC_API_KEY>"
 ```
 
-Next, install and configure the NGC Registry CLI on your system using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1).
+Next, install and configure the NGC Registry CLI on your system using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/ngc/gpu-cloud/ngc-private-registry-user-guide/index.html#generating-personal-api-key).
 
 ### Create Namespace for Morpheus
 
@@ -104,7 +103,7 @@ The Helm chart (`morpheus-ai-engine`) that offers the auxiliary components requi
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-24.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-24.10.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
@@ -146,7 +145,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 Run the following command to pull the Morpheus SDK Client (referred to as Helm chart `morpheus-sdk-client`) on to your instance:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-24.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-24.10.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
 #### Morpheus SDK Client in Sleep Mode
@@ -184,7 +183,7 @@ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 The Morpheus MLflow Helm chart offers MLflow server with Triton plugin to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort `30500`. Follow the below steps to install the Morpheus MLflow:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-24.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-24.10.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
@@ -221,7 +220,7 @@ kubectl -n $NAMESPACE exec -it deploy/mlflow -- bash
 (mlflow) root@mlflow-6d98:/mlflow#
 ```
 
-`Important`: When (mlflow) is present, commands are directly within the container.
+`Important`: When `(mlflow)` is present, commands are directly within the container.
 
 First let's examine the syntax of the commands we will be using to communicate with the MLflow Triton plugin before we start deploying models.
 Publish models to MLflow server is in the form of:
@@ -383,10 +382,9 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 
 This section describes example workflows to run on Morpheus. Four sample pipelines are provided.
 
-1. AutoEncoder pipeline performing Digital Fingerprinting (DFP).
-2. NLP pipeline performing Phishing Detection (PD).
-3. NLP pipeline performing Sensitive Information Detection (SID).
-4. FIL pipeline performing Anomalous Behavior Profiling (ABP).
+1. NLP pipeline performing Phishing Detection (PD).
+2. NLP pipeline performing Sensitive Information Detection (SID).
+3. FIL pipeline performing Anomalous Behavior Profiling (ABP).
 
 Multiple command options are given for each pipeline, with varying data input/output methods, ranging from local files to Kafka Topics.
 
@@ -402,7 +400,7 @@ To publish messages to a Kafka topic, we need to copy datasets to locations wher
 kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
 ```
 
-Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/docs/source/basics/building_a_pipeline.md) documentation for more information regarding the commands.
+Refer to the [Morpheus CLI Overview](./basics/overview.rst) and [Building a Pipeline](./basics/building_a_pipeline.md) documentation for more information regarding the commands.
 
 > **Note**: Before running the example pipelines, ensure the criteria below are met:
 -   Ensure models specific to the pipeline are deployed.
@@ -424,46 +422,6 @@ helm install --set ngc.apiKey="$API_KEY" \
                morpheus-sdk-client
 ```
 
-
-### Run AutoEncoder Digital Fingerprinting Pipeline
-The following AutoEncoder pipeline example shows how to train and validate the AutoEncoder model and write the inference results to a specified location. Digital fingerprinting has also been referred to as **HAMMAH (Human as Machine <> Machine as Human)**.
-These use cases are currently implemented to detect user behavior changes that indicate a change from a human to a machine or a machine to a human, thus leaving a "digital fingerprint". The model is an ensemble of an autoencoder and fast fourier transform reconstruction.
-
-Inference and training based on a userid (`user123`). The model is trained once and inference is conducted on the supplied input entries in the example pipeline below. The `--train_data_glob` parameter must be removed for continuous training.
-
-```bash
-helm install --set ngc.apiKey="$API_KEY" \
-    --set sdk.args="morpheus --log_level=DEBUG run \
-      --num_threads=2 \
-      --edge_buffer_size=4 \
-      --pipeline_batch_size=1024 \
-      --model_max_batch_size=1024 \
-      --use_cpp=False \
-      pipeline-ae \
-        --columns_file=data/columns_ae_cloudtrail.txt \
-        --userid_filter=user123 \
-        --feature_scaler=standard \
-        --userid_column_name=userIdentitysessionContextsessionIssueruserName \
-        --timestamp_column_name=event_dt \
-        from-cloudtrail --input_glob=/common/models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
-        --max_files=200 \
-        train-ae --train_data_glob=/common/models/datasets/training-data/dfp-cloudtrail-*.csv \
-        --source_stage_class=morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage \
-          --seed 42 \
-        preprocess \
-        inf-pytorch \
-        add-scores \
-        timeseries --resolution=1m --zscore_threshold=8.0 --hot_start \
-        monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
-        serialize \
-        to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/cloudtrail-dfp-detections.csv --overwrite" \
-    --namespace $NAMESPACE \
-    <YOUR_RELEASE_NAME> \
-    morpheus-sdk-client
-```
-
-For more information on the Digital Fingerprint use cases, refer to the starter example and a more production-ready example that can be found in the `examples` source directory.
-
 ### Run NLP Phishing Detection Pipeline
 
 The following Phishing Detection pipeline examples use a pre-trained NLP model to analyze emails (body) and determine phishing or benign. Here is the sample data as shown below is used to pass as an input to the pipeline.
@@ -480,11 +438,9 @@ Pipeline example to read data from a file, run inference using a `phishing-bert-
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-      --num_threads=2 \
       --edge_buffer_size=4 \
       --pipeline_batch_size=1024 \
       --model_max_batch_size=32 \
-      --use_cpp=True \
       pipeline-nlp \
         --model_seq_length=128 \
         --labels_file=data/labels_phishing.txt \
@@ -510,11 +466,9 @@ Pipeline example to read messages from an input Kafka topic, run inference using
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-      --num_threads=2 \
       --edge_buffer_size=4 \
       --pipeline_batch_size=1024 \
       --model_max_batch_size=32 \
-      --use_cpp=True \
       pipeline-nlp \
         --model_seq_length=128 \
         --labels_file=data/labels_phishing.txt \
@@ -557,9 +511,7 @@ Pipeline example to read data from a file, run inference using a `sid-minibert-o
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-      --num_threads=3 \
       --edge_buffer_size=4 \
-      --use_cpp=True \
       --pipeline_batch_size=1024 \
       --model_max_batch_size=32 \
       pipeline-nlp \
@@ -586,9 +538,7 @@ Pipeline example to read messages from an input Kafka topic, run inference using
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-        --num_threads=3 \
         --edge_buffer_size=4 \
-        --use_cpp=True \
         --pipeline_batch_size=1024 \
         --model_max_batch_size=32 \
         pipeline-nlp \
@@ -620,7 +570,7 @@ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer
 > **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
 
 ### Run FIL Anomalous Behavior Profiling Pipeline
-The following Anomalous Behavior Profiling pipeline examples use a pre-trained FIL model to ingest and analyze NVIDIA System Management Interface (nvidia-smi) logs, like the example below, as input sample data to identify crypto mining activity on GPU devices.
+The following Anomalous Behavior Profiling pipeline examples use a pre-trained FIL model to ingest and analyze NVIDIA System Management Interface (`nvidia-smi`) logs, like the example below, as input sample data to identify cryptocurrency mining activity on GPU devices.
 
 ```json
 {"nvidia_smi_log.gpu.pci.tx_util": "0 KB/s", "nvidia_smi_log.gpu.pci.rx_util": "0 KB/s", "nvidia_smi_log.gpu.fb_memory_usage.used": "3980 MiB", "nvidia_smi_log.gpu.fb_memory_usage.free": "12180 MiB", "nvidia_smi_log.gpu.bar1_memory_usage.total": "16384 MiB", "nvidia_smi_log.gpu.bar1_memory_usage.used": "11 MiB", "nvidia_smi_log.gpu.bar1_memory_usage.free": "16373 MiB", "nvidia_smi_log.gpu.utilization.gpu_util": "0 %", "nvidia_smi_log.gpu.utilization.memory_util": "0 %", "nvidia_smi_log.gpu.temperature.gpu_temp": "61 C", "nvidia_smi_log.gpu.temperature.gpu_temp_max_threshold": "90 C", "nvidia_smi_log.gpu.temperature.gpu_temp_slow_threshold": "87 C", "nvidia_smi_log.gpu.temperature.gpu_temp_max_gpu_threshold": "83 C", "nvidia_smi_log.gpu.temperature.memory_temp": "57 C", "nvidia_smi_log.gpu.temperature.gpu_temp_max_mem_threshold": "85 C", "nvidia_smi_log.gpu.power_readings.power_draw": "61.77 W", "nvidia_smi_log.gpu.clocks.graphics_clock": "1530 MHz", "nvidia_smi_log.gpu.clocks.sm_clock": "1530 MHz", "nvidia_smi_log.gpu.clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.clocks.video_clock": "1372 MHz", "nvidia_smi_log.gpu.applications_clocks.graphics_clock": "1312 MHz", "nvidia_smi_log.gpu.applications_clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.default_applications_clocks.graphics_clock": "1312 MHz", "nvidia_smi_log.gpu.default_applications_clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.max_clocks.graphics_clock": "1530 MHz", "nvidia_smi_log.gpu.max_clocks.sm_clock": "1530 MHz", "nvidia_smi_log.gpu.max_clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.max_clocks.video_clock": "1372 MHz", "nvidia_smi_log.gpu.max_customer_boost_clocks.graphics_clock": "1530 MHz", "nvidia_smi_log.gpu.processes.process_info.0.process_name": "python", "nvidia_smi_log.gpu.processes.process_info.1.process_name": "tritonserver", "hostname": "ip-10-100-8-98", "timestamp": 1615542360.9566503}
@@ -631,11 +581,9 @@ Pipeline example to read data from a file, run inference using an `abp-nvsmi-xgb
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-        --num_threads=3 \
         --edge_buffer_size=4 \
         --pipeline_batch_size=1024 \
         --model_max_batch_size=64 \
-        --use_cpp=True \
         pipeline-fil --columns_file=data/columns_fil.txt \
           from-file --filename=./examples/data/nvsmi.jsonlines \
           monitor --description 'FromFile Rate' --smoothing=0.001 \
@@ -657,10 +605,8 @@ Pipeline example to read messages from an input Kafka topic, run inference using
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-        --num_threads=3 \
         --pipeline_batch_size=1024 \
         --model_max_batch_size=64 \
-        --use_cpp=True \
         pipeline-fil --columns_file=data/columns_fil.txt \
           from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
           monitor --description 'FromKafka Rate' --smoothing=0.001 \
@@ -782,8 +728,8 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 
 ## Additional Documentation
 For more information on how to use the Morpheus Python API to customize and run your own optimized AI pipelines, Refer to below documentation.
-- [Morpheus Developer Guides](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/docs/source/developer_guide/guides.md)
-- [Morpheus Pipeline Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-24.06/examples)
+- [Morpheus Developer Guides](./developer_guide/guides.md)
+- [Morpheus Pipeline Examples](./examples.md)
 
 
 ## Troubleshooting
@@ -794,7 +740,7 @@ This section lists solutions to problems you might encounter with Morpheus or fr
 - Models Unloaded After Reboot
   - When the pod is restarted, K8s will not automatically load the models. Since models are deployed to *ai-engine* in explicit mode using MLflow, we'd have to manually deploy them again using the [Model Deployment](#model-deployment) process.
 - AI Engine CPU Only Mode
-  - After a server restart, the ai-engine pod on k8s can start up before the GPU operator infrastructure is available, making it "think" there is no driver installed (i.e., CPU -only mode).
+  - After a server restart, the ai-engine pod on k8s can start up before the GPU operator infrastructure is available, making it "think" there is no driver installed (that is, CPU -only mode).
 - Improve Pipeline Message Processing Rate
   - Below settings need to be considered
     - Provide the workflow with the optimal number of threads (`—num threads`), as having more or fewer threads can have an impact on pipeline performance.
@@ -804,6 +750,6 @@ This section lists solutions to problems you might encounter with Morpheus or fr
   ```console
   1649207839.253|COMMITFAIL|rdkafka#consumer-2| [thrd:main]: Offset commit (manual) failed for 1/1 partition(s) in join-state wait-unassign-call: Broker: Unknown member: topic[0]@112071(Broker: Unknown member)
   ```
-  - Problem: If the standalone kafka cluster is receiving significant message throughput from the producer, this error may happen.
+  - Problem: If the standalone Kafka cluster is receiving significant message throughput from the producer, this error may happen.
 
   - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.

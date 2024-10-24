@@ -17,6 +17,8 @@
 set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
+source ${WORKSPACE}/ci/scripts/github/morpheus_env.sh
+source ${WORKSPACE}/ci/scripts/github/cmake_all.sh
 
 rapids-dependency-file-generator \
   --output conda \
@@ -29,7 +31,9 @@ download_artifact "wheel.tar.bz"
 
 tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
 
-pip install ${MORPHEUS_ROOT}/${BUILD_DIR}/dist/*.whl
+pip install ${MORPHEUS_ROOT}/${BUILD_DIR}/python/morpheus/dist/*.whl
+pip install ${MORPHEUS_ROOT}/${BUILD_DIR}/python/morpheus_llm/dist/*.whl
+pip install ${MORPHEUS_ROOT}/${BUILD_DIR}/python/morpheus_dfp/dist/*.whl
 
 rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
@@ -43,6 +47,9 @@ cmake ${CMAKE_BUILD_ALL_FEATURES} -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DMORPH
 rapids-logger "Building docs"
 cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target install
 cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target morpheus_docs
+
+rapids-logger "Checking documentation links"
+cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target morpheus_docs_linkcheck
 
 rapids-logger "Archiving the docs"
 tar cfj "${WORKSPACE_TMP}/docs.tar.bz" ${BUILD_DIR}/docs/html

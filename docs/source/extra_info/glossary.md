@@ -30,7 +30,7 @@ A Helm Chart for deploying the infrastructure of Morpheus. It includes the [Trit
 ## Morpheus SDK CLI
 A Helm Chart that deploys the Morpheus container. Refer to [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/helm-charts/morpheus-sdk-client](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/helm-charts/morpheus-sdk-client)
 
-## morpheus-sdk-client
+## `morpheus-sdk-client`
 Another name for the [Morpheus SDK CLI](#morpheus-sdk-cli) Helm Chart.
 
 ## MRC

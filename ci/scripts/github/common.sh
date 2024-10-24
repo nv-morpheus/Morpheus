@@ -26,7 +26,6 @@ mkdir -p ${WORKSPACE_TMP}
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 cd ${MORPHEUS_ROOT}
-conda activate morpheus
 
 # For non-gpu hosts nproc will correctly report the number of cores we are able to use
 # On a GPU host however nproc will report the total number of cores and PARALLEL_LEVEL
@@ -63,28 +62,6 @@ export SCCACHE_IDLE_TIMEOUT=32768
 
 # Set the build flags
 export BUILD_DIR=${BUILD_DIR:-build}
-
-_FLAGS=()
-_FLAGS+=("-B" "${BUILD_DIR}")
-_FLAGS+=("-G" "Ninja")
-_FLAGS+=("-DCMAKE_MESSAGE_CONTEXT_SHOW=ON")
-_FLAGS+=("-DMORPHEUS_CUDA_ARCHITECTURES=RAPIDS")
-_FLAGS+=("-DMORPHEUS_USE_CONDA=ON")
-_FLAGS+=("-DMORPHEUS_USE_CCACHE=ON")
-_FLAGS+=("-DMORPHEUS_PYTHON_INPLACE_BUILD=OFF")
-_FLAGS+=("-DMORPHEUS_PYTHON_BUILD_STUBS=ON")
-_FLAGS+=("-DMORPHEUS_BUILD_BENCHMARKS=ON")
-_FLAGS+=("-DMORPHEUS_BUILD_EXAMPLES=ON")
-_FLAGS+=("-DMORPHEUS_BUILD_TESTS=ON")
-if [[ "${LOCAL_CI}" == "" ]]; then
-    _FLAGS+=("-DCCACHE_PROGRAM_PATH=$(which sccache)")
-fi
-export CMAKE_BUILD_ALL_FEATURES="${_FLAGS[@]}"
-unset _FLAGS
-
-if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
-    export CMAKE_BUILD_ALL_FEATURES="${CMAKE_BUILD_ALL_FEATURES} -DMORPHEUS_SUPPORT_DOCA=ON"
-fi
 
 export FETCH_STATUS=0
 

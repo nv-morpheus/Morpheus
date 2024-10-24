@@ -37,15 +37,23 @@ from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:di
 from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
 from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
 
+if typing.TYPE_CHECKING:
+    from morpheus.config import ExecutionMode
+
 # Don't let pylint complain about pytest fixtures
 # pylint: disable=redefined-outer-name,unused-argument
 
 (PYTEST_KAFKA_AVAIL, PYTEST_KAFKA_ERROR) = _init_pytest_kafka()
 if PYTEST_KAFKA_AVAIL:
     # Pull out the fixtures into this namespace
+    # pylint: disable=ungrouped-imports
     from _utils.kafka import _kafka_consumer  # noqa: F401  pylint:disable=unused-import
     from _utils.kafka import kafka_server  # noqa: F401  pylint:disable=unused-import
     from _utils.kafka import zookeeper_proc  # noqa: F401  pylint:disable=unused-import
+
+OPT_DEP_SKIP_REASON = (
+    "This test requires the {package} package to be installed, to install this run:\n"
+    "`conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-125_arch-x86_64.yaml`")
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -103,32 +111,11 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     supports
     """
 
-    # === use_cpp Parameterize ===
-    use_cpp = metafunc.definition.get_closest_marker("use_cpp") is not None
-    use_python = metafunc.definition.get_closest_marker("use_python") is not None
-
-    use_cpp_param = pytest.param(True, marks=pytest.mark.use_cpp(added_by="generate_tests"), id="use_cpp")
-    use_python_param = pytest.param(False, marks=pytest.mark.use_python(added_by="generate_tests"), id="use_python")
-
-    _set_use_cpp_params = []
-
-    if ("use_cpp" in metafunc.fixturenames):
-        # Need to add some params since the fixture was requested
-
-        # Add cpp unless use_cpp == True and use_python == False
-        if not (use_python and not use_cpp):
-            _set_use_cpp_params.append(use_cpp_param)
-
-        # Add python unless use_cpp == False and use_python == True
-        if not (not use_python and use_cpp):
-            _set_use_cpp_params.append(use_python_param)
-
-    elif (use_cpp and use_python):
-        # Need to parameterize since we have multiple
-        _set_use_cpp_params.extend([use_cpp_param, use_python_param])
-
-    if (len(_set_use_cpp_params) > 0):
-        metafunc.parametrize("_set_use_cpp", _set_use_cpp_params, indirect=True)
+    # A test can request a fixture by placing it in the function arguments, or with a mark
+    if ("gpu_and_cpu_mode" in metafunc.fixturenames or metafunc.definition.get_closest_marker("gpu_and_cpu_mode")):
+        gpu_mode_param = pytest.param(True, marks=pytest.mark.gpu_mode(added_by="generate_tests"), id="gpu_mode")
+        cpu_mode_param = pytest.param(False, marks=pytest.mark.cpu_mode(added_by="generate_tests"), id="cpu_mode")
+        metafunc.parametrize("execution_mode", [gpu_mode_param, cpu_mode_param], indirect=True)
 
     # === df_type Parameterize ===
     if ("df_type" in metafunc.fixturenames):
@@ -167,24 +154,23 @@ def pytest_runtest_setup(item):
 
 def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config, items: typing.List[pytest.Item]):
     """
-    To support old unittest style tests, try to determine the mark from the name
+    Remove tests that are incompatible with the current configuration.
     """
 
     if config.getoption("--run_kafka") and not PYTEST_KAFKA_AVAIL:
         raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {PYTEST_KAFKA_ERROR}")
 
-    for item in items:
-        if "no_cpp" in item.nodeid and item.get_closest_marker("use_python") is None:
-            item.add_marker(pytest.mark.use_python(added_in="collection_modifyitems"))
-        elif "cpp" in item.nodeid and item.get_closest_marker("use_cpp") is None:
-            item.add_marker(pytest.mark.use_cpp(added_in="collection_modifyitems"))
-
     def should_filter_test(item: pytest.Item):
 
-        use_cpp = item.get_closest_marker("use_cpp")
+        gpu_mode = item.get_closest_marker("gpu_mode")
         use_pandas = item.get_closest_marker("use_pandas")
+        use_cudf = item.get_closest_marker("use_cudf")
+        cpu_mode = item.get_closest_marker("cpu_mode")
 
-        if (use_cpp and use_pandas):
+        if (gpu_mode and use_pandas):
+            return False
+
+        if (use_cudf and cpu_mode):
             return False
 
         return True
@@ -207,72 +193,6 @@ def pytest_runtest_teardown(item, nextitem):
     reset_logging(logger_name=None)  # Reset the root logger as well
 
 
-# This fixture will be used by all tests.
-@pytest.fixture(scope="function", autouse=True)
-def _set_use_cpp(request: pytest.FixtureRequest):
-
-    do_use_cpp: bool = True
-
-    # Check for the param if this was indirectly set
-    if (hasattr(request, "param") and isinstance(request.param, bool)):
-        do_use_cpp = request.param
-    else:
-        # If not, check for the marker and use that
-        use_cpp = request.node.get_closest_marker("use_cpp") is not None
-        use_python = request.node.get_closest_marker("use_python") is not None
-
-        if (use_cpp and use_python):
-            raise RuntimeError(f"Both markers (use_cpp and use_python) were added to function {request.node.nodeid}. "
-                               "Remove markers to support both.")
-
-        # This will default to True or follow use_cpp
-        do_use_cpp = not use_python
-
-    from morpheus.config import CppConfig
-
-    CppConfig.set_should_use_cpp(do_use_cpp)
-
-    yield do_use_cpp
-
-
-# This fixture will be used by all tests.
-@pytest.fixture(scope="function")
-def use_cpp(_set_use_cpp: bool):
-
-    # Just return the set value
-    yield _set_use_cpp
-
-
-@pytest.fixture(scope="function")
-def config_only_cpp():
-    """
-    Use this fixture in unittest style tests to indicate a lack of support for C++. Use via
-    `@pytest.mark.usefixtures("config_only_cpp")`
-    """
-
-    from morpheus.config import Config
-    from morpheus.config import CppConfig
-
-    CppConfig.set_should_use_cpp(True)
-
-    yield Config()
-
-
-@pytest.fixture(scope="function")
-def config_no_cpp():
-    """
-    Use this fixture in unittest style tests to indicate support for C++. Use via
-    `@pytest.mark.usefixtures("config_no_cpp")`
-    """
-
-    from morpheus.config import Config
-    from morpheus.config import CppConfig
-
-    CppConfig.set_should_use_cpp(False)
-
-    yield Config()
-
-
 @pytest.fixture(scope="function")
 def df_type(request: pytest.FixtureRequest):
 
@@ -289,7 +209,7 @@ def df_type(request: pytest.FixtureRequest):
         use_cudf = request.node.get_closest_marker("use_cudf") is not None
 
         if (use_pandas and use_cudf):
-            raise RuntimeError(f"Both markers (use_cpp and use_python) were added to function {request.node.nodeid}. "
+            raise RuntimeError(f"Both markers (use_pandas and use_cudf) were added to function {request.node.nodeid}. "
                                "Remove markers to support both.")
 
         # This will default to "cudf" or follow use_pandas
@@ -298,22 +218,71 @@ def df_type(request: pytest.FixtureRequest):
     yield df_type_str
 
 
+def _get_execution_mode(request: pytest.FixtureRequest) -> "ExecutionMode":
+    do_gpu_mode: bool = True
+
+    # Check for the param if this was indirectly set
+    if (hasattr(request, "param") and isinstance(request.param, bool)):
+        do_gpu_mode = request.param
+    else:
+        # If not, check for the marker and use that
+        gpu_mode = request.node.get_closest_marker("gpu_mode") is not None
+        cpu_mode = request.node.get_closest_marker("cpu_mode") is not None
+
+        if (gpu_mode and cpu_mode):
+            raise RuntimeError(f"Both markers (gpu_mode and cpu_mode) were added to function {request.node.nodeid}. "
+                               "Use the gpu_and_cpu_mode marker to test both.")
+
+        # if both are undefined, infer based on the df_type
+        if (not gpu_mode and not cpu_mode):
+            cpu_mode = request.node.get_closest_marker("use_pandas") is not None
+
+        # This will default to True or follow gpu_mode
+        do_gpu_mode = not cpu_mode
+
+    from morpheus.config import ExecutionMode
+    if do_gpu_mode:
+        return ExecutionMode.GPU
+
+    return ExecutionMode.CPU
+
+
+@pytest.fixture(name="execution_mode", scope="function", autouse=True)
+def execution_mode_fixture(request: pytest.FixtureRequest):
+    exec_mode = _get_execution_mode(request)
+    yield exec_mode
+
+
+# This fixture will be used by all tests.
+@pytest.fixture(scope="function", autouse=True)
+def _set_use_cpp(request: pytest.FixtureRequest):
+    execution_mode = _get_execution_mode(request)
+    from morpheus.config import CppConfig
+
+    do_use_cpp: bool = (execution_mode.value == "GPU")
+    CppConfig.set_should_use_cpp(do_use_cpp)
+
+    yield do_use_cpp
+
+
 @pytest.fixture(scope="function")
-def config(use_cpp: bool):
+def config(execution_mode: "ExecutionMode"):
     """
     For new pytest style tests, get the config by using this fixture. It will setup the config based on the marks set on
     the object. If no marks are added to the test, it will be parameterized for both C++ and python. For example,
 
     ```
-    @pytest.mark.use_python
+    @pytest.mark.cpu_mode
     def my_python_test(config: Config):
         ...
     ```
     """
 
     from morpheus.config import Config
+    config = Config()
+    config.execution_mode = execution_mode
 
-    yield Config()
+    yield config
 
 
 @pytest.fixture(scope="function")
@@ -533,13 +502,11 @@ def disable_gc():
     gc.enable()
 
 
-def wait_for_camouflage(host="localhost", port=8000, timeout=30):
+def wait_for_server(url: str, timeout: int, parse_fn: typing.Callable[[requests.Response], bool]) -> bool:
 
     start_time = time.time()
     cur_time = start_time
     end_time = start_time + timeout
-
-    url = f"http://{host}:{port}/ping"
 
     while cur_time - start_time <= timeout:
         timeout_epoch = min(cur_time + 2.0, end_time)
@@ -549,12 +516,8 @@ def wait_for_camouflage(host="localhost", port=8000, timeout=30):
             resp = requests.get(url, timeout=request_timeout)
 
             if (resp.status_code == 200):
-                if (resp.json()['message'] == 'I am alive.'):
+                if parse_fn(resp):
                     return True
-
-                warnings.warn(("Camoflage returned status 200 but had incorrect response JSON. Continuing to wait. "
-                               "Response JSON:\n%s"),
-                              resp.json())
 
         except Exception:
             pass
@@ -566,6 +529,31 @@ def wait_for_camouflage(host="localhost", port=8000, timeout=30):
         cur_time = time.time()
 
     return False
+
+
+def wait_for_camouflage(host: str = "localhost", port: int = 8000, timeout: int = 30):
+    url = f"http://{host}:{port}/ping"
+
+    def parse_fn(resp: requests.Response) -> bool:
+        if (resp.json()['message'] == 'I am alive.'):
+            return True
+
+        warnings.warn(("Camoflage returned status 200 but had incorrect response JSON. Continuing to wait. "
+                       "Response JSON:\n%s"),
+                      resp.json())
+        return False
+
+    return wait_for_server(url, timeout=timeout, parse_fn=parse_fn)
+
+
+def wait_for_milvus(host: str = "localhost", port: int = 19530, timeout: int = 180):
+    url = f'http://{host}:{port}/healthz'
+
+    def parse_fn(resp: requests.Response) -> bool:
+        content = resp.content.decode('utf-8')
+        return 'OK' in content
+
+    return wait_for_server(url, timeout=timeout, parse_fn=parse_fn)
 
 
 def _set_pdeathsig(sig=signal.SIGTERM):
@@ -778,6 +766,9 @@ def configure_tests_logging(pytestconfig: pytest.Config):
         if (trace_module is not None and trace_module.find("pydevd") != -1):
             log_level = logging.DEBUG
 
+    if os.environ.get("GLOG_v") is not None:
+        log_level = logging.DEBUG
+
     config_log_level = pytestconfig.getoption("log_level")
 
     # Overwrite the logging level if specified
@@ -894,33 +885,11 @@ def dataset(df_type: typing.Literal['cudf', 'pandas']):
     ```
 
     A test that requests this fixture will parameterize on the type of DataFrame returned by the DatasetManager.
-    If a test requests both this fixture and the `use_cpp` fixture, or indirectly via the `config` fixture, then
-    the test will parameterize over both df_type:[cudf, pandas] and use_cpp[True, False]. However it will remove the
-    df_type=pandas & use_cpp=True combinations as this will cause an unsupported usage of Pandas dataframes with the
-    C++ implementation of message classes.
+    If a test requests both this fixture and is marked either `gpu_mode` or `cpu_mode` then only cudf or pandas will be
+    used to prevent an unsupported usage of Pandas dataframes with the C++ implementation of message classes, and cuDF
+    with CPU-only implementations.
 
-    This behavior can also be overridden by using the `use_cudf`, `use_pandas`, `use_cpp` or `use_pandas` marks ex:
-    ```
-    # This test will only run once with C++ enabled and cudf dataframes
-    @pytest.mark.use_cpp
-    def test something(dataset: DatasetManager):
-    ...
-    # This test will run once for each dataframe type, with C++ disabled both times
-    @pytest.mark.use_python
-    import sysdf dataframes both times
-    @pytest.mark.use_cudf
-    def test something(use_cpp: bool, dataset: DatasetManager):
-    ...
-    # This test will run only once
-    @pytest.mark.use_cudf
-    @pytest.mark.use_python
-    def test something(dataset: DatasetManager):
-    ...
-    # This test creates an incompatible combination and will raise a RuntimeError without being executed
-    @pytest.mark.use_pandas
-    @pytest.mark.use_cpp
-    def test something(dataset: DatasetManager):
-    ```
+    Similarly the `use_cudf`, `use_pandas` marks will also prevent parametarization over the DataFrame type.
 
     Users who don't want to parametarize over the DataFrame should use the `dataset_pandas` or `dataset_cudf` fixtures.
     """
@@ -940,7 +909,7 @@ def dataset_pandas():
     In addition to this, users can use this fixture to explicitly request a cudf Dataframe as well, allowing for a test
     that looks like:
     ```
-    @pytest.mark.use_cpp
+    @pytest.mark.gpu_mode
     def test_something(dataset_pandas: DatasetManager):
         input_df = dataset_pandas.cudf["filter_probs.csv"] # Feed our source stage a cudf DF
 
@@ -968,12 +937,12 @@ def dataset_cudf():
 
 
 @pytest.fixture(scope="function")
-def filter_probs_df(dataset, use_cpp: bool):
+def filter_probs_df(dataset):
     """
     Shortcut fixture for loading the filter_probs.csv dataset.
 
     Unless your test uses the `use_pandas` or `use_cudf` marks this fixture will parametarize over the two dataframe
-    types. Similarly unless your test uses the `use_cpp` or `use_python` marks this fixture will also parametarize over
+    types. Similarly unless your test uses the `gpu_mode` or `cpu_mode` marks this fixture will also parametarize over
     that as well, while excluding the combination of C++ execution and Pandas dataframes.
     """
     yield dataset["filter_probs.csv"]
@@ -1004,18 +973,21 @@ def milvus_server_uri(tmp_path_factory):
         yield uri
 
     else:
-        from milvus import default_server
+        from milvus import MilvusServer
+
+        milvus_server = MilvusServer(wait_for_started=False)
 
         # Milvus checks for already bound ports but it doesnt seem to work for webservice_port. Use a random one
-        default_server.webservice_port = _get_random_port()
-        with default_server:
-            default_server.set_base_dir(tmp_path_factory.mktemp("milvus_store"))
-
-            host = default_server.server_address
-            port = default_server.listen_port
+        webservice_port = _get_random_port()
+        milvus_server.webservice_port = webservice_port
+        milvus_server.set_base_dir(tmp_path_factory.mktemp("milvus_store"))
+        with milvus_server:
+            host = milvus_server.server_address
+            port = milvus_server.listen_port
             uri = f"http://{host}:{port}"
 
             logger.info("Started Milvus at: %s", uri)
+            wait_for_milvus(host=host, port=webservice_port, timeout=180)
 
             yield uri
 
@@ -1024,6 +996,13 @@ def milvus_server_uri(tmp_path_factory):
 def milvus_data_fixture():
     inital_data = [{"id": i, "embedding": [i / 10.0] * 3, "age": 25 + i} for i in range(10)]
     yield inital_data
+
+
+@pytest.fixture(scope="session", name="milvus_service")
+def milvus_service_fixture(milvus_server_uri: str):
+    from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBService
+    service = MilvusVectorDBService(uri=milvus_server_uri)
+    yield service
 
 
 @pytest.fixture(scope="session", name="idx_part_collection_config")
@@ -1044,27 +1023,44 @@ def string_collection_config_fixture():
     yield load_json_file(filename="service/milvus_string_collection_conf.json")
 
 
+@pytest.fixture(scope="session", name="bert_cased_hash")
+def bert_cased_hash_fixture():
+    from _utils import TEST_DIRS
+    yield os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-hash.txt')
+
+
+@pytest.fixture(scope="session", name="bert_cased_vocab")
+def bert_cased_vocab_fixture():
+    from _utils import TEST_DIRS
+    yield os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-vocab.txt')
+
+
+@pytest.fixture(name="morpheus_dfp", scope='session')
+def morpheus_dfp_fixture(fail_missing: bool):
+    """
+    Fixture to ensure morpheus_dfp is installed
+    """
+    yield import_or_skip("morpheus_dfp",
+                         reason=OPT_DEP_SKIP_REASON.format(package="morpheus_dfp"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(name="morpheus_llm", scope='session')
+def morpheus_llm_fixture(fail_missing: bool):
+    """
+    Fixture to ensure morpheus_llm is installed
+    """
+    yield import_or_skip("morpheus_llm",
+                         reason=OPT_DEP_SKIP_REASON.format(package="morpheus_llm"),
+                         fail_missing=fail_missing)
+
+
 @pytest.fixture(name="nemollm", scope='session')
 def nemollm_fixture(fail_missing: bool):
     """
     Fixture to ensure nemollm is installed
     """
-    skip_reason = ("Tests for the NeMoLLMService require the nemollm package to be installed, to install this run:\n"
-                   "`conda env update --solver=libmamba -n morpheus "
-                   "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
-    yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
-
-
-@pytest.fixture(name="nvfoundationllm", scope='session')
-def nvfoundationllm_fixture(fail_missing: bool):
-    """
-    Fixture to ensure nvfoundationllm is installed
-    """
-    skip_reason = (
-        "Tests for NVFoundation require the langchain-nvidia-ai-endpoints package to be installed, to install this "
-        "run:\n `conda env update --solver=libmamba -n morpheus "
-        "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
-    yield import_or_skip("langchain_nvidia_ai_endpoints", reason=skip_reason, fail_missing=fail_missing)
+    yield import_or_skip("nemollm", reason=OPT_DEP_SKIP_REASON.format(package="nemollm"), fail_missing=fail_missing)
 
 
 @pytest.fixture(name="openai", scope='session')
@@ -1072,10 +1068,81 @@ def openai_fixture(fail_missing: bool):
     """
     Fixture to ensure openai is installed
     """
-    skip_reason = ("Tests for the OpenAIChatService require the openai package to be installed, to install this run:\n"
-                   "`conda env update --solver=libmamba -n morpheus "
-                   "--file conda/environments/all_cuda-121_arch-x86_64.yaml --prune`")
-    yield import_or_skip("openai", reason=skip_reason, fail_missing=fail_missing)
+    yield import_or_skip("openai", reason=OPT_DEP_SKIP_REASON.format(package="openai"), fail_missing=fail_missing)
+
+
+@pytest.fixture(scope='session')
+def dask_distributed(fail_missing: bool):
+    """
+    Mark tests requiring dask.distributed
+    """
+    yield import_or_skip("dask.distributed",
+                         reason=OPT_DEP_SKIP_REASON.format(package="dask.distributed"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(scope='session')
+def dask_cuda(fail_missing: bool):
+    """
+    Mark tests requiring dask_cuda
+    """
+    yield import_or_skip("dask_cuda", reason=OPT_DEP_SKIP_REASON.format(package="dask_cuda"), fail_missing=fail_missing)
+
+
+@pytest.fixture(scope='session')
+def mlflow(fail_missing: bool):
+    """
+    Mark tests requiring mlflow
+    """
+    yield import_or_skip("mlflow", reason=OPT_DEP_SKIP_REASON.format(package="mlflow"), fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain", scope='session')
+def langchain_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain is installed
+    """
+    yield import_or_skip("langchain", reason=OPT_DEP_SKIP_REASON.format(package="langchain"), fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain_core", scope='session')
+def langchain_core_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain_core is installed
+    """
+    yield import_or_skip("langchain_core",
+                         reason=OPT_DEP_SKIP_REASON.format(package="langchain_core"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain_community", scope='session')
+def langchain_community_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain_community is installed
+    """
+    yield import_or_skip("langchain_community",
+                         reason=OPT_DEP_SKIP_REASON.format(package="langchain_community"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(name="langchain_nvidia_ai_endpoints", scope='session')
+def langchain_nvidia_ai_endpoints_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain_nvidia_ai_endpoints is installed
+    """
+    yield import_or_skip("langchain_nvidia_ai_endpoints",
+                         reason=OPT_DEP_SKIP_REASON.format(package="langchain_nvidia_ai_endpoints"),
+                         fail_missing=fail_missing)
+
+
+@pytest.fixture(name="databricks", scope='session')
+def databricks_fixture(fail_missing: bool):
+    """
+    Fixture to ensure databricks is installed
+    """
+    yield import_or_skip("databricks.connect",
+                         reason=OPT_DEP_SKIP_REASON.format(package="databricks-connect"),
+                         fail_missing=fail_missing)
 
 
 @pytest.mark.usefixtures("openai")
@@ -1101,3 +1168,48 @@ def mock_nemollm_fixture():
         mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}
 
         yield mock_nemollm
+
+
+@pytest.fixture(name="array_pkg")
+def array_pkg_fixture(execution_mode: "ExecutionMode") -> types.ModuleType:
+    from morpheus.utils.type_utils import get_array_pkg
+    return get_array_pkg(execution_mode)
+
+
+@pytest.fixture(name="df_pkg")
+def df_pkg_fixture(execution_mode: "ExecutionMode") -> types.ModuleType:
+    from morpheus.utils.type_utils import get_df_pkg
+    return get_df_pkg(execution_mode)
+
+
+@pytest.fixture(name="mock_subscription")
+def mock_subscription_fixture():
+    """
+    Returns a mock object which like mrc.Subscription has a is_subscribed method
+    """
+    ms = mock.MagicMock()
+    ms.is_subscribed.return_value = True
+    return ms
+
+
+# ==== SharedProcessPool Fixtures ====
+# Any tests that use the SharedProcessPool should use this fixture
+@pytest.fixture(scope="module")
+def shared_process_pool_setup_and_teardown():
+    from morpheus.utils.shared_process_pool import SharedProcessPool
+
+    # Set lower CPU usage for unit test to avoid slowing down the test
+    os.environ["MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE"] = "0.1"
+
+    pool = SharedProcessPool()
+
+    # SharedProcessPool might be configured and used in other tests, stop and reset the pool before the test starts
+    pool.stop()
+    pool.join()
+    pool.reset()
+    yield pool
+
+    # Stop the pool after all tests are done
+    pool.stop()
+    pool.join()
+    os.environ.pop("MORPHEUS_SHARED_PROCESS_POOL_CPU_USAGE", None)

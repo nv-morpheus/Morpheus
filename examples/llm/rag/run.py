@@ -27,7 +27,7 @@ def run():
 @run.command()
 @click.option(
     "--num_threads",
-    default=os.cpu_count(),
+    default=len(os.sched_getaffinity(0)),
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use",
 )

@@ -21,7 +21,7 @@ limitations under the License.
 
 See [Simple Python Module](./7_python_modules.md) for an introduction to Morpheus modules.
 
-## The Passthrough Module
+## The Pass-through Module
 
 The following example will create a simple C++ module that passes through the input data without modification. This module will be written in C++ and would be compiled into the Morpheus core library.
 

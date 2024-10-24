@@ -54,8 +54,10 @@ Getting Started
 Using Morpheus
 ^^^^^^^^^^^^^^
  * :doc:`getting_started` - Using pre-built Docker containers, building Docker containers from source, and fetching models and datasets
+ * :doc:`Morpheus Conda Packages <conda_packages>`- Using Morpheus Libraries via the pre-built Conda Packages
  * :doc:`basics/overview` - Brief overview of the command line interface
  * :doc:`basics/building_a_pipeline` - Introduction to building a pipeline using the command line interface
+ * :doc:`basics/cpu_only_mode` - Running Morpheus and designing stages for CPU-only execution mode
  * :doc:`Morpheus Examples <examples>` - Example pipelines using both the Python API and command line interface
  * :doc:`Pretrained Models <models_and_datasets>` - Pretrained models with corresponding training, validation scripts, and datasets
  * :doc:`Developer Guides <developer_guide/guides>` - Covers extending Morpheus with custom stages
@@ -76,8 +78,10 @@ Deploying Morpheus
    :hidden:
 
    getting_started
+   conda_packages
    basics/overview
    basics/building_a_pipeline
+   basics/cpu_only_mode
    models_and_datasets
    examples/index
    developer_guide/guides/index

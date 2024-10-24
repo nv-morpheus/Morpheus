@@ -15,13 +15,13 @@
 import logging
 import time
 
-import cudf
-
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.utils.concat_df import concat_dataframes
+from morpheus.utils.type_utils import get_df_class
 
 from .common import build_common_pipeline
 
@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def pipeline(
+    use_cpu_only: bool,
     num_threads: int,
     pipeline_batch_size,
     model_max_batch_size,
@@ -36,6 +37,7 @@ def pipeline(
     repeat_count,
 ) -> float:
     config = Config()
+    config.execution_mode = ExecutionMode.CPU if use_cpu_only else ExecutionMode.GPU
     config.mode = PipelineModes.OTHER
 
     # Below properties are specified by the command line
@@ -45,9 +47,9 @@ def pipeline(
     config.mode = PipelineModes.NLP
     config.edge_buffer_size = 128
 
+    df_class = get_df_class(config.execution_mode)
     source_dfs = [
-        cudf.DataFrame(
-            {"questions": ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]})
+        df_class({"questions": ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]})
     ]
 
     completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"], }}

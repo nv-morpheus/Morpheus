@@ -56,7 +56,7 @@ outputs:
         - libtool # Needed for DOCA build
         - ninja =1.11
         - pkg-config =0.29 # for mrc cmake
-        - sysroot_linux-64 =2.17
+        - sysroot_linux-64 =2.28
       host:
         # CUDA dependencies
         - cuda-cudart-dev {{ cuda_compiler_version }}.*
@@ -68,7 +68,7 @@ outputs:
         # Non-CUDA dependencies
         - cudf {{ rapids_version }}
         - cython 3.0.*
-        - glog 0.6.*
+        - glog >=0.7.1,<0.8
         - libcudf {{ rapids_version }}
         - librdkafka >=1.9.2,<1.10.0a0
         - mrc {{ minor_version }}
@@ -80,7 +80,7 @@ outputs:
         - rdma-core >=48 # Needed for DOCA.
         - scikit-build 0.17.6
         - versioneer-518
-        - zlib 1.2.13 # required to build triton client
+        - zlib 1.3.1 # required to build triton client
       run:
         # Runtime only requirements. This + setup.py is the definitive runtime requirement list
         # This should be synced with `runtime` in dependencies.yaml
@@ -95,20 +95,17 @@ outputs:
         - docker-py =5.0.*
         - elasticsearch ==8.9.0
         - feedparser =6.0.*
-        - grpcio =1.59.*
+        - grpcio =1.62.*
         - libwebp>=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863
         - mlflow>=2.10.0,<3
         - mrc
         - networkx=2.8.8
         - numpydoc =1.5.*
-        - nvtabular =23.08.00
         - pydantic
         - pluggy =1.3.*
         - python
         - python-confluent-kafka >=1.9.2,<1.10.0a0
         - python-graphviz
-        - pytorch-cuda
-        - pytorch * *cuda*
         - rapids-dask-dependency {{ rapids_version }} # provides dask and distributed
         - requests
         - requests-cache =1.1.*

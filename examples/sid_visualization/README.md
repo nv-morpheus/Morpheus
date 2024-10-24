@@ -32,7 +32,7 @@ git submodule update --init --recursive
 
 ### Build Morpheus Dev Container
 
-Before launching the demo, we need the dev container for Morpheus to be created:
+Before launching the demo, we need the docker container for Morpheus to be created:
 ```bash
 export DOCKER_IMAGE_TAG="sid-viz"
 ./docker/build_container_dev.sh
@@ -45,11 +45,6 @@ We will use docker-compose to build and run the entire demo. To launch everythin
 Save the Morpheus repo directory:
 ```bash
 export MORPHEUS_ROOT=$(git rev-parse --show-toplevel)
-```
-
-Ensure SID model is downloaded for deployment to Triton:
-```bash
-./scripts/fetch_data.py fetch models
 ```
 
 Change to the example directory:
@@ -101,7 +96,7 @@ After the GUI has been launched, Morpheus now needs to be started. In the same s
 ```bash
 python examples/sid_visualization/run.py \
   --debug \
-  --triton_server_url=triton:8001 \
+  --triton_server_url=triton:8000 \
   --input_file=./examples/data/sid_visualization/group1-benign-2nodes.jsonlines \
   --input_file=./examples/data/sid_visualization/group2-benign-50nodes.jsonlines \
   --input_file=./examples/data/sid_visualization/group3-si-50nodes.jsonlines \
@@ -152,7 +147,7 @@ morpheus --log_level=DEBUG \
       pipeline-nlp --model_seq_length=256 \
          from-file --filename=${DEMO_DATASET} \
          deserialize \
-         preprocess --vocab_hash_file=morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+         preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
          inf-triton --model_name=sid-minibert-onnx --server_url=triton:8001 --force_convert_inputs=True \
          monitor --description Inference\ Rate --unit=inf \
          add-class \

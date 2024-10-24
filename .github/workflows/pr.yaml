@@ -49,7 +49,7 @@ jobs:
       - checks
       - ci_pipe
     secrets: inherit
-    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.02
+    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.10
 
   prepare:
     # Executes the get-pr-info action to determine if the PR has the skip-ci label, if the action fails we assume the
@@ -61,7 +61,7 @@ jobs:
     steps:
       - name: Get PR Info
         id: get-pr-info
-        uses: rapidsai/shared-action-workflows/get-pr-info@branch-23.08
+        uses: nv-gha-runners/get-pr-info@main
         if: ${{ startsWith(github.ref_name, 'pull-request/') }}
     outputs:
       is_pr: ${{ startsWith(github.ref_name, 'pull-request/') }}
@@ -76,7 +76,7 @@ jobs:
     # Only run the CI pipeline if the PR does not have the skip-ci label and we are on a PR branch
     if: ${{ !fromJSON(needs.prepare.outputs.has_skip_ci_label) && fromJSON(needs.prepare.outputs.is_pr )}}
     secrets: inherit
-    uses: rapidsai/shared-workflows/.github/workflows/checks.yaml@branch-24.02
+    uses: rapidsai/shared-workflows/.github/workflows/checks.yaml@branch-24.10
     with:
       enable_check_generated_files: false
 
@@ -89,13 +89,14 @@ jobs:
     with:
       # Run checks for any PR branch
       run_check: ${{ fromJSON(needs.prepare.outputs.is_pr) }}
-      # Run conda-build for main/dev branches and PRs with the conda-build label
+      # Build conda packages for all the morpheus libraries - core, dfp, llm. This is
+      # done for main/dev branches and for PRs with the conda-build label
       conda_run_build: ${{ !fromJSON(needs.prepare.outputs.is_pr) || fromJSON(needs.prepare.outputs.has_conda_build_label) }}
-      # Update conda package only for non PR branches. Use 'main' for main branch and 'dev' for all other branches
-      # Disable conda upload for now, once we have morpheus packages in conda forge set the value to
-      # !fromJSON(needs.prepare.outputs.is_pr) && (fromJSON(needs.prepare.outputs.is_main_branch) && 'main' || 'dev') || ''
-      conda_upload_label: ""
-      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-240614
-      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-240614
+      # Upload morpheus conda packages only for non PR branches. Use 'main' for main branch and 'dev' for all other branches
+      conda_upload_label: ${{ !fromJSON(needs.prepare.outputs.is_pr) && (fromJSON(needs.prepare.outputs.is_main_branch) && 'main' || 'dev') || '' }}
+      base_container: rapidsai/ci-conda:cuda12.5.1-ubuntu22.04-py3.10
+      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-241024
+      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-241024
     secrets:
+      CONDA_TOKEN: ${{ secrets.CONDA_TOKEN }}
       NGC_API_KEY: ${{ secrets.NGC_API_KEY }}

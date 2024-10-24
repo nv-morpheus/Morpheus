@@ -21,11 +21,10 @@ import mrc
 import pandas as pd
 import pika
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
@@ -34,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("from-rabbitmq")
-class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
+class RabbitMQSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource):
     """
     Source stage used to load messages from a RabbitMQ queue.
 
@@ -67,13 +66,10 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
         self._exchange_type = exchange_type
         self._queue_name = queue_name
 
-        self._connection = None
+        self._connection: pika.BlockingConnection = None
         self._channel = None
 
         self._poll_interval = pd.Timedelta(poll_interval)
-
-        # Flag to indicate whether or not we should stop
-        self._stop_requested = False
 
     @property
     def name(self) -> str:
@@ -115,14 +111,14 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._channel.queue_bind(exchange=self._exchange, queue=self._queue_name)
 
-    def source_generator(self):
+    def source_generator(self, subscription: mrc.Subscription):
         try:
-            while not self._stop_requested:
+            while not self.is_stop_requested() and subscription.is_subscribed():
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
                         buffer = StringIO(body.decode("utf-8"))
-                        df = cudf.io.read_json(buffer, orient='records', lines=True)
+                        df = pd.read_json(buffer, orient='records', lines=True)
                         yield MessageMeta(df=df)
                     except Exception as ex:
                         logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)

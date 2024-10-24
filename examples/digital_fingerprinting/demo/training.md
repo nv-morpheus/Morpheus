@@ -18,7 +18,7 @@ limitations under the License.
 # Training Control Message GUI
 
 ## Introduction
-This document demonstrates how to use a GUI to submit training control messages to a Kafka topic, which will be consumed by the DFP Morpheus pipeline in the backend. To begin, let's assume that we have a set of training data files located in the file system at `/workspace/examples/data/dfp/duo-training-data`. We can use these files as an input data for the training message.
+This document demonstrates how to use a GUI to submit training control messages to a Kafka topic, which will be consumed by the DFP Morpheus pipeline in the back end. To begin, let's assume that we have a set of training data files located in the file system at `/workspace/examples/data/dfp/duo-training-data`. We can use these files as an input data for the training message.
 
 ## Home
 To submit a training message, we need to provide some input values. The following screenshot shows the input values we need to enter:

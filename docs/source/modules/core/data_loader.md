@@ -25,7 +25,7 @@ are specified in the module configuration file at the time of object constructio
 
 | Parameter | Type  | Description                                       | Example Value |  Default Value  |
 |-----------|-------|---------------------------------------------------|---------------|-----------------|
-| `loaders` | array | An array containing information on loaders to use | See Below     | `[]`            |
+| `loaders` | array | An array containing information on loaders to use | Refer Below     | `[]`            |
 
 ### `loaders`
 

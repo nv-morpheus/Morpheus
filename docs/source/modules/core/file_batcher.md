@@ -24,18 +24,18 @@ remaining files by period that fall inside the window.
 
 | Parameter               | Type       | Description                   | Example Value          | Default Value |
 |-------------------------|------------|-------------------------------|------------------------|---------------|
-| `batching_options`      | dictionary | Options for batching          | See below              | `-`           |
+| `batching_options`      | dictionary | Options for batching          | Refer Below              | `-`           |
 | `cache_dir`             | string     | Cache directory               | "./file_batcher_cache" | `None`        |
 | `file_type`             | string     | File type                     | "JSON"                 | `"JSON"`      |
 | `filter_nulls`          | boolean    | Whether to filter null values | false                  | `false`       |
-| `schema`                | dictionary | Data schema                   | See below              | `[Required]`  |
+| `schema`                | dictionary | Data schema                   | Refer Below              | `[Required]`  |
 | `timestamp_column_name` | string     | Name of the timestamp column  | "timestamp"            | `"timestamp"` |
 
 ### `batching_options`
 
 | Key                      | Type            | Description                         | Example Value                               | Default Value              |
 |--------------------------|-----------------|-------------------------------------|---------------------------------------------|----------------------------|
-| `end_time`               | datetime/string | Endtime of the time window          | "2023-03-14T23:59:59"                       | `None`                     |
+| `end_time`               | datetime/string | End of the time window          | "2023-03-14T23:59:59"                       | `None`                     |
 | `iso_date_regex_pattern` | string          | Regex pattern for ISO date matching | "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" | `<iso_date_regex_pattern>` |
 | `parser_kwargs`          | dictionary      | Additional arguments for the parser | {}                                          | `{}`                       |
 | `period`                 | string          | Time period for grouping files      | "1d"                                        | `"D"`                      |

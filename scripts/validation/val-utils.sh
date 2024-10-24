@@ -67,9 +67,6 @@ function wait_for_triton {
 }
 
 function ensure_triton_running {
-
-   TRITON_IMAGE=${TRITON_IMAGE:-"nvcr.io/nvidia/tritonserver:23.06-py3"}
-
    IS_RUNNING=$(is_triton_running)
 
    if [[ "${IS_RUNNING}" = "0" ]]; then
@@ -86,7 +83,7 @@ function ensure_triton_running {
 
       MODEL_VOLUME=${WORKSPACE_VOLUME:-${MORPHEUS_ROOT}}
       # Launch triton container in explicit mode
-      TRITON_IMG_ID=$(docker run --rm -ti -d --name=triton-validation --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v ${MODEL_VOLUME}/models:/models ${TRITON_IMAGE} tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit)
+      TRITON_IMG_ID=$(docker run --rm -ti -d --name=triton-validation --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 ${TRITON_IMAGE} tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit)
       TRITON_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${TRITON_IMG_ID})
 
       export TRITON_URL="${TRITON_IP}:${TRITON_GRPC_PORT}"

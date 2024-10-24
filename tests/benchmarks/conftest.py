@@ -20,8 +20,13 @@ import typing
 from unittest import mock
 
 import pytest
-from pynvml.smi import NVSMI_QUERY_GPU
-from pynvml.smi import nvidia_smi
+
+try:
+    from pynvml.smi import NVSMI_QUERY_GPU
+    from pynvml.smi import nvidia_smi
+except ImportError:
+    print("pynvml is not installed")
+
 from test_bench_e2e_pipelines import E2E_TEST_CONFIGS
 
 
