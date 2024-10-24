@@ -27,7 +27,7 @@ The Morpheus CLI is built on the Click Python package which allows for nested co
 together. At a high level, the CLI is broken up into two main sections:
 
  * ``run``
-    * For running AE, FIL, NLP or OTHER pipelines.
+    * For running FIL, NLP or OTHER pipelines.
  * ``tools``
     * Tools/Utilities to help set up, configure and run pipelines and external resources.
 
@@ -58,7 +58,6 @@ run:
    --help                          Show this message and exit.
 
    Commands:
-   pipeline-ae     Run the inference pipeline with an AutoEncoder model
    pipeline-fil    Run the inference pipeline with a FIL model
    pipeline-nlp    Run the inference pipeline with a NLP model
    pipeline-other  Run a custom inference pipeline without a specific model type
@@ -66,8 +65,6 @@ run:
 
 Currently, Morpheus pipeline can be operated in four different modes.
 
- * ``pipeline-ae``
-    * This pipeline mode is used to run training/inference on the AutoEncoder model.
  * ``pipeline-fil``
     * This pipeline mode is used to run inference on FIL (Forest Inference Library) models such as XGBoost, RandomForestClassifier, etc.
  * ``pipeline-nlp``

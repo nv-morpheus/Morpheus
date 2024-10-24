@@ -137,7 +137,6 @@ class PipelineModes(str, Enum):
     OTHER = "OTHER"
     NLP = "NLP"
     FIL = "FIL"
-    AE = "AE"
 
 
 class ExecutionMode(str, Enum):

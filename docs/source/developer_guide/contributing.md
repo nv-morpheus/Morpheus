@@ -151,7 +151,35 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
 
 ### Build in a Conda Environment
 
-If a Conda environment on the host machine is preferred over Docker, it is relatively easy to install the necessary dependencies (In reality, the Docker workflow creates a Conda environment inside the container).
+If a [Conda](https://docs.conda.io/projects/conda/en/latest/) environment on the host machine is preferred over Docker, it is relatively easy to install the necessary dependencies (In reality, the Docker workflow creates a Conda environment inside the container).
+
+#### Conda Environment YAML Files
+Morpheus provides multiple Conda environment files to support different workflows. Morpheus utilizes [rapids-dependency-file-generator](https://pypi.org/project/rapids-dependency-file-generator/) to manage these multiple environment files. All of Morpheus' Conda and [pip](https://pip.pypa.io/en/stable/) dependencies along with the different environments are defined in the `dependencies.yaml` file.
+
+The following are the available Conda environment files, all are located in the `conda/environments` directory, with the following naming convention: `<environment>_<cuda_version>_arch-<architecture>.yaml`.
+| Environment | File | Description |
+| --- | --- | --- |
+| `all` | `all_cuda-125_arch-x86_64.yaml` | All dependencies required to build, run and test Morpheus, along with all of the examples. This is a superset of the `dev`, `runtime` and `examples` environments. |
+| `dev` | `dev_cuda-125_arch-x86_64.yaml` | Dependencies required to build, run and test Morpheus. This is a superset of the `runtime` environment. |
+| `examples` | `examples_cuda-125_arch-x86_64.yaml` | Dependencies required to run all examples. This is a superset of the `runtime` environment. |
+| `model-utils` | `model-utils_cuda-125_arch-x86_64.yaml` | Dependencies required to train models independent of Morpheus. |
+| `runtime` | `runtime_cuda-125_arch-x86_64.yaml` | Minimal set of dependencies strictly required to run Morpheus. |
+
+
+##### Updating Morpheus Dependencies
+Changes to Morpheus dependencies can be made in the `dependencies.yaml` file, then run `rapids-dependency-file-generator` to update the individual environment files in the `conda/environments` directory  .
+
+Install `rapids-dependency-file-generator` into the base Conda environment:
+```bash
+conda run -n base --live-stream pip install rapids-dependency-file-generator
+```
+
+Then to generate update the individual environment files run:
+```bash
+conda run -n base --live-stream rapids-dependency-file-generator
+```
+
+When ready, commit both the changes to the `dependencies.yaml` file and the updated environment files into the repo.
 
 #### Prerequisites
 
@@ -170,19 +198,21 @@ If a Conda environment on the host machine is preferred over Docker, it is relat
    ```bash
    git submodule update --init --recursive
    ```
-1. Create the Morpheus Conda environment
+1. Create the Morpheus Conda environment using either the `dev` or `all` environment file. Refer to the [Conda Environment YAML Files](#conda-environment-yaml-files) section for more information.
    ```bash
    conda env create --solver=libmamba -n morpheus --file conda/environments/dev_cuda-125_arch-x86_64.yaml
-   conda activate morpheus
    ```
-
-   This creates a new environment named `morpheus`, and activates that environment.
-
-   > **Note**: The `dev_cuda-121_arch-x86_64.yaml` Conda environment file specifies all of the dependencies required to build Morpheus and run Morpheus. However many of the examples, and optional packages such as `morpheus_llm` require additional dependencies. Alternately the following command can be used to create the Conda environment:
+   or
    ```bash
-   conda env create --solver=libmamba -n morpheus --file conda/environments/all_cuda-121_arch-x86_64.yaml
+   conda env create --solver=libmamba -n morpheus --file conda/environments/all_cuda-125_arch-x86_64.yaml
+
+   ```
+
+   This creates a new environment named `morpheus`. Activate the environment with:
+   ```bash
    conda activate morpheus
    ```
+
 1. Build Morpheus
    ```bash
    ./scripts/compile.sh
@@ -345,7 +375,7 @@ Launching a full production Kafka cluster is outside the scope of this project; 
 
 ### Pipeline Validation
 
-To verify that all pipelines are working correctly, validation scripts have been added at `${MORPHEUS_ROOT}/scripts/validation`. There are scripts for each of the main workflows: Anomalous Behavior Profiling (ABP), Humans-as-Machines-Machines-as-Humans (HAMMAH), Phishing Detection (Phishing), and Sensitive Information Detection (SID).
+To verify that all pipelines are working correctly, validation scripts have been added at `${MORPHEUS_ROOT}/scripts/validation`. There are scripts for each of the main workflows: Anomalous Behavior Profiling (ABP), Phishing Detection (Phishing), and Sensitive Information Detection (SID).
 
 To run all of the validation workflow scripts, use the following commands:
 

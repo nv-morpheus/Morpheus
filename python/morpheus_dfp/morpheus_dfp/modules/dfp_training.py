@@ -46,9 +46,9 @@ def dfp_training(builder: mrc.Builder):
             - feature_columns (list): List of feature columns to train on; Example: ["column1", "column2", "column3"]
             - epochs (int): Number of epochs to train for; Example: 50
             - model_kwargs (dict): Keyword arguments to pass to the model; Example: {"encoder_layers": [64, 32],
-            "decoder_layers": [32, 64], "activation": "relu", "swap_p": 0.1, "lr": 0.001, "lr_decay": 0.9,
-            "batch_size": 32, "verbose": 1, "optimizer": "adam", "scalar": "min_max", "min_cats": 10,
-            "progress_bar": false, "device": "cpu"}
+              "decoder_layers": [32, 64], "activation": "relu", "swap_p": 0.1, "lr": 0.001, "lr_decay": 0.9,
+              "batch_size": 32, "verbose": 1, "optimizer": "adam", "scalar": "min_max", "min_cats": 10,
+              "progress_bar": false, "device": "cpu"}
             - validation_size (float): Size of the validation set; Example: 0.1
     """
 

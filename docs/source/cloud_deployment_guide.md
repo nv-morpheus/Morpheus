@@ -32,7 +32,6 @@ limitations under the License.
   - [Verify Model Deployment](#verify-model-deployment)
   - [Create Kafka Topics](#create-kafka-topics)
 - [Example Workflows](#example-workflows)
-  - [Run AutoEncoder Digital Fingerprinting Pipeline](#run-autoencoder-digital-fingerprinting-pipeline)
   - [Run NLP Phishing Detection Pipeline](#run-nlp-phishing-detection-pipeline)
   - [Run NLP Sensitive Information Detection Pipeline](#run-nlp-sensitive-information-detection-pipeline)
   - [Run FIL Anomalous Behavior Profiling Pipeline](#run-fil-anomalous-behavior-profiling-pipeline)
@@ -383,10 +382,9 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 
 This section describes example workflows to run on Morpheus. Four sample pipelines are provided.
 
-1. AutoEncoder pipeline performing Digital Fingerprinting (DFP).
-2. NLP pipeline performing Phishing Detection (PD).
-3. NLP pipeline performing Sensitive Information Detection (SID).
-4. FIL pipeline performing Anomalous Behavior Profiling (ABP).
+1. NLP pipeline performing Phishing Detection (PD).
+2. NLP pipeline performing Sensitive Information Detection (SID).
+3. FIL pipeline performing Anomalous Behavior Profiling (ABP).
 
 Multiple command options are given for each pipeline, with varying data input/output methods, ranging from local files to Kafka Topics.
 
@@ -423,44 +421,6 @@ helm install --set ngc.apiKey="$API_KEY" \
                <YOUR_RELEASE_NAME> \
                morpheus-sdk-client
 ```
-
-
-### Run AutoEncoder Digital Fingerprinting Pipeline
-The following AutoEncoder pipeline example shows how to train and validate the AutoEncoder model and write the inference results to a specified location. Digital fingerprinting has also been referred to as **HAMMAH (Human as Machine <> Machine as Human)**.
-These use cases are currently implemented to detect user behavior changes that indicate a change from a human to a machine or a machine to a human, thus leaving a "digital fingerprint." The model is an ensemble of an autoencoder and fast Fourier transform reconstruction.
-
-Inference and training based on a user ID (`user123`). The model is trained once and inference is conducted on the supplied input entries in the example pipeline below. The `--train_data_glob` parameter must be removed for continuous training.
-
-```bash
-helm install --set ngc.apiKey="$API_KEY" \
-    --set sdk.args="morpheus --log_level=DEBUG run \
-      --edge_buffer_size=4 \
-      --pipeline_batch_size=1024 \
-      --model_max_batch_size=1024 \
-      pipeline-ae \
-        --columns_file=data/columns_ae_cloudtrail.txt \
-        --userid_filter=user123 \
-        --feature_scaler=standard \
-        --userid_column_name=userIdentitysessionContextsessionIssueruserName \
-        --timestamp_column_name=event_dt \
-        from-cloudtrail --input_glob=/common/models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
-        --max_files=200 \
-        train-ae --train_data_glob=/common/models/datasets/training-data/dfp-cloudtrail-*.csv \
-        --source_stage_class=morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage \
-          --seed 42 \
-        preprocess \
-        inf-pytorch \
-        add-scores \
-        timeseries --resolution=1m --zscore_threshold=8.0 --hot_start \
-        monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
-        serialize \
-        to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/cloudtrail-dfp-detections.csv --overwrite" \
-    --namespace $NAMESPACE \
-    <YOUR_RELEASE_NAME> \
-    morpheus-sdk-client
-```
-
-For more information on the Digital Fingerprint use cases, refer to the starter example and a more production-ready example that can be found in the `examples` source directory.
 
 ### Run NLP Phishing Detection Pipeline
 
