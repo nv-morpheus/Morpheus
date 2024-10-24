@@ -44,7 +44,7 @@ def gen_engine(config: ConfigOnnxToTRT):
 
     input_model = config.input_model
 
-    logger.info(f"Loading ONNX file: '%s'", input_model)
+    logger.info("Loading ONNX file: '%s'", input_model)
 
     # Otherwise we are creating a new model
     explicit_branch = 1 << (int)(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
