@@ -39,19 +39,20 @@
 #include <mrc/segment/object.hpp>      // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>  // for MRC_CONCAT_STR
 #include <pybind11/attr.h>             // for multiple_inheritance
-#include <pybind11/functional.h>
-#include <pybind11/pybind11.h>  // for arg, init, class_, module_, overload_cast, overload_...
-#include <pybind11/pytypes.h>   // for none, dict, str_attr
-#include <pybind11/stl.h>
-#include <pybind11/stl/filesystem.h>  // IWYU pragma: keep
-#include <pymrc/utils.hpp>            // for from_import, import
-#include <rxcpp/rx.hpp>               // for trace_activity, decay_t
+#include <pybind11/functional.h>       // IWYU pragma: keep
+#include <pybind11/pybind11.h>         // for arg, init, class_, module_, overload_cast, overload_...
+#include <pybind11/pytypes.h>          // for none, dict, str_attr
+#include <pybind11/stl.h>              // IWYU pragma: keep
+#include <pybind11/stl/filesystem.h>   // IWYU pragma: keep
+#include <pymrc/utils.hpp>             // for from_import, import
+#include <rxcpp/rx.hpp>                // for trace_activity, decay_t
 
 #include <filesystem>  // for path
-#include <memory>      // for shared_ptr, allocator
-#include <sstream>     // for operator<<, basic_ostringstream
-#include <string>      // for string
-#include <vector>      // for vector
+#include <map>
+#include <memory>   // for shared_ptr, allocator
+#include <sstream>  // for operator<<, basic_ostringstream
+#include <string>   // for string
+#include <vector>   // for vector
 
 namespace morpheus {
 namespace py = pybind11;

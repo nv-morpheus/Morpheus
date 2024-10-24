@@ -36,7 +36,7 @@ def test_router_stage_pipe(config, filter_probs_df, is_runnable: bool):
 
     count = 0
 
-    def determine_route_fn(x: ControlMessage):
+    def determine_route_fn(_: ControlMessage):
         nonlocal count
         count += 1
         return keys[count % len(keys)]
@@ -93,7 +93,7 @@ def test_router_stage_backpressure_pipe(config, filter_probs_df):
             cm.payload(MessageMeta(filter_probs_df))
             yield cm
 
-    def determine_route_fn(x: ControlMessage):
+    def determine_route_fn(_: ControlMessage):
         nonlocal count
         count += 1
         return keys[count % len(keys)]
