@@ -250,6 +250,22 @@ def test_filter_timestamp():
     assert result[f"{group}::key2"] == timestamp2, "The timestamp for key2 should match."
 
 
+@pytest.mark.gpu_and_cpu_mode
+def test_get_timestamps():
+    # Create a ControlMessage instance
+    msg = messages.ControlMessage()
+
+    # Setup test data
+    timestamp1 = datetime.datetime.now()
+    timestamp2 = timestamp1 + datetime.timedelta(seconds=1)
+    msg.set_timestamp("key1", timestamp1)
+    msg.set_timestamp("key2", timestamp2)
+
+    # Assert both keys are in the result and have correct timestamps
+    timestamps = msg.get_timestamps()
+    assert timestamps == {"key1": timestamp1, "key2": timestamp2}
+
+
 @pytest.mark.gpu_and_cpu_modetest_tensor_manipulation_after_retrieval
 def test_get_timestamp_fail_if_nonexist():
     # Create a ControlMessage instance
