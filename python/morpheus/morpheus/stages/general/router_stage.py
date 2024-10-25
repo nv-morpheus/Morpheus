@@ -17,30 +17,38 @@ import typing
 
 import mrc
 import mrc.core.segment
-import typing_utils
 
 import morpheus.pipeline as _pipeline  # pylint: disable=cyclic-import
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
-from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("router")
-class RouterStage(GpuAndCpuMixin, PassThruTypeMixin, _pipeline.Stage):
+class RouterStage(GpuAndCpuMixin, _pipeline.Stage):
     """
     Buffer results.
 
-    The input messages are buffered by this stage class for faster access to downstream stages. Allows
-    upstream stages to run faster than downstream stages.
+    The input messages are buffered by this stage class for faster access to downstream stages. Allows upstream stages
+    to run faster than downstream stages.
 
     Parameters
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
+    keys : `list[str]`
+        List of keys to route the messages.
+    key_fn : `typing.Callable[[object], str]`
+        Function to determine the key for the message. The function should take a message as input and return a key. The
+        key should be one of the keys in the `keys` list.
+    processing_engines : `int`
+        Number of processing engines to use for the router. If set to 0, the router will use the thread from the
+        upstream node for processing. In this situation, slow downstream nodes can block which can prevent routing to
+        other, non-blocked downstream nodes. To resolve this, set the `processing_engines` parameter to a value greater
+        than 0. This will create separate engines (similar to a thread) which can continue routing even if one gets
+        blocked. Higher values of `processing_engines` can prevent blocking at the expense of additional threads.
 
     """
 
@@ -48,13 +56,19 @@ class RouterStage(GpuAndCpuMixin, PassThruTypeMixin, _pipeline.Stage):
                  c: Config,
                  *,
                  keys: list[str],
-                 key_fn: typing.Callable[[ControlMessage], str],
-                 is_runnable: bool = False) -> None:
+                 key_fn: typing.Callable[[object], str],
+                 processing_engines=0) -> None:
         super().__init__(c)
 
         self._keys = keys
         self._key_fn = key_fn
-        self._is_runnable = is_runnable
+        self._processing_engines = processing_engines
+
+        if (self._processing_engines < 0):
+            raise ValueError("Invalid number of processing engines. Must be greater than or equal to 0.")
+
+        if (len(keys) == 0):
+            raise ValueError("Router stage must have at least one key.")
 
         self._router: mrc.core.segment.SegmentObject | None = None
 
@@ -67,14 +81,6 @@ class RouterStage(GpuAndCpuMixin, PassThruTypeMixin, _pipeline.Stage):
     def supports_cpp_node(self):
         return True
 
-    def _pre_compute_schema(self, schema: _pipeline.StageSchema):
-        # Pre-flight check to verify that the input type is one of the accepted types
-        super()._pre_compute_schema(schema)
-        input_type = schema.input_type
-        if (not typing_utils.issubtype(input_type, ControlMessage)):
-            raise RuntimeError((f"The {self.name} stage cannot handle input of {input_type}. "
-                                f"Accepted input types: {(ControlMessage,)}"))
-
     def compute_schema(self, schema: _pipeline.StageSchema):
 
         # Get the input type
@@ -85,38 +91,17 @@ class RouterStage(GpuAndCpuMixin, PassThruTypeMixin, _pipeline.Stage):
 
     def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
-        def _key_fn_wrapper(msg) -> str:
-            return self._key_fn(msg)
-
         assert len(input_nodes) == 1, "Router stage should have exactly one input node"
 
-        if (self._build_cpp_node()):
-            import morpheus._lib.stages as _stages
+        from mrc.core.node import Router
+        from mrc.core.node import RouterComponent
 
-            if (self._is_runnable):
-                self._router = _stages.RouterControlMessageRunnableStage(builder,
-                                                                         self.unique_name,
-                                                                         router_keys=self._keys,
-                                                                         key_fn=_key_fn_wrapper)
-            else:
-                self._router = _stages.RouterControlMessageComponentStage(builder,
-                                                                          self.unique_name,
-                                                                          router_keys=self._keys,
-                                                                          key_fn=_key_fn_wrapper)
+        if (self._processing_engines > 0):
+            self._router = Router(builder, self.unique_name, router_keys=self._keys, key_fn=self._key_fn)
+
+            self._router.launch_options.engines_per_pe = self._processing_engines
         else:
-            from mrc.core.node import Router
-            from mrc.core.node import RouterComponent
-
-            if (self._is_runnable):
-                self._router = Router(builder, self.unique_name, router_keys=self._keys, key_fn=_key_fn_wrapper)
-            else:
-                self._router = RouterComponent(builder,
-                                               self.unique_name,
-                                               router_keys=self._keys,
-                                               key_fn=_key_fn_wrapper)
-
-        if (self._is_runnable):
-            self._router.launch_options.engines_per_pe = 10
+            self._router = RouterComponent(builder, self.unique_name, router_keys=self._keys, key_fn=self._key_fn)
 
         builder.make_edge(input_nodes[0], self._router)
 

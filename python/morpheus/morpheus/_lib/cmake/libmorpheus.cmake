@@ -61,7 +61,6 @@ add_library(morpheus
   src/stages/kafka_source.cpp
   src/stages/preprocess_fil.cpp
   src/stages/preprocess_nlp.cpp
-  src/stages/router.cpp
   src/stages/serialize.cpp
   src/stages/triton_inference.cpp
   src/stages/write_to_file.cpp
