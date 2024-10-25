@@ -131,7 +131,7 @@ To run the example with default options, use the following command:
 python examples/llm/main.py --log_level=info agents simple
 ```
 
-Available options for the Simple pipeline are as follows:
+Available options for the simple pipeline are as follows:
 
 ### Options:
 - `--use_cpu_only`
