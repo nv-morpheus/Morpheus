@@ -159,6 +159,10 @@ python examples/llm/main.py agents simple [OPTIONS]
     - **Description**: Show the help message with options and commands details.
 
 
+```bash
+python examples/llm/main.py --log_level=info agents simple
+```
+
 ### Run example (Kafka Pipeline):
 
 The Kafka Example in the Morpheus LLM Agents demonstrates an streaming implementation, utilizing Kafka messages to
