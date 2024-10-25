@@ -1,25 +1,24 @@
 {
 	"inputs": [
-	  {
-		"tasks": [
-		  {
-			"type": "load",
-			"properties": {
-			  "loader_id": "fsspec",
-			  "files": [
-				"../../../data/dfp/azure-inference-data/*.json"
-			  ]
+		{
+			"tasks": [
+				{
+					"type": "load",
+					"properties": {
+						"loader_id": "fsspec",
+						"files": [
+							"../../data/dfp/azure-inference-data/*.json"
+						]
+					}
+				},
+				{
+					"type": "inference",
+					"properties": {}
+				}
+			],
+			"metadata": {
+				"data_type": "streaming"
 			}
-		  },
-		  {
-			"type": "inference",
-			"properties": {
-			}
-		  }
-		],
-		"metadata": {
-		  "data_type": "streaming"
 		}
-	  }
 	]
-  }
+}
