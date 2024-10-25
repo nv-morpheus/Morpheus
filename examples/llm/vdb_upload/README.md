@@ -131,8 +131,13 @@ To retrieve the datasets from LFS run the following:
 
 #### Milvus Service
 
-- Follow the instructions [here](https://milvus.io/docs/install_standalone-docker.md) to install and run a Milvus
-  service.
+- Refer to the [Milvus documentation](https://milvus.io/docs/install-overview.md) for more details on running Milvus. For the purposes of testing the pipeline, we will launch an instance of Milvus Lite.
+
+From the root of the Morpheus repository, run the following to launch Milvus in a separate terminal:
+```bash
+mkdir -p .tmp/milvusdb
+milvus-server --data .tmp/milvusdb
+```
 
 #### Triton Service
 
