@@ -123,10 +123,10 @@ Before running the pipeline, we need to ensure that the following services are r
 
 #### Ensure LFS files are downloaded
 
-To retrieve datasets from LFS run the following:
+To retrieve the datasets from LFS run the following:
 
 ```bash
-./scripts/fetch_data.py fetch datasets
+./scripts/fetch_data.py fetch examples
 ```
 
 #### Milvus Service
