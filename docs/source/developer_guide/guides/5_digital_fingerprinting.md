@@ -141,6 +141,7 @@ The reference architecture is composed of the following services:​
 From the root of the Morpheus repo, run:
 ```bash
 cd examples/digital_fingerprinting/production
+export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
 docker compose build
 ```
 
