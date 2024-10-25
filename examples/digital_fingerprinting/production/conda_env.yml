@@ -30,6 +30,7 @@ dependencies:
     - mlflow>=2.10.0,<3
     - nodejs=18.*
     - papermill
+    - pip
     - s3fs>=2023.6
 
     ##### Pip Dependencies (keep sorted!) #######
