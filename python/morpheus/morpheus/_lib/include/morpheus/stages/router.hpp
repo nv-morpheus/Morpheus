@@ -17,22 +17,21 @@
 
 #pragma once
 
-#include "pymrc/utilities/function_wrappers.hpp"
-
 #include "morpheus/export.h"              // for MORPHEUS_EXPORT
 #include "morpheus/messages/control.hpp"  // for ControlMessage
 
-#include <boost/fiber/context.hpp>  // for operator<<
 #include <mrc/node/operators/router.hpp>
 #include <mrc/segment/builder.hpp>  // for Builder
 #include <mrc/segment/object.hpp>   // for Object
-#include <nlohmann/json.hpp>        // for basic_json, json
-#include <pybind11/pytypes.h>       // for object
-#include <pymrc/node.hpp>           // for PythonNode
-#include <rxcpp/rx.hpp>             // for decay_t, trace_activity, from, observable_member
+#include <pymrc/edge_adapter.hpp>   // for AutoRegSinkAdapter, AutoRegSourceAdapter
+#include <pymrc/node.hpp>           // IWYU pragma: keep
+#include <pymrc/port_builders.hpp>  // for AutoRegEgressPort, AutoRegIngressPort
+#include <pymrc/utilities/function_wrappers.hpp>
+#include <rxcpp/rx.hpp>  // for decay_t, trace_activity, from, observable_member
 
 #include <memory>  // for shared_ptr, unique_ptr
 #include <string>  // for string
+#include <vector>  // for vector
 
 namespace morpheus {
 /****** Component public implementations *******************/

@@ -17,9 +17,13 @@
 
 #include "morpheus/stages/router.hpp"
 
-#include "pymrc/utilities/function_wrappers.hpp"
-
+#include <pybind11/gil.h>       // for gil_scoped_acquire
 #include <pybind11/pybind11.h>  // for cast
+#include <pybind11/pytypes.h>   // for str, pybind11
+#include <pymrc/utilities/function_wrappers.hpp>
+
+#include <type_traits>  // for remove_reference
+#include <utility>      // for move
 
 namespace morpheus {
 
