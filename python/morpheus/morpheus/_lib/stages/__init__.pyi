@@ -10,7 +10,6 @@ import morpheus._lib.stages
 import typing
 from morpheus._lib.common import FilterSource
 import morpheus._lib.common
-import morpheus._lib.messages
 import mrc.core.coro
 import mrc.core.segment
 import os
@@ -30,8 +29,6 @@ __all__ = [
     "PreallocateMessageMetaStage",
     "PreprocessFILStage",
     "PreprocessNLPStage",
-    "RouterControlMessageComponentStage",
-    "RouterControlMessageRunnableStage",
     "SerializeStage",
     "WriteToFileStage"
 ]
@@ -81,12 +78,6 @@ class PreprocessFILStage(mrc.core.segment.SegmentObject):
     pass
 class PreprocessNLPStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, vocab_hash_file: str, sequence_length: int, truncation: bool, do_lower_case: bool, add_special_token: bool, stride: int, column: str) -> None: ...
-    pass
-class RouterControlMessageComponentStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, *, router_keys: typing.List[str], key_fn: typing.Callable[[morpheus._lib.messages.ControlMessage], str]) -> None: ...
-    pass
-class RouterControlMessageRunnableStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, *, router_keys: typing.List[str], key_fn: typing.Callable[[morpheus._lib.messages.ControlMessage], str]) -> None: ...
     pass
 class SerializeStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, include: typing.List[str], exclude: typing.List[str], fixed_columns: bool = True) -> None: ...
