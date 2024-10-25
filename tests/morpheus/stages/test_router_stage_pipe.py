@@ -29,8 +29,8 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
-@pytest.mark.parametrize("is_runnable", [True, False])
-def test_router_stage_pipe(config, filter_probs_df, is_runnable: bool):
+@pytest.mark.parametrize("processing_engines", [0, 4])
+def test_router_stage_pipe(config, filter_probs_df, processing_engines: bool):
 
     keys = ["odd", "even"]
 
@@ -44,7 +44,8 @@ def test_router_stage_pipe(config, filter_probs_df, is_runnable: bool):
     pipe = Pipeline(config)
     source = pipe.add_stage(InMemorySourceStage(config, dataframes=[filter_probs_df], repeat=5))
     deserialize = pipe.add_stage(DeserializeStage(config))
-    router_stage = pipe.add_stage(RouterStage(config, keys=keys, key_fn=determine_route_fn, is_runnable=is_runnable))
+    router_stage = pipe.add_stage(
+        RouterStage(config, keys=keys, key_fn=determine_route_fn, processing_engines=processing_engines))
     sink1 = pipe.add_stage(InMemorySinkStage(config))
     sink2 = pipe.add_stage(InMemorySinkStage(config))
 
@@ -101,7 +102,7 @@ def test_router_stage_backpressure_pipe(config, filter_probs_df):
     pipe = Pipeline(config)
 
     source = pipe.add_stage(InMemoryDataGenStage(config, data_source=source_fn, output_data_type=ControlMessage))
-    router_stage = pipe.add_stage(RouterStage(config, keys=keys, key_fn=determine_route_fn, is_runnable=True))
+    router_stage = pipe.add_stage(RouterStage(config, keys=keys, key_fn=determine_route_fn, processing_engines=10))
     sink1 = pipe.add_stage(InMemorySinkStage(config))
     sink2 = pipe.add_stage(InMemorySinkStage(config))
 

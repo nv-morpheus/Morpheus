@@ -47,11 +47,10 @@
 #include <rxcpp/rx.hpp>                // for trace_activity, decay_t
 
 #include <filesystem>  // for path
-#include <map>
-#include <memory>   // for shared_ptr, allocator
-#include <sstream>  // for operator<<, basic_ostringstream
-#include <string>   // for string
-#include <vector>   // for vector
+#include <memory>      // for shared_ptr, allocator
+#include <sstream>     // for operator<<, basic_ostringstream
+#include <string>      // for string
+#include <vector>      // for vector
 
 namespace morpheus {
 namespace py = pybind11;
