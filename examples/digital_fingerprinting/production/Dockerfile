@@ -39,8 +39,8 @@ ENV MLFLOW_TRACKING_URI="http://mlflow:5000"
 # If any changes have been made from the base image, recopy the sources
 COPY . /workspace/examples/digital_fingerprinting/
 
-# Set the workdir to be the morpheus folder
-WORKDIR /workspace/examples/digital_fingerprinting/production/morpheus
+# Set the workdir to be the production folder
+WORKDIR /workspace/examples/digital_fingerprinting/production
 
 # ===== Setup for running unattended =====
 FROM base as runtime
