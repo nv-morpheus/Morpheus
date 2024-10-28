@@ -63,7 +63,7 @@ This example can be easily applied to datasets generated from your own NVIDIA GP
 
 pyNVML is not installed by default, use the following command to install it:
 ```bash
-conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-121_arch-x86_64.yaml
+conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-125_arch-x86_64.yaml
 ```
 
 Run the following to start generating your dataset:
