@@ -524,7 +524,14 @@ SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
   m_start(start),
   m_stop(stop),
   m_column_names(std::move(columns))
-{}
+{
+    auto sliced_other = std::dynamic_pointer_cast<SlicedMessageMeta>(other);
+    if (sliced_other)
+    {
+        m_start += sliced_other->m_start;
+        m_stop += sliced_other->m_start;
+    }
+}
 
 TensorIndex SlicedMessageMeta::count() const
 {
