@@ -92,11 +92,6 @@ Create `bash` shell in `morpheus_pipeline` container:
 docker compose run --rm morpheus_pipeline bash
 ```
 
-Install additional dependencies in the container:
-```bash
-conda env update --solver=libmamba -n morpheus --file conda_env.yml
-```
-
 Set `PYTHONPATH` environment variable to allow import of production DFP Morpheus stages:
 ```
 export PYTHONPATH=/workspace/examples/digital_fingerprinting/production/morpheus
@@ -110,7 +105,7 @@ python run.py --log_level DEBUG --train_users generic --start_time "2022-08-01" 
 
 ## View DFP Logs Dashboard in Grafana
 
-While the training pipeline is running, you can view Morpheus logs live in a Grafana dashboard at http://localhost:3000/dashboards .
+While the training pipeline is running, you can view Morpheus logs live in a Grafana dashboard at http://localhost:3000/dashboards.
 
 Click on `DFP Logs` in the `General` folder. You may need to expand the `General` folder to see the link.
 
