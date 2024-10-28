@@ -7,14 +7,13 @@
           "properties": {
             "loader_id": "fsspec",
             "files": [
-              "../../../data/dfp/duo-training-data/*.json"
+              "../../data/dfp/duo-training-data/*.json"
             ]
           }
         },
         {
           "type": "training",
-          "properties": {
-          }
+          "properties": {}
         }
       ],
       "metadata": {
