@@ -29,6 +29,9 @@ from cudf._lib.column cimport Column
 from cudf._lib.utils cimport data_from_unique_ptr
 from cudf._lib.utils cimport table_view_from_table
 
+##### THE FOLLOWING CODE IS COPIED FROM CUDF AND SHOULD BE REMOVED WHEN UPDATING TO cudf>=24.12 #####
+# see https://github.com/rapidsai/cudf/pull/17193 for details
+
 # isort: off
 
 # imports needed for get_element, which is required by from_column_view_with_fix
@@ -247,6 +250,7 @@ cdef Column from_column_view_with_fix(column_view cv, object owner):
 
     return result
 
+##### THE PREVIOUS CODE IS COPIED FROM CUDF AND SHOULD BE REMOVED WHEN UPDATING TO cudf>=24.12 #####
 
 cdef vector[string] get_column_names(object tbl, object index):
     cdef vector[string] column_names
