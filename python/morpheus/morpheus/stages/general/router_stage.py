@@ -57,7 +57,7 @@ class RouterStage(GpuAndCpuMixin, _pipeline.Stage):
                  *,
                  keys: list[str],
                  key_fn: typing.Callable[[object], str],
-                 processing_engines=0) -> None:
+                 processing_engines: int = 0) -> None:
         super().__init__(c)
 
         self._keys = keys
