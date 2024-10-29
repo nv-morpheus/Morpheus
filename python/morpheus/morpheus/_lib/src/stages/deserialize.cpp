@@ -79,6 +79,7 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
                         incoming_message, i, std::min(i + this->m_batch_size, incoming_message->count()));
                     auto sliced_info = sliced_meta.get_info();
 
+                    // This unforuntately requires grabbing the GIL and is a work-around for issue #2018
                     auto new_meta = MessageMeta::create_from_python(CudfHelper::table_from_table_info(sliced_info));
                     windowed_message->payload(new_meta);
 
