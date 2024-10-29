@@ -26,7 +26,6 @@ from _utils import calc_error_val
 from _utils import compare_class_to_scores
 from _utils import mk_async_infer
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
