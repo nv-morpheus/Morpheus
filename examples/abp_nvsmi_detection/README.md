@@ -127,7 +127,7 @@ morpheus --log_level=DEBUG \
    pipeline-fil --columns_file=data/columns_fil.txt \
    `# 1st Stage: Read from file` \
    from-file --filename=examples/data/nvsmi.jsonlines \
-   `# 2nd Stage: Deserialize from JSON strings to objects` \
+   `# 2nd Stage: Deserialize batch DataFrame into ControlMessages` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
    preprocess \
