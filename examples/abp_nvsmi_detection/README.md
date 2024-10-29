@@ -63,7 +63,7 @@ This example can be easily applied to datasets generated from your own NVIDIA GP
 
 pyNVML is not installed by default, use the following command to install it:
 ```bash
-conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-121_arch-x86_64.yaml
+conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-125_arch-x86_64.yaml
 ```
 
 Run the following to start generating your dataset:
@@ -127,7 +127,7 @@ morpheus --log_level=DEBUG \
    pipeline-fil --columns_file=data/columns_fil.txt \
    `# 1st Stage: Read from file` \
    from-file --filename=examples/data/nvsmi.jsonlines \
-   `# 2nd Stage: Deserialize from JSON strings to objects` \
+   `# 2nd Stage: Deserialize batch DataFrame into ControlMessages` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
    preprocess \
