@@ -179,11 +179,7 @@ def test_minibert_no_trunc(config: Config, tmp_path: str, morpheus_log_level: in
                             truncated=False,
                             morpheus_log_level=morpheus_log_level)
 
-    # Not sure why these are different
-    if (CppConfig.get_should_use_cpp()):
-        assert results.diff_rows == 18
-    else:
-        assert results.diff_rows == 1333
+    assert results.diff_rows == 18
 
 
 @pytest.mark.slow
@@ -198,8 +194,4 @@ def test_minibert_truncated(config: Config, tmp_path: str, morpheus_log_level: i
                             data_col_name=data_col_name,
                             morpheus_log_level=morpheus_log_level)
 
-    # Not sure why these are different
-    if (CppConfig.get_should_use_cpp()):
-        assert results.diff_rows == 1204
-    else:
-        assert results.diff_rows == 1333
+    assert results.diff_rows == 1204
