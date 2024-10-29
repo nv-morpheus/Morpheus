@@ -331,9 +331,11 @@ def test_sliced_meta_nulls(config: Config, use_get_set_data: bool):
 
         if use_get_set_data:
             a_col = meta.get_data('a')
+            assert len(a_col) <= config.pipeline_batch_size
             meta.set_data("copy", a_col)
         else:
             with meta.mutable_dataframe() as df:
+                assert len(df) <= config.pipeline_batch_size
                 df['copy'] = df['a']
 
         return msg
