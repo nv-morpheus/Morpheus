@@ -18,7 +18,9 @@
 #include "morpheus/stages/deserialize.hpp"
 
 #include "morpheus/messages/control.hpp"       // for ControlMessage
+#include "morpheus/messages/meta.hpp"          // for MessageMeta, SlicedMessageMeta
 #include "morpheus/types.hpp"                  // for TensorIndex
+#include "morpheus/utilities/cudf_util.hpp"    // for CudfHelper
 #include "morpheus/utilities/json_types.hpp"   // for PythonByteContainer
 #include "morpheus/utilities/python_util.hpp"  // for show_warning_message
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
@@ -35,23 +37,6 @@
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 namespace morpheus {
-
-void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
-                         TensorIndex start,
-                         TensorIndex stop,
-                         control_message_task_t* task,
-                         std::shared_ptr<ControlMessage>& windowed_message)
-{
-    auto sliced_meta = std::make_shared<SlicedMessageMeta>(incoming_message, start, stop);
-    auto message     = std::make_shared<ControlMessage>();
-    message->payload(sliced_meta);
-    if (task)
-    {
-        message->add_task(task->first, task->second);
-    }
-
-    windowed_message.swap(message);
-}
 
 DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
 {
@@ -89,9 +74,12 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
                 {
                     std::shared_ptr<ControlMessage> windowed_message = std::make_shared<ControlMessage>();
 
-                    auto sliced_meta = std::make_shared<SlicedMessageMeta>(
+                    auto sliced_meta = SlicedMessageMeta(
                         incoming_message, i, std::min(i + this->m_batch_size, incoming_message->count()));
-                    windowed_message->payload(sliced_meta);
+                    auto sliced_info = sliced_meta.get_info();
+
+                    auto new_meta = MessageMeta::create_from_python(CudfHelper::table_from_table_info(sliced_info));
+                    windowed_message->payload(new_meta);
 
                     auto task = m_task.get();
                     if (task)
