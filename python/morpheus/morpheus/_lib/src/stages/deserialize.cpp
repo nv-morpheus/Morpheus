@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/control.hpp"       // for ControlMessage
 #include "morpheus/messages/meta.hpp"          // for MessageMeta, SlicedMessageMeta
+#include "morpheus/objects/table_info.hpp"     // for TableInfo
 #include "morpheus/types.hpp"                  // for TensorIndex
 #include "morpheus/utilities/cudf_util.hpp"    // for CudfHelper
 #include "morpheus/utilities/json_types.hpp"   // for PythonByteContainer
