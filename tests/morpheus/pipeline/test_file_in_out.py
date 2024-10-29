@@ -310,7 +310,8 @@ def test_file_rw_serialize_deserialize_multi_segment_pipe(tmp_path: pathlib.Path
 
 
 @pytest.mark.slow
-def test_null_json_output(config: Config):
+@pytest.mark.parametrize("use_get_set_data", [False, True])
+def test_sliced_meta_nulls(config: Config, use_get_set_data: bool):
     """
     Test reproduces Morpheus issue #2011
     Issue occurrs when the length of the dataframe is larger than the pipeline batch size
@@ -327,8 +328,13 @@ def test_null_json_output(config: Config):
     @stage(execution_modes=(config.execution_mode, ), needed_columns={"copy": TypeId.INT64})
     def copy_col(msg: ControlMessage) -> ControlMessage:
         meta = msg.payload()
-        a_col = meta.get_data('a')
-        meta.set_data("copy", a_col)
+
+        if use_get_set_data:
+            a_col = meta.get_data('a')
+            meta.set_data("copy", a_col)
+        else:
+            with meta.mutable_dataframe() as df:
+                df['copy'] = df['a']
 
         return msg
 
