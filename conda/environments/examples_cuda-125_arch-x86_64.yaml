@@ -13,7 +13,7 @@ dependencies:
 - appdirs
 - arxiv=1.4
 - beautifulsoup4=4.12
-- boto3
+- boto3=1.35.23
 - click>=8
 - cudf=24.10
 - cuml=24.10.*
