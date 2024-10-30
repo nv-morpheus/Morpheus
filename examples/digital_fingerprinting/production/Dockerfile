@@ -33,9 +33,6 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
 # Add conda to the PATH
 ENV PATH=/opt/conda/bin:$PATH
 
-# Create base environment
-RUN conda create -y --name morpheus-dfp python=3.10
-
 SHELL ["/bin/bash", "-c"]
 
 # Set the tracking URI for mlflow
@@ -50,8 +47,8 @@ WORKDIR /workspace/examples/digital_fingerprinting/production
 # If any changes have been made from the base image, recopy the sources
 COPY . /workspace/examples/digital_fingerprinting/production/
 
-# Install morpheus-dfp and any additional dependencies needed to run the examples
-RUN source activate morpheus-dfp && /opt/conda/bin/conda env update --solver=libmamba -n morpheus-dfp --file ./conda/environments/dfp_example_cuda-125_arch-x86_64.yaml
+# Create a conda env with morpheus-dfp and any additional dependencies needed to run the examples
+RUN conda env create --solver=libmamba -y --name morpheus-dfp --file ./conda/environments/dfp_example_cuda-125_arch-x86_64.yaml
 
 ENTRYPOINT [ "/opt/conda/envs/morpheus-dfp/bin/tini", "--", "/workspace/examples/digital_fingerprinting/production/docker/entrypoint.sh" ]
 
