@@ -33,11 +33,6 @@ Key Features:
 cd examples/digital_fingerprinting/production
 docker compose build
 ```
-You can optionally specify the version of the morpheus-dfp conda package for the pipeline via the build-arg. The version defaults to the latest release.
-```bash
-docker compose build --build-arg MORPHEUS_DFP_VERSION=24.10.00a
-```
-
 
 > **Note:** This requires version 1.28.0 or higher of Docker Compose, and preferably v2. If you encounter an error similar to:
 >
