@@ -454,7 +454,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - morpheus-dfp=24.10.00
+          - morpheus-dfp=24.10
           - tini=0.19
           - pip:
             - --extra-index-url https://download.pytorch.org/whl/cu124
