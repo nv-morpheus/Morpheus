@@ -540,14 +540,12 @@ TensorIndex SlicedMessageMeta::count() const
 
 TableInfo SlicedMessageMeta::get_info() const
 {
-    return this->m_data->get_info().get_slice(m_start, m_stop, m_column_names);
+    return get_info(m_column_names);
 }
 
 TableInfo SlicedMessageMeta::get_info(const std::string& col_name) const
 {
-    auto full_info = this->m_data->get_info();
-
-    return full_info.get_slice(m_start, m_stop, {col_name});
+    return get_info(std::vector<std::string>{{col_name}});
 }
 
 TableInfo SlicedMessageMeta::get_info(const std::vector<std::string>& column_names) const
