@@ -441,7 +441,7 @@ dependencies:
       - output_types: [conda]
         packages:
           - *nodejs
-          - boto3=1.35.23
+          - boto3
           - kfp
           - papermill=2.4.0
           - s3fs

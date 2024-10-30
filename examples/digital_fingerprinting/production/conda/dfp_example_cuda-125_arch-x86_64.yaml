@@ -9,7 +9,7 @@ channels:
 - nvidia/label/dev
 - pytorch
 dependencies:
-- boto3=1.35.23
+- boto3
 - kfp
 - morpheus-dfp=24.10.00
 - nodejs=18.*
