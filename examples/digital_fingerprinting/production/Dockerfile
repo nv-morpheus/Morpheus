@@ -51,7 +51,7 @@ WORKDIR /workspace/examples/digital_fingerprinting/production
 COPY . /workspace/examples/digital_fingerprinting/production/
 
 # Install morpheus-dfp and any additional dependencies needed to run the examples
-RUN source activate morpheus-dfp && /opt/conda/bin/conda env update --solver=libmamba -n morpheus-dfp --file ./conda/dfp_example_cuda-125_arch-x86_64.yaml
+RUN source activate morpheus-dfp && /opt/conda/bin/conda env update --solver=libmamba -n morpheus-dfp --file ./conda/environments/dfp_example_cuda-125_arch-x86_64.yaml
 
 ENTRYPOINT [ "/opt/conda/envs/morpheus-dfp/bin/tini", "--", "/workspace/examples/digital_fingerprinting/production/docker/entrypoint.sh" ]
 

@@ -205,7 +205,7 @@ files:
       cuda: ["12.5"]
       arch: [x86_64]
     output: conda
-    conda_dir: examples/digital_fingerprinting/production/conda
+    conda_dir: examples/digital_fingerprinting/production/conda/environments
     includes:
       - example-dfp-container
       - example-dfp-prod
