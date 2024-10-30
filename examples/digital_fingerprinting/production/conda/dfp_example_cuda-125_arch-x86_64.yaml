@@ -11,10 +11,14 @@ channels:
 dependencies:
 - boto3
 - kfp
+- morpheus-dfp=24.10.00
 - nodejs=18.*
 - papermill=2.4.0
 - pip
 - s3fs
+- tini=0.19
 - pip:
+  - --extra-index-url https://download.pytorch.org/whl/cu124
   - python-logging-loki
+  - torch==2.4.0+cu124
 name: dfp_example_cuda-125_arch-x86_64

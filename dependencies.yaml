@@ -207,6 +207,7 @@ files:
     output: conda
     conda_dir: examples/digital_fingerprinting/production/conda
     includes:
+      - example-dfp-container
       - example-dfp-prod
 
 channels:
@@ -447,6 +448,17 @@ dependencies:
           - pip
           - pip:
             - python-logging-loki
+
+  # packages needed in the DFP example container
+  example-dfp-container:
+    common:
+      - output_types: [conda]
+        packages:
+          - morpheus-dfp=24.10.00
+          - tini=0.19
+          - pip:
+            - --extra-index-url https://download.pytorch.org/whl/cu124
+            - torch==2.4.0+cu124
 
   example-gnn:
     common:

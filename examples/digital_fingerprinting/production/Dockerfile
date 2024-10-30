@@ -46,7 +46,7 @@ RUN echo "source activate morpheus-dfp" >> ~/.bashrc
 SHELL ["/bin/bash", "-c"]
 
 # Default MORPHEUS_DFP_VERSION
-ARG MORPHEUS_DFP_VERSION=24.10.00a
+ARG MORPHEUS_DFP_VERSION=24.10.00
 
 # Add conda channels required for the Morpheus dependencies
 RUN source activate morpheus-dfp \
@@ -59,16 +59,8 @@ RUN source activate morpheus-dfp \
 RUN echo "MORPHEUS_DFP_VERSION is set to: ${MORPHEUS_DFP_VERSION}"
 ENV MORPHEUS_DFP_VERSION=${MORPHEUS_DFP_VERSION}
 RUN source activate morpheus-dfp \
-    && mamba install -y \
-     -c nvidia/label/dev morpheus-dfp=${MORPHEUS_DFP_VERSION}
-
-# Install the morpheus-dfp pip requirements
-RUN source activate morpheus-dfp \
-    && export MORPHEUS_DFP_PKG_DIR=$(dirname $(python -c "import morpheus_dfp; print(morpheus_dfp.__file__)")) \
-    && pip install -r ${MORPHEUS_DFP_PKG_DIR}/requirements_morpheus_dfp.txt
-
-RUN source activate morpheus-dfp \
-     && mamba install -y -c conda-forge tini=0.19
+    && conda install -y \
+     -c nvidia/label/dev morpheus-dfp=${MORPHEUS_DFP_VERSION} -c conda-forge tini=0.19
 
 ENTRYPOINT [ "/opt/conda/envs/morpheus-dfp/bin/tini", "--", "/workspace/examples/digital_fingerprinting/production/docker/entrypoint.sh" ]
 
@@ -88,7 +80,12 @@ COPY . /workspace/examples/digital_fingerprinting/production/
 
 # Install additional dependencies needed to run the example.
 # Note: this call is very slow and is the longest part of the build proocess - fixme
-RUN source activate morpheus-dfp && /opt/conda/bin/conda env update --solver=libmamba -n morpheus-dfp --file ./conda/dfp_example_cuda-125_arch-x86_64.yaml
+#RUN source activate morpheus-dfp && /opt/conda/bin/conda env update --solver=libmamba -n morpheus-dfp --file ./conda/dfp_example_cuda-125_arch-x86_64.yaml
+
+# Install the morpheus-dfp pip requirements
+RUN source activate morpheus-dfp \
+    && export MORPHEUS_DFP_PKG_DIR=$(dirname $(python -c "import morpheus_dfp; print(morpheus_dfp.__file__)")) \
+    && pip install -r ${MORPHEUS_DFP_PKG_DIR}/requirements_morpheus_dfp.txt
 
 # ===== Setup for running unattended =====
 FROM base as runtime
