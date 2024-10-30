@@ -33,36 +33,8 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
 # Add conda to the PATH
 ENV PATH=/opt/conda/bin:$PATH
 
-# Install Mamba, a faster alternative to conda, within the base environment
-RUN conda install -y mamba -n base -c conda-forge
-
 # Create base environment
 RUN conda create -y --name morpheus-dfp python=3.10
-
-# Activate the environment (make it default for subsequent commands)
-RUN echo "source activate morpheus-dfp" >> ~/.bashrc
-
-# Set default shell to bash
-SHELL ["/bin/bash", "-c"]
-
-# Default MORPHEUS_DFP_VERSION
-ARG MORPHEUS_DFP_VERSION=24.10.00
-
-# Add conda channels required for the Morpheus dependencies
-RUN source activate morpheus-dfp \
-    && conda config --env --add channels conda-forge \
-    && conda config --env --add channels nvidia \
-    && conda config --env --add channels rapidsai \
-    && conda config --env --add channels pytorch
-
-# Install morpheus-dfp conda package
-RUN echo "MORPHEUS_DFP_VERSION is set to: ${MORPHEUS_DFP_VERSION}"
-ENV MORPHEUS_DFP_VERSION=${MORPHEUS_DFP_VERSION}
-RUN source activate morpheus-dfp \
-    && conda install -y \
-     -c nvidia/label/dev morpheus-dfp=${MORPHEUS_DFP_VERSION} -c conda-forge tini=0.19
-
-ENTRYPOINT [ "/opt/conda/envs/morpheus-dfp/bin/tini", "--", "/workspace/examples/digital_fingerprinting/production/docker/entrypoint.sh" ]
 
 SHELL ["/bin/bash", "-c"]
 
@@ -78,14 +50,12 @@ WORKDIR /workspace/examples/digital_fingerprinting/production
 # If any changes have been made from the base image, recopy the sources
 COPY . /workspace/examples/digital_fingerprinting/production/
 
-# Install additional dependencies needed to run the example.
-# Note: this call is very slow and is the longest part of the build proocess - fixme
-#RUN source activate morpheus-dfp && /opt/conda/bin/conda env update --solver=libmamba -n morpheus-dfp --file ./conda/dfp_example_cuda-125_arch-x86_64.yaml
+# Install morpheus-dfp and any additional dependencies needed to run the examples
+RUN source activate morpheus-dfp && /opt/conda/bin/conda env update --solver=libmamba -n morpheus-dfp --file ./conda/dfp_example_cuda-125_arch-x86_64.yaml
 
-# Install the morpheus-dfp pip requirements
-RUN source activate morpheus-dfp \
-    && export MORPHEUS_DFP_PKG_DIR=$(dirname $(python -c "import morpheus_dfp; print(morpheus_dfp.__file__)")) \
-    && pip install -r ${MORPHEUS_DFP_PKG_DIR}/requirements_morpheus_dfp.txt
+ENTRYPOINT [ "/opt/conda/envs/morpheus-dfp/bin/tini", "--", "/workspace/examples/digital_fingerprinting/production/docker/entrypoint.sh" ]
+
+SHELL ["/bin/bash", "-c"]
 
 # ===== Setup for running unattended =====
 FROM base as runtime
