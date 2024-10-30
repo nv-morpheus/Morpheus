@@ -13,22 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG MORPHEUS_CONTAINER=nvcr.io/nvidia/morpheus/morpheus
-ARG MORPHEUS_CONTAINER_VERSION=v24.10.00-runtime
+ARG BASE_IMG=nvcr.io/nvidia/cuda
+ARG BASE_IMG_TAG=12.5.1-base-ubuntu22.04
 
-FROM ${MORPHEUS_CONTAINER}:${MORPHEUS_CONTAINER_VERSION} as base
+FROM ${BASE_IMG}:${BASE_IMG_TAG} as base
 
-# # Fix the entrypoint to work with different WORKDIR
-ENTRYPOINT [ "/opt/conda/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
+# Install necessary dependencies using apt-get
+RUN apt-get update && apt-get install -y \
+      git \
+      git-lfs \
+      wget \
+    && apt-get clean
+
+# Install miniconda
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh \
+    && bash /tmp/miniconda.sh -b -p /opt/conda \
+    && rm /tmp/miniconda.sh
+
+# Add conda to the PATH
+ENV PATH=/opt/conda/bin:$PATH
 
 SHELL ["/bin/bash", "-c"]
-
-# Set the workdir to the DFP base folder
-WORKDIR /workspace/examples/digital_fingerprinting/
-
-# Install DFP dependencies
-RUN source activate morpheus \
-    && /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/examples_cuda-125_arch-x86_64.yaml
 
 # Set the tracking URI for mlflow
 ENV MLFLOW_TRACKING_URI="http://mlflow:5000"
@@ -36,11 +41,18 @@ ENV MLFLOW_TRACKING_URI="http://mlflow:5000"
 # This will get used by pipelines for the --s3_cache option
 # ENV DFP_S3_CACHE="/work/examples/dfp_workflow/morpheus/.s3_cache"
 
-# If any changes have been made from the base image, recopy the sources
-COPY . /workspace/examples/digital_fingerprinting/
-
 # Set the workdir to be the production folder
 WORKDIR /workspace/examples/digital_fingerprinting/production
+
+# If any changes have been made from the base image, recopy the sources
+COPY . /workspace/examples/digital_fingerprinting/production/
+
+# Create a conda env with morpheus-dfp and any additional dependencies needed to run the examples
+RUN conda env create --solver=libmamba -y --name morpheus-dfp --file ./conda/environments/dfp_example_cuda-125_arch-x86_64.yaml
+
+ENTRYPOINT [ "/opt/conda/envs/morpheus-dfp/bin/tini", "--", "/workspace/examples/digital_fingerprinting/production/docker/entrypoint.sh" ]
+
+SHELL ["/bin/bash", "-c"]
 
 # ===== Setup for running unattended =====
 FROM base as runtime
@@ -52,7 +64,7 @@ CMD ["./launch.sh"]
 FROM base as jupyter
 
 # Install the jupyter specific requirements
-RUN source activate morpheus &&\
+RUN source activate morpheus-dfp &&\
     /opt/conda/bin/conda install --solver=libmamba -y -c conda-forge \
         ipywidgets \
         jupyter_contrib_nbextensions \
