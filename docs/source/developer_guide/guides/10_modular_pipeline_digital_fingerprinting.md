@@ -533,7 +533,7 @@ From the `examples/digital_fingerprinting/production` dir, run:
 ```bash
 docker compose run morpheus_pipeline bash
 ```
-To run the DFP pipelines with the example datasets within the container, run the following from `examples/digital_fingerprinting/production/morpheus`:
+To run the DFP pipelines with the example datasets within the container, run the following from `examples/digital_fingerprinting/production/`:
 
 * Duo Training Pipeline
     ```bash
@@ -543,7 +543,7 @@ To run the DFP pipelines with the example datasets within the container, run the
         --start_time "2022-08-01" \
         --duration "60d" \
         --train_users generic \
-        --input_file "./control_messages/duo_payload_training.json"
+        --input_file "./morpheus/control_messages/duo_payload_training.json"
     ```
 
 * Duo Inference Pipeline
@@ -552,7 +552,7 @@ To run the DFP pipelines with the example datasets within the container, run the
         --log_level DEBUG \
         --source duo \
         --start_time "2022-08-30" \
-        --input_file "./control_messages/duo_payload_inference.json"
+        --input_file "./morpheus/control_messages/duo_payload_inference.json"
     ```
 
 * Duo Training + Inference Pipeline
@@ -563,7 +563,7 @@ To run the DFP pipelines with the example datasets within the container, run the
         --start_time "2022-08-01" \
         --duration "60d" \
         --train_users generic \
-        --input_file "./control_messages/duo_payload_load_train_inference.json"
+        --input_file "./morpheus/control_messages/duo_payload_load_train_inference.json"
     ```
 
 * Azure Training Pipeline
@@ -574,7 +574,7 @@ To run the DFP pipelines with the example datasets within the container, run the
         --start_time "2022-08-01" \
         --duration "60d" \
         --train_users generic \
-        --input_file "./control_messages/azure_payload_training.json"
+        --input_file "./morpheus/control_messages/azure_payload_training.json"
     ```
 
 * Azure Inference Pipeline
@@ -583,7 +583,7 @@ To run the DFP pipelines with the example datasets within the container, run the
         --log_level DEBUG \
         --source azure \
         --start_time "2022-08-30" \
-        --input_file "./control_messages/azure_payload_inference.json"
+        --input_file "./morpheus/control_messages/azure_payload_inference.json"
     ```
 
 * Azure Training + Inference Pipeline
@@ -594,7 +594,7 @@ To run the DFP pipelines with the example datasets within the container, run the
         --start_time "2022-08-01" \
         --duration "60d" \
         --train_users generic \
-        --input_file "./control_messages/azure_payload_load_train_inference.json"
+        --input_file "./morpheus/control_messages/azure_payload_load_train_inference.json"
     ```
 
 ### Output Fields
