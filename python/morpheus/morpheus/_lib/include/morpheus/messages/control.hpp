@@ -236,6 +236,13 @@ class MORPHEUS_EXPORT ControlMessage
     std::optional<time_point_t> get_timestamp(const std::string& key, bool fail_if_nonexist = false);
 
     /**
+     * @brief Return a reference to the timestamps map
+     *
+     * @return A const map reference containing timestamps
+     */
+    const std::map<std::string, time_point_t>& get_timestamps() const;
+
+    /**
      * @brief Retrieves timestamps for all keys that match a regex pattern.
      *
      * Searches for the specified for keys that match the provided regex filter and returns
@@ -339,6 +346,13 @@ struct MORPHEUS_EXPORT ControlMessageProxy
      * an exception is raised.
      */
     static pybind11::object get_timestamp(ControlMessage& self, const std::string& key, bool fail_if_nonexist = false);
+
+    /**
+     * @brief Return all timestamps
+     *
+     * @return A Python dictionary of timestamps
+     */
+    static pybind11::dict get_timestamps(ControlMessage& self);
 
     /**
      * @brief Retrieves timestamps for all keys that match a regex pattern from the ControlMessage object.

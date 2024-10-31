@@ -126,9 +126,12 @@ This example demonstrates the basic implementation of Morpheus pipeline, showcas
 - Stores and manages the results within the pipeline using an InMemorySinkStage.
 
 
+To run the example with default options, use the following command:
 ```bash
-python examples/llm/main.py agents simple [OPTIONS]
+python examples/llm/main.py --log_level=info agents simple
 ```
+
+Available options for the simple pipeline are as follows:
 
 ### Options:
 - `--use_cpu_only`

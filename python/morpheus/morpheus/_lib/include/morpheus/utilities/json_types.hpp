@@ -27,9 +27,11 @@
 #include <cstdint>  // for int64_t, uint64_t, uint8_t
 #include <map>      // for map
 #include <string>   // for allocator, string
+#include <utility>  // for pair
 #include <vector>   // for vector
 
-namespace morpheus::utilities {
+namespace morpheus {
+namespace utilities {
 /**
  * @brief A container class derived from std::vector<uint8_t> to make it compatible with nlohmann::json to hold
  * arbitrary Python objects as bytes.
@@ -113,7 +115,13 @@ class MORPHEUS_EXPORT json_dict_t : public morpheus::utilities::json_t
 class MORPHEUS_EXPORT json_list_t : public morpheus::utilities::json_t
 {};
 // NOLINTEND(readability-identifier-naming)
-}  // namespace morpheus::utilities
+}  // namespace utilities
+
+// A task for a control message consists of a task type and a task payload, defined here as a pair since it is invalid
+// to define one without the other.
+using control_message_task_t = std::pair<std::string, nlohmann::json>;
+
+}  // namespace morpheus
 
 namespace nlohmann {
 // NOLINTBEGIN(readability-identifier-naming)

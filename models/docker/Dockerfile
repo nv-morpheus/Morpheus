@@ -14,7 +14,7 @@
 # limitations under the License.
 
 ARG FROM_IMAGE="nvcr.io/nvidia/tritonserver"
-ARG FROM_IMAGE_TAG="23.06-py3"
+ARG FROM_IMAGE_TAG="24.09-py3"
 FROM ${FROM_IMAGE}:${FROM_IMAGE_TAG} AS base
 
 WORKDIR /
