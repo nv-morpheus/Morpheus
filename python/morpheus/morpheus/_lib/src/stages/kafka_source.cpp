@@ -17,9 +17,6 @@
 
 #include "morpheus/stages/kafka_source.hpp"
 
-#include "mrc/segment/object.hpp"
-#include "pymrc/utilities/function_wrappers.hpp"  // for PyFuncWrapper
-
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
@@ -31,11 +28,13 @@
 #include <librdkafka/rdkafkacpp.h>
 #include <mrc/runnable/context.hpp>
 #include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>  // for SharedFuture
 #include <nlohmann/json.hpp>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
+#include <pymrc/utilities/function_wrappers.hpp>  // for PyFuncWrapper
 
 #include <algorithm>  // for find, min, transform
 #include <chrono>
