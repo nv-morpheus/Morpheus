@@ -140,7 +140,8 @@ class LogParsingInferenceStage(TritonInferenceStage):
         schema.output_schema.set_type(ControlMessage)
 
     @staticmethod
-    def _convert_one_response(output: ControlMessage, inf: ControlMessage, res: TensorMemory) -> ControlMessage:
+    def _convert_one_response(output: ControlMessage, inf: ControlMessage, res: TensorMemory,
+                              batch_offset: int) -> ControlMessage:
         memory = output.tensors()
 
         out_seq_ids = memory.get_tensor('seq_ids')
@@ -153,8 +154,8 @@ class LogParsingInferenceStage(TritonInferenceStage):
         seq_offset = seq_ids[0, 0].item()
         seq_count = seq_ids[-1, 0].item() + 1 - seq_offset
 
-        input_ids[0:inf.tensors().count, :] = inf.tensors().get_tensor('input_ids')
-        out_seq_ids[0:inf.tensors().count, :] = seq_ids
+        input_ids[batch_offset:inf.tensors().count + batch_offset, :] = inf.tensors().get_tensor('input_ids')
+        out_seq_ids[batch_offset:inf.tensors().count + batch_offset, :] = seq_ids
 
         resp_confidences = res.get_tensor('confidences')
         resp_labels = res.get_tensor('labels')
@@ -162,8 +163,8 @@ class LogParsingInferenceStage(TritonInferenceStage):
         # Two scenarios:
         if (inf.payload().count == inf.tensors().count):
             assert seq_count == res.count
-            confidences[0:inf.tensors().count, :] = resp_confidences
-            labels[0:inf.tensors().count, :] = resp_labels
+            confidences[batch_offset:inf.tensors().count + batch_offset, :] = resp_confidences
+            labels[batch_offset:inf.tensors().count + batch_offset, :] = resp_labels
         else:
             assert inf.tensors().count == res.count
 
