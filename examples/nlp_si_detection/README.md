@@ -46,7 +46,7 @@ In this example, we will be using Morpheus' provided NLP SI Detection model. Thi
 
 ### The Dataset
 
-The dataset that this workflow was designed to process is PCAP, or Packet Capture data, that is serialized into a JSON format. Several different applications are capable of capurting this type of network traffic. Each packet contains information about the source, destination, timestamp, and body of the packet, among other things. For example, below is a single packet that is from a HTTP POST request to cumulusnetworks.com:
+The dataset that this workflow was designed to process is PCAP, or Packet Capture data, that is serialized into a JSON format. Several different applications are capable of capturing this type of network traffic. Each packet contains information about the source, destination, timestamp, and body of the packet, among other things. For example, below is a single packet that is from a HTTP POST request to cumulusnetworks.com:
 
 ```json
 {
@@ -85,10 +85,8 @@ This example utilizes the Triton Inference Server to perform inference. The neur
 From the Morpheus repo root directory, run the following to launch Triton and load the `sid-minibert` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
 ```
-
-Where `23.06-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (refer to [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
 
 This will launch Triton and only load the `sid-minibert-onnx` model. This model has been configured with a max batch size of 32, and to use dynamic batching for increased performance.
 
@@ -178,17 +176,17 @@ CPP Enabled: True
 Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
-  └─ morpheus.MessageMeta -> morpheus.MultiMessage
+  └─ morpheus.MessageMeta -> morpheus.ControlMessage
 Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
-  └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=sid-minibert-onnx, server_url=localhost:8000, force_convert_inputs=True, use_shared_memory=False)>
-  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage-> morpheus.ControlMessage
 Added stage: <add-class-5; AddClassificationsStage(threshold=0.5, labels=[], prefix=)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <serialize-6; SerializeStage(include=[], exclude=['^_ts_'], fixed_columns=True)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MessageMeta
+  └─ morpheus.ControlMessage -> morpheus.MessageMeta
 Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====
@@ -199,16 +197,16 @@ Inference Rate[Complete]: 93085inf [00:07, 12673.63inf/s]
 ```
 
 The output file `detections.jsonlines` will contain the original PCAP messages with the following additional fields added:
-* address
-* bank_acct
-* credit_card
-* email
-* govt_id
-* name
-* password
-* phone_num
-* secret_keys
-* user
+* `address`
+* `bank_acct`
+* `credit_card`
+* `email`
+* `govt_id`
+* `name`
+* `password`
+* `phone_num`
+* `secret_keys`
+* `user`
 
 The value for these fields will be a `1` indicating a detection or a `0` indicating no detection. An example row with a detection is:
 ```json

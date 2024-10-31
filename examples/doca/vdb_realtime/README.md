@@ -21,7 +21,7 @@ In this example, the DOCA stages are used to receive packets from the network an
 
 ## Run Milvus
 
-Download the milvus docker-compose file from the [Milvus GitHub repository]()
+Download the Milvus docker-compose file from the [Milvus GitHub repository](https://github.com/milvus-io/milvus)
 
 ```bash
 mkdir milvus
@@ -35,6 +35,12 @@ Start Milvus
 docker compose up -d
 ```
 
+## Fetch the examples data
+
+```bash
+./scripts/fetch_data.py fetch examples
+```
+
 ## Launch Triton Inference Server
 
 To serve the embedding model, we will use Triton:
@@ -42,10 +48,8 @@ To serve the embedding model, we will use Triton:
 ```bash
 cd ${MORPHEUS_ROOT}
 
-# Fetch all models
-./scripts/fetch_data.py fetch models
 # Launch Triton
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:24.01-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model all-MiniLM-L6-v2
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model all-MiniLM-L6-v2
 ```
 
 ## Populate the Milvus database
@@ -94,7 +98,7 @@ export NGC_API_KEY="<YOUR_NGC_API>"
 
 Then install basic requirements:
 ```bash
-conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-121_arch-x86_64.yaml --prune
+conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-125_arch-x86_64.yaml --prune
 ```
 
 Run the RAG example to query the Milvus database:

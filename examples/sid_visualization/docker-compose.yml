@@ -13,19 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version: "3"
-
 x-with-gpus: &with_gpus
   deploy:
     resources:
       reservations:
         devices:
           - capabilities:
-            - gpu
+              - gpu
 
 services:
   triton:
-    image: nvcr.io/nvidia/tritonserver:23.06-py3
+    image: nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
     <<: *with_gpus
     command: "tritonserver --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx --model-repository=/models/triton-model-repo"
     environment:
@@ -35,8 +33,6 @@ services:
       - "8001"
       - "8002"
     runtime: nvidia
-    volumes:
-      - "${MORPHEUS_HOME:-../..}/models:/models"
 
   gui:
     image: sid-viz:latest

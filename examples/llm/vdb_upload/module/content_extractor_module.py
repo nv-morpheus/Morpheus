@@ -22,14 +22,15 @@ from functools import wraps
 from typing import Dict
 from typing import List
 
-import fitz
 import fsspec
 import mrc
 import mrc.core.operators as ops
 import pandas as pd
+import pypdfium2 as libpdfium
 from docx import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import ValidationError
 from pydantic import field_validator
@@ -43,9 +44,7 @@ class CSVConverterSchema(BaseModel):
     chunk_overlap: int = 102  # Example default value
     chunk_size: int = 1024
     text_column_names: List[str]
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra='forbid')
 
 
 class ContentExtractorSchema(BaseModel):
@@ -54,6 +53,7 @@ class ContentExtractorSchema(BaseModel):
     chunk_size: int = 512
     converters_meta: Dict[str, Dict] = Field(default_factory=dict)
     num_threads: int = 10
+    model_config = ConfigDict(extra='forbid')
 
     @field_validator('converters_meta', mode="before")
     @classmethod
@@ -65,9 +65,6 @@ class ContentExtractorSchema(BaseModel):
             else:
                 validated_meta[key] = value
         return validated_meta
-
-    class Config:
-        extra = "forbid"
 
 
 logger = logging.getLogger(__name__)
@@ -172,10 +169,13 @@ def _converter_error_handler(func: typing.Callable) -> typing.Callable:
 @_converter_error_handler
 def _pdf_to_text_converter(input_info: ConverterInputInfo) -> str:
     text = ""
-    pdf_document = fitz.open(stream=input_info.io_bytes, filetype="pdf")
-    for page_num in range(pdf_document.page_count):
-        page = pdf_document[page_num]
-        text += page.get_text()
+    pdf_document = libpdfium.PdfDocument(input_info.io_bytes)
+    for page_idx in range(len(pdf_document)):
+        page = pdf_document.get_page(page_idx)
+        textpage = page.get_textpage()
+        page_text = textpage.get_text_bounded()
+        text += page_text
+
     return text
 
 

@@ -18,7 +18,6 @@ import os
 import click
 
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -27,10 +26,11 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
+
 # pylint: disable=no-name-in-module
-from stages.classification_stage import ClassificationStage
-from stages.graph_construction_stage import FraudGraphConstructionStage
-from stages.graph_sage_stage import GraphSAGEStage
+from .stages.classification_stage import ClassificationStage
+from .stages.graph_construction_stage import FraudGraphConstructionStage
+from .stages.graph_sage_stage import GraphSAGEStage
 
 CUR_DIR = os.path.dirname(__file__)
 
@@ -38,7 +38,7 @@ CUR_DIR = os.path.dirname(__file__)
 @click.command()
 @click.option(
     "--num_threads",
-    default=os.cpu_count(),
+    default=len(os.sched_getaffinity(0)),
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use.",
 )
@@ -98,8 +98,6 @@ def run_pipeline(num_threads,
                  output_file):
     # Enable the default logger.
     configure_logging(log_level=logging.INFO)
-
-    CppConfig.set_should_use_cpp(False)
 
     # Its necessary to get the global config object and configure it for FIL mode.
     config = Config()

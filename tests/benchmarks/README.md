@@ -19,17 +19,17 @@
 ### Set up Triton Inference Server
 
 ##### Pull Triton Inference Server Docker Image
-Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tritonserver) suitable for your environment.
+Pull Morpheus Models Docker image from NGC.
 
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:23.06-py3
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
 ```
 
 ##### Start Triton Inference Server container
 ```bash
-docker run --gpus=all --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx --load-model all-MiniLM-L6-v2
+docker run --gpus=all --rm -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx --load-model all-MiniLM-L6-v2
 ```
 
 ##### Verify Model Deployments
@@ -108,7 +108,7 @@ pytest -s --run_benchmark --run_milvus --benchmark-enable --benchmark-warmup=on 
 
 The `-s` option allows outputs of pipeline execution to be displayed so you can ensure there are no errors while running your benchmarks.
 
-The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflow(s) once before starting measurements. This is because the models deployed to Triton are configured to convert from ONNX to TensorRT on first use. Since the conversion can take a considerable amount of time, we don't want to include it in the measurements. The `--run_milvus` flag enables benchmarks which require the Milvus database.
+The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflows once before starting measurements. This is because the models deployed to Triton are configured to convert from ONNX to TensorRT on first use. Since the conversion can take a considerable amount of time, we don't want to include it in the measurements. The `--run_milvus` flag enables benchmarks which require the Milvus database.
 
 #### Running with an existing Milvus database
 
@@ -158,7 +158,7 @@ with `000N` where N is incremented for every run. For example, the report file n
 
 A hook to `pytest-benchmark` was developed to add the following information to the JSON report:
 
-GPU(s) used by Morpheus. For example:
+GPUs used by Morpheus. For example:
 ```
 "gpu_0": {
     "id": 0,
@@ -171,34 +171,34 @@ GPU(s) used by Morpheus. For example:
 }
 ```
 
-Morpheus config for each workflow:
-- num_threads
-- pipeline_batch_size
-- model_max_batch_size
-- feature_length
-- edge_buffer_size
+Morpheus configuration for each workflow:
+- `num_threads`
+- `pipeline_batch_size`
+- `model_max_batch_size`
+- `feature_length`
+- `edge_buffer_size`
 
 Additional benchmark stats for each workflow:
-- input_lines
-- min_throughput_lines
-- max_throughput_lines
-- mean_throughput_lines
-- median_throughput_lines
-- input_bytes
-- min_throughput_bytes
-- max_throughput_bytes
-- mean_throughput_bytes
-- median_throughput_bytes
+- `input_lines`
+- `min_throughput_lines`
+- `max_throughput_lines`
+- `mean_throughput_lines`
+- `median_throughput_lines`
+- `input_bytes`
+- `min_throughput_bytes`
+- `max_throughput_bytes`
+- `mean_throughput_bytes`
+- `median_throughput_bytes`
 
 
 ### Production DFP E2E Benchmarks
 
-Note that the `test_cloudtrail_ae_e2e` benchmarks measure performance of a pipeline built using [Starter DFP](../../examples/digital_fingerprinting/starter/README.md) stages. Separate benchmark tests are also provided to measure performance of the example [Production DFP](../../examples/digital_fingerprinting/production/README.md) pipelines. More information about running those benchmarks can be found [here](../../examples/digital_fingerprinting/production/morpheus/benchmarks/README.md).
+Separate benchmark tests are provided to measure performance of the example [Production DFP](../../examples/digital_fingerprinting/production/README.md) pipelines. More information about running those benchmarks can be found [here](../../examples/digital_fingerprinting/production/morpheus/benchmarks/README.md).
 
 You can use the same Dev container created here to run the Production DFP benchmarks. You would just need to install additional dependencies as follows:
 
 ```bash
 mamba env update \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./conda/environments/examples_cuda-121_arch-x86_64.yaml
+  --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
 ```

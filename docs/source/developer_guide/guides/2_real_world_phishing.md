@@ -29,7 +29,7 @@ For this task, we'll need to define a new stage, which we will call our `Recipie
 1. Count the number of recipients in the email's metadata.
 1. Emit a Morpheus `MessageMeta` object that will contain the record content along with the augmented metadata.
 
-For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on `MessageMeta` types, our new `accepted_types` method is defined as:
+For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the {py:class}`~morpheus.messages.MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/user_guide/api_docs/dataframe/). Since we will expect our new stage to operate on `MessageMeta` types, our new `accepted_types` method is defined as:
 
 ```python
 def accepted_types(self) -> tuple:
@@ -99,13 +99,13 @@ def __init__(self, config: Config):
 
 Refer to the [Stage Constructors](#stage-constructors) section for more details.
 
-Since the purpose of this stage is specifically tied to pre-processing text data for an NLP pipeline, when we register the stage, we will explicitly limit the stage to NLP pipelines:
+Since the purpose of this stage is specifically tied to pre-processing text data for an NLP pipeline, when we register the stage, we will explicitly limit the stage to NLP pipelines. In addition to this since the pipeline our stage is operating in is a GPU pipeline, we will not be utilizing the `GpuAndCpuMixin` mixin from the previous example.:
 ```python
 @register_stage("recipient-features", modes=[PipelineModes.NLP])
 class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
 ```
 
-Our `_build_single` method remains unchanged from the previous example; even though we are modifying the incoming messages, our input and output types remain the same and we continue to make use of the `PassThruTypeMixin`.
+Our `_build_single` method remains unchanged from the previous example; even though we are modifying the incoming messages, our input and output types remain the same and we continue to make use of the {py:class}`~morpheus.pipeline.pass_thru_type_mixin.PassThruTypeMixin`.
 
 ### The Completed Preprocessing Stage
 
@@ -182,7 +182,7 @@ class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
 
 ### Stand-alone Function
 
-For this example we started with the class based aproach. However we could have just as easily written this as a stand-alone function. The following example is equivalent to the class based example above:
+For this example we started with the class based approach. However we could have just as easily written this as a stand-alone function. The following example is equivalent to the class based example above:
 
 ```python
 from morpheus.common import TypeId
@@ -221,22 +221,21 @@ In the above the `needed_columns` were provided to as an argument to the `stage`
 
 ## Predicting Fraudulent Emails with Accelerated Machine Learning
 
-Now we'll use the `RecipientFeaturesStage` that we just made in a real-world pipeline to detect fraudulent emails. The pipeline we will be building makes use of the `TritonInferenceStage` which is a pre-defined Morpheus stage designed to support the execution of Natural Language Processing (NLP) models via NVIDIA's [Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server). NVIDIA Triton Inference Server allows for GPU accelerated ML/DL and seamless co-location and execution of a wide variety of model frameworks. For our application, we will be using the `phishing-bert-onnx` model, which is included with Morpheus in the `models/triton-model-repo/` directory.
+Now we'll use the `RecipientFeaturesStage` that we just made in a real-world pipeline to detect fraudulent emails. The pipeline we will be building makes use of the `TritonInferenceStage` which is a pre-defined Morpheus stage designed to support the execution of Natural Language Processing (NLP) models via NVIDIA's [Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server). NVIDIA Triton Inference Server allows for GPU accelerated ML/DL and seamless co-location and execution of a wide variety of model frameworks. For our application, we will be using the `phishing-bert-onnx` model, which is included with Morpheus models Docker container as well as in the `models/triton-model-repo/phishing-bert-onnx` directory.
 
-It's important to note here that Triton is a service that is external to the Morpheus pipeline and often will not reside on the same machine(s) as the rest of the pipeline. The `TritonInferenceStage` will use HTTP and [gRPC](https://grpc.io/) network protocols to allow us to interact with the machine learning models that are hosted by the Triton server.
+It's important to note here that Triton is a service that is external to the Morpheus pipeline and often will not reside on the same machine as the rest of the pipeline. The `TritonInferenceStage` will use HTTP and [gRPC](https://grpc.io/) network protocols to allow us to interact with the machine learning models that are hosted by the Triton server.
 
 ### Launching Triton
 
-Triton will need to be running while we execute our pipeline. For simplicity, we will launch it locally inside of a Docker container.
+Triton will need to be running while we execute our pipeline. For simplicity, we will be using the Morpheus models container which includes both Triton and the Morpheus models.
 
-> **Note**: This step assumes you have both [Docker](https://docs.docker.com/engine/install/) and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#installation-guide) installed.
+> **Note**: This step assumes you have both [Docker](https://docs.docker.com/engine/install/) and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation) installed.
 
-From the root of the Morpheus project we will launch a Triton Docker container with the `models` directory mounted into the container:
+We will launch a Triton Docker container with:
 
 ```shell
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-  -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:23.06-py3 \
+  nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -258,7 +257,7 @@ We can also query Triton for the available models:
 curl -X POST "localhost:8000/v2/repository/index"
 ```
 
-Let's ask Triton for some information about the `phishing-bert-onnx` model which we are going to be using, parsing the large JSON output with [jq](https://stedolan.github.io/jq/):
+Let's ask Triton for some information about the `phishing-bert-onnx` model which we are going to be using, parsing the large JSON output with [`jq`](https://stedolan.github.io/jq/):
 
 ```shell
 curl "localhost:8000/v2/models/phishing-bert-onnx/config" | jq
@@ -381,7 +380,7 @@ From this information, we note that the expected dimensions of the model inputs 
 ### Defining our Pipeline
 For this pipeline we will have several configuration parameters such as the paths to the input and output files, we will be using the (click)[https://click.palletsprojects.com/] library to expose and parse these parameters as command line arguments. We will also expose the choice of using the class or function based stage implementation via the `--use_stage_function` command-line flag.
 
-> **Note**: For simplicity, we assume that the `MORPHEUS_ROOT` environment variable is set to the root of the Morpheus project repository. 
+> **Note**: For simplicity, we assume that the `MORPHEUS_ROOT` environment variable is set to the root of the Morpheus project repository.
 
 To start, we will need to instantiate and set a few attributes of the `Config` class. This object is used for configuration options that are global to the pipeline as a whole. We will provide this object to each stage along with stage-specific configuration parameters.
 
@@ -389,7 +388,7 @@ To start, we will need to instantiate and set a few attributes of the `Config` c
 config = Config()
 config.mode = PipelineModes.NLP
 
-config.num_threads = os.cpu_count()
+config.num_threads = len(os.sched_getaffinity(0))
 config.feature_length = model_fea_length
 
 with open(labels_file, encoding='UTF-8') as fh:
@@ -402,7 +401,7 @@ The `feature_length` property needs to match the dimensions of the model inputs,
 
 Ground truth classification labels are read from the `morpheus/data/labels_phishing.txt` file included in Morpheus.
 
-Now that our config object is populated, we move on to the pipeline itself. We will be using the same input file from the previous example. 
+Now that our configuration object is populated, we move on to the pipeline itself. We will be using the same input file from the previous example.
 
 Next, we will add our custom recipient features stage to the pipeline. We imported both implementations of the stage, allowing us to add the appropriate one based on the `use_stage_function` value provided by the command-line.
 
@@ -414,7 +413,7 @@ else:
     pipeline.add_stage(RecipientFeaturesStage(config))
 ```
 
-To tokenize the input data we will use Morpheus' `PreprocessNLPStage`. This stage uses the [cudf subword tokenizer](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.core.subword_tokenizer.SubwordTokenizer.__call__.html) to transform strings into a tensor of numbers to be fed into the neural network model. Rather than split the string by characters or whitespaces, we split them into meaningful subwords based upon the occurrence of the subwords in a large training corpus. You can find more details here: [https://arxiv.org/abs/1810.04805v2](https://arxiv.org/abs/1810.04805v2). All we need to know for now is that the text will be converted to subword token ids based on the vocabulary file that we provide (`vocab_hash_file=vocab file`).
+To tokenize the input data we will use Morpheus' `PreprocessNLPStage`. This stage uses the [cuDF subword tokenizer](https://docs.rapids.ai/api/cudf/stable/user_guide/api_docs/subword_tokenize/#subwordtokenizer) to transform strings into a tensor of numbers to be fed into the neural network model. Rather than split the string by characters or whitespaces, we split them into meaningful subwords based upon the occurrence of the subwords in a large training corpus. You can find more details here: [https://arxiv.org/abs/1810.04805v2](https://arxiv.org/abs/1810.04805v2). All we need to know for now is that the text will be converted to subword token ids based on the vocabulary file that we provide (`vocab_hash_file=vocab file`).
 
 Let's go ahead and instantiate our `PreprocessNLPStage` and add it to the pipeline:
 
@@ -453,7 +452,7 @@ pipeline.add_stage(
 pipeline.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
 ```
 
-Here we add a postprocessing stage that adds the probability score for `is_phishing`:
+Here we add a post-processing stage that adds the probability score for `is_phishing`:
 
 ```python
 pipeline.add_stage(AddScoresStage(config, labels=["is_phishing"]))
@@ -461,7 +460,7 @@ pipeline.add_stage(AddScoresStage(config, labels=["is_phishing"]))
 
 Lastly, we will save our results to disk. For this purpose, we are using two stages that are often used in conjunction with each other: `SerializeStage` and `WriteToFileStage`.
 
-The `SerializeStage` is used to include and exclude columns as desired in the output. Importantly, it also handles conversion from the `MultiMessage`-derived output type to the `MessageMeta` class that is expected as input by the `WriteToFileStage`.
+The `SerializeStage` is used to include and exclude columns as desired in the output. Importantly, it also handles conversion from `ControlMessage` output type to the `MessageMeta` class that is expected as input by the `WriteToFileStage`.
 
 The `WriteToFileStage` will append message data to the output file as messages are received. Note however that for performance reasons the `WriteToFileStage` does not flush its contents out to disk every time a message is received. Instead, it relies on the underlying [buffered output stream](https://gcc.gnu.org/onlinedocs/libstdc++/manual/streambufs.html) to flush as needed, and then will close the file handle on shutdown.
 
@@ -541,7 +540,7 @@ MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
     default="phishing-bert-onnx",
     help="The name of the model that is deployed on Tritonserver.",
 )
-@click.option("--server_url", default='localhost:8001', help="Tritonserver url.")
+@click.option("--server_url", default='localhost:8000', help="Tritonserver url.")
 @click.option(
     "--output_file",
     default=os.path.join(tempfile.gettempdir(), "detections.jsonlines"),
@@ -564,7 +563,7 @@ def run_pipeline(use_stage_function: bool,
     config.mode = PipelineModes.NLP
 
     # Set the thread count to match our cpu count
-    config.num_threads = os.cpu_count()
+    config.num_threads = len(os.sched_getaffinity(0))
     config.feature_length = model_fea_length
 
     with open(labels_file, encoding='UTF-8') as fh:
@@ -631,7 +630,7 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
   recipient-features \
   deserialize \
   preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=true --do_lower_case=true --add_special_tokens=false \
-  inf-triton --model_name=phishing-bert-onnx --server_url=localhost:8001 --force_convert_inputs=true \
+  inf-triton --model_name=phishing-bert-onnx --server_url=localhost:8000 --force_convert_inputs=true \
   monitor --description="Inference Rate" --smoothing=0.001 --unit=inf \
   add-scores --label=is_phishing \
   serialize \
@@ -640,9 +639,9 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
 
 ## Stage Constructors
 
-In our `RecipientFeaturesStage` example we added a constructor to our stage, however we didn't go into much detail on the implementation. Every stage constructor must receive an instance of a `morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus config object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments. It is a best practice to perform any necessary validation checks in the constructor, and raising an exception in the case of mis-configuration. This allows us to fail early rather than after the pipeline has started.
+In our `RecipientFeaturesStage` example we added a constructor to our stage, however we didn't go into much detail on the implementation. Every stage constructor must receive an instance of a {py:class}`~morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus configuration object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments. It is a best practice to perform any necessary validation checks in the constructor, and raising an exception in the case of mis-configuration. This allows us to fail early rather than after the pipeline has started.
 
-In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument. This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users. Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
+In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument. This new constructor argument is documented following the [`numpydoc`](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users. Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
 
 > **Note**: Setting the pipeline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
 
@@ -743,13 +742,19 @@ Options:
 
 ### Class Based Approach
 
-Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource` including the `PreallocatorMixin`. Second, the required methods are the `name` property, `_build_source`, `compute_schema` and `supports_cpp_node` methods.
+Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing {py:class}`~morpheus.pipeline.single_output_source.SingleOutputSource` and including the `PreallocatorMixin`. Second, the required methods are the `name` property, `_build_source`, `compute_schema` and `supports_cpp_node` methods.
 
 In this example, we will create a source that reads messages from a [RabbitMQ](https://www.rabbitmq.com/) queue using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python. For simplicity, we will assume that authentication is not required for our RabbitMQ exchange and that the body of the RabbitMQ messages will be JSON formatted. Both authentication and support for other formats could be easily added later.
 
 The `PreallocatorMixin` when added to a stage class, typically a source stage, indicates that the stage emits newly constructed DataFrames either directly or contained in a `MessageMeta` instance into the pipeline. Adding this mixin allows any columns needed by other stages to be inserted into the DataFrame.
 
-The `compute_schema` method allows us to define our output type of `MessageMeta`, we do so by calling the `set_type` method of the `output_schema` attribute of the `StageSchema` object passed into the method.  Of note here is that it is perfectly valid for a stage to determine its output type based upon configuration arguments passed into the constructor. However the stage must document a single output type per output port. If a stage emitted multiple output types, then the types must share a common base class which would serve as the stage's output type.
+Similar to the pass through stage, this new source stage should be able to operate in both GPU and CPU execution modes, as such we will be using the `GpuAndCpuMixin` mixin. One thing to note is that the DataFrame payload of a `MessageMeta` object is always a `cudf.DataFrame` when running in GPU mode and a `pandas.DataFrame` when running in CPU mode. When supporting both GPU and CPU execution modes, care must be taken to avoid directly importing `cudf` (or any other package requiring a GPU) when running in CPU mode on a system without a GPU and would therefore result in an error. Stages are able to examine the execution mode with the `morpheus.config.Config.execution_mode` attribute. The {py:func}`~morpheus.utils.type_utils.get_df_pkg` helper method is used to import the appropriate DataFrame package based on the execution mode in the constructor:
+```python
+    # This will return either cudf.DataFrame or pandas.DataFrame depending on the execution mode
+    self._df_pkg = get_df_pkg(config.execution_mode)
+```
+
+The `compute_schema` method allows us to define our output type of `MessageMeta`, we do so by calling the `set_type` method of the `output_schema` attribute of the `StageSchema` object passed into the method. Of note here is that it is perfectly valid for a stage to determine its output type based upon configuration arguments passed into the constructor. However the stage must document a single output type per output port. If a stage emitted multiple output types, then the types must share a common base class which would serve as the stage's output type.
 ```python
 def compute_schema(self, schema: StageSchema):
     schema.output_schema.set_type(MessageMeta)
@@ -762,20 +767,20 @@ def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
     return builder.make_source(self.unique_name, self.source_generator)
 ```
 
-The `source_generator` method is where most of the RabbitMQ-specific code exists. When we have a message that we wish to emit into the pipeline, we simply `yield` it.
+The `source_generator` method is where most of the RabbitMQ-specific code exists. When we have a message that we wish to emit into the pipeline, we simply `yield` it. We continue this process until the `is_stop_requested()` method returns `True` or `subscription.is_subscribed()` returns `False`.
 
 ```python
-def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
+def source_generator(self, subscription: mrc.Subscription) -> collections.abc.Iterator[MessageMeta]:
     try:
-        while not self._stop_requested:
-            (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
+        while not self.is_stop_requested() and subscription.is_subscribed():
+            (method_frame, _, body) = self._channel.basic_get(self._queue_name)
             if method_frame is not None:
                 try:
                     buffer = StringIO(body.decode("utf-8"))
-                    df = cudf.io.read_json(buffer, orient='records', lines=True)
+                    df = self._df_pkg.read_json(buffer, orient='records', lines=True)
                     yield MessageMeta(df=df)
                 except Exception as ex:
-                    logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
+                    logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
                 finally:
                     self._channel.basic_ack(method_frame.delivery_tag)
             else:
@@ -786,7 +791,7 @@ def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
         self._connection.close()
 ```
 
-Note that we read messages as quickly as we can from the queue. When the queue is empty we call `time.sleep`, allowing for a context switch to occur if needed. We acknowledge the message (by calling `basic_ack`) only once we have successfully emitted the message or failed to deserialize the message. This means that if the pipeline shuts down while consuming the queue, we will not lose any messages. However, in that situation we may end up with a duplicate message (i.e., if the pipeline is shut down after we have yielded the message but before calling `basic_ack`).
+Note that we read messages as quickly as we can from the queue. When the queue is empty we call `time.sleep`, allowing for a context switch to occur if needed. We acknowledge the message (by calling `basic_ack`) only once we have successfully emitted the message or failed to deserialize the message. This means that if the pipeline shuts down while consuming the queue, we will not lose any messages. However, in that situation we may end up with a duplicate message (that is, if the pipeline is shut down after we have yielded the message but before calling `basic_ack`).
 
 #### The Completed Source Stage
 
@@ -800,20 +805,20 @@ import mrc
 import pandas as pd
 import pika
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.utils.type_utils import get_df_pkg
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("from-rabbitmq")
-class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
+class RabbitMQSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource):
     """
     Source stage used to load messages from a RabbitMQ queue.
 
@@ -825,11 +830,11 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
         Hostname or IP of the RabbitMQ server.
     exchange : str
         Name of the RabbitMQ exchange to connect to.
-    exchange_type : str
+    exchange_type : str, optional
         RabbitMQ exchange type; defaults to `fanout`.
-    queue_name : str
+    queue_name : str, optional
         Name of the queue to listen to. If left blank, RabbitMQ will generate a random queue name bound to the exchange.
-    poll_interval : str
+    poll_interval : str, optional
         Amount of time  between polling RabbitMQ for new messages
     """
 
@@ -855,8 +860,8 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._poll_interval = pd.Timedelta(poll_interval)
 
-        # Flag to indicate whether or not we should stop
-        self._stop_requested = False
+        # This will return either cudf.DataFrame or pandas.DataFrame depending on the execution mode
+        self._df_pkg = get_df_pkg(config.execution_mode)
 
     @property
     def name(self) -> str:
@@ -868,23 +873,17 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def stop(self):
-        # Indicate we need to stop
-        self._stop_requested = True
-
-        return super().stop()
-
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self.source_generator)
 
-    def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
+    def source_generator(self, subscription: mrc.Subscription) -> collections.abc.Iterator[MessageMeta]:
         try:
-            while not self._stop_requested:
+            while not self.is_stop_requested() and subscription.is_subscribed():
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
                         buffer = StringIO(body.decode("utf-8"))
-                        df = cudf.io.read_json(buffer, orient='records', lines=True)
+                        df = self._df_pkg.read_json(buffer, orient='records', lines=True)
                         yield MessageMeta(df=df)
                     except Exception as ex:
                         logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
@@ -899,7 +898,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 ```
 
 ### Function Based Approach
-Similar to the `stage` decorator used in previous examples Morpheus provides a `source` decorator which wraps a generator function to be used as a source stage. In the class based approach we explicitly added the `PreallocatorMixin`, when using the `source` decorator the return type annotation will be inspected and a stage will be created with the `PreallocatorMixin` if the return type is a `DataFrame` type or a message which contains a `DataFrame` (`MessageMeta` and `MultiMessage`).
+Similar to the `stage` decorator used in previous examples Morpheus provides a {py:func}`~morpheus.pipeline.stage_decorator.source` decorator which wraps a generator function to be used as a source stage. In the class based approach we explicitly added the `PreallocatorMixin`, when using the `source` decorator the return type annotation will be inspected and a stage will be created with the `PreallocatorMixin` if the return type is a `DataFrame` type or a message which contains a `DataFrame` (`MessageMeta` and `ControlMessage`). We will also indicate which execution modes are supported by the stage by setting the `execution_modes` argument to the decorator.
 
 The code for the function will first perform the same setup as was used in the class constructor, then entering a nearly identical loop as that in the `source_generator` method.
 
@@ -909,19 +908,21 @@ import logging
 import time
 from io import StringIO
 
+import mrc
 import pandas as pd
 import pika
 
-import cudf
-
+from morpheus.config import ExecutionMode
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.stage_decorator import source
+from morpheus.utils.type_utils import get_df_pkg
 
 logger = logging.getLogger(__name__)
 
 
-@source(name="from-rabbitmq")
-def rabbitmq_source(host: str,
+@source(name="from-rabbitmq", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
+def rabbitmq_source(subscription: mrc.Subscription,
+                    host: str,
                     exchange: str,
                     exchange_type: str = 'fanout',
                     queue_name: str = '',
@@ -931,6 +932,8 @@ def rabbitmq_source(host: str,
 
     Parameters
     ----------
+    subscription : mrc.Subscription
+        Subscription object used to determine if the pipeline is still running.
     host : str
         Hostname or IP of the RabbitMQ server.
     exchange : str
@@ -956,13 +959,15 @@ def rabbitmq_source(host: str,
 
     poll_interval = pd.Timedelta(poll_interval)
 
+    df_pkg = get_df_pkg()
+
     try:
-        while True:
+        while subscription.is_subscribed():
             (method_frame, _, body) = channel.basic_get(queue_name)
             if method_frame is not None:
                 try:
                     buffer = StringIO(body.decode("utf-8"))
-                    df = cudf.io.read_json(buffer, orient='records', lines=True)
+                    df = df_pkg.read_json(buffer, orient='records', lines=True)
                     yield MessageMeta(df=df)
                 except Exception as ex:
                     logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
@@ -986,7 +991,7 @@ The code for our sink will be similar to other stages with a few changes. First,
 
 ```python
 @register_stage("to-rabbitmq")
-class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
+class WriteToRabbitMQStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 ```
 
 Our sink will function as a pass-through allowing the possibility of other sinks to be added to the pipeline. We could, hypothetically, have a pipeline where we emit the results to both RabbitMQ and a file. For this reason we will also be using the `PassThruTypeMixin`.
@@ -1001,16 +1006,21 @@ def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> 
     return node
 ```
 
-Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [io.StringIO](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
+Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the DataFrane attached to the incoming message. We then serialize to an [`io.StringIO`](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
+
+> **Note**: This stage supports both GPU and CPU execution modes. When running in GPU mode, the payload of a `MessageMeta` object is always a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/user_guide/api_docs/dataframe/). When running in CPU mode, the payload is always a [pandas](https://pandas.pydata.org/) [DataFrane](https://pandas.pydata.org/docs/reference/frame.html). In many cases the two will be API compatible without requiring any changes to the code. In some cases however, the API may differ slightly and there is a need to know the payload type, care must be taken not to directly import `cudf` or any other package requiring a GPU when running in CPU mode on a system without a GPU. Morpheus provides some helper methods to assist with this in the {py:mod}`~morpheus.utils.type_utils` module, such as {py:func}`~morpheus.utils.type_utils.is_cudf_type`  and {py:func}`~morpheus.utils.type_utils.get_df_pkg_from_obj`.
 
 ```python
-def on_data(self, message: MessageMeta):
-    df = message.df
-    buffer = StringIO()
-    df.to_json(buffer, orient='records', lines=True)
-    body = buffer.getvalue().strip()
-    self._channel.basic_publish(exchange=self._exchange, routing_key=self._routing_key, body=body)
-    return message
+    def on_data(self, message: MessageMeta) -> MessageMeta:
+        df = message.df
+
+        buffer = StringIO()
+        df.to_json(buffer, orient='records', lines=True)
+        body = buffer.getvalue().strip()
+
+        self._channel.basic_publish(exchange=self._exchange, routing_key=self._routing_key, body=body)
+
+        return message
 ```
 
 The two new methods introduced in this example are the `on_error` and `on_complete` methods. For both methods, we want to make sure  the [connection](https://pika.readthedocs.io/en/stable/modules/connection.html) object is properly closed.
@@ -1038,6 +1048,7 @@ import pika
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
@@ -1045,7 +1056,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("to-rabbitmq")
-class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
+class WriteToRabbitMQStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
     """
     Source stage used to load messages from a RabbitMQ queue.
 
@@ -1107,4 +1118,4 @@ class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
         self._connection.close()
 ```
 
-> **Note**: For information about testing the `RabbitMQSourceStage`, `rabbitmq_source`, and `WriteToRabbitMQStage` stages refer to `examples/developer_guide/2_2_rabbitmq/README.md` in the the Morpheus repo.
+> **Note**: For information about testing the `RabbitMQSourceStage`, `rabbitmq_source`, and `WriteToRabbitMQStage` stages refer to `examples/developer_guide/2_2_rabbitmq/README.md` in the Morpheus repo.

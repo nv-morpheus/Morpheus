@@ -22,3 +22,5 @@ Python API
     :recursive:
 
     morpheus
+    morpheus_dfp
+    morpheus_llm

@@ -99,11 +99,11 @@ fi
 # Run isort
 if [[ "${SKIP_ISORT}" == "" ]]; then
    echo "Running isort..."
-   python3 -m isort --settings-file ${PY_CFG} ${PY_MODIFIED_FILES[@]} 2>&1
+   python3 -m isort --settings-file ${PROJ_TOML} ${PY_MODIFIED_FILES[@]} 2>&1
 fi
 
 # Run yapf
 if [[ "${SKIP_YAPF}" == "" ]]; then
    echo "Running yapf..."
-   python3 -m yapf -i --style ${PY_CFG} -r ${PY_MODIFIED_FILES[@]}
+   python3 -m yapf -i --style ${PROJ_TOML} -r ${PY_MODIFIED_FILES[@]}
 fi

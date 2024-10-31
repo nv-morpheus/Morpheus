@@ -16,8 +16,7 @@ import logging
 import os
 
 import click
-from vdb_upload.vdb_utils import build_cli_configs
-from vdb_upload.vdb_utils import build_final_config
+from vdb_upload.vdb_utils import build_config
 from vdb_upload.vdb_utils import is_valid_service
 
 logger = logging.getLogger(__name__)
@@ -79,7 +78,7 @@ def run():
 )
 @click.option(
     "--num_threads",
-    default=os.cpu_count(),
+    default=len(os.sched_getaffinity(0)),
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use",
 )
@@ -116,7 +115,7 @@ def run():
 @click.option(
     "--triton_server_url",
     type=str,
-    default="localhost:8001",
+    default="localhost:8000",
     help="Triton server URL.",
 )
 @click.option(
@@ -144,7 +143,8 @@ def run():
     default="http://localhost:19530",
     help="URI for connecting to Vector Database server.",
 )
-def pipeline(**kwargs):
+@click.pass_context
+def pipeline(ctx: click.Context, **kwargs):
     """
     Configure and run the data processing pipeline based on the specified command-line options.
 
@@ -154,6 +154,8 @@ def pipeline(**kwargs):
 
     Parameters
     ----------
+    ctx: click.Context
+        Click context object.
     **kwargs : dict
         Keyword arguments containing command-line options.
 
@@ -161,18 +163,19 @@ def pipeline(**kwargs):
     -------
     The result of the internal pipeline function call.
     """
-    vdb_config_path = kwargs.pop('vdb_config_path', None)
-    cli_source_conf, cli_embed_conf, cli_pipe_conf, cli_tok_conf, cli_vdb_conf = build_cli_configs(**kwargs)
-    final_config = build_final_config(vdb_config_path,
-                                      cli_source_conf,
-                                      cli_embed_conf,
-                                      cli_pipe_conf,
-                                      cli_tok_conf,
-                                      cli_vdb_conf)
 
+    vdb_config_path = kwargs.pop('vdb_config_path', None)
+
+    # When a config file is provided, only merge the explicit flags set by the user
+    explicit_cli_args = {}
+    for (key, value) in kwargs.items():
+        if ctx.get_parameter_source(key) is not click.core.ParameterSource.DEFAULT:
+            explicit_cli_args[key] = value
+
+    config = build_config(vdb_conf_path=vdb_config_path, explicit_cli_args=explicit_cli_args, implicit_cli_args=kwargs)
     # Call the internal pipeline function with the final config dictionary
     from .pipeline import pipeline as _pipeline
-    return _pipeline(**final_config)
+    return _pipeline(**config)
 
 
 @run.command()

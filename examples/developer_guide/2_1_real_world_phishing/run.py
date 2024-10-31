@@ -75,7 +75,7 @@ MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
     default="phishing-bert-onnx",
     help="The name of the model that is deployed on Tritonserver.",
 )
-@click.option("--server_url", default='localhost:8001', help="Tritonserver url.")
+@click.option("--server_url", default='localhost:8000', help="Tritonserver url.")
 @click.option(
     "--output_file",
     default=os.path.join(tempfile.gettempdir(), "detections.jsonlines"),
@@ -98,7 +98,7 @@ def run_pipeline(use_stage_function: bool,
     config.mode = PipelineModes.NLP
 
     # Set the thread count to match our cpu count
-    config.num_threads = os.cpu_count()
+    config.num_threads = len(os.sched_getaffinity(0))
     config.feature_length = model_fea_length
 
     with open(labels_file, encoding='UTF-8') as fh:

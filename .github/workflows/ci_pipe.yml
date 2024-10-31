@@ -21,12 +21,15 @@ on:
       run_check:
         required: true
         type: boolean
+      conda_upload_label:
+        description: 'The label to use when uploading the morpheus conda packages. Leave empty to disable uploading'
+        required: true
+        type: string
       conda_run_build:
-        description: 'Runs the conda-build stage to ensure the conda package builds successfully'
+        description: 'Runs the conda-build stage to build the morpheus conda packages'
         required: true
         type: boolean
-      conda_upload_label:
-        description: 'The label to use when uploading the conda package. Leave empty to disable uploading'
+      base_container:
         required: true
         type: string
       container:
@@ -36,6 +39,8 @@ on:
         required: true
         type: string
     secrets:
+      CONDA_TOKEN:
+        required: true
       NGC_API_KEY:
         required: true
 
@@ -132,7 +137,8 @@ jobs:
   test:
     name: Test
     runs-on: linux-amd64-gpu-v100-latest-1
-    timeout-minutes: 60
+    # Consider lowering this back down to 60 minutes per https://github.com/nv-morpheus/Morpheus/issues/1948
+    timeout-minutes: 90
     container:
       credentials:
         username: '$oauthtoken'
@@ -199,16 +205,17 @@ jobs:
         run: ./morpheus/ci/scripts/github/docs.sh
 
   package:
-    name: Package
+    name: Conda Package
     if: ${{ inputs.conda_run_build }}
-    needs: [check, documentation, test]
-    runs-on: linux-amd64-cpu16
+    needs: [documentation, test]
+    runs-on: linux-amd64-gpu-v100-latest-1
     timeout-minutes: 60
     container:
-      credentials:
-        username: '$oauthtoken'
-        password: ${{ secrets.NGC_API_KEY }}
-      image: ${{ inputs.container }}
+      image: ${{ inputs.base_container }}
+      options: --cap-add=sys_nice
+      env:
+        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
+        PARALLEL_LEVEL: '10'
     strategy:
       fail-fast: true
 
@@ -228,10 +235,10 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-duration-seconds: 43200 # 12h
 
-      - name: conda
+      - name: Build morpheus-core conda package
         shell: bash
         env:
           CONDA_TOKEN: "${{ secrets.CONDA_TOKEN }}"
           SCRIPT_ARGS: "${{ inputs.conda_upload_label != '' && 'upload' || '' }}"
           CONDA_PKG_LABEL: "${{ inputs.conda_upload_label }}"
-        run: ./morpheus/ci/scripts/github/conda.sh $SCRIPT_ARGS
+        run: ./morpheus/ci/scripts/github/conda_libs.sh $SCRIPT_ARGS

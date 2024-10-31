@@ -14,12 +14,13 @@
 # limitations under the License.
 
 # Dependency list for https://github.com/rapidsai/dependency-file-generator
+
 files:
   # Includes all dependencies together in a single file
   all:
     output: conda
     matrix:
-      cuda: ["12.1"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -45,7 +46,7 @@ files:
   dev:
     output: conda
     matrix:
-      cuda: ["12.1"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -67,7 +68,7 @@ files:
   build:
     output: none
     matrix:
-      cuda: ["12.1"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -87,7 +88,7 @@ files:
   test:
     output: none
     matrix:
-      cuda: ["12.1"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -108,7 +109,7 @@ files:
   docs:
     output: none
     matrix:
-      cuda: ["12.1"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -131,7 +132,7 @@ files:
   runtime:
     output: conda
     matrix:
-      cuda: ["12.1"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - cudatoolkit
@@ -145,10 +146,11 @@ files:
   examples:
     output: conda
     matrix:
-      cuda: ["12.1"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - cve-mitigation
+      - example-abp-nvsmi
       - example-dfp-prod
       - example-gnn
       - example-llms
@@ -161,7 +163,7 @@ files:
   model-utils:
     output: conda
     matrix:
-      cuda: ["12.1"]
+      cuda: ["12.5"]
       arch: [x86_64]
     includes:
       - model-training-tuning
@@ -173,6 +175,28 @@ files:
     includes:
       - checks
       - python
+
+  # morpheus-core pip dependencies are published as a morpheus package data file
+  morpheus_core:
+    output: requirements
+    requirements_dir: python/morpheus/morpheus
+    includes:
+      - morpheus_core_pip
+
+  # morpheus-dfp pip dependencies are published as a morpheus_dfp package data file
+  morpheus_dfp:
+    output: requirements
+    requirements_dir: python/morpheus_dfp/morpheus_dfp
+    includes:
+      - morpheus_core_pip
+
+  # morpheus-llm pip dependencies are published as a morpheus_llm package data file
+  morpheus_llm:
+    output: requirements
+    requirements_dir: python/morpheus_llm/morpheus_llm
+    includes:
+      - morpheus_core_pip
+      - morpheus_llm_pip
 
 channels:
   - conda-forge
@@ -196,26 +220,30 @@ dependencies:
       - output_types: [conda]
         matrices:
           - matrix:
-              cuda: "12.1"
+              cuda: "12.5"
             packages:
-              - cuda-cudart=12.1
-              - cuda-nvrtc=12.1
-              - cuda-nvtx=12.1
-              - cuda-version=12.1
+              - cuda-cudart=12.5
+              - cuda-nvrtc=12.5
+              - cuda-nvtx=12.5
+              - cuda-version=12.5
 
   cudatoolkit-dev:
     specific:
       - output_types: [conda]
         matrices:
           - matrix:
-              cuda: "12.1"
+              cuda: "12.5"
             packages:
-              - cuda-cudart-dev=12.1
-              - cuda-nvml-dev=12.1
-              - cuda-nvrtc-dev=12.1
-              - cuda-nvtx-dev=12.1
-              - cuda-tools=12.1
-              - cuda-version=12.1
+              - cuda-cudart-dev=12.5
+              - cuda-nvml-dev=12.5
+              - cuda-nvrtc-dev=12.5
+              - cuda-nvtx-dev=12.5
+              - cuda-sanitizer-api
+              - cuda-version=12.5
+              - libcublas-dev # required by matx
+              - libcufft-dev # required by matx
+              - libcusolver-dev # required by matx
+              - libcurand-dev # required by matx
 
 
 
@@ -226,21 +254,21 @@ dependencies:
       - output_types: [conda]
         packages:
           # Compilers
-          - cuda-nvcc=12.1
+          - cuda-nvcc=12.5
           - cxx-compiler
-          - gcc_linux-64=11.2
-          - gxx_linux-64=11.2
+          - gxx=12.1
 
           # Non-Compiler Dependencies
           - automake=1.16.5 # Needed for DOCA build
+          - c-ares=1.32 # 1.33 causes an undefined symbol error
           - ccache
           - cmake=3.27
-          - cuda-cudart-dev=12.1
-          - cuda-version=12.1
+          - cuda-cudart-dev=12.5
+          - cuda-version=12.5
           - libtool # Needed for DOCA build
           - ninja=1.11
           - pkg-config=0.29 # for mrc cmake
-          - sysroot_linux-64=2.17
+          - sysroot_linux-64>=2.28
 
   # Build dependencies for Morpheus on the host arch. Mirrors the `host` section in
   # ci/conda/recipes/morpheus/meta.yaml
@@ -249,19 +277,21 @@ dependencies:
       - output_types: [conda]
         packages:
           # Include: cudatoolkit-dev
-          - cudf=24.02
+          - cudf=24.10
           - cython=3.0
-          - glog=0.6
-          - libcudf=24.02
+          - glog>=0.7.1,<0.8
+          - gtest=1.14
+          - libcudf=24.10
           - librdkafka>=1.9.2,<1.10.0a0
-          - mrc=24.06
+          - libzlib >=1.3.1,<2
+          - mrc=25.02
           - nlohmann_json=3.11
           - pybind11-stubgen=0.10.5
+          - pylibcudf=24.10
           - rapidjson=1.1.0
           - rdma-core>=48 # Needed for DOCA.
           - scikit-build=0.17.6
           - versioneer-518
-          - zlib=1.2.13
 
   checks:
     common:
@@ -284,6 +314,9 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - pylint=3.0.3
+          - vale=3.7
+          - vale-styles-microsoft
+          - vale-styles-write-good
           - versioneer
           - yapf=0.40.1
 
@@ -319,30 +352,26 @@ dependencies:
           - appdirs
           - beautifulsoup4=4.12
           - click>=8
-          # - cuda-version=12.1 ##
-          - cudf=24.02
+          # - cuda-version=12.5 ##
+          - cudf=24.10
           - cupy # Version determined from cudf
           - datacompy=0.10
           - dill=0.3.7
           - docker-py=5.0
           - elasticsearch==8.9.0
           - feedparser=6.0
-          - grpcio=1.59
-          - grpcio-status=1.59
+          - grpcio
+          - grpcio-status
           # - libwebp=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863 ##
-          - mlflow>=2.10.0,<3
-          - mrc=24.06
+          - mlflow #>=2.10.0,<3
+          - mrc=25.02
           - networkx=2.8.8
           - numpydoc=1.5
-          - nvtabular=23.08.00
           - pydantic
-          # - python ##
           - python-confluent-kafka>=1.9.2,<1.10.0a0
           - python-graphviz
-          - pytorch-cuda
-          - pytorch=*=*cuda*
           - pluggy=1.3
-          - rapids-dask-dependency=24.02 # provides dask and distributed
+          - rapids-dask-dependency=24.10 # provides dask and distributed
           - requests
           - requests-cache=1.1
           - scikit-learn=1.3.2
@@ -354,16 +383,19 @@ dependencies:
           - websockets
           - pip
           - pip:
+            - --extra-index-url https://download.pytorch.org/whl/cu124
             - databricks-cli < 0.100
             - databricks-connect
             - milvus==2.3.5 # update to match pymilvus when available
             - pymilvus==2.3.6
+            - torch==2.4.0+cu124
 
   test_python_morpheus:
     common:
       - output_types: [conda]
         packages:
           - &nodejs nodejs=18.*
+          - &pypdfium2 pypdfium2=4.30
           - pytest-asyncio
           - pytest-benchmark=4.0
           - pytest-cov
@@ -371,8 +403,26 @@ dependencies:
           - &python-docx python-docx==1.1.0
           - pip
           - pip:
-              - &PyMuPDF PyMuPDF==1.23.*
               - pytest-kafka==0.6.0
+
+  morpheus_core_pip:
+    common:
+      - output_types: [requirements]
+        packages:
+           - --extra-index-url https://download.pytorch.org/whl/cu124
+           - torch==2.4.0+cu124
+
+  morpheus_llm_pip:
+    common:
+      - output_types: [requirements]
+        packages:
+           - faiss-cpu
+           - google-search-results==2.4
+           - langchain==0.1.16
+           - langchain-nvidia-ai-endpoints==0.0.11
+           - milvus==2.3.5 # update to match pymilvus when available
+           - pymilvus==2.3.6
+           - nemollm==0.3.5
 
   example-dfp-prod:
     common:
@@ -382,19 +432,25 @@ dependencies:
           - boto3
           - kfp
           - papermill=2.4.0
-          - s3fs=2023.12.2
+          - s3fs
 
   example-gnn:
     common:
       - output_types: [conda]
         packages:
-          - &cuml cuml=24.02.*
+          - &cuml cuml=24.10.*
           - pip
           - pip:
             - --find-links https://data.dgl.ai/wheels/cu121/repo.html
             - --find-links https://data.dgl.ai/wheels-test/repo.html
             - dgl==2.0.0
             - dglgo
+
+  example-abp-nvsmi:
+    common:
+      - output_types: [conda]
+        packages:
+          - pynvml=11.4
 
   example-llms:
     common:
@@ -410,6 +466,7 @@ dependencies:
           - onnx=1.15
           - openai=1.13
           - pypdf=3.17.4
+          - *pypdfium2
           - *python-docx
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
           - sentence-transformers=2.7
@@ -417,10 +474,9 @@ dependencies:
           - pip:
             - langchain==0.1.16
             - langchain-nvidia-ai-endpoints==0.0.11
-            - faiss-gpu==1.7.*
+            - faiss-cpu
             - google-search-results==2.4
             - nemollm==0.3.5
-            - *PyMuPDF
 
   model-training-tuning:
     common:

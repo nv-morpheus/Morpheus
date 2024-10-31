@@ -18,8 +18,8 @@ limitations under the License.
 
 ## SQL Sender Sketch Query Constructor Module
 
-Module ID: sql_sender_sketch_query_constructor
-Module Namespace: morpheus_spear_phishing
+Module ID: `sql_sender_sketch_query_constructor`
+Module Namespace: `morpheus_spear_phishing`
 
 This module constructs SQL sender sketch queries in the spear phishing detection pipeline.
 
@@ -27,7 +27,7 @@ This module constructs SQL sender sketch queries in the spear phishing detection
 
 | Parameter          | Type | Description                           | Example Value | Default Value |
 |--------------------|------|---------------------------------------|---------------|---------------|
-| `raise_on_failure` | boolean | If true, raise exceptions on failures | false         | `false`       |
+| `raise_on_failure` | boolean | If true, raise exceptions on failures | `false`         | `false`       |
 
 ### Example JSON Configuration
 
@@ -35,3 +35,4 @@ This module constructs SQL sender sketch queries in the spear phishing detection
 {
   "raise_on_failure": false
 }
+```

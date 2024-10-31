@@ -1,0 +1,84 @@
+# List of case-sensitive regular expressions matching words that should be accepted by Vale. For product names like
+# "cuDF" or "cuML", we want to ensure that they are capitalized the same way they're written by the product owners.
+# Regular expressions are parsed according to the Go syntax: https://golang.org/pkg/regexp/syntax/
+
+API(s?)
+[Aa]utoencoder
+[Aa]nonymize(d?)
+[Bb]ackpressure
+[Bb]atcher
+[Bb]oolean
+# Documentation for ccache only capitalizes the name at the start of a sentence https://ccache.dev/
+[Cc]cache
+[Cc]hatbot(s?)
+# clangd is never capitalized even at the start of a sentence https://clangd.llvm.org/
+clangd
+CMake
+[Cc]omposable
+Conda
+CPython
+[Cc]ryptocurrenc[y|ies]
+cuDF
+cuML
+CuPy
+[Cc]yber
+[Cc]ybersecurity
+Cython
+Dask
+Databricks
+[Dd]eserialize
+[Dd]ev
+[Dd]ocstring(s?)
+[Ee]ngineerable
+[Ee]xplainability
+[Gg]eneratable
+glog
+GPU(s?)
+Grafana
+[Gg]ranularities
+[Hh]ashable
+[Hh]yperparameter(s?)
+[Ii]nferencing
+jsonlines
+# libcudf isn't styled in the way that cuDF is https://docs.rapids.ai/api/libcudf/stable/
+libcudf
+LLM(s?)
+# https://github.com/logpai/loghub/
+Loghub
+Milvus
+PyPI
+[Mm]ixin
+MLflow
+Morpheus
+[Nn]amespace(s?)
+NeMo
+nginx
+NIC
+NIM(s?)
+NumPy
+NVIDIA
+pandas
+[Pp]arallelization
+[Pp]arsable
+PCIe
+PDF(s?)
+[Pp]reprocess
+[Pp]retrained
+pytest
+[Rr]epo
+[Rr]etarget(ed?)
+[Ss]erializable
+[Ss]ubclassing
+[Ss]ubcard(s?)
+[Ss]ubgraph(s?)
+[Ss]ubword(s?)
+[Ss]uperset(s?)
+[Tt]imestamp(s?)
+[Tt]okenization
+[Tt]okenizer(s?)
+triages
+[Uu]nencrypted
+[Uu]nittest(s?)
+[Uu]ploader
+XGBoost
+zsh

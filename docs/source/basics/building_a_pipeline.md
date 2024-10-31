@@ -64,6 +64,8 @@ Configuring Pipeline via CLI
 Starting pipeline via CLI... Ctrl+C to Quit
 Config:
 {
+  "_model_max_batch_size": 8,
+  "_pipeline_batch_size": 256,
   "ae": null,
   "class_labels": [],
   "debug": false,
@@ -75,31 +77,23 @@ Config:
   "log_config_file": null,
   "log_level": 10,
   "mode": "OTHER",
-  "model_max_batch_size": 8,
   "num_threads": 64,
-  "pipeline_batch_size": 256,
   "plugins": []
 }
 CPP Enabled: True
-====Registering Pipeline====
-====Building Pipeline====
-====Building Pipeline Complete!====
-Starting! Time: 1689786614.4988477
-====Registering Pipeline Complete!====
 ====Starting Pipeline====
+====Pipeline Started====
 ====Building Segment: linear_segment_0====
-Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True)>
+Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, filter_null_columns=(), parser_kwargs={})>
   └─> morpheus.MessageMeta
-Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True)>
-  └─ morpheus.MessageMeta -> morpheus.MultiMessage
-Added stage: <serialize-2; SerializeStage(include=(), exclude=('^ID$', '^_ts_'), fixed_columns=True)>
-  └─ morpheus.MultiMessage -> morpheus.MessageMeta
+Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True, task_type=None, task_payload=None)>
+  └─ morpheus.MessageMeta -> morpheus.ControlMessage
+Added stage: <serialize-2; SerializeStage(include=(), exclude=(), fixed_columns=True)>
+  └─ morpheus.ControlMessage -> morpheus.MessageMeta
 Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Segment Complete!====
-====Pipeline Started====
 ====Pipeline Complete====
-Pipeline visualization saved to .tmp/simple_identity.png
 ```
 
 ### Pipeline Build Checks
@@ -113,10 +107,10 @@ morpheus --log_level=DEBUG run pipeline-other \
 
 Then the following error displays:
 ```
-RuntimeError: The to-file stage cannot handle input of <class 'morpheus.messages.multi_message.MultiMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
+RuntimeError: The to-file stage cannot handle input of <class 'morpheus.messages.control_message.ControlMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
 ```
 
-This indicates that the ``to-file`` stage cannot accept the input type of `morpheus.messages.multi_message.MultiMessage`. This is because the ``to-file`` stage has no idea how to write that class to a file; it only knows how to write instances of `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `MultiMessage`, to `MessageMeta`, which is exactly what the `serialize` stage does.
+This indicates that the ``to-file`` stage cannot accept the input type of `morpheus.messages.ControlMessage`. This is because the ``to-file`` stage has no idea how to write that class to a file; it only knows how to write instances of `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `ControlMessage`, to `MessageMeta`, which is exactly what the `serialize` stage does.
 
 ### Kafka Source Example
 The above example essentially just copies a file. However, it is an important to note that most Morpheus pipelines are similar in structure, in that they begin with a source stage (`from-file`) followed by a `deserialize` stage, end with a `serialize` stage followed by a sink stage (`to-file`), with the actual training or inference logic occurring in between.
@@ -142,7 +136,7 @@ morpheus run pipeline-nlp --help
 ## Basic Usage Examples
 
 ### Remove Fields from JSON Objects
-This example only copies the fields 'timestamp', 'src_ip' and 'dest_ip' from `examples/data/pcap_dump.jsonlines` to
+This example only copies the fields `timestamp`, `src_ip` and `dest_ip` from `examples/data/pcap_dump.jsonlines` to
 `out.jsonlines`.
 
 ![../img/remove_fields_from_json_objects.png](../img/remove_fields_from_json_objects.png)
@@ -211,9 +205,9 @@ Pipeline visualization saved to .tmp/multi_monitor_throughput.png
 This example shows an NLP Pipeline which uses several stages available in Morpheus. This example utilizes the Triton Inference Server to perform inference, and writes the output to a Kafka topic named `inference_output`. Both of which need to be started prior to launching Morpheus.
 
 #### Launching Triton
-From the Morpheus repo root directory, run the following to launch Triton and load the `sid-minibert` model:
+Run the following to launch Triton and load the `sid-minibert` model:
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
 ```
 
 #### Launching Kafka
@@ -222,15 +216,15 @@ Follow steps 1-8 in [Quick Launch Kafka Cluster](../developer_guide/contributing
 ![../img/nlp_kitchen_sink.png](../img/nlp_kitchen_sink.png)
 
 ```bash
-morpheus  --log_level=INFO run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+morpheus  --log_level=INFO run  --pipeline_batch_size=1024 --model_max_batch_size=32 \
    pipeline-nlp --viz_file=.tmp/nlp_kitchen_sink.png  \
    from-file --filename examples/data/pcap_dump.jsonlines \
    deserialize \
    preprocess \
-   inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8001 \
+   inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8000 \
    monitor --description "Inference Rate" --smoothing=0.001 --unit "inf" \
    add-class \
-   filter --threshold=0.8 \
+   filter --filter_source=TENSOR --threshold=0.8 \
    serialize --include 'timestamp' --exclude '^_ts_' \
    to-kafka --bootstrap_servers localhost:9092 --output_topic "inference_output" \
    monitor --description "ToKafka Rate" --smoothing=0.001 --unit "msg"
