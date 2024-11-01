@@ -24,7 +24,6 @@ from recipient_features_stage import RecipientFeaturesStage
 from recipient_features_stage_deco import recipient_features_stage
 
 import morpheus
-from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
@@ -32,7 +31,7 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
@@ -139,8 +138,8 @@ def run_pipeline(use_stage_function: bool,
     # Monitor the inference rate
     pipeline.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
 
-    # Filter values lower than 0.9
-    pipeline.add_stage(FilterDetectionsStage(config, threshold=0.9, filter_source=FilterSource.TENSOR))
+    # Add detection scores
+    pipeline.add_stage(AddScoresStage(config, labels=["is_phishing"]))
 
     # Write the to the output file
     pipeline.add_stage(SerializeStage(config))
