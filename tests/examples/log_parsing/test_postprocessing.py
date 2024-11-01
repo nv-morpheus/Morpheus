@@ -38,10 +38,11 @@ def fixture_model_config_file():
 
 def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str):
     input_file = os.path.join(TEST_DIRS.validation_data_dir, 'log-parsing-validation-data-input.csv')
-    input_df = dataset_cudf[input_file]
-    meta = MessageMeta(input_df)
 
     # we have tensor data for the first five rows
+    input_df = dataset_cudf[input_file][:5]
+    meta = MessageMeta(input_df)
+
     count = 5
     tensors = {}
     for tensor_name in ['confidences', 'input_ids', 'labels']:

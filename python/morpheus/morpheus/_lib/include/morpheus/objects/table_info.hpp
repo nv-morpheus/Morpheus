@@ -70,7 +70,7 @@ struct MORPHEUS_EXPORT TableInfoBase
     std::vector<std::string> get_column_names() const;
 
     /**
-     * @brief Get size of a index names in a data table
+     * @brief Get the number of indices in a data table
      *
      * @return cudf::size_type
      */

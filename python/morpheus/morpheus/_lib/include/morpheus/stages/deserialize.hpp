@@ -45,12 +45,6 @@ namespace morpheus {
  * @file
  */
 
-void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
-                         TensorIndex start,
-                         TensorIndex stop,
-                         control_message_task_t* task,
-                         std::shared_ptr<ControlMessage>& windowed_message);
-
 /****** DeserializationStage********************************/
 class MORPHEUS_EXPORT DeserializeStage
   : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<ControlMessage>>
