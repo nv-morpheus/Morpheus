@@ -9,13 +9,13 @@ channels:
 - nvidia/label/dev
 - pytorch
 dependencies:
-- boto3
+- boto3=1.35
 - kfp
 - morpheus-dfp=24.10
 - nodejs=18.*
 - papermill=2.4.0
 - pip
-- s3fs
+- s3fs=2024.10
 - tini=0.19
 - pip:
   - --extra-index-url https://download.pytorch.org/whl/cu124
