@@ -30,6 +30,8 @@
 { "include": ["\"cuda_runtime_api.h\"", "private", "<cuda_runtime.h>", "public"] },
 { "include": ["<driver_types.h>", "private", "<cuda_runtime.h>", "public"] },
 { "include": ["\"driver_types.h\"", "private", "<cuda_runtime.h>", "public"] },
+{ "include": ["\"cuda/__memory_resource/properties.h\"", "private", "<cuda/memory_resource>", "public"] },
+{ "include": ["\"cuda/__memory_resource/resource_ref.h\"", "private", "<cuda/memory_resource>", "public"] },
 
 # gtest
 { "include": ["@<gtest/gtest-.*>", "private", "<gtest/gtest.h>", "public"] },
