@@ -17,11 +17,11 @@
 
 #pragma once
 
-#include <morpheus/export.h>            // for exporting symbols
+#include <morpheus/export.h>              // for exporting symbols
 #include <morpheus/messages/control.hpp>  // for ControlMessage
-#include <mrc/segment/builder.hpp>      // for Segment Builder
-#include <mrc/segment/object.hpp>       // for Segment Object
-#include <pymrc/node.hpp>               // for PythonNode
+#include <mrc/segment/builder.hpp>        // for Segment Builder
+#include <mrc/segment/object.hpp>         // for Segment Object
+#include <pymrc/node.hpp>                 // for PythonNode
 #include <rxcpp/rx.hpp>
 
 #include <memory>

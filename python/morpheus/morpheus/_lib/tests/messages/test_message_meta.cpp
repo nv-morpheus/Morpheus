@@ -26,8 +26,8 @@
 #include "morpheus/objects/tensor.hpp"      // for Tensor
 #include "morpheus/types.hpp"               // for RangeType
 
-#include <gtest/gtest.h>             // for TestInfo, TEST_F
-#include <pybind11/gil.h>            // for gil_scoped_release
+#include <gtest/gtest.h>   // for TestInfo, TEST_F
+#include <pybind11/gil.h>  // for gil_scoped_release
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
