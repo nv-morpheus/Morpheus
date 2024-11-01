@@ -122,4 +122,4 @@ Options:
   --help                          Show this message and exit.
   ```
 
-> **Note**: There is a known race condition in `dask.distributed` which occasionally causes `tornado.iostream.StreamClosedError` to be raised during shutdown, but does not affect the output of the pipeline. If you see this exception during shutdown, it is typically safe to ignore unless it corrosponds to other undesirable behavior. For more information see ([#2026](https://github.com/nv-morpheus/Morpheus/issues/2026)).
+> **Note**: There is a known race condition in `dask.distributed` which occasionally causes `tornado.iostream.StreamClosedError` to be raised during shutdown, but does not affect the output of the pipeline. If you see this exception during shutdown, it is typically safe to ignore unless it corresponds to other undesirable behavior. For more information see ([#2026](https://github.com/nv-morpheus/Morpheus/issues/2026)).
