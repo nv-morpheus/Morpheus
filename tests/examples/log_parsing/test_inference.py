@@ -182,7 +182,7 @@ def test_log_parsing_inference_stage_convert_one_response(import_mod: typing.Lis
 
     input_inf = build_inf_message(filter_probs_df, mess_count=mess_count, count=count, num_cols=num_cols)
 
-    output_msg = inference_mod.LogParsingInferenceStage._convert_one_response(resp_msg, input_inf, input_res)
+    output_msg = inference_mod.LogParsingInferenceStage._convert_one_response(resp_msg, input_inf, input_res, 0)
 
     assert isinstance(output_msg, ControlMessage)
     assert output_msg.payload() is input_inf.payload()

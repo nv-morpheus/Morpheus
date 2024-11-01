@@ -198,6 +198,18 @@ files:
       - morpheus_core_pip
       - morpheus_llm_pip
 
+  # dfp example conda dependencies
+  dfp_example:
+    output: conda
+    matrix:
+      cuda: ["12.5"]
+      arch: [x86_64]
+    output: conda
+    conda_dir: examples/digital_fingerprinting/production/conda/environments
+    includes:
+      - example-dfp-container
+      - example-dfp-prod
+
 channels:
   - conda-forge
   - huggingface
@@ -314,6 +326,7 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - pylint=3.0.3
+          - pynvml=11.4
           - vale=3.7
           - vale-styles-microsoft
           - vale-styles-write-good
@@ -436,6 +449,17 @@ dependencies:
           - pip
           - pip:
             - python-logging-loki
+
+  # packages needed in the DFP example container
+  example-dfp-container:
+    common:
+      - output_types: [conda]
+        packages:
+          - morpheus-dfp=24.10
+          - tini=0.19
+          - pip:
+            - --extra-index-url https://download.pytorch.org/whl/cu124
+            - torch==2.4.0+cu124
 
   example-gnn:
     common:

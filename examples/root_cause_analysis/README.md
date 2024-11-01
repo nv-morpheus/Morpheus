@@ -110,7 +110,7 @@ run --num_threads=8 --edge_buffer_size=4 --pipeline_batch_size=1024 --model_max_
 `# Specify a NLP pipeline with 128 sequence length (Must match Triton config)` \
 pipeline-nlp --model_seq_length=128 --label=not_root_cause --label=is_root_cause \
 `# 1st Stage: Read from file` \
-from-file --filename=${MORPHEUS_ROOT}/models/datasets/validation-data/root-cause-validation-data-input.jsonlines \
+from-file --filename=${MORPHEUS_ROOT}/examples/data/root-cause-validation-data-input.jsonlines \
 `# 2nd Stage: Deserialize batch DataFrame into ControlMessages` \
 deserialize \
 `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \

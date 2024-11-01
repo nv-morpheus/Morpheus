@@ -48,7 +48,7 @@ conda config --env --add channels conda-forge &&\
 
 ### Install the `morpheus-core` Library
 ```bash
-conda install -c nvidia morpheus-core
+conda install -c nvidia morpheus-core=24.10
 ```
 The `morpheus-core` Conda package installs the `morpheus` Python package. It also pulls down all the necessary Conda runtime dependencies for the core stages including [`mrc`](https://anaconda.org/nvidia/mrc) and [`libmrc`](https://anaconda.org/nvidia/libmrc).
 
@@ -80,7 +80,7 @@ conda config --env --add channels conda-forge &&\
 
 ### Install the `morpheus-dfp` Library
 ```bash
-conda install -c nvidia morpheus-dfp
+conda install -c nvidia morpheus-dfp=24.10
 ```
 The `morpheus-dfp` Conda package installs the `morpheus_dfp` Python package. It also pulls down all the necessary Conda runtime dependencies including [`morpheus-core`](https://anaconda.org/nvidia/morpheus-core).
 ### Install Additional PyPI dependencies
@@ -112,7 +112,7 @@ conda config --env --add channels conda-forge &&\
 
 ### Install the `morpheus-llm` Library
 ```bash
-conda install -c nvidia morpheus-llm
+conda install -c nvidia morpheus-llm=24.10
 ```
 The `morpheus-llm` Conda package installs the `morpheus_llm` python package. It also pulls down all the necessary Conda packages including [`morpheus-core`](https://anaconda.org/nvidia/morpheus-core).
 
