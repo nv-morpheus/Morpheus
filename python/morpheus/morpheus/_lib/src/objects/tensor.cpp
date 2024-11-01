@@ -27,6 +27,7 @@
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <rmm/device_buffer.hpp>
 
+#include <algorithm>  // needed by get_element_stride
 #include <memory>
 #include <string>
 #include <utility>  // for move
