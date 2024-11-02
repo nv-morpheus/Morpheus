@@ -23,6 +23,7 @@ import time
 
 LFS_DATASETS = {
     'all': '**',
+    'datasets': 'models/datasets/**',
     'docs': 'docs/**',
     'examples': 'examples/**',
     'models': 'models/**',

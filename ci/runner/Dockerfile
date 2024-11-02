@@ -16,8 +16,8 @@
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/ci-conda"
 ARG CUDA_PKG_VER=12-0
-ARG CUDA_SHORT_VER=12.1
-ARG CUDA_VER=12.1.1
+ARG CUDA_SHORT_VER=12.5
+ARG CUDA_VER=12.5.1
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=22.04
 ARG PROJ_NAME=morpheus
@@ -34,12 +34,6 @@ SHELL ["/bin/bash",  "-c"]
 
 # Create conda environment
 COPY ./dependencies.yaml /tmp/conda/
-
-RUN <<EOF
-rapids-mamba-retry install -y \
-  "rapids-dependency-file-generator>=1.13.*"
-conda clean -aipty
-EOF
 
 # ============ build ==================
 FROM base as build

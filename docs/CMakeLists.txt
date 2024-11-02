@@ -20,14 +20,25 @@ find_package(Sphinx REQUIRED)
 
 set(SPHINX_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR}/html)
-set(SPHINX_ARGS -b html -j auto -T -W)
+set(SPHINX_LINKCHECK_OUT ${CMAKE_CURRENT_BINARY_DIR}/linkcheck)
+set(SPHINX_ARGS -j auto -T -W)
+set(SPHINX_HTML_ARGS -b html ${SPHINX_ARGS})
+set(SPHINX_LINKCHECK_ARGS -b linkcheck ${SPHINX_ARGS})
 
 add_custom_target(${PROJECT_NAME}_docs
    COMMAND
-      BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR} ${SPHINX_EXECUTABLE} ${SPHINX_ARGS} ${SPHINX_SOURCE} ${SPHINX_BUILD}
+      BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR} ${SPHINX_EXECUTABLE} ${SPHINX_HTML_ARGS} ${SPHINX_SOURCE} ${SPHINX_BUILD}
    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
    COMMENT "Generating documentation with Sphinx"
-   DEPENDS morpheus-package-outputs
+   DEPENDS morpheus-package-outputs morpheus_llm-package-outputs morpheus_dfp-package-outputs
+)
+
+add_custom_target(${PROJECT_NAME}_docs_linkcheck
+   COMMAND
+      BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR} ${SPHINX_EXECUTABLE} ${SPHINX_LINKCHECK_ARGS} ${SPHINX_SOURCE} ${SPHINX_LINKCHECK_OUT}
+   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+   COMMENT "Checking documentation links with Sphinx"
+   DEPENDS morpheus-package-outputs morpheus_llm-package-outputs morpheus_dfp-package-outputs
 )
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

@@ -21,84 +21,84 @@ limitations under the License.
 # Model Overview
 
 ## Description:
-* Phishing detection is a binary classifier differentiating between phishing/spam and benign emails and SMS messages.  This model is for demonstration purposes and not for production usage. <br>
+* Phishing detection is a binary classifier differentiating between phishing/spam and benign emails and SMS messages. This model is for demonstration purposes and not for production usage. <br>
 
-## References(s):
+## References:
 * https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection <br>
-* Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding https://arxiv.org/abs/1810.04805 <br> 
+* Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding https://arxiv.org/abs/1810.04805 <br>
 
-## Model Architecture: 
-**Architecture Type:** 
+## Model Architecture:
+**Architecture Type:**
 * Transformers <br>
 
-**Network Architecture:** 
+**Network Architecture:**
 * BERT <br>
 
 ## Input: (Enter "None" As Needed)
 
-**Input Format:** 
-* Evaluation script downloads the smsspamcollection.zip and extract tabular information into a dataframe <br>
+**Input Format:**
+* Evaluation script downloads the smsspamcollection.zip and extract tabular information into a DataFrame <br>
 
-**Input Parameters:** 
+**Input Parameters:**
 * SMS/emails <br>
 
-**Other Properties Related to Output:** 
+**Other Properties Related to Output:**
 * N/A <br>
 
 ## Output: (Enter "None" As Needed)
 
-**Output Format:** 
+**Output Format:**
 * Binary Results, Fraudulent or Benign <br>
 
-**Output Parameters:** 
+**Output Parameters:**
 * N/A <br>
 
-**Other Properties Related to Output:** 
-* N/A <br> 
+**Other Properties Related to Output:**
+* N/A <br>
 
 
 ## Software Integration:
 
-**Runtime(s):** 
+**Runtime:**
 * Morpheus  <br>
 
-**Supported Hardware Platform(s):** <br>
+**Supported Hardware Platforms:** <br>
 * Ampere/Turing <br>
 
-**Supported Operating System(s):** <br>
+**Supported Operating Systems:** <br>
 * Linux <br>
 
-## Model Version(s): 
+## Model Versions:
 * v1  <br>
 
-# Training & Evaluation: 
+# Training & Evaluation:
 
 ## Training Dataset:
 
-**Link:**  
+**Link:**
 * http://archive.ics.uci.edu/ml/machine-learning-databases/00228/smsspamcollection.zip <br>
 
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
-* Dataset consists of SMSs <br>
+**Properties (Quantity, Dataset Descriptions, Sensors):**
+* Dataset consists of SMS messages <br>
 
 ## Evaluation Dataset:
 
-**Link:** 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/validation-data/phishing-email-validation-data.jsonlines  <br>
+**Link:**
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/models/datasets/validation-data/phishing-email-validation-data.jsonlines  <br>
 
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
-* Dataset consists of SMSs <br>
+**Properties (Quantity, Dataset Descriptions, Sensors):**
+* Dataset consists of SMS messages <br>
 
 ## Inference:
 
-**Engine:** 
+**Engine:**
 * Triton <br>
 
 **Test Hardware:** <br>
 * DGX (V100) <br>
 
 ## Ethical Considerations:
-NVIDIA believes Trustworthy AI is a shared responsibility and we have established policies and practices to enable development for a wide array of AI applications.  When downloaded or used in accordance with our terms of service, developers should work with their supporting model team to ensure this model meets requirements for the relevant industry and use case and addresses unforeseen product misuse.  For more detailed information on ethical considerations for this model, please see the Model Card++ Explainability, Bias, Safety & Security, and Privacy Subcards below.  Please report security vulnerabilities or NVIDIA AI Concerns [here](https://www.nvidia.com/en-us/support/submit-security-vulnerability/).
+NVIDIA believes Trustworthy AI is a shared responsibility and we have established policies and practices to enable development for a wide array of AI applications. When downloaded or used in accordance with our terms of service, developers should work with their supporting model team to ensure this model meets requirements for the relevant industry and use case and addresses unforeseen product misuse. For more detailed information on ethical considerations for this model, please see the Model Card++ Explainability, Bias, Safety & Security, and Privacy Subcards below. Please report security vulnerabilities or NVIDIA AI Concerns [here](https://www.nvidia.com/en-us/support/submit-security-vulnerability/).
 
 # Subcards
 
@@ -118,22 +118,22 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 
 ## Model Card ++ Explainability Subcard
 
-### Name example applications and use cases for this model. 
+### Name example applications and use cases for this model.
 * The model is primarily designed for testing purposes and serves as a small pre-trained model specifically used to evaluate and validate the phishing detection pipeline. Its application is focused on assessing the effectiveness of the pipeline rather than being intended for broader use cases or specific applications beyond testing.
 
 ### Intended Users.
 * This model is designed for developers seeking to test the phishing detection pipeline with a small pre-trained model.
 
-### Name who is intended to benefit from this model. 
-* The intended beneficiaries of this model are developers who aim to test the performance and functionality of the phishing pipeline using synthetic datasets. It may not be suitable or provide significant value for real-world phishing messages. 
+### Name who is intended to benefit from this model.
+* The intended beneficiaries of this model are developers who aim to test the performance and functionality of the phishing pipeline using synthetic datasets. It may not be suitable or provide significant value for real-world phishing messages.
 
-### Describe the model output. 
-* This model output can be used as a binary result, Phishing/Spam or Benign 
+### Describe the model output.
+* This model output can be used as a binary result, Phishing/Spam or Benign
 
 ### Describe how this model works.
 * A BERT model gets fine-tuned with the dataset and in the inference it predicts one of the binary classes. Phishing/Spam or Benign.
 
-### List the technical limitations of the model. 
+### List the technical limitations of the model.
 * For different email/SMS types and content, different models need to be trained.
 
 ### Has this been verified to have met prescribed NVIDIA standards?
@@ -145,12 +145,12 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 ### What are the potential known risks to users and stakeholders?
 * N/A
 
-### Link the relevant end user license agreement 
+### Link the relevant end user license agreement
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
-## Model Card ++ Saftey & Security Subcard
+## Model Card ++ Safety & Security Subcard
 
-### Link the location of the training dataset's repository.
+### Link the location of the repository for the training dataset.
 * http://archive.ics.uci.edu/ml/machine-learning-databases/00228/smsspamcollection.zip
 
 ### Describe the life critical impact (if present).
@@ -194,7 +194,7 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 ### Is a mechanism in place to honor data subject right of access or deletion of personal data?
 * N/A
 
-### If PII collected for the development of this AI model, was it minimized to only what was required? 
+### If PII collected for the development of this AI model, was it minimized to only what was required?
 * N/A
 
 ### Is there data provenance?

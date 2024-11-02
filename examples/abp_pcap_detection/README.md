@@ -30,13 +30,13 @@ To run this example, an instance of Triton Inference Server and a sample dataset
 
 ### Triton Inference Server
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:23.06-py3
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
 ```
 
 ##### Deploy Triton Inference Server
-From the root of the Morpheus repo, run the following to launch Triton and load the `abp-pcap-xgb` model:
+Run the following to launch Triton and load the `abp-pcap-xgb` model:
 ```bash
-docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD/examples/abp_pcap_detection/abp-pcap-xgb:/models/abp-pcap-xgb --name tritonserver nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models --exit-on-error=false
+docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 --name tritonserver nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-pcap-xgb
 ```
 
 ##### Verify Model Deployment
@@ -51,7 +51,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 ```
 
 ## ABP Detection Pipeline
-Use Morpheus to run the Anomalous Behavior Profiling Detection Pipeline with the pcap data. A pipeline has been configured in `run.py` with several command line options:
+Use Morpheus to run the Anomalous Behavior Profiling Detection Pipeline with the PCAP data. A pipeline has been configured in `run.py` with several command line options:
 
 From the root of the Morpheus repo, run:
 ```bash
@@ -79,8 +79,8 @@ Options:
                                   [x>=1]
   --model_name TEXT               The name of the model that is deployed on
                                   Tritonserver.
-  --iterative                     Iterative mode will emit dataframes one at a
-                                  time. Otherwise a list of dataframes is
+  --iterative                     Iterative mode will emit DataFrames one at a
+                                  time. Otherwise a list of DataFrames is
                                   emitted. Iterative mode is good for
                                   interleaving source stages.
   --server_url TEXT               Tritonserver url.  [required]

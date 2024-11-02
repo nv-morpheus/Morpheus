@@ -23,11 +23,11 @@ This module reads an input data stream, converts each row of data to a document 
 
 | Parameter               | Type         | Description                                                                                             | Example Value                 | Default Value |
 |-------------------------|--------------|---------------------------------------------------------------------------------------------------------|-------------------------------|---------------|
-| `index`                 | str          | Elasticsearch index.                                                                                   | "my_index"                    | `[Required]`             |
-| `connection_kwargs`     | dict         | Elasticsearch connection kwargs configuration.                                                        | {"hosts": ["host": "localhost", ...}    | `[Required]`             |
-| `raise_on_exception`    | bool         | Raise or suppress exceptions when writing to Elasticsearch.                                           | true                          | `false`         |
-| `pickled_func_config`   | str          | Pickled custom function configuration to update connection_kwargs as needed for the client connection. | See below     | None          |
-| `refresh_period_secs`   | int          | Time in seconds to refresh the client connection.                                                      | 3600                          | `2400`          |
+| `index`                 | `str`          | Elasticsearch index.                                                                                   | `"my_index"`                    | `[Required]`             |
+| `connection_kwargs`     | `dict`         | Elasticsearch connection keyword arguments configuration.                                                        | `{"hosts": ["host": "localhost", ...}`    | `[Required]`             |
+| `raise_on_exception`    | `bool`         | Raise or suppress exceptions when writing to Elasticsearch.                                           | `true`                          | `false`         |
+| `pickled_func_config`   | `str`          | Pickled custom function configuration to update `connection_kwargs` as needed for the client connection. | Refer Below     | `None`          |
+| `refresh_period_secs`   | `int`          | Time in seconds to refresh the client connection.                                                      | `3600`                          | `2400`          |
 
 ### Example JSON Configuration
 

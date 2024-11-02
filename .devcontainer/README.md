@@ -17,20 +17,20 @@ limitations under the License.
 
 # Morpheus Devcontainer
 
-The Morpheus devcontainer is provided as a quick-to-set-up development and exploration environment for use with [Visual Studio Code](https://code.visualstudio.com) (Code). The devcontainer is a lightweight container which mounts-in a conda environment with cached packages, alleviating long conda download times on subsequent launches. It provides a simple framework for adding developer-centric [scripts](#scripts), and incorperates some helpful Code plugins, such as clangd and cmake support.
+The Morpheus devcontainer is provided as a quick-to-set-up development and exploration environment for use with [Visual Studio Code](https://code.visualstudio.com) (Code). The devcontainer is a lightweight container which mounts-in a Conda environment with cached packages, alleviating long Conda download times on subsequent launches. It provides a simple framework for adding developer-centric [scripts](#development-scripts), and incorporates some helpful Code plugins, such as clangd and CMake support.
 
-More information about devcontainers can be found at [containers.dev](https://containers.dev/).
+More information about devcontainers can be found at [`containers.dev`](https://containers.dev/).
 
 ## Getting Started
 
-To get started, simply open the morpheus repository root folder within Code. A window should appear at the bottom-right corner of the editor asking if you would like to reopen the workspace inside of the dev container. After clicking the confirmation dialog, the container will first build, then launch, then remote-attach.
+To get started, simply open the Morpheus repository root folder within Code. A window should appear at the bottom-right corner of the editor asking if you would like to reopen the workspace inside of the dev container. After clicking the confirmation dialog, the container will first build, then launch, then remote-attach.
 
 If the window does not appear, or you would like to rebuild the container, click ctrl-shift-p and search for `Dev Containers: Rebuild and Reopen in Container`. Hit enter, and the container will first build, then launch, then remote-attach.
 
-Once remoted in to the devcontainer within code, the `setup-morpheus-env` script will begin to run and solve a morpheus conda environment (this conda environment is local to the morpheus repository and dev container and will not override any host environments). You should see the script executing in one of Code's integrated terminal. Once the script has completed, we're ready to start development or exploration of Morpheus. By default, each _new_ integrated terminal will automatically conda activate the morpheus environment.
+Once connected to the devcontainer within code, the `setup-morpheus-env` script will begin to run and solve a Morpheus Conda environment (this Conda environment is local to the Morpheus repository and dev container and will not override any host environments). You should see the script executing in one of Code's integrated terminal. Once the script has completed, we're ready to start development or exploration of Morpheus. By default, each _new_ integrated terminal will automatically Conda activate the Morpheus environment.
 
 ## Development Scripts
-Several convienient scripts are available in the devcontainer's `PATH` (`.devcontainer/bin`) for starting, stopping, and interacting with Triton and Kafka. More scripts can be added as needed.
+Several convenient scripts are available in the devcontainer's `PATH` (`.devcontainer/bin`) for starting, stopping, and interacting with Triton and Kafka. More scripts can be added as needed.
 
 ### Interacting with Triton
 To start Triton and connect it to the devcontainer network, the `dev-triton-start` script can be used. The following example starts _or restarts_ Triton with the `abp-pcap-xgb` model loaded.
@@ -54,7 +54,7 @@ To start Kafka and connect it to the devcontainer network, the `dev-kafka-start`
 ```
 dev-kafka-start
 ```
-Kafka should now be started and DNS resolveable as `kafka`.
+Kafka should now be started and DNS resolvable as `kafka`.
 ```
 ping kafka
 ```

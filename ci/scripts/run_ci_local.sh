@@ -21,13 +21,13 @@ case "$1" in
         STAGES=("bash")
         ;;
     "all" )
-        STAGES=("checks" "build" "docs" "test" "conda")
+        STAGES=("checks" "build" "docs" "test" "conda_libs" "conda")
         ;;
-    "checks" | "build" | "docs" | "test" | "conda" | "bash" )
+    "checks" | "build" | "docs" | "test" | "conda_libs" | "conda" | "bash" )
         STAGES=("$1")
         ;;
     * )
-        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build\", \"docs\", \"test\", \"conda\", or \"bash\""
+        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build\", \"docs\", \"test\", \"conda_libs\", \"conda\", or \"bash\""
         exit 1
         ;;
 esac
@@ -58,10 +58,13 @@ GIT_BRANCH=$(git branch --show-current)
 GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
 
 LOCAL_CI_TMP=${LOCAL_CI_TMP:-${MORPHEUS_ROOT}/.tmp/local_ci_tmp}
-CONTAINER_VER=${CONTAINER_VER:-240614}
-CUDA_VER=${CUDA_VER:-12.1}
+CONTAINER_VER=${CONTAINER_VER:-241024}
+CUDA_VER=${CUDA_VER:-12.5}
+CUDA_FULL_VER=${CUDA_FULL_VER:-12.5.1}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
+# Configure the base docker img
+CONDA_CONTAINER="rapidsai/ci-conda:cuda${CUDA_FULL_VER}-ubuntu22.04-py3.10"
 BUILD_CONTAINER="nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-${CONTAINER_VER}"
 TEST_CONTAINER="nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-${CONTAINER_VER}"
 
@@ -88,13 +91,18 @@ for STAGE in "${STAGES[@]}"; do
     DOCKER_RUN_ARGS+=("-v" "${LOCAL_CI_TMP}:/ci_tmp")
     DOCKER_RUN_ARGS+=("${ENV_LIST[@]}")
     DOCKER_RUN_ARGS+=("--env STAGE=${STAGE}")
-    if [[ "${STAGE}" == "test" || "${USE_GPU}" == "1" ]]; then
+    if [[ "${STAGE}" == "conda_libs" || "${USE_BASE}" == "1" ]]; then
+        CONTAINER="${CONDA_CONTAINER}"
+    elif [[ "${STAGE}" == "test" || "${USE_GPU}" == "1" ]]; then
         CONTAINER="${TEST_CONTAINER}"
+    else
+        CONTAINER="${BUILD_CONTAINER}"
+    fi
+    if [[ "${STAGE}" == "test" ||  "${STAGE}" == "conda_libs" || "${USE_GPU}" == "1" ]]; then
         DOCKER_RUN_ARGS+=("--runtime=nvidia")
         DOCKER_RUN_ARGS+=("--gpus all")
         DOCKER_RUN_ARGS+=("--cap-add=sys_nice")
     else
-        CONTAINER="${BUILD_CONTAINER}"
         DOCKER_RUN_ARGS+=("--runtime=runc")
     fi
 

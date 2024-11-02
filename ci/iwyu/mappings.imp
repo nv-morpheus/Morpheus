@@ -8,6 +8,7 @@
 { "include": [ "\"mrc/protos/tensor_meta_data.pb.h\"", private, "<mrc/protos/tensor_meta_data.pb.h>", "public" ] },
 
 # stdlib
+{ "include": [ "<bits/chrono.h>", private, "<chrono>", "public" ] },
 { "include": [ "<bits/cxxabi_forced.h>", private, "<mutex>", "public" ] },
 { "include": [ "<bits/cxxabi_forced.h>", private, "<vector>", "public" ] },
 { "include": [ "<bits/this_thread_sleep.h>", private, "<thread>", "public" ] },
@@ -29,6 +30,8 @@
 { "include": ["\"cuda_runtime_api.h\"", "private", "<cuda_runtime.h>", "public"] },
 { "include": ["<driver_types.h>", "private", "<cuda_runtime.h>", "public"] },
 { "include": ["\"driver_types.h\"", "private", "<cuda_runtime.h>", "public"] },
+{ "include": ["\"cuda/__memory_resource/properties.h\"", "private", "<cuda/memory_resource>", "public"] },
+{ "include": ["\"cuda/__memory_resource/resource_ref.h\"", "private", "<cuda/memory_resource>", "public"] },
 
 # gtest
 { "include": ["@<gtest/gtest-.*>", "private", "<gtest/gtest.h>", "public"] },
@@ -47,7 +50,7 @@
 { "include": [ "<google/protobuf/repeated_ptr_field.h>", private, "<google/protobuf/repeated_field.h>", "public" ] },
 
 # pybind11
-{ "include": [ "<pybind11/detail/common.h>", "private", "<pybind11/pytypes.h>", "public" ] },
+{ "include": [ "@<pybind11/detail/.*>", "private", "<pybind11/pybind11.h>", "public" ] },
 { "include": [ "<pybind11/cast.h>", "private", "<pybind11/pybind11.h>", "public" ] },
 
 # rxcpp

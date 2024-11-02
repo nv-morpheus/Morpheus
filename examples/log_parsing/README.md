@@ -29,19 +29,19 @@ Example Morpheus pipeline using Triton Inference server and Morpheus.
 ### Set up Triton Inference Server
 
 ##### Pull Triton Inference Server Docker Image
-Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tritonserver) suitable for your environment.
+Pull the Morpheus Triton models Docker image from NGC.
 
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:23.06-py3
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
 ```
 
 ##### Start Triton Inference Server Container
 From the Morpheus repo root directory, run the following to launch Triton and load the `log-parsing-onnx` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model log-parsing-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model log-parsing-onnx
 ```
 
 ##### Verify Model Deployment
@@ -63,11 +63,11 @@ Run the following from the root of the Morpheus repo to start the log parsing pi
 
 ```bash
 python examples/log_parsing/run.py \
-    --input_file=./models/datasets/validation-data/log-parsing-validation-data-input.csv \
+    --input_file=./examples/data/log-parsing-validation-data-input.csv \
     --model_vocab_hash_file=data/bert-base-cased-hash.txt \
-    --model_vocab_file=./models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
+    --model_vocab_file=data/bert-base-cased-vocab.txt \
     --model_name log-parsing-onnx \
-    --model_config_file=./models/log-parsing-models/log-parsing-config-20220418.json
+    --model_config_file=./examples/data/log-parsing-config-20220418.json
 ```
 
 Use `--help` to display information about the command line options:
