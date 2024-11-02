@@ -26,9 +26,9 @@
 
 #include <algorithm>  // for find, transform
 #include <filesystem>
-#include <iterator>   // for back_insert_iterator, back_inserter
-#include <memory>     // for unique_ptr
-#include <ostream>    // needed for logging
+#include <iterator>  // for back_insert_iterator, back_inserter
+#include <memory>    // for unique_ptr
+#include <ostream>   // needed for logging
 #include <stdexcept>  // for runtime_error
 
 namespace {
