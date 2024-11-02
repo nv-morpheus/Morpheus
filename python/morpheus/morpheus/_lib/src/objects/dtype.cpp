@@ -28,7 +28,7 @@
 #include <utility>
 
 namespace {
-const std::map<char, std::map<size_t, morpheus::TypeId>> StrToTypeId = {
+const std::map<char, std::map<size_t, morpheus::TypeId>> STR_TO_TYPE_ID = {
     {'b', {{1, morpheus::TypeId::BOOL8}}},
 
     {'i',
@@ -234,9 +234,9 @@ DType DType::from_numpy(const std::string& numpy_str)
     }
 
     // Now lookup in the map
-    auto found_type = StrToTypeId.find(type_char);
+    auto found_type = STR_TO_TYPE_ID.find(type_char);
 
-    if (found_type == StrToTypeId.end())
+    if (found_type == STR_TO_TYPE_ID.end())
     {
         throw std::invalid_argument(MORPHEUS_CONCAT_STR("Type char '" << type_char << "' not supported"));
     }
