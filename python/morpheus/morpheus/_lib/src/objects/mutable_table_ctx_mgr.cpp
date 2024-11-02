@@ -20,6 +20,7 @@
 #include "morpheus/utilities/string_util.hpp"
 
 #include <pybind11/gil.h>
+#include <pybind11/pybind11.h>  // for attribute_error
 #include <pybind11/pytypes.h>
 
 #include <memory>

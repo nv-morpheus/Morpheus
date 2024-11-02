@@ -24,11 +24,12 @@
 #include <pybind11/pytypes.h>           // for object
 #include <pymrc/types.hpp>              // for PyHolder
 
-#include <cstdint>  // for int64_t, uint64_t, uint8_t
-#include <map>      // for map
-#include <string>   // for allocator, string
-#include <utility>  // for pair
-#include <vector>   // for vector
+#include <algorithm>  // for copy (implied usage)
+#include <cstdint>    // for int64_t, uint64_t, uint8_t
+#include <map>        // for map
+#include <string>     // for allocator, string
+#include <utility>    // for pair
+#include <vector>     // for vector
 
 namespace morpheus {
 namespace utilities {
