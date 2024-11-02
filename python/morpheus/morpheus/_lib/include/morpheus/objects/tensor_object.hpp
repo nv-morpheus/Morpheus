@@ -294,7 +294,7 @@ struct TensorObject final
     }
 
     template <typename T, RankType N>
-    T read_element(const TensorIndex (&idx)[N]) const
+    T read_element(const TensorIndex (&idx)[N]) const  // NOLINT(modernize-avoid-c-arrays)
     {
         auto stride = this->get_stride();
         auto shape  = this->get_shape();
