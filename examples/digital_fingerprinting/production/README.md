@@ -27,17 +27,10 @@ Key Features:
  * Can be deployed to Kubernetes using provided Helm charts
  * Uses many customized stages to maximize performance.
 
-## Build the Morpheus container
-This is necessary to get the latest changes needed for DFP. From the root of the Morpheus repo:
-```bash
-./docker/build_container_release.sh
-```
-
 ## Building and Running via `docker compose`
 ### Build
 ```bash
 cd examples/digital_fingerprinting/production
-export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
 docker compose build
 ```
 
@@ -138,23 +131,23 @@ python $DFP_HOME/fetch_example_data.py all
 
 Run Duo Training Pipeline:
 ```bash
-python dfp_duo_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="../../../data/dfp/duo-training-data/*.json"
+python dfp_duo_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="../../data/dfp/duo-training-data/*.json"
 ```
 
 Run Duo Inference Pipeline:
 ```bash
-python dfp_duo_pipeline.py --train_users none --start_time "2022-08-30" --input_file="../../../data/dfp/duo-inference-data/*.json"
+python dfp_duo_pipeline.py --train_users none --start_time "2022-08-30" --input_file="../../data/dfp/duo-inference-data/*.json"
 ```
 
 Run Azure Training Pipeline:
 
 ```bash
-python dfp_azure_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="../../../data/dfp/azure-training-data/AZUREAD_2022*.json"
+python dfp_azure_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="../../data/dfp/azure-training-data/AZUREAD_2022*.json"
 ```
 
 Run Azure Inference Pipeline:
 ```bash
-python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --input_file="../../../data/dfp/azure-inference-data/*.json"
+python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --input_file="../../data/dfp/azure-inference-data/*.json"
 ```
 
 ##### Module-based DFP pipelines

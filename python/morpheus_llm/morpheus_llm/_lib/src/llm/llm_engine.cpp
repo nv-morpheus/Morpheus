@@ -29,6 +29,7 @@
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <nlohmann/json.hpp>
 
+#include <algorithm>  // for max (implied usage)
 #include <coroutine>
 #include <optional>
 #include <stdexcept>

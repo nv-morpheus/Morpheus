@@ -18,7 +18,10 @@
 #include "morpheus/stages/deserialize.hpp"
 
 #include "morpheus/messages/control.hpp"       // for ControlMessage
+#include "morpheus/messages/meta.hpp"          // for MessageMeta, SlicedMessageMeta
+#include "morpheus/objects/table_info.hpp"     // for TableInfo
 #include "morpheus/types.hpp"                  // for TensorIndex
+#include "morpheus/utilities/cudf_util.hpp"    // for CudfHelper
 #include "morpheus/utilities/json_types.hpp"   // for PythonByteContainer
 #include "morpheus/utilities/python_util.hpp"  // for show_warning_message
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
@@ -35,23 +38,6 @@
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 namespace morpheus {
-
-void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
-                         TensorIndex start,
-                         TensorIndex stop,
-                         cm_task_t* task,
-                         std::shared_ptr<ControlMessage>& windowed_message)
-{
-    auto sliced_meta = std::make_shared<SlicedMessageMeta>(incoming_message, start, stop);
-    auto message     = std::make_shared<ControlMessage>();
-    message->payload(sliced_meta);
-    if (task)
-    {
-        message->add_task(task->first, task->second);
-    }
-
-    windowed_message.swap(message);
-}
 
 DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
 {
@@ -89,9 +75,13 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
                 {
                     std::shared_ptr<ControlMessage> windowed_message = std::make_shared<ControlMessage>();
 
-                    auto sliced_meta = std::make_shared<SlicedMessageMeta>(
+                    auto sliced_meta = SlicedMessageMeta(
                         incoming_message, i, std::min(i + this->m_batch_size, incoming_message->count()));
-                    windowed_message->payload(sliced_meta);
+                    auto sliced_info = sliced_meta.get_info();
+
+                    // This unforuntately requires grabbing the GIL and is a work-around for issue #2018
+                    auto new_meta = MessageMeta::create_from_python(CudfHelper::table_from_table_info(sliced_info));
+                    windowed_message->payload(new_meta);
 
                     auto task = m_task.get();
                     if (task)
@@ -119,12 +109,12 @@ std::shared_ptr<mrc::segment::Object<DeserializeStage>> DeserializeStageInterfac
     const pybind11::object& task_type,
     const pybind11::object& task_payload)
 {
-    std::unique_ptr<cm_task_t> task{nullptr};
+    std::unique_ptr<control_message_task_t> task{nullptr};
 
     if (!task_type.is_none() && !task_payload.is_none())
     {
-        task = std::make_unique<cm_task_t>(pybind11::cast<std::string>(task_type),
-                                           mrc::pymrc::cast_from_pyobject(task_payload));
+        task = std::make_unique<control_message_task_t>(pybind11::cast<std::string>(task_type),
+                                                        mrc::pymrc::cast_from_pyobject(task_payload));
     }
 
     auto stage = builder.construct_object<DeserializeStage>(name, batch_size, ensure_sliceable_index, std::move(task));

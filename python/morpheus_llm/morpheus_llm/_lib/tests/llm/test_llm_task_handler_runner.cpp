@@ -27,16 +27,18 @@
 #include "morpheus/utilities/json_types.hpp"  // for PythonByteContainer
 
 #include <gtest/gtest.h>
-#include <mrc/channel/forward.hpp>
+#include <mrc/channel/forward.hpp>  // IWYU pragma: keep
 #include <mrc/coroutines/sync_wait.hpp>
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <nlohmann/json.hpp>        // for nlohmann::json
 
+#include <algorithm>  // for max (implied usage)
 #include <coroutine>
 #include <memory>
 #include <optional>  // for optional
 #include <string>
 // IWYU pragma: no_include "morpheus_llm/llm/fwd.hpp"
+// IWYU pragma: no_include <pymrc/utilities/object_wrappers.hpp>
 
 using namespace morpheus;
 using namespace morpheus::test;

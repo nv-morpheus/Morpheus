@@ -14,10 +14,13 @@ dependencies:
 - matplotlib
 - onnx
 - pandas
+- pip
 - python=3.10
 - scikit-learn=1.3.2
 - seaborn
 - seqeval=1.2.2
 - transformers=4.36.2
 - xgboost
+- pip:
+  - tensorrt-cu12
 name: model-utils_cuda-125_arch-x86_64
