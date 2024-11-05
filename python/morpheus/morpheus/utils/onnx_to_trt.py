@@ -44,7 +44,7 @@ def gen_engine(config: ConfigOnnxToTRT):
 
     input_model = config.input_model
 
-    print("Loading ONNX file: '{input_model}'")
+    logger.info("Loading ONNX file: '%s'", input_model)
 
     # Otherwise we are creating a new model
     explicit_branch = 1 << (int)(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
@@ -62,7 +62,8 @@ def gen_engine(config: ConfigOnnxToTRT):
         # Now we need to build and serialize the model
         with builder.create_builder_config() as builder_config:
 
-            builder_config.max_workspace_size = config.max_workspace_size * (1024 * 1024)
+            builder_config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE,
+                                                 config.max_workspace_size * (1024 * 1024))
             builder_config.set_flag(trt.BuilderFlag.FP16)
 
             # Create the optimization files
@@ -80,11 +81,10 @@ def gen_engine(config: ConfigOnnxToTRT):
 
             # Actually build the engine
             print("Building engine. This may take a while...")
-            engine = builder.build_engine(network, builder_config)
+            serialized_engine = builder.build_serialized_network(network, builder_config)
 
             # Now save a copy to prevent building next time
             print("Writing engine to: {config.output_model}")
-            serialized_engine = engine.serialize()
 
             with open(config.output_model, "wb") as f:
                 f.write(serialized_engine)

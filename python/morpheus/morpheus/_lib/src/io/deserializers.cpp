@@ -39,10 +39,10 @@
 // IWYU pragma: no_include <pybind11/gil.h>
 
 namespace {
-const std::regex IndexRegex(R"(^\s*(unnamed: 0|id)\s*$)",
-                            std::regex_constants::ECMAScript | std::regex_constants::icase);
+const std::regex INDEX_REGEX(R"(^\s*(unnamed: 0|id)\s*$)",
+                             std::regex_constants::ECMAScript | std::regex_constants::icase);
 
-const std::regex UnnamedRegex(R"(^\s*unnamed: 0\s*$)", std::regex_constants::ECMAScript | std::regex_constants::icase);
+const std::regex UNNAMED_REGEX(R"(^\s*unnamed: 0\s*$)", std::regex_constants::ECMAScript | std::regex_constants::icase);
 }  // namespace
 
 namespace morpheus {
@@ -118,7 +118,7 @@ int get_index_col_count(const cudf::io::table_with_metadata& data_table)
         const auto& col_name = names[0];
 
         // Check it against some common terms
-        if (std::regex_search(col_name, IndexRegex))
+        if (std::regex_search(col_name, INDEX_REGEX))
         {
             index_col_count = 1;
         }
@@ -136,7 +136,7 @@ int prepare_df_index(cudf::io::table_with_metadata& data_table)
         auto& col_name = data_table.metadata.schema_info[0].name;
 
         // Also, if its the hideous 'Unnamed: 0', then just use an empty string
-        if (std::regex_search(col_name, UnnamedRegex))
+        if (std::regex_search(col_name, UNNAMED_REGEX))
         {
             col_name.clear();
         }

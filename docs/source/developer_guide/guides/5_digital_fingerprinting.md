@@ -141,6 +141,7 @@ The reference architecture is composed of the following services:​
 From the root of the Morpheus repo, run:
 ```bash
 cd examples/digital_fingerprinting/production
+export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
 docker compose build
 ```
 
@@ -161,7 +162,7 @@ From the Morpheus repo, run:
 ```bash
 conda env update --solver=libmamba \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./conda/environments/examples_cuda-121_arch-x86_64.yaml
+  --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
 
 python examples/digital_fingerprinting/fetch_example_data.py all
 ```
