@@ -14,15 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-
 import pytest
 
 from _utils.stages.error_raiser import ErrorRaiserStage
-from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils.type_aliases import DataFrameType
