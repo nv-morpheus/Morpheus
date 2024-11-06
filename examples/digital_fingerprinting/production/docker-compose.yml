@@ -76,8 +76,8 @@ services:
       resources:
         reservations:
           devices:
-          - driver: nvidia
-            capabilities: [gpu]
+            - driver: nvidia
+              capabilities: [ gpu ]
     image: dfp_morpheus_jupyter
     container_name: jupyter
     ports:
@@ -107,8 +107,8 @@ services:
       resources:
         reservations:
           devices:
-          - driver: nvidia
-            capabilities: [gpu]
+            - driver: nvidia
+              capabilities: [ gpu ]
     networks:
       - frontend
       - backend

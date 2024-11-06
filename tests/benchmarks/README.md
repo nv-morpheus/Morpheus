@@ -24,12 +24,12 @@ Pull Morpheus Models Docker image from NGC.
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
 ```
 
 ##### Start Triton Inference Server container
 ```bash
-docker run --gpus=all --rm -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx --load-model all-MiniLM-L6-v2
+docker run --gpus=all --rm -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx --load-model all-MiniLM-L6-v2
 ```
 
 ##### Verify Model Deployments

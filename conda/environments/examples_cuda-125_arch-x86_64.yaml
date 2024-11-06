@@ -30,7 +30,7 @@ dependencies:
 - kfp
 - libwebp=1.3.2
 - mlflow
-- mrc=24.10
+- mrc=25.02
 - networkx=2.8.8
 - newspaper3k=0.2
 - nodejs=18.*

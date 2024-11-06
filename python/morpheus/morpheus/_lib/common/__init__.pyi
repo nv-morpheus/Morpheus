@@ -210,4 +210,4 @@ def typeid_to_numpy_str(arg0: TypeId) -> str:
     pass
 def write_df_to_file(df: object, filename: str, file_type: FileTypes = FileTypes.Auto, **kwargs) -> None:
     pass
-__version__ = '24.10.0'
+__version__ = '25.2.0'
