@@ -25,6 +25,7 @@ def run():
 
 
 @run.command(help="Runs a simple finite pipeline with a single execution of a LangChain agent from a fixed input")
+@click.option('--use_cpu_only', default=False, type=bool, is_flag=True, help="Run in CPU only mode")
 @click.option(
     "--num_threads",
     default=len(os.sched_getaffinity(0)),

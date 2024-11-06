@@ -31,7 +31,6 @@
 #include "morpheus/stages/preprocess_nlp.hpp"            // for PreprocessNLPStage, PreprocessNLPStageInterfaceProxy
 #include "morpheus/stages/serialize.hpp"                 // for SerializeStage, SerializeStageInterfaceProxy
 #include "morpheus/stages/write_to_file.hpp"             // for WriteToFileStage, WriteToFileStageInterfaceProxy
-#include "morpheus/utilities/cudf_util.hpp"              // for CudfHelper
 #include "morpheus/utilities/http_server.hpp"            // for DefaultMaxPayloadSize
 #include "morpheus/version.hpp"                          // for morpheus_VERSION_MAJOR, morpheus_VERSION_MINOR, morp...
 
@@ -39,8 +38,10 @@
 #include <mrc/segment/object.hpp>      // for Object, ObjectProperties
 #include <mrc/utils/string_utils.hpp>  // for MRC_CONCAT_STR
 #include <pybind11/attr.h>             // for multiple_inheritance
+#include <pybind11/functional.h>       // IWYU pragma: keep
 #include <pybind11/pybind11.h>         // for arg, init, class_, module_, overload_cast, overload_...
 #include <pybind11/pytypes.h>          // for none, dict, str_attr
+#include <pybind11/stl.h>              // IWYU pragma: keep
 #include <pybind11/stl/filesystem.h>   // IWYU pragma: keep
 #include <pymrc/utils.hpp>             // for from_import, import
 #include <rxcpp/rx.hpp>                // for trace_activity, decay_t
@@ -63,9 +64,6 @@ PYBIND11_MODULE(stages, _module)
            :toctree: _generate
 
         )pbdoc";
-
-    // Load the cudf helpers
-    CudfHelper::load();
 
     // Make sure to load mrc.core.segment to get ObjectProperties
     mrc::pymrc::import(_module, "mrc.core.segment");
@@ -234,11 +232,11 @@ PYBIND11_MODULE(stages, _module)
              py::arg("stride"),
              py::arg("column"));
 
-    py::class_<mrc::segment::Object<HttpServerSourceStage>,
+    py::class_<mrc::segment::Object<HttpServerSourceStage<MessageMeta>>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<HttpServerSourceStage>>>(
-        _module, "HttpServerSourceStage", py::multiple_inheritance())
-        .def(py::init<>(&HttpServerSourceStageInterfaceProxy::init),
+               std::shared_ptr<mrc::segment::Object<HttpServerSourceStage<MessageMeta>>>>(
+        _module, "HttpServerMessageMetaSourceStage", py::multiple_inheritance())
+        .def(py::init<>(&HttpServerSourceStageInterfaceProxy::init_meta),
              py::arg("builder"),
              py::arg("name"),
              py::arg("bind_address")       = "127.0.0.1",
@@ -258,6 +256,33 @@ PYBIND11_MODULE(stages, _module)
              py::arg("request_timeout")    = 30,
              py::arg("lines")              = false,
              py::arg("stop_after")         = 0);
+
+    py::class_<mrc::segment::Object<HttpServerSourceStage<ControlMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<HttpServerSourceStage<ControlMessage>>>>(
+        _module, "HttpServerControlMessageSourceStage", py::multiple_inheritance())
+        .def(py::init<>(&HttpServerSourceStageInterfaceProxy::init_cm),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("bind_address")       = "127.0.0.1",
+             py::arg("port")               = 8080,
+             py::arg("endpoint")           = "/message",
+             py::arg("live_endpoint")      = "/live",
+             py::arg("ready_endpoint")     = "/ready",
+             py::arg("method")             = "POST",
+             py::arg("live_method")        = "GET",
+             py::arg("ready_method")       = "GET",
+             py::arg("accept_status")      = 201u,
+             py::arg("sleep_time")         = 0.1f,
+             py::arg("queue_timeout")      = 5,
+             py::arg("max_queue_size")     = 1024,
+             py::arg("num_server_threads") = 1,
+             py::arg("max_payload_size")   = DefaultMaxPayloadSize,
+             py::arg("request_timeout")    = 30,
+             py::arg("lines")              = false,
+             py::arg("stop_after")         = 0,
+             py::arg("task_type")          = py::none(),
+             py::arg("task_payload")       = py::none());
 
     py::class_<mrc::segment::Object<SerializeStage>,
                mrc::segment::ObjectProperties,

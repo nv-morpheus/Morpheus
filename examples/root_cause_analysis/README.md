@@ -105,13 +105,13 @@ From the Morpheus repo root directory, run:
 ```bash
 export MORPHEUS_ROOT=$(pwd)
 morpheus --log_level=DEBUG \
-`# Run a pipeline with 5 threads and a model batch size of 32 (Must match Triton config)` \
-run --num_threads=8 --edge_buffer_size=4 --use_cpp=True --pipeline_batch_size=1024 --model_max_batch_size=32 \
+`# Run a pipeline with 8 threads and a model batch size of 32 (Must match Triton config)` \
+run --num_threads=8 --edge_buffer_size=4 --pipeline_batch_size=1024 --model_max_batch_size=32 \
 `# Specify a NLP pipeline with 128 sequence length (Must match Triton config)` \
 pipeline-nlp --model_seq_length=128 --label=not_root_cause --label=is_root_cause \
 `# 1st Stage: Read from file` \
-from-file --filename=${MORPHEUS_ROOT}/models/datasets/validation-data/root-cause-validation-data-input.jsonlines \
-`# 2nd Stage: Deserialize from JSON strings to objects` \
+from-file --filename=${MORPHEUS_ROOT}/examples/data/root-cause-validation-data-input.jsonlines \
+`# 2nd Stage: Deserialize batch DataFrame into ControlMessages` \
 deserialize \
 `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
 preprocess --column=log --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \

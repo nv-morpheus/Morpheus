@@ -20,11 +20,10 @@ import time
 import typing
 from functools import wraps
 
-import cudf
-
 from morpheus.io.utils import cudf_string_cols_exceed_max_bytes
 from morpheus.io.utils import truncate_string_cols_by_bytes
 from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import is_cudf_type
 from morpheus_llm.error import IMPORT_ERROR_MESSAGE
 from morpheus_llm.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus_llm.service.vdb.vector_db_service import VectorDBService
@@ -327,7 +326,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
                 logger.info("Skipped checking 'None' in the field: %s, with datatype: %s", field_name, dtype)
 
         needs_truncate = self._truncate_long_strings
-        if needs_truncate and isinstance(df, cudf.DataFrame):
+        if needs_truncate and is_cudf_type(df):
             # Cudf specific optimization, we can avoid a costly call to truncate_string_cols_by_bytes if all of the
             # string columns are already below the max length
             needs_truncate = cudf_string_cols_exceed_max_bytes(df, self._fields_max_length)
@@ -336,7 +335,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         column_names = [field.name for field in self._fields if not field.auto_id]
 
         collection_df = df[column_names]
-        if isinstance(collection_df, cudf.DataFrame):
+        if is_cudf_type(collection_df):
             collection_df = collection_df.to_pandas()
 
         if needs_truncate:
@@ -728,7 +727,7 @@ class MilvusVectorDBService(VectorDBService):
         # Always add a primary key
         fields.append({"name": "pk", "dtype": pymilvus.DataType.INT64, "is_primary": True, "auto_id": True})
 
-        if isinstance(df, cudf.DataFrame):
+        if is_cudf_type(df):
             df = df.to_pandas()
 
         # Loop over all of the columns of the first row and build the schema

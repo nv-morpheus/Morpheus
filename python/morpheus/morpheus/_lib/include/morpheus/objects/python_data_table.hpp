@@ -44,7 +44,7 @@ struct PyDataTable : public IDataTable
      * @param py_table
      */
     PyDataTable(pybind11::object&& py_table);
-    ~PyDataTable();
+    ~PyDataTable() override;
 
     /**
      * @brief cuDF table rows count

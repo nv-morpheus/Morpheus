@@ -18,6 +18,7 @@
 #pragma once
 
 #include <algorithm>
+#include <vector>
 
 namespace morpheus {
 /****** Component public free function implementations************/

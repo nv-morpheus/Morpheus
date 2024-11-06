@@ -18,11 +18,12 @@ import typing
 import mrc
 
 from morpheus.config import Config
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
 
 
-class InMemSourceXStage(SingleOutputSource):
+class InMemSourceXStage(GpuAndCpuMixin, SingleOutputSource):
     """
     InMemorySourceStage subclass that emits whatever you give it and doesn't assume the source data
     is a dataframe.

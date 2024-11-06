@@ -25,7 +25,7 @@ from morpheus.messages import MessageMeta
 
 # pylint: disable=no-name-in-module
 @pytest.mark.usefixtures("manual_seed")
-@pytest.mark.use_python
+@pytest.mark.gpu_mode
 class TestGraphSageStage:
 
     def test_constructor(self, config: Config, model_dir: str):

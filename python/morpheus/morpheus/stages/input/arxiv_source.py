@@ -20,11 +20,11 @@ import mrc
 import mrc.core.operators as ops
 import pandas as pd
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
@@ -41,7 +41,7 @@ IMPORT_ERROR_MESSAGE = (
 
 
 @register_stage("from-arxiv")
-class ArxivSource(PreallocatorMixin, SingleOutputSource):
+class ArxivSource(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
     """
     Source stage that downloads PDFs from arxiv and converts them to dataframes.
 
@@ -97,6 +97,10 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         self._total_pages = 0
         self._total_chunks = 0
         self._cache_dir = cache_dir
+
+        if c.execution_mode == ExecutionMode.GPU:
+            import cudf
+            self._cudf = cudf
 
     @property
     def name(self) -> str:
@@ -160,7 +164,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
     def _process_pages(self, pdf_path: str):
         try:
-            from langchain.document_loaders import PyPDFLoader
+            from langchain_community.document_loaders import PyPDFLoader
             from pypdf.errors import PdfStreamError
         except ImportError as exc:
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc
@@ -195,4 +199,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
         df.rename(columns=map_cols, inplace=True)
 
-        return MessageMeta(cudf.from_pandas(df))
+        if self._config.execution_mode == ExecutionMode.GPU:
+            df = self._cudf.from_pandas(df)
+
+        return MessageMeta(df)

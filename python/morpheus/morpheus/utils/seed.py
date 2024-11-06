@@ -20,17 +20,26 @@ import numpy as np
 import torch
 
 
-def manual_seed(seed: int):
+def manual_seed(seed: int, cpu_only: bool = False):
     """
-    Manually see the random number generators for the stdlib, PyTorch, NumPy and CuPy
+    Manually see the random number generators for the Python standard lib, PyTorch, NumPy and CuPy
+
+    Parameters
+    ----------
+    seed : int
+        The seed value to use
+    cpu_only : bool, default = False
+        When set to True, CuPy and CUDA specific PyTorch settings are not set.
     """
     random.seed(seed)
 
     np.random.seed(seed)
-    cp.random.seed(seed)
-
     torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)  # the "all" refers to all GPUs
 
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
+    if not cpu_only:
+        cp.random.seed(seed)
+
+        torch.cuda.manual_seed_all(seed)  # the "all" refers to all GPUs
+
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True

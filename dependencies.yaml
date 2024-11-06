@@ -150,6 +150,7 @@ files:
       arch: [x86_64]
     includes:
       - cve-mitigation
+      - example-abp-nvsmi
       - example-dfp-prod
       - example-gnn
       - example-llms
@@ -174,6 +175,40 @@ files:
     includes:
       - checks
       - python
+
+  # morpheus-core pip dependencies are published as a morpheus package data file
+  morpheus_core:
+    output: requirements
+    requirements_dir: python/morpheus/morpheus
+    includes:
+      - morpheus_core_pip
+
+  # morpheus-dfp pip dependencies are published as a morpheus_dfp package data file
+  morpheus_dfp:
+    output: requirements
+    requirements_dir: python/morpheus_dfp/morpheus_dfp
+    includes:
+      - morpheus_core_pip
+
+  # morpheus-llm pip dependencies are published as a morpheus_llm package data file
+  morpheus_llm:
+    output: requirements
+    requirements_dir: python/morpheus_llm/morpheus_llm
+    includes:
+      - morpheus_core_pip
+      - morpheus_llm_pip
+
+  # dfp example conda dependencies
+  dfp_example:
+    output: conda
+    matrix:
+      cuda: ["12.5"]
+      arch: [x86_64]
+    output: conda
+    conda_dir: examples/digital_fingerprinting/production/conda/environments
+    includes:
+      - example-dfp-container
+      - example-dfp-prod
 
 channels:
   - conda-forge
@@ -291,6 +326,7 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - pylint=3.0.3
+          - pynvml=11.4
           - vale=3.7
           - vale-styles-microsoft
           - vale-styles-write-good
@@ -382,15 +418,48 @@ dependencies:
           - pip:
               - pytest-kafka==0.6.0
 
+  morpheus_core_pip:
+    common:
+      - output_types: [requirements]
+        packages:
+           - --extra-index-url https://download.pytorch.org/whl/cu124
+           - torch==2.4.0+cu124
+
+  morpheus_llm_pip:
+    common:
+      - output_types: [requirements]
+        packages:
+           - faiss-cpu
+           - google-search-results==2.4
+           - langchain==0.1.16
+           - langchain-nvidia-ai-endpoints==0.0.11
+           - milvus==2.3.5 # update to match pymilvus when available
+           - pymilvus==2.3.6
+           - nemollm==0.3.5
+
   example-dfp-prod:
     common:
       - output_types: [conda]
         packages:
           - *nodejs
-          - boto3
+          - boto3=1.35
           - kfp
           - papermill=2.4.0
-          - s3fs
+          - s3fs=2024.10
+          - pip
+          - pip:
+            - python-logging-loki
+
+  # packages needed in the DFP example container
+  example-dfp-container:
+    common:
+      - output_types: [conda]
+        packages:
+          - morpheus-dfp=24.10
+          - tini=0.19
+          - pip:
+            - --extra-index-url https://download.pytorch.org/whl/cu124
+            - torch==2.4.0+cu124
 
   example-gnn:
     common:
@@ -403,6 +472,12 @@ dependencies:
             - --find-links https://data.dgl.ai/wheels-test/repo.html
             - dgl==2.0.0
             - dglgo
+
+  example-abp-nvsmi:
+    common:
+      - output_types: [conda]
+        packages:
+          - pynvml=11.4
 
   example-llms:
     common:
@@ -421,7 +496,6 @@ dependencies:
           - *pypdfium2
           - *python-docx
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
-          - sentence-transformers=2.7
           - pip
           - pip:
             - langchain==0.1.16
@@ -429,6 +503,7 @@ dependencies:
             - faiss-cpu
             - google-search-results==2.4
             - nemollm==0.3.5
+            - sentence-transformers==2.7 # using pip now instead of conda to avoid install of pytorch cpu
 
   model-training-tuning:
     common:
@@ -444,6 +519,9 @@ dependencies:
           - seaborn
           - seqeval=1.2.2
           - xgboost
+          - pip
+          - pip:
+            - tensorrt-cu12
 
   cve-mitigation:
     common:

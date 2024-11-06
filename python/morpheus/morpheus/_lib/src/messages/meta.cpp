@@ -252,7 +252,7 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
     auto cudf_df_cls = py::module_::import("cudf").attr("DataFrame");
     if (!py::isinstance(data_frame, cudf_df_cls))
     {
-        // Convert to cudf if it's a Pandas DF, thrown an error otherwise
+        // Check if we received a Pandas DF or the Python impl of MessageMeta, throw an error otherwise
         auto pd_df_cls = py::module_::import("pandas").attr("DataFrame");
         if (py::isinstance(data_frame, pd_df_cls))
         {
@@ -265,6 +265,7 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
             auto msg_meta_cls = py::module_::import("morpheus.messages").attr("MessageMeta");
             if (py::isinstance(data_frame, msg_meta_cls))
             {
+                DVLOG(10) << "Converting from a Python impl of MessageMeta to C++ impl";
                 return init_python_meta(data_frame);
             }
             else
@@ -523,7 +524,14 @@ SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
   m_start(start),
   m_stop(stop),
   m_column_names(std::move(columns))
-{}
+{
+    auto sliced_other = std::dynamic_pointer_cast<SlicedMessageMeta>(other);
+    if (sliced_other)
+    {
+        m_start += sliced_other->m_start;
+        m_stop += sliced_other->m_start;
+    }
+}
 
 TensorIndex SlicedMessageMeta::count() const
 {
@@ -532,14 +540,12 @@ TensorIndex SlicedMessageMeta::count() const
 
 TableInfo SlicedMessageMeta::get_info() const
 {
-    return this->m_data->get_info().get_slice(m_start, m_stop, m_column_names);
+    return get_info(m_column_names);
 }
 
 TableInfo SlicedMessageMeta::get_info(const std::string& col_name) const
 {
-    auto full_info = this->m_data->get_info();
-
-    return full_info.get_slice(m_start, m_stop, {col_name});
+    return get_info(std::vector<std::string>{{col_name}});
 }
 
 TableInfo SlicedMessageMeta::get_info(const std::vector<std::string>& column_names) const

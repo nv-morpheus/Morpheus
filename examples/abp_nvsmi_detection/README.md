@@ -61,7 +61,10 @@ In this example we will be using the `examples/data/nvsmi.jsonlines` dataset tha
 
 This example can be easily applied to datasets generated from your own NVIDIA GPU devices. If NetQ is not deployed in your environment, the `nvsmi_data_extract.py` script is provided which uses [pyNVML](https://pypi.org/project/nvidia-ml-py/) and [pandas](https://pandas.pydata.org/) to generate data similar to NetQ. `pyNVML` contains the Python bindings for NVIDIA Management Library (NVML), the same library used by `nvidia-smi`.
 
-`pyNVML` and `pandas` come already installed on the Morpheus release and development Docker images. Otherwise, they will need to be installed before running the script.
+pyNVML is not installed by default, use the following command to install it:
+```bash
+conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-125_arch-x86_64.yaml
+```
 
 Run the following to start generating your dataset:
 ```
@@ -124,7 +127,7 @@ morpheus --log_level=DEBUG \
    pipeline-fil --columns_file=data/columns_fil.txt \
    `# 1st Stage: Read from file` \
    from-file --filename=examples/data/nvsmi.jsonlines \
-   `# 2nd Stage: Deserialize from JSON strings to objects` \
+   `# 2nd Stage: Deserialize batch DataFrame into ControlMessages` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
    preprocess \

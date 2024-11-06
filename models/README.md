@@ -73,6 +73,16 @@ This model is an example of customized transformer-based sensitive information d
 English text from PCAP payloads
 #### Output
 Multi-label sequence classification for 10 sensitive information categories
+### Generating TRT Models from ONNX
+The ONNX to TensorRT conversion utility requires additional packages, which can be installed using the following command:
+```bash
+conda env update --solver=libmamba -n morpheus --file conda/environments/model-utils_cuda-125_arch-x86_64.yaml
+```
+For the best performance you need to compile a TensorRT engine file on each machine that it will be run on. To facilitate this, Morpheus contains a utility to input an ONNX file and export the TensorRT engine file. Sample command to generate the TensorRT engine file -
+```bash
+morpheus --log_level=info tools onnx-to-trt --input_model sid-models/sid-minibert-20230424.onnx --output_model ./model.plan --batches 1 8 --batches 1 16 --batches 1 32 --seq_length 256 --max_workspace_size 16000
+```
+Note: If you get an out-of-memory error, reduce the `--max_workspace_size` argument until it will successfully run.
 ### References
 Well-Read Students Learn Better: On the Importance of Pre-training Compact Models, 2019,  https://arxiv.org/abs/1908.08962
 
@@ -89,6 +99,11 @@ This model is an example of customized transformer-based phishing email detectio
 Entire email as a string
 #### Output
 Binary sequence classification as phishing/spam or non-phishing/spam
+### Generating TRT Models from ONNX
+For the best performance you need to compile a TensorRT engine file on each machine that it will be run on. To facilitate this, Morpheus contains a utility to input an ONNX file and export the TensorRT engine file. Sample command to generate the TensorRT engine file -
+```bash
+morpheus --log_level=info tools onnx-to-trt --input_model phishing-models/phishing-bert-20230517.onnx --output_model ./model.plan --batches 1 8 --batches 1 16 --batches 1 32 --seq_length 256 --max_workspace_size 16000
+```
 ### References
 - https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection
 - Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding

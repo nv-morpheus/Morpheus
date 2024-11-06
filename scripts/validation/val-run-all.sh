@@ -27,17 +27,6 @@ source ${SCRIPT_DIR}/val-utils.sh
 # Load triton here to prevent it being closed and restarted after each command
 ensure_triton_running
 
-# Run everything once USE_CPP=False
-export USE_CPP=0
-
-${SCRIPT_DIR}/abp/val-abp-all.sh
-
-# Disabled per #1641
-# ${SCRIPT_DIR}/hammah/val-hammah-all.sh
-
-${SCRIPT_DIR}/phishing/val-phishing-all.sh
-${SCRIPT_DIR}/sid/val-sid-all.sh
-
 # Run everything once USE_CPP=True
 export USE_CPP=1
 

@@ -117,7 +117,7 @@ morpheus --log_level=DEBUG \
    pipeline-nlp --model_seq_length=256 \
    `# 1st Stage: Read from file` \
    from-file --filename=examples/data/pcap_dump.jsonlines \
-   `# 2nd Stage: Deserialize from JSON strings to objects` \
+   `# 2nd Stage: Deserialize batch DataFrame into ControlMessages` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
    preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \

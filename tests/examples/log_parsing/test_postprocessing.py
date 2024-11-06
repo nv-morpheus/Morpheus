@@ -23,12 +23,12 @@ import cupy as cp
 import numpy as np
 import pytest
 
-import morpheus._lib.messages as _messages
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.messages import TensorMemory
 
 
 @pytest.fixture(scope='module', name="model_config_file")
@@ -38,10 +38,11 @@ def fixture_model_config_file():
 
 def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str):
     input_file = os.path.join(TEST_DIRS.validation_data_dir, 'log-parsing-validation-data-input.csv')
-    input_df = dataset_cudf[input_file]
-    meta = MessageMeta(input_df)
 
     # we have tensor data for the first five rows
+    input_df = dataset_cudf[input_file][:5]
+    meta = MessageMeta(input_df)
+
     count = 5
     tensors = {}
     for tensor_name in ['confidences', 'input_ids', 'labels']:
@@ -55,7 +56,7 @@ def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str
     seq_ids[:, 2] = cp.asarray(host__seq_data)[:, 2]
     tensors['seq_ids'] = seq_ids
 
-    memory = _messages.TensorMemory(count=5, tensors=tensors)
+    memory = TensorMemory(count=5, tensors=tensors)
 
     msg = ControlMessage()
     msg.payload(meta)

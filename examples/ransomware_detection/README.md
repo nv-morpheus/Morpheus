@@ -68,7 +68,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 Run the following from the root of the Morpheus repo to start the ransomware detection pipeline:
 
 ```bash
-python examples/ransomware_detection/run.py --server_url=localhost:8001 \
+python examples/ransomware_detection/run.py --server_url=localhost:8000 \
               --sliding_window=3 \
               --model_name=ransomw-model-short-rf \
               --input_glob=./examples/data/appshield/*/snapshot-*/*.json \
@@ -88,7 +88,6 @@ Usage: run.py [OPTIONS]
 
 Options:
   --debug BOOLEAN
-  --use_cpp BOOLEAN
   --num_threads INTEGER RANGE     Number of internal pipeline threads to use
                                   [x>=1]
   --n_dask_workers INTEGER RANGE  Number of dask workers  [x>=2]
@@ -122,3 +121,5 @@ Options:
                                   output will be saved.
   --help                          Show this message and exit.
   ```
+
+> **Note**: There is a known race condition in `dask.distributed` which occasionally causes `tornado.iostream.StreamClosedError` to be raised during shutdown, but does not affect the output of the pipeline. If you see this exception during shutdown, it is typically safe to ignore unless it corresponds to other undesirable behavior. For more information see ([#2026](https://github.com/nv-morpheus/Morpheus/issues/2026)).

@@ -17,20 +17,25 @@
 
 #include "morpheus/messages/control.hpp"
 
-#include "morpheus/messages/meta.hpp"  // for MessageMeta, MessageMetaInterfaceProxy
+#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory, TensorMemoryInterfaceProxy
+#include "morpheus/messages/meta.hpp"                  // for MessageMeta, MessageMetaInterfaceProxy
+#include "morpheus/types.hpp"                          // for TensorIndex
 
-#include <glog/logging.h>       // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
-#include <nlohmann/json.hpp>    // for basic_json, json_ref, iter_impl, operator<<
-#include <pybind11/chrono.h>    // IWYU pragma: keep
-#include <pybind11/pybind11.h>  // for cast, object::cast
-#include <pybind11/pytypes.h>   // for object, none, dict, isinstance, list, str, value_error, generic_item
-#include <pymrc/utils.hpp>      // for cast_from_pyobject
+#include <boost/algorithm/string.hpp>  // for to_lower_copy
+#include <glog/logging.h>              // for COMPACT_GOOGLE_LOG_INFO, LogMessage, VLOG
+#include <nlohmann/json.hpp>           // for basic_json, json_ref, iter_impl, operator<<
+#include <pybind11/chrono.h>           // IWYU pragma: keep
+#include <pybind11/pybind11.h>         // for cast, object::cast
+#include <pybind11/pytypes.h>          // for object, none, dict, isinstance, list, str, value_error, generic_item
+#include <pybind11/stl.h>              // IWYU pragma: keep
+#include <pymrc/utils.hpp>             // for cast_from_pyobject
 
 #include <optional>   // for optional, nullopt
 #include <ostream>    // for basic_ostream, operator<<
 #include <regex>      // for regex_search, regex
 #include <stdexcept>  // for runtime_error
 #include <utility>    // for pair
+// IWYU pragma: no_include <boost/iterator/iterator_facade.hpp>
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -40,6 +45,7 @@ namespace morpheus {
 const std::string ControlMessage::s_config_schema = R"()";
 
 std::map<std::string, ControlMessageType> ControlMessage::s_task_type_map{{"inference", ControlMessageType::INFERENCE},
+                                                                          {"none", ControlMessageType::NONE},
                                                                           {"training", ControlMessageType::TRAINING}};
 
 ControlMessage::ControlMessage() : m_config({{"metadata", morpheus::utilities::json_t::object()}}), m_tasks({}) {}
@@ -53,8 +59,14 @@ ControlMessage::ControlMessage(const morpheus::utilities::json_t& _config) :
 
 ControlMessage::ControlMessage(const ControlMessage& other)
 {
+    m_cm_type = other.m_cm_type;
+    m_payload = other.m_payload;
+    m_tensors = other.m_tensors;
+
     m_config = other.m_config;
     m_tasks  = other.m_tasks;
+
+    m_timestamps = other.m_timestamps;
 }
 
 const morpheus::utilities::json_t& ControlMessage::config() const
@@ -65,16 +77,19 @@ const morpheus::utilities::json_t& ControlMessage::config() const
 void ControlMessage::add_task(const std::string& task_type, const morpheus::utilities::json_t& task)
 {
     VLOG(20) << "Adding task of type " << task_type << " to control message" << task.dump(4);
-    auto _task_type = s_task_type_map.contains(task_type) ? s_task_type_map[task_type] : ControlMessageType::NONE;
+    auto _task_type = to_task_type(task_type, false);
 
-    if (this->task_type() == ControlMessageType::NONE)
+    if (_task_type != ControlMessageType::NONE)
     {
-        this->task_type(_task_type);
-    }
-
-    if (_task_type != ControlMessageType::NONE and this->task_type() != _task_type)
-    {
-        throw std::runtime_error("Cannot add inference and training tasks to the same control message");
+        auto current_task_type = this->task_type();
+        if (current_task_type == ControlMessageType::NONE)
+        {
+            this->task_type(_task_type);
+        }
+        else if (current_task_type != _task_type)
+        {
+            throw std::runtime_error("Cannot mix different types of tasks on the same control message");
+        }
     }
 
     m_tasks[task_type].push_back(task);
@@ -162,6 +177,11 @@ void ControlMessage::set_timestamp(const std::string& key, time_point_t timestam
     m_timestamps[key] = timestamp_ns;
 }
 
+const std::map<std::string, time_point_t>& ControlMessage::get_timestamps() const
+{
+    return m_timestamps;
+}
+
 std::map<std::string, time_point_t> ControlMessage::filter_timestamp(const std::string& regex_filter)
 {
     std::map<std::string, time_point_t> matching_timestamps;
@@ -197,14 +217,7 @@ void ControlMessage::config(const morpheus::utilities::json_t& config)
 {
     if (config.contains("type"))
     {
-        auto task_type = config.at("type");
-        auto _task_type =
-            s_task_type_map.contains(task_type) ? s_task_type_map.at(task_type) : ControlMessageType::NONE;
-
-        if (this->task_type() == ControlMessageType::NONE)
-        {
-            this->task_type(_task_type);
-        }
+        this->task_type(to_task_type(config.at("type").get<std::string>(), true));
     }
 
     if (config.contains("tasks"))
@@ -256,10 +269,65 @@ void ControlMessage::task_type(ControlMessageType type)
     m_cm_type = type;
 }
 
-/*** Proxy Implementations ***/
-std::shared_ptr<ControlMessage> ControlMessageProxy::create(py::dict& config)
+ControlMessageType ControlMessage::to_task_type(const std::string& task_type, bool throw_on_error) const
 {
-    return std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config));
+    auto lower_task_type = boost::to_lower_copy(task_type);
+    if (ControlMessage::s_task_type_map.contains(lower_task_type))
+    {
+        return ControlMessage::s_task_type_map.at(lower_task_type);
+    }
+
+    if (throw_on_error)
+    {
+        throw std::runtime_error("Invalid task type: " + task_type);
+    }
+
+    return ControlMessageType::NONE;
+}
+
+/*** Proxy Implementations ***/
+std::shared_ptr<ControlMessage> ControlMessageProxy::create(py::object& config_or_message)
+{
+    if (config_or_message.is_none())
+    {
+        return std::make_shared<ControlMessage>();
+    }
+
+    if (py::isinstance<py::dict>(config_or_message))
+    {
+        return std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config_or_message));
+    }
+
+    // Assume we received an instance of the Python impl of ControlMessage object, as a Python bound instance of the C++
+    // impl of the ControlMessage class would have invoked the shared_ptr<ControlMessage> overload of the create method
+    py::dict config = config_or_message.attr("_export_config")();
+    auto cm         = std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(config));
+
+    auto py_meta = config_or_message.attr("payload")();
+    if (!py_meta.is_none())
+    {
+        cm->payload(MessageMetaInterfaceProxy::init_python_meta(py_meta));
+    }
+
+    auto py_tensors = config_or_message.attr("tensors")();
+    if (!py_tensors.is_none())
+    {
+        auto count          = py_tensors.attr("count").cast<TensorIndex>();
+        auto py_tensors_map = py_tensors.attr("get_tensors")();
+        cm->tensors(TensorMemoryInterfaceProxy::init(count, py_tensors_map));
+    }
+
+    auto py_timestamps = config_or_message.attr("_timestamps");
+    if (!py_timestamps.is_none())
+    {
+        auto timestamps_map = py_timestamps.cast<std::map<std::string, time_point_t>>();
+        for (const auto& t : timestamps_map)
+        {
+            cm->set_timestamp(t.first, t.second);
+        }
+    }
+
+    return cm;
 }
 
 std::shared_ptr<ControlMessage> ControlMessageProxy::create(std::shared_ptr<ControlMessage> other)
@@ -300,6 +368,11 @@ py::list ControlMessageProxy::list_metadata(ControlMessage& self)
         py_keys.append(py::str(key));
     }
     return py_keys;
+}
+
+py::dict ControlMessageProxy::get_timestamps(ControlMessage& self)
+{
+    return py::cast(self.get_timestamps());
 }
 
 py::dict ControlMessageProxy::filter_timestamp(ControlMessage& self, const std::string& regex_filter)

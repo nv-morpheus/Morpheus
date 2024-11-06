@@ -32,7 +32,6 @@ from morpheus.common import FileTypes
 from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
-from morpheus.config import CppConfig
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -230,9 +229,6 @@ def run_pipeline(train_users,
         logger.info("Tracking URI: %s", mlflow.get_tracking_uri())
 
     config = Config()
-
-    CppConfig.set_should_use_cpp(False)
-
     config.num_threads = len(os.sched_getaffinity(0))
 
     config.ae = ConfigAutoEncoder()

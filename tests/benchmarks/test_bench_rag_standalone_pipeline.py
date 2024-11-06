@@ -121,7 +121,7 @@ def _run_pipeline(config: Config,
 
 
 @pytest.mark.milvus
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.use_cudf
 @pytest.mark.benchmark
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
@@ -135,10 +135,12 @@ def test_rag_standalone_pipe(benchmark: collections.abc.Callable[[collections.ab
                              repeat_count: int,
                              import_mod: types.ModuleType,
                              llm_service_name: str):
+    if llm_service_name == "openai":
+        os.environ.update({"OPENAI_API_KEY": "test_api_key"})
     collection_name = f"test_bench_rag_standalone_pipe_{llm_service_name}"
     populate_milvus(milvus_server_uri=milvus_server_uri,
                     collection_name=collection_name,
-                    resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
+                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
                     df=dataset["service/milvus_rss_data.json"],
                     overwrite=True)
 
