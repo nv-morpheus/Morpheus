@@ -44,8 +44,7 @@ def sample_message_meta_generator(df_rows: int, df_cols: int, count: int) -> Gen
         yield meta
 
 
-@pytest.mark.use_cudf
-@pytest.mark.usefixtures("use_cpp")
+@pytest.mark.gpu_mode
 def test_cpp_monitor_stage_pipe(config):
     config.num_threads = 1
 

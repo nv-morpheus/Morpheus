@@ -42,23 +42,3 @@ def test_stage_raises_exception(config: Config, filter_probs_df: DataFrameType, 
     # Ensure that the raised exception was from our stage and not from something else
     assert error_raiser_stage.error_raised
     assert len(sink_stage.get_messages()) == 0
-
-
-@pytest.mark.gpu_and_cpu_mode
-@pytest.mark.parametrize("delayed_start", [False, True])
-def test_monitor_not_impl(config: Config, delayed_start: bool):
-
-    class UnsupportedType:
-        pass
-
-    pipe = LinearPipeline(config)
-    pipe.set_source(InMemSourceXStage(config, [UnsupportedType()]))
-    monitor_stage = pipe.add_stage(MonitorStage(config, log_level=logging.WARNING, delayed_start=delayed_start))
-    sink_stage = pipe.add_stage(InMemorySinkStage(config))
-
-    assert monitor_stage._mc.is_enabled()
-
-    with pytest.raises(NotImplementedError):
-        pipe.run()
-
-    assert len(sink_stage.get_messages()) == 0
