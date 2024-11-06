@@ -17,11 +17,12 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-class GroupByColumnStage(PassThruTypeMixin, SinglePortStage):
+class GroupByColumnStage(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     """
     Group the incoming message by a column in the DataFrame.
 

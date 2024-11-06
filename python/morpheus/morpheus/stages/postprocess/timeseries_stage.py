@@ -25,9 +25,7 @@ import mrc
 import pandas as pd
 from mrc.core import operators as ops
 
-from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -350,7 +348,9 @@ class _UserTimeSeries:
 
             # Save this message in the pending queue
             self._pending_messages.append(x)
-            new_timedata = x.payload().get_data([self._timestamp_col]).to_pandas()
+            new_timedata = x.payload().get_data([self._timestamp_col])
+            if not isinstance(new_timedata, pd.DataFrame):
+                new_timedata = new_timedata.to_pandas()
 
             # Save this message event times in the event list. Ensure the values are always sorted
             self._timeseries_data = pd.concat([self._timeseries_data, new_timedata]).sort_index()
@@ -401,7 +401,6 @@ class _UserTimeSeries:
         return output_messages
 
 
-@register_stage("timeseries", modes=[PipelineModes.AE])
 class TimeSeriesStage(PassThruTypeMixin, SinglePortStage):
     """
     Perform time series anomaly detection and add prediction.

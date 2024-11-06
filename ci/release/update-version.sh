@@ -48,8 +48,8 @@ NEXT_PATCH=$(echo ${NEXT_FULL_VERSION} | awk '{split($0, a, "."); print a[3]}')
 NEXT_SHORT_TAG=${NEXT_MAJOR}.${NEXT_MINOR}
 
 # Need to distutils-normalize the versions for some use cases
-CURRENT_SHORT_TAG_PEP440=$(python -c "from setuptools.extern import packaging; print(packaging.version.Version('${CURRENT_SHORT_TAG}'))")
-NEXT_SHORT_TAG_PEP440=$(python -c "from setuptools.extern import packaging; print(packaging.version.Version('${NEXT_SHORT_TAG}'))")
+CURRENT_SHORT_TAG_PEP440=$(python -c "from packaging import version; print(version.Version('${CURRENT_SHORT_TAG}'))")
+NEXT_SHORT_TAG_PEP440=$(python -c "from packaging import version; print(version.Version('${NEXT_SHORT_TAG}'))")
 
 echo "Preparing release $CURRENT_FULL_VERSION (PEP ${CURRENT_SHORT_TAG_PEP440}) => $NEXT_FULL_VERSION (PEP ${NEXT_SHORT_TAG_PEP440})"
 
@@ -84,14 +84,13 @@ sed_runner "s|branch-${CURRENT_SHORT_TAG}|branch-${NEXT_SHORT_TAG}|g" manifest.y
 sed_runner "s/mrc=${CURRENT_SHORT_TAG}/mrc=${NEXT_SHORT_TAG}/g" dependencies.yaml
 
 # Generate the environment files based upon the updated dependencies.yaml
-conda run -n base --live-stream rapids-dependency-file-generator
+rapids-dependency-file-generator
 
 # examples/digital_fingerprinting
 sed_runner "s/v${CURRENT_FULL_VERSION}-runtime/v${NEXT_FULL_VERSION}-runtime/g" \
    examples/digital_fingerprinting/production/docker-compose.yml \
    examples/digital_fingerprinting/production/Dockerfile
 sed_runner "s/v${CURRENT_FULL_VERSION}-runtime/v${NEXT_FULL_VERSION}-runtime/g" examples/digital_fingerprinting/production/Dockerfile
-sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" examples/digital_fingerprinting/starter/README.md
 
 # examples/developer_guide
 sed_runner 's/'"VERSION ${CURRENT_FULL_VERSION}.*"'/'"VERSION ${NEXT_FULL_VERSION}"'/g' \

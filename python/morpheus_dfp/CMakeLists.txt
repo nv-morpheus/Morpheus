@@ -41,6 +41,9 @@ if(MORPHEUS_PYTHON_PERFORM_INSTALL)
   list(APPEND extra_args "INSTALL_WHEEL")
 endif()
 
+file(GLOB morpheus_dfp_requirement_files "${CMAKE_CURRENT_SOURCE_DIR}/morpheus_dfp/requirements*")
+morpheus_utils_add_python_sources(${morpheus_dfp_requirement_files})
+
 morpheus_utils_build_python_package(morpheus_dfp ${extra_args})
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

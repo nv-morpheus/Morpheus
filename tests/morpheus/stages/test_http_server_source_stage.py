@@ -16,10 +16,12 @@ import queue
 import threading
 import time
 import typing
+from collections import deque
 from http import HTTPStatus
 from io import StringIO
 from unittest import mock
 
+import pandas as pd
 import pytest
 import requests
 import requests.adapters
@@ -29,7 +31,9 @@ from _utils import make_url
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.io.serializers import df_to_stream_json
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.configurable_output_source import SupportedMessageTypes
 from morpheus.stages.input.http_server_source_stage import HttpServerSourceStage
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
@@ -37,7 +41,7 @@ from morpheus.utils.http_utils import MimeTypes
 
 class GetNext(threading.Thread):
 
-    def __init__(self, msg_queue: queue.Queue, generator: typing.Iterator[MessageMeta]):
+    def __init__(self, msg_queue: queue.Queue, generator: typing.Iterator[ControlMessage | MessageMeta]):
         threading.Thread.__init__(self)
         self._generator = generator
         self._msg_queue = msg_queue
@@ -58,14 +62,24 @@ class GetNext(threading.Thread):
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
+@pytest.mark.parametrize("message_type, task_type, task_payload",
+                         [(SupportedMessageTypes.MESSAGE_META, None, None),
+                          (SupportedMessageTypes.CONTROL_MESSAGE, None, None),
+                          (SupportedMessageTypes.CONTROL_MESSAGE, "test", {
+                              "pay": "load"
+                          })],
+                         ids=["message_meta", "control_message_no_task", "control_message_with_task"])
 @pytest.mark.parametrize("lines", [False, True], ids=["json", "lines"])
 @pytest.mark.parametrize("use_payload_to_df_fn", [False, True], ids=["no_payload_to_df_fn", "payload_to_df_fn"])
 def test_generate_frames(config: Config,
                          mock_subscription: mock.MagicMock,
                          dataset_pandas: DatasetManager,
                          lines: bool,
-                         use_payload_to_df_fn: bool):
+                         use_payload_to_df_fn: bool,
+                         message_type: SupportedMessageTypes,
+                         task_type: str | None,
+                         task_payload: dict | None):
     # The _generate_frames() method is only used when C++ mode is disabled
     endpoint = '/test'
     port = 8088
@@ -73,7 +87,7 @@ def test_generate_frames(config: Config,
     accept_status = HTTPStatus.OK
     url = make_url(port, endpoint)
 
-    df = dataset_pandas['filter_probs.csv']
+    df: pd.DataFrame = dataset_pandas['filter_probs.csv']
 
     if lines:
         content_type = MimeTypes.TEXT.value
@@ -97,7 +111,13 @@ def test_generate_frames(config: Config,
                                   method=method,
                                   accept_status=accept_status,
                                   lines=lines,
-                                  payload_to_df_fn=payload_to_df_fn)
+                                  payload_to_df_fn=payload_to_df_fn,
+                                  message_type=message_type,
+                                  task_type=task_type,
+                                  task_payload=task_payload)
+
+    if not use_payload_to_df_fn:
+        stage._set_default_payload_to_df_fn()
 
     generate_frames = stage._generate_frames(mock_subscription)
     msg_queue = queue.SimpleQueue()
@@ -124,7 +144,9 @@ def test_generate_frames(config: Config,
                                data=payload,
                                timeout=10,
                                allow_redirects=False,
-                               headers={"Content-Type": content_type})
+                               headers={
+                                   "Content-Type": content_type, "unit": "test"
+                               })
 
     result_msg = msg_queue.get(timeout=5.0)
     get_next_thread.join()
@@ -139,7 +161,36 @@ def test_generate_frames(config: Config,
     else:
         expected_df = df
 
-    dataset_pandas.assert_compare_df(expected_df, result_msg.df)
+    if message_type == SupportedMessageTypes.CONTROL_MESSAGE:
+        expected_class = ControlMessage
+        actual_df = result_msg.payload().df
+    else:
+        expected_class = MessageMeta
+        actual_df = result_msg.df
+
+    assert isinstance(result_msg, expected_class)
+    dataset_pandas.assert_compare_df(expected_df, actual_df)
+
+    if message_type == SupportedMessageTypes.CONTROL_MESSAGE:
+        if task_type is not None:
+            expected_tasks = {task_type: deque([task_payload])}
+        else:
+            expected_tasks = {}
+
+        assert result_msg.get_tasks() == expected_tasks
+
+        # Subset of headers that we want to check for
+        expected_headers = {
+            'Host': f'127.0.0.1:{port}',
+            'endpoint': endpoint,
+            'method': method.value,
+            'remote_address': '127.0.0.1',
+            'unit': 'test'
+        }
+
+        actual_headers = result_msg.get_metadata()['http_fields']
+        for (key, value) in expected_headers.items():
+            assert actual_headers[key] == value
 
 
 @pytest.mark.parametrize("invalid_method", [HTTPMethod.GET, HTTPMethod.PATCH])
@@ -155,7 +206,7 @@ def test_constructor_invalid_accept_status(config: Config, invalid_accept_status
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.parametrize(
     "lines",
     [False, pytest.param(True, marks=pytest.mark.skip(reason="https://github.com/rapidsai/cudf/issues/15820"))],

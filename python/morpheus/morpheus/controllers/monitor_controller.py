@@ -19,12 +19,12 @@ from functools import reduce
 import fsspec
 from tqdm import tqdm
 
-import cudf
-
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.utils.logger import LogLevels
 from morpheus.utils.monitor_utils import MorpheusTqdm
+from morpheus.utils.type_aliases import DataFrameType
+from morpheus.utils.type_utils import is_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,7 @@ class MonitorController:
         Custom implementation of tqdm if required.
     """
 
+    SupportedTypes = typing.Union[DataFrameType, MessageMeta, ControlMessage, list]
     controller_count: int = 0
 
     def __init__(self,
@@ -125,20 +126,19 @@ class MonitorController:
         """
         self._progress.refresh()
 
-    def progress_sink(self, msg: typing.Union[cudf.DataFrame, MessageMeta, ControlMessage, list]):
+    def progress_sink(self, msg: SupportedTypes) -> SupportedTypes:
         """
         Receives a message and determines the count of the message.
         The progress bar is displayed and the progress is updated.
 
         Parameters
         ----------
-        msg: typing.Union[cudf.DataFrame, MessageMeta, ControlMessage, typing.List]
+        msg: SupportedTypes
             Message that determines the count of the message
 
         Returns
         -------
-        msg: typing.Union[cudf.DataFrame, MessageMeta, ControlMessage, list]
-
+        SupportedTypes
         """
 
         # Make sure the progress bar is shown
@@ -158,14 +158,14 @@ class MonitorController:
 
         return msg
 
-    def auto_count_fn(self, msg: typing.Union[cudf.DataFrame, MessageMeta, ControlMessage, typing.List]):
+    def auto_count_fn(self, msg: SupportedTypes) -> typing.Callable[[SupportedTypes], int] | None:
         """
         This is a helper function that is used to determine the count of messages received by the
         monitor.
 
         Parameters
         ----------
-        msg: typing.Union[cudf.DataFrame, MessageMeta, ControlMessage, typing.List]
+        msg: SupportedTypes
             Message that determines the count of the message
 
         Returns
@@ -183,7 +183,7 @@ class MonitorController:
         if (isinstance(msg, list) and len(msg) == 0):
             return None
 
-        if (isinstance(msg, cudf.DataFrame)):
+        if (is_dataframe(msg)):
             return lambda y: len(y.index)
 
         if (isinstance(msg, MessageMeta)):

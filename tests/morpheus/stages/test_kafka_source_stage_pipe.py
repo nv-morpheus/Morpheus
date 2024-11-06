@@ -30,6 +30,7 @@ from _utils.stages.dfp_length_checker import DFPLengthChecker
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.trigger_stage import TriggerStage
+from morpheus.stages.input.kafka_source_stage import AutoOffsetReset
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
@@ -39,6 +40,7 @@ if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.kafka
 def test_kafka_source_stage_pipe(config: Config, kafka_bootstrap_servers: str, kafka_topics: KafkaTopics) -> None:
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
@@ -51,7 +53,7 @@ def test_kafka_source_stage_pipe(config: Config, kafka_bootstrap_servers: str, k
         KafkaSourceStage(config,
                          bootstrap_servers=kafka_bootstrap_servers,
                          input_topic=kafka_topics.input_topic,
-                         auto_offset_reset="earliest",
+                         auto_offset_reset=AutoOffsetReset.EARLIEST,
                          poll_interval="1seconds",
                          client_id='morpheus_kafka_source_stage_pipe',
                          stop_after=num_records))
@@ -63,6 +65,7 @@ def test_kafka_source_stage_pipe(config: Config, kafka_bootstrap_servers: str, k
     assert_results(comp_stage.get_results())
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.kafka
 def test_multi_topic_kafka_source_stage_pipe(config: Config, kafka_bootstrap_servers: str) -> None:
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
@@ -83,7 +86,7 @@ def test_multi_topic_kafka_source_stage_pipe(config: Config, kafka_bootstrap_ser
         KafkaSourceStage(config,
                          bootstrap_servers=kafka_bootstrap_servers,
                          input_topic=input_topics,
-                         auto_offset_reset="earliest",
+                         auto_offset_reset=AutoOffsetReset.EARLIEST,
                          poll_interval="1seconds",
                          client_id='test_multi_topic_kafka_source_stage_pipe',
                          stop_after=num_records))
@@ -95,27 +98,30 @@ def test_multi_topic_kafka_source_stage_pipe(config: Config, kafka_bootstrap_ser
     assert_results(comp_stage.get_results())
 
 
+@pytest.mark.gpu_and_cpu_mode
 @pytest.mark.kafka
 @pytest.mark.parametrize('async_commits', [True, False])
-@pytest.mark.parametrize('num_records', [10, 100, 1000])
-def test_kafka_source_commit(num_records: int,
-                             async_commits: bool,
-                             config: Config,
-                             kafka_bootstrap_servers: str,
-                             kafka_topics: KafkaTopics,
-                             kafka_consumer: "KafkaConsumer") -> None:
+@pytest.mark.parametrize('num_records', [10, 1000])
+def test_kafka_source_batch_pipe(num_records: int,
+                                 async_commits: bool,
+                                 config: Config,
+                                 kafka_bootstrap_servers: str,
+                                 kafka_topics: KafkaTopics,
+                                 kafka_consumer: "KafkaConsumer") -> None:
     group_id = 'morpheus'
 
     data = [{'v': i} for i in range(num_records)]
     num_written = write_data_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, data)
     assert num_written == num_records
 
+    expected_length = config.pipeline_batch_size
+    num_exact = num_records // expected_length
+
     kafka_consumer.subscribe([kafka_topics.input_topic])
     seek_to_beginning(kafka_consumer)
     partitions = kafka_consumer.assignment()
 
-    # This method does not advance the consumer, and even if it did, this consumer has a different group_id than the
-    # source stage
+    # This method does not advance the consumer, and this consumer has a different group_id than the source stage
     expected_offsets = kafka_consumer.end_offsets(partitions)
 
     pipe = LinearPipeline(config)
@@ -123,12 +129,13 @@ def test_kafka_source_commit(num_records: int,
         KafkaSourceStage(config,
                          bootstrap_servers=kafka_bootstrap_servers,
                          input_topic=kafka_topics.input_topic,
-                         auto_offset_reset="earliest",
+                         auto_offset_reset=AutoOffsetReset.EARLIEST,
                          poll_interval="1seconds",
                          group_id=group_id,
                          client_id='morpheus_kafka_source_commit',
                          stop_after=num_records,
                          async_commits=async_commits))
+    pipe.add_stage(DFPLengthChecker(config, expected_length=expected_length, num_exact=num_exact))
     pipe.add_stage(TriggerStage(config))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
@@ -145,38 +152,6 @@ def test_kafka_source_commit(num_records: int,
     # The broker may have created additional partitions, offsets should be a superset of expected_offsets
     for (topic_partition, expected_offset) in expected_offsets.items():
         # The value of the offsets dict being returned is a tuple of (offset, metadata), while the value of the
-        #  expected_offsets is just the offset.
+        # expected_offsets is just the offset.
         actual_offset = offsets[topic_partition][0]
         assert actual_offset == expected_offset
-
-
-@pytest.mark.kafka
-@pytest.mark.parametrize('num_records', [1000])
-def test_kafka_source_batch_pipe(config: Config,
-                                 kafka_bootstrap_servers: str,
-                                 kafka_topics: KafkaTopics,
-                                 num_records: int) -> None:
-    data = [{'v': i} for i in range(num_records)]
-    num_written = write_data_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, data)
-    assert num_written == num_records
-
-    expected_length = config.pipeline_batch_size
-    num_exact = num_records // expected_length
-
-    pipe = LinearPipeline(config)
-    pipe.set_source(
-        KafkaSourceStage(config,
-                         bootstrap_servers=kafka_bootstrap_servers,
-                         input_topic=kafka_topics.input_topic,
-                         auto_offset_reset="earliest",
-                         poll_interval="1seconds",
-                         client_id='morpheus_kafka_source_stage_pipe',
-                         stop_after=num_records))
-    pipe.add_stage(DFPLengthChecker(config, expected_length=expected_length, num_exact=num_exact))
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(SerializeStage(config))
-    comp_stage = pipe.add_stage(
-        CompareDataFrameStage(config, pd.DataFrame(data=data), include=[r'^v$'], reset_index=True))
-    pipe.run()
-
-    assert_results(comp_stage.get_results())

@@ -123,27 +123,32 @@ Before running the pipeline, we need to ensure that the following services are r
 
 #### Ensure LFS files are downloaded
 
-To retrieve datasets from LFS run the following:
+To retrieve the datasets from LFS run the following:
 
 ```bash
-./scripts/fetch_data.py fetch datasets
+./scripts/fetch_data.py fetch examples
 ```
 
 #### Milvus Service
 
-- Follow the instructions [here](https://milvus.io/docs/install_standalone-docker.md) to install and run a Milvus
-  service.
+- Refer to the [Milvus documentation](https://milvus.io/docs/install-overview.md) for more details on running Milvus. For the purposes of testing the pipeline, we will launch an instance of Milvus Lite.
+
+From the root of the Morpheus repository, run the following to launch Milvus in a separate terminal:
+```bash
+mkdir -p .tmp/milvusdb
+milvus-server --data .tmp/milvusdb
+```
 
 #### Triton Service
 
 - Pull the Docker image for Triton:
   ```bash
-  docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+  docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
   ```
 
 - Run the following to launch Triton and load the `all-MiniLM-L6-v2` model:
   ```bash
-  docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model all-MiniLM-L6-v2
+  docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model all-MiniLM-L6-v2
   ```
 
   This will launch Triton and only load the `all-MiniLM-L6-v2` model. Once Triton has loaded the model, the following
@@ -277,7 +282,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
     - Reload the docker container, specifying that we also need to load paraphrase-multilingual-mpnet-base-v2
     ```bash
     docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-     nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver \
+     nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver \
      --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit  --load-model \
      all-MiniLM-L6-v2 --load-model sentence-transformers/paraphrase-multilingual-mpnet-base-v2
     ```

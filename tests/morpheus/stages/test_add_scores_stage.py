@@ -16,23 +16,22 @@
 
 import typing
 
-import cupy as cp
+import numpy as np
+import pandas as pd
 import pytest
 import typing_utils
 
-import cudf
-
-import morpheus._lib.messages as _messages
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 
 
 @pytest.fixture(name='config')
-def fixture_config(config: Config, use_cpp: bool):  # pylint: disable=unused-argument
+def fixture_config(config: Config):
     config.class_labels = ['frogs', 'lizards', 'toads']
     config.feature_length = 12
     yield config
@@ -61,16 +60,16 @@ def test_constructor_errors(config: Config):
         AddScoresStage(config, labels=['missing'])
 
 
-@pytest.mark.use_python
-def test_add_labels():
+@pytest.mark.cpu_mode
+def test_add_labels_with_control_message():
     class_labels = {0: "frogs", 1: "lizards", 2: "toads"}
 
-    df = cudf.DataFrame([0, 1], columns=["dummy"])
-    probs_array = cp.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]])
+    df = pd.DataFrame([0, 1], columns=["dummy"])
+    probs_array = np.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]])
 
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(_messages.TensorMemory(count=2, tensors={"probs": probs_array}))
+    cm.tensors(TensorMemory(count=2, tensors={"probs": probs_array}))
 
     labeled_cm = AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=None)
 
@@ -81,7 +80,7 @@ def test_add_labels():
     # Too small of a probs array
     cm = ControlMessage()
     cm.payload(MessageMeta(df))
-    cm.tensors(_messages.TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
+    cm.tensors(TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
 
     with pytest.raises(RuntimeError):
         AddClassificationsStage._add_labels(cm, idx2label=class_labels, threshold=None)

@@ -14,14 +14,12 @@
 
 import logging
 import typing
-from abc import abstractmethod
 from functools import partial
 
 import cupy as cp
 import mrc
 from mrc.core import operators as ops
 
-import morpheus._lib.messages as _messages
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
@@ -82,15 +80,14 @@ class InferenceWorker:
         dims = self.calc_output_dims(msg)
         output_dims = (msg.payload().count, *dims[1:])
 
-        memory = _messages.TensorMemory(count=output_dims[0], tensors={'probs': cp.zeros(output_dims)})
+        memory = TensorMemory(count=output_dims[0], tensors={'probs': cp.zeros(output_dims)})
         output_message = ControlMessage(msg)
         output_message.payload(msg.payload())
         output_message.tensors(memory)
 
         return output_message
 
-    @abstractmethod
-    def calc_output_dims(self, msg: ControlMessage) -> typing.Tuple:
+    def calc_output_dims(self, msg: ControlMessage) -> tuple:
         """
         Calculates the dimensions of the inference output message data given an input message.
 
@@ -101,12 +98,11 @@ class InferenceWorker:
 
         Returns
         -------
-        typing.Tuple
+        tuple
             Output dimensions of response.
         """
-        pass
+        raise NotImplementedError("No Python implementation provided by this stage")
 
-    @abstractmethod
     def process(self, batch: ControlMessage, callback: typing.Callable[[TensorMemory], None]):
         """
         Main inference processing function. This function will be called once for each mini-batch. Once the inference is
@@ -121,7 +117,7 @@ class InferenceWorker:
             Callback to set the values for the inference response.
 
         """
-        pass
+        raise NotImplementedError("No Python implementation provided by this stage")
 
 
 class InferenceStage(ControlMessageStage):
@@ -152,15 +148,21 @@ class InferenceStage(ControlMessageStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-
+    thread_count : int, optional
+        Number of threads to use for inference. If not provided, the `num_threads` attribute of the `Config` object
+        will be used.
     """
 
-    def __init__(self, c: Config):
+    def __init__(self, c: Config, thread_count: int = None):
         super().__init__(c)
+
+        # GPU only stage, assuming all messages are cuDF/CuPy based
+        import cudf
+        self._cudf = cudf
 
         self._fea_length = c.feature_length
 
-        self._thread_count = c.num_threads
+        self._thread_count = thread_count or c.num_threads
         self._workers: typing.List[InferenceWorker] = []
         self._inf_queue = ProducerConsumerQueue()
 
@@ -173,13 +175,13 @@ class InferenceStage(ControlMessageStage):
     def name(self) -> str:
         return "inference"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         """
         Accepted input types to this stage.
 
         Returns
         -------
-        typing.Tuple
+        tuple
             Tuple of input types.
         """
         return (ControlMessage, )
@@ -187,11 +189,10 @@ class InferenceStage(ControlMessageStage):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(ControlMessage)
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         # Default to False unless derived classes override this value
         return False
 
-    @abstractmethod
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
         """
         Returns the main inference worker which manages requests possibly in another thread depending on which mode the
@@ -209,7 +210,7 @@ class InferenceStage(ControlMessageStage):
         `InferenceWorker`
             Inference worker implementation for stage.
         """
-        pass
+        raise NotImplementedError("No Python implementation provided by this stage")
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         raise NotImplementedError("No C++ node is available for this inference type")
@@ -232,6 +233,8 @@ class InferenceStage(ControlMessageStage):
 
                 fut_list = []
 
+                batch_offset = 0
+
                 for batch in batches:
                     outstanding_requests += 1
 
@@ -239,8 +242,9 @@ class InferenceStage(ControlMessageStage):
 
                     def set_output_fut(resp: TensorMemory, inner_batch, batch_future: mrc.Future):
                         nonlocal outstanding_requests
-                        mess = self._convert_one_response(output_message, inner_batch, resp)
-
+                        nonlocal batch_offset
+                        mess = self._convert_one_response(output_message, inner_batch, resp, batch_offset)
+                        batch_offset += inner_batch.tensors().count
                         outstanding_requests -= 1
 
                         batch_future.set_result(mess)
@@ -327,7 +331,7 @@ class InferenceStage(ControlMessageStage):
 
             out_msg.payload(msg.payload().get_slice(start, stop))
 
-            out_msg_tensors = _messages.TensorMemory(count=stop - start, tensors={})
+            out_msg_tensors = TensorMemory(count=stop - start, tensors={})
             for (name, tensor) in msg.tensors().get_tensors().items():
                 out_msg_tensors.set_tensor(name, tensor[start:stop])
             out_msg.tensors(out_msg_tensors)
@@ -339,7 +343,8 @@ class InferenceStage(ControlMessageStage):
         return out_resp
 
     @staticmethod
-    def _convert_one_response(output: ControlMessage, inf: ControlMessage, res: TensorMemory):
+    def _convert_one_response(output: ControlMessage, inf: ControlMessage, res: TensorMemory,
+                              batch_offset: int) -> ControlMessage:  # pylint:disable=unused-argument
         # Make sure we have a continuous list
         # assert inf.mess_offset == saved_offset + saved_count
 

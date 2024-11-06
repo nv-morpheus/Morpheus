@@ -28,7 +28,6 @@
 #include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
-#include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/http_server.hpp"
 #include "morpheus/version.hpp"
 
@@ -57,9 +56,6 @@ PYBIND11_MODULE(common, _module)
         .. autosummary::
            :toctree: _generate
         )pbdoc";
-
-    // Load the cudf helpers
-    CudfHelper::load();
 
     LoaderRegistry::register_factory_fn(
         "file",
@@ -153,7 +149,11 @@ PYBIND11_MODULE(common, _module)
         .value("DATAFRAME", FilterSource::DATAFRAME);
 
     py::class_<HttpEndpoint, std::shared_ptr<HttpEndpoint>>(_module, "HttpEndpoint")
-        .def(py::init<>(&HttpEndpointInterfaceProxy::init), py::arg("py_parse_fn"), py::arg("url"), py::arg("method"));
+        .def(py::init<>(&HttpEndpointInterfaceProxy::init),
+             py::arg("py_parse_fn"),
+             py::arg("url"),
+             py::arg("method"),
+             py::arg("include_headers") = false);
 
     py::class_<HttpServer, std::shared_ptr<HttpServer>>(_module, "HttpServer")
         .def(py::init<>(&HttpServerInterfaceProxy::init),

@@ -100,7 +100,6 @@ class BenchmarkConfGenerator:
         config = generate_ae_config(source=(self._pipe_conf.get('source')),
                                     userid_column_name=(self._pipe_conf.get('userid_column_name')),
                                     timestamp_column_name=(self._pipe_conf.get('timestamp_column_name')),
-                                    use_cpp=(self._pipe_conf.get('use_cpp')),
                                     pipeline_batch_size=(self._pipe_conf.get('pipeline_batch_size')),
                                     edge_buffer_size=(self._pipe_conf.get('edge_buffer_size')),
                                     num_threads=(self._pipe_conf.get('num_threads')))

@@ -1,5 +1,5 @@
 {
-    "triton_server_url": "localhost:8001",
+    "triton_server_url": "localhost:8000",
     "test_sid_nlp_e2e": {
         "file_path": "../../models/datasets/validation-data/sid-validation-data.csv",
         "repeat": 10,
@@ -25,16 +25,6 @@
         "pipeline_batch_size": 1024,
         "model_max_batch_size": 64,
         "feature_length": 128,
-        "edge_buffer_size": 4
-    },
-    "test_cloudtrail_ae_e2e": {
-        "input_glob_path": "../../models/datasets/validation-data/dfp-cloudtrail-*-input.csv",
-        "train_glob_path": "../../models/datasets/training-data/dfp-cloudtrail-*-training-data.csv",
-        "repeat": 1,
-        "num_threads": 1,
-        "pipeline_batch_size": 1024,
-        "model_max_batch_size": 1024,
-        "feature_length": 32,
         "edge_buffer_size": 4
     }
 }

@@ -16,17 +16,16 @@ import typing
 from functools import partial
 
 import cupy as cp
-import mrc
 import numpy as np
 
 import cudf
 
-import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
+from morpheus.messages import InferenceMemoryFIL
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 
@@ -184,7 +183,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         seq_ids[:, 2] = fea_len - 1
 
         # Create the inference memory. Keep in mind count here could be > than input count
-        memory = _messages.InferenceMemoryFIL(count=count, input__0=data, seq_ids=seq_ids)
+        memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seq_ids)
 
         infer_message = ControlMessage(msg)
         infer_message.payload(meta)
@@ -197,6 +196,3 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
                        fea_len=self._fea_length,
                        fea_cols=self.features,
                        req_cols=self.req_cols)
-
-    def _get_preprocess_node(self, builder: mrc.Builder):
-        raise NotImplementedError("C++ node not implemented for this stage")

@@ -17,10 +17,11 @@
 
 #pragma once
 
-#include "morpheus/export.h"              // for MORPHEUS_EXPORT
-#include "morpheus/messages/control.hpp"  // for ControlMessage
-#include "morpheus/messages/meta.hpp"     // for MessageMeta
-#include "morpheus/types.hpp"             // for TensorIndex
+#include "morpheus/export.h"                  // for MORPHEUS_EXPORT
+#include "morpheus/messages/control.hpp"      // for ControlMessage
+#include "morpheus/messages/meta.hpp"         // for MessageMeta
+#include "morpheus/types.hpp"                 // for TensorIndex
+#include "morpheus/utilities/json_types.hpp"  // for control_message_task_t
 
 #include <boost/fiber/context.hpp>  // for operator<<
 #include <mrc/segment/builder.hpp>  // for Builder
@@ -44,14 +45,6 @@ namespace morpheus {
  * @file
  */
 
-using cm_task_t = std::pair<std::string, nlohmann::json>;
-
-void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
-                         TensorIndex start,
-                         TensorIndex stop,
-                         cm_task_t* task,
-                         std::shared_ptr<ControlMessage>& windowed_message);
-
 /****** DeserializationStage********************************/
 class MORPHEUS_EXPORT DeserializeStage
   : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<ControlMessage>>
@@ -71,8 +64,8 @@ class MORPHEUS_EXPORT DeserializeStage
      * @param task Optional task to be added to all outgoing `ControlMessage`s
      */
     DeserializeStage(TensorIndex batch_size,
-                     bool ensure_sliceable_index     = true,
-                     std::unique_ptr<cm_task_t> task = nullptr) :
+                     bool ensure_sliceable_index                  = true,
+                     std::unique_ptr<control_message_task_t> task = nullptr) :
       base_t(base_t::op_factory_from_sub_fn(build_operator())),
       m_batch_size(batch_size),
       m_ensure_sliceable_index(ensure_sliceable_index),
@@ -83,7 +76,7 @@ class MORPHEUS_EXPORT DeserializeStage
 
     TensorIndex m_batch_size;
     bool m_ensure_sliceable_index{true};
-    std::unique_ptr<cm_task_t> m_task{nullptr};
+    std::unique_ptr<control_message_task_t> m_task{nullptr};
 };
 
 /****** DeserializationStageInterfaceProxy******************/

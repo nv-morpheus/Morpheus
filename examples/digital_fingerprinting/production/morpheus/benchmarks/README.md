@@ -38,14 +38,9 @@ In the `/workspace` directory of the container, run the following to compile Mor
 ./scripts/compile.sh
 ```
 
-Now install Morpheus:
-```bash
-pip install -e /workspace
-```
-
 Install additional required dependencies:
 ```bash
-mamba env update \
+conda env update --solver=libmamba \
   -n ${CONDA_DEFAULT_ENV} \
   --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
 ```
@@ -87,8 +82,7 @@ Morpheus pipeline configurations for each workflow are managed using [pipelines_
 		"duration": "60d",
 		"userid_column_name": "username",
 		"timestamp_column_name": "timestamp",
-		"source": "duo",
-		"use_cpp": true
+		"source": "duo"
 },
 ...
 ```
@@ -97,13 +91,14 @@ When using the MRC SegmentModule in a pipeline, it will also require a module co
 
 To ensure the [file_to_df_loader.py](../../../../../morpheus/loaders/file_to_df_loader.py) utilizes the same type of downloading mechanism, set `MORPHEUS_FILE_DOWNLOAD_TYPE` environment variable with any one of given choices (`dask`, `dask thread`, `single thread`).
 
-```
+```bash
 export MORPHEUS_FILE_DOWNLOAD_TYPE=dask
 ```
 
 Benchmarks for an individual workflow can be run from `examples/digital_fingerprinting/production/morpheus` in your container:
 
-```
+```bash
+cd examples/digital_fingerprinting/production/morpheus
 pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave benchmarks/test_bench_e2e_dfp_pipeline.py::<test-workflow>
 ```
 
@@ -134,12 +129,12 @@ The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to
 - `test_dfp_stages_duo_inference_e2e`
 
 For example, to run E2E benchmarks on the DFP training (modules) workflow on the azure logs:
-```
+```bash
 pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave benchmarks/test_bench_e2e_dfp_pipeline.py::test_dfp_modules_azure_payload_lti_e2e
 ```
 
 To run E2E benchmarks on all workflows:
-```
+```bash
 pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave benchmarks/test_bench_e2e_dfp_pipeline.py
 ```
 

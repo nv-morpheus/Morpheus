@@ -17,10 +17,7 @@ import logging
 import time
 import typing
 
-import pandas as pd
-
-import cudf
-
+from morpheus.utils.type_aliases import DataFrameType
 from morpheus_llm.error import IMPORT_ERROR_MESSAGE
 from morpheus_llm.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus_llm.service.vdb.vector_db_service import VectorDBService
@@ -81,13 +78,13 @@ class FaissVectorDBResourceService(VectorDBResourceService):
         """
         raise NotImplementedError("Insert operation is not supported in FAISS")
 
-    def insert_dataframe(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs) -> dict:
+    def insert_dataframe(self, df: DataFrameType, **kwargs) -> dict:
         """
         Insert a dataframe entires into the vector database.
 
         Parameters
         ----------
-        df : typing.Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             Dataframe to be inserted into the collection.
         **kwargs
             Extra keyword arguments specific to the vector database implementation.
@@ -368,11 +365,7 @@ class FaissVectorDBService(VectorDBService):
         """
         raise NotImplementedError("create operation is not supported in FAISS")
 
-    def create_from_dataframe(self,
-                              name: str,
-                              df: typing.Union[cudf.DataFrame, pd.DataFrame],
-                              overwrite: bool = False,
-                              **kwargs) -> None:
+    def create_from_dataframe(self, name: str, df: DataFrameType, overwrite: bool = False, **kwargs) -> None:
         """
         Create collections in the vector database.
 
@@ -380,7 +373,7 @@ class FaissVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection.
-        df : Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             The dataframe to create the collection from.
         overwrite : bool, optional
             Whether to overwrite the collection if it already exists. Default is False.
@@ -416,8 +409,7 @@ class FaissVectorDBService(VectorDBService):
 
         raise NotImplementedError("create_from_dataframe operation is not supported in FAISS")
 
-    def insert_dataframe(self, name: str, df: typing.Union[cudf.DataFrame, pd.DataFrame],
-                         **kwargs) -> dict[str, typing.Any]:
+    def insert_dataframe(self, name: str, df: DataFrameType, **kwargs) -> dict[str, typing.Any]:
         """
         Converts dataframe to rows and insert to the vector database.
 
@@ -425,7 +417,7 @@ class FaissVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection to be inserted.
-        df : typing.Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             Dataframe to be inserted in the collection.
         **kwargs
             Additional keyword arguments containing collection configuration.

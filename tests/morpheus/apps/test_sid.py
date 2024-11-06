@@ -26,7 +26,6 @@ from _utils import calc_error_val
 from _utils import compare_class_to_scores
 from _utils import mk_async_infer
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -169,7 +168,7 @@ def _run_minibert(*,
 
 
 @pytest.mark.slow
-@pytest.mark.use_cpp
+@pytest.mark.gpu_mode
 @pytest.mark.usefixtures("launch_mock_triton")
 def test_minibert_no_trunc(config: Config, tmp_path: str, morpheus_log_level: int):
 
@@ -179,11 +178,7 @@ def test_minibert_no_trunc(config: Config, tmp_path: str, morpheus_log_level: in
                             truncated=False,
                             morpheus_log_level=morpheus_log_level)
 
-    # Not sure why these are different
-    if (CppConfig.get_should_use_cpp()):
-        assert results.diff_rows == 18
-    else:
-        assert results.diff_rows == 1333
+    assert results.diff_rows == 18
 
 
 @pytest.mark.slow
@@ -198,8 +193,4 @@ def test_minibert_truncated(config: Config, tmp_path: str, morpheus_log_level: i
                             data_col_name=data_col_name,
                             morpheus_log_level=morpheus_log_level)
 
-    # Not sure why these are different
-    if (CppConfig.get_should_use_cpp()):
-        assert results.diff_rows == 1204
-    else:
-        assert results.diff_rows == 1333
+    assert results.diff_rows == 1204

@@ -137,7 +137,11 @@ class PipelineModes(str, Enum):
     OTHER = "OTHER"
     NLP = "NLP"
     FIL = "FIL"
-    AE = "AE"
+
+
+class ExecutionMode(str, Enum):
+    GPU = "GPU"
+    CPU = "CPU"
 
 
 class CppConfig:
@@ -199,6 +203,7 @@ class Config(ConfigBase):
     log_config_file : str
         File corresponding to this Config.
     """
+    execution_mode: ExecutionMode = ExecutionMode.GPU
 
     # Whether in Debug mode.
     debug: bool = False
@@ -219,6 +224,41 @@ class Config(ConfigBase):
 
     ae: ConfigAutoEncoder = dataclasses.field(default=None)
     fil: ConfigFIL = dataclasses.field(default=None)
+    frozen: bool = False
+
+    def freeze(self):
+        """
+        Freeze the Config object, making it immutable. This method will be invoked when the config object is passed to
+        a pipeline or stage for the first time.
+
+        Calling `freeze` on a frozen instance will not have any effect.
+        """
+        self._check_cpp_mode(fix_mis_match=not self.frozen)
+        if not self.frozen:
+            self.frozen = True
+
+    def _check_cpp_mode(self, fix_mis_match: bool = False):
+        """
+        Check if C++ mode matched the execution mode. If `
+
+        Parameters
+        ----------
+        fix_mis_match : bool
+            If True, set the C++ mode to the correct value. If False, raise an exception if the value is incorrect.
+        """
+        should_use_cpp: bool = (self.execution_mode == ExecutionMode.GPU)
+        if fix_mis_match:
+            CppConfig.set_should_use_cpp(should_use_cpp)
+        elif CppConfig.get_should_use_cpp() != should_use_cpp:
+            raise ValueError(
+                f"Execution mode {self.execution_mode} does not match C++ mode {CppConfig.get_should_use_cpp()}")
+
+    def __setattr__(self, name, value):
+        # Since __frozen is defined in the __post_init__, the attribute won't exist in the __init__ method.
+        if self.frozen:
+            raise dataclasses.FrozenInstanceError("Cannot modify frozen Config object.")
+
+        super().__setattr__(name, value)
 
     @property
     def pipeline_batch_size(self):

@@ -47,7 +47,7 @@ on:
 env:
   CHANGE_TARGET: "${{ github.base_ref }}"
   CUDA_PATH: "/usr/local/cuda/"
-  CUDA_VER: "12.1"
+  CUDA_VER: "12.5"
   GH_TOKEN: "${{ github.token }}"
   GIT_COMMIT: "${{ github.sha }}"
   MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
@@ -137,7 +137,8 @@ jobs:
   test:
     name: Test
     runs-on: linux-amd64-gpu-v100-latest-1
-    timeout-minutes: 60
+    # Consider lowering this back down to 60 minutes per https://github.com/nv-morpheus/Morpheus/issues/1948
+    timeout-minutes: 90
     container:
       credentials:
         username: '$oauthtoken'

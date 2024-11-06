@@ -19,7 +19,6 @@ import numpy as np
 import tritonclient.grpc as tritonclient
 from scipy.special import softmax
 
-import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -62,7 +61,7 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
         seq_ids[:, 0] = cp.arange(0, msg.tensors().count, dtype=cp.uint32)
         seq_ids[:, 2] = msg.tensors().get_tensor('seq_ids')[:, 2]
 
-        memory = _messages.TensorMemory(
+        memory = TensorMemory(
             count=msg.tensors().count,
             tensors={
                 'confidences': cp.zeros((msg.tensors().count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
@@ -141,7 +140,8 @@ class LogParsingInferenceStage(TritonInferenceStage):
         schema.output_schema.set_type(ControlMessage)
 
     @staticmethod
-    def _convert_one_response(output: ControlMessage, inf: ControlMessage, res: TensorMemory) -> ControlMessage:
+    def _convert_one_response(output: ControlMessage, inf: ControlMessage, res: TensorMemory,
+                              batch_offset: int) -> ControlMessage:
         memory = output.tensors()
 
         out_seq_ids = memory.get_tensor('seq_ids')
@@ -154,8 +154,8 @@ class LogParsingInferenceStage(TritonInferenceStage):
         seq_offset = seq_ids[0, 0].item()
         seq_count = seq_ids[-1, 0].item() + 1 - seq_offset
 
-        input_ids[0:inf.tensors().count, :] = inf.tensors().get_tensor('input_ids')
-        out_seq_ids[0:inf.tensors().count, :] = seq_ids
+        input_ids[batch_offset:inf.tensors().count + batch_offset, :] = inf.tensors().get_tensor('input_ids')
+        out_seq_ids[batch_offset:inf.tensors().count + batch_offset, :] = seq_ids
 
         resp_confidences = res.get_tensor('confidences')
         resp_labels = res.get_tensor('labels')
@@ -163,8 +163,8 @@ class LogParsingInferenceStage(TritonInferenceStage):
         # Two scenarios:
         if (inf.payload().count == inf.tensors().count):
             assert seq_count == res.count
-            confidences[0:inf.tensors().count, :] = resp_confidences
-            labels[0:inf.tensors().count, :] = resp_labels
+            confidences[batch_offset:inf.tensors().count + batch_offset, :] = resp_confidences
+            labels[batch_offset:inf.tensors().count + batch_offset, :] = resp_labels
         else:
             assert inf.tensors().count == res.count
 

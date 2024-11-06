@@ -17,12 +17,15 @@
 
 #pragma once
 
-#include "morpheus/export.h"  // for exporting symbols
+#include "morpheus/export.h"                  // for exporting symbols
+#include "morpheus/utilities/json_types.hpp"  // for json_t
 
-#include <boost/asio/io_context.hpp>   // for io_context
-#include <boost/asio/ip/tcp.hpp>       // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
-#include <boost/beast/core/error.hpp>  // for error_code
-#include <boost/beast/http/verb.hpp>   // for verb
+#include <boost/asio/io_context.hpp>         // for io_context
+#include <boost/asio/ip/tcp.hpp>             // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
+#include <boost/beast/core/error.hpp>        // for error_code
+#include <boost/beast/http/message.hpp>      // for request
+#include <boost/beast/http/string_body.hpp>  // for string_body
+#include <boost/beast/http/verb.hpp>         // for verb
 #include <boost/system/detail/error_code.hpp>
 #include <pybind11/pytypes.h>  // for pybind11::function
 
@@ -56,6 +59,26 @@ using parse_status_t = std::tuple<unsigned /*http status code*/,
                                   std::string /* response body */,
                                   on_complete_cb_fn_t /* optional callback function, ignored if null */>;
 
+// Note this is different than the http endpoint this represents the TCP connection
+using tcp_endpoint_t = boost::asio::ip::tcp::endpoint;
+using request_t      = boost::beast::http::request<boost::beast::http::string_body>;
+
+/**
+ * @brief A function that receives the TCP endpoint, and the request object. Returning an instance of `parse_status_t`.
+ *
+ * @details The function is expected to return a tuple conforming to `parse_status_t` consisting of the HTTP status
+ * code, mime type value for the Content-Type header, body of the response and optionally a callback function.
+ * If specified, the callback function which will be called once the response has been sent or failed to send, as
+ * indicated by a `boost::system::error_code` reference passed to the function.
+ *
+ * Refer to https://www.boost.org/doc/libs/1_74_0/libs/system/doc/html/system.html#ref_class_error_code for more
+ * information regarding `boost::system::error_code`.
+ *
+ * Note: This method is preferred over the payload_parse_fn_t as it provides access to the request headers.
+ */
+using request_handler_fn_t =
+    std::function<parse_status_t(const tcp_endpoint_t& tcp_endpoint, const request_t& request)>;
+
 /**
  * @brief A function that receives the post body and returns an HTTP status code, Content-Type string and body.
  *
@@ -66,10 +89,23 @@ using parse_status_t = std::tuple<unsigned /*http status code*/,
  *
  * Refer to https://www.boost.org/doc/libs/1_74_0/libs/system/doc/html/system.html#ref_class_error_code for more
  * information regarding `boost::system::error_code`.
+ *
+ * Note: Ussage of this function is discouraged in favor of the request_handler_fn_t as it provides access to the
+ * request headers, but remains available for compatibility. This method may be deprecated in the future.
+ *
  */
-using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* post body */)>;
+using payload_parse_fn_t = std::function<parse_status_t(const std::string& body)>;
 
 constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
+
+/**
+ * @brief Convert the request headers to a JSON object.
+ *
+ * @param tcp_endpoint The TCP endpoint of the request.
+ * @param request The request object.
+ * @return The JSON object representing the request headers.
+ */
+utilities::json_t request_headers_to_json(const tcp_endpoint_t& tcp_endpoint, const request_t& request);
 
 /**
  * @brief A struct that encapsulates the http endpoint attributes
@@ -78,11 +114,19 @@ constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
  */
 struct MORPHEUS_EXPORT HttpEndpoint
 {
-    HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string url, std::string method);
+    HttpEndpoint(request_handler_fn_t request_handler_fn, std::string&& url, const std::string& method);
+    HttpEndpoint(payload_parse_fn_t payload_parse_fn, std::string&& url, const std::string& method);
 
+    std::shared_ptr<request_handler_fn_t> m_request_handler;
     std::shared_ptr<payload_parse_fn_t> m_parser;
     std::string m_url;
     boost::beast::http::verb m_method;
+
+  private:
+    HttpEndpoint(std::shared_ptr<request_handler_fn_t>&& request_handler_fn,
+                 std::shared_ptr<payload_parse_fn_t>&& payload_parse_fn,
+                 std::string&& url,
+                 const std::string& method);
 };
 
 /**
@@ -171,7 +215,10 @@ class MORPHEUS_EXPORT HttpServer
  */
 struct MORPHEUS_EXPORT HttpEndpointInterfaceProxy
 {
-    static std::shared_ptr<HttpEndpoint> init(pybind11::function py_parse_fn, std::string m_url, std::string m_method);
+    static std::shared_ptr<HttpEndpoint> init(pybind11::function py_parse_fn,
+                                              std::string m_url,
+                                              std::string m_method,
+                                              bool include_headers = false);
 };
 
 /****** HttpServerInterfaceProxy *************************/

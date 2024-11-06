@@ -18,9 +18,10 @@ import typing
 
 import click
 import yaml
+from stages.create_features import CreateFeaturesRWStage
+from stages.preprocessing import PreprocessingRWStage
 
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -31,15 +32,11 @@ from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
 
-from .stages.create_features import CreateFeaturesRWStage
-from .stages.preprocessing import PreprocessingRWStage
-
 CUR_DIR = os.path.dirname(__file__)
 
 
 @click.command()
 @click.option('--debug', default=False)
-@click.option('--use_cpp', default=False, help="Enable C++ execution for this pipeline, currently this is unsupported.")
 @click.option(
     "--num_threads",
     default=len(os.sched_getaffinity(0)),
@@ -102,7 +99,6 @@ CUR_DIR = os.path.dirname(__file__)
     help="The path to the file where the inference output will be saved.",
 )
 def run_pipeline(debug,
-                 use_cpp,
                  num_threads,
                  n_dask_workers,
                  threads_per_dask_worker,
@@ -121,8 +117,6 @@ def run_pipeline(debug,
         configure_logging(log_level=logging.INFO)
 
     snapshot_fea_length = 99
-
-    CppConfig.set_should_use_cpp(use_cpp)
 
     # Its necessary to get the global config object and configure it for FIL mode.
     config = Config()
@@ -205,6 +199,7 @@ def run_pipeline(debug,
             model_name=model_name,
             server_url=server_url,
             force_convert_inputs=True,
+            thread_count=1  # Work-around for issue #1891 remove once resolved.
         ))
 
     # Add a monitor stage.

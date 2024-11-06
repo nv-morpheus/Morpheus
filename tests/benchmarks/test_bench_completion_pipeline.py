@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import collections.abc
+import os
 import typing
 
 import pytest
@@ -74,7 +75,7 @@ def _run_pipeline(config: Config,
 
 
 @pytest.mark.use_cudf
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.benchmark
 @pytest.mark.usefixtures("mock_nemollm", "mock_chat_completion")
 @pytest.mark.parametrize("llm_service_cls", [NeMoLLMService, OpenAIChatService])
@@ -82,4 +83,6 @@ def test_completion_pipe(benchmark: collections.abc.Callable[[collections.abc.Ca
                          config: Config,
                          dataset: DatasetManager,
                          llm_service_cls: type[LLMService]):
+    if llm_service_cls == OpenAIChatService:
+        os.environ.update({"OPENAI_API_KEY": "test_api_key"})
     benchmark(_run_pipeline, config, llm_service_cls, source_df=dataset["countries.csv"])

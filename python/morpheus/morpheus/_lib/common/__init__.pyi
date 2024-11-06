@@ -110,7 +110,7 @@ class FilterSource():
     __members__: dict # value = {'Auto': <FilterSource.Auto: 0>, 'TENSOR': <FilterSource.TENSOR: 1>, 'DATAFRAME': <FilterSource.DATAFRAME: 2>}
     pass
 class HttpEndpoint():
-    def __init__(self, py_parse_fn: function, url: str, method: str) -> None: ...
+    def __init__(self, py_parse_fn: function, url: str, method: str, include_headers: bool = False) -> None: ...
     pass
 class HttpServer():
     def __enter__(self) -> HttpServer: ...
@@ -210,4 +210,4 @@ def typeid_to_numpy_str(arg0: TypeId) -> str:
     pass
 def write_df_to_file(df: object, filename: str, file_type: FileTypes = FileTypes.Auto, **kwargs) -> None:
     pass
-__version__ = '24.10.0'
+__version__ = '25.2.0'
