@@ -16,7 +16,6 @@ import os
 
 import mrc
 import mrc.core.operators as ops
-import pyarrow.parquet as pq
 
 from morpheus.common import FileTypes
 from morpheus.common import determine_file_type
