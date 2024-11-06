@@ -16,25 +16,26 @@
 
 import types
 
+import pandas as pd
 import pytest
 
 from _utils.dataset_manager import DatasetManager
+from morpheus.common import FileTypes
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-import pandas as pd
 
 
-@pytest.mark.parametrize(
-    "output_file",
-    [
-        "/tmp/output.json",  # "/tmp/output.csv",
-  # "/tmp/output.parquet"
-    ])
+@pytest.mark.parametrize("output_file", ["/tmp/output.json", "/tmp/output.csv", "/tmp/output.parquet"])
 @pytest.mark.gpu_and_cpu_mode
-def test_write_to_file_stage_pipe(config, df_pkg: types.ModuleType, dataset: DatasetManager, output_file: str) -> None:
+def test_write_to_file_stage_pipe(config,
+                                  df_pkg: types.ModuleType,
+                                  dataset: DatasetManager,
+                                  output_file: str,
+                                  execution_mode: str) -> None:
     """
     Test WriteToFileStage with different output formats (JSON, CSV, Parquet)
     """
@@ -47,15 +48,18 @@ def test_write_to_file_stage_pipe(config, df_pkg: types.ModuleType, dataset: Dat
     pipe.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
     pipe.run()
 
-    # Load the output file and compare with the input dataframe
     if output_file.endswith(".json"):
-        with open(output_file, 'r') as f:
-            output_df = pd.concat([pd.read_json(line) for line in f], ignore_index=True)
-    elif output_file.endswith(".csv"):
-        output_df = df_pkg.read_csv(output_file)
-    elif output_file.endswith(".parquet"):
-        output_df = df_pkg.read_parquet(output_file)
-    else:
-        raise ValueError(f"Unsupported file format: {output_file}")
+        output_df = pd.read_json(output_file, lines=True)
+        dataset.assert_compare_df(filter_probs_df, output_df)
 
-    dataset.assert_compare_df(filter_probs_df, output_df)
+    elif output_file.endswith(".csv"):
+        # The output data will contain an additional id column that we will need to slice off
+        output_df = df_pkg.read_csv(output_file).iloc[:, 1:]
+        dataset.assert_compare_df(filter_probs_df, output_df)
+
+    elif output_file.endswith(".parquet"):
+        output_df = read_file_to_df(file_name=output_file, file_type=FileTypes.PARQUET)
+        # The c++ WriteToFileStage will add an additional index column to the output
+        if execution_mode == "GPU":
+            output_df = output_df.iloc[:, 1:]
+        assert output_df.values.tolist() == filter_probs_df.values.tolist()
