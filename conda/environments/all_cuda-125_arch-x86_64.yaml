@@ -68,7 +68,7 @@ dependencies:
 - libwebp=1.3.2
 - libzlib >=1.3.1,<2
 - mlflow
-- mrc=24.10
+- mrc=25.02
 - myst-parser=0.18.1
 - nbsphinx
 - networkx=2.8.8

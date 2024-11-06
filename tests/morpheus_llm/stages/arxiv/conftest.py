@@ -20,10 +20,10 @@ import pytest
 
 from _utils import import_or_skip
 
-SKIP_REASON = ("Tests for the arxiv_source require a number of packages not installed in the Morpheus development "
-               "environment. To install these run:\n"
-               "`conda env update --solver=libmamba -n morpheus "
-               "--file conda/environments/dev_cuda-125_arch-x86_64.yaml --prune`")
+SKIP_REASON = (
+    "Tests for the arxiv_source require a number of packages not installed in the Morpheus development "
+    "environment. To install these run:\n"
+    "`conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-125_arch-x86_64.yaml`")
 
 
 @pytest.fixture(name="arxiv", autouse=True, scope='session')
@@ -35,11 +35,19 @@ def arxiv_fixture(fail_missing: bool):
 
 
 @pytest.fixture(name="langchain", autouse=True, scope='session')
-def langchain_fixture(fail_missing: bool):
+def langchain_fixture(langchain):
     """
     All of the tests in this subdir require langchain
     """
-    yield import_or_skip("langchain", reason=SKIP_REASON, fail_missing=fail_missing)
+    yield langchain
+
+
+@pytest.fixture(name="langchain_community", autouse=True, scope='session')
+def langchain_community_fixture(langchain_community):
+    """
+    All of the tests in this subdir require langchain_community
+    """
+    yield langchain_community
 
 
 @pytest.fixture(name="pypdf", autouse=True, scope='session')

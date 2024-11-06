@@ -61,7 +61,10 @@ In this example we will be using the `examples/data/nvsmi.jsonlines` dataset tha
 
 This example can be easily applied to datasets generated from your own NVIDIA GPU devices. If NetQ is not deployed in your environment, the `nvsmi_data_extract.py` script is provided which uses [pyNVML](https://pypi.org/project/nvidia-ml-py/) and [pandas](https://pandas.pydata.org/) to generate data similar to NetQ. `pyNVML` contains the Python bindings for NVIDIA Management Library (NVML), the same library used by `nvidia-smi`.
 
-`pyNVML` and `pandas` come already installed on the Morpheus release and development Docker images. Otherwise, they will need to be installed before running the script.
+pyNVML is not installed by default, use the following command to install it:
+```bash
+conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-121_arch-x86_64.yaml
+```
 
 Run the following to start generating your dataset:
 ```
@@ -86,12 +89,12 @@ This example utilizes the Triton Inference Server to perform inference.
 
 Pull the Docker image for Triton:
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
 ```
 
 Run the following to launch Triton and load the `abp-nvsmi-xgb` XGBoost model:
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
 ```
 
 This will launch Triton and only load the `abp-nvsmi-xgb` model. This model has been configured with a max batch size of 32768, and to use dynamic batching for increased performance.

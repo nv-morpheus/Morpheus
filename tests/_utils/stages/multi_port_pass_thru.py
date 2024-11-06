@@ -20,11 +20,12 @@ import mrc
 import mrc.core.operators as ops
 
 from morpheus.config import Config
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.stage import Stage
 
 
-class MultiPortPassThruStage(PassThruTypeMixin, Stage):
+class MultiPortPassThruStage(GpuAndCpuMixin, PassThruTypeMixin, Stage):
 
     def __init__(self, c: Config, num_ports: int):
         super().__init__(c)

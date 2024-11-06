@@ -25,7 +25,7 @@ mark_as_advanced(MORPHEUS_CACHE_DIR)
 list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
 
 project(3_simple_cpp_stage
-  VERSION 24.10.00
+  VERSION 25.02.00
   LANGUAGES C CXX
 )
 

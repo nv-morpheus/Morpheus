@@ -35,7 +35,7 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
 ```
 
 ##### Start Triton Inference Server Container
@@ -43,7 +43,7 @@ From the Morpheus repo root directory, run the following to launch Triton and lo
 ```bash
 # Run Triton in explicit mode
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-    nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 \
+    nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 \
     tritonserver --model-repository=/models/triton-model-repo \
                  --exit-on-error=false \
                  --model-control-mode=explicit \
@@ -68,7 +68,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 Run the following from the root of the Morpheus repo to start the ransomware detection pipeline:
 
 ```bash
-python examples/ransomware_detection/run.py --server_url=localhost:8001 \
+python examples/ransomware_detection/run.py --server_url=localhost:8000 \
               --sliding_window=3 \
               --model_name=ransomw-model-short-rf \
               --input_glob=./examples/data/appshield/*/snapshot-*/*.json \
@@ -88,7 +88,6 @@ Usage: run.py [OPTIONS]
 
 Options:
   --debug BOOLEAN
-  --use_cpp BOOLEAN
   --num_threads INTEGER RANGE     Number of internal pipeline threads to use
                                   [x>=1]
   --n_dask_workers INTEGER RANGE  Number of dask workers  [x>=2]

@@ -20,11 +20,12 @@ from mrc.core.node import Broadcast
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.stage import Stage
 from morpheus.pipeline.stage_schema import StageSchema
 
 
-class SplitStage(Stage):
+class SplitStage(GpuAndCpuMixin, Stage):
 
     def __init__(self, c: Config):
         super().__init__(c)

@@ -45,6 +45,9 @@ if(MORPHEUS_PYTHON_PERFORM_INSTALL)
   list(APPEND extra_args "INSTALL_WHEEL")
 endif()
 
+file(GLOB morpheus_llm_requirement_files "${CMAKE_CURRENT_SOURCE_DIR}/morpheus_llm/requirements*")
+morpheus_utils_add_python_sources(${morpheus_llm_requirement_files})
+
 morpheus_utils_build_python_package(morpheus_llm ${extra_args})
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

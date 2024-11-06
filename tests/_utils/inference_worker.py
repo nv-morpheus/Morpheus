@@ -26,8 +26,6 @@ class IW(inference_stage.InferenceWorker):
     """
 
     def calc_output_dims(self, _):
-        # Intentionally calling the abc empty method for coverage
-        super().calc_output_dims(_)
         return (1, 2)
 
     def process(self, _: ControlMessage, __: typing.Callable[[TensorMemory], None]):

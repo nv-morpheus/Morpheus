@@ -17,9 +17,7 @@ import typing
 from abc import ABC
 from abc import abstractmethod
 
-import pandas as pd
-
-import cudf
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +48,13 @@ class VectorDBResourceService(ABC):
         pass
 
     @abstractmethod
-    def insert_dataframe(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs: dict[str, typing.Any]) -> dict:
+    def insert_dataframe(self, df: DataFrameType, **kwargs: dict[str, typing.Any]) -> dict:
         """
         Insert a dataframe into the vector database.
 
         Parameters
         ----------
-        df : typing.Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             Dataframe to be inserted into the resource.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
@@ -241,10 +239,7 @@ class VectorDBService(ABC):
         pass
 
     @abstractmethod
-    def insert_dataframe(self,
-                         name: str,
-                         df: typing.Union[cudf.DataFrame, pd.DataFrame],
-                         **kwargs: dict[str, typing.Any]) -> dict:
+    def insert_dataframe(self, name: str, df: DataFrameType, **kwargs: dict[str, typing.Any]) -> dict:
         """
         Converts dataframe to rows and insert into the vector database resource.
 
@@ -252,7 +247,7 @@ class VectorDBService(ABC):
         ----------
         name : str
             Name of the resource to be inserted.
-        df : typing.Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             Dataframe to be inserted.
         **kwargs : dict[str, typing.Any]
             Additional keyword arguments containing collection configuration.
@@ -391,7 +386,7 @@ class VectorDBService(ABC):
     @abstractmethod
     def create_from_dataframe(self,
                               name: str,
-                              df: typing.Union[cudf.DataFrame, pd.DataFrame],
+                              df: DataFrameType,
                               overwrite: bool = False,
                               **kwargs: dict[str, typing.Any]) -> None:
         """
@@ -401,7 +396,7 @@ class VectorDBService(ABC):
         ----------
         name : str
             Name of the resource.
-        df : Union[cudf.DataFrame, pd.DataFrame]
+        df : DataFrameType
             The dataframe to create the resource from.
         overwrite : bool, optional
             Whether to overwrite the resource if it already exists. Default is False.

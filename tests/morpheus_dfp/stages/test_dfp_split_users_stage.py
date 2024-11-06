@@ -17,6 +17,7 @@ import json
 import os
 import typing
 import warnings
+from collections import defaultdict
 
 import pytest
 
@@ -24,6 +25,7 @@ from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.utils.type_utils import get_df_pkg_from_obj
 
 
 def test_constructor(config: Config):
@@ -67,14 +69,24 @@ def test_extract_users(config: Config,
     from morpheus_dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
     config.ae.userid_column_name = "From"
     config.ae.fallback_username = "testy_testerson"
+    ts_col = config.ae.timestamp_column_name
 
     input_file = os.path.join(TEST_DIRS.tests_data_dir,
                               "examples/developer_guide/email_with_addresses_first_10.jsonlines")
 
     df = dataset[input_file]
+    df_pkg = get_df_pkg_from_obj(df)
+
+    # When the file is read using pandas (as is the case in the actual DFP pipeline), the timestamp column is
+    # automatically converted to datetime objects. However cuDF doesn't do this and the column will contain integers.
+    # When `dataset` is returning pandas DFs this might still be the case if `input_file` is first read using cuDF and
+    # cached by the DatasetManager and then converted to pandas.
+    if df[ts_col].dtype == 'int64':
+        df[ts_col] = df_pkg.to_datetime(df[ts_col], unit='s')
 
     all_data = []
-    expected_data = {}
+    expected_data = defaultdict(list)
+
     with open(input_file, encoding='UTF-8') as fh:
         for line in fh:
             json_data = json.loads(line)
@@ -85,11 +97,13 @@ def test_extract_users(config: Config,
             if len(only_users) > 0 and user_id not in only_users:
                 continue
 
+            json_data[ts_col] = df_pkg.to_datetime(json_data[ts_col], unit='s')
+
             if include_generic:
                 all_data.append(json_data)
 
             if include_individual:
-                expected_data[user_id] = [json_data]
+                expected_data[user_id].append(json_data)
 
     if include_generic:
         expected_data[config.ae.fallback_username] = all_data
@@ -114,9 +128,11 @@ def test_extract_users(config: Config,
     # Add one for the generic user
     assert len(results) == len(expected_data)
     for msg in results:
-        assert len(msg.df) == len(expected_data[msg.user_id])
-        if msg.user_id != config.ae.fallback_username:
-            assert msg.df.iloc[0].to_dict() == expected_data[msg.user_id][0]
+        actual_df = msg.payload().df
+        user_id = msg.get_metadata('user_id')
+        assert len(actual_df) == len(expected_data[user_id])
+        if user_id != config.ae.fallback_username:
+            assert actual_df.to_dict('records') == expected_data[user_id]
 
 
 def test_extract_users_none_to_empty(config: Config):

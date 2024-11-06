@@ -18,11 +18,12 @@ import mrc
 import mrc.core.operators as ops
 
 from morpheus.config import Config
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-class InMemorySinkStage(PassThruTypeMixin, SinglePortStage):
+class InMemorySinkStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
     """
     Collects incoming messages into a list that can be accessed after the pipeline is complete. Useful for testing.
 

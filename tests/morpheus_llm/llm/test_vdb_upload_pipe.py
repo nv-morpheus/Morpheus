@@ -31,7 +31,6 @@ from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBServ
 
 
 @pytest.mark.milvus
-@pytest.mark.use_python
 @pytest.mark.use_pandas
 @pytest.mark.import_mod([
     os.path.join(TEST_DIRS.examples_dir, 'llm/common'),

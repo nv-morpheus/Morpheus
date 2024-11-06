@@ -18,6 +18,7 @@ import typing
 import mrc
 
 from morpheus.config import Config
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -27,7 +28,7 @@ DataSourceType = (typing.Callable[[mrc.Subscription], typing.Iterable[typing.Any
                   | typing.Callable[[], typing.Iterable[typing.Any]])
 
 
-class InMemoryDataGenStage(SingleOutputSource):
+class InMemoryDataGenStage(GpuAndCpuMixin, SingleOutputSource):
     """
     Source stage that generates data in-memory using a provided iterable or generator function.
 
@@ -54,7 +55,7 @@ class InMemoryDataGenStage(SingleOutputSource):
         # Set the output schema based on the OutputDataType
         schema.output_schema.set_type(self._output_data_type)
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:

@@ -19,6 +19,7 @@ limitations under the License.
 
 There are three ways to get started with Morpheus:
 - [Using pre-built Docker containers](#using-pre-built-docker-containers)
+- [Using the Morpheus Conda packages](#using-morpheus-conda-packages)
 - [Building the Morpheus Docker container](#building-the-morpheus-container)
 - [Building Morpheus from source](./developer_guide/contributing.md#building-from-source)
 
@@ -41,18 +42,18 @@ More advanced users, or those who are interested in using the latest pre-release
 ### Pull the Morpheus Image
 1. Go to [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags)
 1. Choose a version
-1. Download the selected version, for example for `24.10`:
+1. Download the selected version, for example for `25.02`:
     ```bash
-    docker pull nvcr.io/nvidia/morpheus/morpheus:24.10-runtime
+    docker pull nvcr.io/nvidia/morpheus/morpheus:25.02-runtime
     ```
 1. Optional, many of the examples require NVIDIA Triton Inference Server to be running with the included models. To download the Morpheus Triton Server Models container (ensure that the version number matches that of the Morpheus container you downloaded in the previous step):
     ```bash
-    docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+    docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
     ```
 
 > **Note about Morpheus versions:**
 >
-> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v24.10.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v24.10.01-runtime`, `v24.10.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference that point release.
+> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v25.02.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v25.02.01-runtime`, `v25.02.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference that point release.
 >
 > Users who want to ensure they are running with the latest bug fixes should use a release image tag (`YY.MM-runtime`). Users who need to deploy a specific version into production should use a point release image tag (`vYY.MM.00-runtime`).
 
@@ -60,7 +61,7 @@ More advanced users, or those who are interested in using the latest pre-release
 1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation) is installed.
 1. Start the container downloaded from the previous section:
 ```bash
-docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:24.10-runtime bash
+docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:25.02-runtime bash
 ```
 
 Note about some of the flags above:
@@ -77,6 +78,12 @@ Once launched, users wishing to launch Triton using the included Morpheus models
 ```
 
 Skip ahead to the [Acquiring the Morpheus Models Container](#acquiring-the-morpheus-models-container) section.
+
+## Using Morpheus Conda Packages
+The Morpheus stages are available as libraries that are hosted on the [`nvidia`](https://anaconda.org/nvidia) Conda channel. The Morpheus Conda packages are:
+[`morpheus-core`](https://anaconda.org/nvidia/morpheus-core), [`morpheus-dfp`](https://anaconda.org/nvidia/morpheus-dfp) and [`morpheus-llm`](https://anaconda.org/nvidia/morpheus-llm)
+
+For details on these libraries and how to use them, refer to the [Morpheus Conda Packages](./conda_packages.md) guide.
 
 ## Building the Morpheus Container
 ### Clone the Repository
@@ -140,17 +147,17 @@ To run the built "release" container, use the following:
 ./docker/run_container_release.sh
 ```
 
-The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables that the `./docker/build_container_release.sh` script does. For example, to run version `v24.10.00` use the following:
+The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables that the `./docker/build_container_release.sh` script does. For example, to run version `v25.02.00` use the following:
 
 ```bash
-DOCKER_IMAGE_TAG="v24.10.00-runtime" ./docker/run_container_release.sh
+DOCKER_IMAGE_TAG="v25.02.00-runtime" ./docker/run_container_release.sh
 ```
 
 ## Acquiring the Morpheus Models Container
 
 Many of the validation tests and example workflows require a Triton server to function. For simplicity Morpheus provides a pre-built models container which contains both Triton and the Morpheus models. Users using a release version of Morpheus can download the corresponding Triton models container from NGC with the following command:
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
 ```
 
 Users working with an unreleased development version of Morpheus can build the Triton models container from the Morpheus repository. To build the Triton models container, from the root of the Morpheus repository run the following command:
@@ -163,7 +170,7 @@ models/docker/build_container.sh
 In a new terminal use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-  nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 \
+  nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -176,7 +183,7 @@ This will launch Triton using the default network ports (8000 for HTTP, 8001 for
 Note: The above command is useful for testing out Morpheus, however it does load several models into GPU memory, which at time of writing consumes roughly 2GB of GPU memory. Production users should consider only loading the specific models they plan on using with the `--model-control-mode=explicit` and `--load-model` flags. For example to launch Triton only loading the `abp-nvsmi-xgb` model:
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-  nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10  \
+  nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02  \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -367,36 +374,6 @@ Commands:
   to-kafka        Write all messages to a Kafka cluster.
   trigger         Buffer data until the previous stage has completed.
   validate        Validate pipeline output for testing.
-```
-
-And for the AE pipeline:
-
-```
-$ morpheus run pipeline-ae --help
-Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
-
-<Help Paragraph Omitted>
-
-Commands:
-  add-class        Add detected classifications to each message.
-  add-scores       Add probability scores to each message.
-  buffer           (Deprecated) Buffer results.
-  delay            (Deprecated) Delay results for a certain duration.
-  filter           Filter message by a classification threshold.
-  from-azure       Source stage is used to load Azure Active Directory messages.
-  from-cloudtrail  Load messages from a CloudTrail directory.
-  from-duo         Source stage is used to load Duo Authentication messages.
-  inf-pytorch      Perform inference with PyTorch.
-  inf-triton       Perform inference with Triton Inference Server.
-  monitor          Display throughput numbers at a specific point in the pipeline.
-  preprocess       Prepare Autoencoder input DataFrames for inference.
-  serialize        Includes & excludes columns from messages.
-  timeseries       Perform time series anomaly detection and add prediction.
-  to-file          Write all messages to a file.
-  to-kafka         Write all messages to a Kafka cluster.
-  train-ae         Train an Autoencoder model on incoming data.
-  trigger          Buffer data until the previous stage has completed.
-  validate         Validate pipeline output for testing.
 ```
 Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Check the CLI help for the most up-to-date information during development.
 

@@ -30,7 +30,7 @@ add_custom_target(${PROJECT_NAME}_docs
       BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR} ${SPHINX_EXECUTABLE} ${SPHINX_HTML_ARGS} ${SPHINX_SOURCE} ${SPHINX_BUILD}
    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
    COMMENT "Generating documentation with Sphinx"
-   DEPENDS morpheus-package-outputs morpheus_llm-package-outputs
+   DEPENDS morpheus-package-outputs morpheus_llm-package-outputs morpheus_dfp-package-outputs
 )
 
 add_custom_target(${PROJECT_NAME}_docs_linkcheck
@@ -38,7 +38,7 @@ add_custom_target(${PROJECT_NAME}_docs_linkcheck
       BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR} ${SPHINX_EXECUTABLE} ${SPHINX_LINKCHECK_ARGS} ${SPHINX_SOURCE} ${SPHINX_LINKCHECK_OUT}
    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
    COMMENT "Checking documentation links with Sphinx"
-   DEPENDS morpheus-package-outputs morpheus_llm-package-outputs
+   DEPENDS morpheus-package-outputs morpheus_llm-package-outputs morpheus_dfp-package-outputs
 )
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

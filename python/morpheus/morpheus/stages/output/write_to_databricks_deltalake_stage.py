@@ -19,8 +19,6 @@ import mrc
 import pandas as pd
 from mrc.core import operators as ops
 
-import cudf
-
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
@@ -97,8 +95,9 @@ class DataBricksDeltaLakeSinkStage(PassThruTypeMixin, SinglePortStage):
             convert cudf to spark dataframe
             """
             df = meta.copy_dataframe()
-            if isinstance(df, cudf.DataFrame):
+            if not isinstance(df, pd.DataFrame):
                 df = df.to_pandas()
+
             schema = self._extract_schema_from_pandas_dataframe(df)
             spark_df = self.spark.createDataFrame(df, schema=schema)
             spark_df.write \

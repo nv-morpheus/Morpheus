@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# morpheus tests are dependent on some pypi packages
-rapids-dependency-file-generator \
-  --output requirements \
-  --file-key morpheus_dfp --matrix "" | tee "dfp_requirements.txt"
-
-pip install -r dfp_requirements.txt
+python3 <<EOF
+import importlib.resources
+import subprocess
+requirements_file = importlib.resources.path("morpheus_dfp", "requirements_morpheus_dfp.txt")
+subprocess.call(f"pip install -r {requirements_file}".split())
+EOF
 
 pytest tests/morpheus_dfp

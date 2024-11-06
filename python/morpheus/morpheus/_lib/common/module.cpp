@@ -28,7 +28,6 @@
 #include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
-#include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/http_server.hpp"
 #include "morpheus/version.hpp"
 
@@ -59,9 +58,6 @@ PYBIND11_MODULE(common, _module)
         .. autosummary::
            :toctree: _generate
         )pbdoc";
-
-    // Load the cudf helpers
-    CudfHelper::load();
 
     LoaderRegistry::register_factory_fn(
         "file",
