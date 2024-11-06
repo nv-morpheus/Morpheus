@@ -233,6 +233,8 @@ class InferenceStage(ControlMessageStage):
 
                 fut_list = []
 
+                batch_offset = 0
+
                 for batch in batches:
                     outstanding_requests += 1
 
@@ -240,8 +242,9 @@ class InferenceStage(ControlMessageStage):
 
                     def set_output_fut(resp: TensorMemory, inner_batch, batch_future: mrc.Future):
                         nonlocal outstanding_requests
-                        mess = self._convert_one_response(output_message, inner_batch, resp)
-
+                        nonlocal batch_offset
+                        mess = self._convert_one_response(output_message, inner_batch, resp, batch_offset)
+                        batch_offset += inner_batch.tensors().count
                         outstanding_requests -= 1
 
                         batch_future.set_result(mess)
@@ -340,7 +343,8 @@ class InferenceStage(ControlMessageStage):
         return out_resp
 
     @staticmethod
-    def _convert_one_response(output: ControlMessage, inf: ControlMessage, res: TensorMemory):
+    def _convert_one_response(output: ControlMessage, inf: ControlMessage, res: TensorMemory,
+                              batch_offset: int) -> ControlMessage:  # pylint:disable=unused-argument
         # Make sure we have a continuous list
         # assert inf.mess_offset == saved_offset + saved_count
 

@@ -184,7 +184,7 @@ When ready, commit both the changes to the `dependencies.yaml` file and the upda
 #### Prerequisites
 
 - Volta architecture GPU or better
-- [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-0-download-archive)
+- [CUDA 12.5](https://developer.nvidia.com/cuda-12-5-0-download-archive)
 - `conda`
   - If `conda` is not installed, we recommend using the [MiniForge install guide](https://github.com/conda-forge/miniforge). This will install `conda` and set the channel default to use `conda-forge`.
 

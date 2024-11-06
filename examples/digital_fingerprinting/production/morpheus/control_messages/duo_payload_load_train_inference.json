@@ -1,46 +1,44 @@
 {
 	"inputs": [
-	  {
-		"tasks": [
-		  {
-			"type": "load",
-			"properties": {
-			  "loader_id": "fsspec",
-			  "files": [
-				"../../../data/dfp/duo-training-data/*.json"
-			  ]
+		{
+			"tasks": [
+				{
+					"type": "load",
+					"properties": {
+						"loader_id": "fsspec",
+						"files": [
+							"../../data/dfp/duo-training-data/*.json"
+						]
+					}
+				},
+				{
+					"type": "training",
+					"properties": {}
+				}
+			],
+			"metadata": {
+				"data_type": "payload"
 			}
-		  },
-		  {
-			"type": "training",
-			"properties": {
+		},
+		{
+			"tasks": [
+				{
+					"type": "load",
+					"properties": {
+						"loader_id": "fsspec",
+						"files": [
+							"../../data/dfp/duo-inference-data/*.json"
+						]
+					}
+				},
+				{
+					"type": "inference",
+					"properties": {}
+				}
+			],
+			"metadata": {
+				"data_type": "payload"
 			}
-		  }
-		],
-		"metadata": {
-		  "data_type": "payload"
 		}
-	  },
-	  {
-		"tasks": [
-		  {
-			"type": "load",
-			"properties": {
-			  "loader_id": "fsspec",
-			  "files": [
-				"../../../data/dfp/duo-inference-data/*.json"
-			  ]
-			}
-		  },
-		  {
-			"type": "inference",
-			"properties": {
-			}
-		  }
-		],
-		"metadata": {
-		  "data_type": "payload"
-		}
-	  }
 	]
-  }
+}

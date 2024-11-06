@@ -19,7 +19,6 @@
 
 #include "morpheus_llm/llm/llm_context.hpp"  // for LLMContext
 #include "morpheus_llm/llm/llm_node_base.hpp"
-#include "pymrc/coro.hpp"
 
 #include "morpheus/utilities/json_types.hpp"  // for cast_from_json, cast_from_pyobject
 #include "morpheus/utilities/string_util.hpp"
@@ -29,6 +28,7 @@
 #include <pybind11/gil.h>           // for PyGILState_Check, gil_scoped_acquire, gil_scoped_release
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pymrc/coro.hpp>
 #include <pymrc/coro.hpp>  // IWYU pragma: keep
 #include <pymrc/types.hpp>
 

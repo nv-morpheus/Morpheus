@@ -83,8 +83,12 @@ class LogParsingPostProcessingStage(SinglePortStage):
         schema.output_schema.set_type(MessageMeta)
 
     def _postprocess(self, msg: ControlMessage):
-        infer_pdf = pd.DataFrame(msg.tensors().get_tensor('seq_ids').get()).astype(int)
-        infer_pdf.columns = ["doc", "start", "stop"]
+        with msg.payload().mutable_dataframe() as src_df:
+            src_index = src_df.index.to_pandas()
+
+        seq_ids = msg.tensors().get_tensor('seq_ids').get()
+        infer_pdf = pd.DataFrame({"doc": src_index, "start": seq_ids[:, 1], "stop": seq_ids[:, 2]})
+
         infer_pdf["confidences"] = msg.tensors().get_tensor('confidences').tolist()
         infer_pdf["labels"] = msg.tensors().get_tensor('labels').tolist()
         infer_pdf["token_ids"] = msg.tensors().get_tensor('input_ids').tolist()

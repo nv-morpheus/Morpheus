@@ -26,7 +26,7 @@ This script is used as test input for morpheus_namespace_update.py script.
 # old DFP import patterns
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
-from morpheus_dfp.stages.dfp_split_users_stage import DFPSplitUsersStage # no update
+from morpheus_dfp.stages.dfp_split_users_stage import DFPSplitUsersStage  # no update
 import dfp.stages.dfp_training
 import dfp.stages.dfp_inference_stage as inference_stage
 import dfp
@@ -39,5 +39,5 @@ def empty_imports_function_scope():
     from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     from dfp.utils.regex_utils import iso_date_regex
-    from morpheus_dfp.utils.schema_utils import SchemaBuilder # no update
+    from morpheus_dfp.utils.schema_utils import SchemaBuilder  # no update
     from dfp.modules import dfp_data_prep

@@ -53,6 +53,7 @@ class ControlMessage():
         """
         Retrieve the timestamp for a given group and key. Returns None if the timestamp does not exist and fail_if_nonexist is False.
         """
+    def get_timestamps(self) -> dict: ...
     def has_metadata(self, key: str) -> bool: ...
     def has_task(self, task_type: str) -> bool: ...
     def list_metadata(self) -> list: ...
@@ -264,4 +265,4 @@ class InferenceMemoryFIL(InferenceMemory, TensorMemory):
     def seq_ids(self, arg1: object) -> None:
         pass
     pass
-__version__ = '24.10.0'
+__version__ = '25.2.0'

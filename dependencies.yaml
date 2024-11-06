@@ -198,6 +198,18 @@ files:
       - morpheus_core_pip
       - morpheus_llm_pip
 
+  # dfp example conda dependencies
+  dfp_example:
+    output: conda
+    matrix:
+      cuda: ["12.5"]
+      arch: [x86_64]
+    output: conda
+    conda_dir: examples/digital_fingerprinting/production/conda/environments
+    includes:
+      - example-dfp-container
+      - example-dfp-prod
+
 channels:
   - conda-forge
   - huggingface
@@ -315,6 +327,7 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - pylint=3.0.3
+          - pynvml=11.4
           - vale=3.7
           - vale-styles-microsoft
           - vale-styles-write-good
@@ -430,10 +443,24 @@ dependencies:
       - output_types: [conda]
         packages:
           - *nodejs
-          - boto3
+          - boto3=1.35
           - kfp
           - papermill=2.4.0
-          - s3fs
+          - s3fs=2024.10
+          - pip
+          - pip:
+            - python-logging-loki
+
+  # packages needed in the DFP example container
+  example-dfp-container:
+    common:
+      - output_types: [conda]
+        packages:
+          - morpheus-dfp=24.10
+          - tini=0.19
+          - pip:
+            - --extra-index-url https://download.pytorch.org/whl/cu124
+            - torch==2.4.0+cu124
 
   example-gnn:
     common:
@@ -470,7 +497,6 @@ dependencies:
           - *pypdfium2
           - *python-docx
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
-          - sentence-transformers=2.7
           - pip
           - pip:
             - langchain==0.1.16
@@ -478,6 +504,7 @@ dependencies:
             - faiss-cpu
             - google-search-results==2.4
             - nemollm==0.3.5
+            - sentence-transformers==2.7 # using pip now instead of conda to avoid install of pytorch cpu
 
   model-training-tuning:
     common:
@@ -493,6 +520,9 @@ dependencies:
           - seaborn
           - seqeval=1.2.2
           - xgboost
+          - pip
+          - pip:
+            - tensorrt-cu12
 
   cve-mitigation:
     common:
