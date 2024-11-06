@@ -126,8 +126,7 @@ class WriteToFileController:
             def write_to_file(x: MessageMeta):
 
                 if self._file_type == FileTypes.PARQUET:
-                    table = x.df.to_arrow()
-                    pq.write_table(table, out_file)
+                    x.df.to_parquet(out_file, index=self._include_index_col)
                 else:
                     lines = self._convert_to_strings(x.df)
                     out_file.writelines(lines)
