@@ -131,7 +131,7 @@ morpheus --log_level=DEBUG \
    filter --filter_source=TENSOR \
    `# 8th Stage: Convert from objects back into strings` \
    serialize --exclude '^_ts_' \
-   `# 9th Stage: Write out the JSON lines to the detections.jsonlines file` \
+   `# 9th Stage: Write out the JSON lines to the nlp_si_detections.jsonlines file` \
    to-file --filename=nlp_si_detections.jsonlines --overwrite
 ```
 
@@ -187,7 +187,7 @@ Added stage: <add-class-5; AddClassificationsStage(threshold=0.5, labels=[], pre
   └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <serialize-6; SerializeStage(include=[], exclude=['^_ts_'], fixed_columns=True)>
   └─ morpheus.ControlMessage -> morpheus.MessageMeta
-Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
+Added stage: <to-file-7; WriteToFileStage(filename=nlp_si_detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====
 Starting! Time: 1656352480.541071
@@ -196,7 +196,7 @@ Inference Rate[Complete]: 93085inf [00:07, 12673.63inf/s]
 
 ```
 
-The output file `detections.jsonlines` will contain the original PCAP messages with the following additional fields added:
+The output file `nlp_si_detections.jsonlines` will contain the original PCAP messages with the following additional fields added:
 * `address`
 * `bank_acct`
 * `credit_card`
