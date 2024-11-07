@@ -220,7 +220,7 @@ examples/digital_fingerprinting/production/benchmarks/.benchmarks/
 /gnn_fraud_detection_cli_output.csv
 /gnn_fraud_detection_output.csv
 /log-parsing-output.jsonlines
-/log-parsing-output_cli.jsonlines
+/log-parsing-cli-output.jsonlines
 /nlp_si_detections.jsonlines
 /pcap_out.jsonlines
 /pcap_out_cli.jsonlines
