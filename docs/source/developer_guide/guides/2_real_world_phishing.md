@@ -484,8 +484,6 @@ import logging
 import os
 
 import click
-from recipient_features_stage import RecipientFeaturesStage
-from recipient_features_stage_deco import recipient_features_stage
 
 import morpheus
 from morpheus.config import Config
@@ -500,6 +498,8 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.logger import configure_logging
+from recipient_features_stage import RecipientFeaturesStage
+from recipient_features_stage_deco import recipient_features_stage
 
 MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
 
