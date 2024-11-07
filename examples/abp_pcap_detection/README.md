@@ -118,6 +118,6 @@ morpheus --log_level INFO --plugin "examples/abp_pcap_detection/abp_pcap_preproc
     monitor --description "Add classification rate" --unit "add-class" \
     serialize \
     monitor --description "Serialize rate" --unit ser \
-    to-file --filename "pcap_out.jsonlines" --overwrite \
+    to-file --filename "pcap_out_cli.jsonlines" --overwrite \
     monitor --description "Write to file rate" --unit "to-file"
 ```

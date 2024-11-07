@@ -132,7 +132,7 @@ morpheus --log_level=DEBUG \
    `# 8th Stage: Convert from objects back into strings` \
    serialize --exclude '^_ts_' \
    `# 9th Stage: Write out the JSON lines to the detections.jsonlines file` \
-   to-file --filename=detections.jsonlines --overwrite
+   to-file --filename=nlp_si_detections.jsonlines --overwrite
 ```
 
 If successful, the following should be displayed:

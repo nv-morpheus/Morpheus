@@ -482,9 +482,10 @@ To explicitly set the output format we could specify the `file_type` argument to
 ```python
 import logging
 import os
-import tempfile
 
 import click
+from recipient_features_stage import RecipientFeaturesStage
+from recipient_features_stage_deco import recipient_features_stage
 
 import morpheus
 from morpheus.config import Config
@@ -499,8 +500,6 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.logger import configure_logging
-from recipient_features_stage import RecipientFeaturesStage
-from recipient_features_stage_deco import recipient_features_stage
 
 MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
 
@@ -542,7 +541,7 @@ MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
 @click.option("--server_url", default='localhost:8000', help="Tritonserver url.")
 @click.option(
     "--output_file",
-    default=os.path.join(tempfile.gettempdir(), "detections.jsonlines"),
+    default="phishing_detections.jsonlines",
     help="The path to the file where the inference output will be saved.",
 )
 def run_pipeline(use_stage_function: bool,
@@ -633,7 +632,7 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
   monitor --description="Inference Rate" --smoothing=0.001 --unit=inf \
   add-scores --label=is_phishing \
   serialize \
-  to-file --filename=/tmp/detections.jsonlines --overwrite
+  to-file --filename=phishing_detections_cli.jsonlines --overwrite
 ```
 
 ## Stage Constructors
