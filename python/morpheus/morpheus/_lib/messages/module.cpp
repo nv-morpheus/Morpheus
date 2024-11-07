@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-#include "pymrc/utilities/object_wrappers.hpp"
-
 #include "morpheus/io/data_loader_registry.hpp"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/memory/inference_memory.hpp"
@@ -43,6 +41,7 @@
 #include <pybind11/stl.h>  // IWYU pragma: keep
 #include <pymrc/node.hpp>  // IWYU pragma: keep
 #include <pymrc/port_builders.hpp>
+#include <pymrc/utilities/object_wrappers.hpp>
 #include <pymrc/utils.hpp>  // for pymrc::import
 #include <rxcpp/rx.hpp>
 
@@ -274,6 +273,7 @@ PYBIND11_MODULE(messages, _module)
              "fail_if_nonexist is False.",
              py::arg("key"),
              py::arg("fail_if_nonexist") = false)
+        .def("get_timestamps", &ControlMessageProxy::get_timestamps)
         .def("set_timestamp",
              &ControlMessageProxy::set_timestamp,
              "Set a timestamp for a given key and group.",

@@ -145,6 +145,5 @@ python examples/llm/main.py completion [OPTIONS] COMMAND [ARGS]...
 ### Running Morpheus Pipeline with OpenAI LLM service
 
 ```bash
-
 python examples/llm/main.py completion pipeline --llm_service OpenAI
 ```

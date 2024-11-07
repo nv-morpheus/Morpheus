@@ -35,7 +35,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.file_utils import load_labels_file
-from morpheus.utils.logger import configure_logging
+from morpheus.utils.logger import set_log_level
 
 E2E_CONFIG_FILE = os.path.join(TEST_DIRS.morpheus_root, "tests/benchmarks/e2e_test_configs.json")
 with open(E2E_CONFIG_FILE, 'r', encoding='UTF-8') as f:
@@ -44,7 +44,7 @@ with open(E2E_CONFIG_FILE, 'r', encoding='UTF-8') as f:
 
 def nlp_pipeline(config: Config, input_file, repeat, vocab_hash_file, output_file, model_name):
 
-    configure_logging(log_level=logging.INFO)
+    set_log_level(log_level=logging.DEBUG)
 
     pipeline = LinearPipeline(config)
     pipeline.set_source(FileSourceStage(config, filename=input_file, repeat=repeat))
@@ -71,7 +71,7 @@ def nlp_pipeline(config: Config, input_file, repeat, vocab_hash_file, output_fil
 
 def fil_pipeline(config: Config, input_file, repeat, output_file, model_name):
 
-    configure_logging(log_level=logging.INFO)
+    set_log_level(log_level=logging.DEBUG)
 
     pipeline = LinearPipeline(config)
     pipeline.set_source(FileSourceStage(config, filename=input_file, repeat=repeat))

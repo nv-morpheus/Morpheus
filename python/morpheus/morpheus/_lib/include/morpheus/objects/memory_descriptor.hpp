@@ -19,9 +19,8 @@
 
 #include "morpheus/export.h"
 
+#include <cuda/memory_resource>
 #include <rmm/cuda_stream_view.hpp>
-
-#include "cuda/memory_resource"
 
 namespace morpheus {
 /**

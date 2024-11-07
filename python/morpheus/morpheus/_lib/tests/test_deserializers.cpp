@@ -30,8 +30,8 @@
 using namespace morpheus;
 
 namespace {
-const std::string UserCols{",time,eventID,eventSource,eventName,z_loss\n"};
-const std::string DataRow{"0,1,2,test,test,5\n"};
+const std::string USER_COLS{",time,eventID,eventSource,eventName,z_loss\n"};
+const std::string DATA_ROW{"0,1,2,test,test,5\n"};
 }  // namespace
 
 TEST_CLASS(Deserializers);
@@ -65,7 +65,7 @@ TEST_F(TestDeserializers, GetIndexColCountNoIdxSimilarName)
     for (const auto& col : not_id_cols)
     {
         // Build a list of column names with `col` as our first element followed by the columns in `UserCols`
-        std::string csv_data{col + UserCols + DataRow};
+        std::string csv_data{col + USER_COLS + DATA_ROW};
 
         auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{csv_data.c_str(), csv_data.size()});
         auto table   = cudf::io::read_csv(options.build());
@@ -83,7 +83,7 @@ TEST_F(TestDeserializers, GetIndexColCountIdx)
     for (const auto& col : id_cols)
     {
         // Build a list of column names with `col` as our first element followed by the columns in `UserCols`
-        std::string csv_data{col + UserCols + DataRow};
+        std::string csv_data{col + USER_COLS + DATA_ROW};
 
         auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{csv_data.c_str(), csv_data.size()});
         auto table   = cudf::io::read_csv(options.build());
@@ -95,8 +95,8 @@ TEST_F(TestDeserializers, GetIndexColCountIdx)
 TEST_F(TestDeserializers, GetIndexColCountValidNameInvalidType)
 {
     // Construct a csv with two rows, first row will contain the expected int id value second row will be a string
-    std::string data_rows{DataRow + "s,6,7,frog,toad,8\n"};
-    std::string csv_data{"id" + UserCols + data_rows};
+    std::string data_rows{DATA_ROW + "s,6,7,frog,toad,8\n"};
+    std::string csv_data{"id" + USER_COLS + data_rows};
 
     auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{csv_data.c_str(), csv_data.size()});
     auto table   = cudf::io::read_csv(options.build());

@@ -35,12 +35,6 @@ SHELL ["/bin/bash",  "-c"]
 # Create conda environment
 COPY ./dependencies.yaml /tmp/conda/
 
-RUN <<EOF
-rapids-mamba-retry install -y \
-  "rapids-dependency-file-generator>=1.13.*"
-conda clean -aipty
-EOF
-
 # ============ build ==================
 FROM base as build
 

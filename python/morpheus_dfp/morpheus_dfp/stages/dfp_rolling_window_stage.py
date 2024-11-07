@@ -148,12 +148,16 @@ class DFPRollingWindowStage(SinglePortStage):
 
             # Find the index of the first and last row
             match = train_df[train_df["_row_hash"] == incoming_hash.iloc[0]]
-
             if (len(match) == 0):
                 raise RuntimeError(f"Invalid rolling window for user {user_id}")
 
-            first_row_idx = match.index[0].item()
-            last_row_idx = train_df[train_df["_row_hash"] == incoming_hash.iloc[-1]].index[-1].item()
+            first_row_idx = match.index[0]
+            if not isinstance(first_row_idx, int):
+                first_row_idx = first_row_idx.item()
+
+            last_row_idx = train_df[train_df["_row_hash"] == incoming_hash.iloc[-1]].index[-1]
+            if (not isinstance(last_row_idx, int)):
+                last_row_idx = last_row_idx.item()
 
             found_count = (last_row_idx - first_row_idx) + 1
 

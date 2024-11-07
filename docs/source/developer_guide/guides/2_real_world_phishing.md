@@ -487,7 +487,6 @@ import tempfile
 import click
 
 import morpheus
-from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
@@ -495,7 +494,7 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
@@ -604,8 +603,8 @@ def run_pipeline(use_stage_function: bool,
     # Monitor the inference rate
     pipeline.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
 
-    # Filter values lower than 0.9
-    pipeline.add_stage(FilterDetectionsStage(config, threshold=0.9, filter_source=FilterSource.TENSOR))
+    # Add detection scores
+    pipeline.add_stage(AddScoresStage(config, labels=["is_phishing"]))
 
     # Write the to the output file
     pipeline.add_stage(SerializeStage(config))
@@ -1008,7 +1007,7 @@ def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> 
 
 Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the DataFrane attached to the incoming message. We then serialize to an [`io.StringIO`](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
 
-> **Note**: This stage supports both GPU and CPU execution modes. When running in GPU mode, the payload of a `MessageMeta` object is always a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/user_guide/api_docs/dataframe/). When running in CPU mode, the payload is always a [pandas](https://pandas.pydata.org/) [DataFrane](https://pandas.pydata.org/docs/reference/frame.html). In many cases the two will be API compatible without requiring any changes to the code. In some cases however, the API may differ slightly and there is a need to know the payload type, care must be taken not to directly import `cudf` or any other package requiring a GPU when running in CPU mode on a system without a GPU. Morpheus provides some helper methods to assist with this in the {py:mod}`~morpheus.utils.type_utils` module, such as {py:func}`~morpheus.utils.type_utils.is_cudf_type`  and {py:func}`~morpheus.utils.type_utils.get_df_pkg_from_obj`.
+> **Note**: This stage supports both GPU and CPU execution modes. When running in GPU mode, the payload of a `MessageMeta` object is always a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/user_guide/api_docs/dataframe/). When running in CPU mode, the payload is always a [pandas](https://pandas.pydata.org/) [DataFrane](https://pandas.pydata.org/docs/reference/frame.html). In many cases the two will be API compatible without requiring any changes to the code. In some cases however, the API may differ slightly and there is a need to know the payload type, care must be taken not to directly import `cudf` or any other package requiring a GPU when running in CPU mode on a system without a GPU. Morpheus provides some helper methods to assist with this in the {py:mod}`~morpheus.utils.type_utils` module, such as {py:func}`~morpheus.utils.type_utils.is_cudf_type` and {py:func}`~morpheus.utils.type_utils.get_df_pkg_from_obj`.
 
 ```python
     def on_data(self, message: MessageMeta) -> MessageMeta:

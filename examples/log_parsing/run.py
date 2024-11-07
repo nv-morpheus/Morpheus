@@ -69,7 +69,7 @@ from morpheus.utils.logger import configure_logging
               help="Model vocab hash file to use for pre-processing.")
 @click.option('--model_vocab_file',
               required=True,
-              type=click.Path(exists=True, dir_okay=False),
+              type=MorpheusRelativePath(exists=True, dir_okay=False),
               help="Model vocab file to use for post-processing.")
 @click.option("--model_seq_length",
               default=256,

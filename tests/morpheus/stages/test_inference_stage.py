@@ -105,8 +105,9 @@ def test_convert_one_response():
     res = ResponseMemory(count=4, tensors={"probs": cp.random.rand(4, 3)})
     output = _mk_control_message(mess_count=4, count=4)
     output.tensors(mem)
+    batch_offset = 0
 
-    cm = InferenceStageT._convert_one_response(output, inf, res)
+    cm = InferenceStageT._convert_one_response(output, inf, res, batch_offset)
     assert cm.payload() == inf.payload()
     assert cm.payload().count == 4
     assert cm.tensors().count == 4
@@ -120,7 +121,7 @@ def test_convert_one_response():
     mem = ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 3))})
     output = _mk_control_message(mess_count=2, count=3)
     output.tensors(mem)
-    cm = InferenceStageT._convert_one_response(output, inf, res)
+    cm = InferenceStageT._convert_one_response(output, inf, res, batch_offset)
     assert cm.tensors().get_tensor("probs").tolist() == [[0, 0.6, 0.7], [5.6, 6.7, 9.2]]
 
 
@@ -128,6 +129,7 @@ def test_convert_one_response_error():
     inf = _mk_control_message(mess_count=2, count=2)
     res = _mk_control_message(mess_count=1, count=1)
     output = inf
+    batch_offset = 0
 
     with pytest.raises(AssertionError):
-        InferenceStageT._convert_one_response(output, inf, res.tensors())
+        InferenceStageT._convert_one_response(output, inf, res.tensors(), batch_offset)

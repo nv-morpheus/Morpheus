@@ -26,16 +26,21 @@ import mrc
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.utils import get_json_reader
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.configurable_output_source import ConfigurableOutputSource
+from morpheus.pipeline.configurable_output_source import SupportedMessageTypes
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
-from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import HttpParseResponse
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.producer_consumer_queue import Closed
 from morpheus.utils.type_aliases import DataFrameType
+
+if typing.TYPE_CHECKING:
+    from morpheus.common import FiberQueue
+    from morpheus.common import HttpServer
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +48,8 @@ SUPPORTED_METHODS = (HTTPMethod.POST, HTTPMethod.PUT)
 HEALTH_SUPPORTED_METHODS = (HTTPMethod.GET, HTTPMethod.POST)
 
 
-@register_stage("from-http")
-class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSource):
+@register_stage("from-http", ignore_args=["task_type", "task_payload"])
+class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, ConfigurableOutputSource):
     """
     Source stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
 
@@ -76,14 +81,22 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
     request_timeout_secs : int, default 30
         The maximum amount of time in seconds for any given request.
     lines : bool, default False
-        If False, the HTTP server will expect each request to be a JSON array of objects. If True, the HTTP server will
-        expect each request to be a JSON object per line.
+        If `False`, the HTTP server will expect each request to be a JSON array of objects. If `True`, the HTTP server
+        will expect each request to be a JSON object per line.
     stop_after : int, default 0
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     payload_to_df_fn : callable, default None
         A callable that takes the HTTP payload string as the first argument and the `lines` parameter is passed in as
         the second argument and returns a DataFrame. When supplied, the C++ implementation of this stage is
         disabled, and the Python impl is used.
+    message_type : `SupportedMessageTypes`, case_sensitive = False
+        The type of message to emit.
+    task_type : str, default = None
+        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
+        is set to `CONTROL_MESSAGE`. If not `None`, `task_payload` must also be specified.
+    task_payload : dict, default = None
+        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
+        is set to `CONTROL_MESSAGE`. If not `None`, `task_type` must also be specified.
     """
 
     def __init__(self,
@@ -105,8 +118,11 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
                  request_timeout_secs: int = 30,
                  lines: bool = False,
                  stop_after: int = 0,
-                 payload_to_df_fn: typing.Callable[[str, bool], DataFrameType] = None):
-        super().__init__(config)
+                 payload_to_df_fn: typing.Callable[[str, bool], DataFrameType] = None,
+                 message_type: SupportedMessageTypes = SupportedMessageTypes.MESSAGE_META,
+                 task_type: str = None,
+                 task_payload: dict = None):
+        super().__init__(config, message_type=message_type, task_type=task_type, task_payload=task_payload)
         self._bind_address = bind_address
         self._port = port
         self._endpoint = endpoint
@@ -124,13 +140,15 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
         self._request_timeout_secs = request_timeout_secs
         self._lines = lines
         self._stop_after = stop_after
-        self._http_server = None
+        self._payload_to_df_fn = payload_to_df_fn
+
+        self._http_server: "HttpServer" = None
 
         # Leave this as None so we can check if it's set later
         self._payload_to_df_fn = payload_to_df_fn
 
         # These are only used when C++ mode is disabled
-        self._queue = None
+        self._queue: "FiberQueue" = None
         self._queue_size = 0
         self._processing = False
         self._records_emitted = 0
@@ -150,9 +168,6 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
         """Indicates whether this stage supports C++ nodes."""
         return True
 
-    def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MessageMeta)
-
     def stop(self):
         """
         Performs cleanup steps when pipeline is stopped.
@@ -164,7 +179,7 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
 
         return super().stop()
 
-    def _parse_payload(self, payload: str) -> HttpParseResponse:
+    def _parse_payload(self, payload: str, headers: dict = None) -> HttpParseResponse:
         try:
             df = self._payload_to_df_fn(payload, self._lines)
         except Exception as e:
@@ -175,7 +190,7 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
                                      body=err_msg)
 
         try:
-            self._queue.put(df, block=True, timeout=self._queue_timeout)
+            self._queue.put((df, headers), block=True, timeout=self._queue_timeout)
             self._queue_size += 1
             return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
 
@@ -205,7 +220,7 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
                                      content_type=MimeTypes.TEXT.value,
                                      body=err_msg)
 
-        return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
+        return HttpParseResponse(status_code=HTTPStatus.OK.value, content_type=MimeTypes.TEXT.value, body="")
 
     def _readiness_check(self, _: str) -> HttpParseResponse:
         if not self._http_server.is_running():
@@ -216,7 +231,7 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
                                      body=err_msg)
 
         if self._queue_size < self._max_queue_size:
-            return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
+            return HttpParseResponse(status_code=HTTPStatus.OK.value, content_type=MimeTypes.TEXT.value, body="")
 
         err_msg = "HTTP payload queue is full or unavailable to accept new values"
         logger.error(err_msg)
@@ -224,14 +239,20 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
                                  content_type=MimeTypes.TEXT.value,
                                  body=err_msg)
 
-    def _generate_frames(self, subscription: mrc.Subscription) -> typing.Iterator[MessageMeta]:
+    def _generate_frames(self, subscription: mrc.Subscription) -> typing.Iterator[ControlMessage | MessageMeta]:
         from morpheus.common import FiberQueue
         from morpheus.common import HttpEndpoint
         from morpheus.common import HttpServer
 
-        msg = HttpEndpoint(self._parse_payload, self._endpoint, self._method.name)
-        live = HttpEndpoint(self._liveliness_check, self._live_endpoint, self._live_method.name)
-        ready = HttpEndpoint(self._readiness_check, self._ready_endpoint, self._ready_method.name)
+        msg = HttpEndpoint(self._parse_payload,
+                           self._endpoint,
+                           self._method.name,
+                           include_headers=(self._message_type is SupportedMessageTypes.CONTROL_MESSAGE))
+        live = HttpEndpoint(self._liveliness_check, self._live_endpoint, self._live_method.name, include_headers=False)
+        ready = HttpEndpoint(self._readiness_check,
+                             self._ready_endpoint,
+                             self._ready_method.name,
+                             include_headers=False)
         with (FiberQueue(self._max_queue_size) as self._queue,
               HttpServer(endpoints=[msg, live, ready],
                          bind_address=self._bind_address,
@@ -246,10 +267,11 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
                 # Read as many messages as we can from the queue if it's empty check to see if we should be shutting
                 # down. It is important that any messages we received that are in the queue are processed before we
                 # shutdown since we already returned an OK response to the client.
-                df = None
+                df: DataFrameType = None
+                headers: dict = None
                 try:
                     # Intentionally not using self._queue_timeout here since that value is rather high
-                    df = self._queue.get(block=False, timeout=0.1)
+                    (df, headers) = self._queue.get(block=False, timeout=0.1)
                     self._queue_size -= 1
                 except queue.Empty:
                     if (not self._http_server.is_running() or self.is_stop_requested()
@@ -263,7 +285,16 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
 
                 if df is not None:
                     num_records = len(df)
-                    yield MessageMeta(df)
+                    msg_meta = MessageMeta(df)
+                    if self._message_type is SupportedMessageTypes.CONTROL_MESSAGE:
+                        out_msg = ControlMessage({"metadata": {"http_fields": headers}})
+                        out_msg.payload(msg_meta)
+                        if self._task_type is not None:
+                            out_msg.add_task(self._task_type, self._task_payload)
+                    else:
+                        out_msg = msg_meta
+
+                    yield out_msg
                     self._records_emitted += num_records
 
                     if self._stop_after > 0 and self._records_emitted >= self._stop_after:
@@ -275,22 +306,34 @@ class HttpServerSourceStage(GpuAndCpuMixin, PreallocatorMixin, SingleOutputSourc
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node() and self._payload_to_df_fn is None:
+            http_server_kwargs = {
+                "bind_address": self._bind_address,
+                "port": self._port,
+                "endpoint": self._endpoint,
+                "method": self._method.value,
+                "live_endpoint": self._live_endpoint,
+                "live_method": self._live_method.value,
+                "ready_endpoint": self._ready_endpoint,
+                "ready_method": self._ready_method.value,
+                "accept_status": self._accept_status.value,
+                "sleep_time": self._sleep_time,
+                "queue_timeout": self._queue_timeout,
+                "max_queue_size": self._max_queue_size,
+                "num_server_threads": self._num_server_threads,
+                "max_payload_size": self._max_payload_size_bytes,
+                "request_timeout": self._request_timeout_secs,
+                "lines": self._lines,
+                "stop_after": self._stop_after
+            }
+
             import morpheus._lib.stages as _stages
-            node = _stages.HttpServerSourceStage(builder,
-                                                 self.unique_name,
-                                                 bind_address=self._bind_address,
-                                                 port=self._port,
-                                                 endpoint=self._endpoint,
-                                                 method=self._method.value,
-                                                 accept_status=self._accept_status.value,
-                                                 sleep_time=self._sleep_time,
-                                                 queue_timeout=self._queue_timeout,
-                                                 max_queue_size=self._max_queue_size,
-                                                 num_server_threads=self._num_server_threads,
-                                                 max_payload_size=self._max_payload_size_bytes,
-                                                 request_timeout=self._request_timeout_secs,
-                                                 lines=self._lines,
-                                                 stop_after=self._stop_after)
+            if self._message_type is SupportedMessageTypes.CONTROL_MESSAGE:
+                http_server_kwargs.update({"task_type": self._task_type, "task_payload": self._task_payload})
+                server_class = _stages.HttpServerControlMessageSourceStage
+            else:
+                server_class = _stages.HttpServerMessageMetaSourceStage
+
+            node = server_class(builder, self.unique_name, **http_server_kwargs)
         else:
             if self._payload_to_df_fn is None:
                 self._set_default_payload_to_df_fn()
