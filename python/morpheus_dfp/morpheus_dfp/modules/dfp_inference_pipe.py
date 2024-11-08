@@ -215,9 +215,6 @@ def dfp_inference_pipe(builder: mrc.Builder):
         "batching_options": config.get("batching_options", {}),
         "cache_dir": cache_dir,
         "monitor_options": monitor_options,
-        "pre_filter_options": {
-            "enable_task_filtering": True, "filter_task_type": "inference"
-        },
         "timestamp_column_name": ts_column_name,
         "user_splitting_options": config.get("user_splitting_options", {}),
     }

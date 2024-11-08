@@ -46,7 +46,6 @@ def dfp_preproc(builder: mrc.Builder):
         Configurable parameters:
             - cache_dir (str): Directory for caching intermediate results
             - timestamp_column_name (str): Name of the column containing timestamps
-            - pre_filter_options (dict): Options for pre-filtering control messages
             - batching_options (dict): Options for batching files
             - user_splitting_options (dict): Options for splitting data by user
             - supported_loaders (dict): Supported data loaders for different file types
@@ -54,11 +53,6 @@ def dfp_preproc(builder: mrc.Builder):
     """
 
     #        MODULE_INPUT_PORT
-    #                |
-    #                v
-    # +-------------------------------+
-    # | filter_control_message_module |
-    # +-------------------------------+
     #                |
     #                v
     # +-------------------------------+
@@ -136,10 +130,6 @@ def dfp_preproc(builder: mrc.Builder):
     dfp_split_users_monitor_default = {"description": f"SplitUsers [{task_type}_pipe]"}
     dfp_split_users_monitor_conf = merge_dictionaries(monitor_options, dfp_split_users_monitor_default)
 
-    filter_control_message_module = builder.load_module(FILTER_CONTROL_MESSAGE,
-                                                        "morpheus",
-                                                        "filter_control_message",
-                                                        pre_filter_conf)
     file_batcher_module = builder.load_module(FILE_BATCHER, "morpheus", "file_batcher", file_batcher_conf)
     file_to_df_dataloader_module = builder.load_module(DATA_LOADER,
                                                        "morpheus",
@@ -156,12 +146,11 @@ def dfp_preproc(builder: mrc.Builder):
     dfp_split_users_monitor_module = dfp_split_users_monitor_loader.load(builder=builder)
 
     # Make an edge between the modules.
-    builder.make_edge(filter_control_message_module.output_port("output"), file_batcher_module.input_port("input"))
     builder.make_edge(file_batcher_module.output_port("output"), file_to_df_dataloader_module.input_port("input"))
     builder.make_edge(file_to_df_dataloader_module.output_port("output"), file_to_df_monitor_module.input_port("input"))
     builder.make_edge(file_to_df_monitor_module.output_port("output"), dfp_split_users_module.input_port("input"))
     builder.make_edge(dfp_split_users_module.output_port("output"), dfp_split_users_monitor_module.input_port("input"))
 
     # Register input and output port for a module.
-    builder.register_module_input("input", filter_control_message_module.input_port("input"))
+    builder.register_module_input("input", file_batcher_module.input_port("input"))
     builder.register_module_output("output", dfp_split_users_monitor_module.output_port("output"))
