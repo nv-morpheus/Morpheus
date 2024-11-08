@@ -20,7 +20,6 @@ from morpheus.modules.general.monitor import MonitorLoaderFactory
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER
-from morpheus.utils.module_ids import FILTER_CONTROL_MESSAGE
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
@@ -103,9 +102,6 @@ def dfp_preproc(builder: mrc.Builder):
 
     file_to_df_monitor_default = {"description": f"FileToDF [{task_type}_pipe]"}
     file_to_df_monitor_conf = merge_dictionaries(monitor_options, file_to_df_monitor_default)
-
-    pre_filter_default = {}
-    pre_filter_conf = merge_dictionaries(pre_filter_options, pre_filter_default)
 
     # Double check on how 'batcher_config' is used in the file_batcher module.
     batching_opts_default = {
