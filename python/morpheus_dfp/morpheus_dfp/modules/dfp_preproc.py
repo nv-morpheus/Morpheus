@@ -87,8 +87,7 @@ def dfp_preproc(builder: mrc.Builder):
     ts_column_name = config.get("timestamp_column_name", None)
 
     monitor_options = config.get("monitor_options", {})
-    pre_filter_options = config.get("pre_filter_options", {})
-    task_type = pre_filter_options.get("filter_task_type")
+    monitor_name_postfix = monitor_options.get("name_postfix", "")
 
     batching_opts = config.get("batching_options", {})
     batching_opts["cache_dir"] = cache_dir
@@ -100,7 +99,7 @@ def dfp_preproc(builder: mrc.Builder):
 
     supported_loaders = config.get("supported_loaders", {})
 
-    file_to_df_monitor_default = {"description": f"FileToDF [{task_type}_pipe]"}
+    file_to_df_monitor_default = {"description": f"FileToDF {monitor_name_postfix}"}
     file_to_df_monitor_conf = merge_dictionaries(monitor_options, file_to_df_monitor_default)
 
     # Double check on how 'batcher_config' is used in the file_batcher module.
@@ -123,7 +122,7 @@ def dfp_preproc(builder: mrc.Builder):
     dfp_split_users_default = {"fallback_username": config.get("fallback_username", "generic_user")}
     dfp_split_users_conf = merge_dictionaries(splitting_opts, dfp_split_users_default)
 
-    dfp_split_users_monitor_default = {"description": f"SplitUsers [{task_type}_pipe]"}
+    dfp_split_users_monitor_default = {"description": f"SplitUsers {monitor_name_postfix}"}
     dfp_split_users_monitor_conf = merge_dictionaries(monitor_options, dfp_split_users_monitor_default)
 
     file_batcher_module = builder.load_module(FILE_BATCHER, "morpheus", "file_batcher", file_batcher_conf)
