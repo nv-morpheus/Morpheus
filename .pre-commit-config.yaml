@@ -32,7 +32,7 @@ repos:
                 additional_dependencies: [pyproject-flake8]
                 args: ["--config=./pyproject.toml"]
       - repo: https://github.com/google/yapf
-        rev: v0.40.2
+        rev: v0.43.0
         hooks:
               - id: yapf
                 args: ["--style", "./pyproject.toml"]
