@@ -363,6 +363,7 @@ COPY --from=git_clone "/tmp/morpheus_repo/examples" "./examples"
 COPY --from=git_clone "/tmp/morpheus_repo/scripts" "./scripts"
 COPY --from=git_clone "/tmp/morpheus_repo/*.md" "./"
 COPY --from=git_clone "/tmp/morpheus_repo/LICENSE" "./"
+COPY --from=git_clone "/tmp/morpheus_repo/thirdparty" "./thirdparty"
 
 RUN /opt/conda/bin/conda clean -afy && \
     # Ensure the conda-bld directory is indexed even if empty
