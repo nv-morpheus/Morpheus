@@ -26,9 +26,12 @@ import logging
 import os
 import pprint
 import re
+import shutil
 import sys
+import tempfile
 import typing
 
+import requests
 import yaml
 
 SCRIPT_DIR = os.path.relpath(os.path.dirname(__file__))
@@ -36,8 +39,7 @@ PROJ_ROOT = os.path.dirname(SCRIPT_DIR)
 
 PIP_FLAGS_RE = re.compile(r"^--.*")
 STRIP_VER_RE = re.compile(r"^([\w|-]+).*")
-TAG_URL_PATH = "{base_url}/releases/tag/{tag}"
-TAG_URL_TAR_PATH = "{base_url}/archive/refs/tags/{tag}.tar.gz"
+TAG_URL_PATH = "{base_url}/archive/refs/tags/{tag}.tar.gz"
 
 # In some cases multiple packages are derived from a single upstream repo, please keep sorted
 PACKAGE_ALIASES = {  # <conda package nanme>: <upstream name>
@@ -122,10 +124,10 @@ GIT_TAG_FORMAT = {  # any packages not in this dict are assumned to have the TAG
     'websockets': TAG_BARE,
 }
 
-logger = logging.getLogger()
+logger = logging.getLogger(__file__)
 
 
-def mk_github_urls(packages: list[tuple[str, str]]) -> dict[str, typing.Any]:
+def mk_github_urls(packages: list[tuple[str, str]]) -> tuple[dict[str, typing.Any], list[str]]:
     matched = {}
     unmatched: list[str] = []
     for (pkg_name, pkg_version) in packages:
@@ -155,15 +157,63 @@ def mk_github_urls(packages: list[tuple[str, str]]) -> dict[str, typing.Any]:
             tag = tag_formatter(pkg_version)
 
         tag_url = TAG_URL_PATH.format(base_url=repo_url, tag=tag)
-        tag_tar_url = TAG_URL_TAR_PATH.format(base_url=repo_url, tag=tag)
 
-        matched[github_name] = {'packages': [pkg_name], 'tag_url': tag_url, 'tag_tar_url': tag_tar_url}
+        matched[github_name] = {'packages': [pkg_name], 'tag': tag, 'tag_url': tag_url}
 
-    return {"matched": matched, "unmatched": unmatched}
+    return (matched, unmatched)
 
 
-def verify_github_urls(github_urls: dict[str, typing.Any]) -> dict[str, typing.Any]:
-    pass
+def mk_request(session: requests.Session, method: str, url: str, **kwargs) -> requests.Response | None:
+    try:
+        response = session.request(method, url, allow_redirects=True, timeout=30)
+        return response
+    except requests.HTTPError as e:
+        logger.error("Failed to fetch %s: %s", url, e)
+
+
+def verify_github_urls(session: requests.Session, github_urls: dict[str, typing.Any]):
+    github_names = sorted(github_urls.keys())
+    for github_name in github_names:
+        github_info = github_urls[github_name]
+        url = github_info['tag_url']
+        response = mk_request(session, "HEAD", url)
+
+        is_valid = (response is not None and response.status_code == 200)
+        github_info['is_valid'] = is_valid
+
+        msg = f"{github_name} : {github_info['tag']} is_valid={is_valid}"
+        if is_valid:
+            logger.debug(msg)
+        else:
+            logger.error(msg)
+
+
+def download_github_tars(session: requests.Session, github_urls: dict[str, typing.Any], download_dir: str):
+    github_names = sorted(github_urls.keys())
+    for github_name in github_names:
+        github_info = github_urls[github_name]
+        url = github_info['tag_url']
+
+        # When --skip_verify is set the is_valid key will not be present
+        if github_info.get('is_valid', True):
+            tar_file = os.path.join(download_dir, f"{github_name}.tar.gz")
+            if os.path.exists(tar_file) and os.path.getsize(tar_file) > 0:
+                logger.info("Skipping download of %s, already exists: %s", github_name, tar_file)
+                continue
+
+            response = mk_request(session, "GET", url, stream=True)
+            if (response is not None and response.status_code == 200):
+                with open(tar_file, 'wb') as fh:
+                    for chunk in response.iter_content(decode_unicode=False):
+                        fh.write(chunk)
+
+                github_info['tar_file'] = tar_file
+                logger.info("Downloaded %s: %s", github_name, tar_file)
+            else:
+                logger.error("Failed to fetch %s", url)
+                continue
+        else:
+            logger.warning("Skipping download of invalid package %s", github_name)
 
 
 def parse_json_deps(json_file: str) -> dict[str, dict[str, typing.Any]]:
@@ -225,7 +275,8 @@ def merge_deps(declared_deps: list[str], resolved_conda_deps: dict[str, dict[str
     for dep in declared_deps:
         # intentionally allow a KeyError to be raised in the case of an unmatched package
         pkg_info = resolved_conda_deps[dep]
-        merged_deps.append((dep, pkg_info['version']))
+        version = pkg_info['version'].split('+')[0]  # strip any conda variant info ex: 1.2.3+cuda11.0
+        merged_deps.append((dep, version))
 
     # Return sorted list just for nicer debug output
     return sorted(merged_deps)
@@ -251,10 +302,32 @@ def parse_args():
     argparser.add_argument('--skip_verify', default=False, action='store_true')
     argparser.add_argument('--download', default=False, action='store_true')
 
+    argparser.add_argument('--download_dir',
+                           default=None,
+                           help="When --download is set, directory to download tar archives to, if unspecified, a "
+                           "temporary directory will be created.")
+
+    argparser.add_argument('--no_clean',
+                           default=False,
+                           action='store_true',
+                           help="Do not remove temporary download directory.")
+
+    argparser.add_argument('--extract', default=False, action='store_true')
+
+    argparser.add_argument('--extract_dir',
+                           default=None,
+                           help="When --extract is set, directory to extract tar archives, if unspecified, a temporary "
+                           "directory will be created.")
+
     argparser.add_argument("--log_level",
                            default="INFO",
                            choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
                            help="Specify the logging level to use.")
+
+    argparser.add_argument("--http_log_level",
+                           default="WARNING",
+                           choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+                           help="Specify the logging level to use for requests and urllib3.")
 
     args = argparser.parse_args()
     return args
@@ -264,6 +337,10 @@ def main():
     args = parse_args()
     log_level = logging._nameToLevel[args.log_level.upper()]
     logging.basicConfig(level=log_level, format="%(message)s")
+
+    # Set the log level for requests and urllib3
+    logging.getLogger('requests').setLevel(args.http_log_level)
+    logging.getLogger("urllib3").setLevel(args.http_log_level)
 
     declared_deps = parse_env_file(args.conda_yaml)
     resolved_conda_deps = parse_json_deps(args.conda_json)
@@ -275,24 +352,33 @@ def main():
         logger.debug("Resolved Conda deps:\n%s", pprint.pformat(resolved_conda_deps))
         logger.debug("Merged deps:\n%s", pprint.pformat(merged_deps))
 
-    github_urls = mk_github_urls(merged_deps)
-    unmatched_packages = github_urls['unmatched']
+    (github_urls, unmatched_packages) = mk_github_urls(merged_deps)
     if len(unmatched_packages) > 0:
         logger.error(
             "\n------------\nPackages without github info which will need to be fetched manually:\n%s\n------------\n",
             pprint.pformat(unmatched_packages))
 
-    if (not args.skip_verify) or (args.download):
-        try:
-            gh_token = os.environ['GITHUB_TOKEN']
-        except KeyError:
-            logger.warning("GITHUB_TOKEN environment variable is unset, may incur github rate limits. Refer to:\n"
-                           "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/"
-                           "managing-your-personal-access-tokens#creating-a-personal-access-token-classic\n"
-                           "For more information")
+    if not args.download and args.skip_verify:
+        sys.exit(0)
 
+    session = requests.Session()
     if not args.skip_verify:
+        verify_github_urls(session, github_urls)
+
+    download_dir: str | None = args.download_dir
+    if args.download:
+        if download_dir is None:
+            download_dir = tempfile.mkdtemp(prefix="morpheus_deps_download_")
+            logger.info("Created temporary download directory: %s", download_dir)
+
+        download_github_tars(session, github_urls, download_dir)
+
+    if args.extract:
         pass
+
+    if args.download_dir is None and download_dir is not None and not args.no_clean:
+        logger.info("Removing temporary download directory: %s", download_dir)
+        shutil.rmtree(download_dir)
 
 
 if __name__ == "__main__":
