@@ -60,6 +60,9 @@ target_include_directories(morpheus_llm
 # In debug mode, dont allow missing symbols
 target_link_options(morpheus_llm PUBLIC "$<$<CONFIG:Debug>:-Wl,--no-allow-shlib-undefined>")
 
+# Avoid warning from the lto-wrapper about serial compilation
+target_link_options(morpheus_llm PUBLIC "-flto=auto")
+
 # Ideally, we dont use glob here. But there is no good way to guarantee you dont miss anything like *.cpp
 file(GLOB_RECURSE morpheus_llm_public_headers
   LIST_DIRECTORIES FALSE
