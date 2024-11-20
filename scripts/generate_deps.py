@@ -106,20 +106,20 @@ TAG_V_PREFIX = "v{version}"  # Default & most common tag format
 TAG_NAME_DASH_BARE = "{name}-{version}"
 
 GIT_TAG_FORMAT = {  # any packages not in this dict are assumned to have the TAG_V_PREFIX
+    'appdirs': TAG_BARE,
     'click': TAG_BARE,
     'databricks-cli': TAG_BARE,
     'dill': TAG_NAME_DASH_BARE,
     'docker-py': TAG_BARE,
     'feedparser': TAG_BARE,
+    'graphviz': TAG_BARE,
     'networkx': TAG_NAME_DASH_BARE,
     'pip': TAG_BARE,
     'pluggy': TAG_BARE,
-    'graphviz': TAG_BARE,
+    'python-versioneer': TAG_BARE,
     'scikit-learn': TAG_BARE,
     'sqlalchemy': lambda ver: f"rel_{ver.replace('.', '_')}",
     'websockets': TAG_BARE,
-    'python-versioneer': TAG_BARE,
-    'dfencoder': TAG_V_PREFIX
 }
 
 logger = logging.getLogger()
