@@ -76,7 +76,6 @@ function(add_morpheus_test)
 
   target_link_libraries(test_${MORPHEUS_TEST_NAME}
     PRIVATE
-      indicators::indicators
       GTest::gtest_main
       morpheus_test_utilities
       pybind11::embed
