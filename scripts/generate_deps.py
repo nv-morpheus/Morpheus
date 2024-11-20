@@ -162,6 +162,10 @@ def mk_github_urls(packages: list[tuple[str, str]]) -> dict[str, typing.Any]:
     return {"matched": matched, "unmatched": unmatched}
 
 
+def verify_github_urls(github_urls: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    pass
+
+
 def parse_json_deps(json_file: str) -> dict[str, dict[str, typing.Any]]:
     with open(json_file, 'r', encoding="utf-8") as f:
         json_data = json.load(f)
@@ -277,6 +281,15 @@ def main():
         logger.error(
             "\n------------\nPackages without github info which will need to be fetched manually:\n%s\n------------\n",
             pprint.pformat(unmatched_packages))
+
+    if (not args.skip_verify) or (args.download):
+        try:
+            gh_token = os.environ['GITHUB_TOKEN']
+        except KeyError:
+            logger.warning("GITHUB_TOKEN environment variable is unset, may incur github rate limits. Refer to:\n"
+                           "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/"
+                           "managing-your-personal-access-tokens#creating-a-personal-access-token-classic\n"
+                           "For more information")
 
     if not args.skip_verify:
         pass
