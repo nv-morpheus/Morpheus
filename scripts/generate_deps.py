@@ -28,6 +28,7 @@ import pprint
 import re
 import shutil
 import sys
+import tarfile
 import tempfile
 import typing
 
@@ -103,6 +104,8 @@ KNOWN_FIRST_PARTY = {
     'cuda-cudart', 'cuda-nvrtc', 'cuda-nvtx', 'cuda-version', 'cudf', 'mrc', 'rapids-dask-dependency', 'tritonclient'
 }
 
+KNOWN_NON_CONDA_DEPS = [('dfencoder', '0.0.37')]
+
 TAG_BARE = "{version}"
 TAG_V_PREFIX = "v{version}"  # Default & most common tag format
 TAG_NAME_DASH_BARE = "{name}-{version}"
@@ -156,9 +159,9 @@ def mk_github_urls(packages: list[tuple[str, str]]) -> tuple[dict[str, typing.An
         else:
             tag = tag_formatter(pkg_version)
 
-        tag_url = TAG_URL_PATH.format(base_url=repo_url, tag=tag)
+        tar_url = TAG_URL_PATH.format(base_url=repo_url, tag=tag)
 
-        matched[github_name] = {'packages': [pkg_name], 'tag': tag, 'tag_url': tag_url}
+        matched[github_name] = {'packages': [pkg_name], 'tag': tag, 'tar_url': tar_url}
 
     return (matched, unmatched)
 
@@ -171,33 +174,34 @@ def mk_request(session: requests.Session, method: str, url: str, **kwargs) -> re
         logger.error("Failed to fetch %s: %s", url, e)
 
 
-def verify_github_urls(session: requests.Session, github_urls: dict[str, typing.Any]):
-    github_names = sorted(github_urls.keys())
+def verify_tar_urls(session: requests.Session, dep_urls: dict[str, typing.Any]):
+    github_names = sorted(dep_urls.keys())
     for github_name in github_names:
-        github_info = github_urls[github_name]
-        url = github_info['tag_url']
+        dep_info = dep_urls[github_name]
+        url = dep_info['tar_url']
         response = mk_request(session, "HEAD", url)
 
         is_valid = (response is not None and response.status_code == 200)
-        github_info['is_valid'] = is_valid
+        dep_info['is_valid'] = is_valid
 
-        msg = f"{github_name} : {github_info['tag']} is_valid={is_valid}"
+        msg = f"{github_name} : {dep_info['tag']} is_valid={is_valid}"
         if is_valid:
             logger.debug(msg)
         else:
             logger.error(msg)
 
 
-def download_github_tars(session: requests.Session, github_urls: dict[str, typing.Any], download_dir: str):
-    github_names = sorted(github_urls.keys())
+def download_tars(session: requests.Session, dep_urls: dict[str, typing.Any], download_dir: str):
+    github_names = sorted(dep_urls.keys())
     for github_name in github_names:
-        github_info = github_urls[github_name]
-        url = github_info['tag_url']
+        dep_info = dep_urls[github_name]
+        url = dep_info['tar_url']
 
-        # When --skip_verify is set the is_valid key will not be present
-        if github_info.get('is_valid', True):
+        # When --skip_url_verify is set the is_valid key will not be present
+        if dep_info.get('is_valid', True):
             tar_file = os.path.join(download_dir, f"{github_name}.tar.gz")
-            if os.path.exists(tar_file) and os.path.getsize(tar_file) > 0:
+            if os.path.exists(tar_file) and tarfile.is_tarfile(tar_file):
+                dep_info['tar_file'] = tar_file
                 logger.info("Skipping download of %s, already exists: %s", github_name, tar_file)
                 continue
 
@@ -207,13 +211,32 @@ def download_github_tars(session: requests.Session, github_urls: dict[str, typin
                     for chunk in response.iter_content(decode_unicode=False):
                         fh.write(chunk)
 
-                github_info['tar_file'] = tar_file
+                dep_info['tar_file'] = tar_file
                 logger.info("Downloaded %s: %s", github_name, tar_file)
             else:
                 logger.error("Failed to fetch %s", url)
                 continue
         else:
             logger.warning("Skipping download of invalid package %s", github_name)
+
+
+def extract_tar_files(dep_urls: dict[str, typing.Any], extract_dir: str):
+    github_names = sorted(dep_urls.keys())
+    for github_name in github_names:
+        dep_info = dep_urls[github_name]
+        tar_file = dep_info.get('tar_file')
+        if tar_file is None:
+            logger.error("No tar file found for %s", github_name)
+            continue
+
+        if tarfile.is_tarfile(tar_file):
+            with tarfile.open(tar_file, 'r:*') as tar:
+                extract_location = os.path.join(extract_dir, github_name)
+                tar.extractall(path=extract_location)
+                logger.debug("Extracted %s: %s -> %s", github_name, tar_file, extract_location)
+                dep_info['extract_location'] = extract_location
+        else:
+            logger.error("Not a valid tar file: %s", tar_file)
 
 
 def parse_json_deps(json_file: str) -> dict[str, dict[str, typing.Any]]:
@@ -269,9 +292,10 @@ def parse_env_file(yaml_env_file: str) -> list[str]:
     return sorted(parsed_deps)
 
 
-def merge_deps(declared_deps: list[str], resolved_conda_deps: dict[str, dict[str,
-                                                                             typing.Any]]) -> list[tuple[str, str]]:
-    merged_deps: list[tuple[str, str]] = []
+def merge_deps(declared_deps: list[str],
+               other_deps: list[tuple[str, str]],
+               resolved_conda_deps: dict[str, dict[str, typing.Any]]) -> list[tuple[str, str]]:
+    merged_deps: list[tuple[str, str]] = other_deps.copy()
     for dep in declared_deps:
         # intentionally allow a KeyError to be raised in the case of an unmatched package
         pkg_info = resolved_conda_deps[dep]
@@ -280,6 +304,32 @@ def merge_deps(declared_deps: list[str], resolved_conda_deps: dict[str, dict[str
 
     # Return sorted list just for nicer debug output
     return sorted(merged_deps)
+
+
+def print_summary(dep_urls: dict[str, typing.Any], unmatched_packages: list[str], download: bool,
+                  extract: bool) -> list[str]:
+    missing_packages = unmatched_packages.copy()
+
+    if extract:
+        check_key = 'extract_location'
+    elif download:
+        check_key = 'tar_file'
+    else:
+        check_key = 'is_valid'
+
+    for pkg_name in sorted(dep_urls.keys()):
+        pkg_info = dep_urls[pkg_name]
+        if not pkg_info.get(check_key, False):
+            missing_packages.append(pkg_name)
+
+    if len(missing_packages) > 0:
+        # Print summary of all packages that we couldn't find, and will need to be fetched manually
+        logger.warning(
+            "\n----------------------\n"
+            "Packages that could not be downaloaded and will need to be fetched manually:\n%s",
+            "\n".join(sorted(missing_packages)))
+
+    return missing_packages
 
 
 def parse_args():
@@ -299,7 +349,7 @@ def parse_args():
                                  "This is used to determine the exact version number actually used by a package which "
                                  "specifies a version range in the Conda environment file."))
 
-    argparser.add_argument('--skip_verify', default=False, action='store_true')
+    argparser.add_argument('--skip_url_verify', default=False, action='store_true')
     argparser.add_argument('--download', default=False, action='store_true')
 
     argparser.add_argument('--download_dir',
@@ -345,40 +395,52 @@ def main():
     declared_deps = parse_env_file(args.conda_yaml)
     resolved_conda_deps = parse_json_deps(args.conda_json)
 
-    merged_deps = merge_deps(declared_deps, resolved_conda_deps)
+    merged_deps = merge_deps(declared_deps, KNOWN_NON_CONDA_DEPS, resolved_conda_deps)
 
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("Declared Yaml deps:\n%s", pprint.pformat(sorted(declared_deps)))
         logger.debug("Resolved Conda deps:\n%s", pprint.pformat(resolved_conda_deps))
         logger.debug("Merged deps:\n%s", pprint.pformat(merged_deps))
 
-    (github_urls, unmatched_packages) = mk_github_urls(merged_deps)
+    (dep_urls, unmatched_packages) = mk_github_urls(merged_deps)
     if len(unmatched_packages) > 0:
         logger.error(
             "\n------------\nPackages without github info which will need to be fetched manually:\n%s\n------------\n",
             pprint.pformat(unmatched_packages))
 
-    if not args.download and args.skip_verify:
+    if not args.download and args.skip_url_verify:
         sys.exit(0)
 
-    session = requests.Session()
-    if not args.skip_verify:
-        verify_github_urls(session, github_urls)
+    with requests.Session() as session:
+        if not args.skip_url_verify:
+            verify_tar_urls(session, dep_urls)
 
-    download_dir: str | None = args.download_dir
-    if args.download:
-        if download_dir is None:
-            download_dir = tempfile.mkdtemp(prefix="morpheus_deps_download_")
-            logger.info("Created temporary download directory: %s", download_dir)
+        download_dir: str | None = args.download_dir
+        if args.download:
+            if download_dir is None:
+                download_dir = tempfile.mkdtemp(prefix="morpheus_deps_download_")
+                logger.info("Created temporary download directory: %s", download_dir)
 
-        download_github_tars(session, github_urls, download_dir)
+            download_tars(session, dep_urls, download_dir)
 
+    extract_dir: str | None = args.extract_dir
     if args.extract:
-        pass
+        if extract_dir is None:
+            extract_dir = tempfile.mkdtemp(prefix="morpheus_deps_extract_")
+            logger.info("Created temporary extract directory: %s", extract_dir)
+
+        extract_tar_files(dep_urls, extract_dir)
 
     if args.download_dir is None and download_dir is not None and not args.no_clean:
         logger.info("Removing temporary download directory: %s", download_dir)
         shutil.rmtree(download_dir)
+
+    missing_packages = print_summary(dep_urls, unmatched_packages, args.download, args.extract)
+    if args.extract:
+        print(f"Exraction location: {extract_dir}")
+
+    if len(missing_packages) > 0:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
