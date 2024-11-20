@@ -39,7 +39,7 @@ STRIP_VER_RE = re.compile(r"^([\w|-]+).*")
 TAG_URL_PATH = "{base_url}/releases/tag/{tag}"
 TAG_URL_TAR_PATH = "{base_url}/archive/refs/tags/{tag}.tar.gz"
 
-# In some cases multiple packages are derived from a single upstream repo
+# In some cases multiple packages are derived from a single upstream repo, please keep sorted
 PACKAGE_ALIASES = {  # <conda package nanme>: <upstream name>
     "beautifulsoup4": "beautifulsoup",
     "elasticsearch": "elasticsearch-py",
@@ -47,25 +47,33 @@ PACKAGE_ALIASES = {  # <conda package nanme>: <upstream name>
     "grpcio-status": "grpc",
     "milvus": "milvus-lite",
     "nlohmann_json": "json",
+    'python': 'cpython',
     "python-confluent-kafka": "confluent-kafka-python",
     "python-graphviz": "graphviz",
     "torch": "pytorch",
 }
 
-KNOWN_GITHUB_URLS = {  # <package>: <github repo>
+KNOWN_GITHUB_URLS = {  # <package>: <github repo>, please keep sorted
+    'appdirs': 'https://github.com/ActiveState/appdirs',
     'c-ares': 'https://github.com/c-ares/c-ares',
     'click': 'https://github.com/pallets/click',
+    'confluent-kafka-python': 'https://github.com/confluentinc/confluent-kafka-python',
     'cpython': 'https://github.com/python/cpython',
+    'cupy': 'https://github.com/cupy/cupy',
     'databricks-cli': 'https://github.com/databricks/databricks-cli',
     'datacompy': 'https://github.com/capitalone/datacompy',
+    'dfencoder': 'https://github.com/AlliedToasters/dfencoder',
     'dill': 'https://github.com/uqfoundation/dill',
     'docker-py': 'https://github.com/docker/docker-py',
     'elasticsearch-py': 'https://github.com/elastic/elasticsearch-py',
     'feedparser': 'https://github.com/kurtmckee/feedparser',
+    'graphviz': 'https://github.com/xflr6/graphviz',
     'grpc': 'https://github.com/grpc/grpc',
+    'json': 'https://github.com/nlohmann/json',
+    'librdkafka': 'https://github.com/confluentinc/librdkafka',
+    'libwebp': 'https://github.com/webmproject/libwebp',
     'mlflow': 'https://github.com/mlflow/mlflow',
     'networkx': 'https://github.com/networkx/networkx',
-    'json': 'https://github.com/nlohmann/json',
     'numpydoc': 'https://github.com/numpy/numpydoc',
     'pip': 'https://github.com/pypa/pip',
     'pluggy': 'https://github.com/pytest-dev/pluggy',
@@ -73,10 +81,8 @@ KNOWN_GITHUB_URLS = {  # <package>: <github repo>
     'pybind11': 'https://github.com/pybind/pybind11',
     'pydantic': 'https://github.com/pydantic/pydantic',
     'pymilvus': 'https://github.com/milvus-io/pymilvus',
-    'confluent-kafka-python': 'https://github.com/confluentinc/confluent-kafka-python',
-    'graphviz': 'https://github.com/xflr6/graphviz',
+    'python-versioneer': 'https://github.com/python-versioneer/python-versioneer',
     'rapidjson': 'https://github.com/Tencent/rapidjson',
-    'librdkafka': 'https://github.com/confluentinc/librdkafka',
     'rdma-core': 'https://github.com/linux-rdma/rdma-core',
     'requests': 'https://github.com/psf/requests',
     'requests-cache': 'https://github.com/requests-cache/requests-cache',
@@ -88,8 +94,11 @@ KNOWN_GITHUB_URLS = {  # <package>: <github repo>
     'typing_utils': 'https://github.com/bojiang/typing_utils',
     'watchdog': 'https://github.com/gorakhargosh/watchdog',
     'websockets': 'https://github.com/python-websockets/websockets',
-    'python-versioneer': 'https://github.com/python-versioneer/python-versioneer',
-    'dfencoder': 'https://github.com/AlliedToasters/dfencoder'
+}
+
+# Please keep sorted
+KNOWN_FIRST_PARTY = {
+    'cuda-cudart', 'cuda-nvrtc', 'cuda-nvtx', 'cuda-version', 'cudf', 'mrc', 'rapids-dask-dependency', 'tritonclient'
 }
 
 TAG_BARE = "{version}"
@@ -120,6 +129,10 @@ def mk_github_urls(packages: list[tuple[str, str]]) -> dict[str, typing.Any]:
     matched = {}
     unmatched: list[str] = []
     for (pkg_name, pkg_version) in packages:
+        if pkg_name in KNOWN_FIRST_PARTY:
+            logger.debug("Skipping first party package: %s", pkg_name)
+            continue
+
         github_name = PACKAGE_ALIASES.get(pkg_name, pkg_name)
         if github_name != pkg_name:
             logger.debug("Package %s is knwon as %s", pkg_name, github_name)
