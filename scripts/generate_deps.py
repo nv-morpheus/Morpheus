@@ -168,10 +168,12 @@ def mk_github_urls(packages: list[tuple[str, str]]) -> tuple[dict[str, typing.An
 
 def mk_request(session: requests.Session, method: str, url: str, **kwargs) -> requests.Response | None:
     try:
-        response = session.request(method, url, allow_redirects=True, timeout=30)
+        response = session.request(method, url, allow_redirects=True, timeout=30, **kwargs)
         return response
     except requests.HTTPError as e:
         logger.error("Failed to fetch %s: %s", url, e)
+
+    return None
 
 
 def verify_tar_urls(session: requests.Session, dep_urls: dict[str, typing.Any]):
