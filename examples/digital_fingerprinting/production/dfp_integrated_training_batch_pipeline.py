@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import typing
 from datetime import datetime
 
 import click
@@ -120,17 +119,17 @@ from morpheus_dfp.utils.schema_utils import SchemaBuilder
 @click.option('--silence_monitors', flag_value=True, help='Controls whether monitors will be verbose.')
 def run_pipeline(source: str,
                  train_users: str,
-                 skip_user: typing.Tuple[str],
-                 only_user: typing.Tuple[str],
-                 start_time: datetime,
+                 skip_user: tuple[str],
+                 only_user: tuple[str],
+                 start_time: datetime | None,
                  duration: str,
                  cache_dir: str,
                  log_level: int,
                  sample_rate_s: int,
-                 tracking_uri,
-                 silence_monitors,
-                 mlflow_experiment_name_template,
-                 mlflow_model_name_template,
+                 tracking_uri: str,
+                 silence_monitors: bool,
+                 mlflow_experiment_name_template: str | None,
+                 mlflow_model_name_template: str | None,
                  **kwargs):
     if (skip_user and only_user):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
