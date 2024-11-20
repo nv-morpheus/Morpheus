@@ -66,7 +66,7 @@ def main():
                          abs_tol=args.abs_tol,
                          rel_tol=args.rel_tol)
 
-    if results['diff_rows'] > 0:
+    if results['diff_rows'] > 0 or results['diff_cols'] > 0:
         sys.exit(1)
 
 
