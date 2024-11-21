@@ -36,12 +36,12 @@ class TimeFields:
 class DFPArgParser:
 
     def __init__(self,
-                 skip_user: str,
-                 only_user: str,
-                 start_time: str,
+                 skip_user: tuple[str],
+                 only_user: tuple[str],
+                 start_time: datetime | None,
                  log_level: int,
                  cache_dir: str,
-                 sample_rate_s: str,
+                 sample_rate_s: int,
                  duration: str,
                  source: str,
                  tracking_uri: str,
