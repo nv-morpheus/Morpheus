@@ -213,18 +213,3 @@ examples/digital_fingerprinting/visualization/*-dfp-output/
 # Ignore saved benchmark data
 tests/benchmarks/.benchmarks/
 examples/digital_fingerprinting/production/benchmarks/.benchmarks/
-
-# Ignore output files from examples
-/abp_nvsmi_detections.jsonlines
-/detections.jsonlines
-/gnn_fraud_detection_cli_output.csv
-/gnn_fraud_detection_output.csv
-/log-parsing-output.jsonlines
-/log-parsing-cli-output.jsonlines
-/nlp_si_detections.jsonlines
-/pcap_out.jsonlines
-/pcap_out_cli.jsonlines
-/phishing_detections.jsonlines
-/phishing_detections_cli.jsonlines
-/ransomware_detection_output.jsonlines
-/root-cause-binary-output.jsonlines
