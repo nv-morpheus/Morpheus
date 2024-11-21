@@ -104,7 +104,7 @@ CUR_DIR = os.path.dirname(__file__)
 @click.option(
     "--output_file",
     type=click.STRING,
-    default="./ransomware_detection_output.jsonlines",
+    default=".tmp/output/ransomware_detection_output.jsonlines",
     help="The path to the file where the inference output will be saved.",
 )
 def run_pipeline(debug: bool,

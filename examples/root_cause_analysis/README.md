@@ -124,7 +124,7 @@ add-scores --label=is_root_cause \
 `# 7th Stage: Convert from objects back into strings` \
 serialize --exclude '^ts_' \
 `# 8th Stage: Write results out to CSV file` \
-to-file --filename=./root-cause-binary-output.jsonlines --overwrite
+to-file --filename=.tmp/output/root-cause-binary-output.jsonlines --overwrite
 ```
 
 If successful, the following should be displayed:
@@ -177,10 +177,10 @@ Added stage: <add-scores-5; AddScoresStage(labels=('is_root_cause',), prefix=)>
   └─ morpheus.ControlMessagee -> morpheus.ControlMessage
 Added stage: <serialize-6; SerializeStage(include=(), exclude=('^ts_',), fixed_columns=True)>
   └─ morpheus.ControlMessage -> morpheus.MessageMeta
-Added stage: <to-file-7; WriteToFileStage(filename=./root-cause-binary-output.jsonlines, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
+Added stage: <to-file-7; WriteToFileStage(filename=.tmp/output/root-cause-binary-output.jsonlines, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 Inference rate[Complete]: 473 inf [00:01, 340.43 inf/s]
 ====Pipeline Complete====
 ```
 
-The output file `root-cause-binary-output.jsonlines` will contain the original kernel log messages with an additional field `is_root_cause`. The value of the new field will be the root cause probability.
+The output file `.tmp/output/root-cause-binary-output.jsonlines` will contain the original kernel log messages with an additional field `is_root_cause`. The value of the new field will be the root cause probability.
