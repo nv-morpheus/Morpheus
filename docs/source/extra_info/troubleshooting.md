@@ -48,7 +48,7 @@ Error trying to get model
 
 Traceback (most recent call last):
 
-File "/workspace/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py", line 101, in on_data
+File "/workspace/python/morpheus_dfp/morpheus_dfp/stages/dfp_inference_stage.py", line 101, in on_data
 
 loaded_model = model_cache.load_model(self._client)
 ```
