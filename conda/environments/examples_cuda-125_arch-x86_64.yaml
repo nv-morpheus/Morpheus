@@ -29,7 +29,7 @@ dependencies:
 - jsonpatch>=1.33
 - kfp
 - libwebp=1.3.2
-- mlflow
+- mlflow>=2.10.0,<2.18
 - mrc=24.10
 - networkx=2.8.8
 - newspaper3k=0.2
