@@ -196,7 +196,7 @@ Inference Rate[Complete]: 93085inf [00:07, 12673.63inf/s]
 
 ```
 
-The output file `nlp_si_detections.jsonlines` will contain the original PCAP messages with the following additional fields added:
+The output file `.tmp/output/nlp_si_detections.jsonlines` will contain the original PCAP messages with the following additional fields added:
 * `address`
 * `bank_acct`
 * `credit_card`
