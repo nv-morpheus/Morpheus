@@ -277,6 +277,7 @@ dependencies:
           - cmake=3.27
           - cuda-cudart-dev=12.5
           - cuda-version=12.5
+          - indicators=2.3 # C++ library for displaying progress bars
           - libtool # Needed for DOCA build
           - ninja=1.11
           - pkg-config=0.29 # for mrc cmake

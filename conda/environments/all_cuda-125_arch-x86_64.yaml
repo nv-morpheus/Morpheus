@@ -53,6 +53,7 @@ dependencies:
 - gxx=12.1
 - huggingface_hub=0.20.2
 - include-what-you-use=0.20
+- indicators=2.3
 - ipython
 - isort
 - jsonpatch>=1.33
