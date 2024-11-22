@@ -29,4 +29,4 @@ morpheus --log_level=DEBUG \
     add-class \
     filter --filter_source=TENSOR \
     serialize --exclude '^_ts_' \
-    to-file --filename=detections.jsonlines --overwrite
+    to-file --filename=.tmp/output/nlp_si_detections.jsonlines --overwrite

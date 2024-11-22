@@ -72,7 +72,7 @@ python examples/ransomware_detection/run.py --server_url=localhost:8000 \
               --sliding_window=3 \
               --model_name=ransomw-model-short-rf \
               --input_glob=./examples/data/appshield/*/snapshot-*/*.json \
-              --output_file=./ransomware_detection_output.jsonlines
+              --output_file=.tmp/output/ransomware_detection_output.jsonlines
 ```
 
 Input features for a short model can be taken from every three snapshots sequence, such as (1, 2, 3), or (2, 3, 4). The sliding window represents the number of subsequent snapshots that need to be taken into consideration when generating the input for a model. Sliding window for the medium model is `5` and for the long model it is `10`.

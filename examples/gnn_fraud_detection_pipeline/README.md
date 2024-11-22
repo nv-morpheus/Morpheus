@@ -97,7 +97,7 @@ Added stage: <serialize-8; SerializeStage(include=None, exclude=None, fixed_colu
   └─ morpheus.ControlMessage -> morpheus.MessageMeta
 Added stage: <monitor-9; MonitorStage(description=Serialize rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
-Added stage: <to-file-10; WriteToFileStage(filename=output.csv, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
+Added stage: <to-file-10; WriteToFileStage(filename=.tmp/output/gnn_fraud_detection_output.csv, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Segment Complete!====
 Graph construction rate[Complete]: 265 messages [00:00, 1016.18 messages/s]
@@ -128,5 +128,5 @@ morpheus --log_level INFO \
 	gnn-fraud-classification --model_xgb_file examples/gnn_fraud_detection_pipeline/model/xgb.pt \
 	monitor --description "Add classification rate" \
 	serialize \
-	to-file --filename "output.csv" --overwrite
+	to-file --filename "gnn_fraud_detection_cli_output.csv" --overwrite
 ```

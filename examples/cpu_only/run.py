@@ -61,7 +61,7 @@ logger = logging.getLogger(f"morpheus.{__name__}")
     "--out_file",
     help="Output file",
     type=click.Path(dir_okay=False),
-    default="output.csv",
+    default=".tmp/output/cpu_only_out.csv",
     required=True,
 )
 def run_pipeline(log_level: int, use_cpu_only: bool, in_file: pathlib.Path, out_file: pathlib.Path):
