@@ -97,7 +97,7 @@ python examples/abp_pcap_detection/run.py
 ```
 Note: Both Morpheus and Triton Inference Server containers must have access to the same GPUs in order for this example to work.
 
-The pipeline will process the input `abp_pcap_dump.jsonlines` sample data and write it to `pcap_out.jsonlines`.
+The pipeline will process the input `abp_pcap_dump.jsonlines` sample data and write it to `.tmp/output/pcap_out.jsonlines`.
 
 ### CLI Example
 The above example is illustrative of using the Python API to build a custom Morpheus Pipeline.
@@ -118,6 +118,6 @@ morpheus --log_level INFO --plugin "examples/abp_pcap_detection/abp_pcap_preproc
     monitor --description "Add classification rate" --unit "add-class" \
     serialize \
     monitor --description "Serialize rate" --unit ser \
-    to-file --filename "pcap_out.jsonlines" --overwrite \
+    to-file --filename ".tmp/output/pcap_out_cli.jsonlines" --overwrite \
     monitor --description "Write to file rate" --unit "to-file"
 ```
