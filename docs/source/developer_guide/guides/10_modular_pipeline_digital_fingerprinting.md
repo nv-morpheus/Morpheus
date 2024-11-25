@@ -71,7 +71,7 @@ The front-end loader outputs one or more control messages that are passed to the
 
 Moreover, the updated pipeline supports human-in-the-loop workflows, such as the ability to manually trigger training or inference tasks against a specific set of data, and the capacity for real-time labeling of production inference events that can be injected back into the training pipeline.
 
-The following content will track the pipeline declared in `examples/digital_fingerprinting/production/morpheus/dfp_integrated_training_streaming_pipeline.py`
+The following content will track the pipeline declared in `examples/digital_fingerprinting/production/dfp_integrated_training_streaming_pipeline.py`
 
 ```python
 # Setup and command line argument parsing
@@ -115,7 +115,7 @@ For a full introduction to Morpheus modules, refer to the [Python Modules](7_pyt
 ## DFP Deployment
 
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_deployment.py`
+Source: `python/morpheus_dfp/morpheus_dfp/modules/dfp_deployment.py`
 
 This is the top level module that encapsulates the entire Digital Fingerprinting pipeline, it is primarily responsible for wrapping the training and inference pipelines, providing the correct module interface, and doing some configuration pre-processing. Since this module is monolithic, it supports a significant number of configuration options; however, the majority of these have intelligent defaults and are not required to be specified.
 
@@ -162,7 +162,7 @@ There are a number of modules that are used in both the training and inference p
 
 ### DFP Preprocessing
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_preproc.py`
+Source: `python/morpheus_dfp/morpheus_dfp/modules/dfp_preproc.py`
 
 The `dfp_preproc` module is a functional component within the Morpheus framework that combines multiple data filtering and processing pipeline modules related to inference and training. This module simplifies the pipeline by consolidating various modules into a single, cohesive unit. The `dfp_preproc` module supports configuration parameters such as the cache directory, timestamp column name, pre-filter options, batching options, user splitting options, and supported data loaders for various file types.
 
@@ -233,7 +233,7 @@ For a complete reference, refer to: [DataLoader Module](../../modules/core/data_
 
 ### DFP Split Users
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_split_users.py`
+Source: `python/morpheus_dfp/morpheus_dfp/modules/dfp_split_users.py`
 
 The `dfp_split_users` module is responsible for splitting the input data based on user IDs. The module provides configuration options, such as fallback username, include generic user, include individual users, and specify lists of user IDs to include or exclude in the output.
 
@@ -250,7 +250,7 @@ def dfp_split_users(builder: mrc.Builder):
 
 ### DFP Rolling Window
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_rolling_window.py`
+Source: `python/morpheus_dfp/morpheus_dfp/modules/dfp_rolling_window.py`
 
 The `dfp_rolling_window` module is responsible for maintaining a rolling window of historical data, acting as a streaming caching and batching system. The module provides various configuration options, such as aggregation span, cache directory, caching options, timestamp column name, and trigger conditions.
 
@@ -271,7 +271,7 @@ def dfp_rolling_window(builder: mrc.Builder):
 
 ### DFP Data Prep
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_data_prep.py`
+Source: `python/morpheus_dfp/morpheus_dfp/modules/dfp_data_prep.py`
 
 The `dfp_data_prep` module is responsible for preparing data for either inference or model training. The module requires a defined schema for data preparation.
 
@@ -288,7 +288,7 @@ def dfp_data_prep(builder: mrc.Builder):
 
 ## DFP Training Pipeline
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_training_pipe.py`
+Source: `python/morpheus_dfp/morpheus_dfp/modules/dfp_training_pipe.py`
 
 The DFP Training Pipe module is a consolidated module that integrates several DFP pipeline modules that are essential to the training process. This module function provides a single entry point to the training pipeline, simplifying the process of training a model. The module offers configurable parameters for various stages in the pipeline, including data batching, data preprocessing, and data encoding for model training. Additionally, the MLflow model writer options allow for the trained model to be saved for future use.
 
@@ -326,7 +326,7 @@ def dfp_training_pipe(builder: mrc.Builder):
 
 ### DFP Training
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_training.py`
+Source: `python/morpheus_dfp/morpheus_dfp/modules/dfp_training.py`
 
 The `dfp_training` module function is responsible for training the model. The `on_data` function is defined to handle incoming `ControlMessage` instances. It retrieves the user ID and the input data from the `ControlMessage`, creates an instance of the `AutoEncoder` class with the specified `model_kwargs`, and trains the model on the input data. The output message includes the trained model and metadata.
 
@@ -358,7 +358,7 @@ def mlflow_model_writer(builder: mrc.Builder):
 
 ## DFP Inference Pipeline
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_inference_pipe.py`
+Source: `python/morpheus_dfp/morpheus_dfp/modules/dfp_inference_pipe.py`
 
 The `dfp_inference_pipe` module function consolidates multiple digital fingerprinting pipeline (DFP) modules relevant to the inference process into a single module. Its purpose is to simplify the creation and configuration of an inference pipeline by combining all necessary components.
 
@@ -407,7 +407,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
 
 ### DFP Inference
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_inference.py`
+Source: `python/morpheus_dfp/morpheus_dfp/modules/dfp_inference.py`
 
 The `dfp_inference` module function creates an inference module that retrieves trained models and performs inference on the input data. The module requires a `model_name_formatter` and a `fallback_username` to be configured in its parameters.
 
@@ -443,7 +443,7 @@ For a complete reference, refer to: [Filter Detections](../../modules/core/filte
 
 ### DFP Post Processing
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_postprocessing.py`
+Source: `python/morpheus_dfp/morpheus_dfp/modules/dfp_postprocessing.py`
 
 The `dfp_postprocessing` module function performs post-processing tasks on the input data.
 
