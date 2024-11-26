@@ -20,6 +20,7 @@ on:
     branches:
       - 'pull-request/**'
       - 'branch-*'
+      - 'main'
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:

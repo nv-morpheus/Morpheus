@@ -91,7 +91,7 @@ outputs:
         - feedparser =6.0.*
         - grpcio =1.62.*
         - lxml
-        - mlflow>=2.10.0,<3
+        - mlflow>=2.10.0,<2.18
         - mrc
         - networkx=2.8.8
         - numpydoc =1.5.*
@@ -239,7 +239,7 @@ outputs:
         - scripts/fetch_data.py
         - tests/*
       script: morpheus_llm_test.sh
- 
+
 about:
   home: https://github.com/nv-morpheus/Morpheus
   license: Apache-2.0

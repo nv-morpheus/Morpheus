@@ -10,6 +10,7 @@ import morpheus._lib.stages
 import typing
 from morpheus._lib.common import FilterSource
 import morpheus._lib.common
+import morpheus._lib.messages
 import mrc.core.coro
 import mrc.core.segment
 import os
@@ -25,6 +26,8 @@ __all__ = [
     "HttpServerMessageMetaSourceStage",
     "InferenceClientStage",
     "KafkaSourceStage",
+    "MonitorControlMessageStage",
+    "MonitorMessageMetaStage",
     "PreallocateControlMessageStage",
     "PreallocateMessageMetaStage",
     "PreprocessFILStage",
@@ -66,6 +69,12 @@ class KafkaSourceStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, max_batch_size: int, topic: str, batch_timeout_ms: int, config: typing.Dict[str, str], disable_commits: bool = False, disable_pre_filtering: bool = False, stop_after: int = 0, async_commits: bool = True, oauth_callback: typing.Optional[function] = None) -> None: ...
     @typing.overload
     def __init__(self, builder: mrc.core.segment.Builder, name: str, max_batch_size: int, topics: typing.List[str], batch_timeout_ms: int, config: typing.Dict[str, str], disable_commits: bool = False, disable_pre_filtering: bool = False, stop_after: int = 0, async_commits: bool = True, oauth_callback: typing.Optional[function] = None) -> None: ...
+    pass
+class MonitorControlMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, description: str, unit: str = 'messages', text_color: morpheus._lib.common.IndicatorsTextColor = IndicatorsTextColor.cyan, font_style: morpheus._lib.common.IndicatorsFontStyle = IndicatorsFontStyle.bold, determine_count_fn: typing.Optional[typing.Callable[[morpheus._lib.messages.ControlMessage], int]] = None) -> None: ...
+    pass
+class MonitorMessageMetaStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, description: str, unit: str = 'messages', text_color: morpheus._lib.common.IndicatorsTextColor = IndicatorsTextColor.cyan, font_style: morpheus._lib.common.IndicatorsFontStyle = IndicatorsFontStyle.bold, determine_count_fn: typing.Optional[typing.Callable[[morpheus._lib.messages.MessageMeta], int]] = None) -> None: ...
     pass
 class PreallocateControlMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: typing.List[typing.Tuple[str, morpheus._lib.common.TypeId]]) -> None: ...
