@@ -31,10 +31,13 @@ PROJ_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 UTILITIES_RELEASE_DIR = os.path.join(PROJ_ROOT, "external/utilities/ci/release")
 
 sys.path.append(UTILITIES_RELEASE_DIR)
-from download_deps_lib import TAG_BARE
-from download_deps_lib import TAG_NAME_DASH_BARE
-from download_deps_lib import download_source_deps
-from download_deps_lib import parse_args
+# pylint: disable=wrong-import-position
+from download_deps_lib import TAG_BARE  # noqa: E402
+from download_deps_lib import TAG_NAME_DASH_BARE  # noqa: E402
+from download_deps_lib import download_source_deps  # noqa: E402
+from download_deps_lib import parse_args  # noqa: E402
+
+# pylint: enable=wrong-import-position
 
 # In some cases multiple packages are derived from a single upstream repo, please keep sorted
 PACKAGE_ALIASES = {  # <conda package nanme>: <upstream name>
