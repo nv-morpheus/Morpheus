@@ -39,6 +39,8 @@ from download_deps_lib import parse_args  # noqa: E402
 
 # pylint: enable=wrong-import-position
 
+CONDA_JSON_CMD = "./docker/run_container_release.sh conda list --json > .tmp/container_pkgs.json"
+
 # In some cases multiple packages are derived from a single upstream repo, please keep sorted
 PACKAGE_ALIASES = {  # <conda package nanme>: <upstream name>
     "beautifulsoup4": "beautifulsoup",
@@ -161,7 +163,8 @@ logger = logging.getLogger(__file__)
 
 
 def main():
-    args = parse_args(default_conda_yaml=os.path.join(PROJ_ROOT,
+    args = parse_args(conda_json_cmd=CONDA_JSON_CMD,
+                      default_conda_yaml=os.path.join(PROJ_ROOT,
                                                       "conda/environments/runtime_cuda-125_arch-x86_64.yaml"),
                       default_conda_json=os.path.join(PROJ_ROOT, ".tmp/container_pkgs.json"))
     log_level = logging._nameToLevel[args.log_level.upper()]
