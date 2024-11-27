@@ -32,6 +32,7 @@ UTILITIES_RELEASE_DIR = os.path.join(PROJ_ROOT, "external/utilities/ci/release")
 
 sys.path.append(UTILITIES_RELEASE_DIR)
 # pylint: disable=wrong-import-position
+from download_deps_lib import PACKAGE_TO_URL_FN_T  # noqa: E402
 from download_deps_lib import TAG_BARE  # noqa: E402
 from download_deps_lib import TAG_NAME_DASH_BARE  # noqa: E402
 from download_deps_lib import download_source_deps  # noqa: E402
@@ -43,7 +44,6 @@ CONDA_JSON_CMD = "./docker/run_container_release.sh conda list --json > .tmp/con
 
 # In some cases multiple packages are derived from a single upstream repo, please keep sorted
 PACKAGE_ALIASES = {  # <conda package nanme>: <upstream name>
-    "beautifulsoup4": "beautifulsoup",
     "elasticsearch": "elasticsearch-py",
     "grpcio": "grpc",
     "grpcio-status": "grpc",
@@ -107,6 +107,14 @@ KNOWN_GITHUB_URLS = {  # <package>: <github repo>, please keep sorted
 
 KNOWN_GITLAB_URLS = {
     'pkg-config': 'https://gitlab.freedesktop.org/pkg-config/pkg-config',
+}
+
+OTHER_REPOS: dict[str, PACKAGE_TO_URL_FN_T] = {
+    # While boost is available on GitHub, the sub-libraries are in separate repos.
+    'beautifulsoup4':
+        lambda name,
+        ver:
+        f"https://www.crummy.com/software/BeautifulSoup/bs4/download/{'.'.join(ver.split('.')[:-1])}/{name}-{ver}.tar.gz",
 }
 
 # Please keep sorted
@@ -195,6 +203,7 @@ def main():
                                                 package_aliases=PACKAGE_ALIASES,
                                                 known_github_urls=KNOWN_GITHUB_URLS,
                                                 known_gitlab_urls=KNOWN_GITLAB_URLS,
+                                                other_repos=OTHER_REPOS,
                                                 known_first_party=KNOWN_FIRST_PARTY,
                                                 git_tag_format=GIT_TAG_FORMAT,
                                                 known_non_conda_deps=KNOWN_NON_CONDA_DEPS,
