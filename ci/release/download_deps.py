@@ -113,8 +113,8 @@ OTHER_REPOS: dict[str, PACKAGE_TO_URL_FN_T] = {
     # While boost is available on GitHub, the sub-libraries are in separate repos.
     'beautifulsoup4':
         lambda name,
-        ver:
-        f"https://www.crummy.com/software/BeautifulSoup/bs4/download/{'.'.join(ver.split('.')[:-1])}/{name}-{ver}.tar.gz",
+        ver: ("https://www.crummy.com/software/BeautifulSoup/bs4/download/"
+              f"{'.'.join(ver.split('.')[:-1])}/{name}-{ver}.tar.gz"),
 }
 
 # Please keep sorted
