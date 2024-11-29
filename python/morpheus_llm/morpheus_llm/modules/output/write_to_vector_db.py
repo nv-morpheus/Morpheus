@@ -165,6 +165,8 @@ def _write_to_vector_db(builder: mrc.Builder):
             df = msg.payload().df
             if (msg.has_metadata("vdb_resource")):
                 resource_name = msg.get_metadata("vdb_resource")
+            df.info()
+            print("Resource name = ", resource_name)
             else:
                 resource_name = None
         else:
