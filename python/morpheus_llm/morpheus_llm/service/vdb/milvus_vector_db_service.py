@@ -310,6 +310,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
             Returns response content as a dictionary.
         """
         # Ensure that there are no None values in the DataFrame entries.
+        print("##### 1")
         for field_name, dtype in self._fillna_fields_dict.items():
             if dtype in (pymilvus.DataType.VARCHAR, pymilvus.DataType.STRING):
                 df[field_name] = df[field_name].fillna("")
@@ -324,6 +325,8 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
                 df[field_name] = df[field_name].fillna(False)
             else:
                 logger.info("Skipped checking 'None' in the field: %s, with datatype: %s", field_name, dtype)
+
+        print("##### 2")
 
         needs_truncate = self._truncate_long_strings
         if needs_truncate and is_cudf_type(df):
