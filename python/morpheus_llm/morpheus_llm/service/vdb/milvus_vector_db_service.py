@@ -265,6 +265,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         self._truncate_long_strings = truncate_long_strings
 
         self._collection.load()
+        print("Resource created ...")
 
     def _set_up_collection(self):
         """
@@ -859,6 +860,8 @@ class MilvusVectorDBService(VectorDBService):
             If the collection not exists exists.
         """
         resource = self.load_resource(name)
+        print(name)
+        print(resource)
 
         return resource.insert_dataframe(df=df, **kwargs)
 
