@@ -333,6 +333,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         # From the schema, this is the list of columns we need, excluding any auto_id columns
         column_names = [field.name for field in self._fields if not field.auto_id]
+        print(column_names)
 
         collection_df = df[column_names]
         if is_cudf_type(collection_df):
@@ -342,6 +343,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
             truncate_string_cols_by_bytes(collection_df, self._fields_max_length, warn_on_truncate=True)
 
         # Note: dataframe columns has to be in the order of collection schema fields.s
+        print(collection_df.to_string(max_rows=3))
         result = self._collection.insert(data=collection_df, **kwargs)
         self._collection.flush()
 
