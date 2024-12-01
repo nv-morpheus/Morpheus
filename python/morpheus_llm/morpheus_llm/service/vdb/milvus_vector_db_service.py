@@ -312,19 +312,25 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         """
         # Ensure that there are no None values in the DataFrame entries.
         print("##### 1")
+        print(self._fillna_fields_dict.items())
         for field_name, dtype in self._fillna_fields_dict.items():
             if dtype in (pymilvus.DataType.VARCHAR, pymilvus.DataType.STRING):
+                print("##### 1 1")
                 df[field_name] = df[field_name].fillna("")
             elif dtype in (pymilvus.DataType.INT8,
                            pymilvus.DataType.INT16,
                            pymilvus.DataType.INT32,
                            pymilvus.DataType.INT64):
+                print("##### 1 2")
                 df[field_name] = df[field_name].fillna(0)
             elif dtype in (pymilvus.DataType.FLOAT, pymilvus.DataType.DOUBLE):
+                print("##### 1 3")
                 df[field_name] = df[field_name].fillna(0.0)
             elif dtype == pymilvus.DataType.BOOL:
+                print("##### 1 4")
                 df[field_name] = df[field_name].fillna(False)
             else:
+                print("##### 1 5")
                 logger.info("Skipped checking 'None' in the field: %s, with datatype: %s", field_name, dtype)
 
         print("##### 2")
