@@ -199,9 +199,9 @@ class MORPHEUS_EXPORT ControlMessage
     void tensors(const std::shared_ptr<TensorMemory>& tensor_memory);
 
     /**
-     * @brief Get the number of tensors in the tensor memory.
+     * @brief Get the length of tensors in the tensor memory.
      *
-     * @return The count of tensors in the tensor memory.
+     * @return The length of tensors in the tensor memory.
      */
     TensorIndex tensor_count();
 
