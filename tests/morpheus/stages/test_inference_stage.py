@@ -110,7 +110,7 @@ def test_convert_one_response():
     cm = InferenceStageT._convert_one_response(output, inf, res, batch_offset)
     assert cm.payload() == inf.payload()
     assert cm.payload().count == 4
-    assert cm.tensors().count == 4
+    assert cm.tensor_count() == 4
     assert cp.all(cm.tensors().get_tensor("probs") == res.get_tensor("probs"))
 
     # Test for the second branch

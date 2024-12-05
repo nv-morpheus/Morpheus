@@ -568,7 +568,7 @@ class TritonInferenceWorker(InferenceWorker):
             raise ex
 
     def calc_output_dims(self, msg: ControlMessage) -> typing.Tuple:
-        return (msg.tensors().count, self._outputs[list(self._outputs.keys())[0]].shape[1])
+        return (msg.tensor_count(), self._outputs[list(self._outputs.keys())[0]].shape[1])
 
     def _build_response(
             self,

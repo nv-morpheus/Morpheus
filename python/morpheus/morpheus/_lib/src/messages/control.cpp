@@ -59,9 +59,10 @@ ControlMessage::ControlMessage(const morpheus::utilities::json_t& _config) :
 
 ControlMessage::ControlMessage(const ControlMessage& other)
 {
-    m_cm_type = other.m_cm_type;
-    m_payload = other.m_payload;
-    m_tensors = other.m_tensors;
+    m_cm_type      = other.m_cm_type;
+    m_payload      = other.m_payload;
+    m_tensors      = other.m_tensors;
+    m_tensor_count = other.m_tensor_count;
 
     m_config = other.m_config;
     m_tasks  = other.m_tasks;
@@ -256,7 +257,13 @@ std::shared_ptr<TensorMemory> ControlMessage::tensors()
 
 void ControlMessage::tensors(const std::shared_ptr<TensorMemory>& tensors)
 {
-    m_tensors = tensors;
+    m_tensors      = tensors;
+    m_tensor_count = tensors ? tensors->count : 0;
+}
+
+TensorIndex ControlMessage::tensor_count()
+{
+    return m_tensor_count;
 }
 
 ControlMessageType ControlMessage::task_type()
