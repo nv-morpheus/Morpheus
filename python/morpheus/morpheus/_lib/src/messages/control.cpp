@@ -257,11 +257,8 @@ std::shared_ptr<TensorMemory> ControlMessage::tensors()
 
 void ControlMessage::tensors(const std::shared_ptr<TensorMemory>& tensors)
 {
-    m_tensors = tensors;
-    if (tensors)
-    {
-        m_tensor_count = tensors->count;
-    }
+    m_tensors      = tensors;
+    m_tensor_count = tensors ? tensors->count : 0;
 }
 
 TensorIndex ControlMessage::tensor_count()
