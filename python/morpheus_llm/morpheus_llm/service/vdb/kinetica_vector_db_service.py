@@ -77,7 +77,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
     def __init__(self, name: str, schema: str, client: "GPUdb") -> None:
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='pyKinetica')) from IMPORT_EXCEPTION
+            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='gpudb')) from IMPORT_EXCEPTION
 
         super().__init__()
 
@@ -525,7 +525,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         }
         return result_dict
 
-    def _update_delete_result_to_dict(self, result: "MutationResult") -> dict[str, typing.Any]:
+    def _update_delete_result_to_dict(self, result) -> dict[str, typing.Any]:
         result_dict = {
             "count_deleted": result["count_deleted"],
             "counts_updated": result["counts_deleted"],
