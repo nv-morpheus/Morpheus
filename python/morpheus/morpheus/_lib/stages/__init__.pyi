@@ -53,10 +53,10 @@ class KafkaSourceStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, max_batch_size: int, topics: list[str], batch_timeout_ms: int, config: dict[str, str], disable_commits: bool = False, disable_pre_filtering: bool = False, stop_after: int = 0, async_commits: bool = True, oauth_callback: typing.Callable | None = None) -> None:
         ...
 class MonitorControlMessageStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, description: str, unit: str = 'messages', text_color: morpheus._lib.common.IndicatorsTextColor = ..., font_style: morpheus._lib.common.IndicatorsFontStyle = ..., determine_count_fn: typing.Callable[[morpheus._lib.messages.ControlMessage], int] | None = None) -> None:
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, description: str, unit: str = 'messages', text_color: morpheus._lib.common.IndicatorsTextColor = IndicatorsTextColor.cyan, font_style: morpheus._lib.common.IndicatorsFontStyle = IndicatorsFontStyle.bold, determine_count_fn: typing.Callable[[morpheus._lib.messages.ControlMessage], int] | None = None) -> None:
         ...
 class MonitorMessageMetaStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, description: str, unit: str = 'messages', text_color: morpheus._lib.common.IndicatorsTextColor = ..., font_style: morpheus._lib.common.IndicatorsFontStyle = ..., determine_count_fn: typing.Callable[[morpheus._lib.messages.MessageMeta], int] | None = None) -> None:
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, description: str, unit: str = 'messages', text_color: morpheus._lib.common.IndicatorsTextColor = IndicatorsTextColor.cyan, font_style: morpheus._lib.common.IndicatorsFontStyle = IndicatorsFontStyle.bold, determine_count_fn: typing.Callable[[morpheus._lib.messages.MessageMeta], int] | None = None) -> None:
         ...
 class PreallocateControlMessageStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, needed_columns: list[tuple[str, morpheus._lib.common.TypeId]]) -> None:
@@ -74,6 +74,6 @@ class SerializeStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, include: list[str], exclude: list[str], fixed_columns: bool = True) -> None:
         ...
 class WriteToFileStage(mrc.core.segment.SegmentObject):
-    def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: str, mode: str = 'w', file_type: morpheus._lib.common.FileTypes = ..., include_index_col: bool = True, flush: bool = False) -> None:
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, filename: str, mode: str = 'w', file_type: morpheus._lib.common.FileTypes = FileTypes.Auto, include_index_col: bool = True, flush: bool = False) -> None:
         ...
 __version__: str = '25.2.0'
