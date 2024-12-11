@@ -21,6 +21,7 @@
 #include "morpheus/messages/control.hpp"               // for ControlMessage
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
 #include "morpheus/messages/meta.hpp"                  // for MessageMeta
+#include "morpheus/types.hpp"
 #include "morpheus/utilities/json_types.hpp"           // for PythonByteContainer
 
 #include <gtest/gtest.h>       // for Message, TestPartResult, AssertionResult, TestInfo
@@ -298,7 +299,8 @@ TEST_F(TestControlMessage, SetAndGetTensorMemory)
 {
     auto msg = ControlMessage();
 
-    auto tensorMemory = std::make_shared<TensorMemory>(0);
+    TensorIndex count = 5;
+    auto tensorMemory = std::make_shared<TensorMemory>(count);
     // Optionally, modify tensorMemory here if it has any mutable state to test
 
     // Set the tensor memory
@@ -309,6 +311,7 @@ TEST_F(TestControlMessage, SetAndGetTensorMemory)
 
     // Verify that the retrieved tensor memory matches what was set
     EXPECT_EQ(tensorMemory, retrievedTensorMemory);
+    EXPECT_EQ(count, msg.tensor_count());
 }
 
 // Test setting TensorMemory to nullptr
