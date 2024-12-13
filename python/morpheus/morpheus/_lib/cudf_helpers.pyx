@@ -13,7 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
+
 import cudf
+from cudf.core.column import ColumnBase
 from cudf.core.dtypes import StructDtype
 
 from libcpp.string cimport string
@@ -27,7 +30,6 @@ from pylibcudf.libcudf.types cimport size_type
 
 from cudf._lib.column cimport Column
 from cudf._lib.utils cimport data_from_unique_ptr
-from cudf._lib.utils cimport table_view_from_table
 
 ##### THE FOLLOWING CODE IS COPIED FROM CUDF AND SHOULD BE REMOVED WHEN UPDATING TO cudf>=24.12 #####
 # see https://github.com/rapidsai/cudf/pull/17193 for details
@@ -39,6 +41,7 @@ cimport pylibcudf.libcudf.copying as cpp_copying
 from pylibcudf.libcudf.column.column_view cimport column_view
 from libcpp.memory cimport make_unique, unique_ptr
 from pylibcudf.libcudf.scalar.scalar cimport scalar
+from pylibcudf cimport Table as plc_Table
 from cudf._lib.scalar cimport DeviceScalar
 
 # imports needed for from_column_view_with_fix
@@ -289,8 +292,35 @@ cdef public api:
         index_names = schema_infos[0:index_col_count] if index_col_count > 0 else None
         column_names = schema_infos[index_col_count:]
 
-        data, index = data_from_unique_ptr(move(table.tbl), column_names=column_names, index_names=index_names)
+        plc_table = plc_Table.from_libcudf(move(table.tbl))
 
+        if index_names is None:
+            index = None
+            data = {
+                col_name: ColumnBase.from_pylibcudf(col)
+                for col_name, col in zip(
+                    column_names, plc_table.columns()
+                )
+            }
+        else:
+            result_columns = [
+                ColumnBase.from_pylibcudf(col)
+                for col in plc_table.columns()
+            ]
+            index = cudf.Index._from_data(
+                dict(
+                    zip(
+                        index_names,
+                        result_columns[: len(index_names)],
+                    )
+                )
+            )
+            data = dict(
+                zip(
+                    column_names,
+                    result_columns[len(index_names) :],
+                )
+            )
         df = cudf.DataFrame._from_data(data, index)
 
         # Update the struct field names after the DataFrame is created
@@ -356,7 +386,13 @@ cdef public api:
 
         cdef vector[string] temp_col_names = get_column_names(table, True)
 
-        cdef table_view input_table_view = table_view_from_table(table, ignore_index=False)
+        cdef plc_Table plc_table = plc_Table(
+            [
+                col.to_pylicudf(mode="read")
+                for col in itertools.chain(table.index._columns, table._columns)
+            ]
+        )
+        cdef table_view input_table_view = plc_table.view()
         cdef vector[string] index_names
         cdef vector[string] column_names
 
