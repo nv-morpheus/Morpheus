@@ -29,7 +29,6 @@ from pylibcudf.libcudf.table.table_view cimport table_view
 from pylibcudf.libcudf.types cimport size_type
 
 from cudf._lib.column cimport Column
-from cudf._lib.utils cimport data_from_unique_ptr
 
 ##### THE FOLLOWING CODE IS COPIED FROM CUDF AND SHOULD BE REMOVED WHEN UPDATING TO cudf>=24.12 #####
 # see https://github.com/rapidsai/cudf/pull/17193 for details
