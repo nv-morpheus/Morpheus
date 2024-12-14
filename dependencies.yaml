@@ -430,13 +430,14 @@ dependencies:
     common:
       - output_types: [requirements]
         packages:
-           - faiss-cpu
-           - google-search-results==2.4
-           - langchain==0.1.16
-           - langchain-nvidia-ai-endpoints==0.0.11
+           - &faiss-cpu faiss-cpu
+           - &google-search-results google-search-results==2.4
+           - &langchain langchain==0.1.16
+           - &langchain-nvidia-ai-endpoints langchain-nvidia-ai-endpoints==0.0.11
+           - &langchain-openai langchain-openai==0.1.3
            - milvus==2.3.5 # update to match pymilvus when available
            - pymilvus==2.3.6
-           - nemollm==0.3.5
+           - &nemollm nemollm==0.3.5
 
   example-dfp-prod:
     common:
@@ -487,6 +488,7 @@ dependencies:
           - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
           - anyio>=3.7
           - arxiv=1.4
+          - httpx>=0.23,<0.28 # work-around for https://github.com/openai/openai-python/issues/1915
           - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
           - jsonpatch>=1.33
           - newspaper3k=0.2
@@ -499,11 +501,12 @@ dependencies:
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
           - pip
           - pip:
-            - langchain==0.1.16
-            - langchain-nvidia-ai-endpoints==0.0.11
-            - faiss-cpu
-            - google-search-results==2.4
-            - nemollm==0.3.5
+            - *faiss-cpu
+            - *google-search-results
+            - *langchain
+            - *langchain-nvidia-ai-endpoints
+            - *langchain-openai
+            - *nemollm
             - sentence-transformers==2.7 # using pip now instead of conda to avoid install of pytorch cpu
 
   model-training-tuning:
