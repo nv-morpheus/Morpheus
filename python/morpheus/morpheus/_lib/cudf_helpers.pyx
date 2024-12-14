@@ -387,7 +387,7 @@ cdef public api:
 
         cdef plc_Table plc_table = plc_Table(
             [
-                col.to_pylicudf(mode="read")
+                col.to_pylibcudf(mode="read")
                 for col in itertools.chain(table.index._columns, table._columns)
             ]
         )
