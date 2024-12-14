@@ -42,8 +42,8 @@ try:
     from langchain.agents.tools import Tool
     from langchain.schema import Generation
     from langchain.schema import LLMResult
-    from langchain_community.llms import OpenAI  # pylint: disable=no-name-in-module
     from langchain_community.utilities import serpapi
+    from langchain_openai import OpenAI  # pylint: disable=no-name-in-module
 except ImportError:
     pass
 
