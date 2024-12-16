@@ -887,3 +887,55 @@ class KineticaVectorDBService(VectorDBService):
 
         return resource.describe(**kwargs)
 
+    def release_resource(self, name: str) -> None:
+        """
+        Release a loaded resource from the memory.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource to release.
+        """
+        pass
+
+    def close(self) -> None:
+        """
+        Close connection to the vector database.
+        """
+
+        pass
+
+    def list_store_objects(self, **kwargs: dict[str, typing.Any]) -> list[str]:
+        """
+        List existing resources in the vector database.
+
+        Parameters
+        ----------
+        **kwargs : dict[str, typing.Any]
+            Extra keyword arguments specific to the vector database implementation.
+
+        Returns
+        -------
+        list[str]
+            Returns available resouce names in the vector database.
+        """
+
+        pass
+
+    def delete_by_keys(self, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> typing.Any:
+        """
+        Delete vectors by keys from the resource.
+
+        Parameters
+        ----------
+        keys : int | str | list
+            Primary keys to delete vectors.
+        **kwargs :  dict[str, typing.Any]
+            Extra keyword arguments specific to the vector database implementation.
+
+        Returns
+        -------
+        typing.Any
+            Returns vectors of the given keys that are delete from the resource.
+        """
+        pass
