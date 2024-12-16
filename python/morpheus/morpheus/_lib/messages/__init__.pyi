@@ -1,7 +1,7 @@
 """
 
         -----------------------
-        .. currentmodule:: morpheus.messages
+        .. currentmodule:: morpheus._lib.messages
         .. autosummary::
            :toctree: _generate
 
