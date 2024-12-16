@@ -553,10 +553,9 @@ class KineticaVectorDBService(VectorDBService):
                  uri: str,
                  user: str = "",
                  password: str = "",
-                 db_name: str = "",
-                 token: str = ""):
+                 ):
 
-        self._client = GPUdb(host=uri, username=user, password=password, db_name=db_name, token=token)
+        self._client = GPUdb(host=uri, username=user, password=password)
 
     def load_resource(self, name: str, **kwargs: dict[str, typing.Any]) -> KineticaVectorDBResourceService:
         return KineticaVectorDBResourceService(name=name,
