@@ -576,7 +576,7 @@ class KineticaVectorDBService(VectorDBService):
         bool
             True if the table exists, False otherwise.
         """
-        return self._client.has_table(name)
+        return self._client.has_table(name)["table_exists"]
 
     def create(self, name: str, overwrite: bool = False, **kwargs: dict[str, typing.Any]):
         """
@@ -590,20 +590,22 @@ class KineticaVectorDBService(VectorDBService):
         overwrite : bool, optional
             If True, the Kinetica table will be overwritten if it already exists, by default False.
         **kwargs : dict
-            Additional keyword arguments containing Kinetica table configuration.
+            Additional keyword arguments containing Kinetica `/create/table` options.
 
         Raises
         ------
-        ValueError
-            If the provided schema fields configuration is empty.
+        GPUdbException
+            If the provided type schema configuration is empty.
         """
         logger.debug("Creating Kinetica table: %s, overwrite=%s, kwargs=%s", name, overwrite, kwargs)
 
         table_type: list[list[str]] = kwargs.get("type", [])
         if not self.has_store_object(name) and (table_type is None or len(table_type) == 0):
-            raise GPUdbException("Table must either be existing or a type ust be given to create the table ...")
+            raise GPUdbException("Table must either be existing or a type must be given to create the table ...")
 
         options = kwargs.get("options", {})
+        if len(options) == 0:
+            options['no_error_if_exists'] = 'true'
 
         if not self.has_store_object(name) or overwrite:
             if overwrite and self.has_store_object(name):
