@@ -89,13 +89,11 @@ def mk_mock_openai_response(messages: list[str]) -> mock.MagicMock:
     response = mock.MagicMock()
 
     response.choices = [_mk_mock_choice(message) for message in messages]
-    response.dict.return_value = {
-        "choices": [{
-            'message': {
-                'role': 'assistant', 'content': message
-            }
-        } for message in messages]
-    }
+
+    response_dict = {"choices": [{'message': {'role': 'assistant', 'content': message}} for message in messages]}
+
+    response.dict.return_value = response_dict
+    response.model_dump.return_value = response_dict
 
     return response
 
