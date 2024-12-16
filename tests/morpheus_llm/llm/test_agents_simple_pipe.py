@@ -129,7 +129,7 @@ def test_agents_simple_pipe_integration_openai(config: Config, questions: list[s
 
 @pytest.mark.usefixtures("openai", "restore_environ")
 @mock.patch("langchain_community.utilities.serpapi.SerpAPIWrapper.aresults")
-@mock.patch("langchain_community.llms.OpenAI._agenerate",
+@mock.patch("langchain_openai.OpenAI._agenerate",
             autospec=True)  # autospec is needed as langchain will inspect the function
 def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
                             mock_serpapi_aresults: mock.AsyncMock,
