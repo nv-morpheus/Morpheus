@@ -1126,7 +1126,7 @@ def langchain_community_fixture(fail_missing: bool):
 
 
 @pytest.fixture(name="langchain_openai", scope='session')
-def langchain_community_fixture(fail_missing: bool):
+def langchain_openai_fixture(fail_missing: bool):
     """
     Fixture to ensure langchain_openai is installed
     """

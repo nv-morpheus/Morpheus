@@ -62,7 +62,7 @@ def langchain_community_fixture(langchain_community: types.ModuleType):
 
 
 @pytest.fixture(name="langchain_openai", scope='session', autouse=True)
-def langchain_community_fixture(langchain_openai: types.ModuleType):
+def langchain_openai_fixture(langchain_openai: types.ModuleType):
     """
     Fixture to ensure langchain_openai is installed
     """
