@@ -1125,6 +1125,16 @@ def langchain_community_fixture(fail_missing: bool):
                          fail_missing=fail_missing)
 
 
+@pytest.fixture(name="langchain_openai", scope='session')
+def langchain_community_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain_openai is installed
+    """
+    yield import_or_skip("langchain_openai",
+                         reason=OPT_DEP_SKIP_REASON.format(package="langchain_openai"),
+                         fail_missing=fail_missing)
+
+
 @pytest.fixture(name="langchain_nvidia_ai_endpoints", scope='session')
 def langchain_nvidia_ai_endpoints_fixture(fail_missing: bool):
     """

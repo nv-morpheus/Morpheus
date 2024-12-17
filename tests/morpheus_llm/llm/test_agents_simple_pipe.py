@@ -127,7 +127,7 @@ def test_agents_simple_pipe_integration_openai(config: Config, questions: list[s
     assert float(response_match.group(1)) >= 3.7
 
 
-@pytest.mark.usefixtures("openai", "restore_environ")
+@pytest.mark.usefixtures("langchain_community", "langchain_openai", "openai", "restore_environ")
 @mock.patch("langchain_community.utilities.serpapi.SerpAPIWrapper.aresults")
 @mock.patch("langchain_openai.OpenAI._agenerate",
             autospec=True)  # autospec is needed as langchain will inspect the function
