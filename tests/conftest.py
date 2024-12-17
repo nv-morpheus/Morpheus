@@ -1155,6 +1155,14 @@ def databricks_fixture(fail_missing: bool):
                          fail_missing=fail_missing)
 
 
+@pytest.fixture(name="numexpr", scope='session')
+def numexpr_fixture(fail_missing: bool):
+    """
+    Fixture to ensure numexpr is installed
+    """
+    yield import_or_skip("numexpr", reason=OPT_DEP_SKIP_REASON.format(package="numexpr"), fail_missing=fail_missing)
+
+
 @pytest.mark.usefixtures("openai")
 @pytest.fixture(name="mock_chat_completion")
 def mock_chat_completion_fixture():
