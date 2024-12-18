@@ -61,6 +61,14 @@ def langchain_community_fixture(langchain_community: types.ModuleType):
     yield langchain_community
 
 
+@pytest.fixture(name="langchain_openai", scope='session', autouse=True)
+def langchain_openai_fixture(langchain_openai: types.ModuleType):
+    """
+    Fixture to ensure langchain_openai is installed
+    """
+    yield langchain_openai
+
+
 @pytest.fixture(name="langchain_nvidia_ai_endpoints", scope='session', autouse=True)
 def langchain_nvidia_ai_endpoints_fixture(langchain_nvidia_ai_endpoints: types.ModuleType):
     """
