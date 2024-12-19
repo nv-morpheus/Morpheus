@@ -86,7 +86,7 @@ def main(input_file_name: str):
     config.execution_mode = ExecutionMode.GPU
 
     # milvus_db_service = MilvusVectorDBService("https://in03-c87c25d216da0ac.serverless.gcp-us-west1.cloud.zilliz.com", user="db_c87c25d216da0ac", password="Cv3;^~HaY.>~>!)H", token="1c80242758bbfc207773c9a731421d9d96e269ac3ef41d87b40725f53795e1305489827dd310f0e55fb886ba0ea15898244de182")
-    kinetica_db_service = KineticaVectorDBService("http://demo72.kinetica.com/_gpudb", user="amukherjee", password="Kinetica1!")
+    kinetica_db_service = KineticaVectorDBService("https://demo72.kinetica.com/_gpudb", user="amukherjee", password="Kinetica1!")
     # milvus_resource_service = milvus_db_service.load_resource("test_collection")
     kinetica_resource_service = kinetica_db_service.load_resource("test_collection")
     collection_name = "test_collection"
