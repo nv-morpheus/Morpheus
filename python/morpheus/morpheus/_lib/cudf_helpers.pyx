@@ -35,15 +35,10 @@ from cudf._lib.column cimport Column
 
 # isort: off
 
-# imports needed for get_element, which is required by from_column_view_with_fix
-cimport pylibcudf.libcudf.copying as cpp_copying
-from pylibcudf.libcudf.column.column_view cimport column_view
-from libcpp.memory cimport make_unique, unique_ptr
-from pylibcudf.libcudf.scalar.scalar cimport scalar
-from pylibcudf cimport Table as plc_Table
-from cudf._lib.scalar cimport DeviceScalar
-
 # imports needed for from_column_view_with_fix
+import pylibcudf as plc
+from pylibcudf cimport Column as plc_Column, Table as plc_Table
+from pylibcudf.libcudf.column.column_view cimport column_view
 import rmm
 from libc.stdint cimport uintptr_t
 from cudf.core.buffer import (
@@ -63,18 +58,6 @@ from cudf._lib.types cimport (
 from cudf._lib.null_mask import bitmask_allocation_size_bytes
 
 # isort: on
-
-cdef get_element(column_view col_view, size_type index):
-
-    cdef unique_ptr[scalar] c_output
-    with nogil:
-        c_output = move(
-            cpp_copying.get_element(col_view, index)
-        )
-
-    return DeviceScalar.from_unique_ptr(
-        move(c_output), dtype=dtype_from_column_view(col_view)
-    )
 
 cdef Column from_column_view_with_fix(column_view cv, object owner):
     """
@@ -118,9 +101,13 @@ cdef Column from_column_view_with_fix(column_view cv, object owner):
             if offset_child_column.size() == 0:
                 base_nbytes = 0
             else:
-                chars_size = get_element(
-                    offset_child_column, offset_child_column.size()-1).value
-                base_nbytes = chars_size
+                offset_child_column_owner = owner.children[offsets_column_index]
+                plc_owner = offset_child_column_owner.to_pylibcudf(mode="read")
+                plc_offsets_col = plc_Column.from_column_view(
+                    offset_child_column, plc_owner
+                )
+                plc_scalar = plc.copying.get_element(plc_offsets_col, offset_child_column.size()-1)
+                base_nbytes = plc.interop.to_arrow(plc_scalar).as_py()
 
     if data_ptr:
         if data_owner is None:
