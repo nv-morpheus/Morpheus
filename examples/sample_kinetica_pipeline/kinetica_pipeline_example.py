@@ -2,16 +2,13 @@ import csv
 import logging
 import random
 import cudf
+import os
 
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.config import Config
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.type_utils import exec_mode_to_df_type_str
 
-from morpheus.stages.input.in_memory_data_generation_stage import InMemoryDataGenStage
-
-from morpheus.stages.preprocess.drop_null_stage import DropNullStage
 from morpheus_llm.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 
@@ -19,17 +16,11 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 # from morpheus.utils.type_support import numpy_to_cudf
 
 # Import Milvus services from Morpheus
-from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBResourceService, MilvusVectorDBService
-from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBResourceService, KineticaVectorDBService
+from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBService
 
-import numpy as np
 import json
 
 from morpheus.utils.logger import configure_logging
-
-from morpheus.stages.input.file_source_stage import FileSourceStage
-
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
@@ -79,18 +70,29 @@ def get_test_df(num_input_rows):
 
 
 def main(input_file_name: str):
+    host = os.getenv("kinetica_host", "http://localhost:9191")
+    username = os.getenv("username", "")
+    password = os.getenv("password", "")
+    schema = os.getenv("schema", "")
     # Step 1: Configure logging
 
     # Step 2: Initialize Morpheus Config
     config = Config()
     config.execution_mode = ExecutionMode.GPU
 
-    # milvus_db_service = MilvusVectorDBService("https://in03-c87c25d216da0ac.serverless.gcp-us-west1.cloud.zilliz.com", user="db_c87c25d216da0ac", password="Cv3;^~HaY.>~>!)H", token="1c80242758bbfc207773c9a731421d9d96e269ac3ef41d87b40725f53795e1305489827dd310f0e55fb886ba0ea15898244de182")
-    kinetica_db_service = KineticaVectorDBService("https://demo72.kinetica.com/_gpudb", user="amukherjee", password="Kinetica1!")
-    # milvus_resource_service = milvus_db_service.load_resource("test_collection")
-    kinetica_resource_service = kinetica_db_service.load_resource("test_collection")
+    kinetica_db_service = KineticaVectorDBService(host, user=username, password=password, kinetica_schema=schema)
     collection_name = "test_collection"
+    collection_name = f"{schema}.{collection_name}" if schema is not None and len(
+        schema) > 0 else f"ki_home.{collection_name}"
+
     vector_dim = 3  # Example: 3-dimensional vector embeddings
+
+    columns = [
+        ["id", "long", "primary_key"],
+        ["embeddings", "bytes", "vector(3)"],
+        ["metadata", "string", "json"],
+    ]
+    kinetica_db_service.create(collection_name, type=columns)
 
     source_df = read_file_to_df(input_file_name, df_type=exec_mode_to_df_type_str(config.execution_mode))
     print(source_df.shape[0])

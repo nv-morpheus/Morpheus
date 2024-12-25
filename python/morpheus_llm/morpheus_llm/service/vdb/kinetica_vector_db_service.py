@@ -75,18 +75,16 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         An instance of the GPUdb class for interaction with the Kinetica Vector Database.
     """
 
-    def __init__(self, name: str, schema: str, client: "GPUdb") -> None:
+    def __init__(self, name: str, client: "GPUdb") -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE.format(package='gpudb')) from IMPORT_EXCEPTION
 
         super().__init__()
 
         self._name = name
-        self._schema = schema
         self._client = client
 
-        self._collection_name = f"{self._schema}.{self._name}"
-        self._collection =  GPUdbTable(name=self._collection_name, db=client)
+        self._collection =  GPUdbTable(name=self._name, db=client)
         self._record_type = self._collection.get_table_type()
         self._fields: list[GPUdbRecordColumn] = self._record_type.columns
 
@@ -553,17 +551,31 @@ class KineticaVectorDBService(VectorDBService):
                  uri: str,
                  user: str = "",
                  password: str = "",
+                 kinetica_schema = "",
                  ):
         options = GPUdb.Options()
         options.skip_ssl_cert_verification = True
-        options.username = "amukherjee"
-        options.password = "Kinetica1!"
+        options.username = user
+        options.password = password
 
+        self._collection_name = None
+        self.schema = kinetica_schema if kinetica_schema is not None and len(kinetica_schema) > 0 else None
         self._client = GPUdb(host=uri, options=options)
 
     def load_resource(self, name: str, **kwargs: dict[str, typing.Any]) -> KineticaVectorDBResourceService:
-        return KineticaVectorDBResourceService(name=name,
+        """
+
+        @param name:
+        @param kwargs:
+        @return:
+        """
+        self._collection_name = f"{self.schema}.{name}" if self.schema is not None and len(self.schema) > 0 else f"ki_home.{name}"
+        return KineticaVectorDBResourceService(name=self._collection_name,
                                                client=self._client)
+
+    @property
+    def collection_name(self):
+        return self._collection_name if self._collection_name is not None else None
 
     def has_store_object(self, name: str) -> bool:
         """
