@@ -459,6 +459,24 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
         return self._update_delete_result_to_dict(result=result)
 
+    def delete_by_keys(self, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> typing.Any:
+        """
+        Delete vectors by keys from the resource.
+
+        Parameters
+        ----------
+        keys : int | str | list
+            Primary keys to delete vectors.
+        **kwargs :  dict[str, typing.Any]
+            Extra keyword arguments specific to the vector database implementation.
+
+        Returns
+        -------
+        typing.Any
+            Returns vectors of the given keys that are delete from the resource.
+        """
+        pass
+
     def retrieve_by_keys(self, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> list[typing.Any]:
         """
         Retrieve the inserted vectors using their primary keys.
