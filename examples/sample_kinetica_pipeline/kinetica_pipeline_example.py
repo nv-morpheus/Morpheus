@@ -8,9 +8,15 @@ from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.type_utils import exec_mode_to_df_type_str
+from morpheus.modules import to_control_message  # noqa: F401 # pylint: disable=unused-import
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
+from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
 
 from morpheus_llm.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.general.linear_modules_stage import LinearModulesStage
+
+from morpheus.messages import ControlMessage
 
 # from morpheus.utils.logging import configure_logging
 # from morpheus.utils.type_support import numpy_to_cudf
@@ -62,8 +68,8 @@ def generate_csv(file_path, num_records=10):
 def get_test_df(num_input_rows):
     df = cudf.DataFrame({
         "id": list(range(num_input_rows)),
-        "age": [random.randint(20, 40) for i in range(num_input_rows)],
-        "embedding": [[random.random() for _ in range(3)] for _ in range(num_input_rows)]
+        "embeddings": [[random.random() for _ in range(3)] for _ in range(num_input_rows)],
+        "metadata": [json.dumps({"metadata": f"Sample metadata for row {i}"}) for i in range(num_input_rows)],
     })
 
     return df
@@ -94,22 +100,20 @@ def main(input_file_name: str):
     ]
     kinetica_db_service.create(collection_name, type=columns)
 
-    source_df = read_file_to_df(input_file_name, df_type=exec_mode_to_df_type_str(config.execution_mode))
-    print(source_df.shape[0])
+    df = get_test_df(10)
+    to_cm_module_config = {
+        "module_id": TO_CONTROL_MESSAGE, "module_name": "to_control_message", "namespace": MORPHEUS_MODULE_NAMESPACE
+    }
 
     # Step 1: Create a pipeline
     pipeline = LinearPipeline(config)
-
-    # # Step 6: Define source stage
-    # def data_generator():
-    #     for i in range(5):
-    #         embedding = np.random.random(vector_dim).tolist()
-    #         metadata = {"id": i, "label": f"example_{i}"}
-    #         yield {"embedding": embedding, "metadata": metadata}
-
-    pipeline.set_source(InMemorySourceStage(config, dataframes=[source_df]))
-
-    pipeline.add_stage(DeserializeStage(config))
+    pipeline.set_source(InMemorySourceStage(config, [df]))
+    pipeline.add_stage(
+        LinearModulesStage(config,
+                           to_cm_module_config,
+                           input_port_name="input",
+                           output_port_name="output",
+                           output_type=ControlMessage))
 
     pipeline.add_stage(
         WriteToVectorDBStage(
@@ -118,8 +122,6 @@ def main(input_file_name: str):
             "test_collection"
         )
     )
-
-    pipeline.build()
 
     pipeline.run()
 
