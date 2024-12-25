@@ -126,7 +126,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
         result = self._collection.insert_records(data, options=options)
 
-        return self._insert_result_to_dict(result=result)
+        return self._insert_result_to_dict(result=result.count)
 
     def insert_dataframe(self, df: DataFrameType, **kwargs: dict[str, typing.Any]) -> dict:
         """
@@ -535,9 +535,9 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
         self._client.clear_table(self._collection_name)
 
-    def _insert_result_to_dict(self, result: "GPUdbTable") -> dict[str, typing.Any]:
+    def _insert_result_to_dict(self, result: int) -> dict[str, typing.Any]:
         result_dict = {
-            "count": result.count,
+            "count": result,
         }
         return result_dict
 
