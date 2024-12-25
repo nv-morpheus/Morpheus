@@ -644,7 +644,7 @@ class KineticaVectorDBService(VectorDBService):
             if overwrite and self.has_store_object(name):
                 self.drop(name)
 
-            GPUdbTable(table_type, name, options=options)
+            GPUdbTable(table_type, name, options=options, db=self._client)
 
 
     def create_from_dataframe(self,
