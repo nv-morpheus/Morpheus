@@ -15,7 +15,6 @@
 import logging
 import pickle
 import time
-import traceback
 from dataclasses import dataclass
 
 import mrc
@@ -146,15 +145,10 @@ def _write_to_vector_db(builder: mrc.Builder):
                 try:
                     if accum_stats.data:
                         df_pkg = get_df_pkg_from_obj(accum_stats.data[0])
-                        print("1 ......")
                         merged_df = df_pkg.concat(accum_stats.data)
-                        print("2 ......")
                         service.insert_dataframe(name=key, df=merged_df)
-                        print("3 ......")
                         final_df_references.append(accum_stats.data)
-                        print("4 ......")
                 except Exception as e:
-                    print(traceback.format_exc())
                     logger.error("Unable to upload dataframe entries to vector database: %s", e)
         finally:
             # Close vector database service connection

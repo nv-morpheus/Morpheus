@@ -6,8 +6,6 @@ import os
 
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.config import Config
-from morpheus.io.deserializers import read_file_to_df
-from morpheus.utils.type_utils import exec_mode_to_df_type_str
 from morpheus.modules import to_control_message  # noqa: F401 # pylint: disable=unused-import
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
@@ -34,37 +32,6 @@ from morpheus.config import ExecutionMode
 
 logger = logging.getLogger(__name__)
 
-def generate_random_vector(dim=3):
-    """Generate a random vector of specified dimensions."""
-    return [random.uniform(-1.0, 1.0) for _ in range(dim)]
-
-
-def generate_csv(file_path, num_records=10):
-    """
-    Generate a CSV file with the specified format.
-
-    Parameters:
-        file_path (str): Path to the output CSV file.
-        num_records (int): Number of records to generate.
-    """
-    records = []
-
-    for i in range(1, num_records + 1):
-        vector = generate_random_vector()
-        metadata = json.dumps({"metadata": f"Sample metadata for row {i}"})
-        records.append([i, str(vector), metadata])
-
-    # Write records to CSV file
-    with open(file_path, mode='w', newline='') as csv_file:
-        writer = csv.writer(csv_file)
-        # Write header
-        writer.writerow(["id", "embeddings", "metadata"])
-        # Write data
-        writer.writerows(records)
-
-    print(f"CSV file '{file_path}' with {num_records} records generated successfully.")
-
-
 def get_test_df(num_input_rows):
     df = cudf.DataFrame({
         "id": list(range(num_input_rows)),
@@ -75,14 +42,12 @@ def get_test_df(num_input_rows):
     return df
 
 
-def main(input_file_name: str):
+def main():
     host = os.getenv("kinetica_host", "http://localhost:9191")
     username = os.getenv("username", "")
     password = os.getenv("password", "")
     schema = os.getenv("schema", "")
-    # Step 1: Configure logging
 
-    # Step 2: Initialize Morpheus Config
     config = Config()
     config.execution_mode = ExecutionMode.GPU
 
@@ -126,6 +91,4 @@ def main(input_file_name: str):
     pipeline.run()
 
 if __name__ == "__main__":
-    file_name = "test.csv"
-    generate_csv(file_name)
-    main(file_name)
+    main()
