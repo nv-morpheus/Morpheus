@@ -91,7 +91,6 @@ dependencies:
 - pylint=3.0.3
 - pynvml=11.4
 - pypdf=3.17.4
-- pypdfium2=4.30
 - pytest-asyncio
 - pytest-benchmark=4.0
 - pytest-cov

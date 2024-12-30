@@ -419,7 +419,6 @@ dependencies:
       - output_types: [conda]
         packages:
           - &nodejs nodejs=18.*
-          - &pypdfium2 pypdfium2=4.30
           - pytest-asyncio
           - pytest-benchmark=4.0
           - pytest-cov
@@ -428,6 +427,16 @@ dependencies:
           - pip
           - pip:
               - pytest-kafka==0.6.0
+    specific:
+      - output_types: [conda]
+        matrices:
+          - matrix:
+              arch: x86_64
+            packages:
+              # pypdfium2 does not have arm64 builds
+              - &pypdfium2 pypdfium2=4.30
+          - matrix:
+              arch: aarch64
 
   morpheus_core_pip:
     common:
@@ -507,7 +516,6 @@ dependencies:
           - onnx=1.15
           - *openai
           - pypdf=3.17.4
-          - *pypdfium2
           - *python-docx
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
           - pip
@@ -519,6 +527,17 @@ dependencies:
             - *langchain-openai
             - *nemollm
             - sentence-transformers==2.7 # using pip now instead of conda to avoid install of pytorch cpu
+    specific:
+      - output_types: [conda]
+        matrices:
+          - matrix:
+              arch: x86_64
+            packages:
+              # pypdfium2 does not have arm64 builds
+              - *pypdfium2
+          - matrix:
+              arch: aarch64
+
 
   model-training-tuning:
     common:
