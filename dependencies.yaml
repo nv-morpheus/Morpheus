@@ -21,7 +21,7 @@ files:
     output: conda
     matrix:
       cuda: ["12.5"]
-      arch: [x86_64]
+      arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
       - build_cpp_build
@@ -47,7 +47,7 @@ files:
     output: conda
     matrix:
       cuda: ["12.5"]
-      arch: [x86_64]
+      arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
       - build_cpp_build
@@ -69,7 +69,7 @@ files:
     output: none
     matrix:
       cuda: ["12.5"]
-      arch: [x86_64]
+      arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
       - build_cpp_build
@@ -89,7 +89,7 @@ files:
     output: none
     matrix:
       cuda: ["12.5"]
-      arch: [x86_64]
+      arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
       - cudatoolkit
@@ -133,7 +133,7 @@ files:
     output: conda
     matrix:
       cuda: ["12.5"]
-      arch: [x86_64]
+      arch: [x86_64, aarch64]
     includes:
       - cudatoolkit
       - cve-mitigation
@@ -147,7 +147,7 @@ files:
     output: conda
     matrix:
       cuda: ["12.5"]
-      arch: [x86_64]
+      arch: [x86_64, aarch64]
     includes:
       - cve-mitigation
       - example-abp-nvsmi
@@ -203,7 +203,7 @@ files:
     output: conda
     matrix:
       cuda: ["12.5"]
-      arch: [x86_64]
+      arch: [x86_64, aarch64]
     output: conda
     conda_dir: examples/digital_fingerprinting/production/conda/environments
     includes:
@@ -324,7 +324,6 @@ dependencies:
         packages:
           - clangdev=16
           - flake8
-          - include-what-you-use=0.20
           - isort
           - pylint=3.0.3
           - pynvml=11.4
@@ -333,6 +332,16 @@ dependencies:
           - vale-styles-write-good
           - versioneer
           - yapf=0.40.1
+    specific:
+      - output_types: [conda]
+        matrices:
+          - matrix:
+              arch: x86_64
+            packages:
+              # IWYU v0.20 doesn't support aarch64, but is supported in 0.21+
+              - include-what-you-use=0.20
+          - matrix:
+              arch: aarch64
 
   docs:
     common:
