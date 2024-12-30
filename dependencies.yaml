@@ -410,9 +410,19 @@ dependencies:
             - --extra-index-url https://download.pytorch.org/whl/cu124
             - databricks-cli < 0.100
             - databricks-connect
-            - milvus==2.3.5 # update to match pymilvus when available
-            - pymilvus==2.3.6
             - torch==2.4.0+cu124
+    specific:
+      - output_types: [conda]
+        matrices:
+          - matrix:
+              arch: x86_64
+            packages:
+              - pip:
+                # Milvus does not have arm64 builds for linux
+                - &milvus milvus==2.3.5 # update to match pymilvus when available
+                - &pymilvus pymilvus==2.3.6
+          - matrix:
+              arch: aarch64
 
   test_python_morpheus:
     common:
@@ -454,10 +464,10 @@ dependencies:
            - &langchain langchain==0.1.16
            - &langchain-nvidia-ai-endpoints langchain-nvidia-ai-endpoints==0.0.11
            - &langchain-openai langchain-openai==0.1.3
-           - milvus==2.3.5 # update to match pymilvus when available
-           - &openai openai==1.13.*
-           - pymilvus==2.3.6
+           - *milvus
            - &nemollm nemollm==0.3.5
+           - &openai openai==1.13.*
+           - *pymilvus
 
   example-dfp-prod:
     common:
