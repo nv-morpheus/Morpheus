@@ -78,5 +78,5 @@ dependencies:
   - nemollm==0.3.5
   - python-logging-loki
   - sentence-transformers==2.7
-  - torch==2.4.0+cu124
+  - torch==2.4.0
 name: examples_cuda-125_arch-aarch64

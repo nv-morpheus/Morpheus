@@ -410,7 +410,6 @@ dependencies:
             - --extra-index-url https://download.pytorch.org/whl/cu124
             - databricks-cli < 0.100
             - databricks-connect
-            - torch==2.4.0+cu124
     specific:
       - output_types: [conda]
         matrices:
@@ -421,8 +420,12 @@ dependencies:
                 # Milvus does not have arm64 builds for linux
                 - &milvus milvus==2.3.5 # update to match pymilvus when available
                 - &pymilvus pymilvus==2.3.6
+                - torch==2.4.0+cu124
           - matrix:
               arch: aarch64
+            packages:
+              - pip:
+                - torch==2.4.0
 
   test_python_morpheus:
     common:

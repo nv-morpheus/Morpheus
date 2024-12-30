@@ -50,5 +50,5 @@ dependencies:
   - --extra-index-url https://download.pytorch.org/whl/cu124
   - databricks-cli < 0.100
   - databricks-connect
-  - torch==2.4.0+cu124
+  - torch==2.4.0
 name: runtime_cuda-125_arch-aarch64

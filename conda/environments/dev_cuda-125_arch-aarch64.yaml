@@ -106,5 +106,5 @@ dependencies:
   - databricks-cli < 0.100
   - databricks-connect
   - pytest-kafka==0.6.0
-  - torch==2.4.0+cu124
+  - torch==2.4.0
 name: dev_cuda-125_arch-aarch64

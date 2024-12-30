@@ -138,5 +138,5 @@ dependencies:
   - pytest-kafka==0.6.0
   - python-logging-loki
   - sentence-transformers==2.7
-  - torch==2.4.0+cu124
+  - torch==2.4.0
 name: all_cuda-125_arch-aarch64
