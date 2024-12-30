@@ -21,7 +21,7 @@ source ${WORKSPACE}/ci/scripts/github/morpheus_env.sh
 source ${WORKSPACE}/ci/scripts/github/cmake_all.sh
 /usr/bin/nvidia-smi
 
-update_conda_env "${WORKSPACE}/conda/environments/all_cuda-125_arch-x86_64.yaml"
+update_conda_env "${WORKSPACE}/conda/environments/all_cuda-125_arch-${REAL_ARCH}.yaml"
 
 log_toolchain
 
@@ -101,10 +101,10 @@ popd
 
 rapids-logger "Archiving test reports"
 cd $(dirname ${REPORTS_DIR})
-tar cfj ${WORKSPACE_TMP}/test_reports.tar.bz $(basename ${REPORTS_DIR})
+tar cfj ${WORKSPACE_TMP}/test_reports-${REAL_ARCH}.tar.bz $(basename ${REPORTS_DIR})
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 set_job_summary_preamble
-upload_artifact ${WORKSPACE_TMP}/test_reports.tar.bz
+upload_artifact ${WORKSPACE_TMP}/test_reports-${REAL_ARCH}.tar.bz
 
 exit ${TEST_RESULTS}

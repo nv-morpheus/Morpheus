@@ -57,9 +57,9 @@ if [[ " ${CI_SCRIPT_ARGS} " =~ " upload " ]]; then
    rapids-logger "Building Morpheus Libraries... Done"
 else
    # if we didn't receive the upload argument, we can still upload the artifact to S3
-   tar cfj "${WORKSPACE_TMP}/conda_libs.tar.bz" "${RAPIDS_CONDA_BLD_OUTPUT_DIR}"
+   tar cfj "${WORKSPACE_TMP}/conda_libs-${REAL_ARCH}.tar.bz" "${RAPIDS_CONDA_BLD_OUTPUT_DIR}"
    ls -lh ${WORKSPACE_TMP}/
 
    rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}/"
-   upload_artifact "${WORKSPACE_TMP}/conda_libs.tar.bz"
+   upload_artifact "${WORKSPACE_TMP}/conda_libs-${REAL_ARCH}.tar.bz"
 fi

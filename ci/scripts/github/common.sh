@@ -32,6 +32,7 @@ cd ${MORPHEUS_ROOT}
 # will be defined specifying the subset we are allowed to use.
 NUM_CORES=$(nproc)
 export PARALLEL_LEVEL=${PARALLEL_LEVEL:-${NUM_CORES}}
+export REAL_ARCH=${REAL_ARCH:-$(arch)}
 rapids-logger "Procs: ${NUM_CORES}"
 /usr/bin/lscpu
 
