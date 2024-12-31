@@ -24,6 +24,7 @@ ARG PROJ_NAME=morpheus
 ARG PYTHON_VER=3.10
 ARG REAL_ARCH=x86_64
 
+
 # Configure the base docker img
 FROM --platform=$TARGETPLATFORM ${FROM_IMAGE}:cuda${CUDA_VER}-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
 
@@ -67,7 +68,7 @@ RUN apt update && \
         libtool \
         automake && \
     apt clean && \
-    /tmp/doca/doca.sh /tmp/doca && \
+    PKG_ARCH=${TARGETARCH} /tmp/doca/doca.sh /tmp/doca && \
     rm -rf /tmp/doca
 
 # ============ test ==================
