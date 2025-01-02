@@ -61,7 +61,7 @@ def pymilvus_fixture(pymilvus: types.ModuleType):
     """
     Fixture to ensure pymilvus is installed
     """
-    yield pymilvus
+    yield pymilvus  # pylint: disable=redefined-outer-name
 
 
 @pytest.mark.milvus
