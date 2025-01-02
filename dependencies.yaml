@@ -524,7 +524,6 @@ dependencies:
           - httpx>=0.23,<0.28 # work-around for https://github.com/openai/openai-python/issues/1915
           - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
           - jsonpatch>=1.33
-          - newspaper3k=0.2
           - numexpr
           - onnx=1.15
           - *openai
@@ -546,6 +545,8 @@ dependencies:
           - matrix:
               arch: x86_64
             packages:
+              # newspaper3k is packaged noarch, but some deps jieba3k are not having issues resolving on arm64
+              - newspaper3k=0.2
               # pypdfium2 does not have arm64 builds
               - *pypdfium2
           - matrix:
