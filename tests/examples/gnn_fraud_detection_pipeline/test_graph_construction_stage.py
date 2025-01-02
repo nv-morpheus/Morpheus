@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import platform
 import types
 from io import StringIO
 
@@ -29,7 +28,7 @@ from morpheus.messages import MessageMeta
 # pylint: disable=no-name-in-module
 
 
-@pytest.mark.skipif(platform.machine() in ('aarch64', 'sbsa'), reason="Need CUDA enabled torch installation")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="Need CUDA enabled torch installation")
 @pytest.mark.gpu_mode
 class TestGraphConstructionStage:
 

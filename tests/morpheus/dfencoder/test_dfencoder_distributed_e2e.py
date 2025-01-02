@@ -106,6 +106,7 @@ def cleanup_dist():
     torch.distributed.destroy_process_group()
 
 
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="Need CUDA enabled torch installation")
 @pytest.mark.slow
 def test_dfencoder_distributed_e2e():
     world_size = 1
