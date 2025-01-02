@@ -22,6 +22,7 @@
 #include "morpheus_llm/llm/llm_node.hpp"
 #include "morpheus_llm/llm/llm_node_base.hpp"
 
+#include <glog/logging.h>
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
