@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -1161,6 +1161,14 @@ def numexpr_fixture(fail_missing: bool):
     Fixture to ensure numexpr is installed
     """
     yield import_or_skip("numexpr", reason=OPT_DEP_SKIP_REASON.format(package="numexpr"), fail_missing=fail_missing)
+
+
+@pytest.fixture(name="pymilvus", scope='session')
+def pymilvus_fixture(fail_missing: bool):
+    """
+    Fixture to ensure milvus is installed
+    """
+    yield import_or_skip("pymilvus", reason=OPT_DEP_SKIP_REASON.format(package="pymilvus"), fail_missing=fail_missing)
 
 
 @pytest.mark.usefixtures("openai")
