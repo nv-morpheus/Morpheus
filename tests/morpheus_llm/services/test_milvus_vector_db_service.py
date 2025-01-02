@@ -57,11 +57,11 @@ except ImportError:
 
 
 @pytest.fixture(name="pymilvus", scope='session', autouse=True)
-def pymilvus_fixture(pymilvus: types.ModuleType):
+def pymilvus_fixture(pymilvus: types.ModuleType):  # pylint: disable=redefined-outer-name
     """
     Fixture to ensure pymilvus is installed
     """
-    yield pymilvus  # pylint: disable=redefined-outer-name
+    yield pymilvus
 
 
 @pytest.mark.milvus
