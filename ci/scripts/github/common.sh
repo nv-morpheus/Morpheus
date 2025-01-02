@@ -144,8 +144,8 @@ function show_conda_info() {
 function log_toolchain() {
     rapids-logger "Check versions"
     python3 --version
-    x86_64-conda-linux-gnu-cc --version
-    x86_64-conda-linux-gnu-c++ --version
+    ${REAL_ARCH}-conda-linux-gnu-cc --version
+    ${REAL_ARCH}-conda-linux-gnu-c++ --version
     cmake --version
     ninja --version
     sccache --version
