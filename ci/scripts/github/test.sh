@@ -87,11 +87,19 @@ done
 rapids-logger "Running Python tests"
 set +e
 
-python -I -m pytest --run_slow --run_kafka --run_milvus --fail_missing \
-       --junit-xml=${REPORTS_DIR}/report_pytest.xml \
-       --cov=morpheus \
-       --cov-report term-missing \
-       --cov-report=xml:${REPORTS_DIR}/report_pytest_coverage.xml
+PYTEST_FLAGS=()
+PYTEST_FLAGS+=("--run_slow")
+PYTEST_FLAGS+=("--run_kafka")
+if [[ "${REAL_ARCH}" == "x86_64" ]]; then
+    PYTEST_FLAGS+=("--run_milvus")
+    PYTEST_FLAGS+=("--fail_missing")
+fi
+PYTEST_FLAGS+=("--junit-xml=${REPORTS_DIR}/report_pytest.xml")
+PYTEST_FLAGS+=("--cov=morpheus")
+PYTEST_FLAGS+=("--cov-report term-missing")
+PYTEST_FLAGS+=("--cov-report=xml:${REPORTS_DIR}/report_pytest_coverage.xml")
+
+python -I -m pytest ${PYTEST_FLAGS[@]}
 
 PYTEST_RESULTS=$?
 TEST_RESULTS=$(($TEST_RESULTS+$PYTEST_RESULTS))
