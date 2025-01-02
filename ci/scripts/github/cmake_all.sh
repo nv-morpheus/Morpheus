@@ -34,6 +34,10 @@ fi
 export CMAKE_BUILD_ALL_FEATURES="${_FLAGS[@]}"
 unset _FLAGS
 
-if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
+if [[ ${REAL_ARCH} == "aarch64" ]]; then
+    export MORPHEUS_SUPPORT_DOCA=OFF
+fi
+
+if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) && ${REAL_ARCH} == "x86_64" ]]; then
     export CMAKE_BUILD_ALL_FEATURES="${CMAKE_BUILD_ALL_FEATURES} -DMORPHEUS_SUPPORT_DOCA=ON"
 fi
