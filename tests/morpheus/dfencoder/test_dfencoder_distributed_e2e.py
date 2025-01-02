@@ -24,6 +24,7 @@ import os
 
 import numpy as np
 import pytest
+import torch
 
 from _utils import TEST_DIRS
 from morpheus.models.dfencoder.autoencoder import AutoEncoder
