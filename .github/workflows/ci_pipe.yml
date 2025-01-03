@@ -223,7 +223,7 @@ jobs:
       image: ${{ inputs.base_container }}
       options: --cap-add=sys_nice
       env:
-        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
+        NVIDIA_VISIBLE_DEVICES: ${{ matrix.visible_devices }}
         PARALLEL_LEVEL: '10'
     strategy:
       fail-fast: true
@@ -232,8 +232,10 @@ jobs:
         include:
           - runner: linux-amd64-gpu-v100-latest-1
             arch: "amd64"
-          - runner: linux-arm64-gpu-a100-latest-1
+            visible_devices: ${{ env.NVIDIA_VISIBLE_DEVICES }}
+          - runner: linux-arm64-cpu16
             arch: "arm64"
+            visible_devices: ""
 
     steps:
       - name: Checkout
