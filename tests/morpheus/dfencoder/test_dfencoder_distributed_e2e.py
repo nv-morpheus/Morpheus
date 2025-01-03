@@ -24,15 +24,12 @@ import os
 
 import numpy as np
 import pytest
-import torch
 
 from _utils import TEST_DIRS
 from morpheus.models.dfencoder.autoencoder import AutoEncoder
 from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
 from morpheus.models.dfencoder.dataloader import FileSystemDataset
 from morpheus.models.dfencoder.multiprocessing import start_processes
-
-# import torch
 
 FEATURE_COLUMNS = [
     "app_name",
@@ -107,7 +104,6 @@ def cleanup_dist():
     torch.distributed.destroy_process_group()
 
 
-@pytest.mark.skipif(not torch.cuda.is_available(), reason="Need CUDA enabled torch installation")
 @pytest.mark.slow
 def test_dfencoder_distributed_e2e():
     world_size = 1
@@ -122,6 +118,10 @@ def _run_test(rank, world_size):
     seed_utils.manual_seed(42)
 
     import torch
+
+    if not torch.cuda.is_available():
+        pytest.skip("Need CUDA enabled torch installation")
+
     torch.cuda.set_device(rank)
 
     setup_dist(rank, world_size)
