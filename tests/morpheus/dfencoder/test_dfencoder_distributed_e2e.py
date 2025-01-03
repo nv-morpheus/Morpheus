@@ -108,6 +108,11 @@ def cleanup_dist():
 def test_dfencoder_distributed_e2e():
     world_size = 1
 
+    import torch
+
+    if not torch.cuda.is_available():
+        pytest.skip("Need CUDA enabled torch installation")
+
     start_processes(_run_test, args=(world_size, ), nprocs=world_size, join=True)
 
     # torch.multiprocessing.spawn(_run_test, args=(world_size, ), nprocs=world_size, join=True)
@@ -118,10 +123,6 @@ def _run_test(rank, world_size):
     seed_utils.manual_seed(42)
 
     import torch
-
-    if not torch.cuda.is_available():
-        pytest.skip("Need CUDA enabled torch installation")
-
     torch.cuda.set_device(rank)
 
     setup_dist(rank, world_size)
