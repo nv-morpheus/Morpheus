@@ -510,7 +510,19 @@ dependencies:
           - tini=0.19
           - pip:
             - *torch-extra-index
-            - *torchcu
+    specific:
+      - output_types: [conda]
+        matrices:
+          - matrix:
+              arch: x86_64
+            packages:
+              - pip:
+                - *torchcu
+          - matrix:
+              arch: aarch64
+            packages:
+              - pip:
+                - *torch
 
   example-gnn:
     common:
