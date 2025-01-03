@@ -180,6 +180,8 @@ files:
   morpheus_core:
     output: requirements
     requirements_dir: python/morpheus/morpheus
+    matrix:
+      arch: [x86_64, aarch64]
     includes:
       - morpheus_core_pip
 
@@ -187,6 +189,8 @@ files:
   morpheus_dfp:
     output: requirements
     requirements_dir: python/morpheus_dfp/morpheus_dfp
+    matrix:
+      arch: [x86_64, aarch64]
     includes:
       - morpheus_core_pip
 
@@ -194,6 +198,8 @@ files:
   morpheus_llm:
     output: requirements
     requirements_dir: python/morpheus_llm/morpheus_llm
+    matrix:
+      arch: [x86_64, aarch64]
     includes:
       - morpheus_core_pip
       - morpheus_llm_pip
@@ -407,7 +413,7 @@ dependencies:
           - websockets
           - pip
           - pip:
-            - --extra-index-url https://download.pytorch.org/whl/cu124
+            - &torch-extra-index --extra-index-url https://download.pytorch.org/whl/cu124
             - databricks-cli < 0.100
             - databricks-connect
     specific:
@@ -420,12 +426,12 @@ dependencies:
                 # Milvus does not have arm64 builds for linux
                 - &milvus milvus==2.3.5 # update to match pymilvus when available
                 - &pymilvus pymilvus==2.3.6
-                - torch==2.4.0+cu124
+                - &torchcu torch==2.4.0+cu124
           - matrix:
               arch: aarch64
             packages:
               - pip:
-                - torch==2.4.0
+                - &torch torch==2.4.0
 
   test_python_morpheus:
     common:
@@ -455,8 +461,18 @@ dependencies:
     common:
       - output_types: [requirements]
         packages:
-           - --extra-index-url https://download.pytorch.org/whl/cu124
-           - torch==2.4.0+cu124
+           - *torch-extra-index
+    specific:
+      - output_types: [requirements]
+        matrices:
+          - matrix:
+              arch: x86_64
+            packages:
+              - *torchcu
+          - matrix:
+              arch: aarch64
+            packages:
+              - *torch
 
   morpheus_llm_pip:
     common:
@@ -493,8 +509,8 @@ dependencies:
           - morpheus-dfp=24.10
           - tini=0.19
           - pip:
-            - --extra-index-url https://download.pytorch.org/whl/cu124
-            - torch==2.4.0+cu124
+            - *torch-extra-index
+            - *torchcu
 
   example-gnn:
     common:
