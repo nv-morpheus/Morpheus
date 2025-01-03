@@ -82,7 +82,7 @@ def test_dfp_namespace_update(tmp_path):
         assert False, "old dfp imports are not updated to the new namespace"
 
 
-def test_llm_namespace_update(tmp_path, pymilvus: types.ModuleType):
+def test_llm_namespace_update(tmp_path, pymilvus: types.ModuleType):  # pylint: disable=unused-argument
     '''
     Update the LLM namespace imports and verify the imports work.
     '''
