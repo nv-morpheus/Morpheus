@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ import io
 import logging
 import logging.handlers
 import os
+import platform
 import re
 import time
 from unittest.mock import patch
@@ -130,6 +131,8 @@ def test_configure_logging_from_file_filenotfound():
         configure_logging(log_config_file="does_not_exist.json")
 
 
+@pytest.mark.skipif(platform.machine() == 'aarch64',
+                    reason="Appears to be caused by https://github.com/python/cpython/issues/101094")
 def test_configure_logging_custom_handlers():
     # Create a string stream for the handler
     string_stream_1 = io.StringIO()
