@@ -105,6 +105,7 @@ dependencies:
   - --extra-index-url https://download.pytorch.org/whl/cu124
   - databricks-cli < 0.100
   - databricks-connect
+  - pypdfium2==4.30
   - pytest-kafka==0.6.0
   - torch==2.4.0
 name: dev_cuda-125_arch-aarch64

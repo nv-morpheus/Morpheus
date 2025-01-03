@@ -73,7 +73,7 @@ dependencies:
 - myst-parser=0.18.1
 - nbsphinx
 - networkx=2.8.8
-- newspaper3k=0.2
+- newspaper3k==0.2
 - ninja=1.11
 - nlohmann_json=3.11
 - nodejs=18.*
@@ -92,7 +92,7 @@ dependencies:
 - pylint=3.0.3
 - pynvml=11.4
 - pypdf=3.17.4
-- pypdfium2=4.30
+- pypdfium2==4.30
 - pytest-asyncio
 - pytest-benchmark=4.0
 - pytest-cov

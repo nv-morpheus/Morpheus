@@ -33,7 +33,7 @@ dependencies:
 - mlflow>=2.10.0,<2.18
 - mrc=25.02
 - networkx=2.8.8
-- newspaper3k=0.2
+- newspaper3k==0.2
 - nodejs=18.*
 - numexpr
 - numpydoc=1.5
@@ -45,7 +45,7 @@ dependencies:
 - pydantic
 - pynvml=11.4
 - pypdf=3.17.4
-- pypdfium2=4.30
+- pypdfium2==4.30
 - python-confluent-kafka>=1.9.2,<1.10.0a0
 - python-docx==1.1.0
 - python-graphviz

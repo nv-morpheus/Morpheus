@@ -452,10 +452,13 @@ dependencies:
           - matrix:
               arch: x86_64
             packages:
-              # pypdfium2 does not have arm64 builds
-              - &pypdfium2 pypdfium2=4.30
+              # pypdfium2 does not have Conda arm64 builds, but does have pip arm64 builds
+              - &pypdfium2 pypdfium2==4.30
           - matrix:
               arch: aarch64
+            packages:
+              - pip:
+                - *pypdfium2
 
   morpheus_core_pip:
     common:
@@ -574,11 +577,14 @@ dependencies:
               arch: x86_64
             packages:
               # newspaper3k is packaged noarch, but some deps jieba3k are not having issues resolving on arm64
-              - newspaper3k=0.2
-              # pypdfium2 does not have arm64 builds
+              - &newspaper3k newspaper3k==0.2
               - *pypdfium2
           - matrix:
               arch: aarch64
+            packages:
+              - pip:
+                - *newspaper3k
+                - *pypdfium2
 
 
   model-training-tuning:
