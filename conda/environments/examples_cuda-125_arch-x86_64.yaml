@@ -33,7 +33,7 @@ dependencies:
 - mlflow>=2.10.0,<2.18
 - mrc=25.02
 - networkx=2.8.8
-- newspaper3k==0.2
+- newspaper3k==0.2.8
 - nodejs=18.*
 - numexpr
 - numpydoc=1.5

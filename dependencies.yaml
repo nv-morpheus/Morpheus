@@ -577,7 +577,7 @@ dependencies:
               arch: x86_64
             packages:
               # newspaper3k is packaged noarch, but some deps jieba3k are not having issues resolving on arm64
-              - &newspaper3k newspaper3k==0.2
+              - &newspaper3k newspaper3k==0.2.8
               - *pypdfium2
           - matrix:
               arch: aarch64
