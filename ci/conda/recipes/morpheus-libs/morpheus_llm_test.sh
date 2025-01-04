@@ -23,7 +23,7 @@ fi
 python3 <<EOF
 import importlib.resources
 import subprocess
-requirements_file = importlib.resources.path("morpheus_llm", "requirements_morpheus_llm-$(arch).txt")
+requirements_file = importlib.resources.path("morpheus_llm", "requirements_morpheus_llm_arch-$(arch).txt")
 subprocess.call(f"pip install -r {requirements_file}".split())
 EOF
 

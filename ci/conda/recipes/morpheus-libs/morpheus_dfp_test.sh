@@ -22,7 +22,7 @@ fi
 python3 <<EOF
 import importlib.resources
 import subprocess
-requirements_file = importlib.resources.path("morpheus_dfp", "requirements_morpheus_dfp-$(arch).txt")
+requirements_file = importlib.resources.path("morpheus_dfp", "requirements_morpheus_dfp_arch-$(arch).txt")
 subprocess.call(f"pip install -r {requirements_file}".split())
 EOF
 
