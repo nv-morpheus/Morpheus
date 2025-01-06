@@ -8,7 +8,6 @@ from cudf.core.dtypes import StructDtype
 import _cython_3_0_11
 import cudf
 import itertools
-import pylibcudf
 import rmm
 
 __all__ = [
@@ -20,7 +19,6 @@ __all__ = [
     "bitmask_allocation_size_bytes",
     "cudf",
     "itertools",
-    "plc",
     "rmm"
 ]
 

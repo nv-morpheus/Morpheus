@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,8 +40,8 @@ cimport pylibcudf.libcudf.copying as cpp_copying
 from pylibcudf.libcudf.column.column_view cimport column_view
 from libcpp.memory cimport make_unique, unique_ptr
 from pylibcudf.libcudf.scalar.scalar cimport scalar
-from pylibcudf cimport Table as plc_Table, Scalar as plc_Scalar
-import pylibcudf as plc
+from pylibcudf cimport Table as plc_Table
+from cudf._lib.scalar cimport DeviceScalar
 
 # imports needed for from_column_view_with_fix
 import rmm
@@ -72,9 +72,9 @@ cdef get_element(column_view col_view, size_type index):
             cpp_copying.get_element(col_view, index)
         )
 
-    plc_scalar = plc_Scalar.from_libcudf(move(c_output))
-    return plc.interop.to_arrow(plc_scalar).to_py()
-
+    return DeviceScalar.from_unique_ptr(
+        move(c_output), dtype=dtype_from_column_view(col_view)
+    )
 
 cdef Column from_column_view_with_fix(column_view cv, object owner):
     """
@@ -119,7 +119,7 @@ cdef Column from_column_view_with_fix(column_view cv, object owner):
                 base_nbytes = 0
             else:
                 chars_size = get_element(
-                    offset_child_column, offset_child_column.size()-1)
+                    offset_child_column, offset_child_column.size()-1).value
                 base_nbytes = chars_size
 
     if data_ptr:
