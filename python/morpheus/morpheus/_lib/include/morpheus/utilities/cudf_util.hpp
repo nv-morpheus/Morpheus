@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "morpheus/export.h"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/table_info_data.hpp"
 
@@ -38,7 +37,7 @@ namespace morpheus {
  * the actual generated cython calls. The cython implementation in 'cudf_helpers_api.h' can only appear in the
  * translation unit for the pybind module declaration. These functions should be considered de
  */
-struct MORPHEUS_EXPORT CudfHelper
+struct CudfHelper
 {
   public:
     static void load();
