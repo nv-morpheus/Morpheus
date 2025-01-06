@@ -73,7 +73,7 @@ cdef get_element(column_view col_view, size_type index):
         )
 
     plc_scalar = plc_Scalar.from_libcudf(move(c_output))
-    return plc.interop.to_arrow(plc_scalar).to_py()
+    return plc.interop.to_arrow(plc_scalar).as_py()
 
 
 cdef Column from_column_view_with_fix(column_view cv, object owner):
