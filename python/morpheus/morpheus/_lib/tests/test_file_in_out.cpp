@@ -19,7 +19,9 @@
 
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/io/serializers.hpp"
+#include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
 
 #include <boost/algorithm/string.hpp>
 #include <gtest/gtest.h>
@@ -107,4 +109,24 @@ TEST_F(TestFileInOut, RoundTripJSONLines)
 
         EXPECT_EQ(output_data, src_data);
     }
+}
+
+TEST_F(TestFileInOut, CoreDumpOnGetInfo)
+{
+    auto input_file = test::get_morpheus_root() / "examples/data/log-parsing-validation-data-input.csv";
+    auto py_df      = read_file_to_df(input_file);
+    auto meta       = MessageMeta::create_from_python(std::move(py_df));
+
+    auto sliced_meta = SlicedMessageMeta(meta, 0, 1024);
+
+    pybind11::gil_scoped_release no_gil;
+    auto sliced_info = sliced_meta.get_info();
+
+    // This unforuntately requires grabbing the GIL and is a work-around for issue #2018
+    auto new_meta = MessageMeta::create_from_python(CudfHelper::table_from_table_info(sliced_info));
+
+    auto cm = std::make_shared<ControlMessage>();
+    cm->payload(new_meta);
+
+    auto table_info = cm->payload()->get_info("raw");
 }
