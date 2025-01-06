@@ -87,6 +87,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         self._collection =  GPUdbTable(name=self._name, db=client)
         self._record_type = self._collection.get_table_type()
         self._fields: list[GPUdbRecordColumn] = self._record_type.columns
+        self._description = self.describe()
 
         self._vector_field = None
         self._fillna_fields_dict = {}
@@ -172,15 +173,27 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         """
         table1 = GPUdbTable(db=self._client, name=self._name)
         record_type: GPUdbRecordType = table1.get_table_type()
-        print(type(record_type))
 
         col: GPUdbRecordColumn = None
         description: dict[str, object] = {}
 
         for col in record_type.columns:
-            description[col.name] = (col.column_type, col.is_nullable, col.is_vector(), col.column_properties)
+            description[col.name] = (
+                col.column_type,
+                col.is_nullable,
+                col.is_vector(),
+                col.column_properties,
+                "primary_key" if "primary_key" in col.column_properties else ""
+            )
 
         return description
+
+    def _get_pk_field_name(self):
+        for field_name, properties in self._description.items():
+            if properties[4] == "primary_key":
+                return field_name
+
+        return ""
 
     def query(self, query: str, **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
@@ -397,18 +410,30 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         Parameters
         ----------
         data : list[typing.Any]
-            Data to be updated in the Kinetica table.
+            Data to be updated in the Kinetica table. This is npt used by Kinetica. The required parameters
+            are all passed in a keyword arguments.
         **kwargs : dict[str, typing.Any]
-            Extra keyword arguments specific to upsert operation.
+            Extra keyword arguments specific to Kinetica. The full explanation of each of these
+            keyword arguments is available in the documentation of the API `/update/records`.
+
+            Allowed keyword arguments:
+                options: dict[str, str] - options
+
+                expressions: [list] - expression used to filter records for update
+
+                new_value_maps: [list[dict]] | [dict] -
+
+                records_to_insert: list[] -
+
+                records_to_insert_str: list[] -
+
+
 
         Returns
         -------
         dict[str, typing.Any]
             Returns result of the updated operation stats.
         """
-
-        if not isinstance(data, list):
-            raise RuntimeError("Data is not of type list.")
 
         options = kwargs.get( "options", None )
         if options is not None: # if given, remove from kwargs
@@ -418,12 +443,16 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
         expressions = kwargs.get( "expressions", [] )
         if expressions is not None: # if given, remove from kwargs
+            if not isinstance(expressions, list):
+                raise GPUdbException("'expressions' must be of type 'list' ...")
             kwargs.pop( "expressions" )
         else: # no option given; use an empty dict
-            raise GPUdbException("Update expression must be given ...")
+            raise GPUdbException("Update 'expressions' must be given ...")
 
         new_values_maps = kwargs.get( "new_values_maps", None )
         if new_values_maps is not None: # if given, remove from kwargs
+            if not isinstance(new_values_maps, (list, dict)):
+                raise GPUdbException("'new_value_maps' should either be a 'list of dicts' or a dict ...")
             kwargs.pop( "new_values_maps" )
         else: # no option given; use an empty dict
             raise GPUdbException("'new_values_maps' must be given ...")
@@ -498,12 +527,30 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         result = None
         expression = kwargs.get("expression", "")
         options = kwargs.get("options", {})
+        if keys is None or keys <= 0 or (isinstance(keys, (str, list)) and len(keys) <= 0):
+            raise GPUdbException("'keys' must be specified as either an 'int' or 'str' or 'list' ...")
+
+        if expression == "":
+            # expression not specified; keys must be values of PK in the Kinetica table.
+            pk_field_name = self._get_pk_field_name()
+            if pk_field_name == "":
+                raise GPUdbException("No 'expression' given and no 'PK field' found cannot retrieve records ...")
+
+            if isinstance(keys, str):
+                expression = [f"{pk_field_name} = '{keys}'"]
+            elif isinstance(keys, int):
+                expression = [f"{pk_field_name} = {keys}"]
+            elif isinstance(keys, list):
+                # keys is a list
+                expression = [f"{pk_field_name} in ({','.join(keys)})"]
+            else:
+                raise GPUdbException("'keys' must be of type (int or str or list) ...")
         try:
             result = self._collection.get_records_by_key(keys, expression, options)
         except GPUdbException as exec_info:
             raise RuntimeError(f"Unable to perform search: {exec_info}") from exec_info
 
-        return result["records"]
+        return result["records"] if result is not None and 'records' in result else []
 
     def count(self, **kwargs: dict[str, typing.Any]) -> int:
         """
@@ -512,7 +559,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         Parameters
         ----------
         **kwargs :  dict[str, typing.Any]
-            Additional keyword arguments for the count operation.
+            Not used.
 
         Returns
         -------
@@ -523,14 +570,14 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
     def drop(self, **kwargs: dict[str, typing.Any]) -> None:
         """
-        Drop a Kinetica table, index, or partition in the Kinetica vector database.
+        Drop a Kinetica table.
 
         This function allows you to drop a Kinetica table.
 
         Parameters
         ----------
         **kwargs : dict
-            Additional keyword arguments for specifying the type and partition name (if applicable).
+            Not used.
         """
 
         self._client.clear_table(self._collection_name)
@@ -893,7 +940,7 @@ class KineticaVectorDBService(VectorDBService):
         logger.debug("Dropping Kinetica table: %s, kwargs=%s", name, kwargs)
 
         if self.has_store_object(name):
-            schema = kwargs.get("schema", "ki_home")
+            # schema = kwargs.get("schema", "ki_home")
             try:
                 self._client.clear_table(name)
             except GPUdbException as e:
