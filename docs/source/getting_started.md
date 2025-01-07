@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -376,35 +376,6 @@ Commands:
   validate        Validate pipeline output for testing.
 ```
 
-And for the AE pipeline:
-
-```
-$ morpheus run pipeline-ae --help
-Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
-
-<Help Paragraph Omitted>
-
-Commands:
-  add-class        Add detected classifications to each message.
-  add-scores       Add probability scores to each message.
-  buffer           (Deprecated) Buffer results.
-  delay            (Deprecated) Delay results for a certain duration.
-  filter           Filter message by a classification threshold.
-  from-azure       Source stage is used to load Azure Active Directory messages.
-  from-cloudtrail  Load messages from a CloudTrail directory.
-  from-duo         Source stage is used to load Duo Authentication messages.
-  inf-pytorch      Perform inference with PyTorch.
-  inf-triton       Perform inference with Triton Inference Server.
-  monitor          Display throughput numbers at a specific point in the pipeline.
-  preprocess       Prepare Autoencoder input DataFrames for inference.
-  serialize        Includes & excludes columns from messages.
-  timeseries       Perform time series anomaly detection and add prediction.
-  to-file          Write all messages to a file.
-  to-kafka         Write all messages to a Kafka cluster.
-  train-ae         Train an Autoencoder model on incoming data.
-  trigger          Buffer data until the previous stage has completed.
-  validate         Validate pipeline output for testing.
-```
 > **Note**: The available commands for different types of pipelines are not the same. This means that the same stage may have different options when used in different pipelines. Check the CLI help for the most up-to-date information during development.
 
 ## Next Steps

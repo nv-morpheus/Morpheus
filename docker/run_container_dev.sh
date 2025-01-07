@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,4 +22,4 @@ export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"dev-$(date +'%y%m%d')"}
 export DOCKER_ARGS="-v $PWD:/workspace -v /dev/hugepages:/dev/hugepages --privileged"
 
 # Call the general run script
-${SCRIPT_DIR}/run_container.sh
+${SCRIPT_DIR}/run_container.sh "${@:-bash}"

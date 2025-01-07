@@ -1,5 +1,5 @@
 <!--
-# Copyright (c) 2021-2024, NVIDIA CORPORATION.
+# Copyright (c) 2021-2025, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -119,6 +119,6 @@ morpheus --log_level INFO \
 	monitor --description "Inference rate" --unit inf \
 	log-postprocess --vocab_path ./models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
 		--model_config_path=./models/log-parsing-models/log-parsing-config-20220418.json \
-	to-file --filename ./log-parsing-output.jsonlines --overwrite  \
+	to-file --filename .tmp/output/log-parsing-cli-output.jsonlines --overwrite  \
 	monitor --description "Postprocessing rate"
 ```

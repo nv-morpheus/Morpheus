@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+
+# Morpheus 24.10.01 (22 Nov 2024)
+
+## 🐛 Bug Fixes
+
+- Pin mlflow version to avoid breaking changes in v2.18 ([#2067](https://github.com/nv-morpheus/Morpheus/pull/2067)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Execute CI on the main branch ([#2064](https://github.com/nv-morpheus/Morpheus/pull/2064)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 📖 Documentation
+
+- Remove references to pipeline-ae in docs ([#2063](https://github.com/nv-morpheus/Morpheus/pull/2063)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Document location of third party source repository ([#2059](https://github.com/nv-morpheus/Morpheus/pull/2059)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update DFP class and file paths ([#2052](https://github.com/nv-morpheus/Morpheus/pull/2052)) [@dagardner-nv](https://github.com/dagardner-nv)
 
 # Morpheus 24.10.00 (01 Nov 2024)
 
