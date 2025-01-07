@@ -332,7 +332,7 @@ dependencies:
           - vale-styles-microsoft
           - vale-styles-write-good
           - versioneer
-          - yapf=0.40.1
+          - yapf=0.43
 
   docs:
     common:
