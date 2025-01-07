@@ -105,7 +105,7 @@ dependencies:
 - versioneer-518
 - watchdog=3.0
 - websockets
-- yapf=0.40.1
+- yapf=0.43
 - pip:
   - --extra-index-url https://download.pytorch.org/whl/cu124
   - databricks-cli < 0.100

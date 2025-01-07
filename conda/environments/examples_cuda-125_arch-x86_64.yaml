@@ -38,7 +38,7 @@ dependencies:
 - numexpr
 - numpydoc=1.5
 - onnx=1.15
-- openai=1.13
+- openai==1.13.*
 - papermill=2.4.0
 - pip
 - pluggy=1.3

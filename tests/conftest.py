@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -1125,6 +1125,16 @@ def langchain_community_fixture(fail_missing: bool):
                          fail_missing=fail_missing)
 
 
+@pytest.fixture(name="langchain_openai", scope='session')
+def langchain_openai_fixture(fail_missing: bool):
+    """
+    Fixture to ensure langchain_openai is installed
+    """
+    yield import_or_skip("langchain_openai",
+                         reason=OPT_DEP_SKIP_REASON.format(package="langchain_openai"),
+                         fail_missing=fail_missing)
+
+
 @pytest.fixture(name="langchain_nvidia_ai_endpoints", scope='session')
 def langchain_nvidia_ai_endpoints_fixture(fail_missing: bool):
     """
@@ -1143,6 +1153,14 @@ def databricks_fixture(fail_missing: bool):
     yield import_or_skip("databricks.connect",
                          reason=OPT_DEP_SKIP_REASON.format(package="databricks-connect"),
                          fail_missing=fail_missing)
+
+
+@pytest.fixture(name="numexpr", scope='session')
+def numexpr_fixture(fail_missing: bool):
+    """
+    Fixture to ensure numexpr is installed
+    """
+    yield import_or_skip("numexpr", reason=OPT_DEP_SKIP_REASON.format(package="numexpr"), fail_missing=fail_missing)
 
 
 @pytest.mark.usefixtures("openai")
