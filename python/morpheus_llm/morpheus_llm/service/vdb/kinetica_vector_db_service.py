@@ -22,7 +22,7 @@ import typing
 from collections import OrderedDict
 from functools import wraps
 
-from gpudb import GPUdb, GPUdbTable, GPUdbRecordColumn, GPUdbRecordType, GPUdbException
+from gpudb import GPUdb, GPUdbTable, GPUdbRecordColumn, GPUdbRecordType, GPUdbException, GPUdbSqlIterator
 import sqlparse
 from sqlparse.sql import IdentifierList, Identifier, Token
 from sqlparse.tokens import Keyword
@@ -782,7 +782,7 @@ class KineticaVectorDBService(VectorDBService):
         name : str
             Name of the Kinetica table to search within.
         query : str
-            The search query, which can be a filter expression.
+            The search query, which is an SQL query.
         **kwargs : dict
             Additional keyword arguments for the search operation.
 
