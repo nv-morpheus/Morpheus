@@ -518,6 +518,12 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         **kwargs :  dict[str, typing.Any]
             Additional keyword arguments for the retrieval operation.
 
+            Only valid keyword arguments are:
+
+                expression: [str] - The Kinetica expression to pass on to `get/records/by/key`
+
+                options: dict - The `options` dict accepted by `get/records/by/key`
+
         Returns
         -------
         list[typing.Any]
@@ -564,7 +570,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         Returns
         -------
         int
-            Returns number of entities in the Kinetica table.
+            Returns number of records in the Kinetica table.
         """
         return self._collection.count
 
@@ -572,7 +578,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         """
         Drop a Kinetica table.
 
-        This function allows you to drop a Kinetica table.
+        This function allows you to delete/drop a Kinetica table.
 
         Parameters
         ----------
