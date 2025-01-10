@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -209,7 +209,7 @@ jobs:
     if: ${{ inputs.conda_run_build }}
     needs: [documentation, test]
     runs-on: linux-amd64-gpu-v100-latest-1
-    timeout-minutes: 60
+    timeout-minutes: 90
     container:
       image: ${{ inputs.base_container }}
       options: --cap-add=sys_nice

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.3
 
-# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -185,6 +185,7 @@ COPY . ./
 
 RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    --mount=type=cache,id=pip_cache,target=/root/.cache/pip,sharing=locked \
     # Install git-lfs before running the build to avoid errors during conda build
     /opt/conda/bin/mamba install -y -n base -c conda-forge "git-lfs" &&\
     source activate base &&\
@@ -227,6 +228,7 @@ COPY ${MORPHEUS_ROOT_HOST}/conda/environments/dev_cuda-${CUDA_MAJOR_VER}${CUDA_M
 
 # Update the morpheus environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    --mount=type=cache,id=pip_cache,target=/root/.cache/pip,sharing=locked \
     # Temp add channel_alias to get around conda 404 errors
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS} &&\
     /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file conda/environments/dev.yaml &&\
@@ -263,6 +265,7 @@ COPY . ./
 
 RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    --mount=type=cache,id=pip_cache,target=/root/.cache/pip,sharing=locked \
     # Install git-lfs before running the build to avoid errors during conda build
     /opt/conda/bin/mamba install -y -n base -c conda-forge "git-lfs" &&\
     source activate base &&\
@@ -285,6 +288,7 @@ COPY . ./
 RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
     --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    --mount=type=cache,id=pip_cache,target=/root/.cache/pip,sharing=locked \
     source activate morpheus &&\
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus \
         -c local \
@@ -314,6 +318,7 @@ COPY "${MORPHEUS_ROOT_HOST}/conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${C
 # Mount Morpheus conda package build in `conda_bld_morpheus`
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    --mount=type=cache,id=pip_cache,target=/root/.cache/pip,sharing=locked \
     # CVE-2018-20225 for the base pip, not the env one
     # conda will ignore the request to remove pip
     python -m pip uninstall -y pip && \
