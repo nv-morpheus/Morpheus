@@ -128,6 +128,9 @@ class MonitorStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
             self._mc.progress.close()
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        if not self._mc.is_enabled():
+            return input_node
+
         if self._build_cpp_node():
             if self._schema.input_type == ControlMessage:
                 node = _stages.MonitorControlMessageStage(builder,
@@ -149,9 +152,6 @@ class MonitorStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
                 node.launch_options.pe_count = self._config.num_threads
 
         else:
-            if not self._mc.is_enabled():
-                return input_node
-
             # Use a component so we track progress using the upstream progress engine. This will provide more accurate
             # results
             node = builder.make_node_component(self.unique_name,
