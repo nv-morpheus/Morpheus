@@ -82,6 +82,7 @@ sed_runner "s|branch-${CURRENT_SHORT_TAG}|branch-${NEXT_SHORT_TAG}|g" manifest.y
 
 # Depedencies file
 sed_runner "s/mrc=${CURRENT_SHORT_TAG}/mrc=${NEXT_SHORT_TAG}/g" dependencies.yaml
+sed_runner "s/morpheus-dfp=${CURRENT_SHORT_TAG}/morpheus-dfp=${NEXT_SHORT_TAG}/g" dependencies.yaml
 
 # Generate the environment files based upon the updated dependencies.yaml
 rapids-dependency-file-generator
