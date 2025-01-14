@@ -44,6 +44,15 @@ docker compose build
 >
 > This is most likely due to using an older version of the `docker-compose` command, instead re-run the build with `docker compose`. Refer to [Migrate to Compose V2](https://docs.docker.com/compose/migrate/) for more information.
 
+### Fetch Example Data
+The `examples/digital_fingerprinting/fetch_example_data.py` script can be used to fetch the Duo and Azure logs to run the example pipelines.
+
+Download the data needed to run the DFP pipeline on Azure / Duo logs:
+```bash
+docker compose run fetch_data
+```
+
+
 ### Running the services
 
 The Morpheus DFP pipeline can be run from either a Jupyter Notebook using the `jupyter` service or from the command line using the `morpheus_pipeline` service. The `mlflow` service is also started in the background to provide a tracking URI for the Morpheus pipeline.
@@ -59,14 +68,6 @@ docker compose up mlflow
 By default, a MLflow dashboard will be available at:
 ```bash
 http://localhost:5000
-```
-
-#### Fetch Example Data
-The `examples/digital_fingerprinting/fetch_example_data.py` script can be used to fetch the Duo and Azure logs to run the example pipelines.
-
-Download the data needed to run a pipeline on Azure / Duo logs:
-```bash
-docker compose run morpheus_pipeline /workspace/examples/digital_fingerprinting/fetch_example_data.py all
 ```
 
 #### Jupyter Server
