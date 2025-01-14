@@ -141,7 +141,6 @@ class MonitorStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
                                                           self._mc._text_color,
                                                           self._mc._font_style,
                                                           self._mc._determine_count_fn)
-                node.launch_options.pe_count = self._config.num_threads
             else:
                 node = _stages.MonitorMessageMetaStage(builder,
                                                        self.unique_name,
@@ -150,7 +149,8 @@ class MonitorStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
                                                        self._mc._text_color,
                                                        self._mc._font_style,
                                                        self._mc._determine_count_fn)
-                node.launch_options.pe_count = self._config.num_threads
+
+            node.launch_options.pe_count = self._config.num_threads
 
         else:
             # Use a component so we track progress using the upstream progress engine. This will provide more accurate
