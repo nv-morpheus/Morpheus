@@ -94,7 +94,7 @@ Copy and paste the URL into a web browser. There are six notebooks included with
 
 > **Note:** The token in the URL is a one-time use token, and a new one is generated with each invocation.
 
-#### Morpheus Pipeline
+#### Morpheus Pipeline Service
 By default the `morpheus_pipeline` will run the training pipeline for Duo data, from the `examples/digital_fingerprinting/production` dir run:
 ```bash
 docker compose up morpheus_pipeline
