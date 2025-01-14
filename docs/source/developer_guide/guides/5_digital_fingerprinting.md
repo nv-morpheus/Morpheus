@@ -129,6 +129,7 @@ The reference architecture is composed of the following services:​
 | `mlflow` | [MLflow](https://mlflow.org/) provides a versioned model store​ |
 | `jupyter` | [Jupyter Server](https://jupyter-server.readthedocs.io/en/latest/)​ necessary for testing and development of the pipelines​ |
 | `morpheus_pipeline` | Used for executing both training and inference pipelines |
+| `fetch_data` | Downloads the example datasets for the DFP example |
 
 ### Running via `docker-compose`
 #### System requirements
@@ -158,12 +159,32 @@ docker compose build
 #### Downloading the example datasets
 First, we will need to install additional requirements in to the Conda environment. Then run the `examples/digital_fingerprinting/fetch_example_data.py` script. This will download the example data into the `examples/data/dfp` dir.
 
-From the Morpheus repo, run:
+The script can be run from within the `fetch_data` Docker Compose service, or from within a Conda environment on the host machine.
+
+##### Docker Compose Service Method
+This approach has the advantage of not requiring any additional setup on the host machine. From the `examples/digital_fingerprinting/production` dir run:
+```bash
+docker compose up mlflow
+```
+##### Conda Environment Method
+This approach is useful for users who have already set up a Conda environment on their host machine, and has the advantage that the downloaded data will be owned by the host user.
+
+If a Conda environment has already been created, it can be updated by running the following command from the root of the Morpheus repo:
 ```bash
 conda env update --solver=libmamba \
   -n ${CONDA_DEFAULT_ENV} \
   --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
+```
 
+If a Conda environment has not been created, it can be created by running the following command from the root of the Morpheus repo:
+```bash
+conda env create --solver=libmamba \
+  -n morpheus \
+  --file ./conda/environments/all_cuda-125_arch-x86_64.yaml
+```
+
+Once the Conda environment has been updated or created, fetch the data with the following command:
+```bash
 python examples/digital_fingerprinting/fetch_example_data.py all
 ```
 
