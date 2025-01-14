@@ -26,6 +26,7 @@ from morpheus.common import IndicatorsTextColor
 from morpheus.config import Config
 from morpheus.controllers.monitor_controller import MonitorController
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -131,7 +132,7 @@ class MonitorStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
         if not self._mc.is_enabled():
             return input_node
 
-        if self._build_cpp_node():
+        if self._build_cpp_node() and self._schema.input_type in (ControlMessage, MessageMeta):
             if self._schema.input_type == ControlMessage:
                 node = _stages.MonitorControlMessageStage(builder,
                                                           self.unique_name,
