@@ -44,7 +44,32 @@ docker compose build
 >
 > This is most likely due to using an older version of the `docker-compose` command, instead re-run the build with `docker compose`. Refer to [Migrate to Compose V2](https://docs.docker.com/compose/migrate/) for more information.
 
+### Fetch Example Data
+The `examples/digital_fingerprinting/fetch_example_data.py` script can be used to fetch the Duo and Azure logs to run the example pipelines.
+
+Download the data needed to run the DFP pipeline on Azure / Duo logs:
+```bash
+docker compose run fetch_data
+```
+
+
 ### Running the services
+
+The Morpheus DFP pipeline can be run from either a Jupyter Notebook using the `jupyter` service or from the command line using the `morpheus_pipeline` service. The `mlflow` service is also started in the background to provide a tracking URI for the Morpheus pipeline.
+
+#### Optional MLflow Service
+Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background. For debugging purposes it can be helpful to view the logs of the running MLflow service.
+
+From the `examples/digital_fingerprinting/production` dir run:
+```bash
+docker compose up mlflow
+```
+
+By default, a MLflow dashboard will be available at:
+```bash
+http://localhost:5000
+```
+
 #### Jupyter Server
 From the `examples/digital_fingerprinting/production` dir run:
 ```bash
@@ -70,7 +95,7 @@ Copy and paste the URL into a web browser. There are six notebooks included with
 
 > **Note:** The token in the URL is a one-time use token, and a new one is generated with each invocation.
 
-#### Morpheus Pipeline
+#### Morpheus Pipeline Service
 By default the `morpheus_pipeline` will run the training pipeline for Duo data, from the `examples/digital_fingerprinting/production` dir run:
 ```bash
 docker compose up morpheus_pipeline
@@ -105,29 +130,6 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--help` | | Show this message and exit. |
 
 ##### Steps to Run Example Pipeline
-The `examples/digital_fingerprinting/fetch_example_data.py` script can be used to fetch the Duo and Azure logs to run the example pipelines.
-
-```bash
-export DFP_HOME=examples/digital_fingerprinting
-```
-
-Usage of the script is as follows:
-```bash
-python $DFP_HOME/fetch_example_data.py --help
-
-usage: Fetches training and inference data for DFP examples [-h] [{azure,duo,all} [{azure,duo,all} ...]]
-
-positional arguments:
-  {azure,duo,all}  Data set to fetch
-
-optional arguments:
-  -h, --help       show this help message and exit
-```
-
-Download the data needed to run a pipeline on Azure / Duo logs:
-```bash
-python $DFP_HOME/fetch_example_data.py all
-```
 
 Run Duo Training Pipeline:
 ```bash
@@ -155,19 +157,6 @@ python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --inp
 The commands in the previous section run stage-based example DFP pipelines. The Morpheus 23.03 release introduced a new, more flexible module-based approach to build pipelines through the use of control messages. More information about modular DFP pipelines can be found [here](../../../docs/source/developer_guide/guides/10_modular_pipeline_digital_fingerprinting.md).
 
 Commands to run equivalent module-based DFP pipelines can be found [here](../../../docs/source/developer_guide/guides/10_modular_pipeline_digital_fingerprinting.md#running-example-modular-dfp-pipelines).
-
-#### Optional MLflow Service
-Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background. For debugging purposes it can be helpful to view the logs of the running MLflow service.
-
-From the `examples/digital_fingerprinting/production` dir run:
-```bash
-docker compose up mlflow
-```
-
-By default, a MLflow dashboard will be available at:
-```bash
-http://localhost:5000
-```
 
 ## Kubernetes deployment
 

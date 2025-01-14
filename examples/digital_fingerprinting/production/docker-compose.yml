@@ -129,6 +129,24 @@ services:
     cap_add:
       - sys_nice
 
+  fetch_data:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      target: runtime
+    image: dfp_morpheus
+    networks:
+      - frontend
+    environment:
+      # Colorize the terminal in the container if possible
+      TERM: "${TERM:-}"
+    working_dir: /workspace/examples/digital_fingerprinting
+    command: ./fetch_example_data.py all
+    volumes:
+      - ../../..:/workspace
+    cap_add:
+      - sys_nice
+
   grafana:
     image: grafana/grafana:10.0.0
     environment:

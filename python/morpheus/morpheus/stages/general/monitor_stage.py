@@ -26,6 +26,7 @@ from morpheus.common import IndicatorsTextColor
 from morpheus.config import Config
 from morpheus.controllers.monitor_controller import MonitorController
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -128,7 +129,10 @@ class MonitorStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
             self._mc.progress.close()
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        if self._build_cpp_node():
+        if not self._mc.is_enabled():
+            return input_node
+
+        if self._build_cpp_node() and self._schema.input_type in (ControlMessage, MessageMeta):
             if self._schema.input_type == ControlMessage:
                 node = _stages.MonitorControlMessageStage(builder,
                                                           self.unique_name,
@@ -137,7 +141,6 @@ class MonitorStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
                                                           self._mc._text_color,
                                                           self._mc._font_style,
                                                           self._mc._determine_count_fn)
-                node.launch_options.pe_count = self._config.num_threads
             else:
                 node = _stages.MonitorMessageMetaStage(builder,
                                                        self.unique_name,
@@ -146,12 +149,10 @@ class MonitorStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
                                                        self._mc._text_color,
                                                        self._mc._font_style,
                                                        self._mc._determine_count_fn)
-                node.launch_options.pe_count = self._config.num_threads
+
+            node.launch_options.pe_count = self._config.num_threads
 
         else:
-            if not self._mc.is_enabled():
-                return input_node
-
             # Use a component so we track progress using the upstream progress engine. This will provide more accurate
             # results
             node = builder.make_node_component(self.unique_name,

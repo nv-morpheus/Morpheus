@@ -82,7 +82,7 @@ from morpheus_dfp.utils.schema_utils import SchemaBuilder
     help="The location to cache data such as S3 downloads and pre-processed data",
 )
 @click.option("--log_level",
-              default=logging.getLevelName(Config().log_level),
+              default="INFO",
               type=click.Choice(get_log_levels(), case_sensitive=False),
               callback=parse_log_level,
               help="Specify the logging level to use.")
