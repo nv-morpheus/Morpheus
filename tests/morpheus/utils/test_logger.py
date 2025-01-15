@@ -132,7 +132,7 @@ def test_configure_logging_from_file_filenotfound():
 
 
 @pytest.mark.skipif(platform.machine() == 'aarch64',
-                    reason="Appears to be caused by https://github.com/python/cpython/issues/101094")
+                    reason="Remove skip once https://github.com/nv-morpheus/Morpheus/issues/2110 is resolved")
 def test_configure_logging_custom_handlers():
     # Create a string stream for the handler
     string_stream_1 = io.StringIO()
