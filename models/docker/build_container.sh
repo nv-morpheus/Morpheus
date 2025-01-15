@@ -21,6 +21,14 @@ pushd ${SCRIPT_DIR} &> /dev/null
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-"$(git rev-parse --show-toplevel)"}
 popd &> /dev/null
 
+HOST_ARCH=$(dpkg --print-architecture)
+DOCKER_TARGET_ARCH=${DOCKER_TARGET_ARCH:-${HOST_ARCH}}
+
+if [ ${DOCKER_TARGET_ARCH} != ${HOST_ARCH} ]; then
+    echo -n "Performing cross-build for ${DOCKER_TARGET_ARCH} on ${HOST_ARCH}, please ensure qemu is installed, "
+    echo "details in ${MORPHEUS_ROOT}/external/utilities/ci/runner/README.md"
+fi
+
 # Determine the relative path from $PWD to $MORPHEUS_ROOT
 MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST:-"$(realpath --relative-to=${PWD} ${MORPHEUS_ROOT})"}
 
