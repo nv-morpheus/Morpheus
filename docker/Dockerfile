@@ -59,16 +59,20 @@ ARG PYTHON_VER=3.10
 ARG MORPHEUS_ROOT_HOST=.
 # Supply a channel alias to use for conda. This is needed if the conda channels go down
 ARG CONDA_CHANNEL_ALIAS="https://conda.anaconda.org"
+# This should reflect the output of the `arch` command.
+ARG REAL_ARCH=x86_64
 
 # ============ Stage: base ============
 # Configure the base conda environment
-FROM ${FROM_IMAGE}:${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}.${CUDA_REV_VER}-base-${LINUX_DISTRO}${LINUX_VER} AS base
+FROM --platform=$TARGETPLATFORM ${FROM_IMAGE}:${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}.${CUDA_REV_VER}-base-${LINUX_DISTRO}${LINUX_VER} AS base
 
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 ARG PYTHON_VER
+ARG REAL_ARCH
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV REAL_ARCH=${REAL_ARCH}
 
 # Remove the file which breaks apt caching since we will handle it ourselves. See
 # https://vsupalov.com/buildkit-cache-mount-dockerfile/
