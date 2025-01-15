@@ -127,7 +127,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
-FROM base AS conda_env
+FROM --platform=$TARGETPLATFORM base AS conda_env
 
 ARG MORPHEUS_ROOT_HOST
 
@@ -155,7 +155,7 @@ SHELL ["/bin/bash", "-c"]
 
 # ============ Stage: conda_bld_morpheus_core ============
 # Now build the morpheus conda package
-FROM conda_env AS conda_bld_morpheus_core
+FROM --platform=$TARGETPLATFORM conda_env AS conda_bld_morpheus_core
 
 ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
@@ -202,7 +202,7 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
 
 # ============ Stage: base_extended ============
 # Base environment with any optional extensions. ex. DOCA libs
-FROM conda_env AS base_extended
+FROM --platform=$TARGETPLATFORM conda_env AS base_extended
 
 # Add one or more optional dependencies to the base environment
 ARG MORPHEUS_ROOT_HOST
@@ -220,15 +220,16 @@ RUN --mount=type=cache,id=doca,target=/tmp/doca,sharing=locked \
 
 # ============ Stage: conda_env_dev ============
 # Create the development conda environment
-FROM base_extended AS conda_env_dev
+FROM --platform=$TARGETPLATFORM base_extended AS conda_env_dev
 
 ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 ARG CONDA_CHANNEL_ALIAS
+ARM REAL_ARCH
 
 # Copy the development dependencies file
-COPY ${MORPHEUS_ROOT_HOST}/conda/environments/dev_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml ./conda/environments/dev.yaml
+COPY ${MORPHEUS_ROOT_HOST}/conda/environments/dev_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-${REAL_ARCH}.yaml ./conda/environments/dev.yaml
 
 # Update the morpheus environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
@@ -241,7 +242,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
 
 # ============ Stage: conda_bld_morpheus ============
 # Now build the morpheus conda package
-FROM base_extended AS conda_bld_morpheus
+FROM --platform=$TARGETPLATFORM base_extended AS conda_bld_morpheus
 
 ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
@@ -282,7 +283,7 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
 
 # ============ Stage: build_docs ============
 # Now build the morpheus docs
-FROM conda_env_dev AS build_docs
+FROM --platform=$TARGETPLATFORM conda_env_dev AS build_docs
 
 ARG MORPHEUS_ROOT_HOST
 
@@ -312,12 +313,13 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
 
 # ============ Stage: runtime_conda_create ============
 # Setup conda for the runtime environment
-FROM base_extended AS runtime_conda_create
+FROM --platform=$TARGETPLATFORM base_extended AS runtime_conda_create
 ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
+ARG REAL_ARCH
 
-COPY "${MORPHEUS_ROOT_HOST}/conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml" "./conda/environments/"
+COPY "${MORPHEUS_ROOT_HOST}/conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-${REAL_ARCH}.yaml" "./conda/environments/"
 
 # Mount Morpheus conda package build in `conda_bld_morpheus`
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
@@ -340,12 +342,12 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
         -c defaults \
         morpheus && \
     /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file \
-        conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml
+        conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-${REAL_ARCH}.yaml
 
 # ============ Stage: git_clone ============
 # Perform a clone of the git repository this ensures that when we copy files from the source repository, we aren't
 # unintentionally including build artifacts or other files that shouldn't be in the final image
-FROM conda_env_dev AS git_clone
+FROM --platform=$TARGETPLATFORM conda_env_dev AS git_clone
 
 ARG MORPHEUS_ROOT_HOST
 
@@ -360,7 +362,7 @@ RUN --mount=type=bind,source=.,target=/opt/host_repo \
 
 # ============ Stage: runtime ============
 # Setup container for runtime environment
-FROM runtime_conda_create AS runtime
+FROM --platform=$TARGETPLATFORM runtime_conda_create AS runtime
 
 ARG MORPHEUS_ROOT_HOST
 
@@ -384,7 +386,7 @@ CMD [ "morpheus" ]
 
 # ============ Stage: development ============
 # Install and configure development only packages
-FROM conda_env_dev AS development
+FROM --platform=$TARGETPLATFORM conda_env_dev AS development
 
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
@@ -416,7 +418,7 @@ RUN git config --global --add safe.directory "*"
 
 # ============ Stage: python_debug_bld ===========
 # Configure and build cpython with debugging symbols
-FROM development AS development_pydbg
+FROM --platform=$TARGETPLATFORM development AS development_pydbg
 
 COPY ${MORPHEUS_ROOT_HOST}/ci/conda/recipes/python-dbg/ ./ci/conda/recipes/python-dbg
 COPY ${MORPHEUS_ROOT_HOST}/ci/conda/recipes/run_conda_build.sh ./ci/conda/recipes/run_conda_build.sh
