@@ -16,7 +16,7 @@
 ARG BASE_IMG=nvcr.io/nvidia/cuda
 ARG BASE_IMG_TAG=12.5.1-base-ubuntu22.04
 
-FROM ${BASE_IMG}:${BASE_IMG_TAG} as base
+FROM ${BASE_IMG}:${BASE_IMG_TAG} AS base
 
 # Install necessary dependencies using apt-get
 RUN apt-get update && apt-get install -y \
@@ -55,13 +55,13 @@ ENTRYPOINT [ "/opt/conda/envs/morpheus-dfp/bin/tini", "--", "/workspace/examples
 SHELL ["/bin/bash", "-c"]
 
 # ===== Setup for running unattended =====
-FROM base as runtime
+FROM base AS runtime
 
 # Launch morpheus
 CMD ["./launch.sh"]
 
 # ===== Setup for running Jupyter =====
-FROM base as jupyter
+FROM base AS jupyter
 
 # Install the jupyter specific requirements
 RUN source activate morpheus-dfp &&\
