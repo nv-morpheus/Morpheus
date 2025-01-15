@@ -96,7 +96,6 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
         libcurand-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcusolver-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libnuma1 \
-        openjdk-11-jre-headless \
         openssh-client \
         pkg-config \
         tar \
@@ -226,7 +225,7 @@ ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 ARG CONDA_CHANNEL_ALIAS
-ARM REAL_ARCH
+ARG REAL_ARCH
 
 # Copy the development dependencies file
 COPY ${MORPHEUS_ROOT_HOST}/conda/environments/dev_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-${REAL_ARCH}.yaml ./conda/environments/dev.yaml
@@ -402,7 +401,8 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
         libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} && \
+        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        openjdk-11-jre-headless && \
     rm -rf /var/lib/apt/lists/*
 
 # Install camouflage needed for unittests to mock a triton server
