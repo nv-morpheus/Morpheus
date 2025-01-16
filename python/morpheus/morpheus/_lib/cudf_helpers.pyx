@@ -28,8 +28,6 @@ from pylibcudf.libcudf.io.types cimport table_with_metadata
 from pylibcudf.libcudf.table.table_view cimport table_view
 from pylibcudf.libcudf.types cimport size_type
 
-from cudf._lib.column cimport Column
-
 ##### THE FOLLOWING CODE IS COPIED FROM CUDF AND SHOULD BE REMOVED WHEN UPDATING TO cudf>=24.12 #####
 # see https://github.com/rapidsai/cudf/pull/17193 for details
 
@@ -61,7 +59,7 @@ from cudf._lib.types cimport (
     # dtype_to_pylibcudf_type,
 )
 from cudf._lib.null_mask import bitmask_allocation_size_bytes
-
+from cudf._lib.column cimport Column
 # isort: on
 
 cdef get_element(column_view col_view, size_type index):
@@ -469,7 +467,7 @@ cdef public api:
 
         return dict(zip(column_names, data_columns)), index
 
-cdef _set_col_children_metadata(Column col,
+cdef _set_col_children_metadata(col,
                                 column_name_info& col_meta):
     cdef column_name_info child_info
     if isinstance(col.dtype, cudf.StructDtype):
@@ -500,8 +498,8 @@ cdef update_struct_field_names(
         )
 
 
-cdef Column update_column_struct_field_names(
-    Column col,
+cdef update_column_struct_field_names(
+    col,
     column_name_info& info
 ):
     cdef vector[string] field_names
