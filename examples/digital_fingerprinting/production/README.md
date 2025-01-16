@@ -154,6 +154,6 @@ python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --inp
 
 ## Additional Information
 
-Additional information on the DFP pipeline, inclusing how it can be customized for additional data sources can be found in the [Digital Fingerprinting Guide](../../../docs/source/developer_guide/guides/5_digital_fingerprinting.md) as well as the [Digital Fingerprinting Reference Guide](../../../docs/source/developer_guide/guides/6_digital_fingerprinting_reference.md).
+Additional information on the DFP pipeline, including how it can be customized for additional data sources can be found in the [Digital Fingerprinting Guide](../../../docs/source/developer_guide/guides/5_digital_fingerprinting.md) as well as the [Digital Fingerprinting Reference Guide](../../../docs/source/developer_guide/guides/6_digital_fingerprinting_reference.md).
 
 The commands in the previous section run stage-based example DFP pipelines. The Morpheus 23.03 release introduced a new, more flexible module-based approach to build pipelines through the use of control messages. More information about modular DFP pipelines can be found at [Introduction to Modular Digital Fingerprinting Pipeline Guide](../../../docs/source/developer_guide/guides/10_modular_pipeline_digital_fingerprinting.md). Along with the commands to run equivalent module-based DFP pipelines are available at [Running Example Modular DFP Pipelines](../../../docs/source/developer_guide/guides/10_modular_pipeline_digital_fingerprinting.md#running-example-modular-dfp-pipelines).

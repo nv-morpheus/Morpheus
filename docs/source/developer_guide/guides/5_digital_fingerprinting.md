@@ -22,7 +22,7 @@ Every account, user, service, and machine has a digital fingerprint that represe
 
 To construct this digital fingerprint, we will be training unsupervised behavioral models at various granularities, including a generic model for all users in the organization along with fine-grained models for each user to monitor their behavior. These models are continuously updated and retrained over time​, and alerts are triggered when deviations from normality occur for any user​.
 
-## Runing the DFP Example
+## Running the DFP Example
 Instructions for building and running the DFP example are available in the `examples/digital_fingerprinting/production/README.md` guide in the Morpheus repository.
 
 ## Training Sources
