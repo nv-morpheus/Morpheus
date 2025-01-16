@@ -53,6 +53,7 @@ DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 DOCKER_ARGS="-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg FROM_IMAGE=${FROM_IMAGE}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg FROM_IMAGE_TAG=${FROM_IMAGE_TAG}"
+DOCKER_ARGS="${DOCKER_ARGS} --platform=linux/${DOCKER_TARGET_ARCH}"
 DOCKER_ARGS="${DOCKER_ARGS} --network=host"
 
 # Last add any extra args (duplicates override earlier ones)
