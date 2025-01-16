@@ -80,7 +80,7 @@ conda env update --solver=libmamba -n morpheus --file conda/environments/model-u
 ```
 For the best performance you need to compile a TensorRT engine file on each machine that it will be run on. To facilitate this, Morpheus contains a utility to input an ONNX file and export the TensorRT engine file. Sample command to generate the TensorRT engine file -
 ```bash
-morpheus --log_level=info tools onnx-to-trt --input_model sid-models/sid-minibert-20230424.onnx --output_model ./model.plan --batches 1 8 --batches 1 16 --batches 1 32 --seq_length 256 --max_workspace_size 16000
+morpheus --log_level=info tools onnx-to-trt --input_model ${MORPHEUS_ROOT}/models/sid-models/sid-minibert-20230424.onnx --output_model ${MORPHEUS_ROOT}/models/model.plan --batches 1 8 --batches 1 16 --batches 1 32 --seq_length 256 --max_workspace_size 16000
 ```
 Note: If you get an out-of-memory error, reduce the `--max_workspace_size` argument until it will successfully run.
 ### References
