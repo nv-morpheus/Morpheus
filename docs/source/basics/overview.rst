@@ -107,6 +107,18 @@ queried in the same manner:
    --max_workspace_size INTEGER    [default: 16000]
    --help                          Show this message and exit.
 
+ONNX To TensorRT
+----------------
+The ONNX to TensorRT (TRT) conversion utility requires additional packages, which can be installed using the following command:
+```bash
+conda env update --solver=libmamba -n morpheus --file conda/environments/model-utils_cuda-125_arch-x86_64.yaml
+```
+
+Example usage of the ONNX to TRT conversion utility can be found in `models/README.md <https://github.com/nv-morpheus/Morpheus/blob/branch-25.02/models/README.md#generating-trt-models-from-onnx>`_.
+
+.. note::
+   Currently, the ONNX to TRT conversion utility is only supported on x86_64 architecture (`#2115 <https://github.com/nv-morpheus/Morpheus/issues/2115>`_).
+
 AutoComplete
 ------------
 
