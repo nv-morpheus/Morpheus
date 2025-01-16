@@ -103,6 +103,9 @@ sed_runner "s|${CURRENT_SHORT_TAG}.tgz|${NEXT_SHORT_TAG}.tgz|g" docs/source/clou
 sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" docs/source/cloud_deployment_guide.md
 sed_runner "s|tree/branch-${CURRENT_SHORT_TAG}|tree/branch-${NEXT_SHORT_TAG}|g" docs/source/cloud_deployment_guide.md
 
+# docs/source/developer_guide/guides/5_digital_fingerprinting.md
+sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" docs/source/developer_guide/guides/5_digital_fingerprinting.md
+
 # docs/source/examples.md
 sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" docs/source/examples.md
 
