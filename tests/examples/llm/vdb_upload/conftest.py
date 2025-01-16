@@ -15,6 +15,7 @@
 
 import os
 import sys
+import types
 
 import pytest
 
@@ -22,7 +23,7 @@ from _utils import TEST_DIRS
 
 
 @pytest.fixture(scope="function")
-def import_vdb_update_utils_module(restore_sys_path):  # pylint: disable=unused-argument
+def import_vdb_update_utils_module(restore_sys_path, pymilvus: types.ModuleType):  # pylint: disable=unused-argument
     path = os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/')
     sys.path.insert(0, path)
 

@@ -15,6 +15,7 @@
 
 import os
 import sys
+import types
 
 import pytest
 
@@ -43,7 +44,7 @@ def import_web_scraper_module(restore_sys_path):  # pylint: disable=unused-argum
 
 # Fixture for importing the module
 @pytest.fixture(scope="function")
-def import_content_extractor_module(restore_sys_path):  # pylint: disable=unused-argument
+def import_content_extractor_module(restore_sys_path, pypdfium2: types.ModuleType):  # pylint: disable=unused-argument
     sys.path.insert(0, os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/module/'))
 
     import content_extractor_module

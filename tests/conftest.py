@@ -956,7 +956,7 @@ def _get_random_port():
 
 
 @pytest.fixture(scope="session")
-def milvus_server_uri(tmp_path_factory):
+def milvus_server_uri(tmp_path_factory, pymilvus: types.ModuleType):
     """
     Pytest fixture to start and stop a Milvus server and provide its URI for testing.
     Due to the high startup time for Milvus users can optionally start a Milvus server before running tests and
@@ -1161,6 +1161,22 @@ def numexpr_fixture(fail_missing: bool):
     Fixture to ensure numexpr is installed
     """
     yield import_or_skip("numexpr", reason=OPT_DEP_SKIP_REASON.format(package="numexpr"), fail_missing=fail_missing)
+
+
+@pytest.fixture(name="pymilvus", scope='session')
+def pymilvus_fixture(fail_missing: bool):
+    """
+    Fixture to ensure milvus is installed
+    """
+    yield import_or_skip("pymilvus", reason=OPT_DEP_SKIP_REASON.format(package="pymilvus"), fail_missing=fail_missing)
+
+
+@pytest.fixture(name="pypdfium2", scope='session')
+def pypdfium2_fixture(fail_missing: bool):
+    """
+    Fixture to ensure pypdfium2 is installed
+    """
+    yield import_or_skip("pypdfium2", reason=OPT_DEP_SKIP_REASON.format(package="pypdfium2"), fail_missing=fail_missing)
 
 
 @pytest.mark.usefixtures("openai")

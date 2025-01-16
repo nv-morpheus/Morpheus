@@ -12,9 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pymilvus
+import types
+
 import pytest
-from pymilvus.exceptions import DataTypeNotSupportException
+
+try:
+    import pymilvus
+    from pymilvus.exceptions import DataTypeNotSupportException
+except ImportError:
+    pass
+
+
+@pytest.fixture(name="pymilvus", scope='session', autouse=True)
+def pymilvus_fixture(pymilvus: types.ModuleType):  # pylint: disable=redefined-outer-name
+    """
+    Fixture to ensure pymilvus is installed
+    """
+    yield pymilvus
 
 
 def test_build_milvus_config_valid_schema(import_utils):

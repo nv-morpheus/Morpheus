@@ -31,8 +31,6 @@ from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
 from morpheus.models.dfencoder.dataloader import FileSystemDataset
 from morpheus.models.dfencoder.multiprocessing import start_processes
 
-# import torch
-
 FEATURE_COLUMNS = [
     "app_name",
     "browser_type",
@@ -109,6 +107,11 @@ def cleanup_dist():
 @pytest.mark.slow
 def test_dfencoder_distributed_e2e():
     world_size = 1
+
+    import torch
+
+    if not torch.cuda.is_available():
+        pytest.skip("Need CUDA enabled torch installation")
 
     start_processes(_run_test, args=(world_size, ), nprocs=world_size, join=True)
 

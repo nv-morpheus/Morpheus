@@ -29,7 +29,6 @@ from morpheus.utils.module_utils import register_module
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import get_df_pkg_from_obj
 from morpheus_llm.modules.schemas.write_to_vector_db_schema import WriteToVDBSchema
-from morpheus_llm.service.vdb.milvus_client import DATA_TYPE_MAP
 from morpheus_llm.service.vdb.utils import VectorDBServiceFactory
 from morpheus_llm.service.vdb.vector_db_service import VectorDBService
 
@@ -39,6 +38,8 @@ WriteToVectorDBLoaderFactory = ModuleLoaderFactory(WRITE_TO_VECTOR_DB, MORPHEUS_
 
 
 def preprocess_vdb_resources(service, recreate: bool, resource_schemas: dict):
+    from morpheus_llm.service.vdb.milvus_client import DATA_TYPE_MAP
+
     for resource_name, resource_schema_config in resource_schemas.items():
         has_object = service.has_store_object(name=resource_name)
 

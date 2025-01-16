@@ -41,6 +41,14 @@ MODEL_MAX_BATCH_SIZE = 64
 MODEL_FEA_LENGTH = 512
 
 
+@pytest.fixture(name="pymilvus", scope='session', autouse=True)
+def pymilvus_fixture(pymilvus: types.ModuleType):
+    """
+    Fixture to ensure pymilvus is installed
+    """
+    yield pymilvus
+
+
 def _run_pipeline(config: Config,
                   milvus_server_uri: str,
                   collection_name: str,
