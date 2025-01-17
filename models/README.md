@@ -108,7 +108,7 @@ Binary sequence classification as phishing/spam or non-phishing/spam
 ### Generating TRT Models from ONNX
 For the best performance you need to compile a TensorRT engine file on each machine that it will be run on. To facilitate this, Morpheus contains a utility to input an ONNX file and export the TensorRT engine file. Sample command to generate the TensorRT engine file -
 ```bash
-morpheus --log_level=info tools onnx-to-trt --input_model ${MORPHEUS_ROOT}/models/phishing-models/phishing-bert-20230517.onnx --output_model ${MORPHEUS_ROOT}/models/phishing-models/model.plan --batches 1 8 --batches 1 16 --batches 1 32 --seq_length 256 --max_workspace_size 16000
+morpheus --log_level=info tools onnx-to-trt --input_model ${MORPHEUS_ROOT}/models/phishing-models/phishing-bert-20230517.onnx --output_model ${MORPHEUS_ROOT}/models/phishing-models/model.plan --batches 1 8 --batches 1 16 --batches 1 32 --seq_length 128 --max_workspace_size 16000
 ```
 ### References
 - https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection
