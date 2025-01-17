@@ -39,7 +39,7 @@ option(MORPHEUS_USE_IWYU "Enable running include-what-you-use as part of the bui
 
 set(MORPHEUS_PY_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/wheel" CACHE STRING "Location to install the python directory")
 
-set(MORPHEUS_RAPIDS_VERSION "24.10" CACHE STRING "Sets default versions for RAPIDS libraries.")
+set(MORPHEUS_RAPIDS_VERSION "25.02" CACHE STRING "Sets default versions for RAPIDS libraries.")
 set(MORPHEUS_CACHE_DIR "${CMAKE_SOURCE_DIR}/.cache" CACHE PATH "Directory to contain all CPM and CCache data")
 mark_as_advanced(MORPHEUS_CACHE_DIR)
 
@@ -49,7 +49,7 @@ if(MORPHEUS_USE_IWYU AND MORPHEUS_USE_CCACHE)
   message(FATAL_ERROR "MORPHEUS_USE_IWYU and MORPHEUS_USE_CCACHE cannot be set simultaneously")
 endif()
 
-if (MORPHEUS_BUILD_DOCS AND NOT MORPHEUS_BUILD_MORPHEUS_LLM)
+if(MORPHEUS_BUILD_DOCS AND NOT MORPHEUS_BUILD_MORPHEUS_LLM)
   message(FATAL_ERROR "MORPHEUS_BUILD_MORPHEUS_LLM must be ON if MORPHEUS_BUILD_DOCS is ON")
 endif()
 
