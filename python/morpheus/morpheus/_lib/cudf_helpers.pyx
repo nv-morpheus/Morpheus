@@ -54,7 +54,6 @@ from cudf.core.buffer import (
 )
 cimport pylibcudf.libcudf.types as libcudf_types
 from cudf._lib.column cimport dtype_from_column_view
-from cudf._lib.null_mask import bitmask_allocation_size_bytes
 from cudf._lib.column cimport Column
 # isort: on
 
@@ -205,13 +204,13 @@ cdef Column from_column_view_with_fix(column_view cv, object owner):
                 mask = as_buffer(
                     rmm.DeviceBuffer(
                         ptr=mask_ptr,
-                        size=bitmask_allocation_size_bytes(base_size)
+                        size=plc.null_mask.bitmask_allocation_size_bytes(base_size)
                     )
                 )
         else:
             mask = as_buffer(
                 data=mask_ptr,
-                size=bitmask_allocation_size_bytes(base_size),
+                size=plc.null_mask.bitmask_allocation_size_bytes(base_size),
                 owner=mask_owner,
                 exposed=True
             )
