@@ -28,6 +28,7 @@ except ImportError as e:
         "conda/environments/model-utils_cuda-125_arch-$(arch).yaml") from e
 
 
+# pylint: disable=no-member
 def gen_engine(config: ConfigOnnxToTRT):
     """
     This class converts an Onnx model to a TRT model.
