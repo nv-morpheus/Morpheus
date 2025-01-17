@@ -19,6 +19,5 @@ limitations under the License.
 
 - `vdb_upload` example pipeline triggers an internal error in Triton ([#1649](https://github.com/nv-morpheus/Morpheus/issues/1649))
 - `ransomware_detection` example pipeline occasionally logs a `distributed.comm.core.CommClosedError` error during shutdown ([#2026](https://github.com/nv-morpheus/Morpheus/issues/2026)).
-- Currently, the ONNX to TRT conversion utility is only supported on x86_64 architecture ([#2115](https://github.com/nv-morpheus/Morpheus/issues/2115)).
 
 Refer to [open issues in the Morpheus project](https://github.com/nv-morpheus/Morpheus/issues)
