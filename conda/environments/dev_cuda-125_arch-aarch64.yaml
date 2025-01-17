@@ -72,7 +72,7 @@ dependencies:
 - pydantic
 - pylibcudf=25.02
 - pylint=3.0.3
-- pynvml=11.4
+- pynvml=12
 - pytest-asyncio
 - pytest-benchmark=4.0
 - pytest-cov

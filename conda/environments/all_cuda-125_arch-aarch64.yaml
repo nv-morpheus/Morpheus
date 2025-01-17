@@ -87,7 +87,7 @@ dependencies:
 - pydantic
 - pylibcudf=25.02
 - pylint=3.0.3
-- pynvml=11.4
+- pynvml=12
 - pypdf=3.17.4
 - pytest-asyncio
 - pytest-benchmark=4.0
