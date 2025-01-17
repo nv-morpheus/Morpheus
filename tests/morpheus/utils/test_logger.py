@@ -18,7 +18,6 @@ import io
 import logging
 import logging.handlers
 import os
-import platform
 import re
 import time
 from unittest.mock import patch
@@ -35,9 +34,12 @@ from morpheus.utils.logger import set_log_level
 
 
 def _flush_logging_queue(logger: logging.Logger):
+    # Per Python documentation, the `empty` method is not reliable, adding a safety sleep
+    # https://docs.python.org/3.10/library/multiprocessing.html?highlight=queue#multiprocessing.Queue.empty
+    time.sleep(0.1)
     for handler in logger.handlers:
         if isinstance(handler, logging.handlers.QueueHandler):
-            while (handler.queue.qsize() != 0):
+            while (not handler.queue.empty()):
                 time.sleep(0.01)
 
 
@@ -131,8 +133,6 @@ def test_configure_logging_from_file_filenotfound():
         configure_logging(log_config_file="does_not_exist.json")
 
 
-@pytest.mark.skipif(platform.machine() == 'aarch64',
-                    reason="Remove skip once https://github.com/nv-morpheus/Morpheus/issues/2110 is resolved")
 def test_configure_logging_custom_handlers():
     # Create a string stream for the handler
     string_stream_1 = io.StringIO()
