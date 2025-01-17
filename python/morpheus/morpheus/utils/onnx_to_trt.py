@@ -21,11 +21,11 @@ logger = logging.getLogger(__name__)
 try:
     import tensorrt as trt
 except ImportError as e:
-    error_msg = ("The ONNX to TensorRT conversion utility requires additional packages, which can be installed using "
-                 "the following command:\n"
-                 "conda env update --solver=libmamba -n morpheus --file "
-                 "conda/environments/model-utils_cuda-125_arch-$(arch).yaml")
-    raise ImportError(error_msg) from e
+    raise ImportError(
+        "The ONNX to TensorRT conversion utility requires additional packages, which can be installed using the "
+        "following command:\n"
+        "conda env update --solver=libmamba -n morpheus --file "
+        "conda/environments/model-utils_cuda-125_arch-$(arch).yaml") from e
 
 
 def gen_engine(config: ConfigOnnxToTRT):
