@@ -15,4 +15,4 @@
 IMPORT_ERROR_MESSAGE = (
     "{package} not found. Install it and other additional dependencies by running the following command:\n"
     "`conda env update --solver=libmamba -n morpheus "
-    "--file conda/environments/examples_cuda-125_arch-x86_64.yaml`")
+    "--file conda/environments/examples_cuda-125_arch-$(arch).yaml`")
