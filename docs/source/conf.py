@@ -202,6 +202,10 @@ linkcheck_ignore = [
     r'https://code.visualstudio.com'
 ]
 
+# The way Github handles anchors into markdown files is not compatible with the way linkcheck handles them.
+# This allows us to continue to verify that the links are valid, but ignore the anchors.
+linkcheck_anchors_ignore_for_url = ["^https://github.com"]
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
