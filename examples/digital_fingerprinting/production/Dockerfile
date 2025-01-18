@@ -16,7 +16,7 @@
 ARG BASE_IMG=nvcr.io/nvidia/cuda
 ARG BASE_IMG_TAG=12.5.1-base-ubuntu22.04
 
-FROM ${BASE_IMG}:${BASE_IMG_TAG} AS base
+FROM --platform=$TARGETPLATFORM ${BASE_IMG}:${BASE_IMG_TAG} AS base
 
 # Install necessary dependencies using apt-get
 RUN apt-get update && apt-get install -y \
@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # Install miniconda
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh \
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-$(arch).sh -O /tmp/miniconda.sh \
     && bash /tmp/miniconda.sh -b -p /opt/conda \
     && rm /tmp/miniconda.sh
 
@@ -48,20 +48,20 @@ WORKDIR /workspace/examples/digital_fingerprinting/production
 COPY . /workspace/examples/digital_fingerprinting/production/
 
 # Create a conda env with morpheus-dfp and any additional dependencies needed to run the examples
-RUN conda env create --solver=libmamba -y --name morpheus-dfp --file ./conda/environments/dfp_example_cuda-125_arch-x86_64.yaml
+RUN conda env create --solver=libmamba -y --name morpheus-dfp --file ./conda/environments/dfp_example_cuda-125_arch-$(arch).yaml
 
 ENTRYPOINT [ "/opt/conda/envs/morpheus-dfp/bin/tini", "--", "/workspace/examples/digital_fingerprinting/production/docker/entrypoint.sh" ]
 
 SHELL ["/bin/bash", "-c"]
 
 # ===== Setup for running unattended =====
-FROM base AS runtime
+FROM --platform=$TARGETPLATFORM base AS runtime
 
 # Launch morpheus
 CMD ["./launch.sh"]
 
 # ===== Setup for running Jupyter =====
-FROM base AS jupyter
+FROM --platform=$TARGETPLATFORM base AS jupyter
 
 # Install the jupyter specific requirements
 RUN source activate morpheus-dfp &&\
