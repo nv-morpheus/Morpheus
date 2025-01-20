@@ -401,7 +401,6 @@ dependencies:
             - databricks-connect
             - milvus==2.3.5 # update to match pymilvus when available
             - pymilvus==2.3.6
-            - gpudb>=7.2.2.3
             - torch==2.4.0+cu124
 
   test_python_morpheus:
