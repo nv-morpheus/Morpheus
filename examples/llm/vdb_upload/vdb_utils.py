@@ -15,7 +15,6 @@
 import logging
 import typing
 
-import pymilvus
 import yaml
 
 from morpheus.config import Config
@@ -147,6 +146,8 @@ YAML_TO_CONFIG_MAPPING = {
 
 
 def build_milvus_config(resource_schema_config: dict):
+    import pymilvus
+
     schema_fields = []
     for field_data in resource_schema_config["schema_conf"]["schema_fields"]:
         field_data["dtype"] = DATA_TYPE_MAP.get(field_data["dtype"])
