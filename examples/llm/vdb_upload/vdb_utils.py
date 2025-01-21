@@ -19,7 +19,6 @@ import yaml
 
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus_llm.service.vdb.milvus_client import DATA_TYPE_MAP
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +146,8 @@ YAML_TO_CONFIG_MAPPING = {
 
 def build_milvus_config(resource_schema_config: dict):
     import pymilvus
+
+    from morpheus_llm.service.vdb.milvus_client import DATA_TYPE_MAP
 
     schema_fields = []
     for field_data in resource_schema_config["schema_conf"]["schema_fields"]:
