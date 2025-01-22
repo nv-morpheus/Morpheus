@@ -24,7 +24,6 @@ popd &> /dev/null
 DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:?"Must set \$DOCKER_IMAGE_NAME to build. Use the dev/release scripts to set these automatically"}
 DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:?"Must set \DOCKER_IMAGE_TAG to build. Use the dev/release scripts to set these automatically"}
 DOCKER_TARGET=${DOCKER_TARGET:-"runtime"}
-DOCKER_TARGET_ARCH=${DOCKER_TARGET_ARCH:-$(dpkg --print-architecture)}
 
 if [ "${DOCKER_TARGET_ARCH}" == "amd64" ]; then
     REAL_ARCH="x86_64"
