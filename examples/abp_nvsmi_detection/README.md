@@ -140,7 +140,7 @@ morpheus --log_level=DEBUG \
    `# 7th Stage: Convert from objects back into strings. Ignore verbose input data` \
    serialize --include 'mining' \
    `# 8th Stage: Write out the JSON lines to the detections.jsonlines file` \
-   to-file --filename=detections.jsonlines --overwrite
+   to-file --filename=.tmp/output/abp_nvsmi_detections.jsonlines --overwrite
 ```
 
 If successful, the following should be displayed:
@@ -217,7 +217,7 @@ Added stage: <add-class-5; AddClassificationsStage(threshold=0.5, labels=[], pre
   └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <serialize-6; SerializeStage(include=['mining'], exclude=['^ID$', '^_ts_'], fixed_columns=True)>
   └─ morpheus.ControlMessage -> morpheus.MessageMeta
-Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
+Added stage: <to-file-7; WriteToFileStage(filename=.tmp/output/abp_nvsmi_detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====
 Starting! Time: 1656353254.9919598
@@ -225,7 +225,7 @@ Inference Rate[Complete]: 1242inf [00:00, 1863.04inf/s]
 ====Pipeline Complete====
 ```
 
-The output file `detections.jsonlines` will contain a single boolean value for each input line. At some point the values will switch from `0` to `1`:
+The output file `.tmp/output/detections.jsonlines` will contain a single boolean value for each input line. At some point the values will switch from `0` to `1`:
 
 ```
 ...

@@ -119,6 +119,6 @@ morpheus --log_level INFO \
 	monitor --description "Inference rate" --unit inf \
 	log-postprocess --vocab_path ./models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
 		--model_config_path=./models/log-parsing-models/log-parsing-config-20220418.json \
-	to-file --filename ./log-parsing-output.jsonlines --overwrite  \
+	to-file --filename .tmp/output/log-parsing-cli-output.jsonlines --overwrite  \
 	monitor --description "Postprocessing rate"
 ```

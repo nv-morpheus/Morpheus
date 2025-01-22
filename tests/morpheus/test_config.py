@@ -159,6 +159,7 @@ def test_warning_model_batch_size_less_than_pipeline_batch_size(caplog: pytest.L
     config.pipeline_batch_size = 256
     with caplog.at_level(logging.WARNING):
         config.model_max_batch_size = 257
+        config.freeze()
         assert len(caplog.records) == 1
         import re
         assert re.match(".*pipeline_batch_size < model_max_batch_size.*", caplog.records[0].message) is not None
@@ -169,6 +170,7 @@ def test_warning_pipeline_batch_size_less_than_model_batch_size(caplog: pytest.L
     config.model_max_batch_size = 8
     with caplog.at_level(logging.WARNING):
         config.pipeline_batch_size = 7
+        config.freeze()
         assert len(caplog.records) == 1
         import re
         assert re.match(".*pipeline_batch_size < model_max_batch_size.*", caplog.records[0].message) is not None

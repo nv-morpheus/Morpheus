@@ -84,7 +84,7 @@ CUR_DIR = os.path.dirname(__file__)
 @click.option(
     "--output_file",
     type=click.Path(dir_okay=False),
-    default="output.csv",
+    default=".tmp/output/gnn_fraud_detection_output.csv",
     help="The path to the file where the inference output will be saved.",
 )
 def run_pipeline(num_threads,
