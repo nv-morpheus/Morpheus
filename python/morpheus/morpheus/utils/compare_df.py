@@ -130,6 +130,7 @@ def compare_df(df_a: pd.DataFrame,
 
     total_rows = len(df_a_filtered)
     diff_rows = len(df_a_filtered) - int(comparison.count_matching_rows())
+    diff_cols = len(extra_columns) + len(missing_columns)
 
     if (comparison.matches()):
         logger.info("Results match validation dataset")
@@ -141,7 +142,7 @@ def compare_df(df_a: pd.DataFrame,
 
         mismatch_df = merged.loc[mismatched_idx]
 
-        if diff_rows > 0:
+        if diff_rows > 0 or diff_cols > 0:
             logger.debug("Results do not match. Diff %d/%d (%f %%). First 10 mismatched rows:",
                          diff_rows,
                          total_rows,
@@ -160,5 +161,5 @@ def compare_df(df_a: pd.DataFrame,
         "matching_cols": list(same_columns),
         "extra_cols": list(extra_columns),
         "missing_cols": list(missing_columns),
-        "diff_cols": len(extra_columns) + len(missing_columns)
+        "diff_cols": diff_cols
     }

@@ -60,7 +60,7 @@ from morpheus.utils.logger import configure_logging
 )
 @click.option(
     "--output_file",
-    default="log-parsing-output.jsonlines",
+    default=".tmp/output/log-parsing-output.jsonlines",
     help="The path to the file where the inference output will be saved.",
 )
 @click.option('--model_vocab_hash_file',

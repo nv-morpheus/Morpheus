@@ -25,7 +25,7 @@ mark_as_advanced(MORPHEUS_CACHE_DIR)
 list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
 
 project(3_simple_cpp_stage
-  VERSION 24.10.00
+  VERSION 25.02.00
   LANGUAGES C CXX
 )
 
@@ -38,6 +38,10 @@ set(CMAKE_INSTALL_RPATH "$ORIGIN")
 
 # Set the option prefix to match the outer project before including. Must be before find_package(morpheus)
 set(OPTION_PREFIX "MORPHEUS")
+
+# Set the policy to allow for CMP0144, avoids warning about MORPHEUS_ROOT being set
+cmake_policy(SET CMP0144 NEW)
+
 find_package(morpheus REQUIRED)
 
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)

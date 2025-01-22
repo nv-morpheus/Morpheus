@@ -26,6 +26,6 @@ repos:
       sub_dir: python/morpheus
   git:
     host: github
-    tag: branch-24.10
+    tag: branch-25.02
     upstream: nv-morpheus
     repo: morpheus

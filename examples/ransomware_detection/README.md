@@ -35,7 +35,7 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
 ```
 
 ##### Start Triton Inference Server Container
@@ -43,7 +43,7 @@ From the Morpheus repo root directory, run the following to launch Triton and lo
 ```bash
 # Run Triton in explicit mode
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-    nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 \
+    nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 \
     tritonserver --model-repository=/models/triton-model-repo \
                  --exit-on-error=false \
                  --model-control-mode=explicit \
@@ -72,7 +72,7 @@ python examples/ransomware_detection/run.py --server_url=localhost:8000 \
               --sliding_window=3 \
               --model_name=ransomw-model-short-rf \
               --input_glob=./examples/data/appshield/*/snapshot-*/*.json \
-              --output_file=./ransomware_detection_output.jsonlines
+              --output_file=.tmp/output/ransomware_detection_output.jsonlines
 ```
 
 Input features for a short model can be taken from every three snapshots sequence, such as (1, 2, 3), or (2, 3, 4). The sliding window represents the number of subsequent snapshots that need to be taken into consideration when generating the input for a model. Sliding window for the medium model is `5` and for the long model it is `10`.

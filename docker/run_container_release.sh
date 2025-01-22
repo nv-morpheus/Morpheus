@@ -35,4 +35,4 @@ if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
 fi
 
 # Call the general run script
-${SCRIPT_DIR}/run_container.sh
+${SCRIPT_DIR}/run_container.sh "${@:-bash}"

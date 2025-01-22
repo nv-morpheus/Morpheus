@@ -65,7 +65,7 @@ EX_DATA_DIR = os.path.join(CUR_DIR, "../data")
 )
 @click.option(
     "--output_file",
-    default="./pcap_out.jsonlines",
+    default="./.tmp/output/pcap_out.jsonlines",
     help="The path to the file where the inference output will be saved.",
 )
 @click.option(
