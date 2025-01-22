@@ -34,12 +34,6 @@ fi
 export CMAKE_BUILD_ALL_FEATURES="${_FLAGS[@]}"
 unset _FLAGS
 
-if [[ ${REAL_ARCH} == "aarch64" ]]; then
-    # Currently DOCA is failing to build on ARM
-    # https://github.com/nv-morpheus/Morpheus/issues/2092
-    export MORPHEUS_SUPPORT_DOCA=OFF
-fi
-
-if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) && ${REAL_ARCH} == "x86_64" ]]; then
+if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
     export CMAKE_BUILD_ALL_FEATURES="${CMAKE_BUILD_ALL_FEATURES} -DMORPHEUS_SUPPORT_DOCA=ON"
 fi
