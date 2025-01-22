@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ This example builds upon the `examples/developer_guide/2_2_rabbitmq` example add
 |-------------|-----------|-------|
 | Conda | ✔ | |
 | Morpheus Docker Container | ✔ | Requires launching the RabbitMQ container on the host |
-| Morpheus Release Container | ✔ | Requires launching the RabbitMQ container on the host, and adding development packages to the container's Conda environment via `conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-125_arch-x86_64.yaml` |
+| Morpheus Release Container | ✔ | Requires launching the RabbitMQ container on the host, and adding development packages to the container's Conda environment via `conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-125_arch-$(arch).yaml` |
 | Dev Container | ✘ |  |
 
 ## Installing Pika

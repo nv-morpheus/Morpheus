@@ -75,7 +75,7 @@ dependencies:
 - pylibcudf=24.10
 - pylint=3.0.3
 - pynvml=11.4
-- pypdfium2=4.30
+- pypdfium2==4.30
 - pytest-asyncio
 - pytest-benchmark=4.0
 - pytest-cov
@@ -105,7 +105,7 @@ dependencies:
 - versioneer-518
 - watchdog=3.0
 - websockets
-- yapf=0.40.1
+- yapf=0.43
 - pip:
   - --extra-index-url https://download.pytorch.org/whl/cu124
   - databricks-cli < 0.100
