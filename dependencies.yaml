@@ -164,7 +164,7 @@ files:
     output: conda
     matrix:
       cuda: ["12.5"]
-      arch: [x86_64]
+      arch: [x86_64, aarch64]
     includes:
       - model-training-tuning
       - python

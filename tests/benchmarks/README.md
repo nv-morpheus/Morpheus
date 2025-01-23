@@ -195,7 +195,7 @@ Separate benchmark tests are provided to measure performance of the example [Pro
 You can use the same Dev container created here to run the Production DFP benchmarks. You would just need to install additional dependencies as follows:
 
 ```bash
-mamba env update \
+conda env update --solver=libmamba \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./conda/environments/examples_cuda-125_arch-x86_64.yaml
+  --file ./conda/environments/examples_cuda-125_arch-$(arch).yaml
 ```

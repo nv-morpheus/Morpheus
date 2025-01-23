@@ -132,6 +132,13 @@ add_custom_target(${PROJECT_NAME}_style_checks
   COMMENT "Building dependencies for style checks"
 )
 
+# CMAKE_LIBRARY_ARCHITECTURE is needed to find DOCA dependencies
+if(NOT DEFINED CMAKE_LIBRARY_ARCHITECTURE)
+  set(CMAKE_LIBRARY_ARCHITECTURE "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}-${CMAKE_CXX_COMPILER_ID}")
+  string(TOLOWER "${CMAKE_LIBRARY_ARCHITECTURE}" CMAKE_LIBRARY_ARCHITECTURE)
+  message(STATUS "Setting CMAKE_LIBRARY_ARCHITECTURE to ${CMAKE_LIBRARY_ARCHITECTURE}")
+endif()
+
 # Configure all dependencies
 include(dependencies)
 

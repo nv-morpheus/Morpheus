@@ -193,13 +193,16 @@ numpydoc_class_members_toctree = False
 # Config linkcheck
 # Ignore localhost and url prefix fragments
 # Ignore openai.com links, as these always report a 403 when requested by the linkcheck agent
+# The way Github handles anchors into markdown files is not compatible with the way linkcheck handles them.
+# This allows us to continue to verify that the links are valid, but ignore the anchors.
 linkcheck_ignore = [
     r'http://localhost:\d+/',
     r'https://localhost:\d+/',
     r'^http://$',
     r'^https://$',
     r'https://(platform\.)?openai.com',
-    r'https://code.visualstudio.com'
+    r'https://code.visualstudio.com',
+    r"^https://github.com/nv-morpheus/Morpheus/blob/.*#.+$"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
