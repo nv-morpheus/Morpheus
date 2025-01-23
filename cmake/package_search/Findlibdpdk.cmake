@@ -28,11 +28,6 @@ block(SCOPE_FOR VARIABLES
   # List of required args. Start with INCLUDE_DIR since the first one is displayed
   list(APPEND libdpdk_REQUIRED_VARS bsd_FOUND libdpdk_INCLUDE_DIR)
 
-  # CMAKE_LIBRARY_ARCHITECTURE needs to be set for this to work correctly. Will be restored at the end of the block
-  if(NOT DEFINED CMAKE_LIBRARY_ARCHITECTURE)
-    set(CMAKE_LIBRARY_ARCHITECTURE x86_64-linux-gnu)
-  endif()
-
   # This library will always be installed on the host. Allow that to be searched here (Should fix this up in the future)
   set("CMAKE_FIND_ROOT_PATH_MODE_INCLUDE" BOTH)
   set("CMAKE_FIND_ROOT_PATH_MODE_LIBRARY" BOTH)
@@ -76,7 +71,7 @@ block(SCOPE_FOR VARIABLES
         set_target_properties(${library_name} PROPERTIES
           IMPORTED_LINK_INTERFACE_LANGUAGES "C"
           IMPORTED_LOCATION "${${library_name}_LIBRARY}"
-          INTERFACE_INCLUDE_DIRECTORIES "${libdpdk_INCLUDE_DIR};${libdpdk_INCLUDE_DIR}/../x86_64-linux-gnu/dpdk"
+          INTERFACE_INCLUDE_DIRECTORIES "${libdpdk_INCLUDE_DIR};${libdpdk_INCLUDE_DIR}/../${CMAKE_LIBRARY_ARCHITECTURE}/dpdk"
           INTERFACE_LINK_LIBRARIES "bsd::bsd"
         )
 

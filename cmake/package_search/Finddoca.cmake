@@ -42,11 +42,6 @@ block(SCOPE_FOR VARIABLES
   set("CMAKE_FIND_ROOT_PATH_MODE_INCLUDE" BOTH)
   set("CMAKE_FIND_ROOT_PATH_MODE_LIBRARY" BOTH)
 
-  # CMAKE_LIBRARY_ARCHITECTURE needs to be set for this to work correctly. Will be restored at the end of the block
-  if(NOT DEFINED CMAKE_LIBRARY_ARCHITECTURE)
-    set(CMAKE_LIBRARY_ARCHITECTURE x86_64-linux-gnu)
-  endif()
-
   # Find the include path
   find_path(
     doca_INCLUDE_DIR doca_gpunetio.h
