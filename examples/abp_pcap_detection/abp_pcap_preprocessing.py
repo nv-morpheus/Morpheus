@@ -85,7 +85,6 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         orig_df = meta.get_data()
 
         # Converts the int flags field into a binary string
-        #flags_bin_series = orig_df["flags"].to_pandas().apply(lambda x: format(int(x), "05b"))
         flags = orig_df["flags"].astype("int8")
         flags_bin_series = (flags // 16 % 2).astype('O') + (flags // 8 % 2).astype('O') + (
             flags // 4 % 2).astype('O') + (flags // 2 % 2).astype('O') + (flags % 2).astype('O')
