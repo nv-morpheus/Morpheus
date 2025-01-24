@@ -85,14 +85,16 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         orig_df = meta.get_data()
 
         # Converts the int flags field into a binary string
-        flags_bin_series = orig_df["flags"].to_pandas().apply(lambda x: format(int(x), "05b"))
+        #flags_bin_series = orig_df["flags"].to_pandas().apply(lambda x: format(int(x), "05b"))
+        flags = orig_df["flags"].astype("int8")
+        flags_bin_series = (flags // 16 % 2).astype('O') + (flags // 8 % 2).astype('O') + (
+            flags // 4 % 2).astype('O') + (flags // 2 % 2).astype('O') + (flags % 2).astype('O')
 
-        # Expand binary string into an array
-        df = cudf.DataFrame(np.vstack(flags_bin_series.str.findall("[0-1]")).astype("int8"), index=orig_df.index)
+        flag_array = flags_bin_series.str.findall("[0-1]").list.astype("int8")
 
-        # adding [ack, psh, rst, syn, fin] details from the binary flag
+        # Expand binary string into an array adding [ack, psh, rst, syn, fin] details from the binary flag
         rename_cols_dct = {0: "ack", 1: "psh", 2: "rst", 3: "syn", 4: "fin"}
-        df = df.rename(columns=rename_cols_dct)
+        df = cudf.DataFrame({rename_cols_dct[i]: flag_array.list.get(i) for i in range(5)}, index=orig_df.index)
 
         df["flags_bin"] = flags_bin_series
         df["timestamp"] = orig_df["timestamp"].astype("int64")
