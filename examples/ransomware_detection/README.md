@@ -90,10 +90,10 @@ Options:
   --debug BOOLEAN
   --num_threads INTEGER RANGE     Number of internal pipeline threads to use
                                   [x>=1]
-  --n_dask_workers INTEGER RANGE  Number of dask workers  [x>=2]
+  --n_dask_workers INTEGER RANGE  Number of dask workers  [x>=1]
   --threads_per_dask_worker INTEGER RANGE
                                   Number of threads per each dask worker
-                                  [x>=2]
+                                  [x>=1]
   --model_max_batch_size INTEGER RANGE
                                   Max batch size to use for the model  [x>=1]
   --model_fea_length INTEGER RANGE
