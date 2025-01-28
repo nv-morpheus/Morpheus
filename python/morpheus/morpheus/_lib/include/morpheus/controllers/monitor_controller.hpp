@@ -120,7 +120,7 @@ class ProgressBarContextManager
         {
             pbar->print_progress(true);
             m_stdout_os << termcolor::reset;  // The font option only works for the current bar
-            m_stdout_os << "\n" << std::flush;
+            m_stdout_os << std::endl;
         }
 
         // After each round of display, move cursor up ("\033[A") to the beginning of the first bar
