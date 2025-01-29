@@ -60,6 +60,7 @@ rapids_find_package(gflags REQUIRED
 # glog
 # ====
 morpheus_utils_configure_glog()
+add_compile_definitions(GLOG_USE_GLOG_EXPORT)
 
 if(MORPHEUS_BUILD_TESTS)
   # google test
