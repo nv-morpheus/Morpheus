@@ -17,12 +17,19 @@ limitations under the License.
 
 # Simple C++ Stage
 ## Building the Example
-The code for this guide can be found in the `examples/developer_guide/3_simple_cpp_stage` directory of the Morpheus repository. There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to CMake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+The code for this guide can be found in the `examples/developer_guide/3_simple_cpp_stage` directory of the Morpheus repository. There are two ways to build the example.
+
+The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to CMake. This approach is preferable for users who are already building Morpheus from source. For users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
 ```bash
 CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
 ```
 
-The second method is to build the example as a standalone project. From the root of the Morpheus repo execute:
+The second method is to build the example as a standalone project. For those using the release container, additional dependencies will need to be installed prior to performing the build:
+```bash
+conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-125_arch-$(arch).yaml
+```
+
+From the root of the Morpheus repo execute:
 ```bash
 cd examples/developer_guide/3_simple_cpp_stage
 ./compile.sh
