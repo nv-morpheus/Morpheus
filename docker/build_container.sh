@@ -24,7 +24,6 @@ popd &> /dev/null
 DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:?"Must set \$DOCKER_IMAGE_NAME to build. Use the dev/release scripts to set these automatically"}
 DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:?"Must set \DOCKER_IMAGE_TAG to build. Use the dev/release scripts to set these automatically"}
 DOCKER_TARGET=${DOCKER_TARGET:-"runtime"}
-DOCKER_TARGET_ARCH=${DOCKER_TARGET_ARCH:-$(dpkg --print-architecture)}
 
 if [ "${DOCKER_TARGET_ARCH}" == "amd64" ]; then
     REAL_ARCH="x86_64"
@@ -58,7 +57,7 @@ PYTHON_VER=${PYTHON_VER:-3.10}
 MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST:-"$(realpath --relative-to=${PWD} ${MORPHEUS_ROOT})"}
 
 # Build the docker arguments
-DOCKER_ARGS="-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}-${DOCKER_TARGET_ARCH}"
+DOCKER_ARGS="-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
 DOCKER_ARGS="${DOCKER_ARGS} --target ${DOCKER_TARGET}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg CUDA_MAJOR_VER=${CUDA_MAJOR_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg CUDA_MINOR_VER=${CUDA_MINOR_VER}"

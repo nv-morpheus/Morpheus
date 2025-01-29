@@ -63,20 +63,6 @@ configure_logging(loki_handler, log_level=log_level)
 
 More information about Loki Python logging can be found [here](https://pypi.org/project/python-logging-loki/).
 
-## Build the Morpheus container:
-From the root of the Morpheus repo:
-```bash
-./docker/build_container_release.sh
-```
-
-Build `docker compose` services:
-
-```
-cd examples/digital_fingerprinting/production
-export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
-docker compose build
-```
-
 ## Start Grafana and Loki services:
 
 To start Grafana and Loki, run the following command on host in `examples/digital_fingerprinting/production`:
@@ -86,7 +72,7 @@ docker compose up grafana
 
 ## Run Azure DFP Training
 
-Create `bash` shell in `morpheus_pipeline` container:
+Start `bash` shell in `morpheus_pipeline` container, run the following command on host in `examples/digital_fingerprinting/production`:
 
 ```bash
 docker compose run --rm morpheus_pipeline bash
