@@ -25,18 +25,18 @@ include(${CMAKE_CURRENT_LIST_DIR}/package_config/register_api.cmake)
 
 # Load direct physical package dependencies first, so we fail early. Add all dependencies to our export set
 rapids_find_package(Protobuf REQUIRED
-  BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
-  INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+  BUILD_EXPORT_SET ${PROJECT_NAME}-exports
+  INSTALL_EXPORT_SET ${PROJECT_NAME}-exports
 )
 
 rapids_find_package(CUDAToolkit REQUIRED
-  BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
-  INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+  BUILD_EXPORT_SET ${PROJECT_NAME}-exports
+  INSTALL_EXPORT_SET ${PROJECT_NAME}-exports
 )
 
 rapids_find_package(ZLIB
-  BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
-  INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+  BUILD_EXPORT_SET ${PROJECT_NAME}-exports
+  INSTALL_EXPORT_SET ${PROJECT_NAME}-exports
 )
 
 if(MORPHEUS_BUILD_BENCHMARKS)
@@ -44,8 +44,8 @@ if(MORPHEUS_BUILD_BENCHMARKS)
   # ================
   include(${rapids-cmake-dir}/cpm/gbench.cmake)
   rapids_cpm_gbench(
-    BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
-    INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+    BUILD_EXPORT_SET ${PROJECT_NAME}-exports
+    INSTALL_EXPORT_SET ${PROJECT_NAME}-exports
   )
 endif()
 
@@ -66,8 +66,8 @@ if(MORPHEUS_BUILD_TESTS)
   # ===========
   include(${rapids-cmake-dir}/cpm/gtest.cmake)
   rapids_cpm_gtest(
-    BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
-    INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+    BUILD_EXPORT_SET ${PROJECT_NAME}-exports
+    INSTALL_EXPORT_SET ${PROJECT_NAME}-exports
   )
 endif()
 
