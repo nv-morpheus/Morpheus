@@ -24,6 +24,7 @@ morpheus_add_pybind11_module(pass_thru_cpp
     morpheus
     CUDA::nvtx3
     cudf::cudf
+    glog::glog
 )
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
