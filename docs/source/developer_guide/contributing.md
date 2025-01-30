@@ -314,7 +314,7 @@ Launching a full production Kafka cluster is outside the scope of this project; 
       $ echo $KAFKA_ADVERTISED_HOST_NAME
       "172.17.0.1"
       ```
-   1. Change the value of `DOCKER_API_VERSION` to an updated version. The default version `1.22` is no longer supported by Kafka. The supported version can be obtained by running `docker version` command and looking into `API version` field. For example, if the `API version` of the machine is `1.47`, the config should be updated to:
+   1. Change the value of `DOCKER_API_VERSION` to an updated version. The default version `1.22` is no longer supported by Kafka. The supported version can be obtained by running `docker version` command and looking into `API version` field. For example, if the `API version` of the machine is `1.47`, the configuration should be updated to:
 
       ```yaml
       environment:
@@ -362,7 +362,7 @@ Launching a full production Kafka cluster is outside the scope of this project; 
    ```
    **Note:** If you are using `to-kafka`, ensure your output topic is also created.
 
-9.  Generate input messages
+9. Generate input messages
    1. In order for Morpheus to read from Kafka, messages need to be published to the cluster. You can use the `kafka-console-producer.sh` script to load data:
 
       ```bash
