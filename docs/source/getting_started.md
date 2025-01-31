@@ -36,7 +36,7 @@ More advanced users, or those who are interested in using the latest pre-release
 
 > **Note for Arm64/AArch64 users:**
 >
-> In testing performance issues were observed running on Ubuntu 22.04, switching to Ubuntu 24.04 resolved the issues, Arm64 users should consider upgrading to the latest release of their Linux distribution.
+> In testing, performance issues were observed running on Ubuntu 22.04 and switching to Ubuntu 24.04 resolved the issues. Arm64 users should consider upgrading to the latest release of their Linux distribution.
 > In addition to this, Arm64 users should be aware that most but not all Morpheus pipelines are supported on Arm64. Refer to the [Known Issues](./extra_info/known_issues.md) document for more information.
 
 > **Note about Docker:**
