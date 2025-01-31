@@ -17,7 +17,6 @@ limitations under the License.
 
 # Known Issues
 
-- `vdb_upload` example pipeline triggers an internal error in Triton ([#1649](https://github.com/nv-morpheus/Morpheus/issues/1649))
 - `ransomware_detection` example pipeline occasionally logs a `distributed.comm.core.CommClosedError` error during shutdown ([#2026](https://github.com/nv-morpheus/Morpheus/issues/2026)).
 - `abp_pcap_detection` pipeline running slowly on AArch64 ([#2120](https://github.com/nv-morpheus/Morpheus/issues/2120))
 - LLM `vdb_upload` and `rag` pipelines not supported on AArch64 ([#2122](https://github.com/nv-morpheus/Morpheus/issues/2122))
