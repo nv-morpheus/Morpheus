@@ -25,6 +25,7 @@ morpheus_add_pybind11_module(rabbitmq_cpp_stage
     morpheus
     CUDA::nvtx3
     cudf::cudf
+    glog::glog
     rabbitmq
     SimpleAmqpClient
 )
