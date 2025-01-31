@@ -19,25 +19,20 @@ limitations under the License.
 
 ## Table of Contents
 
-- [Morpheus LLM Agents Pipeline](#morpheus-llm-agents-pipeline)
-  - [Table of Contents](#table-of-contents)
-  - [Supported Environments](#supported-environments)
-  - [Background Information](#background-information)
+1. [Background Information](#background-information)
     - [Purpose](#purpose)
     - [LLM Service](#llm-service)
     - [Agent type](#agent-type)
     - [Agent tools](#agent-tools)
     - [LLM Library](#llm-library)
-  - [Pipeline Implementation](#pipeline-implementation)
-  - [Getting Started](#getting-started)
+2. [Pipeline Implementation](#pipeline-implementation)
+3. [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
-      - [Set Environment Variables](#set-environment-variables)
-      - [Install Dependencies](#install-dependencies)
+        - [Set Environment Variables](#set-environment-variables)
+        - [Install Dependencies](#install-dependencies)
     - [Running the Morpheus Pipeline](#running-the-morpheus-pipeline)
-    - [Run example (Simple Pipeline):](#run-example-simple-pipeline)
-    - [Options:](#options)
-    - [Run example (Kafka Pipeline):](#run-example-kafka-pipeline)
-    - [Options:](#options-1)
+        - [Run example (Simple Pipeline)](#run-example-simple-pipeline)
+        - [Run example (Kafka Pipeline)](#run-example-kafka-pipeline)
 
 ## Supported Environments
 All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-125_arch-$(arch).yaml` or `conda/environments/examples_cuda-125_arch-$(arch).yaml` environment files. Refer to the [Install Dependencies](#install-dependencies) section for more information.
