@@ -52,7 +52,7 @@ RUN conda env create --solver=libmamba -y --name morpheus-dfp --file ./conda/env
 
 # Work-around Torch issues https://github.com/nv-morpheus/Morpheus/issues/2095
 RUN source activate morpheus-dfp && \
-    pip install --index-url https://download.pytorch.org/whl/cu124 torch==2.4.0
+    pip install --force-reinstall --index-url https://download.pytorch.org/whl/cu124 torch==2.4.0
 
 ENTRYPOINT [ "/opt/conda/envs/morpheus-dfp/bin/tini", "--", "/workspace/examples/digital_fingerprinting/production/docker/entrypoint.sh" ]
 
