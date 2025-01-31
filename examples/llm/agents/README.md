@@ -41,7 +41,7 @@ All environments require additional Conda packages which can be installed with e
 | Conda | ✔ | |
 | Morpheus Docker Container | ✔ |  |
 | Morpheus Release Container | ✔ |  |
-| Dev Container | ✔ |  |
+| Dev Container | ✔ | Requires using the `dev-kafka-start` and `dev-kafka-produce` script and using CLI option `--bootstrap_servers kafka:9092` |
 
 ## Background Information
 
