@@ -34,6 +34,11 @@ More advanced users, or those who are interested in using the latest pre-release
 - [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation)
 - [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `24.09` or higher
 
+> **Note for Arm64/AArch64 users:**
+>
+> In testing performance issues were observed running on Ubuntu 22.04, upgrating to Ubuntu 24.04 resolved the issues, Arm64 users should consider upgrading to the latest release of their Linux distribution.
+> In addition to this, Arm64 users should be aware that most but not all Morpheus pipelines are supported on Arm64. Refer to the [Known Issues](./extra_info/known_issues.md) document for more information.
+
 > **Note about Docker:**
 >
 > The Morpheus documentation and examples assume that the [Manage Docker as a non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user) post-installation step has been performed, allowing Docker commands to be executed by a non-root user. This is not strictly necessary as long as the current user has `sudo` privileges to execute Docker commands.
