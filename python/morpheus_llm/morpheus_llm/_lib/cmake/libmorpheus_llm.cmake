@@ -29,11 +29,11 @@ add_library(${PROJECT_NAME}::morpheus_llm ALIAS morpheus_llm)
 
 # morpheus_llm can be built two ways -
 # 1. For development purposes (eg. scripts/compile.sh) all the functional blocks are built.
-#    This includes morpheus (core), morpheus_llm, morpheus_dfp etc. In this case we
-#    set dependencies on build targets across components.
+# This includes morpheus (core), morpheus_llm, morpheus_dfp etc. In this case we
+# set dependencies on build targets across components.
 # 2. For conda packaging purposes morpheus_llm is built on its own. In this case
-#    the dependencies (including morpheus-core) are loaded from the conda enviroment.
-if (MORPHEUS_BUILD_MORPHEUS_CORE)
+# the dependencies (including morpheus-core) are loaded from the conda enviroment.
+if(MORPHEUS_BUILD_MORPHEUS_CORE)
   # Add a dependency on the morpheus cpython libraries
   get_property(py_morpheus_target GLOBAL PROPERTY py_morpheus_target_property)
   add_dependencies(morpheus_llm ${py_morpheus_target})
@@ -81,7 +81,6 @@ target_sources(morpheus_llm
   ${morpheus_llm_public_headers}
 )
 
-
 # We want to use RUNPATH instead of RPATH to allow LD_LIBRARY_PATH to take precedence over the paths specified in the
 # binary. This is necessary to allow ld to find the real libcuda.so instead of the stub. Eventually, this can be removed
 # once upgraded to cuda-python 12.1. Ideally, cuda-python would just load libcuda.so.1 which would take precedence over
@@ -113,11 +112,11 @@ include(GNUInstallDirs)
 
 install(
     TARGETS
-      morpheus_llm
+  morpheus_llm
     EXPORT
-      ${PROJECT_NAME}-core-exports
+  ${PROJECT_NAME}-exports
     LIBRARY
     DESTINATION ${lib_dir}
     FILE_SET
-      public_headers
+  public_headers
 )

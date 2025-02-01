@@ -66,7 +66,7 @@ target_sources(morpheus_doca
     TYPE HEADERS
     BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include"
     FILES
-      ${morpheus_doca_public_headers}
+  ${morpheus_doca_public_headers}
 )
 
 target_compile_definitions(morpheus_doca
@@ -96,7 +96,7 @@ install(
   TARGETS
     morpheus_doca
   EXPORT
-    ${PROJECT_NAME}-core-exports
+    ${PROJECT_NAME}-exports
   LIBRARY
     DESTINATION ${lib_dir}
   FILE_SET
