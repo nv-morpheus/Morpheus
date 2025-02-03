@@ -17,12 +17,11 @@ limitations under the License.
 
 # Known Issues
 
-- `vdb_upload` example pipeline triggers an internal error in Triton ([#1649](https://github.com/nv-morpheus/Morpheus/issues/1649))
 - `ransomware_detection` example pipeline occasionally logs a `distributed.comm.core.CommClosedError` error during shutdown ([#2026](https://github.com/nv-morpheus/Morpheus/issues/2026)).
-- `abp_pcap_detection` pipeline running slowly on AArch64 ([#2120](https://github.com/nv-morpheus/Morpheus/issues/2120))
+- Arm64 users need to install CUDA enabled PyTorch by hand ([#2095](https://github.com/nv-morpheus/Morpheus/issues/2095))
+- Performance issues were observed running the `abp_pcap_detection` and `ransomware_detection` pipelines on AArch64 ([#2120](https://github.com/nv-morpheus/Morpheus/issues/2120)) & ([#2124](https://github.com/nv-morpheus/Morpheus/issues/2124)) on Ubuntu 22.04. Arm64 users should consider upgrading to Ubuntu 24.04.
 - LLM `vdb_upload` and `rag` pipelines not supported on AArch64 ([#2122](https://github.com/nv-morpheus/Morpheus/issues/2122))
 - `gnn_fraud_detection_pipeline` not working on AArch64 ([#2123](https://github.com/nv-morpheus/Morpheus/issues/2123))
-- `ransomware_detection` pipeline running slowly on AArch64 ([#2124](https://github.com/nv-morpheus/Morpheus/issues/2124))
 - DFP visualization fails to install on AArch64 ([#2125](https://github.com/nv-morpheus/Morpheus/issues/2125))
 
 Refer to [open issues in the Morpheus project](https://github.com/nv-morpheus/Morpheus/issues)
