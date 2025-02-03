@@ -1,4 +1,4 @@
-import csv
+import json
 import logging
 import random
 import cudf
@@ -6,29 +6,18 @@ import os
 
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.modules import to_control_message  # noqa: F401 # pylint: disable=unused-import
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
 
 from morpheus_llm.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
+# Import Kinetica services from Morpheus
+from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBService
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 
 from morpheus.messages import ControlMessage
-
-# from morpheus.utils.logging import configure_logging
-# from morpheus.utils.type_support import numpy_to_cudf
-
-# Import Milvus services from Morpheus
-from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBService
-
-import json
-
-from morpheus.utils.logger import configure_logging
-
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-
-from morpheus.config import ExecutionMode
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +44,6 @@ def main():
     collection_name = "test_collection"
     collection_name = f"{schema}.{collection_name}" if schema is not None and len(
         schema) > 0 else f"ki_home.{collection_name}"
-
-    vector_dim = 3  # Example: 3-dimensional vector embeddings
 
     columns = [
         ["id", "long", "primary_key"],

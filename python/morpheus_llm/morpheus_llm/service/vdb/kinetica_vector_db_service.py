@@ -138,7 +138,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         df : DataFrameType
             Dataframe to be inserted into the Kinetica table.
         **kwargs : dict[str, typing.Any]
-            Extra keyword arguments specific to the vector database implementation.
+            Not used by Kinetica.
 
         Returns
         -------
@@ -164,7 +164,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         Parameters
         ----------
         **kwargs : dict[str, typing.Any]
-            Extra keyword arguments specific to the vector database implementation.
+            Not used by Kinetica.
 
         Returns
         -------
@@ -283,23 +283,6 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         filter: dict[str, str] = None,
     ) -> dict:
         """Query the Kinetica table."""
-        # if filter is not None:
-        #     filter_clauses = []
-        #     for key, value in filter.items():
-        #         IN = "in"
-        #         if isinstance(value, dict) and IN in map(str.lower, value):
-        #             value_case_insensitive = {
-        #                 k.lower(): v for k, v in value.items()
-        #             }
-        #             filter_by_metadata = self.EmbeddingStore.cmetadata[
-        #                 key
-        #             ].astext.in_(value_case_insensitive[IN])
-        #             filter_clauses.append(filter_by_metadata)
-        #         else:
-        #             filter_by_metadata = self.EmbeddingStore.cmetadata[
-        #                 key
-        #             ].astext == str(value)
-        #             filter_clauses.append(filter_by_metadata)
 
         json_filter = json.dumps(filter) if filter is not None else None
         where_clause = (
@@ -308,7 +291,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             else ""
         )
 
-        embedding_str = "[" + ",".join([str(x) for x in embedding]) + "]"
+        embedding_str = f"[{','.join([str(x) for x in embedding])}]"
 
         dist_strategy = DEFAULT_DISTANCE_STRATEGY
 
@@ -338,6 +321,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
         Args:
             embedding: Embedding to look up documents similar to.
+            output_fields: The fields to return in the query output
             k: Number of Documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
@@ -357,7 +341,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         filter: dict = None,
     ) -> list[dict]:
 
-        resp: dict = self.__query_collection(embedding, k, filter)
+        resp: dict = self.__query_collection(embedding, output_fields, k, filter)
         if resp and resp["status_info"]["status"] == "OK" and "records" in resp:
             records: OrderedDict = resp["records"]
             return [records]
@@ -483,14 +467,19 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         dict[str, typing.Any]
             Returns result of the given keys that are deleted from the Kinetica table.
         """
+        options = kwargs.get( "options", None )
+        if options is not None: # if given, remove from kwargs
+            kwargs.pop( "options" )
+        else: # no option given; use an empty dict
+            options = {}
 
-        result = self._collection.delete_records(expressions=[expr], **kwargs)
+        result = self._collection.delete_records(expressions=[expr], options=options)
 
         return self._update_delete_result_to_dict(result=result)
 
     def delete_by_keys(self, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
-        Delete vectors by keys from the resource.
+        Not supported by Kinetica.
 
         Parameters
         ----------
@@ -530,6 +519,9 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             Returns result rows of the given keys from the Kinetica table.
         """
 
+        def is_list_of_type(lst, data_type):
+            return all(isinstance(item, data_type) for item in lst)
+
         result = None
         expression = kwargs.get("expression", "")
         options = kwargs.get("options", {})
@@ -546,9 +538,12 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
                 expression = [f"{pk_field_name} = '{keys}'"]
             elif isinstance(keys, int):
                 expression = [f"{pk_field_name} = {keys}"]
-            elif isinstance(keys, list):
-                # keys is a list
+            elif isinstance(keys, list) and is_list_of_type(keys, int):
+                # keys is a list of ints
                 expression = [f"{pk_field_name} in ({','.join(keys)})"]
+            elif isinstance(keys, list) and is_list_of_type(keys, str):
+                # keys is a list of strs
+                expression = ["{0} in ({1})".format(pk_field_name, ','.join(f"'{s}'" for s in keys))]
             else:
                 raise GPUdbException("'keys' must be of type (int or str or list) ...")
         try:
@@ -597,7 +592,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
     def _update_delete_result_to_dict(self, result) -> dict[str, typing.Any]:
         result_dict = {
             "count_deleted": result["count_deleted"],
-            "counts_updated": result["counts_deleted"],
+            "counts_updated": result["count_updated"],
             "info": result["info"],
         }
         return result_dict
@@ -717,7 +712,7 @@ class KineticaVectorDBService(VectorDBService):
         overwrite : bool, optional
             Whether to overwrite the Kinetica table if it already exists. Default is False.
         **kwargs : dict[str, typing.Any]
-            Extra keyword arguments specific to the vector database implementation.
+            Not used by Kinetica.
         """
 
         GPUdbTable.from_df(df, self._client, name, clear_table=overwrite)
@@ -746,6 +741,10 @@ class KineticaVectorDBService(VectorDBService):
         RuntimeError
             If the table not exists.
         """
+        options = kwargs.get( "options", None )
+        if options is None: # if given, remove from kwargs
+            options = {}
+            kwargs["options"] = options
 
         resource = self.load_resource(name)
         return resource.insert(data, **kwargs)

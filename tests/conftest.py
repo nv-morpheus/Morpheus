@@ -954,6 +954,39 @@ def _get_random_port():
         sckt.bind(('', 0))
         return sckt.getsockname()[1]
 
+@pytest.fixture(scope="session", name="kinetica_data")
+def kinetica_data_fixture():
+    import random
+    import json
+    inital_data = [[
+        i+1,
+        [random.random() for _ in range(3)],
+        json.dumps({"metadata": f"Sample metadata for row {i+1}"}),
+    ] for i in range(10)]
+    yield inital_data
+
+
+@pytest.fixture(scope="session", name="kinetica_type")
+def kinetica_type_fixture():
+    columns = [
+        ["id", "long", "primary_key"],
+        ["embeddings", "bytes", "vector(3)"],
+        ["metadata", "string", "json"],
+    ]
+    yield columns
+
+
+KINETICA_HOST = os.getenv("KINETICA_HOST", "http://loclahost:9191")
+KINETICA_USER = os.getenv("KINETICA_USER", "")
+KINETICA_PASSWORD = os.getenv("KINETICA_PASSWORD", "")
+KINETICA_SCHEMA = os.getenv("KINETICA_SCHEMA", "")
+
+@pytest.fixture(scope="session", name="kinetica_service")
+def kinetica_service_fixture(kinetica_server_uri: str = KINETICA_HOST, username: str = KINETICA_USER, password: str = KINETICA_PASSWORD, schema: str = KINETICA_SCHEMA):
+    from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBService
+    service = KineticaVectorDBService(kinetica_server_uri, user=username, password=password, kinetica_schema=schema)
+    yield service
+
 
 @pytest.fixture(scope="session")
 def milvus_server_uri(tmp_path_factory, pymilvus: types.ModuleType):

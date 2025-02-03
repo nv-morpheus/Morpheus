@@ -129,8 +129,6 @@ def pipeline(use_cpu_only: bool,
 
     pipe.add_stage(MonitorStage(config, description="Inference rate", unit="req", delayed_start=True))
 
-    pipe.add_stage(WriteToVectorDBStage())
-
     sink = pipe.add_stage(InMemorySinkStage(config))
 
     start_time = time.time()
