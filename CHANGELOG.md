@@ -15,6 +15,63 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# Morpheus 25.02.00 (04 Feb 2025)
+
+## 🐛 Bug Fixes
+
+- Pin numba to 0.60 ([#2167](https://github.com/nv-morpheus/Morpheus/pull/2167)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Document known Arm64 issues and work-around PyTorch installation issues for DFP ([#2162](https://github.com/nv-morpheus/Morpheus/pull/2162)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Ensure that `MORPHEUS_ROOT_HOST` is defined in the models `Dockerfile` ([#2159](https://github.com/nv-morpheus/Morpheus/pull/2159)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix version incompatibility causing `Kafka` service fails to launch ([#2158](https://github.com/nv-morpheus/Morpheus/pull/2158)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Work-around glog dependency issues for C++ examples ([#2156](https://github.com/nv-morpheus/Morpheus/pull/2156)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix file paths in `log_parsing` CLI example ([#2146](https://github.com/nv-morpheus/Morpheus/pull/2146)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Remove TRT optimization from `all-MiniLM-L6-v2` ([#2143](https://github.com/nv-morpheus/Morpheus/pull/2143)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Fix output directory for `gnn_fraud_detection_pipeline` example ([#2142](https://github.com/nv-morpheus/Morpheus/pull/2142)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix C++ version of `MonitorStage` output issue caused by out of order function calls ([#2140](https://github.com/nv-morpheus/Morpheus/pull/2140)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Suppress spurious socket error messages from `GenerateVizFramesStage`  on shutdown ([#2137](https://github.com/nv-morpheus/Morpheus/pull/2137)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix DOCA builds on ARM64 ([#2127](https://github.com/nv-morpheus/Morpheus/pull/2127)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Ensure `MonitorStage` returns the cursor back to the end of output ([#2121](https://github.com/nv-morpheus/Morpheus/pull/2121)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix `test_configure_logging_custom_handlers` test for ARM ([#2112](https://github.com/nv-morpheus/Morpheus/pull/2112)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Improved DFP documentation, logging and fix MonitorStage ([#2106](https://github.com/nv-morpheus/Morpheus/pull/2106)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Specify `count: all` for GPU resources in docker compose yamls ([#2104](https://github.com/nv-morpheus/Morpheus/pull/2104)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix openai validation error ([#2083](https://github.com/nv-morpheus/Morpheus/pull/2083)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add missing indicators lib to conda package ([#2081](https://github.com/nv-morpheus/Morpheus/pull/2081)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update the version of yapf being used by pre-commit ([#2055](https://github.com/nv-morpheus/Morpheus/pull/2055)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update `compare_df` to display the diff report on column differences not just rows ([#2040](https://github.com/nv-morpheus/Morpheus/pull/2040)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 📖 Documentation
+
+- Mention using `--bootstrap_servers` option when running Kafka pipelines in `devcontainer` ([#2164](https://github.com/nv-morpheus/Morpheus/pull/2164)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Documentation improvements for the C++ developer guides ([#2160](https://github.com/nv-morpheus/Morpheus/pull/2160)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update `abp_nvsmi_detection` example README ([#2138](https://github.com/nv-morpheus/Morpheus/pull/2138)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Update `ransomware_detection` documentation to reflect default Dask values ([#2130](https://github.com/nv-morpheus/Morpheus/pull/2130)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Document known ARM64 issues ([#2128](https://github.com/nv-morpheus/Morpheus/pull/2128)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Documentation improvements ([#2117](https://github.com/nv-morpheus/Morpheus/pull/2117)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 🚀 New Features
+
+- Automate downloading of dependent source packages ([#2062](https://github.com/nv-morpheus/Morpheus/pull/2062)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update DFP integrated pipeline to use MRC `Router` node ([#2050](https://github.com/nv-morpheus/Morpheus/pull/2050)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Implement C++ version of `MonitorStage` ([#1908](https://github.com/nv-morpheus/Morpheus/pull/1908)) [@yczhang-nv](https://github.com/yczhang-nv)
+
+## 🛠️ Improvements
+
+- Performance improvements for `AbpPcapPreprocessingStage` ([#2129](https://github.com/nv-morpheus/Morpheus/pull/2129)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Support ARM builds for the Morpheus and Models container ([#2111](https://github.com/nv-morpheus/Morpheus/pull/2111)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Remove some cudf._lib.column.Column annotations in Cython ([#2109](https://github.com/nv-morpheus/Morpheus/pull/2109)) [@mroeschke](https://github.com/mroeschke)
+- Add Arm64 builds to CI ([#2093](https://github.com/nv-morpheus/Morpheus/pull/2093)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update CR year ([#2091](https://github.com/nv-morpheus/Morpheus/pull/2091)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Avoid private cudf DeviceScalar in favor of using pylibcudf &amp; pyarrow ([#2090](https://github.com/nv-morpheus/Morpheus/pull/2090)) [@mroeschke](https://github.com/mroeschke)
+- Remove cudf._lib.utils usage in favor of pylibcudf ([#2082](https://github.com/nv-morpheus/Morpheus/pull/2082)) [@mroeschke](https://github.com/mroeschke)
+- Remove triton optimization config, causing error for multi gpu inference ([#2079](https://github.com/nv-morpheus/Morpheus/pull/2079)) [@tzemicheal](https://github.com/tzemicheal)
+- Add `tensor_count` property for ControlMessage ([#2078](https://github.com/nv-morpheus/Morpheus/pull/2078)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Increase time limit for Conda builds in CI to 90 minutes ([#2075](https://github.com/nv-morpheus/Morpheus/pull/2075)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Allow running something other than bash when using docker scripts ([#2061](https://github.com/nv-morpheus/Morpheus/pull/2061)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Avoid compiler warnings ([#2054](https://github.com/nv-morpheus/Morpheus/pull/2054)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Misc cleanups to example pipelines ([#2049](https://github.com/nv-morpheus/Morpheus/pull/2049)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Improve `SharedProcessPool` tests performance ([#1950](https://github.com/nv-morpheus/Morpheus/pull/1950)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Add parquet support to write_to_file_stage.py ([#1937](https://github.com/nv-morpheus/Morpheus/pull/1937)) [@yczhang-nv](https://github.com/yczhang-nv)
+
 # Morpheus 24.10.01 (22 Nov 2024)
 
 ## 🐛 Bug Fixes
