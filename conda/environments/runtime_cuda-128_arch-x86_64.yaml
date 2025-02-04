@@ -12,10 +12,10 @@ dependencies:
 - appdirs
 - beautifulsoup4=4.12
 - click>=8
-- cuda-cudart=12.5
-- cuda-nvrtc=12.5
-- cuda-nvtx=12.5
-- cuda-version=12.5
+- cuda-cudart=12.8
+- cuda-nvrtc=12.8
+- cuda-nvtx=12.8
+- cuda-version=12.8
 - cudf=25.02
 - cupy
 - datacompy=0.10
@@ -52,5 +52,7 @@ dependencies:
   - --extra-index-url https://download.pytorch.org/whl/cu124
   - databricks-cli < 0.100
   - databricks-connect
-  - torch==2.4.0
-name: runtime_cuda-125_arch-aarch64
+  - milvus==2.3.5
+  - pymilvus==2.3.6
+  - torch==2.4.0+cu124
+name: runtime_cuda-128_arch-x86_64

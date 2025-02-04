@@ -9,24 +9,31 @@ channels:
 - nvidia/label/dev
 - pytorch
 dependencies:
+- anyio>=3.7
 - appdirs
+- arxiv=1.4
 - automake=1.16.5
 - beautifulsoup4=4.12
 - benchmark=1.8.3
+- boto3=1.35
 - breathe=4.35.0
 - c-ares=1.32
 - ccache
 - clangdev=16
 - click>=8
 - cmake=3.27
-- cuda-cudart-dev=12.5
-- cuda-nvcc=12.5
-- cuda-nvml-dev=12.5
-- cuda-nvrtc-dev=12.5
-- cuda-nvtx-dev=12.5
+- cuda-cudart-dev=12.8
+- cuda-cudart=12.8
+- cuda-nvcc=12.8
+- cuda-nvml-dev=12.8
+- cuda-nvrtc-dev=12.8
+- cuda-nvrtc=12.8
+- cuda-nvtx-dev=12.8
+- cuda-nvtx=12.8
 - cuda-sanitizer-api
-- cuda-version=12.5
+- cuda-version=12.8
 - cudf=25.02
+- cuml=25.02.*
 - cupy
 - cxx-compiler
 - cython=3.0
@@ -44,10 +51,14 @@ dependencies:
 - grpcio-status
 - gtest=1.14
 - gxx=12.1
+- httpx>=0.23,<0.28
+- huggingface_hub=0.20.2
 - include-what-you-use=0.20
 - indicators=2.3
 - ipython
 - isort
+- jsonpatch>=1.33
+- kfp
 - libcublas-dev
 - libcudf=25.02
 - libcufft-dev
@@ -62,11 +73,16 @@ dependencies:
 - myst-parser=0.18.1
 - nbsphinx
 - networkx=2.8.8
+- newspaper3k==0.2.8
 - ninja=1.11
 - nlohmann_json=3.11
 - nodejs=18.*
 - numba=0.60
+- numexpr
 - numpydoc=1.5
+- onnx=1.15
+- openai==1.13.*
+- papermill=2.4.0
 - pip
 - pkg-config=0.29
 - pluggy=1.3
@@ -76,6 +92,7 @@ dependencies:
 - pylibcudf=25.02
 - pylint=3.0.3
 - pynvml=12
+- pypdf=3.17.4
 - pypdfium2==4.30
 - pytest-asyncio
 - pytest-benchmark=4.0
@@ -89,7 +106,9 @@ dependencies:
 - rapids-dask-dependency=25.02
 - rdma-core>=48
 - requests-cache=1.1
+- requests-toolbelt=1.0
 - requests<2.29.0
+- s3fs=2024.10
 - scikit-build=0.17.6
 - scikit-learn=1.3.2
 - sphinx
@@ -97,6 +116,7 @@ dependencies:
 - sqlalchemy<2.0
 - sysroot_linux-64>=2.28
 - tqdm=4
+- transformers=4.36.2
 - tritonclient=2.34
 - typing_utils=0.1
 - urllib3<2.0
@@ -110,10 +130,22 @@ dependencies:
 - yapf=0.43
 - pip:
   - --extra-index-url https://download.pytorch.org/whl/cu124
+  - --find-links https://data.dgl.ai/wheels-test/repo.html
+  - --find-links https://data.dgl.ai/wheels/cu121/repo.html
   - databricks-cli < 0.100
   - databricks-connect
+  - dgl==2.0.0
+  - dglgo
+  - faiss-cpu
+  - google-search-results==2.4
+  - langchain-nvidia-ai-endpoints==0.0.11
+  - langchain-openai==0.1.3
+  - langchain==0.1.16
   - milvus==2.3.5
+  - nemollm==0.3.5
   - pymilvus==2.3.6
   - pytest-kafka==0.6.0
+  - python-logging-loki
+  - sentence-transformers==2.7
   - torch==2.4.0+cu124
-name: dev_cuda-125_arch-x86_64
+name: all_cuda-128_arch-x86_64

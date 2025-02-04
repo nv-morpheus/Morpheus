@@ -20,7 +20,7 @@ files:
   all:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
@@ -46,7 +46,7 @@ files:
   dev:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
@@ -68,7 +68,7 @@ files:
   build:
     output: none
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
@@ -88,7 +88,7 @@ files:
   test:
     output: none
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
@@ -109,7 +109,7 @@ files:
   docs:
     output: none
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -132,7 +132,7 @@ files:
   runtime:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - cudatoolkit
@@ -146,7 +146,7 @@ files:
   examples:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - cve-mitigation
@@ -163,7 +163,7 @@ files:
   model-utils:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - model-training-tuning
@@ -208,7 +208,7 @@ files:
   dfp_example:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     output: conda
     conda_dir: examples/digital_fingerprinting/production/conda/environments
@@ -238,26 +238,26 @@ dependencies:
       - output_types: [conda]
         matrices:
           - matrix:
-              cuda: "12.5"
+              cuda: "12.8"
             packages:
-              - cuda-cudart=12.5
-              - cuda-nvrtc=12.5
-              - cuda-nvtx=12.5
-              - cuda-version=12.5
+              - cuda-cudart=12.8
+              - cuda-nvrtc=12.8
+              - cuda-nvtx=12.8
+              - cuda-version=12.8
 
   cudatoolkit-dev:
     specific:
       - output_types: [conda]
         matrices:
           - matrix:
-              cuda: "12.5"
+              cuda: "12.8"
             packages:
-              - cuda-cudart-dev=12.5
-              - cuda-nvml-dev=12.5
-              - cuda-nvrtc-dev=12.5
-              - cuda-nvtx-dev=12.5
+              - cuda-cudart-dev=12.8
+              - cuda-nvml-dev=12.8
+              - cuda-nvrtc-dev=12.8
+              - cuda-nvtx-dev=12.8
               - cuda-sanitizer-api
-              - cuda-version=12.5
+              - cuda-version=12.8
               - libcublas-dev # required by matx
               - libcufft-dev # required by matx
               - libcusolver-dev # required by matx
@@ -272,7 +272,7 @@ dependencies:
       - output_types: [conda]
         packages:
           # Compilers
-          - cuda-nvcc=12.5
+          - cuda-nvcc=12.8
           - cxx-compiler
           - gxx=12.1
 
@@ -281,8 +281,8 @@ dependencies:
           - c-ares=1.32 # 1.33 causes an undefined symbol error
           - ccache
           - cmake=3.27
-          - cuda-cudart-dev=12.5
-          - cuda-version=12.5
+          - cuda-cudart-dev=12.8
+          - cuda-version=12.8
           - indicators=2.3 # C++ library for displaying progress bars
           - libtool # Needed for DOCA build
           - ninja=1.11
@@ -382,7 +382,7 @@ dependencies:
           - appdirs
           - beautifulsoup4=4.12
           - click>=8
-          # - cuda-version=12.5 ##
+          # - cuda-version=12.8 ##
           - *cudf
           - cupy # Version determined from cudf
           - datacompy=0.10

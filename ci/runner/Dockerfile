@@ -15,9 +15,8 @@
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/ci-conda"
-ARG CUDA_PKG_VER=12-0
-ARG CUDA_SHORT_VER=12.5
-ARG CUDA_VER=12.5.1
+ARG CUDA_SHORT_VER=12.8
+ARG CUDA_VER=12.8.0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=22.04
 ARG PROJ_NAME=morpheus
