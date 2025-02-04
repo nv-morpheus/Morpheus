@@ -28,7 +28,7 @@ CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
 ### Compiling the Example as a standalone Project
 The second method is to build the example as a standalone project. For those using the release container, additional dependencies will need to be installed prior to performing the build:
 ```bash
-conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-125_arch-$(arch).yaml
+conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-128_arch-$(arch).yaml
 
 # reload the environment
 conda deactivate
