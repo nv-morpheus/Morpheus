@@ -138,13 +138,13 @@ dependencies:
   - dglgo
   - faiss-cpu
   - google-search-results==2.4
+  - gpudb>=7.2.2.3
   - langchain-nvidia-ai-endpoints==0.0.11
   - langchain-openai==0.1.3
   - langchain==0.1.16
   - milvus==2.3.5
   - nemollm==0.3.5
   - pymilvus==2.3.6
-  - gpudb>=7.2.2.3
   - pytest-kafka==0.6.0
   - python-logging-loki
   - sentence-transformers==2.7
