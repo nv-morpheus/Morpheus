@@ -109,22 +109,7 @@ class ProgressBarContextManager
         {
             return;
         }
-
-        // A bit of hack here to make the font settings work. Indicators enables the font options only if the bars are
-        // output to standard streams (see is_colorized() in <indicators/termcolor.hpp>), but since we are still using
-        // the ostream (m_stdout_os) that is connected to the console terminal, the font options should be enabled.
-        // The internal function here is used to manually enable the font display.
-        m_stdout_os.iword(termcolor::_internal::colorize_index()) = 1;
-
-        for (auto& pbar : m_progress_bars)
-        {
-            pbar->print_progress(true);
-            m_stdout_os << termcolor::reset;  // The font option only works for the current bar
-            m_stdout_os << std::endl;
-        }
-
-        // After each round of display, move cursor up ("\033[A") to the beginning of the first bar
-        m_stdout_os << "\033[" << m_progress_bars.size() << "A" << std::flush;
+        display_all_impl();
     }
 
     void mark_pbar_as_completed(size_t bar_id)
@@ -145,6 +130,8 @@ class ProgressBarContextManager
             }
             if (all_pbars_completed)
             {
+                display_all_impl();
+
                 // Move the cursor down to the bottom of the last progress bar
                 // Doing this here instead of the destructor to avoid a race condition with the pipeline's
                 // "====Pipeline Complete====" log message.
@@ -199,6 +186,25 @@ class ProgressBarContextManager
         return std::move(progress_bar);
     }
 
+    void display_all_impl()
+    {
+        // A bit of hack here to make the font settings work. Indicators enables the font options only if the bars are
+        // output to standard streams (see is_colorized() in <indicators/termcolor.hpp>), but since we are still using
+        // the ostream (m_stdout_os) that is connected to the console terminal, the font options should be enabled.
+        // The internal function here is used to manually enable the font display.
+        m_stdout_os.iword(termcolor::_internal::colorize_index()) = 1;
+
+        for (auto& pbar : m_progress_bars)
+        {
+            pbar->print_progress(true);
+            m_stdout_os << termcolor::reset;  // The font option only works for the current bar
+            m_stdout_os << std::endl;
+        }
+
+        // After each round of display, move cursor up ("\033[A") to the beginning of the first bar
+        m_stdout_os << "\033[" << m_progress_bars.size() << "A" << std::flush;
+    }
+
     indicators::DynamicProgress<indicators::IndeterminateProgressBar> m_dynamic_progress_bars;
     std::vector<std::unique_ptr<indicators::IndeterminateProgressBar>> m_progress_bars;
     std::mutex m_mutex;
@@ -227,8 +233,8 @@ class MonitorController
      * @param unit : the unit of message count
      * @param determine_count_fn : A function that computes the count for each incoming message
      */
-    MonitorController(const std::string& description,
-                      std::string unit                                                  = "messages",
+    MonitorController(const std::string& description                                    = "Progress",
+                      const std::string& unit                                           = "messages",
                       indicators::Color text_color                                      = indicators::Color::cyan,
                       indicators::FontStyle font_style                                  = indicators::FontStyle::bold,
                       std::optional<std::function<size_t(MessageT)>> determine_count_fn = std::nullopt);
@@ -239,23 +245,28 @@ class MonitorController
     void sink_on_completed();
 
   private:
-    static std::string format_duration(std::chrono::seconds duration);
-    static std::string format_throughput(std::chrono::seconds duration, size_t count, const std::string& unit);
+    static std::string format_duration(std::chrono::microseconds duration);
+    static std::string format_throughput(std::chrono::microseconds duration, size_t count, const std::string& unit);
 
     size_t m_bar_id;
+    const std::string m_description;
     const std::string m_unit;
     std::optional<std::function<size_t(MessageT)>> m_determine_count_fn;
     size_t m_count{0};
     time_point_t m_start_time;
     bool m_is_started{false};  // Set to true after the first call to progress_sink()
+    bool m_is_completed{false};
+
+    std::mutex m_mutex;
 };
 
 template <typename MessageT>
 MonitorController<MessageT>::MonitorController(const std::string& description,
-                                               std::string unit,
+                                               const std::string& unit,
                                                indicators::Color text_color,
                                                indicators::FontStyle font_style,
                                                std::optional<std::function<size_t(MessageT)>> determine_count_fn) :
+  m_description(std::move(description)),
   m_unit(std::move(unit)),
   m_determine_count_fn(determine_count_fn)
 {
@@ -268,7 +279,7 @@ MonitorController<MessageT>::MonitorController(const std::string& description,
         }
     }
 
-    m_bar_id = ProgressBarContextManager::get_instance().add_progress_bar(description, text_color, font_style);
+    m_bar_id = ProgressBarContextManager::get_instance().add_progress_bar(m_description, text_color, font_style);
 }
 
 template <typename MessageT>
@@ -280,13 +291,15 @@ MessageT MonitorController<MessageT>::progress_sink(MessageT msg)
         m_is_started = true;
     }
     m_count += (*m_determine_count_fn)(msg);
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - m_start_time);
+    auto duration =
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - m_start_time);
 
     auto& manager = ProgressBarContextManager::get_instance();
     auto& pbar    = manager.progress_bars()[m_bar_id];
 
     // Update the progress bar
     pbar->set_option(indicators::option::PostfixText{format_throughput(duration, m_count, m_unit)});
+    pbar->set_option(indicators::option::PrefixText{m_description});
     pbar->tick();
 
     manager.display_all();
@@ -298,14 +311,23 @@ template <typename MessageT>
 void MonitorController<MessageT>::sink_on_completed()
 {
     auto& manager = ProgressBarContextManager::get_instance();
-    manager.mark_pbar_as_completed(m_bar_id);
+    auto& pbar    = manager.progress_bars()[m_bar_id];
+
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        // Display again when completed to avoid being covered by other logs
+        // manager.display_all();
+        // \033[32m is the escape code that turns the completed progress bar to green
+        // pbar->set_option(indicators::option::PrefixText{"\033[32m[Completed]" + m_description});
+        manager.mark_pbar_as_completed(m_bar_id);
+    }
 }
 
 template <typename MessageT>
-std::string MonitorController<MessageT>::format_duration(std::chrono::seconds duration)
+std::string MonitorController<MessageT>::format_duration(std::chrono::microseconds duration)
 {
     auto minutes = std::chrono::duration_cast<std::chrono::minutes>(duration);
-    auto seconds = duration - minutes;
+    auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration - minutes);
 
     std::ostringstream oss;
     oss << std::setw(2) << std::setfill('0') << minutes.count() << "m:" << std::setw(2) << std::setfill('0')
@@ -314,14 +336,14 @@ std::string MonitorController<MessageT>::format_duration(std::chrono::seconds du
 }
 
 template <typename MessageT>
-std::string MonitorController<MessageT>::format_throughput(std::chrono::seconds duration,
+std::string MonitorController<MessageT>::format_throughput(std::chrono::microseconds duration,
                                                            size_t count,
                                                            const std::string& unit)
 {
-    double throughput = static_cast<double>(count) / duration.count();
+    double throughput = static_cast<double>(count) / duration.count() * 1000 * 1000;
     std::ostringstream oss;
-    oss << count << " " << unit << " in " << format_duration(duration) << ", "
-        << "Throughput: " << std::fixed << std::setprecision(2) << throughput << " " << unit << "/s";
+    oss << count << " " << unit << " in " << format_duration(duration) << ", " << "Throughput: " << std::fixed
+        << std::setprecision(2) << throughput << " " << unit << "/s";
     return oss.str();
 }
 
