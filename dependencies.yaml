@@ -424,6 +424,7 @@ dependencies:
               arch: x86_64
             packages:
               - pip:
+                - &gpudb gpudb>=7.2.2.3
                 # Milvus does not have arm64 builds for linux
                 - &milvus milvus==2.3.5 # update to match pymilvus when available
                 - &pymilvus pymilvus==2.3.6
@@ -484,6 +485,7 @@ dependencies:
         packages:
            - &faiss-cpu faiss-cpu
            - &google-search-results google-search-results==2.4
+           - *gpudb
            - &langchain langchain==0.1.16
            - &langchain-nvidia-ai-endpoints langchain-nvidia-ai-endpoints==0.0.11
            - &langchain-openai langchain-openai==0.1.3

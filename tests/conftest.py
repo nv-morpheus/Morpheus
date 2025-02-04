@@ -982,7 +982,10 @@ KINETICA_PASSWORD = os.getenv("KINETICA_PASSWORD", "")
 KINETICA_SCHEMA = os.getenv("KINETICA_SCHEMA", "")
 
 @pytest.fixture(scope="session", name="kinetica_service")
-def kinetica_service_fixture(kinetica_server_uri: str = KINETICA_HOST, username: str = KINETICA_USER, password: str = KINETICA_PASSWORD, schema: str = KINETICA_SCHEMA):
+def kinetica_service_fixture(kinetica_server_uri: str = KINETICA_HOST,
+                             username: str = KINETICA_USER,
+                             password: str = KINETICA_PASSWORD,
+                             schema: str = KINETICA_SCHEMA):
     from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBService
     service = KineticaVectorDBService(kinetica_server_uri, user=username, password=password, kinetica_schema=schema)
     yield service

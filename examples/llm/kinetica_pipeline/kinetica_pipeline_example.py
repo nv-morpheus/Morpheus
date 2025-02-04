@@ -10,14 +10,12 @@ from morpheus.config import ExecutionMode
 from morpheus.modules import to_control_message  # noqa: F401 # pylint: disable=unused-import
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
-
-from morpheus_llm.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
-# Import Kinetica services from Morpheus
-from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBService
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
-
 from morpheus.messages import ControlMessage
+
+from morpheus_llm.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
+from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBService
 
 logger = logging.getLogger(__name__)
 

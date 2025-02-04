@@ -37,8 +37,6 @@ from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
 from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
-from morpheus_llm.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
-
 logger = logging.getLogger(__name__)
 
 

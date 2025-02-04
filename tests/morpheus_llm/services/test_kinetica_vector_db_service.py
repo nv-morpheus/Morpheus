@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-import os
 import random
-import string
 
 import numpy as np
 import pytest
@@ -302,7 +299,8 @@ def test_create_from_dataframe(kinetica_service: KineticaVectorDBService):
 
 @pytest.mark.kinetica
 @pytest.mark.slow
-def test_insert_dataframe(kinetica_service: KineticaVectorDBService, kinetica_type: list[list], kinetica_data: list[list]):
+def test_insert_dataframe(kinetica_service: KineticaVectorDBService,
+                          kinetica_type: list[list], kinetica_data: list[list]):
     num_rows = len(kinetica_data)
     collection_name = "test_insert_dataframe"
 

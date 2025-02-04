@@ -12,23 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 import enum
 import json
 import logging
-import threading
-import time
 import typing
 from collections import OrderedDict
-from functools import wraps
 
-from gpudb import GPUdb, GPUdbTable, GPUdbRecordColumn, GPUdbRecordType, GPUdbException, GPUdbSqlIterator
+from gpudb import GPUdb, GPUdbTable, GPUdbRecordColumn, GPUdbRecordType, GPUdbException
 import sqlparse
-from sqlparse.sql import IdentifierList, Identifier, Token
+from sqlparse.sql import IdentifierList, Identifier
 from sqlparse.tokens import Keyword
 
-from morpheus.io.utils import cudf_string_cols_exceed_max_bytes
-from morpheus.io.utils import truncate_string_cols_by_bytes
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import is_cudf_type
 from morpheus_llm.error import IMPORT_ERROR_MESSAGE
@@ -38,12 +32,6 @@ from morpheus_llm.service.vdb.vector_db_service import VectorDBService
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
-
-try:
-    import gpudb
-
-except ImportError as import_exc:
-    IMPORT_EXCEPTION = import_exc
 
 
 class DistanceStrategy(str, enum.Enum):
@@ -280,11 +268,11 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         embedding: list[float],
         output_fields: list[str],
         k: int = 4,
-        filter: dict[str, str] = None,
+        kinetica_filter: dict[str, str] = None,
     ) -> dict:
         """Query the Kinetica table."""
 
-        json_filter = json.dumps(filter) if filter is not None else None
+        json_filter = json.dumps(kinetica_filter) if kinetica_filter is not None else None
         where_clause = (
             f" where '{json_filter}' = JSON(metadata) "
             if json_filter is not None
@@ -298,15 +286,15 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         query_string = f"""
                 SELECT {', '.join(output_fields)}, {dist_strategy}(embedding, '{embedding_str}') 
                 as distance, {self._vector_field}
-                FROM {self._collection_name}
+                FROM {self._collection.name}
                 {where_clause}
                 ORDER BY distance asc NULLS LAST
                 LIMIT {k}
         """
 
-        self.logger.debug(query_string)
+        self._client.log_debug(query_string)
         resp = self._client.execute_sql_and_decode(query_string)
-        self.logger.debug(resp)
+        self._client.log_debug(resp)
         return resp
 
     def similarity_search_by_vector(
@@ -314,8 +302,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         embedding: list[float],
         output_fields: list[str],
         k: int = 4,
-        filter: dict = None,
-        **kwargs: typing.Any,
+        kinetica_filter: dict = None,
     ) -> list[dict]:
         """Return docs most similar to embedding vector.
 
@@ -323,13 +310,13 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             embedding: Embedding to look up documents similar to.
             output_fields: The fields to return in the query output
             k: Number of Documents to return. Defaults to 4.
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            kinetica_filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of records most similar to the query vector.
         """
         docs = self.similarity_search_with_score_by_vector(
-            embedding=embedding, output_fields=output_fields, k=k, filter=filter
+            embedding=embedding, output_fields=output_fields, k=k, kinetica_filter=kinetica_filter
         )
         return docs
 
@@ -338,15 +325,15 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         embedding: list[float],
         output_fields: list[str],
         k: int = 4,
-        filter: dict = None,
+        kinetica_filter: dict = None,
     ) -> list[dict]:
 
-        resp: dict = self.__query_collection(embedding, output_fields, k, filter)
+        resp: dict = self.__query_collection(embedding, output_fields, k, kinetica_filter)
         if resp and resp["status_info"]["status"] == "OK" and "records" in resp:
             records: OrderedDict = resp["records"]
             return [records]
 
-        self.logger.error(resp["status_info"]["message"])
+        self._client.log_error(resp["status_info"]["message"])
         return []
 
 
@@ -382,7 +369,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             embedding=embedding,
             output_fields=output_fields,
             k=k,
-            filter=search_filter,
+            kinetica_filter=search_filter,
         ) for embedding in embeddings]
 
         return results
@@ -447,7 +434,8 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         records_to_insert = kwargs.get("records_to_insert", [])
         records_to_insert_str = kwargs.get("records_to_insert_str", [])
 
-        result = self._collection.update_records(expressions, new_values_maps, records_to_insert, records_to_insert_str, options=options)
+        result = self._collection.update_records(
+            expressions, new_values_maps, records_to_insert, records_to_insert_str, options=options)
 
         return self._update_delete_result_to_dict(result=result)
 
@@ -578,10 +566,15 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         Parameters
         ----------
         **kwargs : dict
-            Not used.
+            Options as accepted by `/clear/table` API of Kinetica.
         """
+        options = kwargs.get( "options", None )
+        if options is not None: # if given, remove from kwargs
+            kwargs.pop( "options" )
+        else: # no option given; use an empty dict
+            options = {}
 
-        self._client.clear_table(self._collection_name)
+        self._client.clear_table(self._collection.name, options=options)
 
     def _insert_result_to_dict(self, result: int) -> dict[str, typing.Any]:
         result_dict = {
@@ -635,7 +628,8 @@ class KineticaVectorDBService(VectorDBService):
         @param kwargs:
         @return:
         """
-        self._collection_name = f"{self.schema}.{name}" if self.schema is not None and len(self.schema) > 0 else f"ki_home.{name}"
+        self._collection_name = f"{self.schema}.{name}" \
+            if self.schema is not None and len(self.schema) > 0 else f"ki_home.{name}"
         return KineticaVectorDBResourceService(name=self._collection_name,
                                                client=self._client)
 
@@ -780,7 +774,8 @@ class KineticaVectorDBService(VectorDBService):
         """
         Query data in a Kinetica table in the Kinetica vector database.
 
-        This method performs a search operation in the specified Kinetica table/partition in the Kinetica vector database.
+        This method performs a search operation in the specified Kinetica table/partition
+        in the Kinetica vector database.
 
         Parameters
         ----------
@@ -949,7 +944,7 @@ class KineticaVectorDBService(VectorDBService):
             try:
                 self._client.clear_table(name)
             except GPUdbException as e:
-                raise ValueError(e.message)
+                raise ValueError(e.message) from e
 
     def describe(self, name: str, **kwargs: dict[str, typing.Any]) -> dict:
         """
@@ -1007,12 +1002,14 @@ class KineticaVectorDBService(VectorDBService):
 
         pass
 
-    def delete_by_keys(self, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def delete_by_keys(self, name: str, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
-        Delete vectors by keys from the resource.
+        Delete vectors by keys from the resource. Not supported by Kinetica
 
         Parameters
         ----------
+        name : str
+            Name of the resource.
         keys : int | str | list
             Primary keys to delete vectors.
         **kwargs :  dict[str, typing.Any]
