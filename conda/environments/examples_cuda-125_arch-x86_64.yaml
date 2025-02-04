@@ -35,6 +35,7 @@ dependencies:
 - networkx=2.8.8
 - newspaper3k==0.2.8
 - nodejs=18.*
+- numba=0.60
 - numexpr
 - numpydoc=1.5
 - onnx=1.15
