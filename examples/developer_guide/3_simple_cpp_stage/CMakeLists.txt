@@ -43,6 +43,7 @@ set(OPTION_PREFIX "MORPHEUS")
 cmake_policy(SET CMP0144 NEW)
 
 find_package(morpheus REQUIRED)
+find_package(glog REQUIRED) # work-around for #2149
 
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 

@@ -111,14 +111,14 @@ morpheus --log_level INFO \
 	--plugin "postprocessing" \
 	run --pipeline_batch_size 1024 --model_max_batch_size 32  \
 	pipeline-nlp \
-	from-file --filename ./models/datasets/validation-data/log-parsing-validation-data-input.csv  \
+	from-file --filename ./examples/data/log-parsing-validation-data-input.csv \
 	deserialize \
-	preprocess --vocab_hash_file data/bert-base-cased-hash.txt --stride 64 --column=raw \
+	preprocess --vocab_hash_file=data/bert-base-cased-hash.txt --stride 64 --column=raw \
 	monitor --description "Preprocessing rate" \
 	inf-logparsing --model_name log-parsing-onnx --server_url localhost:8001 --force_convert_inputs=True \
 	monitor --description "Inference rate" --unit inf \
-	log-postprocess --vocab_path ./models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
-		--model_config_path=./models/log-parsing-models/log-parsing-config-20220418.json \
+	log-postprocess --vocab_path=data/bert-base-cased-vocab.txt \
+		--model_config_path=./examples/data/log-parsing-config-20220418.json \
 	to-file --filename .tmp/output/log-parsing-cli-output.jsonlines --overwrite  \
 	monitor --description "Postprocessing rate"
 ```

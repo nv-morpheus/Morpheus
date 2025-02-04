@@ -19,5 +19,5 @@ set -e
 COMPOSE_FILE="${MORPHEUS_ROOT}/.devcontainer/docker-compose.yml"
 
 docker compose -f $COMPOSE_FILE up -d zookeeper kafka
-export ZOOKEEPER_HOST=$(docker compose -f $COMPOSE_FILE exec zookeper hostname -i)
+export ZOOKEEPER_HOST=$(docker compose -f $COMPOSE_FILE exec zookeeper hostname -i)
 export KAFKA_HOST=$(docker compose -f $COMPOSE_FILE exec kafka hostname -i)
