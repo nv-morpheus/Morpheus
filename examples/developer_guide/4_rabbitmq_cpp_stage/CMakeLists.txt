@@ -26,7 +26,7 @@ list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 project(4_rabbitmq_cpp_stage
-  VERSION 25.02.00
+  VERSION 25.06.00
   LANGUAGES C CXX
 )
 
@@ -43,6 +43,7 @@ set(OPTION_PREFIX "MORPHEUS")
 cmake_policy(SET CMP0144 NEW)
 
 find_package(morpheus REQUIRED)
+find_package(glog REQUIRED)
 
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 

@@ -25,7 +25,7 @@ mark_as_advanced(MORPHEUS_CACHE_DIR)
 list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
 
 project(3_simple_cpp_stage
-  VERSION 25.02.00
+  VERSION 25.06.00
   LANGUAGES C CXX
 )
 
@@ -43,6 +43,7 @@ set(OPTION_PREFIX "MORPHEUS")
 cmake_policy(SET CMP0144 NEW)
 
 find_package(morpheus REQUIRED)
+find_package(glog REQUIRED) # work-around for #2149
 
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 

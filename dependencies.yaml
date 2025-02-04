@@ -303,7 +303,7 @@ dependencies:
           - libcudf=25.02
           - librdkafka>=1.9.2,<1.10.0a0
           - libzlib >=1.3.1,<2
-          - &mrc mrc=25.02
+          - &mrc mrc=25.06
           - nlohmann_json=3.11
           - pybind11-stubgen=0.10.5
           - pylibcudf=25.02
@@ -396,19 +396,21 @@ dependencies:
           - mlflow>=2.10.0,<2.18 # Pin version to avoid breaking change in 2.18 to thread local variable code commit id: 5541888
           - *mrc
           - networkx=2.8.8
+          - numba=0.60 # Pin version to avoid https://github.com/nv-morpheus/Morpheus/issues/2166
           - numpydoc=1.5
           - pydantic
           - python-confluent-kafka>=1.9.2,<1.10.0a0
           - python-graphviz
           - pluggy=1.3
           - rapids-dask-dependency=25.02 # provides dask and distributed
-          - requests
+          - requests<2.29.0
           - requests-cache=1.1
           - scikit-learn=1.3.2
           - sqlalchemy<2.0 # 2.0 is incompatible with pandas=1.3
           - tqdm=4
           - tritonclient=2.34
           - typing_utils=0.1
+          - urllib3<2.0
           - watchdog=3.0
           - websockets
           - pip
@@ -509,7 +511,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - morpheus-dfp=25.02
+          - morpheus-dfp=25.06
           - tini=0.19
           - pip:
             - *torch-extra-index

@@ -89,12 +89,12 @@ This example utilizes the Triton Inference Server to perform inference.
 
 Pull the Docker image for Triton:
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06
 ```
 
 Run the following to launch Triton and load the `abp-nvsmi-xgb` XGBoost model:
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
 ```
 
 This will launch Triton and only load the `abp-nvsmi-xgb` model. This model has been configured with a max batch size of 32768, and to use dynamic batching for increased performance.
@@ -225,22 +225,22 @@ Inference Rate[Complete]: 1242inf [00:00, 1863.04inf/s]
 ====Pipeline Complete====
 ```
 
-The output file `.tmp/output/detections.jsonlines` will contain a single boolean value for each input line. At some point the values will switch from `0` to `1`:
+The output file `.tmp/output/abp_nvsmi_detections.jsonlines` will contain a single boolean value for each input line. At some point the values will switch from `false` to `true`:
 
 ```
 ...
-{"mining": 0}
-{"mining": 0}
-{"mining": 0}
-{"mining": 0}
-{"mining": 1}
-{"mining": 1}
-{"mining": 1}
-{"mining": 1}
-{"mining": 1}
-{"mining": 1}
-{"mining": 1}
-{"mining": 1}
+{"mining": false}
+{"mining": false}
+{"mining": false}
+{"mining": false}
+{"mining": true}
+{"mining": true}
+{"mining": true}
+{"mining": true}
+{"mining": true}
+{"mining": true}
+{"mining": true}
+{"mining": true}
 ...
 ```
 

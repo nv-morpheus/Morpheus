@@ -26,6 +26,12 @@ All environments require additional Conda packages which can be installed with e
 | Morpheus Release Container | ✔ | Requires launching Milvus on the host |
 | Dev Container | ✘ |  |
 
+### Supported Architectures
+| Architecture | Supported | Issue |
+|--------------|-----------|-------|
+| x86_64 | ✔ | |
+| aarch64 | ✘ | [#2122](https://github.com/nv-morpheus/Morpheus/issues/2122) |
+
 ## Table of Contents
 
 ## Background Information

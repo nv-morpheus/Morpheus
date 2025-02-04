@@ -25,6 +25,12 @@ All environments require additional Conda packages which can be installed with e
 | Morpheus Release Container | ✔ |  |
 | Dev Container | ✔ |  |
 
+### Supported Architectures
+| Architecture | Supported | Issue |
+|--------------|-----------|-------|
+| x86_64 | ✔ | |
+| aarch64 | ✘ | [#2123](https://github.com/nv-morpheus/Morpheus/issues/2123) |
+
 ## Requirements
 
 Prior to running the GNN fraud detection pipeline, additional requirements must be installed in to your Conda environment.
@@ -128,5 +134,5 @@ morpheus --log_level INFO \
 	gnn-fraud-classification --model_xgb_file examples/gnn_fraud_detection_pipeline/model/xgb.pt \
 	monitor --description "Add classification rate" \
 	serialize \
-	to-file --filename "gnn_fraud_detection_cli_output.csv" --overwrite
+	to-file --filename ".tmp/output/gnn_fraud_detection_cli_output.csv" --overwrite
 ```
