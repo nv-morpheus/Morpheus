@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024, NVIDIA CORPORATION.
+# Copyright (c) 2021-2025, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ from mrc.core import operators as ops
 import cudf
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
@@ -35,7 +36,16 @@ from morpheus.pipeline.stage_schema import StageSchema
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
-@register_stage("log-postprocess", modes=[PipelineModes.NLP])
+@register_stage("log-postprocess",
+                modes=[PipelineModes.NLP],
+                option_args={
+                    "vocab_path": {
+                        "type": MorpheusRelativePath(exists=True, dir_okay=False, resolve_path=True)
+                    },
+                    "model_config_path": {
+                        "type": MorpheusRelativePath(exists=True, dir_okay=False, resolve_path=True)
+                    }
+                })
 class LogParsingPostProcessingStage(SinglePortStage):
 
     def __init__(self, c: Config, vocab_path: pathlib.Path, model_config_path: pathlib.Path):

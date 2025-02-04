@@ -1,5 +1,5 @@
 <!--
-# Copyright (c) 2023-2024, NVIDIA CORPORATION.
+# Copyright (c) 2023-2025, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,42 +63,28 @@ configure_logging(loki_handler, log_level=log_level)
 
 More information about Loki Python logging can be found [here](https://pypi.org/project/python-logging-loki/).
 
-## Build the Morpheus container:
-From the root of the Morpheus repo:
-```bash
-./docker/build_container_release.sh
-```
-
-Build `docker compose` services:
-
-```
-cd examples/digital_fingerprinting/production
-export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
-docker compose build
-```
-
 ## Start Grafana and Loki services:
 
-To start Grafana and Loki, run the following command on host in `examples/digital_fingerprinting/production`:
+To start Grafana and Loki, from the root of the Morpheus repo:
 ```bash
+cd examples/digital_fingerprinting/production
+docker compose build
 docker compose up grafana
 ```
 
 ## Run Azure DFP Training
 
-Create `bash` shell in `morpheus_pipeline` container:
+Open a second terminal and start the `bash` shell in `morpheus_pipeline` container, from the root of the Morpheus repo:
 
 ```bash
+cd examples/digital_fingerprinting/production
 docker compose run --rm morpheus_pipeline bash
 ```
 
-Set `PYTHONPATH` environment variable to allow import of production DFP Morpheus stages:
-```
-export PYTHONPATH=/workspace/examples/digital_fingerprinting/production/morpheus
-```
-
-Run the following in the container to train the Azure models.
+From within the `morpheus_pipeline` container, set `PYTHONPATH` environment variable to allow import of production DFP Morpheus stages, and then begin training the Azure models.
 ```bash
+export PYTHONPATH=/workspace/examples/digital_fingerprinting/production/morpheus
+
 cd /workspace/examples/digital_fingerprinting/production/grafana
 python run.py --log_level DEBUG --train_users generic --start_time "2022-08-01" --input_file="../../../data/dfp/azure-training-data/AZUREAD_2022*.json"
 ```
