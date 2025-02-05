@@ -101,6 +101,7 @@ outputs:
         - mlflow>=2.10.0,<2.18
         - mrc
         - networkx=2.8.8
+        - numba=0.60 # Pin version to avoid https://github.com/nv-morpheus/Morpheus/issues/2166
         - numpydoc =1.5.*
         - pydantic
         - pluggy =1.3.*
