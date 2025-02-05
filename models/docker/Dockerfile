@@ -14,7 +14,7 @@
 # limitations under the License.
 
 ARG FROM_IMAGE="nvcr.io/nvidia/tritonserver"
-ARG FROM_IMAGE_TAG="25.01-py3"
+ARG FROM_IMAGE_TAG="24.09-py3"
 ARG MORPHEUS_ROOT_HOST=.
 FROM --platform=$TARGETPLATFORM ${FROM_IMAGE}:${FROM_IMAGE_TAG} AS base
 
