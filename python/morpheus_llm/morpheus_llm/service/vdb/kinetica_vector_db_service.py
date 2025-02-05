@@ -63,14 +63,17 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         An instance of the GPUdb class for interaction with the Kinetica Vector Database.
     """
 
-    def __init__(self, name: str, client: "GPUdb") -> None:
+    def __init__(self, name: str, schema: str, client: "GPUdb") -> None:
         if IMPORT_EXCEPTION is not None:
             raise ImportError(IMPORT_ERROR_MESSAGE.format(package='gpudb')) from IMPORT_EXCEPTION
 
         super().__init__()
 
-        self._name = name
+        self._schema = schema
         self._client = client
+
+        self._name = f"{self._schema}.{name}" \
+            if self._schema is not None and len(self._schema) > 0 else f"ki_home.{name}"
 
         self._collection =  GPUdbTable(name=self._name, db=client)
         self._record_type = self._collection.get_table_type()
@@ -79,9 +82,6 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
         self._vector_field = None
         self._fillna_fields_dict = {}
-
-        # Mapping of field name to max length for string fields
-        self._fields_max_length: dict[str, int] = {}
 
         for field in self._fields:
             if field.is_vector():
@@ -531,7 +531,8 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
                 expression = [f"{pk_field_name} in ({','.join(keys)})"]
             elif isinstance(keys, list) and is_list_of_type(keys, str):
                 # keys is a list of strs
-                expression = ["{0} in ({1})".format(pk_field_name, ','.join(f"'{s}'" for s in keys))]
+                keys_str = ','.join(f"'{s}'" for s in keys)
+                expression = [f"{pk_field_name} in ({keys_str})"]
             else:
                 raise GPUdbException("'keys' must be of type (int or str or list) ...")
         try:
@@ -598,27 +599,28 @@ class KineticaVectorDBService(VectorDBService):
 
     Parameters
     ----------
-    host : str
-        The hostname or IP address of the Kinetica server.
-    port : str
-        The port number for connecting to the Kinetica server.
-    alias : str, optional
-        Alias for the Kinetica connection, by default "default".
+    uri : str
+        The hostname or IP address of the Kinetica server along with the port e.g., `http://localhost:9191`.
+    user : str
+        The username for connecting to the Kinetica server.
+    password : str
+        The password for connecting to the Kinetica server.
+    kinetica_schema : str, optional
+        Kinetica schema name, by default "ki_home".
     """
 
     def __init__(self,
                  uri: str,
                  user: str = "",
                  password: str = "",
-                 kinetica_schema = "",
+                 kinetica_schema: str = "ki_home",
                  ):
         options = GPUdb.Options()
         options.skip_ssl_cert_verification = True
         options.username = user
         options.password = password
 
-        self._collection_name = None
-        self.schema = kinetica_schema if kinetica_schema is not None and len(kinetica_schema) > 0 else None
+        self._schema = kinetica_schema
         self._client = GPUdb(host=uri, options=options)
 
     def load_resource(self, name: str, **kwargs: dict[str, typing.Any]) -> KineticaVectorDBResourceService:
@@ -628,14 +630,27 @@ class KineticaVectorDBService(VectorDBService):
         @param kwargs:
         @return:
         """
-        self._collection_name = f"{self.schema}.{name}" \
-            if self.schema is not None and len(self.schema) > 0 else f"ki_home.{name}"
-        return KineticaVectorDBResourceService(name=self._collection_name,
+        return KineticaVectorDBResourceService(name=name,
+                                               schema=self._schema,
                                                client=self._client)
 
-    @property
-    def collection_name(self):
-        return self._collection_name if self._collection_name is not None else None
+    def collection_name(self, name: str):
+        """
+        Returns a fully qualified Kinetica table name
+
+        Parameters
+        ----------
+            name : str
+                Name fo the Kinetica table
+
+        Returns
+        -------
+            str:
+                Fully qualified Kinetica table name by prepending the schema name
+
+        """
+        name = f"{self._schema}.{name}"
+        return name
 
     def has_store_object(self, name: str) -> bool:
         """
@@ -651,6 +666,8 @@ class KineticaVectorDBService(VectorDBService):
         bool
             True if the table exists, False otherwise.
         """
+        name = f"{self._schema}.{name}"
+
         return self._client.has_table(name)["table_exists"]
 
     def create(self, name: str, overwrite: bool = False, **kwargs: dict[str, typing.Any]):
@@ -674,7 +691,7 @@ class KineticaVectorDBService(VectorDBService):
         """
         logger.debug("Creating Kinetica table: %s, overwrite=%s, kwargs=%s", name, overwrite, kwargs)
 
-        table_type: list[list[str]] = kwargs.get("type", [])
+        table_type: list[list[str]] = kwargs.get("table_type", [])
         if not self.has_store_object(name) and (table_type is None or len(table_type) == 0):
             raise GPUdbException("Table must either be existing or a type must be given to create the table ...")
 
@@ -766,7 +783,7 @@ class KineticaVectorDBService(VectorDBService):
         RuntimeError
             If the Kinetica table not exists.
         """
-        resource = self.load_resource(name)
+        resource: KineticaVectorDBResourceService = self.load_resource(name)
 
         return resource.insert_dataframe(df=df, **kwargs)
 
@@ -792,7 +809,7 @@ class KineticaVectorDBService(VectorDBService):
             The search result, which can vary depending on the query and options.
         """
 
-        resource = self.load_resource(name)
+        resource: KineticaVectorDBResourceService = self.load_resource(name)
 
         return resource.query(query, **kwargs)
 
@@ -813,7 +830,7 @@ class KineticaVectorDBService(VectorDBService):
             Returns a list of dictionaries representing the results of the similarity search.
         """
 
-        resource = self.load_resource(name)
+        resource: KineticaVectorDBResourceService = self.load_resource(name)
 
         return resource.similarity_search(**kwargs)
 
@@ -839,7 +856,7 @@ class KineticaVectorDBService(VectorDBService):
         if not isinstance(data, list):
             raise RuntimeError("Data is not of type list.")
 
-        resource = self.load_resource(name)
+        resource: KineticaVectorDBResourceService = self.load_resource(name)
 
         return resource.update(data=data, **kwargs)
 
@@ -862,7 +879,7 @@ class KineticaVectorDBService(VectorDBService):
             Returns result of the given keys that are delete from the Kinetica table.
         """
 
-        resource = self.load_resource(name)
+        resource: KineticaVectorDBResourceService = self.load_resource(name)
         result = resource.delete(expr=expr, **kwargs)
 
         return result
@@ -887,7 +904,7 @@ class KineticaVectorDBService(VectorDBService):
             Returns result rows of the given keys from the Kinetica table.
         """
 
-        resource = self.load_resource(name)
+        resource: KineticaVectorDBResourceService = self.load_resource(name)
 
         result = resource.retrieve_by_keys(keys=keys, **kwargs)
 
@@ -909,7 +926,7 @@ class KineticaVectorDBService(VectorDBService):
         int
             Returns number of entities in the Kinetica table.
         """
-        resource = self.load_resource(name)
+        resource: KineticaVectorDBResourceService = self.load_resource(name)
 
         return resource.count(**kwargs)
 
@@ -963,13 +980,13 @@ class KineticaVectorDBService(VectorDBService):
             Returns Kinetica table information.
         """
 
-        resource = self.load_resource(name)
+        resource: KineticaVectorDBResourceService = self.load_resource(name)
 
         return resource.describe(**kwargs)
 
     def release_resource(self, name: str) -> None:
         """
-        Release a loaded resource from the memory.
+        Release a loaded resource from the memory. Not used by Kinetica
 
         Parameters
         ----------
@@ -980,14 +997,14 @@ class KineticaVectorDBService(VectorDBService):
 
     def close(self) -> None:
         """
-        Close connection to the vector database.
+        Close connection to the vector database. Not used by Kinetica
         """
 
         pass
 
     def list_store_objects(self, **kwargs: dict[str, typing.Any]) -> list[str]:
         """
-        List existing resources in the vector database.
+        List existing resources in the vector database. Not used by Kinetica
 
         Parameters
         ----------
