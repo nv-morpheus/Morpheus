@@ -107,6 +107,9 @@ sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" 
 # docs/source/examples.md
 sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" docs/source/examples.md
 
+# docs/source/extra_info/glossary.md
+sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" docs/source/extra_info/glossary.md
+
 # docs/source/getting_started.md
 # Only do the minor version here since the full version can mess up the examples
 sed_runner "s/${CURRENT_SHORT_TAG}/${NEXT_SHORT_TAG}/g" docs/source/getting_started.md
