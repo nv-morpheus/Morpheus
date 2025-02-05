@@ -22,6 +22,12 @@ ARG MORPHEUS_ROOT_HOST
 
 WORKDIR /
 
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt upgrade -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy the model repository
 COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
 
