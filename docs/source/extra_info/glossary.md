@@ -19,7 +19,7 @@ limitations under the License.
 
 <!-- Please keep these sorted alphabetically -->
 ## MLflow Triton Plugin
-A Docker container, allowing the deployment of models in [MLflow](https://mlflow.org/) to [Triton Inference Server](#triton-inference-server). Information on building this container is available in the [`models/mlflow/README.md`](https://github.com/nv-morpheus/Morpheus/blob/branch-25.02/models/mlflow/README.md) document.
+[MLflow](https://mlflow.org/) plugin for deploying your models from MLflow to [Triton Inference Server](#triton-inference-server). Refer to [`mlflow-triton-plugin`](https://github.com/triton-inference-server/server/tree/main/deploy/mlflow-triton-plugin) for more information.
 
 ## module
 A Morpheus module is a type of work unit that can be utilized in the Morpheus stage and can be registered to a MRC segment module registry. Modules are beneficial when there is a possibility for the work-unit to be reused.

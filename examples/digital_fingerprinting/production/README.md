@@ -24,7 +24,6 @@ Key Features:
  * Uses a model store to allow the training and inference pipelines to communicate
  * Organized into a `docker compose` deployment for easy startup
  * Contains a Jupyter notebook service to ease development and debugging
- * Can be deployed to Kubernetes using provided Helm charts
  * Uses many customized stages to maximize performance.
 
 ## Building and Running via `docker compose`
