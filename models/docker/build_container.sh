@@ -39,7 +39,7 @@ SHORT_VERSION=${MAJOR_VERSION}.${MINOR_VERSION}
 
 # Build args
 FROM_IMAGE=${FROM_IMAGE:-"nvcr.io/nvidia/tritonserver"}
-FROM_IMAGE_TAG=${FROM_IMAGE_TAG:-"24.09-py3"}
+FROM_IMAGE_TAG=${FROM_IMAGE_TAG:-"25.01-py3"}
 
 DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"nvcr.io/nvidia/morpheus/morpheus-tritonserver-models"}
 DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"${SHORT_VERSION}"}
