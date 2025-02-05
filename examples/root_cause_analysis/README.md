@@ -54,7 +54,7 @@ This example utilizes the Triton Inference Server to perform inference. The bina
 From the Morpheus repo root directory, run the following to launch Triton and load the `root-cause-binary-onnx` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model root-cause-binary-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model root-cause-binary-onnx
 ```
 
 This will launch Triton and only load the model required by our example pipeline. The model has been configured with a max batch size of 32, and to use dynamic batching for increased performance.
