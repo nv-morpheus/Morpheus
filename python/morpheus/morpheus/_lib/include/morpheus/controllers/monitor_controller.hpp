@@ -130,6 +130,7 @@ class ProgressBarContextManager
             }
             if (all_pbars_completed)
             {
+                // Display again when completed to avoid progress bars being covered by other logs
                 display_all_impl();
 
                 // Move the cursor down to the bottom of the last progress bar
@@ -255,9 +256,6 @@ class MonitorController
     size_t m_count{0};
     time_point_t m_start_time;
     bool m_is_started{false};  // Set to true after the first call to progress_sink()
-    bool m_is_completed{false};
-
-    std::mutex m_mutex;
 };
 
 template <typename MessageT>
@@ -313,14 +311,10 @@ void MonitorController<MessageT>::sink_on_completed()
     auto& manager = ProgressBarContextManager::get_instance();
     auto& pbar    = manager.progress_bars()[m_bar_id];
 
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        // Display again when completed to avoid being covered by other logs
-        // manager.display_all();
-        // \033[32m is the escape code that turns the completed progress bar to green
-        // pbar->set_option(indicators::option::PrefixText{"\033[32m[Completed]" + m_description});
-        manager.mark_pbar_as_completed(m_bar_id);
-    }
+    pbar->set_option(indicators::option::PrefixText{"[Completed]" + m_description});
+    pbar->set_option(indicators::option::ForegroundColor{indicators::Color::green});
+
+    manager.mark_pbar_as_completed(m_bar_id);
 }
 
 template <typename MessageT>
