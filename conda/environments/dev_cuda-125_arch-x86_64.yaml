@@ -65,6 +65,7 @@ dependencies:
 - ninja=1.11
 - nlohmann_json=3.11
 - nodejs=18.*
+- numba=0.60
 - numpydoc=1.5
 - pip
 - pkg-config=0.29

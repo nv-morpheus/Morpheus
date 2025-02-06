@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -99,6 +99,7 @@ KNOWN_GITHUB_URLS = {  # <package>: <github repo>, please keep sorted
     'pytorch': 'https://github.com/pytorch/pytorch',
     'tqdm': 'https://github.com/tqdm/tqdm',
     'typing_utils': 'https://github.com/bojiang/typing_utils',
+    'urllib3': 'https://github.com/urllib3/urllib3',
     'versioneer-518': 'https://github.com/python-versioneer/versioneer-518',
     'watchdog': 'https://github.com/gorakhargosh/watchdog',
     'websockets': 'https://github.com/python-websockets/websockets',
@@ -112,9 +113,8 @@ KNOWN_GITLAB_URLS = {
 OTHER_REPOS: dict[str, PACKAGE_TO_URL_FN_T] = {
     # While boost is available on GitHub, the sub-libraries are in separate repos.
     'beautifulsoup4':
-        lambda name,
-        ver: ("https://www.crummy.com/software/BeautifulSoup/bs4/download/"
-              f"{'.'.join(ver.split('.')[:-1])}/{name}-{ver}.tar.gz"),
+        lambda name, ver: ("https://www.crummy.com/software/BeautifulSoup/bs4/download/"
+                           f"{'.'.join(ver.split('.')[:-1])}/{name}-{ver}.tar.gz"),
 }
 
 # Please keep sorted
@@ -164,6 +164,7 @@ GIT_TAG_FORMAT = {  # any packages not in this dict are assumned to have the TAG
     'python-versioneer': TAG_BARE,
     'scikit-learn': TAG_BARE,
     'sqlalchemy': lambda ver: f"rel_{ver.replace('.', '_')}",
+    'urllib3': TAG_BARE,
     'websockets': TAG_BARE,
 }
 
