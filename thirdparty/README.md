@@ -17,4 +17,4 @@ limitations under the License.
 
 # Source Code for OSS Packages in the NVIDIA Morpheus Docker container
 
-The source code for OSS packages which are included in the NVIDIA Morpheus Docker image is available at [https://github.com/nv-morpheus/morpheus_third_party_oss](https://github.com/nv-morpheus/morpheus_third_party_oss)
+The source code for OSS packages which are included in the NVIDIA Morpheus Docker containers are available at [https://github.com/nv-morpheus/morpheus_third_party_oss](https://github.com/nv-morpheus/morpheus_third_party_oss)
