@@ -104,12 +104,22 @@ class ProgressBarContextManager
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        // To avoid display_all() being executed after calling mark_pbar_as_completed() in some race conditions
+        // If the progress bars needs to be updated after completion, move the cursor up to the beginning
+        if (m_is_completed)
+        {
+            move_cursor_up(m_progress_bars.size());
+        }
+
+        display_all_impl();
+
+        // If all the progress bars are completed, keep the cursor position as it is
         if (m_is_completed)
         {
             return;
         }
-        display_all_impl();
+
+        // Otherwise, move cursor up to the beginning after each round of display
+        move_cursor_up(m_progress_bars.size());
     }
 
     void mark_pbar_as_completed(size_t bar_id)
@@ -133,17 +143,6 @@ class ProgressBarContextManager
                 // Display again when completed to avoid progress bars being covered by other logs
                 display_all_impl();
 
-                // Move the cursor down to the bottom of the last progress bar
-                // Doing this here instead of the destructor to avoid a race condition with the pipeline's
-                // "====Pipeline Complete====" log message.
-                // Using a string stream to ensure other logs are not interleaved.
-                std::ostringstream new_lines;
-                for (std::size_t i = 0; i < m_progress_bars.size(); ++i)
-                {
-                    new_lines << "\n";
-                }
-
-                m_stdout_os << new_lines.str() << std::flush;
                 m_is_completed = true;
             }
         }
@@ -201,9 +200,18 @@ class ProgressBarContextManager
             m_stdout_os << termcolor::reset;  // The font option only works for the current bar
             m_stdout_os << std::endl;
         }
+    }
 
-        // After each round of display, move cursor up ("\033[A") to the beginning of the first bar
-        m_stdout_os << "\033[" << m_progress_bars.size() << "A" << std::flush;
+    void move_cursor_up(size_t lines)
+    {
+        // "\033[<n>A" means moving the cursor up for n lines
+        m_stdout_os << "\033[" << lines << "A" << std::flush;
+    }
+
+    void move_cursor_down(size_t lines)
+    {
+        // "\033[<n>B" means moving the cursor down for n lines
+        m_stdout_os << "\033[" << lines << "B" << std::flush;
     }
 
     indicators::DynamicProgress<indicators::IndeterminateProgressBar> m_dynamic_progress_bars;
@@ -256,6 +264,7 @@ class MonitorController
     size_t m_count{0};
     time_point_t m_start_time;
     bool m_is_started{false};  // Set to true after the first call to progress_sink()
+    bool m_is_completed{false};
 };
 
 template <typename MessageT>
@@ -336,8 +345,8 @@ std::string MonitorController<MessageT>::format_throughput(std::chrono::microsec
 {
     double throughput = static_cast<double>(count) / duration.count() * 1000 * 1000;
     std::ostringstream oss;
-    oss << count << " " << unit << " in " << format_duration(duration) << ", "
-        << "Throughput: " << std::fixed << std::setprecision(2) << throughput << " " << unit << "/s";
+    oss << count << " " << unit << " in " << format_duration(duration) << ", " << "Throughput: " << std::fixed
+        << std::setprecision(2) << throughput << " " << unit << "/s";
     return oss.str();
 }
 
