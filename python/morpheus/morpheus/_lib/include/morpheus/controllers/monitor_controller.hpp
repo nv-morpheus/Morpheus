@@ -343,7 +343,8 @@ std::string MonitorController<MessageT>::format_throughput(std::chrono::microsec
                                                            size_t count,
                                                            const std::string& unit)
 {
-    double throughput = static_cast<double>(count) / duration.count() * 1000 * 1000;
+    double time_in_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(duration).count();
+    double throughput = static_cast<double>(count) / time_in_seconds;
     std::ostringstream oss;
     oss << count << " " << unit << " in " << format_duration(duration) << ", " << "Throughput: " << std::fixed
         << std::setprecision(2) << throughput << " " << unit << "/s";
