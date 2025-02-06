@@ -28,6 +28,9 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Append our third party notice to the entrypoint message
+COPY "${MORPHEUS_ROOT_HOST}/thirdparty/models-container-thirdparty-oss.txt" "/opt/nvidia/entrypoint.d/80-morpheus-thirdparty-oss.txt"
+
 # Copy the model repository
 COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
 

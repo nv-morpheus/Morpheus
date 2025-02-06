@@ -1,0 +1,7 @@
+
+===================================
+== Morpheus Triton Server Models ==
+===================================
+
+The source code for OSS packages which are included in the NVIDIA Morpheus Triton Server Models Docker container
+are available at https://github.com/nv-morpheus/morpheus_third_party_oss
