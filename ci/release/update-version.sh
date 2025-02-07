@@ -101,11 +101,6 @@ sed_runner 's/'"VERSION ${CURRENT_FULL_VERSION}.*"'/'"VERSION ${NEXT_FULL_VERSIO
 # docs/source/basics/overview.rst
 sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" docs/source/basics/overview.rst
 
-# docs/source/cloud_deployment_guide.md
-sed_runner "s|${CURRENT_SHORT_TAG}.tgz|${NEXT_SHORT_TAG}.tgz|g" docs/source/cloud_deployment_guide.md
-sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" docs/source/cloud_deployment_guide.md
-sed_runner "s|tree/branch-${CURRENT_SHORT_TAG}|tree/branch-${NEXT_SHORT_TAG}|g" docs/source/cloud_deployment_guide.md
-
 # docs/source/developer_guide/guides/5_digital_fingerprinting.md
 sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" docs/source/developer_guide/guides/5_digital_fingerprinting.md
 
@@ -119,9 +114,6 @@ sed_runner "s/${CURRENT_SHORT_TAG}/${NEXT_SHORT_TAG}/g" docs/source/getting_star
 # models/model-cards
 sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" models/model-cards/*.md
 sed_runner "s|tree/branch-${CURRENT_SHORT_TAG}|tree/branch-${NEXT_SHORT_TAG}|g" models/model-cards/*.md
-
-# thirdparty
-sed_runner "s|tree/branch-${CURRENT_SHORT_TAG}|tree/branch-${NEXT_SHORT_TAG}|g" thirdparty/README.md
 
 # Update the version of the Morpheus model container
 # We need to update several files, however we need to avoid symlinks as well as the build and .cache directories
