@@ -66,11 +66,6 @@ Modifying Morpheus
 ^^^^^^^^^^^^^^^^^^
  * :doc:`developer_guide/contributing` - Covers building from source, making changes and contributing to Morpheus
 
-Deploying Morpheus
-^^^^^^^^^^^^^^^^^^
- * :doc:`cloud_deployment_guide` - Kubernetes and cloud based deployments
-
-
 
 .. toctree::
    :caption: Using Morpheus
@@ -93,13 +88,6 @@ Deploying Morpheus
 
    developer_guide/architecture
    developer_guide/contributing
-
-.. toctree::
-   :caption: Deploying Morpheus
-   :maxdepth: 20
-   :hidden:
-
-   cloud_deployment_guide
 
 .. toctree::
    :caption: API

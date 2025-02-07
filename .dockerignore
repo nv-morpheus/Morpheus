@@ -14,3 +14,6 @@
 docker/commands.sh
 *.egg-info/
 kafka-docker
+
+# Ignore the models docker files
+models/docker

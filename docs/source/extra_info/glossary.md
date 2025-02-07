@@ -19,19 +19,10 @@ limitations under the License.
 
 <!-- Please keep these sorted alphabetically -->
 ## MLflow Triton Plugin
-Docker container published on [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/mlflow-triton-plugin), allowing the deployment of models in [MLflow](https://mlflow.org/) to [Triton Inference Server](#triton-inference-server). This is also available as a [Helm Chart](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/helm-charts/morpheus-mlflow).
+[MLflow](https://mlflow.org/) plugin for deploying your models from MLflow to [Triton Inference Server](#triton-inference-server). Refer to [`mlflow-triton-plugin`](https://github.com/triton-inference-server/server/tree/main/deploy/mlflow-triton-plugin) for more information.
 
 ## module
 A Morpheus module is a type of work unit that can be utilized in the Morpheus stage and can be registered to a MRC segment module registry. Modules are beneficial when there is a possibility for the work-unit to be reused.
-
-## Morpheus AI Engine
-A Helm Chart for deploying the infrastructure of Morpheus. It includes the [Triton Inference Server](#triton-inference-server), Kafka, and Zookeeper. Refer to [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/helm-charts/morpheus-ai-engine](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/helm-charts/morpheus-ai-engine).
-
-## Morpheus SDK CLI
-A Helm Chart that deploys the Morpheus container. Refer to [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/helm-charts/morpheus-sdk-client](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/helm-charts/morpheus-sdk-client)
-
-## `morpheus-sdk-client`
-Another name for the [Morpheus SDK CLI](#morpheus-sdk-cli) Helm Chart.
 
 ## MRC
 [Morpheus Runtime Core (MRC)](https://github.com/nv-morpheus/MRC). Pipelines in MRC are low level representations of Morpheus [pipelines](#pipeline).
