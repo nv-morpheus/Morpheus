@@ -590,7 +590,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
     def _insert_result_to_dict(self, result: int) -> dict[str, typing.Any]:
         result_dict = {
-            "count": result,
+            "count_inserted": result,
         }
         return result_dict
 
@@ -603,7 +603,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
     def _update_result_to_dict(self, result) -> dict[str, typing.Any]:
         result_dict = {
-            "counts_updated": result["count_updated"],
+            "count_updated": result["count_updated"],
             "info": result["info"],
         }
         return result_dict

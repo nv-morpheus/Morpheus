@@ -61,7 +61,7 @@ def test_insert_and_retrieve_by_keys(kinetica_service: KineticaVectorDBService,
 
     # Insert data into the collection.
     response = kinetica_service.insert(collection_name, kinetica_data)
-    assert response["count_inserted"] == len(kinetica_data)
+    assert response["count"] == len(kinetica_data)
 
     # Retrieve inserted data by primary keys.
     keys_to_retrieve = [2, 4, 6]
@@ -90,9 +90,13 @@ def test_query(kinetica_service: KineticaVectorDBService, kinetica_type: list[li
 
     # Perform a search in the collection.
     search_result = kinetica_service.query(collection_name, query)
-    print(search_result)
+    result_list = []
+    for rec in search_result:
+        result_list.append(rec)
 
-    assert len(search_result.records) == 2
+    print(f"SEARCH RESULT = {result_list}")
+
+    assert len(result_list) == 2
 
     # Clean up the collection.
     kinetica_service.drop(collection_name)
@@ -125,9 +129,15 @@ async def test_similarity_search_with_data(kinetica_service: KineticaVectorDBSer
                                                                          embeddings=search_vec,
                                                                          expr=expr)
     search_result = await similarity_search_coroutine
+    result_list = []
+    for rec in search_result:
+        result_list.append(rec)
 
-    assert len(search_result[0]) == 2
-    assert sorted(list(search_result[0][0].keys())) == ["id", "metadata"]
+    print(f"SEARCH RESULT = {result_list}")
+
+    assert len(result_list) == 2
+
+    assert sorted(list(result_list[0][0].keys())) == ["id", "metadata"]
 
     # Clean up the collection.
     kinetica_service.drop(collection_name)
@@ -234,7 +244,7 @@ def test_delete(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
 
     # Delete data from the collection using the expression.
     delete_response = kinetica_service.delete(collection_name, delete_expr)
-    assert delete_response["delete_count"] == 2
+    assert delete_response["count_deleted"] == 2
 
     response = kinetica_service.query(collection_name, query="id > 0")
     assert len(response) == len(kinetica_data) - 2
