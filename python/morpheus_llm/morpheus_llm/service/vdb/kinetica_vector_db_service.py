@@ -634,7 +634,13 @@ class KineticaVectorDBService(VectorDBService):
                                                schema=self._schema,
                                                client=self._client)
 
+    def is_collection_name_fully_qualified(self, name: str):
+        import re
+        return bool(re.fullmatch(r'[^.]+\.[^.]+', name))
+
+
     def collection_name(self, name: str):
+
         """
         Returns a fully qualified Kinetica table name
 
@@ -649,7 +655,7 @@ class KineticaVectorDBService(VectorDBService):
                 Fully qualified Kinetica table name by prepending the schema name
 
         """
-        name = f"{self._schema}.{name}"
+        name = f"{self._schema}.{name}" if not self.is_collection_name_fully_qualified(name) else name
         return name
 
     def has_store_object(self, name: str) -> bool:
@@ -666,7 +672,7 @@ class KineticaVectorDBService(VectorDBService):
         bool
             True if the table exists, False otherwise.
         """
-        name = f"{self._schema}.{name}"
+        name = f"{self._schema}.{name}" if not self.is_collection_name_fully_qualified(name) else name
 
         return self._client.has_table(name)["table_exists"]
 
