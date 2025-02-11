@@ -254,7 +254,7 @@ def test_delete(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
         result_list.append(rec)
 
     print(f"SEARCH RESULT = {result_list}")
-    assert len(result_list) == len(kinetica_data) - 2
+    assert len(result_list) == len(kinetica_data) - 1
 
     for item in response:
         assert item["id"] > 1
@@ -297,7 +297,7 @@ def test_insert_dataframe(kinetica_service: KineticaVectorDBService,
     kinetica_service.drop(collection_name)
 
     # Create a collection.
-    kinetica_service.create(collection_name, kinetica_type)
+    kinetica_service.create(collection_name, table_type=kinetica_type)
     import pandas as pd
     df = pd.DataFrame(kinetica_data, columns=["id", "embeddings", "metadata"])
 

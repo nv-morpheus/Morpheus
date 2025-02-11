@@ -522,6 +522,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             return all(isinstance(item, data_type) for item in lst)
 
         result = None
+        result_list = []
         expression = kwargs.get("expression", "")
         options = kwargs.get("options", {})
 
@@ -557,11 +558,17 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             else:
                 raise GPUdbException("'keys' must be of type (int or str or list) ...")
         try:
-            result = self._collection.get_records_by_key(keys, expression, options)
+            table_name = self._collection.qualified_table_name
+            query = f"select * from {table_name} where {expression}"
+            result = self.query(query)
+            # result = self._collection.get_records_by_key(keys, expression, options)
+            for rec in result:
+                result_list.append(rec)
+
         except GPUdbException as exec_info:
             raise RuntimeError(f"Unable to perform search: {exec_info}") from exec_info
 
-        return result["records"] if result is not None and 'records' in result else []
+        return result_list if len(result_list) > 0 else []
 
     def count(self, **kwargs: dict[str, typing.Any]) -> int:
         """
