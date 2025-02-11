@@ -193,7 +193,7 @@ def test_overwrite_collection_on_create(kinetica_service: KineticaVectorDBServic
     assert response2["count_inserted"] == len(new_data)
 
     # Retrieve the data from the collection and check if it matches the second set of data.
-    retrieved_data = kinetica_service.retrieve_by_keys(collection_name, list(range(10)))
+    retrieved_data = kinetica_service.retrieve_by_keys(collection_name, list(range(1, 11)))
     for i in range(10):
         assert retrieved_data[i]["metadata"] == new_data[i][2]
 
@@ -248,7 +248,7 @@ def test_delete(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
     delete_response = kinetica_service.delete(collection_name, delete_expr)
     assert delete_response["count_deleted"] == 1
 
-    response = kinetica_service.query(f"select * from {collection_name} where id > 0")
+    response = kinetica_service.query(collection_name, f"select * from {collection_name} where id > 0")
     result_list = []
     for rec in response:
         result_list.append(rec)
@@ -288,7 +288,6 @@ def test_create_from_dataframe(kinetica_service: KineticaVectorDBService):
 
 
 @pytest.mark.kinetica
-@pytest.mark.slow
 def test_insert_dataframe(kinetica_service: KineticaVectorDBService,
                           kinetica_type: list[list], kinetica_data: list[list]):
     num_rows = len(kinetica_data)
