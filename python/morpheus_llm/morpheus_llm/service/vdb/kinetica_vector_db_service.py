@@ -33,6 +33,13 @@ logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
 
+class _Utils:
+
+    @staticmethod
+    def is_collection_name_fully_qualified(name: str):
+        import re
+        return bool(re.fullmatch(r'[^.]+\.[^.]+', name))
+
 
 class DistanceStrategy(str, enum.Enum):
     """Enumerator of the Distance strategies."""
@@ -72,8 +79,11 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         self._schema = schema
         self._client = client
 
-        self._name = f"{self._schema}.{name}" \
-            if self._schema is not None and len(self._schema) > 0 else f"ki_home.{name}"
+        if _Utils.is_collection_name_fully_qualified(name):
+            self._name = name
+        else:
+            self._name = f"{self._schema}.{name}" \
+                if self._schema is not None and len(self._schema) > 0 else f"ki_home.{name}"
 
         self._collection =  GPUdbTable(name=self._name, db=client)
         self._record_type = self._collection.get_table_type()
@@ -634,11 +644,6 @@ class KineticaVectorDBService(VectorDBService):
                                                schema=self._schema,
                                                client=self._client)
 
-    def is_collection_name_fully_qualified(self, name: str):
-        import re
-        return bool(re.fullmatch(r'[^.]+\.[^.]+', name))
-
-
     def collection_name(self, name: str):
 
         """
@@ -655,7 +660,7 @@ class KineticaVectorDBService(VectorDBService):
                 Fully qualified Kinetica table name by prepending the schema name
 
         """
-        name = f"{self._schema}.{name}" if not self.is_collection_name_fully_qualified(name) else name
+        name = f"{self._schema}.{name}" if not _Utils.is_collection_name_fully_qualified(name) else name
         return name
 
     def has_store_object(self, name: str) -> bool:
@@ -672,7 +677,7 @@ class KineticaVectorDBService(VectorDBService):
         bool
             True if the table exists, False otherwise.
         """
-        name = f"{self._schema}.{name}" if not self.is_collection_name_fully_qualified(name) else name
+        name = f"{self._schema}.{name}" if not _Utils.is_collection_name_fully_qualified(name) else name
 
         return self._client.has_table(name)["table_exists"]
 
