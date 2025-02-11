@@ -133,8 +133,6 @@ async def test_similarity_search_with_data(kinetica_service: KineticaVectorDBSer
     for rec in search_result:
         result_list.append(rec)
 
-    print(f"SEARCH RESULT = {result_list}")
-
     assert len(result_list) == 1
 
     # Clean up the collection.
@@ -253,7 +251,6 @@ def test_delete(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
     for rec in response:
         result_list.append(rec)
 
-    print(f"SEARCH RESULT = {result_list}")
     assert len(result_list) == len(kinetica_data) - 1
 
     for item in response:

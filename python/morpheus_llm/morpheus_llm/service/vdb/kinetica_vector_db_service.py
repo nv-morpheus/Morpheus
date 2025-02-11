@@ -524,12 +524,12 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         result = None
         result_list = []
         expression = kwargs.get("expression", "")
-        options = kwargs.get("options", {})
 
         if keys is None:
             raise GPUdbException("'keys' must be specified as either an 'int' "
                                  "or 'str' or 'list of ints' or 'list of strs' ...")
-        elif isinstance(keys, list) and is_list_of_type(keys, int) and any(x <= 0 for x in keys):
+
+        if isinstance(keys, list) and is_list_of_type(keys, int) and any(x <= 0 for x in keys):
             raise GPUdbException("'keys' given as 'list of ints' cannot contain values <= 0 ...")
         elif isinstance(keys, list) and is_list_of_type(keys, str) and len(keys) == 0:
             raise GPUdbException("'keys' given as 'list of strs' must have valid values ...")
@@ -545,19 +545,15 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
                 raise GPUdbException("No 'expression' given and no 'PK field' found cannot retrieve records ...")
 
             if isinstance(keys, str):
-                # expression = [f"{pk_field_name} = '{keys}'"]
                 expression = f"{pk_field_name} = '{keys}'"
             elif isinstance(keys, int):
-                # expression = [f"{pk_field_name} = {keys}"]
                 expression = f"{pk_field_name} = {keys}"
             elif isinstance(keys, list) and is_list_of_type(keys, int):
                 # keys is a list of ints
-                # expression = [f"{pk_field_name} in ({','.join(map(str, keys))})"]
                 expression = f"{pk_field_name} in ({','.join(map(str, keys))})"
             elif isinstance(keys, list) and is_list_of_type(keys, str):
                 # keys is a list of strs
                 keys_str = ','.join(f"'{s}'" for s in keys)
-                # expression = [f"{pk_field_name} in ({keys_str})"]
                 expression = f"{pk_field_name} in ({keys_str})"
             else:
                 raise GPUdbException("'keys' must be of type (int or str or list) ...")
@@ -565,7 +561,6 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             table_name = self._collection.qualified_table_name
             query = f"select * from {table_name} where {expression}"
             result = self.query(query)
-            # result = self._collection.get_records_by_key(keys, expression, options)
             for rec in result:
                 result_list.append(rec)
 
