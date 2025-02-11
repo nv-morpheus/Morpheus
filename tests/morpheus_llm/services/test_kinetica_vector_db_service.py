@@ -183,15 +183,19 @@ def test_overwrite_collection_on_create(kinetica_service: KineticaVectorDBServic
     kinetica_service.create(collection_name, overwrite=True, table_type=kinetica_type)
 
     # Insert different data into the collection.
-    data2 = [{"id": i, "embeddings": [i / 10] * 3, "metadata": f"Sample metadata for row {i+1}"} for i in range(11, 21)]
+    new_data = [[
+        i+1,
+        [random.random() for _ in range(3)],
+        json.dumps({"metadata": f"New metadata for row {i+1}"}),
+    ] for i in range(10)]
 
-    response2 = kinetica_service.insert(collection_name, data2)
-    assert response2["count_inserted"] == len(data2)
+    response2 = kinetica_service.insert(collection_name, new_data)
+    assert response2["count_inserted"] == len(new_data)
 
     # Retrieve the data from the collection and check if it matches the second set of data.
     retrieved_data = kinetica_service.retrieve_by_keys(collection_name, list(range(10)))
     for i in range(10):
-        assert retrieved_data[i]["age"] == data2[i]["age"]
+        assert retrieved_data[i]["metadata"] == new_data[i][2]
 
     # Clean up the collection.
     kinetica_service.drop(collection_name)
@@ -244,7 +248,7 @@ def test_delete(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
     delete_response = kinetica_service.delete(collection_name, delete_expr)
     assert delete_response["count_deleted"] == 1
 
-    response = kinetica_service.query(collection_name, query="id > 0")
+    response = kinetica_service.query(f"select * from {collection_name} where id > 0")
     result_list = []
     for rec in response:
         result_list.append(rec)

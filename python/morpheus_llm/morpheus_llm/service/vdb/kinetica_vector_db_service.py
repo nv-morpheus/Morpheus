@@ -534,10 +534,10 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         elif isinstance(keys, list) and is_list_of_type(keys, str) and len(keys) <= 0:
             raise GPUdbException("'keys' must be specified as either an 'int' "
                                  "or 'str' or 'list of ints' or 'list of strs' ...")
-        elif not isinstance(keys, str):
+        elif isinstance(keys, str) and len(str) <= 0:
             raise GPUdbException("'keys' must be specified as either an 'int' "
                                  "or 'str' or 'list of ints' or 'list of strs' ...")
-        elif not isinstance(keys, int):
+        elif isinstance(keys, int) and keys <= 0 :
             raise GPUdbException("'keys' must be specified as either an 'int' "
                                  "or 'str' or 'list of ints' or 'list of strs' ...")
 
