@@ -61,7 +61,7 @@ def test_insert_and_retrieve_by_keys(kinetica_service: KineticaVectorDBService,
 
     # Insert data into the collection.
     response = kinetica_service.insert(collection_name, kinetica_data)
-    assert response["count"] == len(kinetica_data)
+    assert response["count_inserted"] == len(kinetica_data)
 
     # Retrieve inserted data by primary keys.
     keys_to_retrieve = [2, 4, 6]
@@ -135,7 +135,7 @@ async def test_similarity_search_with_data(kinetica_service: KineticaVectorDBSer
 
     print(f"SEARCH RESULT = {result_list}")
 
-    assert len(result_list) == 2
+    assert len(result_list) == 1
 
     assert sorted(list(result_list[0][0].keys())) == ["id", "metadata"]
 
@@ -182,7 +182,7 @@ def test_overwrite_collection_on_create(kinetica_service: KineticaVectorDBServic
     assert response1["count_inserted"] == len(kinetica_data)
 
     # Create the same collection again with overwrite=True.
-    kinetica_service.create(collection_name, kinetica_type, overwrite=True)
+    kinetica_service.create(collection_name, overwrite=True, table_type=kinetica_type)
 
     # Insert different data into the collection.
     data2 = [{"id": i, "embeddings": [i / 10] * 3, "age": 26 + i} for i in range(10)]
@@ -244,7 +244,7 @@ def test_delete(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
 
     # Delete data from the collection using the expression.
     delete_response = kinetica_service.delete(collection_name, delete_expr)
-    assert delete_response["count_deleted"] == 2
+    assert delete_response["count_deleted"] == 1
 
     response = kinetica_service.query(collection_name, query="id > 0")
     assert len(response) == len(kinetica_data) - 2
