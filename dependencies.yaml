@@ -217,7 +217,6 @@ files:
       - example-dfp-prod
 
 channels:
-  - local # TEMPORARY: Picking up local MRC package, remove once https://github.com/nv-morpheus/MRC/pull/536 is merged
   - conda-forge
   - huggingface
   - rapidsai
