@@ -426,7 +426,8 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         if expressions is not None: # if given, remove from kwargs
             if not isinstance(expressions, list):
                 raise GPUdbException("'expressions' must be of type 'list' ...")
-            kwargs.pop( "expressions" )
+            if "expressions" in kwargs:
+                kwargs.pop( "expressions" )
         else: # no option given; use an empty dict
             raise GPUdbException("Update 'expressions' must be given ...")
 
@@ -447,7 +448,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         result = self._collection.update_records(
             expressions, new_values_maps, records_to_insert, records_to_insert_str, options=options)
 
-        return self._update_delete_result_to_dict(result=result)
+        return self._update_result_to_dict(result=result)
 
     def delete(self, expr: str, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
         """
@@ -473,7 +474,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
         result = self._collection.delete_records(expressions=[expr], options=options)
 
-        return self._update_delete_result_to_dict(result=result)
+        return self._delete_result_to_dict(result=result)
 
     def delete_by_keys(self, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
@@ -589,18 +590,24 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
     def _insert_result_to_dict(self, result: int) -> dict[str, typing.Any]:
         result_dict = {
-            "count": result,
-        }
-        return result_dict
-
-    def _update_delete_result_to_dict(self, result) -> dict[str, typing.Any]:
-        result_dict = {
-            "count_deleted": result["count_deleted"],
-            "counts_updated": result["count_updated"],
+            "count": result["count_inserted"],
             "info": result["info"],
         }
         return result_dict
 
+    def _delete_result_to_dict(self, result) -> dict[str, typing.Any]:
+        result_dict = {
+            "count_deleted": result["count_deleted"],
+            "info": result["info"],
+        }
+        return result_dict
+
+    def _update_result_to_dict(self, result) -> dict[str, typing.Any]:
+        result_dict = {
+            "counts_updated": result["count_updated"],
+            "info": result["info"],
+        }
+        return result_dict
 
 class KineticaVectorDBService(VectorDBService):
     """

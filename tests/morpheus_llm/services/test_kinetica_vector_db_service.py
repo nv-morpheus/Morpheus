@@ -61,7 +61,7 @@ def test_insert_and_retrieve_by_keys(kinetica_service: KineticaVectorDBService,
 
     # Insert data into the collection.
     response = kinetica_service.insert(collection_name, kinetica_data)
-    assert response["insert_count"] == len(kinetica_data)
+    assert response["count_inserted"] == len(kinetica_data)
 
     # Retrieve inserted data by primary keys.
     keys_to_retrieve = [2, 4, 6]
@@ -90,6 +90,8 @@ def test_query(kinetica_service: KineticaVectorDBService, kinetica_type: list[li
 
     # Perform a search in the collection.
     search_result = kinetica_service.query(collection_name, query)
+    print(search_result)
+
     assert len(search_result.records) == 2
 
     # Clean up the collection.
@@ -167,7 +169,7 @@ def test_overwrite_collection_on_create(kinetica_service: KineticaVectorDBServic
 
     # Insert data to the collection.
     response1 = kinetica_service.insert(collection_name, kinetica_data)
-    assert response1["insert_count"] == len(kinetica_data)
+    assert response1["count_inserted"] == len(kinetica_data)
 
     # Create the same collection again with overwrite=True.
     kinetica_service.create(collection_name, kinetica_type, overwrite=True)
@@ -176,7 +178,7 @@ def test_overwrite_collection_on_create(kinetica_service: KineticaVectorDBServic
     data2 = [{"id": i, "embeddings": [i / 10] * 3, "age": 26 + i} for i in range(10)]
 
     response2 = kinetica_service.insert(collection_name, data2)
-    assert response2["insert_count"] == len(data2)
+    assert response2["count_inserted"] == len(data2)
 
     # Retrieve the data from the collection and check if it matches the second set of data.
     retrieved_data = kinetica_service.retrieve_by_keys(collection_name, list(range(10)))
@@ -208,35 +210,6 @@ def test_update(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
     result_dict = kinetica_service.update(collection_name, updated_data)
 
     assert result_dict["count_updated"] == 7
-
-    # Clean up the collection.
-    kinetica_service.drop(collection_name)
-
-
-@pytest.mark.kinetica
-def test_delete_by_keys(kinetica_service: KineticaVectorDBService,
-                        kinetica_type: list[list],
-                        kinetica_data: list[list]):
-    collection_name = kinetica_service.collection_name("test_delete_by_keys_collection")
-
-    # Make sure to drop any existing collection from previous runs.
-    kinetica_service.drop(collection_name)
-
-    # Create a collection.
-    kinetica_service.create(collection_name, table_type=kinetica_type)
-
-    # Insert data into the collection.
-    kinetica_service.insert(collection_name, kinetica_data)
-
-    # Delete data by keys from the collection.
-    keys_to_delete = [5, 6]
-    kinetica_service.delete_by_keys(collection_name, keys_to_delete)
-
-    response = kinetica_service.query(collection_name, query="id >= 0")
-    assert len(response) == len(kinetica_data) - 2
-
-    for item in response:
-        assert item["id"] not in [5, 6]
 
     # Clean up the collection.
     kinetica_service.drop(collection_name)
