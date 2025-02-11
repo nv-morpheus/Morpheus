@@ -545,16 +545,20 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
                 raise GPUdbException("No 'expression' given and no 'PK field' found cannot retrieve records ...")
 
             if isinstance(keys, str):
-                expression = [f"{pk_field_name} = '{keys}'"]
+                # expression = [f"{pk_field_name} = '{keys}'"]
+                expression = f"{pk_field_name} = '{keys}'"
             elif isinstance(keys, int):
-                expression = [f"{pk_field_name} = {keys}"]
+                # expression = [f"{pk_field_name} = {keys}"]
+                expression = f"{pk_field_name} = {keys}"
             elif isinstance(keys, list) and is_list_of_type(keys, int):
                 # keys is a list of ints
-                expression = [f"{pk_field_name} in ({','.join(map(str, keys))})"]
+                # expression = [f"{pk_field_name} in ({','.join(map(str, keys))})"]
+                expression = f"{pk_field_name} in ({','.join(map(str, keys))})"
             elif isinstance(keys, list) and is_list_of_type(keys, str):
                 # keys is a list of strs
                 keys_str = ','.join(f"'{s}'" for s in keys)
-                expression = [f"{pk_field_name} in ({keys_str})"]
+                # expression = [f"{pk_field_name} in ({keys_str})"]
+                expression = f"{pk_field_name} in ({keys_str})"
             else:
                 raise GPUdbException("'keys' must be of type (int or str or list) ...")
         try:
