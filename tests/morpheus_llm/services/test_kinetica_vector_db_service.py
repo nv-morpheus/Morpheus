@@ -195,7 +195,7 @@ def test_overwrite_collection_on_create(kinetica_service: KineticaVectorDBServic
     # Retrieve the data from the collection and check if it matches the second set of data.
     retrieved_data = kinetica_service.retrieve_by_keys(collection_name, list(range(1, 11)))
     for i in range(10):
-        assert retrieved_data[i]["metadata"] == new_data[i][2]
+        assert retrieved_data[i][2] == new_data[i][2]
 
     # Clean up the collection.
     kinetica_service.drop(collection_name)
