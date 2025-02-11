@@ -524,8 +524,22 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         result = None
         expression = kwargs.get("expression", "")
         options = kwargs.get("options", {})
-        if keys is None or keys <= 0 or (isinstance(keys, (str, list)) and len(keys) <= 0):
-            raise GPUdbException("'keys' must be specified as either an 'int' or 'str' or 'list' ...")
+
+        if keys is None:
+            raise GPUdbException("'keys' must be specified as either an 'int' "
+                                 "or 'str' or 'list of ints' or 'list of strs' ...")
+        elif isinstance(keys, list) and is_list_of_type(keys, int) and any(x <= 0 for x in keys):
+            raise GPUdbException("'keys' must be specified as either an 'int' "
+                                 "or 'str' or 'list of ints' or 'list of strs' ...")
+        elif isinstance(keys, list) and is_list_of_type(keys, str) and len(keys) <= 0:
+            raise GPUdbException("'keys' must be specified as either an 'int' "
+                                 "or 'str' or 'list of ints' or 'list of strs' ...")
+        elif not isinstance(keys, str):
+            raise GPUdbException("'keys' must be specified as either an 'int' "
+                                 "or 'str' or 'list of ints' or 'list of strs' ...")
+        elif not isinstance(keys, int):
+            raise GPUdbException("'keys' must be specified as either an 'int' "
+                                 "or 'str' or 'list of ints' or 'list of strs' ...")
 
         if expression == "":
             # expression not specified; keys must be values of PK in the Kinetica table.

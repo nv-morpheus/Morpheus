@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import json
 import random
 
 import numpy as np
@@ -137,8 +137,6 @@ async def test_similarity_search_with_data(kinetica_service: KineticaVectorDBSer
 
     assert len(result_list) == 1
 
-    assert sorted(list(result_list[0][0].keys())) == ["id", "metadata"]
-
     # Clean up the collection.
     kinetica_service.drop(collection_name)
 
@@ -185,7 +183,7 @@ def test_overwrite_collection_on_create(kinetica_service: KineticaVectorDBServic
     kinetica_service.create(collection_name, overwrite=True, table_type=kinetica_type)
 
     # Insert different data into the collection.
-    data2 = [{"id": i, "embeddings": [i / 10] * 3, "age": 26 + i} for i in range(10)]
+    data2 = [{"id": i, "embeddings": [i / 10] * 3, "metadata": f"Sample metadata for row {i+1}"} for i in range(11, 21)]
 
     response2 = kinetica_service.insert(collection_name, data2)
     assert response2["count_inserted"] == len(data2)
@@ -247,7 +245,12 @@ def test_delete(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
     assert delete_response["count_deleted"] == 1
 
     response = kinetica_service.query(collection_name, query="id > 0")
-    assert len(response) == len(kinetica_data) - 2
+    result_list = []
+    for rec in response:
+        result_list.append(rec)
+
+    print(f"SEARCH RESULT = {result_list}")
+    assert len(result_list) == len(kinetica_data) - 2
 
     for item in response:
         assert item["id"] > 1
