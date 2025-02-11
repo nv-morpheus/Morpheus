@@ -529,15 +529,6 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             raise GPUdbException("'keys' must be specified as either an 'int' "
                                  "or 'str' or 'list of ints' or 'list of strs' ...")
 
-        if isinstance(keys, list) and is_list_of_type(keys, int) and any(x <= 0 for x in keys):
-            raise GPUdbException("'keys' given as 'list of ints' cannot contain values <= 0 ...")
-        elif isinstance(keys, list) and is_list_of_type(keys, str) and len(keys) == 0:
-            raise GPUdbException("'keys' given as 'list of strs' must have valid values ...")
-        elif isinstance(keys, str) and len(str) == 0:
-            raise GPUdbException("'keys' specified as 'str' cannot be empty ...")
-        elif isinstance(keys, int) and keys <= 0 :
-            raise GPUdbException("'keys' specified as 'int' cannot be negative or zero ...")
-
         if expression == "":
             # expression not specified; keys must be values of PK in the Kinetica table.
             pk_field_name = self._get_pk_field_name()
@@ -548,10 +539,10 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
                 expression = f"{pk_field_name} = '{keys}'"
             elif isinstance(keys, int):
                 expression = f"{pk_field_name} = {keys}"
-            elif isinstance(keys, list) and is_list_of_type(keys, int):
+            elif isinstance(keys, list) and is_list_of_type(keys, int) and len(keys) > 0:
                 # keys is a list of ints
                 expression = f"{pk_field_name} in ({','.join(map(str, keys))})"
-            elif isinstance(keys, list) and is_list_of_type(keys, str):
+            elif isinstance(keys, list) and is_list_of_type(keys, str) and len(keys) > 0:
                 # keys is a list of strs
                 keys_str = ','.join(f"'{s}'" for s in keys)
                 expression = f"{pk_field_name} in ({keys_str})"
