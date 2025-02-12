@@ -218,7 +218,7 @@ def test_update(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
 
     # Use updated data to test the update/upsert functionality.
     metadata = f"New updated metadata for row id"
-    updated_value = f'json.dumps({"metadata": "{metadata}")}'
+    updated_value = json.dumps({"metadata": f"{metadata}"})
     updated_data = dict(embeddings="embeddings", metadata=f"{updated_value}")
 
     # Apply update/upsert on updated_data.
