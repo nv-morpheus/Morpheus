@@ -222,7 +222,7 @@ def test_update(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
     updated_data = dict(embeddings="embeddings", metadata=f"{updated_value}")
 
     # Apply update/upsert on updated_data.
-    result_dict = kinetica_service.update([], expressions=expressions ,new_values_maps=updated_data, options=options)
+    result_dict = kinetica_service.update(collection_name, [], expressions=expressions ,new_values_maps=updated_data, options=options)
 
     assert result_dict["count_updated"] == 3
 
