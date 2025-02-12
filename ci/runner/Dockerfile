@@ -56,19 +56,19 @@ RUN rapids-dependency-file-generator \
     conda clean -afy && \
     rm -rf /tmp/conda
 
-ENV MORPHEUS_SUPPORT_DOCA=ON
+ENV MORPHEUS_SUPPORT_DOCA=OFF
 
 COPY ./.devcontainer/docker/optional_deps/doca.sh /tmp/doca/
 
-RUN apt update && \
-    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
-    apt install --no-install-recommends -y \
-        build-essential \
-        libtool \
-        automake && \
-    apt clean && \
-    PKG_ARCH=${TARGETARCH} /tmp/doca/doca.sh /tmp/doca && \
-    rm -rf /tmp/doca
+# RUN apt update && \
+#     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+#     apt install --no-install-recommends -y \
+#         build-essential \
+#         libtool \
+#         automake && \
+#     apt clean && \
+#     PKG_ARCH=${TARGETARCH} /tmp/doca/doca.sh /tmp/doca && \
+#     rm -rf /tmp/doca
 
 # ============ test ==================
 FROM base as test
