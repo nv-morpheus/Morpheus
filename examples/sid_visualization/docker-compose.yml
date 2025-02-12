@@ -24,7 +24,7 @@ x-with-gpus: &with_gpus
 
 services:
   triton:
-    image: nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
+    image: nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06
     <<: *with_gpus
     command: "tritonserver --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx --model-repository=/models/triton-model-repo"
     environment:

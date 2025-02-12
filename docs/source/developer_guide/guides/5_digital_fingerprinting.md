@@ -23,10 +23,10 @@ Every account, user, service, and machine has a digital fingerprint that represe
 To construct this digital fingerprint, we will be training unsupervised behavioral models at various granularities, including a generic model for all users in the organization along with fine-grained models for each user to monitor their behavior. These models are continuously updated and retrained over time​, and alerts are triggered when deviations from normality occur for any user​.
 
 ## Running the DFP Example
-Instructions for building and running the DFP example are available in the [`examples/digital_fingerprinting/production/README.md`](https://github.com/nv-morpheus/Morpheus/blob/branch-25.02/examples/digital_fingerprinting/production/README.md) guide in the Morpheus repository.
+Instructions for building and running the DFP example are available in the [`examples/digital_fingerprinting/production/README.md`](https://github.com/nv-morpheus/Morpheus/blob/branch-25.06/examples/digital_fingerprinting/production/README.md) guide in the Morpheus repository.
 
 ## Training Sources
-The data we will want to use for the training and inference will be any sensitive system that the user interacts with, such as VPN, authentication and cloud services. The digital fingerprinting example ([`examples/digital_fingerprinting/production/README.md`](https://github.com/nv-morpheus/Morpheus/blob/branch-25.02/examples/digital_fingerprinting/production/README.md)) included in Morpheus ingests logs from [Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-sign-ins), and [Duo Authentication](https://duo.com/docs/adminapi).
+The data we will want to use for the training and inference will be any sensitive system that the user interacts with, such as VPN, authentication and cloud services. The digital fingerprinting example ([`examples/digital_fingerprinting/production/README.md`](https://github.com/nv-morpheus/Morpheus/blob/branch-25.06/examples/digital_fingerprinting/production/README.md)) included in Morpheus ingests logs from [Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-sign-ins), and [Duo Authentication](https://duo.com/docs/adminapi).
 
 The location of these logs could be either local to the machine running Morpheus, a shared file system like NFS, or on a remote store such as [Amazon S3](https://aws.amazon.com/s3/).
 
@@ -56,7 +56,6 @@ Key Features:
  * Uses a model store to allow the training and inference pipelines to communicate
  * Organized into a docker-compose deployment for easy startup
  * Contains a Jupyter notebook service to ease development and debugging
- * Can be deployed to Kubernetes using provided Helm charts
  * Uses many customized stages to maximize performance.
 
 This example is described in `examples/digital_fingerprinting/production/README.md` as well as the rest of this document.
@@ -121,9 +120,7 @@ DFP in Morpheus is accomplished via two independent pipelines: training and infe
 ## Runtime Environment Setup
 ![Runtime Environment Setup](img/dfp_runtime_env.png)
 
-DFP in Morpheus is built as an application of containerized services​ and can be run in two ways:
-1. Using docker-compose for testing and development​
-1. Using helm charts for production Kubernetes deployment​
+DFP in Morpheus is built as an application of containerized services​ and can be run using `docker-compose` for testing and development​.
 
 ### Services
 The reference architecture is composed of the following services:​
@@ -161,13 +158,6 @@ From the `examples/digital_fingerprinting/production` dir, run:
 ```bash
 docker compose up mlflow
 ```
-
-### Running via Kubernetes​
-#### System requirements
-* [Kubernetes](https://kubernetes.io/) cluster configured with GPU resources​
-* [NVIDIA GPU Operator](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/gpu-operator) installed in the cluster
-
-> **Note:**  For GPU Requirements refer to the [Getting Started](../../getting_started.md#requirements) guide.
 
 ## Customizing DFP
 For details on customizing the DFP pipeline refer to [Digital Fingerprinting (DFP) Reference](./6_digital_fingerprinting_reference.md).
