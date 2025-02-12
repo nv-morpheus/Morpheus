@@ -34,6 +34,9 @@ SHELL ["/bin/bash",  "-c"]
 
 ENV REAL_ARCH=${REAL_ARCH}
 
+# https://github.com/rapidsai/ci-imgs/issues/241
+RUN rm -rf /tmp/sccache* /root/.cache
+
 # Create conda environment
 COPY ./dependencies.yaml /tmp/conda/
 
@@ -46,7 +49,9 @@ ARG PROJ_NAME
 ARG PYTHON_VER
 ARG REAL_ARCH
 
-RUN rapids-dependency-file-generator \
+RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    --mount=type=cache,id=pip_cache,target=/root/.cache/pip,sharing=locked \
+    rapids-dependency-file-generator \
       --config /tmp/conda/dependencies.yaml \
       --output conda \
       --file-key build \
@@ -60,15 +65,21 @@ ENV MORPHEUS_SUPPORT_DOCA=OFF
 
 COPY ./.devcontainer/docker/optional_deps/doca.sh /tmp/doca/
 
-# RUN apt update && \
-#     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
-#     apt install --no-install-recommends -y \
-#         build-essential \
-#         libtool \
-#         automake && \
-#     apt clean && \
+RUN --mount=type=cache,id=apt,target=/var/cache/apt \
+    apt update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt upgrade -y && \
+    apt install --no-install-recommends -y \
+        automake \
+        build-essential \
+        libtool \
+        wget
+
+
+# RUN --mount=type=cache,id=apt,target=/var/cache/apt \
 #     PKG_ARCH=${TARGETARCH} /tmp/doca/doca.sh /tmp/doca && \
-#     rm -rf /tmp/doca
+#     rm -rf /tmp/doca && \
+#     apt clean
 
 # ============ test ==================
 FROM base as test
@@ -80,14 +91,17 @@ ARG CUDA_SHORT_VER
 ARG PROJ_NAME
 ARG PYTHON_VER
 
-RUN apt update && \
+RUN --mount=type=cache,id=apt,target=/var/cache/apt \
+    apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
         openjdk-11-jre-headless && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN rapids-dependency-file-generator \
+RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    --mount=type=cache,id=pip_cache,target=/root/.cache/pip,sharing=locked \
+    rapids-dependency-file-generator \
       --config /tmp/conda/dependencies.yaml \
       --output conda \
       --file-key test \
