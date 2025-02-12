@@ -213,13 +213,18 @@ def test_update(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
     # Insert data to the collection.
     kinetica_service.insert(collection_name, kinetica_data)
 
+    expressions = ["id in (2, 4, 6)"]
+    options = {"use_expressions_in_new_values_maps":"true"}
+
     # Use updated data to test the update/upsert functionality.
-    updated_data = []
+    metadata = f"New updated metadata for row id"
+    updated_value = f"json.dumps({'metadata': {metadata})}"
+    updated_data = dict(embeddings="embeddings", metadata=f"{updated_value}")
 
     # Apply update/upsert on updated_data.
-    result_dict = kinetica_service.update(collection_name, updated_data)
+    result_dict = kinetica_service.update([], expressions=expressions ,new_values_maps=updated_data, options=options)
 
-    assert result_dict["count_updated"] == 7
+    assert result_dict["count_updated"] == 3
 
     # Clean up the collection.
     kinetica_service.drop(collection_name)
