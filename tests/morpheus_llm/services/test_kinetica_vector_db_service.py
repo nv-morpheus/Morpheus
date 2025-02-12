@@ -214,7 +214,6 @@ def test_update(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
     kinetica_service.insert(collection_name, kinetica_data)
 
     expressions = ["id in (2, 4, 6)"]
-    # options = {"use_expressions_in_new_values_maps":"true"}
 
     # Use updated data to test the update/upsert functionality.
     metadata = f"New updated metadata for row id"
