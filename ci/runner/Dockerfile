@@ -61,7 +61,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     conda clean -afy && \
     rm -rf /tmp/conda
 
-ENV MORPHEUS_SUPPORT_DOCA=OFF
+ENV MORPHEUS_SUPPORT_DOCA=ON
 
 COPY ./.devcontainer/docker/optional_deps/doca.sh /tmp/doca/
 
@@ -76,10 +76,10 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
         wget
 
 
-# RUN --mount=type=cache,id=apt,target=/var/cache/apt \
-#     PKG_ARCH=${TARGETARCH} /tmp/doca/doca.sh /tmp/doca && \
-#     rm -rf /tmp/doca && \
-#     apt clean
+RUN --mount=type=cache,id=apt,target=/var/cache/apt \
+    PKG_ARCH=${TARGETARCH} /tmp/doca/doca.sh /tmp/doca && \
+    rm -rf /tmp/doca && \
+    apt clean
 
 # ============ test ==================
 FROM base as test
