@@ -22,6 +22,14 @@ import cudf
 
 from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBService
 
+# These tests need a running instance of Kinetica
+# Steps to run these tests
+#    1. Create a Kinetica free SAAS account (https://cloud.kinetica.com/trynow/)
+#    2. Set the `KINETICA_HOST` environment variable to the host address from the first step
+#    3. Set the `KINETICA_USER` environment variable to your username
+#    4. Set the `KINETICA_PASSWORD` environment variable to your password
+#    5. Optionally set the `KINETICA_SCHEMA` to your schema name
+#
 
 
 @pytest.mark.kinetica
@@ -216,7 +224,7 @@ def test_update(kinetica_service: KineticaVectorDBService, kinetica_type: list[l
     expressions = ["id in (2, 4, 6)"]
 
     # Use updated data to test the update/upsert functionality.
-    metadata = f"New updated metadata for row id"
+    metadata = "New updated metadata for row id"
     updated_value = json.dumps({"metadata": f"{metadata}"})
     updated_data = {"embeddings": [random.random() for _ in range(3)], "metadata": f"{updated_value}"}
 
