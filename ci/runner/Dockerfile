@@ -61,7 +61,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     conda clean -afy && \
     rm -rf /tmp/conda
 
-ENV MORPHEUS_SUPPORT_DOCA=OFF
+ENV MORPHEUS_SUPPORT_DOCA=ON
 
 COPY ./.devcontainer/docker/optional_deps/doca.sh /tmp/doca/
 
