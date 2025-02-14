@@ -17,10 +17,24 @@
 set -e
 
 MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
+
 LINUX_DISTRO=${LINUX_DISTRO:-ubuntu}
-LINUX_VER=${LINUX_VER:-22.04}
+
+DOCA_OS_VERSION=${DOCA_OS_VERSION:-"22.04"}
 DOCA_VERSION=${DOCA_VERSION:-2.7.0}
-PKG_ARCH=${PKG_ARCH:-$(dpkg --print-architecture)}
+
+REAL_ARCH=${REAL_ARCH:-$(arch)}
+if [[ ${REAL_ARCH} == "x86_64" ]]; then
+    DOCA_ARCH="x86_64"
+elif [[ ${REAL_ARCH} == "aarch64" ]]; then
+    DOCA_ARCH="arm64-sbsa"
+else
+    echo "Unsupported architecture: ${REAL_ARCH}"
+    exit 1
+fi
+
+DOCA_URL="https://linux.mellanox.com/public/repo/doca/${DOCA_VERSION}/${LINUX_DISTRO}${DOCA_OS_VERSION}/${DOCA_ARCH}/"
+DOCA_GPG_URL="https://linux.mellanox.com/public/repo/doca/GPG-KEY-Mellanox.pub"
 
 # Exit early if nothing to do
 if [[ ${MORPHEUS_SUPPORT_DOCA} != @(TRUE|ON) ]]; then
@@ -28,28 +42,21 @@ if [[ ${MORPHEUS_SUPPORT_DOCA} != @(TRUE|ON) ]]; then
 fi
 
 WORKING_DIR=$1
-
+mkdir -p ${WORKING_DIR}
 echo "Installing DOCA using directory: ${WORKING_DIR}"
 
-DEB_DIR=${WORKING_DIR}/deb
 
-mkdir -p ${DEB_DIR}
+echo "Adding DOCA repo: ${DOCA_URL}"
+curl ${DOCA_GPG_URL} | gpg --dearmor > /etc/apt/trusted.gpg.d/GPG-KEY-Mellanox.pub
+echo "deb [signed-by=/etc/apt/trusted.gpg.d/GPG-KEY-Mellanox.pub] $DOCA_URL ./" > /etc/apt/sources.list.d/doca.list
 
-DOCA_OS_VERSION="ubuntu2204"
-DOCA_PKG_LINK="https://www.mellanox.com/downloads/DOCA/DOCA_v${DOCA_VERSION}/host/doca-host_${DOCA_VERSION}-204000-24.04-${DOCA_OS_VERSION}_${PKG_ARCH}.deb"
-
-# Upgrade the base packages (diff between image and Canonical upstream repo)
-apt update -y
-apt upgrade -y
-
-# Install wget
-apt install -y --no-install-recommends wget
-
-wget -qO - ${DOCA_PKG_LINK} -O doca-host.deb
-apt install ./doca-host.deb
 apt update
-apt install -y doca-all
-apt install -y doca-gpu doca-gpu-dev
+
+# Need to explicitly install the version of mft provided by the DOCA repo overriding the verdion from the cuda repo
+# to avoid version conflicts.
+# If/when we update either the OS, DOCA or CUDA version, we need to update the mft version here as well by checking
+# the output of `apt policy mft`
+apt install -y doca-all doca-gpu doca-gpu-dev mft=4.28.0-92
 
 # Now install the gdrcopy library according to: https://github.com/NVIDIA/gdrcopy
 GDRCOPY_DIR=${WORKING_DIR}/gdrcopy

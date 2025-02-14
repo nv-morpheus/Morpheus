@@ -159,11 +159,11 @@ Morpheus provides multiple Conda environment files to support different workflow
 The following are the available Conda environment files, all are located in the `conda/environments` directory, with the following naming convention: `<environment>_<cuda_version>_arch-<architecture>.yaml`.
 | Environment | File | Description |
 | --- | --- | --- |
-| `all` | `all_cuda-125_arch-<arch>.yaml` | All dependencies required to build, run and test Morpheus, along with all of the examples. This is a superset of the `dev`, `runtime` and `examples` environments. |
-| `dev` | `dev_cuda-125_arch-<arch>.yaml` | Dependencies required to build, run and test Morpheus. This is a superset of the `runtime` environment. |
-| `examples` | `examples_cuda-125_arch-<arch>.yaml` | Dependencies required to run all examples. This is a superset of the `runtime` environment. |
-| `model-utils` | `model-utils_cuda-125_arch-<arch>.yaml` | Dependencies required to train models independent of Morpheus. |
-| `runtime` | `runtime_cuda-125_arch-<arch>.yaml` | Minimal set of dependencies strictly required to run Morpheus. |
+| `all` | `all_cuda-128_arch-<arch>.yaml` | All dependencies required to build, run and test Morpheus, along with all of the examples. This is a superset of the `dev`, `runtime` and `examples` environments. |
+| `dev` | `dev_cuda-128_arch-<arch>.yaml` | Dependencies required to build, run and test Morpheus. This is a superset of the `runtime` environment. |
+| `examples` | `examples_cuda-128_arch-<arch>.yaml` | Dependencies required to run all examples. This is a superset of the `runtime` environment. |
+| `model-utils` | `model-utils_cuda-128_arch-<arch>.yaml` | Dependencies required to train models independent of Morpheus. |
+| `runtime` | `runtime_cuda-128_arch-<arch>.yaml` | Minimal set of dependencies strictly required to run Morpheus. |
 
 
 ##### Updating Morpheus Dependencies
@@ -184,7 +184,7 @@ When ready, commit both the changes to the `dependencies.yaml` file and the upda
 #### Prerequisites
 
 - Volta architecture GPU or better
-- [CUDA 12.5](https://developer.nvidia.com/cuda-12-5-0-download-archive)
+- [CUDA 12.8](https://developer.nvidia.com/cuda-12-5-0-download-archive)
 - `conda`
   - If `conda` is not installed, we recommend using the [MiniForge install guide](https://github.com/conda-forge/miniforge). This will install `conda` and set the channel default to use `conda-forge`.
 
@@ -200,11 +200,11 @@ When ready, commit both the changes to the `dependencies.yaml` file and the upda
    ```
 1. Create the Morpheus Conda environment using either the `dev` or `all` environment file. Refer to the [Conda Environment YAML Files](#conda-environment-yaml-files) section for more information.
    ```bash
-   conda env create --solver=libmamba -n morpheus --file conda/environments/dev_cuda-125_arch-$(arch).yaml
+   conda env create --solver=libmamba -n morpheus --file conda/environments/dev_cuda-128_arch-$(arch).yaml
    ```
    or
    ```bash
-   conda env create --solver=libmamba -n morpheus --file conda/environments/all_cuda-125_arch-$(arch).yaml
+   conda env create --solver=libmamba -n morpheus --file conda/environments/all_cuda-128_arch-$(arch).yaml
 
    ```
 

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 ARG BASE_IMG=nvcr.io/nvidia/cuda
-ARG BASE_IMG_TAG=12.5.1-base-ubuntu22.04
+ARG BASE_IMG_TAG=12.8.0-base-ubuntu22.04
 
 FROM --platform=$TARGETPLATFORM ${BASE_IMG}:${BASE_IMG_TAG} AS base
 

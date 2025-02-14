@@ -23,10 +23,10 @@ cuda_compiler:
   - cuda-nvcc
 
 cuda_compiler_version:
-  - 12.5
+  - 12.8
 
 python:
   - 3.10
 
 rapids_version:
-  - 24.10
+  - 25.02

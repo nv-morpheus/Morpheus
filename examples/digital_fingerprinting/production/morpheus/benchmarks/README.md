@@ -42,7 +42,7 @@ Install additional required dependencies:
 ```bash
 conda env update --solver=libmamba \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./conda/environments/examples_cuda-125_arch-$(arch).yaml
+  --file ./conda/environments/examples_cuda-128_arch-$(arch).yaml
 ```
 
 

@@ -62,7 +62,7 @@ In the root directory, the file `model-information.csv` contains the following i
 ## Generating TensorRT Models from ONNX
 The Morpheus ONNX to TensorRT (TRT) conversion utility requires additional packages, which can be installed using the following command:
 ```bash
-conda env update --solver=libmamba -n morpheus --file conda/environments/model-utils_cuda-125_arch-$(arch).yaml
+conda env update --solver=libmamba -n morpheus --file conda/environments/model-utils_cuda-128_arch-$(arch).yaml
 ```
 
 For users wishing to use TRT models generated using this tool with Triton will then need to refer to the [Triton Model Repository](./triton-model-repo/README.md) documentation on how to deploy the models to Triton, and how to build the Morpheus Triton Server Models Container.

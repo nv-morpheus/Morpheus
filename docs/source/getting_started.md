@@ -29,7 +29,7 @@ More advanced users, or those who are interested in using the latest pre-release
 
 ## Requirements
 - Volta architecture GPU or better
-- [CUDA 12.5](https://developer.nvidia.com/cuda-12-5-0-download-archive)
+- [CUDA 12.8](https://developer.nvidia.com/cuda-12-8-0-download-archive)
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation)
 - [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `24.09` or higher
