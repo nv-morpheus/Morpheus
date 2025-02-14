@@ -19,17 +19,22 @@ set -e
 MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
 
 LINUX_DISTRO=${LINUX_DISTRO:-ubuntu}
-LINUX_VER=${LINUX_VER:-22.04}
 
-DOCA_OS_VERSION=${DOCA_OS_VERSION:-"ubuntu2204"}
+DOCA_OS_VERSION=${DOCA_OS_VERSION:-"22.04"}
 DOCA_VERSION=${DOCA_VERSION:-2.7.0}
-DOCA_FULL_VERSION=${DOCA_FULL_VERSION:-"204000-24.04"}
 
-PKG_ARCH=${PKG_ARCH:-$(dpkg --print-architecture)}
+REAL_ARCH=${REAL_ARCH:-$(arch)}
+if [[ ${REAL_ARCH} == "x86_64" ]]; then
+    DOCA_ARCH="x86_64"
+elif [[ ${REAL_ARCH} == "aarch64" ]]; then
+    DOCA_ARCH="arm64-sbsa"
+else
+    echo "Unsupported architecture: ${REAL_ARCH}"
+    exit 1
+fi
 
-DOCA_BASE_URL="https://www.mellanox.com/downloads/DOCA"
-DOCA_DEB_PATH="DOCA_v${DOCA_VERSION}/host/doca-host_${DOCA_VERSION}-${DOCA_FULL_VERSION}-${DOCA_OS_VERSION}_${PKG_ARCH}.deb"
-DOCA_PKG_LINK="${DOCA_BASE_URL}/${DOCA_DEB_PATH}"
+DOCA_URL="https://linux.mellanox.com/public/repo/doca/${DOCA_VERSION}/${LINUX_DISTRO}${DOCA_OS_VERSION}/${DOCA_ARCH}/"
+DOCA_GPG_URL="https://linux.mellanox.com/public/repo/doca/GPG-KEY-Mellanox.pub"
 
 # Exit early if nothing to do
 if [[ ${MORPHEUS_SUPPORT_DOCA} != @(TRUE|ON) ]]; then
@@ -37,19 +42,14 @@ if [[ ${MORPHEUS_SUPPORT_DOCA} != @(TRUE|ON) ]]; then
 fi
 
 WORKING_DIR=$1
-
+mkdir -p ${WORKING_DIR}
 echo "Installing DOCA using directory: ${WORKING_DIR}"
 
-DEB_DIR=${WORKING_DIR}/deb
 
-mkdir -p ${DEB_DIR}
+echo "Adding DOCA repo: ${DOCA_URL}"
+curl ${DOCA_GPG_URL} | gpg --dearmor > /etc/apt/trusted.gpg.d/GPG-KEY-Mellanox.pub
+echo "deb [signed-by=/etc/apt/trusted.gpg.d/GPG-KEY-Mellanox.pub] $DOCA_URL ./" > /etc/apt/sources.list.d/doca.list
 
-echo "Downloading DOCA package from: ${DOCA_PKG_LINK}"
-
-# This doesn't work with curl
-wget -qO - ${DOCA_PKG_LINK} -O ${DEB_DIR}/doca-host.deb
-
-apt install ${DEB_DIR}/doca-host.deb
 apt update
 
 # Need to explicitly install the version of mft provided by the DOCA repo overriding the verdion from the cuda repo
