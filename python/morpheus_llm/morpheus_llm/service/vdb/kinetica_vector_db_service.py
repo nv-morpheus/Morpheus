@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
 
+
 class _Utils:
 
     @staticmethod
@@ -92,7 +93,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             self._name = f"{self._schema}.{name}" \
                 if self._schema is not None and len(self._schema) > 0 else f"ki_home.{name}"
 
-        self._collection =  GPUdbTable(name=self._name, db=client)
+        self._collection = GPUdbTable(name=self._name, db=client)
         self._record_type = self._collection.get_table_type()
         self._fields: list[GPUdbRecordColumn] = self._record_type.columns
         self._description = self.describe()
@@ -106,7 +107,6 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             else:
                 if not field.column_properties[1] == "primary_key":
                     self._fillna_fields_dict[field.name] = field.column_type
-
 
     def insert(self, data: list[list] | list[dict], **kwargs: dict[str, typing.Any]) -> dict:
         """
@@ -124,10 +124,10 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         dict
             Returns response content as a dictionary.
         """
-        options = kwargs.get( "options", None )
-        if options is not None: # if given, remove from kwargs
-            kwargs.pop( "options" )
-        else: # no option given; use an empty dict
+        options = kwargs.get("options", None)
+        if options is not None:  # if given, remove from kwargs
+            kwargs.pop("options")
+        else:  # no option given; use an empty dict
             options = {}
 
         result = self._collection.insert_records(data, options=options)
@@ -301,12 +301,12 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         dist_strategy = DEFAULT_DISTANCE_STRATEGY
 
         query_string = f"""
-                SELECT {', '.join(output_fields)}, {dist_strategy}(embedding, '{embedding_str}') 
-                as distance, {self._vector_field}
-                FROM {self._collection.name}
-                {where_clause}
-                ORDER BY distance asc NULLS LAST
-                LIMIT {k}
+            SELECT {', '.join(output_fields)}, {dist_strategy}(embedding, '{embedding_str}')
+            as distance, {self._vector_field}
+            FROM {self._collection.name}
+            {where_clause}
+            ORDER BY distance asc NULLS LAST
+            LIMIT {k}
         """
 
         self._client.log_debug(query_string)
@@ -352,7 +352,6 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
 
         self._client.log_error(resp["status_info"]["message"])
         return []
-
 
     async def similarity_search(self,
                                 embeddings: list[list[float]],
@@ -423,27 +422,27 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             Returns result of the updated operation stats.
         """
 
-        options = kwargs.get( "options", None )
-        if options is not None: # if given, remove from kwargs
-            kwargs.pop( "options" )
-        else: # no option given; use an empty dict
+        options = kwargs.get("options", None)
+        if options is not None:  # if given, remove from kwargs
+            kwargs.pop("options")
+        else:  # no option given; use an empty dict
             options = {}
 
-        expressions = kwargs.get( "expressions", [] )
-        if expressions is not None: # if given, remove from kwargs
+        expressions = kwargs.get("expressions", [])
+        if expressions is not None:  # if given, remove from kwargs
             if not isinstance(expressions, list):
                 raise GPUdbException("'expressions' must be of type 'list' ...")
             if "expressions" in kwargs:
-                kwargs.pop( "expressions" )
-        else: # no option given; use an empty dict
+                kwargs.pop("expressions")
+        else:  # no option given; use an empty dict
             raise GPUdbException("Update 'expressions' must be given ...")
 
-        new_values_maps = kwargs.get( "new_values_maps", None )
-        if new_values_maps is not None: # if given, remove from kwargs
+        new_values_maps = kwargs.get("new_values_maps", None)
+        if new_values_maps is not None:  # if given, remove from kwargs
             if not isinstance(new_values_maps, (list, dict)):
                 raise GPUdbException("'new_value_maps' should either be a 'list of dicts' or a dict ...")
-            kwargs.pop( "new_values_maps" )
-        else: # no option given; use an empty dict
+            kwargs.pop("new_values_maps")
+        else:  # no option given; use an empty dict
             raise GPUdbException("'new_values_maps' must be given ...")
 
         if len(expressions) != len(new_values_maps):
@@ -473,10 +472,10 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         dict[str, typing.Any]
             Returns result of the given keys that are deleted from the Kinetica table.
         """
-        options = kwargs.get( "options", None )
-        if options is not None: # if given, remove from kwargs
-            kwargs.pop( "options" )
-        else: # no option given; use an empty dict
+        options = kwargs.get("options", None)
+        if options is not None:  # if given, remove from kwargs
+            kwargs.pop("options")
+        else:  # no option given; use an empty dict
             options = {}
 
         result = self._collection.delete_records(expressions=[expr], options=options)
@@ -594,10 +593,10 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
         **kwargs : dict
             Options as accepted by `/clear/table` API of Kinetica.
         """
-        options = kwargs.get( "options", None )
-        if options is not None: # if given, remove from kwargs
-            kwargs.pop( "options" )
-        else: # no option given; use an empty dict
+        options = kwargs.get("options", None)
+        if options is not None:  # if given, remove from kwargs
+            kwargs.pop("options")
+        else:  # no option given; use an empty dict
             options = {}
 
         self._client.clear_table(self._collection.name, options=options)
@@ -621,6 +620,7 @@ class KineticaVectorDBResourceService(VectorDBResourceService):
             "info": result["info"],
         }
         return result_dict
+
 
 class KineticaVectorDBService(VectorDBService):
     """
@@ -736,7 +736,6 @@ class KineticaVectorDBService(VectorDBService):
 
             GPUdbTable(table_type, name, options=options, db=self._client)
 
-
     def create_from_dataframe(self,
                               name: str,
                               df: DataFrameType,
@@ -783,8 +782,8 @@ class KineticaVectorDBService(VectorDBService):
         RuntimeError
             If the table not exists.
         """
-        options = kwargs.get( "options", None )
-        if options is None: # if given, remove from kwargs
+        options = kwargs.get("options", None)
+        if options is None:  # if given, remove from kwargs
             options = {}
             kwargs["options"] = options
 
