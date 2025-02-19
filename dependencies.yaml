@@ -217,6 +217,7 @@ files:
       - example-dfp-prod
 
 channels:
+  - local # temp remove before merging
   - conda-forge
   - huggingface
   - rapidsai
@@ -231,7 +232,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - python=3.10
+          - python=3.12
 
   cudatoolkit:
     specific:
