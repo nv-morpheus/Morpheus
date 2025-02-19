@@ -48,7 +48,7 @@ dependencies:
 - pynvml=11.4
 - pypdf=3.17.4
 - pypdfium2==4.30
-- python-confluent-kafka>=1.9.2,<1.10.0a0
+- python-confluent-kafka=2.8
 - python-docx==1.1.0
 - python-graphviz
 - python=3.12
