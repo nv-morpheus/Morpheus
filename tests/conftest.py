@@ -954,6 +954,7 @@ def _get_random_port():
         sckt.bind(('', 0))
         return sckt.getsockname()[1]
 
+
 @pytest.fixture(scope="session", name="kinetica_data")
 def kinetica_data_fixture():
     import json
@@ -980,6 +981,7 @@ KINETICA_HOST = os.getenv("KINETICA_HOST", "http://loclahost:9191")
 KINETICA_USER = os.getenv("KINETICA_USER", "")
 KINETICA_PASSWORD = os.getenv("KINETICA_PASSWORD", "")
 KINETICA_SCHEMA = os.getenv("KINETICA_SCHEMA", "")
+
 
 @pytest.fixture(scope="session", name="kinetica_service")
 def kinetica_service_fixture(kinetica_server_uri: str = KINETICA_HOST,

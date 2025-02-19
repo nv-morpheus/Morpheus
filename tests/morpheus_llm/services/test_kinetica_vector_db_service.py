@@ -134,9 +134,11 @@ async def test_similarity_search_with_data(kinetica_service: KineticaVectorDBSer
     expr = "id=2 or id=7"
 
     # Perform a search in the collection.
-    similarity_search_coroutine = await kinetica_service.similarity_search(collection_name,
-                                                                         embeddings=search_vec,
-                                                                         expr=expr)
+    similarity_search_coroutine = await kinetica_service.similarity_search(
+        collection_name,
+        embeddings=search_vec,
+        expr=expr
+    )
     search_result = await similarity_search_coroutine
     result_list = []
     for rec in search_result:
@@ -206,7 +208,6 @@ def test_overwrite_collection_on_create(kinetica_service: KineticaVectorDBServic
 
     # Clean up the collection.
     kinetica_service.drop(collection_name)
-
 
 
 @pytest.mark.kinetica
@@ -297,7 +298,6 @@ def test_create_from_dataframe(kinetica_service: KineticaVectorDBService):
 
     # Clean up the collection.
     kinetica_service.drop(collection_name)
-
 
 
 @pytest.mark.kinetica
