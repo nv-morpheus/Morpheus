@@ -73,7 +73,7 @@ docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD:/model
 
 To load a TensorRT model, it first must be compiled with the `morpheus tools onnx-to-trt` utility. This utility requires additional packages to be installed. From the root of the Morpheus repo, install them with:
 ```bash
-conda env update --solver=libmamba -n morpheus --file conda/environments/model-utils_cuda-125_arch-$(arch).yaml
+conda env update --solver=libmamba -n morpheus --file conda/environments/model-utils_cuda-128_arch-$(arch).yaml
 ```
 
 Then build the TensorRT model with (refer `triton-model-repo/sid-minibert-trt/1/README.md` for more info):
