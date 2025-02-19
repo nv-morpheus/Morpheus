@@ -1,23 +1,24 @@
 import json
 import logging
-import random
-import cudf
 import os
+import random
 
-from morpheus.pipeline.linear_pipeline import LinearPipeline
+import cudf
+
 from morpheus.config import Config
 from morpheus.config import ExecutionMode
+from morpheus.messages import ControlMessage
 from morpheus.modules import to_control_message  # noqa: F401 # pylint: disable=unused-import
+from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.stages.general.linear_modules_stage import LinearModulesStage
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
-from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.general.linear_modules_stage import LinearModulesStage
-from morpheus.messages import ControlMessage
-
-from morpheus_llm.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBService
+from morpheus_llm.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 
 logger = logging.getLogger(__name__)
+
 
 def get_test_df(num_input_rows):
     df = cudf.DataFrame({
@@ -74,6 +75,7 @@ def main():
     )
 
     pipeline.run()
+
 
 if __name__ == "__main__":
     main()

@@ -956,8 +956,8 @@ def _get_random_port():
 
 @pytest.fixture(scope="session", name="kinetica_data")
 def kinetica_data_fixture():
-    import random
     import json
+    import random
     inital_data = [[
         i+1,
         [random.random() for _ in range(3)],

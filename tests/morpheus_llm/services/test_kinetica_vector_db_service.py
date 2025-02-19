@@ -18,6 +18,7 @@ import random
 
 import numpy as np
 import pytest
+
 import cudf
 
 from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBService

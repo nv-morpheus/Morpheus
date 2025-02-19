@@ -18,9 +18,14 @@ import logging
 import typing
 from collections import OrderedDict
 
-from gpudb import GPUdb, GPUdbTable, GPUdbRecordColumn, GPUdbRecordType, GPUdbException
 import sqlparse
-from sqlparse.sql import IdentifierList, Identifier
+from gpudb import GPUdb
+from gpudb import GPUdbException
+from gpudb import GPUdbRecordColumn
+from gpudb import GPUdbRecordType
+from gpudb import GPUdbTable
+from sqlparse.sql import Identifier
+from sqlparse.sql import IdentifierList
 from sqlparse.tokens import Keyword
 
 from morpheus.utils.type_aliases import DataFrameType
@@ -48,6 +53,7 @@ class DistanceStrategy(str, enum.Enum):
     COSINE = "cosine"
     MAX_INNER_PRODUCT = "inner"
 
+
 class Dimension(int, enum.Enum):
     """Some default dimensions for known embeddings."""
 
@@ -55,6 +61,7 @@ class Dimension(int, enum.Enum):
 
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.EUCLIDEAN
+
 
 class KineticaVectorDBResourceService(VectorDBResourceService):
     """
