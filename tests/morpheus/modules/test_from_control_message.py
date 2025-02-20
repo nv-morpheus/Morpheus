@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import re
 
 import mrc
 import pytest
@@ -50,7 +51,7 @@ def test_contains_namespace():
 def test_is_version_compatible():
     registry = mrc.ModuleRegistry
 
-    release_version = [int(x) for x in mrc.__version__.split(".")]
+    release_version = list(int(x) for x in re.compile(r"^(\d+)\.(\d+)\.(\d+)").match(mrc.__version__).groups())
     old_release_version = [22, 10, 0]
     no_version_patch = [22, 10]
     no_version_minor_and_patch = [22]
