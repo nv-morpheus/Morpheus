@@ -9,7 +9,7 @@ channels:
 - nvidia/label/dev
 - pytorch
 dependencies:
-- cuml=24.10.*
+- cuml=25.02.*
 - jupyterlab
 - matplotlib
 - onnx
@@ -23,4 +23,4 @@ dependencies:
 - xgboost
 - pip:
   - tensorrt-cu12
-name: model-utils_cuda-125_arch-aarch64
+name: model-utils_cuda-128_arch-x86_64

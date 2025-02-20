@@ -21,7 +21,7 @@ source ${WORKSPACE}/ci/scripts/github/morpheus_env.sh
 source ${WORKSPACE}/ci/scripts/github/cmake_all.sh
 /usr/bin/nvidia-smi
 
-update_conda_env "${WORKSPACE}/conda/environments/all_cuda-125_arch-${REAL_ARCH}.yaml"
+update_conda_env "${WORKSPACE}/conda/environments/all_cuda-128_arch-${REAL_ARCH}.yaml"
 
 log_toolchain
 

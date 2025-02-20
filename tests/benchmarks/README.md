@@ -197,5 +197,5 @@ You can use the same Dev container created here to run the Production DFP benchm
 ```bash
 conda env update --solver=libmamba \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./conda/environments/examples_cuda-125_arch-$(arch).yaml
+  --file ./conda/environments/examples_cuda-128_arch-$(arch).yaml
 ```

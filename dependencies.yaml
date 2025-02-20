@@ -20,7 +20,7 @@ files:
   all:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
@@ -46,7 +46,7 @@ files:
   dev:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
@@ -68,7 +68,7 @@ files:
   build:
     output: none
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
@@ -88,7 +88,7 @@ files:
   test:
     output: none
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - benchmark_cpp
@@ -109,7 +109,7 @@ files:
   docs:
     output: none
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64]
     includes:
       - benchmark_cpp
@@ -132,7 +132,7 @@ files:
   runtime:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - cudatoolkit
@@ -146,7 +146,7 @@ files:
   examples:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - cve-mitigation
@@ -163,7 +163,7 @@ files:
   model-utils:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     includes:
       - model-training-tuning
@@ -208,7 +208,7 @@ files:
   dfp_example:
     output: conda
     matrix:
-      cuda: ["12.5"]
+      cuda: ["12.8"]
       arch: [x86_64, aarch64]
     output: conda
     conda_dir: examples/digital_fingerprinting/production/conda/environments
@@ -238,26 +238,26 @@ dependencies:
       - output_types: [conda]
         matrices:
           - matrix:
-              cuda: "12.5"
+              cuda: "12.8"
             packages:
-              - cuda-cudart=12.5
-              - cuda-nvrtc=12.5
-              - cuda-nvtx=12.5
-              - cuda-version=12.5
+              - cuda-cudart=12.8
+              - cuda-nvrtc=12.8
+              - cuda-nvtx=12.8
+              - cuda-version=12.8
 
   cudatoolkit-dev:
     specific:
       - output_types: [conda]
         matrices:
           - matrix:
-              cuda: "12.5"
+              cuda: "12.8"
             packages:
-              - cuda-cudart-dev=12.5
-              - cuda-nvml-dev=12.5
-              - cuda-nvrtc-dev=12.5
-              - cuda-nvtx-dev=12.5
+              - cuda-cudart-dev=12.8
+              - cuda-nvml-dev=12.8
+              - cuda-nvrtc-dev=12.8
+              - cuda-nvtx-dev=12.8
               - cuda-sanitizer-api
-              - cuda-version=12.5
+              - cuda-version=12.8
               - libcublas-dev # required by matx
               - libcufft-dev # required by matx
               - libcusolver-dev # required by matx
@@ -272,7 +272,7 @@ dependencies:
       - output_types: [conda]
         packages:
           # Compilers
-          - cuda-nvcc=12.5
+          - cuda-nvcc=12.8
           - cxx-compiler
           - gxx=12.1
 
@@ -281,8 +281,8 @@ dependencies:
           - c-ares=1.32 # 1.33 causes an undefined symbol error
           - ccache
           - cmake=3.27
-          - cuda-cudart-dev=12.5
-          - cuda-version=12.5
+          - cuda-cudart-dev=12.8
+          - cuda-version=12.8
           - indicators=2.3 # C++ library for displaying progress bars
           - libtool # Needed for DOCA build
           - ninja=1.11
@@ -296,17 +296,17 @@ dependencies:
       - output_types: [conda]
         packages:
           # Include: cudatoolkit-dev
-          - cudf=24.10
+          - &cudf cudf=25.02
           - cython=3.0
           - glog>=0.7.1,<0.8
           - gtest=1.14
-          - libcudf=24.10
+          - libcudf=25.02
           - librdkafka>=1.9.2,<1.10.0a0
           - libzlib >=1.3.1,<2
-          - mrc=25.06
+          - &mrc mrc=25.06
           - nlohmann_json=3.11
           - pybind11-stubgen=0.10.5
-          - pylibcudf=24.10
+          - pylibcudf=25.02
           - rapidjson=1.1.0
           - rdma-core>=48 # Needed for DOCA.
           - scikit-build=0.17.6
@@ -332,7 +332,7 @@ dependencies:
           - flake8
           - isort
           - pylint=3.0.3
-          - pynvml=11.4
+          - pynvml=12
           - versioneer
           - yapf=0.43
     specific:
@@ -382,8 +382,8 @@ dependencies:
           - appdirs
           - beautifulsoup4=4.12
           - click>=8
-          # - cuda-version=12.5 ##
-          - cudf=24.10
+          # - cuda-version=12.8 ##
+          - *cudf
           - cupy # Version determined from cudf
           - datacompy=0.10
           - dill=0.3.7
@@ -394,7 +394,7 @@ dependencies:
           - grpcio-status
           # - libwebp=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863 ##
           - mlflow>=2.10.0,<2.18 # Pin version to avoid breaking change in 2.18 to thread local variable code commit id: 5541888
-          - mrc=25.06
+          - *mrc
           - networkx=2.8.8
           - numba=0.60 # Pin version to avoid https://github.com/nv-morpheus/Morpheus/issues/2166
           - numpydoc=1.5
@@ -402,7 +402,7 @@ dependencies:
           - python-confluent-kafka>=1.9.2,<1.10.0a0
           - python-graphviz
           - pluggy=1.3
-          - rapids-dask-dependency=24.10 # provides dask and distributed
+          - rapids-dask-dependency=25.02 # provides dask and distributed
           - requests<2.29.0
           - requests-cache=1.1
           - scikit-learn=1.3.2
@@ -535,7 +535,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - &cuml cuml=24.10.*
+          - &cuml cuml=25.02.*
           - pip
           - pip:
             - --find-links https://data.dgl.ai/wheels/cu121/repo.html
