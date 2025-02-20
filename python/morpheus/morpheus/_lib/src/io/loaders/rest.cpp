@@ -260,7 +260,7 @@ void parse_params(nlohmann::json& params, std::string& query)
     py::dict query_pydict;
     for (auto& param : params.items())
     {
-        query_pydict[py::str(param.key())] = py::str(param.value());
+        query_pydict[py::str(param.key())] = py::str(param.value().get<std::string>());
     }
     query = py::len(query_pydict) == 0 ? "" : "?" + urllib.attr("urlencode")(query_pydict).cast<std::string>();
 }

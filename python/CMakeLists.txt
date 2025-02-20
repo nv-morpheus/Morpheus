@@ -15,6 +15,8 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "python")
 
+add_compile_definitions("PYBIND11_NO_ASSERT_GIL_HELD_INCREF_DECREF=1")
+
 if (MORPHEUS_BUILD_MORPHEUS_CORE)
   add_subdirectory(morpheus)
 endif()
