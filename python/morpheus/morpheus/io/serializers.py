@@ -62,7 +62,7 @@ def df_to_stream_json(df: DataFrameType, stream: IOBase, include_index_col=True,
     lines : bool, optional
         Write out the JSON in lines format, by default True.
     """
-    df.to_json(stream, orient="records", lines=lines, index=include_index_col)
+    df.to_json(stream, orient="records", lines=lines)
 
     return stream
 
