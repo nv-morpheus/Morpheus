@@ -217,7 +217,6 @@ files:
       - example-dfp-prod
 
 channels:
-  - local # temp remove before merging
   - conda-forge
   - huggingface
   - rapidsai
