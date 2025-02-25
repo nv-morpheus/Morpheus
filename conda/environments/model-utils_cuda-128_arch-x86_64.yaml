@@ -24,8 +24,4 @@ dependencies:
 - xgboost
 - pip:
   - tensorrt-cu12
-<<<<<<<< HEAD:conda/environments/model-utils_cuda-128_arch-aarch64.yaml
-name: model-utils_cuda-128_arch-aarch64
-========
 name: model-utils_cuda-128_arch-x86_64
->>>>>>>> f55e3826dca06ff746a495f52ed931dd423fe543:conda/environments/model-utils_cuda-128_arch-x86_64.yaml
