@@ -75,6 +75,13 @@ def pytest_addoption(parser: pytest.Parser):
     )
 
     parser.addoption(
+        "--run_kinetica",
+        action="store_true",
+        dest="run_kinetica",
+        help="Run kinetica tests that would otherwise be skipped",
+    )
+
+    parser.addoption(
         "--run_milvus",
         action="store_true",
         dest="run_milvus",
@@ -142,6 +149,10 @@ def pytest_runtest_setup(item):
     if (not item.config.getoption("--run_kafka")):
         if (item.get_closest_marker("kafka") is not None):
             pytest.skip("Skipping Kafka tests by default. Use --run_kafka to enable")
+
+    if (not item.config.getoption("--run_kinetica")):
+        if (item.get_closest_marker("kinetica") is not None):
+            pytest.skip("Skipping kinetica tests by default. Use --run_kinetica to enable")
 
     if (not item.config.getoption("--run_milvus")):
         if (item.get_closest_marker("milvus") is not None):
@@ -953,6 +964,44 @@ def _get_random_port():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sckt:
         sckt.bind(('', 0))
         return sckt.getsockname()[1]
+
+
+@pytest.fixture(scope="session", name="kinetica_data")
+def kinetica_data_fixture():
+    import json
+    import random
+    inital_data = [[
+        i + 1,
+        [random.random() for _ in range(3)],
+        json.dumps({"metadata": f"Sample metadata for row {i+1}"}),
+    ] for i in range(10)]
+    yield inital_data
+
+
+@pytest.fixture(scope="session", name="kinetica_type")
+def kinetica_type_fixture():
+    columns = [
+        ["id", "long", "primary_key"],
+        ["embeddings", "bytes", "vector(3)"],
+        ["metadata", "string", "json"],
+    ]
+    yield columns
+
+
+KINETICA_HOST = os.getenv("KINETICA_HOST", "http://loclahost:9191")
+KINETICA_USER = os.getenv("KINETICA_USER", "")
+KINETICA_PASSWORD = os.getenv("KINETICA_PASSWORD", "")
+KINETICA_SCHEMA = os.getenv("KINETICA_SCHEMA", "")
+
+
+@pytest.fixture(scope="session", name="kinetica_service")
+def kinetica_service_fixture(kinetica_server_uri: str = KINETICA_HOST,
+                             username: str = KINETICA_USER,
+                             password: str = KINETICA_PASSWORD,
+                             schema: str = KINETICA_SCHEMA):
+    from morpheus_llm.service.vdb.kinetica_vector_db_service import KineticaVectorDBService
+    service = KineticaVectorDBService(kinetica_server_uri, user=username, password=password, kinetica_schema=schema)
+    yield service
 
 
 @pytest.fixture(scope="session")
