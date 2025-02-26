@@ -483,7 +483,7 @@ dependencies:
     common:
       - output_types: [requirements]
         packages:
-           - &faiss-gpu faiss-gpu
+           - &faiss-cpu faiss-cpu
            - &google-search-results google-search-results==2.4
            - &langchain langchain==0.1.16
            - &langchain-nvidia-ai-endpoints langchain-nvidia-ai-endpoints==0.0.11
@@ -565,7 +565,7 @@ dependencies:
           - requests-toolbelt=1.0 # Transitive dep needed by nemollm, specified here to ensure we get a compatible version
           - pip
           - pip:
-            - *faiss-gpu
+            - *faiss-cpu
             - *google-search-results
             - *langchain
             - *langchain-nvidia-ai-endpoints

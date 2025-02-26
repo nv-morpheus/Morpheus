@@ -74,7 +74,7 @@ dependencies:
 - pybind11-stubgen=0.10.5
 - pydantic
 - pylibcudf=25.02
-- pylint=3.3.4
+- pylint=3.0.3
 - pynvml=12
 - pypdfium2==4.30
 - pytest-asyncio
