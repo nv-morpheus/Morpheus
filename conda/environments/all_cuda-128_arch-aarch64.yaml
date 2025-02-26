@@ -88,7 +88,7 @@ dependencies:
 - pybind11-stubgen=0.10.5
 - pydantic
 - pylibcudf=25.02
-- pylint=3.0.3
+- pylint=3.3.4
 - pynvml=12
 - pypdf=3.17.4
 - pytest-asyncio
@@ -130,7 +130,7 @@ dependencies:
   - databricks-connect
   - dgl==2.1.0
   - dglgo
-  - faiss-cpu
+  - faiss-gpu
   - google-search-results==2.4
   - langchain-nvidia-ai-endpoints==0.0.11
   - langchain-openai==0.1.3
