@@ -75,6 +75,13 @@ def pytest_addoption(parser: pytest.Parser):
     )
 
     parser.addoption(
+        "--run_kinetica",
+        action="store_true",
+        dest="run_kinetica",
+        help="Run kinetica tests that would otherwise be skipped",
+    )
+
+    parser.addoption(
         "--run_milvus",
         action="store_true",
         dest="run_milvus",
@@ -142,6 +149,10 @@ def pytest_runtest_setup(item):
     if (not item.config.getoption("--run_kafka")):
         if (item.get_closest_marker("kafka") is not None):
             pytest.skip("Skipping Kafka tests by default. Use --run_kafka to enable")
+
+    if (not item.config.getoption("--run_kinetica")):
+        if (item.get_closest_marker("kinetica") is not None):
+            pytest.skip("Skipping kinetica tests by default. Use --run_kinetica to enable")
 
     if (not item.config.getoption("--run_milvus")):
         if (item.get_closest_marker("milvus") is not None):
@@ -960,7 +971,7 @@ def kinetica_data_fixture():
     import json
     import random
     inital_data = [[
-        i+1,
+        i + 1,
         [random.random() for _ in range(3)],
         json.dumps({"metadata": f"Sample metadata for row {i+1}"}),
     ] for i in range(10)]
