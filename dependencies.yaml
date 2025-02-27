@@ -536,8 +536,9 @@ dependencies:
           - &cuml cuml=25.02.*
           - pip
           - pip:
+            - --find-links https://data.dgl.ai/wheels/torch-2.3/repo.html
             - --find-links https://data.dgl.ai/wheels/torch-2.4/cu124/repo.html
-            - dgl==2.4.0
+            - dgl
 
   example-abp-nvsmi:
     common:

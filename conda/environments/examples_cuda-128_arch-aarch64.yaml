@@ -65,10 +65,11 @@ dependencies:
 - websockets
 - pip:
   - --extra-index-url https://download.pytorch.org/whl/cu124
+  - --find-links https://data.dgl.ai/wheels/torch-2.3/repo.html
   - --find-links https://data.dgl.ai/wheels/torch-2.4/cu124/repo.html
   - databricks-cli < 0.100
   - databricks-connect
-  - dgl==2.4.0
+  - dgl
   - faiss-cpu
   - google-search-results==2.4
   - langchain-nvidia-ai-endpoints==0.0.11
