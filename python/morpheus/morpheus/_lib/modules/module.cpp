@@ -44,10 +44,11 @@ PYBIND11_MODULE(modules, _module)
     std::vector<unsigned int> mrc_version;
     mrc_version.reserve(3);
 
-    auto re = pybind11::module_::import("re");
+    auto re  = pybind11::module_::import("re");
     auto mrc = pybind11::module_::import("mrc");
     // re.compile(r"^(\d+)\.(\d+)\.(\d+)").match(mrc.__version__).groups()
-    for (const auto& x : re.attr("compile")(R"(^(\d+)\.(\d+)\.(\d+))").attr("match")(mrc.attr("__version__")).attr("groups")())
+    for (const auto& x :
+         re.attr("compile")(R"(^(\d+)\.(\d+)\.(\d+))").attr("match")(mrc.attr("__version__")).attr("groups")())
     {
         // int(x)
         auto i = py::int_(py::reinterpret_borrow<py::object>(x));
