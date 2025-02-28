@@ -38,7 +38,7 @@ export x="\033[0m"
 export CONDA_ALWAYS_YES=true
 
 # Change this to switch between build/mambabuild/debug
-export CONDA_COMMAND=${CONDA_COMMAND:-"mambabuild"}
+export CONDA_COMMAND=${CONDA_COMMAND:-"build"}
 
 # Get the path to the morpheus git folder
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
