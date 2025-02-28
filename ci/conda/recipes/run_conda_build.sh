@@ -121,7 +121,6 @@ CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}rapi
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/dev")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}pytorch")
-CONDA_ARGS_ARRAY+=("-vv")
 
 if [[ ${NUMARGS} == 0 ]]; then
    echo -e "${r}ERROR: No arguments were provided. Please provide at least one package to build. Available packages:${x}"
@@ -149,7 +148,7 @@ if hasArg morpheus-libs; then
 
    echo "Running conda-build for morpheus libraries v${GIT_VERSION}..."
    set -x
-   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus-libs
+   conda -vvv ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus-libs
    set +x
 fi
 
