@@ -303,7 +303,6 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
         -c nvidia \
         -c nvidia/label/dev \
         -c pytorch \
-        -c defaults \
         morpheus && \
     # Change to the morpheus directory and build the docs
     cd ${MORPHEUS_ROOT_HOST} &&\
@@ -338,7 +337,6 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
         -c nvidia \
         -c nvidia/label/dev \
         -c pytorch \
-        -c defaults \
         morpheus && \
     /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file \
         conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-${REAL_ARCH}.yaml

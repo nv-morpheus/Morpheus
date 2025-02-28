@@ -75,7 +75,7 @@ outputs:
         - rapidjson 1.1.0
         - scikit-build 0.17.6
         - versioneer-518
-        - zlib 1.3.1 # required to build triton client
+        - zlib >=1.3.1,<2 # required to build triton client
       run:
         # Runtime only requirements. This + setup.py is the definitive runtime requirement list
         # This should be synced with `runtime` in dependencies.yaml
@@ -222,7 +222,7 @@ outputs:
         - rapidjson 1.1.0
         - scikit-build 0.17.6
         - versioneer-518
-        - zlib 1.3.1 # required to build triton client
+        - zlib >=1.3.1,<2 # required to build triton client
       run:
         - {{ pin_subpackage('morpheus-core', exact=True) }}
 
