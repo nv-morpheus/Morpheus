@@ -60,7 +60,7 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
 
       # Run using a clang-tidy wrapper to allow warnings-as-errors and to eliminate any output except errors (since
       # clang-tidy-diff.py doesn't return the correct error codes)
-      CLANG_TIDY_OUTPUT=`get_unified_diff ${CPP_FILE_REGEX} | ${CLANG_TIDY_DIFF} \
+      CLANG_TIDY_OUTPUT=`get_unified_diff ${CPP_FILE_REGEX} | python -W ignore ${CLANG_TIDY_DIFF} \
          -extra-arg="-Wno-ignored-optimization-argument" -j 0 -path ${BUILD_DIR} -p1 -quiet 2>&1`
 
       if [[ -n "${CLANG_TIDY_OUTPUT}" && ${CLANG_TIDY_OUTPUT} != "No relevant changes found." ]]; then

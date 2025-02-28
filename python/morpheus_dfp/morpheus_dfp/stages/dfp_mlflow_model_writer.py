@@ -28,7 +28,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 # Setup conda environment
 conda_env = {
     'channels': ['defaults', 'conda-forge'],
-    'dependencies': ['python=3.10', 'pip'],
+    'dependencies': ['python=3.12', 'pip'],
     'pip': ['mlflow'],
     'name': 'mlflow-env'
 }

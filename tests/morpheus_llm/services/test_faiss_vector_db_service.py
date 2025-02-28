@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import platform
 import typing
 from pathlib import Path
 
@@ -79,6 +80,7 @@ def faiss_service_fixture(faiss_simple_store_dir: str):
     yield service
 
 
+@pytest.mark.skipif(platform.machine() == 'aarch64', reason="https://github.com/nv-morpheus/Morpheus/issues/2190")
 def test_load_resource(faiss_service: FaissVectorDBService):
 
     # Check the default implementation
@@ -94,6 +96,7 @@ def test_load_resource(faiss_service: FaissVectorDBService):
     assert resource.describe()["index_name"] == "other_index"
 
 
+@pytest.mark.skipif(platform.machine() == 'aarch64', reason="https://github.com/nv-morpheus/Morpheus/issues/2190")
 def test_describe(faiss_service: FaissVectorDBService):
     desc_dict = faiss_service.load_resource().describe()
 
@@ -102,12 +105,14 @@ def test_describe(faiss_service: FaissVectorDBService):
     # Room for other properties
 
 
+@pytest.mark.skipif(platform.machine() == 'aarch64', reason="https://github.com/nv-morpheus/Morpheus/issues/2190")
 def test_count(faiss_service: FaissVectorDBService):
 
     count = faiss_service.load_resource().count()
     assert count == 3
 
 
+@pytest.mark.skipif(platform.machine() == 'aarch64', reason="https://github.com/nv-morpheus/Morpheus/issues/2190")
 async def test_similarity_search(faiss_service: FaissVectorDBService):
 
     vdb = faiss_service.load_resource()
@@ -131,6 +136,7 @@ async def test_similarity_search(faiss_service: FaissVectorDBService):
     assert k_5[0][0]["page_content"] == "22"
 
 
+@pytest.mark.skipif(platform.machine() == 'aarch64', reason="https://github.com/nv-morpheus/Morpheus/issues/2190")
 def test_has_store_object(faiss_service: FaissVectorDBService):
     assert faiss_service.has_store_object("index")
 

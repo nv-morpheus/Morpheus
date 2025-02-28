@@ -486,7 +486,7 @@ def test_create_from_dataframe(milvus_service: MilvusVectorDBService):
 def test_fse_default():
     encoder = FieldSchemaEncoder()
     result = encoder.default(pymilvus.DataType.INT32)
-    assert result == "DataType.INT32"
+    assert result == str(pymilvus.DataType.INT32.value)
 
 
 def test_fse_object_hook():

@@ -60,7 +60,7 @@ class LLMContext():
     @typing.overload
     def __init__(self) -> None: ...
     @typing.overload
-    def __init__(self, prent: LLMContext, name: str, inputs: typing.List[InputMap]) -> None: ...
+    def __init__(self, prent: LLMContext, name: str, inputs: list[InputMap]) -> None: ...
     @typing.overload
     def __init__(self, task: LLMTask, message: morpheus._lib.messages.ControlMessage) -> None: ...
     @typing.overload
@@ -69,7 +69,7 @@ class LLMContext():
     def get_input(self, node_name: str) -> object | None: ...
     def get_inputs(self) -> object | None: ...
     def message(self) -> morpheus._lib.messages.ControlMessage: ...
-    def push(self, name: str, inputs: typing.List[InputMap]) -> LLMContext: ...
+    def push(self, name: str, inputs: list[InputMap]) -> LLMContext: ...
     @typing.overload
     def set_output(self, output_name: str, output: object | None) -> None: ...
     @typing.overload
@@ -81,9 +81,9 @@ class LLMContext():
         :type: str
         """
     @property
-    def input_map(self) -> typing.List[InputMap]:
+    def input_map(self) -> list[InputMap]:
         """
-        :type: typing.List[InputMap]
+        :type: list[InputMap]
         """
     @property
     def name(self) -> str:
@@ -117,7 +117,7 @@ class LLMNodeBase():
         context : `morpheus._lib.llm.LLMContext`
             Context instance to use for the execution
         """
-    def get_input_names(self) -> typing.List[str]: 
+    def get_input_names(self) -> list[str]: 
         """
         Get the input names for the node.
 
@@ -131,9 +131,9 @@ class LLMEngineStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, engine: LLMEngine) -> None: ...
     pass
 class LLMLambdaNode(LLMNodeBase):
-    def __init__(self, fn: function) -> None: ...
+    def __init__(self, fn: typing.Callable) -> None: ...
     def execute(self, context: LLMContext) -> typing.Awaitable[LLMContext]: ...
-    def get_input_names(self) -> typing.List[str]: ...
+    def get_input_names(self) -> list[str]: ...
     pass
 class LLMNode(LLMNodeBase):
     def __init__(self) -> None: ...
@@ -159,15 +159,15 @@ class LLMNode(LLMNodeBase):
     pass
 class LLMEngine(LLMNode, LLMNodeBase):
     def __init__(self) -> None: ...
-    def add_task_handler(self, inputs: typing.List[typing.Union[InputMap, str, typing.Tuple[str, str], LLMNodeRunner]], handler: LLMTaskHandler) -> None: ...
-    def run(self, message: morpheus._lib.messages.ControlMessage) -> typing.Awaitable[typing.List[morpheus._lib.messages.ControlMessage]]: ...
+    def add_task_handler(self, inputs: list[typing.Union[InputMap, str, tuple[str, str], LLMNodeRunner]], handler: LLMTaskHandler) -> None: ...
+    def run(self, message: morpheus._lib.messages.ControlMessage) -> typing.Awaitable[list[morpheus._lib.messages.ControlMessage]]: ...
     pass
 class LLMNodeRunner():
     def execute(self, context: LLMContext) -> typing.Awaitable[LLMContext]: ...
     @property
-    def inputs(self) -> typing.List[InputMap]:
+    def inputs(self) -> list[InputMap]:
         """
-        :type: typing.List[InputMap]
+        :type: list[InputMap]
         """
     @property
     def name(self) -> str:
@@ -175,14 +175,14 @@ class LLMNodeRunner():
         :type: str
         """
     @property
-    def parent_input_names(self) -> typing.List[str]:
+    def parent_input_names(self) -> list[str]:
         """
-        :type: typing.List[str]
+        :type: list[str]
         """
     @property
-    def sibling_input_names(self) -> typing.List[str]:
+    def sibling_input_names(self) -> list[str]:
         """
-        :type: typing.List[str]
+        :type: list[str]
         """
     pass
 class LLMTask():
@@ -208,7 +208,7 @@ class LLMTaskHandler():
     Acts as a sink for an `LLMEngine`, emitting results as a `ControlMessage`
     """
     def __init__(self) -> None: ...
-    def get_input_names(self) -> typing.List[str]: 
+    def get_input_names(self) -> list[str]: 
         """
         Get the input names for the task handler.
 
@@ -217,7 +217,7 @@ class LLMTaskHandler():
         list[str]
             The input names for the task handler.
         """
-    def try_handle(self, context: LLMContext) -> typing.Awaitable[typing.Optional[typing.List[morpheus._lib.messages.ControlMessage]]]: 
+    def try_handle(self, context: LLMContext) -> typing.Awaitable[typing.Optional[list[morpheus._lib.messages.ControlMessage]]]: 
         """
         Convert the given `context` into a list of `ControlMessage` instances.
 

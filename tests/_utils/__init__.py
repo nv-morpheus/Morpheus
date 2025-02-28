@@ -121,6 +121,11 @@ def import_or_skip(modname: str,
         if fail_missing:
             raise ImportError(e) from e
         raise
+    except Exception as e:
+        # if we encounter some expcetion while loading, then also skip the test
+        if fail_missing:
+            raise e
+        raise pytest.skip.Exception(f"failed to import {modname}: {e}")
 
 
 # pylint: disable=inconsistent-return-statements

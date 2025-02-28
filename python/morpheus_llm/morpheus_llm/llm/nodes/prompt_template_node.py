@@ -44,7 +44,7 @@ class PromptTemplateNode(LLMNodeBase):
             formatter = string.Formatter()
             # The parse method is returning an iterable of tuples in the form of:
             # (literal_text, field_name, format_spec, conversion)
-            # https://docs.python.org/3.10/library/string.html#string.Formatter.parse
+            # https://docs.python.org/3.12/library/string.html#string.Formatter.parse
             self._input_names = []
             for (_, field_name, _, _) in formatter.parse(self._template_str):
                 if field_name == '':

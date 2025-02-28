@@ -29,7 +29,7 @@ from morpheus.utils.type_utils import get_df_pkg_from_obj
 logger = logging.getLogger(__name__)
 
 Registry = mrc.ModuleRegistry
-mrc_version = [int(i) for i in mrc.__version__.split('.')]
+mrc_version = [int(j.group(1)) for i in mrc.__version__.split('.') if (j := re.compile(r"(\d+)").match(i)) is not None]
 
 
 def verify_module_registration(func):

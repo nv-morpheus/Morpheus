@@ -31,10 +31,12 @@ fetch_base_branch
 # Print the info just to be sure base is active
 conda info
 
+rapids-logger "Installing Boa and Git LFS"
+conda install --solver=libmamba -c conda-forge boa git-lfs
+
 # Pull down data needed for running the per-library unit tests
 rapids-logger "Pulling LFS assets"
 
-conda install git-lfs
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
 
