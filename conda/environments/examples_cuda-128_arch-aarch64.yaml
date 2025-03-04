@@ -17,7 +17,7 @@ dependencies:
 - click>=8
 - cudf=25.02
 - cuml=25.02.*
-- cupy
+- cupy<13.4
 - datacompy=0.10
 - dill=0.3.7
 - docker-py=5.0

@@ -413,7 +413,7 @@ else:
     pipeline.add_stage(RecipientFeaturesStage(config))
 ```
 
-To tokenize the input data we will use Morpheus' `PreprocessNLPStage`. This stage uses the [cuDF subword tokenizer](https://docs.rapids.ai/api/cudf/legacy/user_guide/api_docs/subword_tokenize/#subwordtokenizer) to transform strings into a tensor of numbers to be fed into the neural network model. Rather than split the string by characters or whitespaces, we split them into meaningful subwords based upon the occurrence of the subwords in a large training corpus. You can find more details here: [https://arxiv.org/abs/1810.04805v2](https://arxiv.org/abs/1810.04805v2). All we need to know for now is that the text will be converted to subword token ids based on the vocabulary file that we provide (`vocab_hash_file=vocab file`).
+To tokenize the input data we will use Morpheus' `PreprocessNLPStage`. This stage uses the [cuDF subword tokenizer](https://docs.rapids.ai/api/cudf/stable/pylibcudf/api_docs/nvtext/subword_tokenize/) to transform strings into a tensor of numbers to be fed into the neural network model. Rather than split the string by characters or whitespaces, we split them into meaningful subwords based upon the occurrence of the subwords in a large training corpus. You can find more details here: [https://arxiv.org/abs/1810.04805v2](https://arxiv.org/abs/1810.04805v2). All we need to know for now is that the text will be converted to subword token ids based on the vocabulary file that we provide (`vocab_hash_file=vocab file`).
 
 Let's go ahead and instantiate our `PreprocessNLPStage` and add it to the pipeline:
 
