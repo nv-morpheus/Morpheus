@@ -384,7 +384,7 @@ dependencies:
           - click>=8
           # - cuda-version=12.8 ##
           - *cudf
-          - cupy # Version determined from cudf
+          - cupy<13.4 # Version determined from cudf
           - datacompy=0.10
           - dill=0.3.7
           - docker-py=5.0
