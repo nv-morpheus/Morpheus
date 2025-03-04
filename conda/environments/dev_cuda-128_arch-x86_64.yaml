@@ -26,8 +26,8 @@ dependencies:
 - cuda-nvtx-dev=12.8
 - cuda-sanitizer-api
 - cuda-version=12.8
-- cudf=25.02.00
-- cupy
+- cudf=25.02
+- cupy<13.4
 - cxx-compiler
 - cython=3.0
 - datacompy=0.10
@@ -49,7 +49,7 @@ dependencies:
 - ipython
 - isort
 - libcublas-dev
-- libcudf=25.02.00
+- libcudf=25.02
 - libcufft-dev
 - libcurand-dev
 - libcusolver-dev
@@ -73,7 +73,7 @@ dependencies:
 - pre-commit
 - pybind11-stubgen=0.10.5
 - pydantic
-- pylibcudf=25.02.00
+- pylibcudf=25.02
 - pylint=3.0.3
 - pynvml=12
 - pypdfium2==4.30
@@ -86,7 +86,7 @@ dependencies:
 - python-graphviz
 - python=3.10
 - rapidjson=1.1.0
-- rapids-dask-dependency=25.02.00
+- rapids-dask-dependency=25.02
 - rdma-core>=48
 - requests-cache=1.1
 - requests<2.29.0

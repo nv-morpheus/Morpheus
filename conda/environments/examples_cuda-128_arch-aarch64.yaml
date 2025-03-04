@@ -15,9 +15,9 @@ dependencies:
 - beautifulsoup4=4.12
 - boto3=1.35
 - click>=8
-- cudf=25.02.00
-- cuml=25.02.00
-- cupy
+- cudf=25.02
+- cuml=25.02.*
+- cupy<13.4
 - datacompy=0.10
 - dill=0.3.7
 - docker-py=5.0
@@ -49,7 +49,7 @@ dependencies:
 - python-docx==1.1.0
 - python-graphviz
 - python=3.10
-- rapids-dask-dependency=25.02.00
+- rapids-dask-dependency=25.02
 - requests-cache=1.1
 - requests-toolbelt=1.0
 - requests<2.29.0

@@ -296,17 +296,17 @@ dependencies:
       - output_types: [conda]
         packages:
           # Include: cudatoolkit-dev
-          - &cudf cudf=25.02.00
+          - &cudf cudf=25.02
           - cython=3.0
           - glog>=0.7.1,<0.8
           - gtest=1.14
-          - libcudf=25.02.00
+          - libcudf=25.02
           - librdkafka>=1.9.2,<1.10.0a0
           - libzlib >=1.3.1,<2
           - &mrc mrc=25.06
           - nlohmann_json=3.11
           - pybind11-stubgen=0.10.5
-          - pylibcudf=25.02.00
+          - pylibcudf=25.02
           - rapidjson=1.1.0
           - rdma-core>=48 # Needed for DOCA.
           - scikit-build=0.17.6
@@ -384,7 +384,7 @@ dependencies:
           - click>=8
           # - cuda-version=12.8 ##
           - *cudf
-          - cupy # Version determined from cudf
+          - cupy<13.4 # Version determined from cudf
           - datacompy=0.10
           - dill=0.3.7
           - docker-py=5.0
@@ -402,7 +402,7 @@ dependencies:
           - python-confluent-kafka>=1.9.2,<1.10.0a0
           - python-graphviz
           - pluggy=1.3
-          - rapids-dask-dependency=25.02.00 # provides dask and distributed
+          - rapids-dask-dependency=25.02 # provides dask and distributed
           - requests<2.29.0
           - requests-cache=1.1
           - scikit-learn=1.3.2
@@ -533,7 +533,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - &cuml cuml=25.02.00
+          - &cuml cuml=25.02.*
           - pip
           - pip:
             - --find-links https://data.dgl.ai/wheels/cu121/repo.html
