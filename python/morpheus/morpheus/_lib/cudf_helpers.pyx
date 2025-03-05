@@ -248,7 +248,7 @@ cdef public api:
             source_column_idx += 1
 
         return dict(zip(column_names, data_columns)), index
-ls
+
 cdef _set_col_children_metadata(col,
                                 column_name_info& col_meta):
     cdef column_name_info child_info
