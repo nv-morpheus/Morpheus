@@ -148,7 +148,7 @@ if hasArg morpheus-libs; then
 
    echo "Running conda-build for morpheus libraries v${GIT_VERSION}..."
    set -x
-   conda -vvv ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus-libs
+   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus-libs
    set +x
 fi
 
