@@ -45,7 +45,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
         Pipeline builder instance.
 
     Notes
-    ----------
+    -----
         Configurable parameters:
             - batching_options (dict): Options for batching the data; Example: See Below
             - cache_dir (str): Directory to cache the rolling window data; Example: "/path/to/cache/dir";

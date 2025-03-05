@@ -335,7 +335,7 @@ The {py:obj}`~morpheus_dfp.stages.dfp_mlflow_model_writer.DFPMLFlowModelWriterSt
 | `experiment_name_formatter` | `str` | Optional format string to control the experiment name for models stored in MLflow, default is `/dfp-models/{reg_model_name}`. Currently available field names are: `user_id`, `user_md5` and `reg_model_name` which is the model name as defined by `model_name_formatter` once the field names have been applied. |
 | `databricks_permissions` | `dict` or `None` | Optional, when not `None` sets permissions needed when using a Databricks hosted MLflow server |
 
-> **Note:**  If using a remote MLflow server, users will need to call [`mlflow.set_tracking_uri`](https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri) before starting the pipeline.
+> **Note:**  If using a remote MLflow server, users will need to call [`mlflow.set_tracking_uri`](https://mlflow.org/docs/latest/api_reference/python_api/mlflow.html#mlflow.set_tracking_uri) before starting the pipeline.
 
 ## Inference Pipeline
 ![Inference Pipeline Overview](img/dfp_inference_overview.png)
