@@ -51,7 +51,7 @@ outputs:
         - cmake =3.27
         - ninja =1.11
         - pkg-config =0.29
-        - sysroot_linux-64 =2.28
+        - sysroot_linux-64>=2.28
       host:
         # CUDA dependencies
         - cuda-cudart-dev {{ cuda_compiler_version }}.*
@@ -84,8 +84,8 @@ outputs:
         - click >=8
         - cuda-version {{ cuda_compiler_version }}.*
         - cudf
-        - cupy # Version determined from cudf
-        - datacompy =0.10.*
+        - cupy <13.4
+        - datacompy =0.13.1
         - dill =0.3.7
         - docker-py =5.0.*
         - elasticsearch ==8.9.0
