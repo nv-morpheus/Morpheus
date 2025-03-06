@@ -19,12 +19,20 @@ if [[ $(arch) == "aarch64" ]]; then
     exit 0
 fi
 
+package_name="morpheus_llm"
+file_name="requirements_morpheus_llm_arch-$(arch).txt"
+
 # Install requirements if they are included in the package
 python3 <<EOF
-import importlib.resources
 import subprocess
-with importlib.resources.path("morpheus_llm", "requirements_morpheus_llm_arch-$(arch).txt") as requirements_file:
+import sys
+import importlib.resources as ir
+
+package_name = "${package_name}"
+file_name = "${file_name}"
+
+with ir.as_file(ir.files(anchor=package_name).joinpath(file_name)) as requirements_file:
     subprocess.call(f"pip install -r {requirements_file}".split())
 EOF
 
-pytest tests/morpheus_llm
+pytest tests/${package_name}

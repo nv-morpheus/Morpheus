@@ -19,11 +19,20 @@ if [[ $(arch) == "aarch64" ]]; then
     exit 0
 fi
 
+package_name="morpheus_dfp"
+file_name="requirements_morpheus_dfp_arch-$(arch).txt"
+
+# Install requirements if they are included in the package
 python3 <<EOF
-import importlib.resources
 import subprocess
-with importlib.resources.path("morpheus_dfp", "requirements_morpheus_dfp_arch-$(arch).txt") as requirements_file:
+import sys
+import importlib.resources as ir
+
+package_name = "${package_name}"
+file_name = "${file_name}"
+
+with ir.as_file(ir.files(anchor=package_name).joinpath(file_name)) as requirements_file:
     subprocess.call(f"pip install -r {requirements_file}".split())
 EOF
 
-pytest tests/morpheus_dfp
+pytest tests/${package_name}
