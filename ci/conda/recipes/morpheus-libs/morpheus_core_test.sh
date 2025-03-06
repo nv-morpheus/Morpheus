@@ -22,8 +22,8 @@ fi
 python3 <<EOF
 import importlib.resources
 import subprocess
-requirements_file = importlib.resources.path("morpheus", "requirements_morpheus_core_arch-$(arch).txt")
-subprocess.call(f"pip install -r {requirements_file}".split())
+with importlib.resources.path("morpheus", "requirements_morpheus_core_arch-$(arch).txt") as requirements_file:
+    subprocess.call(f"pip install -r {requirements_file}".split())
 EOF
 
 pytest tests/morpheus
