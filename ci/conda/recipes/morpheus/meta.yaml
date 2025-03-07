@@ -71,7 +71,7 @@ outputs:
         - glog >=0.7.1,<0.8
         - indicators=2.3
         - libcudf {{ rapids_version }}
-        - librdkafka = 2.6.1
+        - librdkafka =2.6.1
         - mrc {{ minor_version }}
         - nlohmann_json 3.11.*
         - pip
