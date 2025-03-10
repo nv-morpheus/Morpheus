@@ -1041,19 +1041,19 @@ class MilvusVectorDBService(VectorDBService):
         **kwargs : dict
             Additional keyword arguments for specifying the type and partition name (if applicable).
 
-        Notes on Expected Keyword Arguments:
-        ------------------------------------
-        - 'collection' (str, optional):
-        Specifies the type of collection to drop. Possible values: 'collection' (default), 'index', 'partition'.
+        Other Parameters
+        ----------------
+        collection: str
+            Type of collection to drop. Possible values: 'collection' (default), 'index', 'partition'.
 
-        - 'partition_name' (str, optional):
-        Required when dropping a specific partition within a collection. Specifies the partition name to be dropped.
+        partition_name: str
+            The partition name to be dropped. Required when dropping a specific partition within a collection.
 
-        - 'field_name' (str, optional):
-        Required when dropping an index within a collection. Specifies the field name for which the index is created.
+        field_name: str
+            The field name for which the index is created. Required when dropping an index within a collection.
 
-        - 'index_name' (str, optional):
-        Required when dropping an index within a collection. Specifies the name of the index to be dropped.
+        index_name: str
+            The name of the index to be dropped. Required when dropping an index within a collection.
 
         Raises
         ------

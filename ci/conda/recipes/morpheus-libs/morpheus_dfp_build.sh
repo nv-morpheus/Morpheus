@@ -56,5 +56,5 @@ cmake -B ${BUILD_DIR} \
 # Build the components
 cmake --build ${BUILD_DIR} -j${PARALLEL_LEVEL:-$(nproc)} --target install
 
-# Install the mprpheus dfp python wheel components
+# Install the morpheus dfp python wheel components
 ${PYTHON} -m pip install -vv ${BUILD_DIR}/python/morpheus_dfp/dist/*.whl

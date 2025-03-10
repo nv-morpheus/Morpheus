@@ -230,7 +230,7 @@ jobs:
       matrix:
         arch: ["amd64", "arm64"]
         include:
-          - runner: linux-amd64-gpu-v100-latest-1
+          - runner: linux-amd64-gpu-l4-latest-1
             arch: "amd64"
           - runner: linux-arm64-cpu16
             arch: "arm64"

@@ -43,7 +43,7 @@ def dfp_inference(builder: mrc.Builder):
         Pipeline builder instance.
 
     Notes
-    ----------
+    -----
         Configurable parameters:
             - model_name_formatter (str): Formatter for model names; Example: "user_{username}_model";
               Default: `[Required]`

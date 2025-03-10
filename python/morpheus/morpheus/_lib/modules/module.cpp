@@ -42,12 +42,16 @@ PYBIND11_MODULE(modules, _module)
     // Get the MRC version that we are registering these modules for. Ideally, this would be able to get it directly
     // from <mrc/version.hpp> but that file isnt exported
     std::vector<unsigned int> mrc_version;
+    mrc_version.reserve(3);
 
-    auto mrc_version_list = pybind11::module_::import("mrc").attr("__version__").attr("split")(".").cast<py::list>();
-
-    for (const auto& l : mrc_version_list)
+    auto re  = pybind11::module_::import("re");
+    auto mrc = pybind11::module_::import("mrc");
+    // re.compile(r"^(\d+)\.(\d+)\.(\d+)").match(mrc.__version__).groups()
+    for (const auto& x :
+         re.attr("compile")(R"(^(\d+)\.(\d+)\.(\d+))").attr("match")(mrc.attr("__version__")).attr("groups")())
     {
-        auto i = py::int_(py::reinterpret_borrow<py::object>(l));
+        // int(x)
+        auto i = py::int_(py::reinterpret_borrow<py::object>(x));
         mrc_version.push_back(i.cast<unsigned int>());
     }
 

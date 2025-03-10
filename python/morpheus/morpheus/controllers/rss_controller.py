@@ -320,7 +320,7 @@ class RSSController:
         """
         Parse the RSS feed using the feedparser library.
 
-        Yeilds
+        Yields
         ------
         feedparser.FeedParserDict
             The parsed feed content.
@@ -350,7 +350,7 @@ class RSSController:
         """
         Fetch and process RSS feed entries.
 
-        Yeilds
+        Yields
         ------
         DataFrameType
             A DataFrame containing feed entry data.
