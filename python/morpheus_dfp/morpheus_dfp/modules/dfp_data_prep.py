@@ -40,7 +40,7 @@ def dfp_data_prep(builder: mrc.Builder):
         Pipeline builder instance.
 
     Notes
-    ----------
+    -----
         Configurable parameters:
             - schema: Schema of the data
             - timestamp_column_name: Name of the timestamp column

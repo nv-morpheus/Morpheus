@@ -33,7 +33,7 @@ To set up a Conda environment with the [`morpheus-core`](https://anaconda.org/nv
 ### Create a Conda Environment
 ```bash
 export CONDA_ENV_NAME=morpheus
-conda create -n ${CONDA_ENV_NAME} python=3.10
+conda create -n ${CONDA_ENV_NAME} python=3.12
 conda activate ${CONDA_ENV_NAME}
 ```
 
@@ -65,7 +65,7 @@ Digital Finger Printing (DFP) is a technique used to identify anomalous behavior
 ### Create a Conda Environment
 ```bash
 export CONDA_ENV_NAME=morpheus-dfp
-conda create -n ${CONDA_ENV_NAME} python=3.10
+conda create -n ${CONDA_ENV_NAME} python=3.12
 conda activate ${CONDA_ENV_NAME}
 ```
 
@@ -97,7 +97,7 @@ To set up a Conda environment with the [`morpheus-llm`](https://anaconda.org/nvi
 ### Create a Conda Environment
 ```bash
 export CONDA_ENV_NAME=morpheus-llm
-conda create -n ${CONDA_ENV_NAME} python=3.10
+conda create -n ${CONDA_ENV_NAME} python=3.12
 conda activate ${CONDA_ENV_NAME}
 ```
 

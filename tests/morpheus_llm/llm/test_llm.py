@@ -59,8 +59,8 @@ class AutoResetEvent(asyncio.mixins._LoopBoundMixin):
     false.
     """
 
-    def __init__(self, *, loop=asyncio.mixins._marker):
-        super().__init__(loop=loop)
+    def __init__(self):
+        super().__init__()
         self._waiters = collections.deque()
         self._value = False
 

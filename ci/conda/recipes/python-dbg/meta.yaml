@@ -37,7 +37,7 @@ requirements:
   build:
     - bzip2       [unix]
     - libffi      [unix] # Required for _ctypes, pip will complain that setuptools doesn't exist if _ctypes is missing.
-    - openssl >=1.1.1n,<2.0   # Required for TLS/SSL capabilities in pip.
+    - openssl >=3.0,<3.1   # Required for TLS/SSL capabilities in pip.
     - readline    [unix]
     - sqlite      [unix]
     - tk          [unix]
@@ -46,7 +46,7 @@ requirements:
   run:
     - bzip2       [unix]
     - libffi      [unix]
-    - openssl >=1.1.1n,<2.0   # Required for TLS/SSL capabilities in pip.
+    - openssl >=3.0,<3.1   # Required for TLS/SSL capabilities in pip.
     - readline    [unix]
     - sqlite      [unix]
     - tk          [unix]
