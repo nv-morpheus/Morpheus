@@ -15,6 +15,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# Morpheus 25.02.01 (28 Feb 2025)
+
+## 🐛 Bug Fixes
+
+- Perform apt upgrade during docker build of the models container ([#2174](https://github.com/nv-morpheus/Morpheus/pull/2174)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Remove pe_count option from MonitorStage ([#2178](https://github.com/nv-morpheus/Morpheus/pull/2178)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Pick up changes from nv-morpheus/morpheus-visualizations#50 ([#2186](https://github.com/nv-morpheus/Morpheus/pull/2186)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 📖 Documentation
+
+- Remove out of date documentation ([#2173](https://github.com/nv-morpheus/Morpheus/pull/2173)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Include a Third Party OSS notice in the entrypoint banner ([#2176](https://github.com/nv-morpheus/Morpheus/pull/2176)) [@dagardner-nv](https://github.com/dagardner-nv)
+
 # Morpheus 25.02.00 (04 Feb 2025)
 
 ## 🐛 Bug Fixes
