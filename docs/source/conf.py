@@ -56,7 +56,7 @@ os.environ["MORPHEUS_IN_SPHINX_BUILD"] = "1"
 # -- Project information -----------------------------------------------------
 
 project = 'morpheus'
-copyright = '2024, NVIDIA'
+copyright = '2025, NVIDIA'
 author = 'NVIDIA'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -124,7 +124,7 @@ exhale_args = {
     "exhaleExecutesDoxygen":
         True,
     "exhaleDoxygenStdin":
-        textwrap.dedent('''
+        textwrap.dedent(r'''
         BRIEF_MEMBER_DESC = YES
         BUILTIN_STL_SUPPORT = YES
         DOT_IMAGE_FORMAT = svg
@@ -141,8 +141,7 @@ exhale_args = {
         ENABLE_PREPROCESSING = YES
         MACRO_EXPANSION = YES
         EXPAND_ONLY_PREDEF = NO
-        PREDEFINED = "MORPHEUS_EXPORT=" \
-                     "DOXYGEN_SHOULD_SKIP_THIS=1"
+        PREDEFINED += "MORPHEUS_EXPORT="
     ''')
 }
 

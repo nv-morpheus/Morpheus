@@ -67,8 +67,8 @@ def process_dataframe(
         The processed DataFrame. If 'df_in' was a pd.DataFrame, the return type is also pd.DataFrame,
         otherwise, it is cudf.DataFrame.
 
-    Note
-    ----
+    Notes
+    -----
     Any transformation that needs to be performed should be defined in 'input_schema'.
     If 'df_in' is a pandas DataFrame, it is temporarily converted into a cudf DataFrame for the transformation.
     """

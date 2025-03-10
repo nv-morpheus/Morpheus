@@ -15,6 +15,10 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "python")
 
+# Disable the assert that checks for the GIL being held during incref/decref
+# https://pybind11.readthedocs.io/en/stable/changelog.html#version-2-11-1-july-17-2023
+add_compile_definitions("PYBIND11_NO_ASSERT_GIL_HELD_INCREF_DECREF=1")
+
 if (MORPHEUS_BUILD_MORPHEUS_CORE)
   add_subdirectory(morpheus)
 endif()

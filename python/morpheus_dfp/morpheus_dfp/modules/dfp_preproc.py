@@ -41,7 +41,7 @@ def dfp_preproc(builder: mrc.Builder):
         Pipeline builder instance.
 
     Notes
-    ----------
+    -----
         Configurable parameters:
             - cache_dir (str): Directory for caching intermediate results
             - timestamp_column_name (str): Name of the column containing timestamps

@@ -47,7 +47,7 @@ class _Utils:
         return bool(re.fullmatch(r'[^.]+\.[^.]+', name))
 
 
-class DistanceStrategy(str, enum.Enum):
+class DistanceStrategy(enum.StrEnum):
     """Enumerator of the Distance strategies."""
 
     EUCLIDEAN = "l2"
@@ -55,7 +55,7 @@ class DistanceStrategy(str, enum.Enum):
     MAX_INNER_PRODUCT = "inner"
 
 
-class Dimension(int, enum.Enum):
+class Dimension(enum.IntEnum):
     """Some default dimensions for known embeddings."""
 
     OPENAI = 1536
@@ -973,10 +973,10 @@ class KineticaVectorDBService(VectorDBService):
         **kwargs : dict
             Additional keyword arguments for specifying the type and partition name (if applicable).
 
-        Notes on Expected Keyword Arguments:
-        ------------------------------------
-        - 'schema' (str, optional):
-        Specifies the schema of the table to drop. Default 'ki_home'
+        Other Parameters
+        ----------------
+        schema : str
+            Specifies the schema of the table to drop. Default 'ki_home'
 
         Raises
         ------
@@ -987,7 +987,6 @@ class KineticaVectorDBService(VectorDBService):
         logger.debug("Dropping Kinetica table: %s, kwargs=%s", name, kwargs)
 
         if self.has_store_object(name):
-            # schema = kwargs.get("schema", "ki_home")
             try:
                 self._client.clear_table(name)
             except GPUdbException as e:

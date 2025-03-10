@@ -38,7 +38,7 @@ def dfp_postprocessing(builder: mrc.Builder):
         Pipeline builder instance.
 
     Notes
-    ----------
+    -----
     Configurable parameters:
         - timestamp_column_name (str): Name of the timestamp column in the input data.
     """
