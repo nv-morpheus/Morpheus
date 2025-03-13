@@ -88,12 +88,12 @@ version = f"{version_obj.major:02d}.{version_obj.minor:02d}"
 # ones.
 extensions = [
     'breathe',
-    'exhale',
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',
     'myst_parser',
     'nbsphinx',
     'numpydoc',
+    'sphinx_copybutton',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
@@ -154,6 +154,7 @@ exhale_args = {
 #     'show-inheritance': True,
 # }
 
+copybutton_prompt_text = ">>> |$ |# "  # characters to be stripped from the copied text
 autosummary_imported_members = False
 autosummary_generate = True  # Generate autodoc stubs with summaries from code
 autoclass_content = "class"  # Dont show __init__
@@ -237,7 +238,7 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 #
 # html_theme = 'alabaster'
-html_theme = "sphinx_rtd_theme"
+html_theme = "nvidia_sphinx_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -257,8 +258,6 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
-html_js_files = ["example_mod.js"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -329,16 +328,6 @@ texinfo_documents = [
 intersphinx_mapping = {
     "python": ('https://docs.python.org/', None), "scipy": ('https://docs.scipy.org/doc/scipy/reference', None)
 }
-
-
-def setup(app):
-    app.add_css_file('omni-style.css')
-    app.add_css_file('copybutton.css')
-    app.add_css_file('infoboxes.css')
-    app.add_css_file('params.css')
-    app.add_css_file('references.css')
-    app.add_css_file('py_properties.css')
-
 
 # The following is used by sphinx.ext.linkcode to provide links to github
 linkcode_resolve = make_linkcode_resolve(
