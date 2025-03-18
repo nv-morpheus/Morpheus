@@ -243,7 +243,8 @@ class KafkaSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource):
 
             # Only use multiple progress engines with C++. The python implementation will duplicate messages with
             # multiple threads
-            source.launch_options.pe_count = self._max_concurrent
+            # Work-around issue #2204
+            # source.launch_options.pe_count = self._max_concurrent
         else:
             self._json_reader = get_json_reader(self._config.execution_mode)
             source = builder.make_source(self.unique_name, self._source_generator)
