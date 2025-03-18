@@ -354,14 +354,15 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - breathe=4.35.0
+          - breathe>=4.36
           - doxygen=1.9.2
           - ipython
-          - myst-parser==4.0
+          - myst-parser>=4.0
           - nbsphinx
           - sphinx>=8.2
           - sphinx-copybutton>=0.5
           - pip:
+            - exhale>=0.3.7
             - nvidia-sphinx-theme>=0.0.7
 
   benchmark_cpp:

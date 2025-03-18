@@ -16,7 +16,7 @@ dependencies:
 - beautifulsoup4=4.12
 - benchmark=1.8.3
 - boto3=1.35
-- breathe=4.35.0
+- breathe>=4.36
 - c-ares=1.32
 - ccache
 - clangdev=16
@@ -69,7 +69,7 @@ dependencies:
 - libzlib
 - mlflow>=2.10.0,<2.18
 - mrc=25.06
-- myst-parser==4.0
+- myst-parser>=4.0
 - nbsphinx
 - networkx=2.8.8
 - newspaper3k==0.2.8
@@ -134,6 +134,7 @@ dependencies:
   - databricks-cli < 0.100
   - databricks-connect
   - dgl
+  - exhale>=0.3.7
   - faiss-cpu
   - google-search-results==2.4
   - gpudb>=7.2.2.3
