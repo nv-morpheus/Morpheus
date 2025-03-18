@@ -346,7 +346,7 @@ Launching a full production Kafka cluster is outside the scope of this project; 
    4. Once the Kafka shell has been launched, you can begin configuring the cluster. All of the following commands require the argument `--bootstrap-server`. To simplify things, set the `BOOTSTRAP_SERVER` and `MY_TOPIC` variables:
       ```bash
       export BOOTSTRAP_SERVER=$(broker-list.sh)
-      export MY_TOPIC="your_topic_here"
+      export MY_TOPIC="your-topic-here"
       ```
 8. Create the topic
 
