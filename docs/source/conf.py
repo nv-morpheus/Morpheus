@@ -88,6 +88,7 @@ version = f"{version_obj.major:02d}.{version_obj.minor:02d}"
 # ones.
 extensions = [
     'breathe',
+    'exhale',
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',
     'myst_parser',
@@ -142,6 +143,7 @@ exhale_args = {
         MACRO_EXPANSION = YES
         EXPAND_ONLY_PREDEF = NO
         PREDEFINED += "MORPHEUS_EXPORT="
+        GENERATE_XML = YES
     ''')
 }
 
