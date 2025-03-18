@@ -139,7 +139,7 @@ dependencies:
   - newspaper3k==0.2.8
   - nvidia-sphinx-theme>=0.0.7
   - pypdfium2==4.30
-  - pytest-kafka==0.6.0
+  - pytest-kafka[kafka-python-ng]>=0.8,<0.9
   - python-logging-loki
   - sentence-transformers==2.7
   - torch==2.4.0

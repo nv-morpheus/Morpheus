@@ -450,7 +450,7 @@ dependencies:
           - &python-docx python-docx==1.1.0
           - pip
           - pip:
-              - pytest-kafka==0.6.0
+              - pytest-kafka[kafka-python-ng]>=0.8,<0.9
     specific:
       - output_types: [conda]
         matrices:

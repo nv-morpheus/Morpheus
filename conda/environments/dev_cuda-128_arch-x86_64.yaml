@@ -116,6 +116,6 @@ dependencies:
   - milvus==2.3.5
   - nvidia-sphinx-theme>=0.0.7
   - pymilvus==2.3.6
-  - pytest-kafka==0.6.0
+  - pytest-kafka[kafka-python-ng]>=0.8,<0.9
   - torch==2.4.0+cu124
 name: dev_cuda-128_arch-x86_64
