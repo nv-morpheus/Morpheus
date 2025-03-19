@@ -248,6 +248,7 @@ html_theme = "nvidia_sphinx_theme"
 # documentation.
 
 html_logo = '_static/main_nv_logo_square.png'
+html_title = f'{project.title()} ({version})'
 
 html_theme_options = {
     'logo_only': True,
