@@ -48,7 +48,7 @@ rapids-logger "Installing Morpheus"
 cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target install
 
 rapids-logger "Building docs"
-cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target morpheus_docs --target morpheus_docs_linkcheck
+cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target morpheus_docs morpheus_docs_linkcheck
 
 rapids-logger "Archiving the docs"
 tar cfj "${WORKSPACE_TMP}/docs.tar.bz" ${BUILD_DIR}/docs/html
