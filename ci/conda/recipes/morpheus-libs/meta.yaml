@@ -103,14 +103,14 @@ outputs:
         - python-confluent-kafka =2.6.1
         - python-graphviz
         - rapids-dask-dependency {{ rapids_version }} # provides dask and distributed
-        - requests<2.29.0
+        - requests>=2.32.3,<3
         - requests-cache =1.1.*
         - scikit-learn =1.3.2.*
         - sqlalchemy <2.0 # 2.0 is incompatible with pandas=1.3
         - tqdm =4.*
         - tritonclient =2.34.*
         - typing_utils =0.1.*
-        - urllib3<2.0
+        - urllib3>=2.3,<3
         - watchdog =3.0.*
         - websockets
     test:
