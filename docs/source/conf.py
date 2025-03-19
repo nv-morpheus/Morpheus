@@ -248,13 +248,29 @@ html_theme = "nvidia_sphinx_theme"
 # documentation.
 
 html_logo = '_static/main_nv_logo_square.png'
+html_title = f'{project.title()} ({version})'
 
 html_theme_options = {
-    'logo_only': True,
-    'display_version': True,
-    'style_nav_header_background': '#000000',  # Toc options
-    'collapse_navigation': False,
-    'navigation_depth': 6,
+    'logo_only':
+        True,
+    'display_version':
+        True,
+    'style_nav_header_background':
+        '#000000',  # Toc options
+    'collapse_navigation':
+        False,
+    'navigation_depth':
+        6,
+    'extra_head': [  # Adding Adobe Analytics
+        '''
+    <script src="https://assets.adobedtm.com/5d4962a43b79/c1061d2c5e7b/launch-191c2462b890.min.js" ></script>
+    '''
+    ],
+    'extra_footer': [
+        '''
+    <script type="text/javascript">if (typeof _satellite !== "undefined") {_satellite.pageBottom();}</script>
+    '''
+    ],
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
