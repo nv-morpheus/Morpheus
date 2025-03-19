@@ -44,12 +44,11 @@ ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs examples
 rapids-logger "Configuring for docs"
 cmake ${CMAKE_BUILD_ALL_FEATURES} -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_BUILD_DOCS=ON .
 
-rapids-logger "Building docs"
+rapids-logger "Installing Morpheus"
 cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target install
-cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target morpheus_docs
 
-rapids-logger "Checking documentation links"
-cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target morpheus_docs_linkcheck
+rapids-logger "Building docs"
+cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target morpheus_docs --target morpheus_docs_linkcheck
 
 rapids-logger "Archiving the docs"
 tar cfj "${WORKSPACE_TMP}/docs.tar.bz" ${BUILD_DIR}/docs/html
