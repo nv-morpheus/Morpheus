@@ -204,7 +204,8 @@ linkcheck_ignore = [
     r'^https://$',
     r'https://(platform\.)?openai.com',
     r'https://code.visualstudio.com',
-    r"^https://github.com/nv-morpheus/Morpheus/blob/.*#.+$"
+    r"^https://github.com/nv-morpheus/Morpheus/blob/.*#.+$",
+    r"^https://nvcr.io/"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
