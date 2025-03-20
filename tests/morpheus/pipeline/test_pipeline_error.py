@@ -15,11 +15,15 @@
 # limitations under the License.
 
 import collections.abc
+import os
 import time
+import typing
 
 import mrc
 import pytest
 
+from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
+from _utils.stages.record_thread_id_stage import RecordThreadIdStage
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.stage_decorator import source
@@ -57,4 +61,61 @@ def test_pipeline(config: Config, source_error: bool, stage_error: bool):
     pipe.add_stage(error_stage(config, raise_error=stage_error))
 
     with pytest.raises(RuntimeError, match="^Test error in (source|stage)$"):
+        pipe.run()
+
+
+class SimpleSource(InMemSourceXStage):
+    """
+    InMemorySourceStage subclass that emits whatever you give it and doesn't assume the source data
+    is a dataframe.
+    """
+
+    def __init__(self, c: Config, data: list[typing.Any], pe_count: int):
+        super().__init__(c, data)
+        self._pe_count = pe_count
+
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        src_node = super()._build_source(builder)
+        src_node.launch_options.pe_count = self._pe_count
+        return src_node
+
+
+class SimpleStage(RecordThreadIdStage):
+
+    def __init__(self, c: Config, pe_count: int):
+        super().__init__(c)
+        self._pe_count = pe_count
+
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = super()._build_single(builder, input_node)
+        node.launch_options.pe_count = self._pe_count
+        return node
+
+
+@pytest.mark.parametrize("source_error, stage_error", [(True, False), (False, True), (True, True)])
+def test_pe_exceeds_cores(source_error: bool, stage_error: bool):
+    """
+    Test to verify that when the pe_count exceeds the number of cores available, a reasonable error is raised.
+    Issue #2202
+    """
+    config = Config()
+    pipe = LinearPipeline(config)
+
+    safe_pe_count = 1
+    unsafe_pe_count = os.cpu_count() + 1
+
+    if source_error:
+        source_kwargs = {"pe_count": unsafe_pe_count}
+    else:
+        source_kwargs = {"pe_count": safe_pe_count}
+
+    if stage_error:
+        stage_kwargs = {"pe_count": unsafe_pe_count}
+    else:
+        stage_kwargs = {"pe_count": safe_pe_count}
+
+    pipe.set_source(SimpleSource(config, [1, 2, 3], **source_kwargs))
+    pipe.add_stage(SimpleStage(config, **stage_kwargs))
+
+    with pytest.raises(RuntimeError, match="^more dedicated threads/cores than available$"):
         pipe.run()
