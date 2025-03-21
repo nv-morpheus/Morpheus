@@ -98,6 +98,7 @@ cudf::io::table_with_metadata load_table_from_file(const std::string& filename,
 
 pybind11::object read_file_to_df(const std::string& filename, FileTypes file_type)
 {
+    CudfHelper::load();
     auto table          = load_table_from_file(filename, file_type);
     int index_col_count = prepare_df_index(table);
 

@@ -37,7 +37,7 @@ namespace morpheus {
  * the actual generated cython calls. The cython implementation in 'cudf_helpers_api.h' can only appear in the
  * translation unit for the pybind module declaration. These functions should be considered de
  */
-struct CudfHelper
+struct MORPHEUS_EXPORT CudfHelper
 {
   public:
     static void load();

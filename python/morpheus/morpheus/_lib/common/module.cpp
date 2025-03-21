@@ -28,6 +28,7 @@
 #include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/http_server.hpp"
 #include "morpheus/version.hpp"
 
@@ -191,6 +192,10 @@ PYBIND11_MODULE(common, _module)
         .value("reverse", indicators::FontStyle::reverse)
         .value("concealed", indicators::FontStyle::concealed)
         .value("crossed", indicators::FontStyle::crossed);
+
+    _module.def("load_cudf_helper", []() {
+        CudfHelper::load();
+    });
 
     _module.attr("__version__") =
         MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
