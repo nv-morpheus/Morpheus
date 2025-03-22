@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"  // for MORPHEUS_EXPORT
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/table_info_data.hpp"
 
