@@ -20,6 +20,7 @@ __all__ = [
     "Tensor",
     "TypeId",
     "determine_file_type",
+    "load_cudf_helper",
     "read_file_to_df",
     "typeid_is_fully_supported",
     "typeid_to_numpy_str",
@@ -309,6 +310,8 @@ def determine_file_type(filename: os.PathLike) -> FileTypes:
     pass
 @typing.overload
 def determine_file_type(filename: str) -> FileTypes:
+    pass
+def load_cudf_helper() -> None:
     pass
 def read_file_to_df(filename: str, file_type: FileTypes = FileTypes.Auto) -> object:
     pass

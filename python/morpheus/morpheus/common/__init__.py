@@ -25,6 +25,7 @@ from morpheus._lib.common import IndicatorsTextColor
 from morpheus._lib.common import Tensor
 from morpheus._lib.common import TypeId
 from morpheus._lib.common import determine_file_type
+from morpheus._lib.common import load_cudf_helper
 from morpheus._lib.common import read_file_to_df
 from morpheus._lib.common import typeid_is_fully_supported
 from morpheus._lib.common import typeid_to_numpy_str
@@ -39,6 +40,7 @@ __all__ = [
     "HttpServer",
     "IndicatorsFontStyle",
     "IndicatorsTextColor",
+    "load_cudf_helper",
     "read_file_to_df",
     "Tensor",
     "typeid_is_fully_supported",
