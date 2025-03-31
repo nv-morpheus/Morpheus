@@ -31,21 +31,6 @@ from pylibcudf.libcudf.table.table_view cimport table_view
 from pylibcudf.libcudf.types cimport size_type
 
 
-cdef vector[string] get_column_names(object tbl, object index):
-    cdef vector[string] column_names
-    if index is not False:
-        if isinstance(tbl._index, cudf.core.multiindex.MultiIndex):
-            for idx_name in tbl._index.names:
-                column_names.push_back(str.encode(idx_name))
-        else:
-            if tbl._index.name is not None:
-                column_names.push_back(str.encode(tbl._index.name))
-
-    for col_name in tbl._column_names:
-        column_names.push_back(str.encode(col_name))
-
-    return column_names
-
 cdef extern from "morpheus/objects/table_info.hpp" namespace "morpheus" nogil:
 
 
@@ -63,54 +48,17 @@ cdef extern from "morpheus/objects/table_info.hpp" namespace "morpheus" nogil:
 
 cdef public api:
     object make_table_from_table_with_metadata(table_with_metadata table, int index_col_count):
-
-        schema_infos = [x.name.decode() for x in table.metadata.schema_info]
-        index_names = schema_infos[0:index_col_count] if index_col_count > 0 else None
-        column_names = schema_infos[index_col_count:]
-
-        plc_table = plc_Table.from_libcudf(move(table.tbl))
-
-        if index_names is None:
-            index = None
-            data = {
-                col_name: ColumnBase.from_pylibcudf(col)
-                for col_name, col in zip(
-                    column_names, plc_table.columns()
-                )
-            }
-        else:
-            result_columns = [
-                ColumnBase.from_pylibcudf(col)
-                for col in plc_table.columns()
-            ]
-            index = cudf.Index._from_data(
-                dict(
-                    zip(
-                        index_names,
-                        result_columns[: len(index_names)],
-                    )
-                )
-            )
-            data = dict(
-                zip(
-                    column_names,
-                    result_columns[len(index_names) :],
-                )
-            )
-        df = cudf.DataFrame._from_data(data, index)
-
-        # Update the struct field names after the DataFrame is created
-        update_struct_field_names(df, table.metadata.schema_info)
-
+        df = cudf.DataFrame.from_pylibcudf(table)
+        if index_col_count > 0:
+            df = df.set_index(df.columns[:index_col_count])
         return df
 
     object make_table_from_table_info_data(TableInfoData table_info, object owner):
 
         cdef table_metadata tbl_meta
 
-        num_index_cols_meta = 0
         cdef column_name_info child_info
-        for i, name in enumerate(owner._column_names, num_index_cols_meta):
+        for i, name in enumerate(owner._column_names):
             child_info.name = name.encode()
             tbl_meta.schema_info.push_back(child_info)
             _set_col_children_metadata(
@@ -155,9 +103,6 @@ cdef public api:
 
 
     TableInfoData make_table_info_data_from_table(object table):
-
-        cdef vector[string] temp_col_names = get_column_names(table, True)
-
         cdef plc_Table plc_table = plc_Table(
             [
                 col.to_pylibcudf(mode="read")
@@ -170,9 +115,15 @@ cdef public api:
 
         # cuDF does a weird check where if there is only one name in both index and columns, and that column is empty or
         # None, then change it to '""'. Not sure what this is used for
-        check_empty_name = get_column_names(table, True).size() == 1
+        all_names = []
+        if isinstance(table.index, cudf.MultiIndex):
+            all_names.extend(table.index.names)
+        elif table.index.name is not None:
+            all_names.append(table.index.name)
+        all_names.extend(table._column_names)
+        check_empty_name = len(all_names) == 1
 
-        for name in table._index.names:
+        for name in table.index.names:
             if (check_empty_name and name in (None, '')):
                 name = '""'
             elif (name is None):
