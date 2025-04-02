@@ -2,6 +2,7 @@
 build-backend = "setuptools.build_meta"
 requires = [
   "nvidia-pyindex",
+  "scikit-build",
   "setuptools",
   "versioneer-518",
   "wheel",
