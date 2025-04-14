@@ -17,7 +17,6 @@ import itertools
 
 import cudf
 from cudf.core.column import ColumnBase
-from cudf.core.dtypes import StructDtype
 
 from libcpp.string cimport string
 from libcpp.utility cimport move
@@ -50,7 +49,7 @@ cdef public api:
     object make_table_from_table_with_metadata(table_with_metadata table, int index_col_count):
         df = cudf.DataFrame.from_pylibcudf(table)
         if index_col_count > 0:
-            df = df.set_index(df.columns[:index_col_count])
+            df = df.set_index(df._column_names[:index_col_count])
         return df
 
     object make_table_from_table_info_data(TableInfoData table_info, object owner):
@@ -78,8 +77,8 @@ cdef public api:
         column_names = []
 
         for c_name in table_info.column_names:
-                name = c_name.decode()
-                column_names.append(name if name != "" else None)
+            name = c_name.decode()
+            column_names.append(name if name != "" else None)
 
 
         column_indicies = []
@@ -158,7 +157,7 @@ cdef public api:
         ``cudf.Column`` of the ``owner`` Frame
         """
         cdef size_type column_idx = 0
-        table_owner = isinstance(owner, cudf.core.frame.Frame)
+        table_owner = isinstance(owner, cudf.DataFrame)
 
         # First construct the index, if any
         index = None
@@ -167,7 +166,7 @@ cdef public api:
             for _ in index_names:
                 column_owner = owner
                 if table_owner:
-                    column_owner = owner._index._columns[column_idx]
+                    column_owner = owner.index._columns[column_idx]
                 index_columns.append(
                     ColumnBase.from_pylibcudf(
                         plc_Column.from_column_view(
@@ -177,8 +176,11 @@ cdef public api:
                     )
                 )
                 column_idx += 1
-            index = cudf.core.index._index_from_data(
-                dict(zip(index_names, index_columns)))
+            
+            if len(index_columns) == 1:
+                index = cudf.Index._from_column(index_columns[0], name=index_names[0])
+            else:
+                index = cudf.MultiIndex._from_data(dict(zip(index_names, index_columns)))
 
         # Construct the data dict
         cdef size_type source_column_idx = 0
@@ -246,7 +248,7 @@ cdef update_column_struct_field_names(
             )
             col.set_base_children(tuple(children))
 
-    if isinstance(col.dtype, StructDtype):
+    if isinstance(col.dtype, cudf.StructDtype):
         field_names.reserve(len(col.base_children))
         for i in range(info.children.size()):
             field_names.push_back(info.children[i].name)
