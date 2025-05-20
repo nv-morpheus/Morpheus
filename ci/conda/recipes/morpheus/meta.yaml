@@ -107,8 +107,6 @@ outputs:
         - python
         - python-confluent-kafka >=1.9.2,<1.10.0a0
         - python-graphviz
-        # - pytorch-cuda
-        # - pytorch * *cuda*
         - rapids-dask-dependency {{ rapids_version }} # provides dask and distributed
         - requests
         - requests-cache =1.1.*
