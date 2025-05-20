@@ -92,8 +92,8 @@ dependencies:
 - python-docx==1.1.0
 - python-graphviz
 - python=3.10
-- pytorch-cuda
-- pytorch=*=*cuda*
+# - pytorch-cuda
+# - pytorch=*=*cuda*
 - rapidjson=1.1.0
 - rapids-dask-dependency=24.02
 - rdma-core>=48
@@ -119,6 +119,7 @@ dependencies:
 - yapf=0.40.1
 - zlib=1.2.13
 - pip:
+  - --extra-index-url https://download.pytorch.org/whl/cu121
   - --find-links https://data.dgl.ai/wheels-test/repo.html
   - --find-links https://data.dgl.ai/wheels/cu121/repo.html
   - databricks-cli < 0.100
@@ -133,4 +134,5 @@ dependencies:
   - nemollm==0.3.5
   - pymilvus==2.3.6
   - pytest-kafka==0.6.0
+  - torch==2.4.0+cu121
 name: all_cuda-121_arch-x86_64
