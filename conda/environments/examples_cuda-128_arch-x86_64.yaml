@@ -14,7 +14,7 @@ dependencies:
 - arxiv=1.4
 - beautifulsoup4=4.12
 - boto3=1.35
-- click>=8
+- click>=8, <8.2
 - cudf=25.02
 - cuml=25.02.*
 - cupy<13.4

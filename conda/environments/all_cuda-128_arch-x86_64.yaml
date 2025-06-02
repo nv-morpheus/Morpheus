@@ -20,7 +20,7 @@ dependencies:
 - c-ares=1.32
 - ccache
 - clangdev=16
-- click>=8
+- click>=8, <8.2
 - cmake=3.27
 - cuda-cudart-dev=12.8
 - cuda-cudart=12.8
