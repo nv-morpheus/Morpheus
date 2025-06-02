@@ -45,7 +45,9 @@ dependencies:
 - feedparser=6.0
 - flake8
 - git-lfs
+- gliner=0.2.19
 - glog>=0.7.1,<0.8
+- google-re2=1.1
 - grpcio
 - grpcio-status
 - gtest=1.14
@@ -143,6 +145,7 @@ dependencies:
   - langchain==0.1.16
   - milvus==2.3.5
   - nemollm==0.3.5
+  - nervaluate=0.2
   - nvidia-sphinx-theme>=0.0.7
   - pymilvus==2.3.6
   - pytest-kafka[kafka-python-ng]>=0.8,<0.9

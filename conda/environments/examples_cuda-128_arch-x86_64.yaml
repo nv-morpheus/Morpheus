@@ -23,6 +23,8 @@ dependencies:
 - docker-py>=7.1,<8
 - elasticsearch==8.9.0
 - feedparser=6.0
+- gliner=0.2.19
+- google-re2=1.1
 - grpcio
 - grpcio-status
 - httpx>=0.23,<0.28
@@ -80,6 +82,7 @@ dependencies:
   - langchain==0.1.16
   - milvus==2.3.5
   - nemollm==0.3.5
+  - nervaluate=0.2
   - pymilvus==2.3.6
   - python-logging-loki
   - sentence-transformers==2.7
