@@ -48,6 +48,7 @@ dependencies:
 - urllib3>=2.3,<3
 - watchdog=3.0
 - websockets
+- yaml=0.2
 - pip:
   - --extra-index-url https://download.pytorch.org/whl/cu124
   - databricks-cli < 0.100

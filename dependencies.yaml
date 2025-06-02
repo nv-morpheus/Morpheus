@@ -417,6 +417,7 @@ dependencies:
           - urllib3>=2.3,<3
           - watchdog=3.0
           - websockets
+          - yaml=0.2
           - pip
           - pip:
             - &torch-extra-index --extra-index-url https://download.pytorch.org/whl/cu124
@@ -556,11 +557,11 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
+          - &transformers transformers=4.40
           - anyio>=3.7
           - arxiv=1.4
           - httpx>=0.23,<0.28 # work-around for https://github.com/openai/openai-python/issues/1915
-          - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
+          - huggingface_hub=0.21
           - jsonpatch>=1.33
           - numexpr
           - onnx=1.15
@@ -626,4 +627,4 @@ dependencies:
           - google-re2=1.1
           - pip
           - pip:
-            - nervaluate=0.2
+            - nervaluate==0.2

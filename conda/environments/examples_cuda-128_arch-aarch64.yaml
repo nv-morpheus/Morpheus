@@ -28,7 +28,7 @@ dependencies:
 - grpcio
 - grpcio-status
 - httpx>=0.23,<0.28
-- huggingface_hub=0.20.2
+- huggingface_hub=0.21
 - jsonpatch>=1.33
 - kfp
 - libwebp=1.3.2
@@ -59,12 +59,13 @@ dependencies:
 - scikit-learn=1.3.2
 - sqlalchemy<2.0
 - tqdm=4
-- transformers=4.36.2
+- transformers=4.40
 - tritonclient=2.34
 - typing_utils=0.1
 - urllib3>=2.3,<3
 - watchdog=3.0
 - websockets
+- yaml=0.2
 - pip:
   - --extra-index-url https://download.pytorch.org/whl/cu124
   - --find-links https://data.dgl.ai/wheels/torch-2.3/repo.html
@@ -79,7 +80,7 @@ dependencies:
   - langchain-openai==0.1.3
   - langchain==0.1.16
   - nemollm==0.3.5
-  - nervaluate=0.2
+  - nervaluate==0.2
   - newspaper3k==0.2.8
   - pypdfium2==4.30
   - python-logging-loki
