@@ -87,7 +87,7 @@ outputs:
         - cupy <13.4
         - datacompy =0.13.1
         - dill =0.3.7
-        - docker-py =5.0.*
+        - docker-py >=7.1,<8
         - elasticsearch ==8.9.0
         - feedparser =6.0.*
         - grpcio =1.62.*
