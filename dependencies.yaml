@@ -383,7 +383,7 @@ dependencies:
           # Include: cve-mitigation
           - appdirs
           - beautifulsoup4=4.12
-          - click>=8
+          - click>=8, <8.2 # work-around for #2219
           # - cuda-version=12.8 ##
           - *cudf
           - cupy<13.4
