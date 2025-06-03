@@ -333,6 +333,8 @@ dependencies:
           - isort
           - pylint=3.0.3
           - pynvml=12
+          # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
+          - setuptools>=75,<80 
           - versioneer
           - yapf=0.43
     specific:
