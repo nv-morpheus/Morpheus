@@ -37,8 +37,6 @@ dependencies:
 - python-confluent-kafka>=1.9.2,<1.10.0a0
 - python-graphviz
 - python=3.10
-- pytorch-cuda
-- pytorch=*=*cuda*
 - rapids-dask-dependency=24.02
 - requests
 - requests-cache=1.1
@@ -50,8 +48,8 @@ dependencies:
 - watchdog=3.0
 - websockets
 - pip:
-  - databricks-cli < 0.100
-  - databricks-connect
+  - --extra-index-url https://download.pytorch.org/whl/cu121
   - milvus==2.3.5
   - pymilvus==2.3.6
+  - torch==2.4.0+cu121
 name: runtime_cuda-121_arch-x86_64
