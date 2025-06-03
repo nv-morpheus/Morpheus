@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import cudf
-import re2 as re
+import re
 from gliner import GLiNER
 
 

@@ -19,7 +19,7 @@
 
 import json
 import os
-import re2 as re
+import re
 import sys
 import time
 from ast import literal_eval

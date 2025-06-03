@@ -22,7 +22,7 @@ import re
 import time
 from typing import Any, Dict, List, Optional
 
-import re2 as re
+import re
 from gliner import GLiNER
 
 
