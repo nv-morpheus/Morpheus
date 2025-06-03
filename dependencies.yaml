@@ -624,7 +624,7 @@ dependencies:
       - output_types: [conda]
         packages:
           - datasets=3.6
-          - gliner=0.2.19 # do we need all three digits?
+          - gliner=0.2
           - google-re2=1.1
           - pip
           - pip:

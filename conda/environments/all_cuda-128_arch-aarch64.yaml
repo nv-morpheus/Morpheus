@@ -46,7 +46,7 @@ dependencies:
 - feedparser=6.0
 - flake8
 - git-lfs
-- gliner=0.2.19
+- gliner=0.2
 - glog>=0.7.1,<0.8
 - google-re2=1.1
 - grpcio
