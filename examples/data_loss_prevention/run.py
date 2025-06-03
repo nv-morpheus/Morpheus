@@ -352,11 +352,6 @@ dlp_pipeline = DLPPipeline(regex_patterns=patterns,
                            model_name="gretelai/gretel-gliner-bi-small-v1.0",
                            context_window=300)
 
-# Process the first test document
-document = test_documents[0]
-print(f"Processing document: {document['title']}")
-results = dlp_pipeline.process(document['content'])
-
 
 # ##### Running batch of examples
 
