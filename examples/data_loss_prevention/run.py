@@ -151,8 +151,7 @@ class RiskScorer:
         # Calculate total weighted score
         total_score = 0
         severity_counts = {"high": 0, "medium": 0, "low": 0}
-        print(findings[0])
-
+        
         for finding in findings:
             # Get data type (either direct type or mapped from semantic)
             data_type = finding.get("data_type", finding["label"])
