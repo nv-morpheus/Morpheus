@@ -627,6 +627,3 @@ dependencies:
         packages:
           - datasets=3.6
           - gliner=0.2
-          - pip
-          - pip:
-            - nervaluate==0.2

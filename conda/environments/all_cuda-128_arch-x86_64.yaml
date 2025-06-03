@@ -147,7 +147,6 @@ dependencies:
   - langchain==0.1.16
   - milvus==2.3.5
   - nemollm==0.3.5
-  - nervaluate==0.2
   - nvidia-sphinx-theme>=0.0.7
   - pymilvus==2.3.6
   - pytest-kafka[kafka-python-ng]>=0.8,<0.9
