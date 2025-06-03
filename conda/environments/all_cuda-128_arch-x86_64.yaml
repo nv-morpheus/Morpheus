@@ -20,7 +20,7 @@ dependencies:
 - c-ares=1.32
 - ccache
 - clangdev=16
-- click>=8
+- click>=8, <8.2
 - cmake=3.27
 - cuda-cudart-dev=12.8
 - cuda-cudart=12.8
@@ -110,6 +110,7 @@ dependencies:
 - s3fs=2024.10
 - scikit-build=0.17.6
 - scikit-learn=1.3.2
+- setuptools>=75,<80
 - sphinx-copybutton>=0.5
 - sphinx>=8.2
 - sqlalchemy<2.0
