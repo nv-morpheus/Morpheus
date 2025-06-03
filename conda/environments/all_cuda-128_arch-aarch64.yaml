@@ -38,6 +38,7 @@ dependencies:
 - cxx-compiler
 - cython=3.0
 - datacompy=0.13.1
+- datasets=3.6
 - dill=0.3.7
 - docker-py>=7.1,<8
 - doxygen=1.9.2
@@ -53,7 +54,7 @@ dependencies:
 - gtest=1.14
 - gxx=12.1
 - httpx>=0.23,<0.28
-- huggingface_hub=0.21
+- huggingface_hub=0.24
 - indicators=2.3
 - ipython
 - isort

@@ -561,7 +561,7 @@ dependencies:
           - anyio>=3.7
           - arxiv=1.4
           - httpx>=0.23,<0.28 # work-around for https://github.com/openai/openai-python/issues/1915
-          - huggingface_hub=0.21
+          - huggingface_hub=0.24
           - jsonpatch>=1.33
           - numexpr
           - onnx=1.15
@@ -623,7 +623,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - datasets=2.14
+          - datasets=3.6
           - gliner=0.2.19 # do we need all three digits?
           - google-re2=1.1
           - pip
