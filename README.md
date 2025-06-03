@@ -38,5 +38,4 @@ NVIDIA Morpheus is an open AI application framework that provides cybersecurity 
 * [Morpheus Cloud Deployment Guide](./docs/source/cloud_deployment_guide.md) - Kubernetes and cloud based deployments
 
 
-
 Full documentation for the latest official release is available at [https://docs.nvidia.com/morpheus/](https://docs.nvidia.com/morpheus/).
