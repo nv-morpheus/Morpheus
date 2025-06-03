@@ -23,7 +23,7 @@ from datasets import load_dataset
 SEED = 42
 
 
-def fix_gretel_masks(row):
+def fix_gretel_masks(row) -> list[dict[str, str]]:
     """Fix Gretel dataset mask format to match standard format."""
     list_of_masks = []
     for m in row.privacy_mask:
@@ -34,31 +34,27 @@ def fix_gretel_masks(row):
             print("WARNING: found more than one of the entity!")
         start, end = matches[0].start(), matches[0].end()
 
-        list_of_masks.append(
-            {
-                "label": label,
-                "start": start,
-                "end": end,
-                "value": value,
-            }
-        )
+        list_of_masks.append({
+            "label": label,
+            "start": start,
+            "end": end,
+            "value": value,
+        })
 
     return list_of_masks
 
 
-def normalize_privacy_masks(dataframe):
+def normalize_privacy_masks(dataframe: pd.DataFrame) -> pd.DataFrame:
     """Normalize privacy masks to consistent format."""
     for _, row in dataframe.iterrows():
         list_of_masks = []
         for m in row.privacy_mask:
-            list_of_masks.append(
-                {
-                    "label": m["label"],
-                    "start": m["start"],
-                    "end": m["end"],
-                    "value": m["value"],
-                }
-            )
+            list_of_masks.append({
+                "label": m["label"],
+                "start": m["start"],
+                "end": m["end"],
+                "value": m["value"],
+            })
         row.privacy_mask = list_of_masks
     return dataframe
 
@@ -68,16 +64,14 @@ def process_gretel_dataset(dataset, num_samples):
     df = dataset.to_pandas()
     df = df[["text", "entities"]]
     df.columns = ["source_text", "privacy_mask"]
-    
+
     if num_samples:
-        df = df.sample(n=num_samples, random_state=SEED).reset_index(
-            drop=True
-        )
-    
+        df = df.sample(n=num_samples, random_state=SEED).reset_index(drop=True)
+
     df["privacy_mask"] = df["privacy_mask"].apply(literal_eval)
     df["privacy_mask"] = df.apply(fix_gretel_masks, axis=1)
     df["source"] = "gretel"
-    
+
     return df
 
 
@@ -87,14 +81,12 @@ def process_ai4privacy_dataset(dataset, num_samples):
     df = df[df["language"] == "en"]
     df = df[["source_text", "privacy_mask"]]
     df = df[df["privacy_mask"].str.len() > 0]
-    
+
     if num_samples:
-        df = df.sample(n=num_samples, random_state=SEED).reset_index(
-            drop=True
-        )
-    
+        df = df.sample(n=num_samples, random_state=SEED).reset_index(drop=True)
+
     df["source"] = "ai4privacy"
-    
+
     return df
 
 
@@ -122,17 +114,13 @@ def load_and_process_datasets(dataset_names, num_samples=None):
         dataframes.append(df)
 
     # Combine dataframes
-    joint_dataframe = pd.concat(dataframes, ignore_index=True).reset_index(
-        drop=True
-    )
+    joint_dataframe = pd.concat(dataframes, ignore_index=True).reset_index(drop=True)
 
     # Normalize all privacy masks to consistent format
     joint_dataframe = normalize_privacy_masks(joint_dataframe)
 
     # Filter out empty masks
-    joint_dataframe = joint_dataframe[
-        joint_dataframe.privacy_mask.str.len() > 0
-    ].reset_index(drop=True)
+    joint_dataframe = joint_dataframe[joint_dataframe.privacy_mask.str.len() > 0].reset_index(drop=True)
 
     return joint_dataframe
 
@@ -156,9 +144,7 @@ def analyze_dataset(dataframe):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Create evaluation dataset from PII masking datasets"
-    )
+    parser = argparse.ArgumentParser(description="Create evaluation dataset from PII masking datasets")
     parser.add_argument(
         "--datasets",
         nargs="+",
@@ -166,11 +152,7 @@ def main():
         default=["both"],
         help="Datasets to include (default: both)",
     )
-    parser.add_argument(
-        "--num-samples",
-        type=int,
-        help="Number of samples per dataset (default: all)"
-    )
+    parser.add_argument("--num-samples", type=int, help="Number of samples per dataset (default: all)")
     parser.add_argument(
         "--output",
         type=str,
@@ -192,9 +174,7 @@ def main():
     else:
         dataset_names = args.datasets
 
-    joint_dataframe = load_and_process_datasets(
-        dataset_names, args.num_samples
-    )
+    joint_dataframe = load_and_process_datasets(dataset_names, args.num_samples)
 
     analyze_dataset(joint_dataframe)
 
