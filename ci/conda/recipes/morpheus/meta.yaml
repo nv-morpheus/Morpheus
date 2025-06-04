@@ -80,6 +80,8 @@ outputs:
         - rapidjson 1.1.0
         - rdma-core >=48 # Needed for DOCA.
         - scikit-build 0.17.6
+        # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
+        - setuptools>=75,<80 
         - versioneer-518
         - zlib >=1.3.1,<2 # required to build triton client
       run:

@@ -74,6 +74,8 @@ outputs:
         - python {{ python }}
         - rapidjson 1.1.0
         - scikit-build 0.17.6
+        # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
+        - setuptools>=75,<80 
         - versioneer-518
         - zlib >=1.3.1,<2 # required to build triton client
       run:
@@ -163,6 +165,8 @@ outputs:
         - pip
         - python {{ python }}
         - scikit-build 0.17.6
+        # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
+        - setuptools>=75,<80 
         - versioneer-518
       run:
         - {{ pin_subpackage('morpheus-core', exact=True) }}
@@ -221,6 +225,8 @@ outputs:
         - python {{ python }}
         - rapidjson 1.1.0
         - scikit-build 0.17.6
+        # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
+        - setuptools>=75,<80 
         - versioneer-518
         - zlib >=1.3.1,<2 # required to build triton client
       run:
