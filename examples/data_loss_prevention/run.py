@@ -13,11 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# # DLP Pipeline Inference Workflow
-#
-# This notebook demonstrates a Data Loss Prevention (DLP) pipeline that combines regex pattern matching with GliNER model inference for entity detection.
-
-import json
 import logging
 import os
 import pathlib
@@ -25,6 +20,7 @@ import pathlib
 import click
 from stages.datasets_source import DatasetsSourceStage
 from stages.dlp_input_processor import DLPInputProcessor
+from stages.regex_processor import RegexProcessor
 
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
@@ -38,12 +34,6 @@ from morpheus.utils.logger import configure_logging
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-def load_regex_patterns(file_path: str | pathlib.Path) -> dict[str, list[str]]:
-    """Load regex patterns from a JSON file."""
-    with open(file_path, 'r', encoding="utf-8") as f:
-        return json.load(f)
 
 
 @click.command()
@@ -78,9 +68,6 @@ def load_regex_patterns(file_path: str | pathlib.Path) -> dict[str, list[str]]:
 def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_samples: int, out_file: pathlib.Path):
     configure_logging(log_level=log_level)
 
-    regex_patterns = load_regex_patterns(regex_file)
-    logger.info("Loaded %d regex pattern groups", len(regex_patterns))
-
     if num_samples < 0:
         num_samples = None
 
@@ -98,6 +85,10 @@ def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_sampl
     pipeline.add_stage(DLPInputProcessor(config))
 
     pipeline.add_stage(MonitorStage(config, description="dpl input processor"))
+
+    pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file))
+
+    pipeline.add_stage(MonitorStage(config, description="regex processor"))
 
     pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=out_file, overwrite=True))

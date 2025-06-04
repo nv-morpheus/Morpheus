@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
 import re
+
 from gliner import GLiNER
+
+import cudf
 
 
 class RegexProcessor:
@@ -24,7 +26,7 @@ class RegexProcessor:
     def __init__(self, patterns: dict[str, list[str]], case_sensitive: bool = False):
         """
         Initialize with regex patterns to detect sensitive data
-        
+
         Args:
             patterns: Dictionary mapping data types to lists of regex patterns
             case_sensitive: Whether regex matching should be case sensitive
@@ -51,7 +53,7 @@ class RegexProcessor:
     def process(self, text: str) -> list[dict[str, list]]:
         """
         Scan text for sensitive data using regex patterns
-        
+
         Returns:
             List of findings with metadata
         """
@@ -61,6 +63,7 @@ class RegexProcessor:
             # for pattern in pattern_list:
             matches = pattern.finditer(text)
             for match in matches:
+                print(f"Found match for {text} - {pattern}: group={match.group()} at span={match.span()}")
                 findings.append({
                     "label": pattern_name,
                     "match": match.group(),
@@ -85,7 +88,7 @@ class GliNERProcessor:
                  labels: list[str] = None):
         """
         Initialize with configuration for SLM-based detection
-        
+
         Args:
             confidence_threshold: Minimum confidence score to report a finding
         """
@@ -148,11 +151,11 @@ class GliNERProcessor:
                 failback: bool = True) -> list[dict[str, list]]:
         """
         Analyze text using an entity prediction model for sensitive data detection
-        
+
         Args:
             text: The text to analyze
             regex_findings: Optional list of regex findings to filter candidates for classification
-            
+
         Returns:
             List of findings with metadata
         """
@@ -193,11 +196,11 @@ class GliNERProcessor:
     def _extract_contexts_from_regex_findings(self, text: str, regex_findings: list[dict[str, list]]) -> list[str]:
         """
         Extract text contexts around regex matches to focus SLM analysis
-        
+
         Args:
             text: The full text being analyzed
             regex_findings: List of regex findings with span information
-            
+
         Returns:
             List of text contexts for focused analysis
         """
@@ -258,7 +261,7 @@ class GPURegexProcessor:
     def __init__(self, patterns: dict[str, list[str]], case_sensitive: bool = False):
         """
         Initialize with regex patterns to detect sensitive data
-        
+
         Args:
             patterns: Dictionary mapping data types to lists of regex patterns
             case_sensitive: Whether regex matching should be case sensitive
@@ -282,7 +285,7 @@ class GPURegexProcessor:
     def process(self, text: str, delimiter: str = '\n') -> list[dict[str, list]]:
         """
         Scan text for sensitive data using regex patterns with GPU acceleration
-        
+
         Returns:
             List of findings with metadata
         """
