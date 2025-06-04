@@ -26,6 +26,7 @@ import typing
 
 import click
 import pandas as pd
+from dataset_creation import AVAILABLE_DATASETS
 from dataset_creation import load_and_process_datasets
 from regex_processor import GliNERProcessor
 from regex_processor import RegexProcessor
@@ -308,19 +309,26 @@ def batch_process_documents(pipeline: DLPPipeline, documents: SeriesType) -> lis
               default=os.path.join(CUR_DIR, "data/regex_patterns.json"),
               show_default=True,
               type=click.Path(exists=True, readable=True))
+@click.option('--dataset',
+              type=str,
+              default=["gretel"],
+              show_default=True,
+              multiple=True,
+              help=("Specify the datasets to use, can be set multiple times, valid datasets are: "
+                    f"{', '.join(sorted(AVAILABLE_DATASETS.keys()))}."))
 @click.option("--out_file",
               help="Output file",
               type=click.Path(dir_okay=False),
               default=".tmp/output/data_loss_prevention.jsonlines",
               required=True)
-def main(log_level: int, regex_file: pathlib.Path, out_file: pathlib.Path):
+def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], out_file: pathlib.Path):
     configure_logging(log_level=log_level)
 
     regex_patterns = load_regex_patterns(regex_file)
     logger.info("Loaded %d regex pattern groups", len(regex_patterns))
 
     # Load datasets
-    gretel_dataset = load_and_process_datasets(dataset_names=['gretel'], num_samples=2000)
+    gretel_dataset = load_and_process_datasets(dataset_names=dataset, num_samples=2000)
 
     # Create and Initialize the DLP Pipeline
     dlp_pipeline = DLPPipeline(regex_patterns=regex_patterns,

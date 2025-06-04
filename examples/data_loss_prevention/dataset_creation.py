@@ -24,6 +24,11 @@ from morpheus.utils.type_aliases import DataFrameType
 
 SEED = 42
 
+AVAILABLE_DATASETS = {
+    "ai4privacy": "ai4privacy/pii-masking-400k",
+    "gretel": "gretelai/gretel-pii-masking-en-v1",
+}
+
 
 def fix_gretel_masks(row) -> list[dict[str, str]]:
     """Fix Gretel dataset mask format to match standard format."""
@@ -94,19 +99,15 @@ def process_ai4privacy_dataset(dataset, num_samples):
 
 def load_and_process_datasets(dataset_names, num_samples=None) -> DataFrameType:
     """Load and process specified datasets."""
-    available_datasets = {
-        "ai4privacy": "ai4privacy/pii-masking-400k",
-        "gretel": "gretelai/gretel-pii-masking-en-v1",
-    }
 
     print(f"Loading datasets: {dataset_names}")
 
     dataframes = []
     for name in dataset_names:
-        if name not in available_datasets:
+        if name not in AVAILABLE_DATASETS:
             raise ValueError(f"Unknown dataset: {name}")
 
-        dataset = load_dataset(available_datasets[name], split="validation")
+        dataset = load_dataset(AVAILABLE_DATASETS[name], split="validation")
 
         if name == "gretel":
             df = process_gretel_dataset(dataset, num_samples)
