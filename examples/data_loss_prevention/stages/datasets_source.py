@@ -15,6 +15,7 @@
 
 import collections.abc
 import logging
+import re
 
 import mrc
 import pandas as pd
@@ -30,6 +31,7 @@ from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import exec_mode_to_df_type_str
+from morpheus.utils.type_utils import get_df_class
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -100,7 +102,7 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
         return list_of_masks
 
     @classmethod
-    def process_gretel_dataset(cls, df: DataFrameType, num_samples: int | None):
+    def process_gretel_dataset(cls, df: pd.DataFrame, num_samples: int | None) -> pd.DataFrame:
         """Process Gretel dataset to standard format."""
         df = df[["text", "entities"]]
         df.columns = ["source_text", "privacy_mask"]
@@ -114,6 +116,21 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
 
         return df
 
+    @staticmethod
+    def normalize_privacy_masks(dataframe: pd.DataFrame) -> pd.DataFrame:
+        """Normalize privacy masks to consistent format."""
+        for _, row in dataframe.iterrows():
+            list_of_masks = []
+            for m in row.privacy_mask:
+                list_of_masks.append({
+                    "label": m["label"],
+                    "start": m["start"],
+                    "end": m["end"],
+                    "value": m["value"],
+                })
+            row.privacy_mask = list_of_masks
+
+        return dataframe
 
     def source_generator(self, subscription: mrc.Subscription) -> collections.abc.Iterator[MessageMeta]:
 
@@ -121,9 +138,9 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
             dataset = load_dataset(self.AVAILABLE_DATASETS[dataset_name], split="validation")
             df = dataset.to_pandas()
             if dataset_name == "gretel":
-                df = self.process_gretel_dataset(dataset, self._num_samples)
+                df = self.process_gretel_dataset(df, self._num_samples)
 
-            df = normalize_privacy_masks(df)
+            df = self.normalize_privacy_masks(df)
             df = df[df.privacy_mask.str.len() > 0].reset_index(drop=True)
 
             if self._df_str == "cudf":
