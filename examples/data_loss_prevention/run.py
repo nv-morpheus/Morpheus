@@ -18,50 +18,32 @@
 # This notebook demonstrates a Data Loss Prevention (DLP) pipeline that combines regex pattern matching with GliNER model inference for entity detection.
 
 import json
+import logging
 import os
+import pathlib
 import time
+import typing
 
+import click
+import pandas as pd
+from dataset_creation import load_and_process_datasets
 from regex_processor import GliNERProcessor
 from regex_processor import RegexProcessor
 
-# ## 1. Dataset creation and processing
+from morpheus.cli.utils import get_log_levels
+from morpheus.cli.utils import parse_log_level
+from morpheus.io.serializers import write_df_to_file
+from morpheus.utils.logger import configure_logging
+from morpheus.utils.type_aliases import SeriesType
 
-from dataset_creation import load_and_process_datasets
-
+logger = logging.getLogger(f"morpheus.{__name__}")
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
-gretel_dataset = load_and_process_datasets(['gretel'], num_samples=2000)
 
-gretel_dataset.head()
-
-# ## 2. Load and Configure Regex Patterns
-#
-# First, we'll load the regex patterns from the benchmark patterns file.
-
-# Load regex patterns
-regex_file = os.path.join(CUR_DIR, "data/regex_patterns.json")
-
-if not os.path.exists(regex_file):
-    # Create a basic set of patterns as fallback
-    patterns = {
-        "credit_card_number": [
-            r"\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\d{3})\d{11}|(?:\d{4}[-\s]?){3}\d{4}|\d{16})\b"
-        ],
-        "ssn": [r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b"],
-        "email": [r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"],
-        "phone_number": [r"\b(?:\+?1[-\.\s]?)?(?:\(\d{3}\)|\d{3})[-\.\s]?\d{3}[-\.\s]?\d{4}\b|\b\d{10}\b"],
-        "ipv4": [r"\b(?:\d{1,3}\.){3}\d{1,3}\b"],
-        "date": [r"\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b"]
-    }
-else:
-    with open(regex_file, 'r') as f:
-        patterns = json.load(f)
-
-print(f"Loaded {len(patterns)} regex pattern groups")
-
-# ## 3. DLP Pipeline
-#
-# Now we'll create a  DLP pipeline that integrates the regex pipeline and Gliner SLM
+def load_regex_patterns(file_path: str | pathlib.Path) -> dict[str, list[str]]:
+    """Load regex patterns from a JSON file."""
+    with open(file_path, 'r', encoding="utf-8") as f:
+        return json.load(f)
 
 
 class DLPInputProcessor:
@@ -151,7 +133,7 @@ class RiskScorer:
         # Calculate total weighted score
         total_score = 0
         severity_counts = {"high": 0, "medium": 0, "low": 0}
-        
+
         for finding in findings:
             # Get data type (either direct type or mapped from semantic)
             data_type = finding.get("data_type", finding["label"])
@@ -217,7 +199,7 @@ class DLPPipeline:
                                                 model_name=model_name)
         self.risk_scorer = RiskScorer()
 
-    def inference(self, document: str, failback: bool = False) -> dict[str, list]:
+    def inference(self, document: str, failback: bool = False) -> dict[str, typing.Any]:
         """Process a document through the DLP pipeline"""
         regex_findings = self.regex_processor.process(document)
         return self.gliner_processor.process(document, regex_findings, failback=failback)
@@ -278,84 +260,7 @@ class DLPPipeline:
         }
 
 
-# ## 4. Pipeline processing
-#
-#
-#
-
-test_documents = [{
-    "title":
-        "Patient Information",
-    "content":
-        """
-PATIENT INFORMATION
-Medical Record #: MRN-12345678
-Name: John Smith
-DOB: 01/15/1985
-SSN: 123-45-6789
-Address: 5678 Pine Avenue, Apt 302, Chicago, IL 60601
-Phone: 773-555-1234
-Email: jsmith@email.net
-Insurance ID: INS-987654321
-
-VISIT SUMMARY
-Date: 03/22/2023
-Time: 14:30
-Provider: Dr. Sarah Johnson, MD (NPI: 1234567890)
-Diagnosis: Hypertension (ICD-10: I10)
-Medications: Lisinopril 10mg daily
-Follow-up: 3 months
-"""
-},
-                  {
-                      "title":
-                          "Config File with API Keys",
-                      "content":
-                          """
-# Production API Configuration
-api_key = "ak_live_HJd8e7h23hFxMznWcQE5TWqL"
-api_secret = "sk_test_abcdefghijklmnopqrstuvwxyz12345"
-debug = false
-
-# Database Connection
-DB_HOST = "db.example.com"
-DB_USER = "admin"
-DB_PASSWORD = "SecurePassword123!"
-"""
-                  },
-                  {
-                      "title":
-                          "Order Receipt",
-                      "content":
-                          """
-PURCHASE RECEIPT
-
-Customer: Jane Doe
-Email: jane.doe@example.com
-Card: VISA ending in 4567
-Transaction: $128.50
-
-Shipping Address:
-123 Main Street
-Anytown, CA 94538
-"""
-                  }]
-
-# ### Create and Initialize the DLP Pipeline
-#
-# Now we'll create the pipeline with the components for inference on sample dataset
-
-# Create the enhanced DLP pipeline
-dlp_pipeline = DLPPipeline(regex_patterns=patterns,
-                           confidence_threshold=0.7,
-                           model_name="gretelai/gretel-gliner-bi-small-v1.0",
-                           context_window=300)
-
-
-# ##### Running batch of examples
-
-
-def batch_process_documents(pipeline, documents):
+def batch_process_documents(pipeline: DLPPipeline, documents: SeriesType) -> list[dict[str, list]]:
     """Process multiple documents and aggregate results"""
     all_results = []
     total_findings = 0
@@ -365,30 +270,69 @@ def batch_process_documents(pipeline, documents):
     for doc in documents:
 
         result = pipeline.process(doc)
-        all_results.append(result.get('all_findings', []))
+        all_results.append(result.get('findings', []))
 
         total_findings += result['total_findings']
         total_processing_time += result['performance_metrics']['total_time']
         total_document_length += result['document_length']
 
     # Aggregate metrics
-    avg_processing_time = total_processing_time / len(documents) if documents else 0
-    avg_findings_per_doc = total_findings / len(documents) if documents else 0
+    avg_processing_time = total_processing_time / len(documents) if not documents.empty else 0
+    avg_findings_per_doc = total_findings / len(documents) if not documents.empty else 0
     overall_throughput = total_document_length / total_processing_time if total_processing_time > 0 else 0
 
-    # Print summary
-    print(f"\n{'='*50}")
-    print(f"Batch Processing Summary")
-    print(f"{'='*50}")
-    print(f"Documents processed: {len(documents)}")
-    print(f"Total findings: {total_findings}")
-    print(f"Average findings per document: {avg_findings_per_doc:.2f}")
-    print(f"Total processing time: {total_processing_time:.3f} seconds")
-    print(f"Average processing time: {avg_processing_time:.3f} seconds per document")
-    print(f"Overall throughput: {overall_throughput:.2f} characters/second")
+    # Print summary as a single log message, ensuring the output is not interleaved with other logs
+    summary_msg = (f"\n{'=' * 50}\n"
+                   "Batch Processing Summary"
+                   f"\n{'=' * 50}\n"
+                   f"Documents processed: {len(documents)}\n"
+                   f"Total findings: {total_findings}\n"
+                   f"Average findings per document: {avg_findings_per_doc:.2f}\n"
+                   f"Total processing time: {total_processing_time:.3f} seconds\n"
+                   f"Average processing time: {avg_processing_time:.3f} seconds per document\n"
+                   f"Overall throughput: {overall_throughput:.2f} characters/second\n")
+    logger.info(summary_msg)
 
     return all_results
 
 
-batch_results = batch_process_documents(dlp_pipeline, gretel_dataset['source_text'].tolist())
+@click.command()
+@click.option("--log_level",
+              default="INFO",
+              type=click.Choice(get_log_levels(), case_sensitive=False),
+              callback=parse_log_level,
+              show_default=True,
+              help="Specify the logging level to use.")
+@click.option("--regex_file",
+              help="JSON file containing regex patterns",
+              default=os.path.join(CUR_DIR, "data/regex_patterns.json"),
+              show_default=True,
+              type=click.Path(exists=True, readable=True))
+@click.option("--out_file",
+              help="Output file",
+              type=click.Path(dir_okay=False),
+              default=".tmp/output/data_loss_prevention.jsonlines",
+              required=True)
+def main(log_level: int, regex_file: pathlib.Path, out_file: pathlib.Path):
+    configure_logging(log_level=log_level)
 
+    regex_patterns = load_regex_patterns(regex_file)
+    logger.info("Loaded %d regex pattern groups", len(regex_patterns))
+
+    # Load datasets
+    gretel_dataset = load_and_process_datasets(dataset_names=['gretel'], num_samples=2000)
+
+    # Create and Initialize the DLP Pipeline
+    dlp_pipeline = DLPPipeline(regex_patterns=regex_patterns,
+                               confidence_threshold=0.7,
+                               model_name="gretelai/gretel-gliner-bi-small-v1.0",
+                               context_window=300)
+
+    batch_results = batch_process_documents(dlp_pipeline, gretel_dataset['source_text'])
+
+    df = pd.DataFrame({"results": batch_results})
+    write_df_to_file(df, str(out_file))
+
+
+if __name__ == "__main__":
+    main()

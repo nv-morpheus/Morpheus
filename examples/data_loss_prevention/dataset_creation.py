@@ -20,6 +20,8 @@ from ast import literal_eval
 import pandas as pd
 from datasets import load_dataset
 
+from morpheus.utils.type_aliases import DataFrameType
+
 SEED = 42
 
 
@@ -90,7 +92,7 @@ def process_ai4privacy_dataset(dataset, num_samples):
     return df
 
 
-def load_and_process_datasets(dataset_names, num_samples=None):
+def load_and_process_datasets(dataset_names, num_samples=None) -> DataFrameType:
     """Load and process specified datasets."""
     available_datasets = {
         "ai4privacy": "ai4privacy/pii-masking-400k",
