@@ -44,8 +44,7 @@ class DLPInputProcessor(ControlMessageStage, GpuAndCpuMixin):
         self.column_name = column_name
         self.chunking_size = chunking_size
         self.split_by_paragraphs = split_by_paragraphs
-        self.df_class = get_df_class(config)
-        self.s
+        self.df_class = get_df_class(config.execution_mode)
 
     @property
     def name(self) -> str:
@@ -75,7 +74,7 @@ class DLPInputProcessor(ControlMessageStage, GpuAndCpuMixin):
 
             if not isinstance(source_series, pd.Series):
                 # cudf series doesn't support iteration
-                source_series = source_series.to_list()
+                source_series = source_series.to_arrow().to_pylist()
 
             for row in source_series:
                 # Basic normalization
@@ -105,7 +104,7 @@ class DLPInputProcessor(ControlMessageStage, GpuAndCpuMixin):
                         new_rows.append("".join(current_chunk))
 
                 else:
-                    new_rows = [normalized_text]
+                    new_rows.append(normalized_text)
 
         new_df = self.df_class({self.column_name: new_rows})
         control_msg = ControlMessage()

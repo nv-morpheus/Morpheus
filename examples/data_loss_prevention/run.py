@@ -24,6 +24,7 @@ import pathlib
 
 import click
 from stages.datasets_source import DatasetsSourceStage
+from stages.dlp_input_processor import DLPInputProcessor
 
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
@@ -32,6 +33,7 @@ from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -91,9 +93,13 @@ def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_sampl
     # Set source stage
     pipeline.set_source(DatasetsSourceStage(config, dataset_names=dataset, num_samples=num_samples))
 
-    # Add monitor to record the performance of the class based stage
-    pipeline.add_stage(MonitorStage(config))
+    pipeline.add_stage(MonitorStage(config, description="source"))
 
+    pipeline.add_stage(DLPInputProcessor(config))
+
+    pipeline.add_stage(MonitorStage(config, description="dpl input processor"))
+
+    pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=out_file, overwrite=True))
 
     # Run the pipeline
