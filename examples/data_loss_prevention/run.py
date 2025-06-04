@@ -316,11 +316,11 @@ def batch_process_documents(pipeline: DLPPipeline, documents: SeriesType) -> lis
               multiple=True,
               help=("Specify the datasets to use, can be set multiple times, valid datasets are: "
                     f"{', '.join(sorted(AVAILABLE_DATASETS.keys()))}."))
-click.option('--num_samples',
-             type=int,
-             default=2000,
-             show_default=True,
-             help="Number of samples to use from each dataset, set to -1 for all samples.")
+@click.option('--num_samples',
+              type=int,
+              default=2000,
+              show_default=True,
+              help="Number of samples to use from each dataset, set to -1 for all samples.")
 @click.option("--out_file",
               help="Output file",
               type=click.Path(dir_okay=False),
