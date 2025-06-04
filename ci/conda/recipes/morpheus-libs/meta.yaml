@@ -50,9 +50,6 @@ outputs:
         - ccache
         - cmake =3.27
         - libgcc={{ c_compiler_version }}.*
-        - libgcc-ng={{ c_compiler_version }}.*
-        - libstdcxx={{ cxx_compiler_version }}.*
-        - libstdcxx-ng={{ cxx_compiler_version }}.*
         - ninja =1.11
         - pkg-config =0.29
         - sysroot_linux-64>=2.28
@@ -159,9 +156,6 @@ outputs:
         - ccache
         - cmake =3.27
         - libgcc={{ c_compiler_version }}.*
-        - libgcc-ng={{ c_compiler_version }}.*
-        - libstdcxx={{ cxx_compiler_version }}.*
-        - libstdcxx-ng={{ cxx_compiler_version }}.*
         - ninja =1.11
         - pkg-config =0.29
       host:
@@ -219,9 +213,6 @@ outputs:
         - ccache
         - cmake =3.27
         - libgcc={{ c_compiler_version }}.*
-        - libgcc-ng={{ c_compiler_version }}.*
-        - libstdcxx={{ cxx_compiler_version }}.*
-        - libstdcxx-ng={{ cxx_compiler_version }}.*
         - ninja =1.11
         - pkg-config =0.29
       host:
