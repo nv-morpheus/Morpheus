@@ -20,6 +20,7 @@ import pathlib
 import click
 from stages.datasets_source import DatasetsSourceStage
 from stages.dlp_input_processor import DLPInputProcessor
+from stages.gliner_processor import GliNERProcessor
 from stages.regex_processor import RegexProcessor
 
 from morpheus.cli.utils import get_log_levels
@@ -86,9 +87,14 @@ def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_sampl
 
     pipeline.add_stage(MonitorStage(config, description="dpl input processor"))
 
-    pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file))
+    regex_processor = RegexProcessor(config, patterns_file=regex_file)
+    pipeline.add_stage(regex_processor)
 
     pipeline.add_stage(MonitorStage(config, description="regex processor"))
+
+    pipeline.add_stage(GliNERProcessor(config, labels=list(regex_processor.patterns.keys())))
+
+    pipeline.add_stage(MonitorStage(config, description="gliner processor"))
 
     pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=out_file, overwrite=True))
