@@ -82,24 +82,22 @@ def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_sampl
     # Set source stage
     pipeline.set_source(DatasetsSourceStage(config, dataset_names=dataset, num_samples=num_samples))
 
-    pipeline.add_stage(MonitorStage(config, description="source"))
+    pipeline.add_stage(MonitorStage(config, description="Datasets Source"))
 
     pipeline.add_stage(DLPInputProcessor(config))
-
-    pipeline.add_stage(MonitorStage(config, description="dpl input processor"))
 
     regex_processor = RegexProcessor(config, patterns_file=regex_file)
     pipeline.add_stage(regex_processor)
 
-    pipeline.add_stage(MonitorStage(config, description="regex processor"))
+    pipeline.add_stage(MonitorStage(config, description="Regex Processor"))
 
     pipeline.add_stage(GliNERProcessor(config, labels=list(regex_processor.patterns.keys())))
 
-    pipeline.add_stage(MonitorStage(config, description="gliner processor"))
+    pipeline.add_stage(MonitorStage(config, description="GliNER Processor"))
 
     pipeline.add_stage(RiskScorer(config))
 
-    pipeline.add_stage(MonitorStage(config, description="risk scorer"))
+    pipeline.add_stage(MonitorStage(config, description="Risk Scorer"))
 
     pipeline.add_stage(dlp_post_process(config))
     pipeline.add_stage(DLPOutput(config, filename=str(out_file), overwrite=True))
