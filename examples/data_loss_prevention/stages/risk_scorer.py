@@ -158,11 +158,11 @@ class RiskScorer(ControlMessageStage, GpuAndCpuMixin):
         """
 
         with msg.payload().mutable_dataframe() as df:
-            gliner_findings = df['gliner_findings']
-            if not isinstance(gliner_findings, pd.Series):
+            dlp_findings = df['dlp_findings']
+            if not isinstance(dlp_findings, pd.Series):
 
                 # cudf series doesn't support iteration
-                gliner_findings = gliner_findings.to_arrow().to_pylist()
+                dlp_findings = dlp_findings.to_arrow().to_pylist()
 
             scores = {
                 "risk_score": [],
@@ -173,7 +173,7 @@ class RiskScorer(ControlMessageStage, GpuAndCpuMixin):
                 "num_medium": [],
                 "num_low": [],
             }
-            for findings in gliner_findings:
+            for findings in dlp_findings:
                 score = self._score_row(findings)
                 for (key, value) in score.items():
                     scores[key].append(value)

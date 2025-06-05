@@ -182,16 +182,16 @@ class GliNERProcessor(ControlMessageStage, GpuAndCpuMixin):
         """
 
         with msg.payload().mutable_dataframe() as df:
-            gliner_findings = []
+            dlp_findings = []
             rows = df[[self.column_name, 'regex_findings']].to_dict(orient="records")
 
             for row in rows:
                 regex_findings = row['regex_findings']
                 text = row[self.column_name]
 
-                gliner_findings.append(self._process_row(text, regex_findings))
+                dlp_findings.append(self._process_row(text, regex_findings))
 
-            df['gliner_findings'] = gliner_findings
+            df['dlp_findings'] = dlp_findings
 
         return msg
 
