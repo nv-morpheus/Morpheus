@@ -93,14 +93,16 @@ class RiskScorer(ControlMessageStage, GpuAndCpuMixin):
                 "risk_level": None,
                 "data_types_found": [],
                 "highest_confidence": 0.0,
-                "severity_distribution": {
-                    "high": 0, "medium": 0, "low": 0
-                }
+                "num_high": 0,
+                "num_medium": 0,
+                "num_low": 0
             }
 
         # Calculate total weighted score
         total_score = 0
-        severity_counts = {"high": 0, "medium": 0, "low": 0}
+        num_high = 0
+        num_medium = 0
+        num_low = 0
 
         for finding in findings:
             # Get data type (either direct type or mapped from semantic)
@@ -115,12 +117,12 @@ class RiskScorer(ControlMessageStage, GpuAndCpuMixin):
             total_score += weighted_score
 
             # Count by severity
-            if weight >= 80:
-                severity_counts["high"] += 1
-            elif weight >= 50:
-                severity_counts["medium"] += 1
+            if weighted_score >= 80:
+                num_high += 1
+            elif weighted_score >= 50:
+                num_medium += 1
             else:
-                severity_counts["low"] += 1
+                num_low += 1
 
         # Normalize to 0-100 scale with diminishing returns for many findings
         max_score = 100
@@ -143,7 +145,9 @@ class RiskScorer(ControlMessageStage, GpuAndCpuMixin):
             "risk_level": risk_level,
             "data_types_found": data_types_found,
             "highest_confidence": highest_confidence,
-            "severity_distribution": severity_counts
+            "num_high": num_high,
+            "num_medium": num_medium,
+            "num_low": num_low
         }
 
     def score(self, msg: ControlMessage) -> ControlMessage:
@@ -158,11 +162,22 @@ class RiskScorer(ControlMessageStage, GpuAndCpuMixin):
                 # cudf series doesn't support iteration
                 gliner_findings = gliner_findings.to_arrow().to_pylist()
 
-            scores = []
+            scores = {
+                "risk_score": [],
+                "risk_level": [],
+                "data_types_found": [],
+                "highest_confidence": [],
+                "num_high": [],
+                "num_medium": [],
+                "num_low": [],
+            }
             for findings in gliner_findings:
-                scores.append(self._score_row(findings))
+                score = self._score_row(findings)
+                for (key, value) in score.items():
+                    scores[key].append(value)
 
-            df['risk_score'] = scores
+            for key, value in scores.items():
+                df[key] = value
 
         return msg
 

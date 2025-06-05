@@ -101,8 +101,8 @@ def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_sampl
 
     pipeline.add_stage(MonitorStage(config, description="risk scorer"))
 
-    pipeline.add_stage(SerializeStage(config, include=["ID", "gliner_findings", "risk_score"]))
-    pipeline.add_stage(WriteToFileStage(config, filename=out_file, overwrite=True))
+    pipeline.add_stage(SerializeStage(config, exclude=["regex_findings"]))
+    pipeline.add_stage(WriteToFileStage(config, filename=str(out_file), overwrite=True))
 
     # Run the pipeline
     pipeline.run()
