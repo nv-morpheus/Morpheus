@@ -13,44 +13,81 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
 import typing
 
+import mrc
+import pandas as pd
+from mrc.core import operators as ops
 
-class RiskScorer:
+from morpheus.cli.register_stage import register_stage
+from morpheus.config import Config
+from morpheus.messages import ControlMessage
+from morpheus.pipeline.control_message_stage import ControlMessageStage
+from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
+
+
+@register_stage("risk-scorer")
+class RiskScorer(ControlMessageStage, GpuAndCpuMixin):
     """Analyzes findings to calculate risk scores and metrics"""
 
-    def __init__(self):
-        """Initialize with configuration for risk scoring"""
+    DEFAULT_TYPE_WEIGHTS = {
+        "password": 85,
+        "credit_card": 90,
+        "ssn": 95,
+        "address": 60,
+        "email": 40,
+        "phone_us": 45,
+        "phone_numbers": 45,
+        "ip_address": 30,
+        "date": 20,
+        "api_key": 80,
+        "customer_id": 65,  # Semantic categories
+        "personal": 70,
+        "financial": 85,
+        "health": 75,
+        "api_credentials": 75
+    }
 
-        self.type_weights = {
-            "password": 85,
-            "credit_card": 90,
-            "ssn": 95,
-            "address": 60,
-            "email": 40,
-            "phone_us": 45,
-            "phone_numbers": 45,
-            "ip_address": 30,
-            "date": 20,
-            "api_key": 80,
-            "customer_id": 65,  # Semantic categories
-            "personal": 70,
-            "financial": 85,
-            "health": 75,
-            "api_credentials": 75
-        }
+    def __init__(self, config: Config, *, type_weights: dict[str, int] | None = None, default_weight: int = 50):
+        """Initialize with configuration for risk scoring"""
+        super().__init__(config)
+
+        if type_weights is not None:
+            self.type_weights = type_weights
+        else:
+            self.type_weights = self.DEFAULT_TYPE_WEIGHTS.copy()
 
         # Default weight if type not in dictionary
-        self.default_weight = 50
+        self.default_weight = default_weight
 
-    def score(self, findings: list[dict[str, list]]) -> dict[str, typing.Any]:
-        """
-        Calculate risk scores based on findings
+    @property
+    def name(self) -> str:
+        return "risk-scorer"
 
-        Returns:
-            Risk scoring results and metrics
-        """
-        if not findings:
+    def accepted_types(self) -> tuple:
+        return (ControlMessage, )
+
+    def supports_cpp_node(self) -> bool:
+        return False
+
+    @staticmethod
+    def _risk_score_to_level(risk_score: int) -> str:
+        """Convert risk score to risk level string"""
+        if risk_score >= 80:
+            return "Critical"
+        elif risk_score >= 60:
+            return "High"
+        elif risk_score >= 40:
+            return "Medium"
+        elif risk_score >= 20:
+            return "Low"
+
+        return "Minimal"
+
+    def _score_row(self, findings: list[dict[str, typing.Any]] | None) -> dict[str, typing.Any]:
+
+        if findings is None or len(findings) == 0:
             return {
                 "risk_score": 0,
                 "risk_level": None,
@@ -86,18 +123,14 @@ class RiskScorer:
                 severity_counts["low"] += 1
 
         # Normalize to 0-100 scale with diminishing returns for many findings
-        import math
         max_score = 100
         normalization_factor = max(1, math.log2(len(findings) + 1)) * 20  # Adjust scaling factor
 
         # Calculate normalized risk score
-        risk_score = min(max_score, total_score / normalization_factor)
+        risk_score = round(min(max_score, total_score / normalization_factor))
 
         # Determine risk level from score
-        risk_level = "Critical" if risk_score >= 80 else \
-                     "High" if risk_score >= 60 else \
-                     "Medium" if risk_score >= 40 else \
-                     "Low" if risk_score >= 20 else "Minimal"
+        risk_level = self._risk_score_to_level(risk_score)
 
         # Get unique data types found
         data_types_found = list({finding.get("data_type", finding["label"]) for finding in findings})
@@ -106,9 +139,35 @@ class RiskScorer:
         highest_confidence = max(finding["score"] for finding in findings)
 
         return {
-            "risk_score": int(risk_score),
+            "risk_score": risk_score,
             "risk_level": risk_level,
             "data_types_found": data_types_found,
             "highest_confidence": highest_confidence,
             "severity_distribution": severity_counts
         }
+
+    def score(self, msg: ControlMessage) -> ControlMessage:
+        """
+        Calculate risk scores based on findings
+        """
+
+        with msg.payload().mutable_dataframe() as df:
+            gliner_findings = df['gliner_findings']
+            if not isinstance(gliner_findings, pd.Series):
+
+                # cudf series doesn't support iteration
+                gliner_findings = gliner_findings.to_arrow().to_pylist()
+
+            scores = []
+            for findings in gliner_findings:
+                scores.append(self._score_row(findings))
+
+            df['risk_scores'] = scores
+
+        return msg
+
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.score))
+        builder.make_edge(input_node, node)
+
+        return node

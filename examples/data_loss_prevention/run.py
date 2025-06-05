@@ -22,6 +22,7 @@ from stages.datasets_source import DatasetsSourceStage
 from stages.dlp_input_processor import DLPInputProcessor
 from stages.gliner_processor import GliNERProcessor
 from stages.regex_processor import RegexProcessor
+from stages.risk_scorer import RiskScorer
 
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
@@ -95,6 +96,10 @@ def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_sampl
     pipeline.add_stage(GliNERProcessor(config, labels=list(regex_processor.patterns.keys())))
 
     pipeline.add_stage(MonitorStage(config, description="gliner processor"))
+
+    pipeline.add_stage(RiskScorer(config))
+
+    pipeline.add_stage(MonitorStage(config, description="risk scorer"))
 
     pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=out_file, overwrite=True))
