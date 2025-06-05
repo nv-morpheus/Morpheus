@@ -59,7 +59,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         else:
             map_location = "cpu"
 
-        self.model = GLiNER.from_pretrained(model_name, map_location="cuda")
+        self.model = GLiNER.from_pretrained(model_name, map_location=map_location)
         self.column_name = column_name
         self.context_window = context_window
         self.fallback = fallback
