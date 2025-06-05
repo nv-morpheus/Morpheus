@@ -35,7 +35,7 @@ class DLPOutput(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
 
     Parameters
     ----------
-    c : `morpheus.config.Config`
+    config : `morpheus.config.Config`
         Pipeline configuration instance.
     filename : str
         Name of the file to which the messages will be written.
@@ -51,14 +51,14 @@ class DLPOutput(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     """
 
     def __init__(self,
-                 c: Config,
+                 config: Config,
                  filename: str,
                  overwrite: bool = False,
                  file_type: FileTypes = FileTypes.Auto,
                  include_index_col: bool = True,
                  flush: bool = False):
 
-        super().__init__(c)
+        super().__init__(config)
 
         self._controller = WriteToFileController(filename=filename,
                                                  overwrite=overwrite,
@@ -74,12 +74,6 @@ class DLPOutput(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         """
         Returns accepted input types for this stage.
-
-        Returns
-        -------
-        typing.Tuple(`morpheus.pipeline.messages.MessageMeta`, )
-            Accepted input types.
-
         """
         return (MessageMeta, )
 

@@ -145,4 +145,7 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
             if self._df_str == "cudf":
                 df = self._df_class(df)
 
-            yield MessageMeta(df=df)
+            if subscription.is_subscribed():
+                yield MessageMeta(df=df)
+            else:
+                break

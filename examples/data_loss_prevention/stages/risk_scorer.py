@@ -76,11 +76,14 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         """Convert risk score to risk level string"""
         if risk_score >= 80:
             return "Critical"
-        elif risk_score >= 60:
+
+        if risk_score >= 60:
             return "High"
-        elif risk_score >= 40:
+
+        if risk_score >= 40:
             return "Medium"
-        elif risk_score >= 20:
+
+        if risk_score >= 20:
             return "Low"
 
         return "Minimal"

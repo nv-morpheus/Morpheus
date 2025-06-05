@@ -33,7 +33,23 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 @register_stage("regex-processor")
 class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
-    """Process text with regex patterns to identify structured sensitive data"""
+    """
+    Process text with regex patterns to identify structured sensitive data
+
+    Parameters
+    ----------
+    config : morpheus.config.Config
+        Pipeline configuration instance.
+    patterns: dict[str, list[str]] | None
+        Dictionary mapping data types to lists of regex patterns
+    patterns_file : str | pathlib.Path | None
+        Path to a JSON file containing regex patterns for different data types.
+        Ignored if `patterns` is provided.
+    column_name : str
+        Name of the column containing the source text to process.
+    confidence: float
+        Confidence score to assign to regex findings.
+    """
 
     def __init__(self,
                  config: Config,

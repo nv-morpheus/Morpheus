@@ -32,6 +32,24 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
     """
     Process text with a Small Language Model to identify semantically sensitive content
     Uses a model to predict entities in text
+
+    Parameters
+    ----------
+    config : morpheus.config.Config
+        Pipeline configuration instance.
+    labels : list[str]
+        List of entity labels to detect, this should match the named patterns used in the RegexProcessor stage.
+    model_name : str
+        Name of the model to use.
+    column_name : str
+        Name of the column containing the source text to process.
+    context_window : int
+        Number of characters before and after a regex match to include in the context for SLM analysis.
+    confidence_threshold: float
+        Minimum confidence score to report a finding
+    fallback : bool
+        If True, fallback to GLiNER prediction if no regex findings are available.
+        If False, only process rows with regex findings.
     """
 
     def __init__(self,
@@ -43,12 +61,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                  confidence_threshold: float = 0.7,
                  context_window: int = 100,
                  fallback: bool = True):
-        """
-        Initialize with configuration for SLM-based detection
 
-        Args:
-            confidence_threshold: Minimum confidence score to report a finding
-        """
         super().__init__(config)
         self.confidence_threshold = confidence_threshold
         self.entity_labels = labels
@@ -172,13 +185,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
     def process(self, msg: ControlMessage) -> ControlMessage:
         """
         Analyze text using an entity prediction model for sensitive data detection
-
-        Args:
-            text: The text to analyze
-            regex_findings: Optional list of regex findings to filter candidates for classification
-
-        Returns:
-            List of findings with metadata
         """
 
         with msg.payload().mutable_dataframe() as df:

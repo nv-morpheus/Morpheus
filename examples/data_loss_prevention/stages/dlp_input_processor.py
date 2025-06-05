@@ -32,18 +32,32 @@ from morpheus.utils.type_utils import get_df_class
 
 @register_stage("dlp_input_processor", modes=[PipelineModes.NLP])
 class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
-    """Handles input text processing and normalization for DLP pipeline"""
+    """
+    Handles input text processing and normalization for DLP pipeline
+
+    Parameters
+    ----------
+    config : morpheus.config.Config
+        Pipeline configuration instance.
+    column_name : str
+        Name of the column containing the source text to process.
+    use_chunking : bool
+        If True, splits input text into chunks. Defaults to False.
+    chunking_size : int
+        Maximum size of text chunks to process at once, ignored unless `use_chunking` is True.
+        Defaults to 1000 characters.
+    """
 
     def __init__(self,
                  config: Config,
                  *,
                  column_name: str = "source_text",
                  chunking_size: int = 1000,
-                 split_by_paragraphs: bool = False):
+                 use_chunking: bool = False):
         super().__init__(config)
         self.column_name = column_name
         self.chunking_size = chunking_size
-        self.split_by_paragraphs = split_by_paragraphs
+        self.use_chunking = use_chunking
         self.df_class = get_df_class(config.execution_mode)
 
     @property
@@ -81,7 +95,7 @@ class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
                 normalized_text = row.replace('\r\n', '\n').replace('\r', '\n')
 
                 # For larger texts, split into chunks to optimize processing
-                if self.split_by_paragraphs:
+                if self.use_chunking:
                     # Split by paragraphs first to preserve content boundaries
                     paragraphs = normalized_text.split('\n\n')
                     current_chunk = []
@@ -100,7 +114,7 @@ class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
                             current_chunk.append(para)
                             current_chunk_len += len(para)
 
-                    if len(current_chunk):
+                    if len(current_chunk) > 0:
                         new_rows.append("".join(current_chunk))
 
                 else:
