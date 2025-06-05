@@ -83,47 +83,53 @@ class DLPInputProcessor(PreallocatorMixin, GpuAndCpuMixin, ControlMessageStage):
         2. Split into manageable chunks for processing
         """
 
-        new_rows = []
         with msg.mutable_dataframe() as df:
             source_series: SeriesType = df[self.column_name]
+            if not self.use_chunking:
+                df[self.column_name] = source_series.str.replace('\r\n', '\n').str.replace('\r', '\n')
+                meta = msg
+            else:
+                new_rows = []
 
-            if not isinstance(source_series, pd.Series):
-                # cudf series doesn't support iteration
-                source_series = source_series.to_arrow().to_pylist()
+                if not isinstance(source_series, pd.Series):
+                    # cudf series doesn't support iteration
+                    source_series = source_series.to_arrow().to_pylist()
 
-            for row in source_series:
-                # Basic normalization
-                normalized_text = row.replace('\r\n', '\n').replace('\r', '\n')
+                for row in source_series:
+                    # Basic normalization
+                    normalized_text = row.replace('\r\n', '\n').replace('\r', '\n')
 
-                # For larger texts, split into chunks to optimize processing
-                if self.use_chunking:
-                    # Split by paragraphs first to preserve content boundaries
-                    paragraphs = normalized_text.split('\n\n')
-                    current_chunk = []
-                    current_chunk_len = 0
+                    # For larger texts, split into chunks to optimize processing
+                    if self.use_chunking:
+                        # Split by paragraphs first to preserve content boundaries
+                        paragraphs = normalized_text.split('\n\n')
+                        current_chunk = []
+                        current_chunk_len = 0
 
-                    for para in paragraphs:
-                        if current_chunk_len > 0 and (current_chunk_len + len(para) > self.chunking_size):
+                        for para in paragraphs:
+                            if current_chunk_len > 0 and (current_chunk_len + len(para) > self.chunking_size):
+                                new_rows.append("".join(current_chunk))
+                                current_chunk = [para]
+                                current_chunk_len = len(para)
+                            else:
+                                if len(current_chunk) > 0:
+                                    current_chunk.append("\n\n")
+                                    current_chunk_len += 2
+
+                                current_chunk.append(para)
+                                current_chunk_len += len(para)
+
+                        if len(current_chunk) > 0:
                             new_rows.append("".join(current_chunk))
-                            current_chunk = [para]
-                            current_chunk_len = len(para)
-                        else:
-                            if len(current_chunk) > 0:
-                                current_chunk.append("\n\n")
-                                current_chunk_len += 2
 
-                            current_chunk.append(para)
-                            current_chunk_len += len(para)
+                    else:
+                        new_rows.append(normalized_text)
 
-                    if len(current_chunk) > 0:
-                        new_rows.append("".join(current_chunk))
+                new_df = self.df_class({self.column_name: new_rows})
+                meta = MessageMeta(new_df)
 
-                else:
-                    new_rows.append(normalized_text)
-
-        new_df = self.df_class({self.column_name: new_rows})
         control_msg = ControlMessage()
-        control_msg.payload(MessageMeta(new_df))
+        control_msg.payload(meta)
 
         return control_msg
 
