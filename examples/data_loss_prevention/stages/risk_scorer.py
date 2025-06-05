@@ -21,6 +21,7 @@ import pandas as pd
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.control_message_stage import ControlMessageStage
@@ -60,6 +61,15 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
         # Default weight if type not in dictionary
         self.default_weight = default_weight
+        self._needed_columns.update({
+            "risk_score": TypeId.INT32,
+            "risk_level": TypeId.STRING,
+            "data_types_found": TypeId.STRING,
+            "highest_confidence": TypeId.FLOAT32,
+            "num_high": TypeId.INT32,
+            "num_medium": TypeId.INT32,
+            "num_low": TypeId.INT32
+        })
 
     @property
     def name(self) -> str:

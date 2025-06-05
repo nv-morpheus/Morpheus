@@ -23,6 +23,7 @@ import pandas as pd
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.control_message_stage import ControlMessageStage
@@ -86,6 +87,8 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
                 combined_pattern = pattern_list[0]
 
             self.combined_patterns[entity_type] = re.compile(combined_pattern)
+
+        self._needed_columns['regex_findings'] = TypeId.STRING
 
     @staticmethod
     def load_regex_patterns(file_path: str | pathlib.Path) -> dict[str, list[str]]:

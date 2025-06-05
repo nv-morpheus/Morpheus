@@ -20,6 +20,7 @@ from gliner import GLiNER
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import ExecutionMode
 from morpheus.messages import ControlMessage
@@ -76,6 +77,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self.column_name = column_name
         self.context_window = context_window
         self.fallback = fallback
+        self._needed_columns['dlp_findings'] = TypeId.STRING
 
     @property
     def name(self) -> str:
