@@ -42,7 +42,6 @@ class GliNERProcessor(ControlMessageStage, GpuAndCpuMixin):
                  column_name: str = "source_text",
                  confidence_threshold: float = 0.7,
                  context_window: int = 100,
-                 model_max_length: int = 512,
                  fallback: bool = True):
         """
         Initialize with configuration for SLM-based detection
@@ -60,7 +59,7 @@ class GliNERProcessor(ControlMessageStage, GpuAndCpuMixin):
         else:
             map_location = "cpu"
 
-        self.model = GLiNER.from_pretrained(model_name, map_location=map_location, model_max_length=model_max_length)
+        self.model = GLiNER.from_pretrained(model_name, map_location=map_location)
         self.column_name = column_name
         self.context_window = context_window
         self.fallback = fallback
