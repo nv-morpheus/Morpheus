@@ -28,7 +28,7 @@ from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 
 
 @register_stage("gliner-processor")
-class GliNERProcessor(ControlMessageStage, GpuAndCpuMixin):
+class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
     """
     Process text with a Small Language Model to identify semantically sensitive content
     Uses a model to predict entities in text
@@ -59,7 +59,7 @@ class GliNERProcessor(ControlMessageStage, GpuAndCpuMixin):
         else:
             map_location = "cpu"
 
-        self.model = GLiNER.from_pretrained(model_name, map_location=map_location)
+        self.model = GLiNER.from_pretrained(model_name, map_location="cuda")
         self.column_name = column_name
         self.context_window = context_window
         self.fallback = fallback

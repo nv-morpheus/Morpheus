@@ -31,7 +31,7 @@ from morpheus.utils.type_utils import get_df_class
 
 
 @register_stage("dlp_input_processor", modes=[PipelineModes.NLP])
-class DLPInputProcessor(ControlMessageStage, GpuAndCpuMixin):
+class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
     """Handles input text processing and normalization for DLP pipeline"""
 
     def __init__(self,

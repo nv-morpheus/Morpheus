@@ -28,7 +28,7 @@ from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 
 
 @register_stage("risk-scorer")
-class RiskScorer(ControlMessageStage, GpuAndCpuMixin):
+class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
     """Analyzes findings to calculate risk scores and metrics"""
 
     DEFAULT_TYPE_WEIGHTS = {

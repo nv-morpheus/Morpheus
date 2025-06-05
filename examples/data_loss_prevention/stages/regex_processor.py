@@ -33,7 +33,7 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_stage("regex-processor")
-class RegexProcessor(ControlMessageStage, GpuAndCpuMixin):
+class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
     """Process text with regex patterns to identify structured sensitive data"""
 
     def __init__(self,
