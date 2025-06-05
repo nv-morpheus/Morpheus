@@ -20,6 +20,8 @@ import pathlib
 import click
 from stages.datasets_source import DatasetsSourceStage
 from stages.dlp_input_processor import DLPInputProcessor
+from stages.dlp_output import DLPOutput
+from stages.dlp_post_process import dlp_post_process
 from stages.gliner_processor import GliNERProcessor
 from stages.regex_processor import RegexProcessor
 from stages.risk_scorer import RiskScorer
@@ -27,12 +29,9 @@ from stages.risk_scorer import RiskScorer
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
-from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -76,7 +75,6 @@ def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_sampl
 
     config = Config()
     config.mode = PipelineModes.NLP
-    config.execution_mode = ExecutionMode.CPU
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
@@ -103,8 +101,8 @@ def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_sampl
 
     pipeline.add_stage(MonitorStage(config, description="risk scorer"))
 
-    pipeline.add_stage(SerializeStage(config, exclude=["regex_findings"]))
-    pipeline.add_stage(WriteToFileStage(config, filename=str(out_file), overwrite=True))
+    pipeline.add_stage(dlp_post_process(config))
+    pipeline.add_stage(DLPOutput(config, filename=str(out_file), overwrite=True))
 
     # Run the pipeline
     pipeline.run()
