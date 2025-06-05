@@ -16,7 +16,6 @@
 import typing
 
 import mrc
-import pandas as pd
 from gliner import GLiNER
 from mrc.core import operators as ops
 
@@ -26,8 +25,6 @@ from morpheus.config import ExecutionMode
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
-from morpheus.utils.type_aliases import DataFrameType
-from morpheus.utils.type_aliases import SeriesType
 
 
 @register_stage("gliner-processor")
@@ -140,9 +137,8 @@ class GliNERProcessor(ControlMessageStage, GpuAndCpuMixin):
 
         return (contexts, spans)
 
-    def _process_row(self,
-                     text: str,
-                     regex_findings: list[dict[str, typing.Any]] | None = None) -> list[dict[str, list]]:
+    def _process_row(self, text: str,
+                     regex_findings: list[dict[str, typing.Any]] | None) -> list[dict[str, typing.Any]]:
         all_entities = []
         if regex_findings is not None and len(regex_findings) > 0:
 
