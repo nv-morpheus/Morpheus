@@ -29,7 +29,6 @@ from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import exec_mode_to_df_type_str
 from morpheus.utils.type_utils import get_df_class
 
