@@ -87,13 +87,13 @@ outputs:
         # This should be synced with `runtime` in dependencies.yaml
         - appdirs
         - beautifulsoup4
-        - click>=8, <8.2 # work-around for #2219
+        - click >=8
         - cuda-version {{ cuda_compiler_version }}.*
         - cudf
         - cupy <13.4
         - datacompy =0.13.1
         - dill =0.3.7
-        - docker-py >=7.1,<8
+        - docker-py =5.0.*
         - elasticsearch ==8.9.0
         - feedparser =6.0.*
         - grpcio =1.62.*
