@@ -21,8 +21,8 @@ The goal of this  DLP pipeline is to identify and mitigate exposure of sensitive
 - **Secure Cloud and SaaS Workloads**: Protect data in motion and at rest across hybrid and multi-cloud architectures
 
 This pipeline implements a hybrid approach that couples:
-- **Regex-based pre-filtering** for fast and scalable detection with high recall (1000x speed improvement over AI-only approaches)
-- **Contextual entity validation** using GLiNER-based semantic analysis, reducing false positives by 80%
+- **Regex-based pre-filtering** for fast and scalable detection with high recall 
+- **Contextual entity validation** using GLiNER-based semantic analysis
 
 ## 🎯 Supported Data Types
 
@@ -122,9 +122,3 @@ To launch the configured Morpheus pipeline with the default arguments, run the f
 ```bash
 python examples/data_loss_prevention/run.py
 ```
-
-## Acknowledgments
-
-- **GLiNER Team**: Excellent semantic analysis model
-- **Gretel.ai**: High-quality synthetic datasets and fine-tuned GLiNER model for PII
-- **nervaluate**: Comprehensive NER evaluation metrics
