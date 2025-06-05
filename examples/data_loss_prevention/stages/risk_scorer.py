@@ -162,7 +162,7 @@ class RiskScorer(ControlMessageStage, GpuAndCpuMixin):
             for findings in gliner_findings:
                 scores.append(self._score_row(findings))
 
-            df['risk_scores'] = scores
+            df['risk_score'] = scores
 
         return msg
 
