@@ -27,7 +27,6 @@ from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
-from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
