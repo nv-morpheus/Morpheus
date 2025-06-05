@@ -27,6 +27,7 @@ from stages.risk_scorer import RiskScorer
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
+from morpheus.config import ExecutionMode
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -75,6 +76,7 @@ def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_sampl
 
     config = Config()
     config.mode = PipelineModes.NLP
+    config.execution_mode = ExecutionMode.CPU
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
