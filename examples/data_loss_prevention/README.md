@@ -7,6 +7,8 @@ This example demonstrates how to use Morpheus to implement a DLP solution that c
 |-------------|-----------|-------|
 | Conda | ✔ | |
 | Morpheus Docker Container | ✔ |  |
+| Morpheus Release Container | ✔ |  |
+| Dev Container | ✔ |  |
 
 
 ## Background
@@ -24,15 +26,15 @@ This pipeline implements a hybrid approach that couples:
 
 ## 🎯 Supported Data Types
 
-The DLP pipeline is capable of detecting multiple categories of sensitive information inlcuding these and more entities:
+The DLP pipeline is capable of detecting multiple categories of sensitive information including these and more entities:
 
 ### Personal Information
 1. **SSN**: Social Security Numbers with flexible formatting
-2. **Credit Cards**: Visa, MasterCard, Amex, Discover with validation
+2. **Credit Cards**: Visa, MasterCard, American Express and Discover with validation
 3. **Phone Numbers**: US/International formats with area codes
 4. **Email Addresses**: Comprehensive email pattern matching
 
-### Technical Information  
+### Technical Information
 5. **IP Addresses**: IPv4 & IPV6 addresses and subnets
 6. **API Keys**: Various API key formats and tokens
 7. **Passwords**: Password pattern detection
@@ -65,16 +67,16 @@ The pipeline we will be using in this example is a hybrid feed-forward pipeline 
 Below is a visualization of the pipeline showing all stages and data flow:
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │   Input Text    │───▶│ DLPInputProcessor│───▶│ RegexProcessor  │
-│   Documents     │    │ (Preprocessing) │    │  (Fast Filter)  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+│   Documents     │     │ (Preprocessing)  │     │  (Fast Filter)  │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
                                                        │
                                                        ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   RiskScorer    │◀───│ DLPPipeline     │◀───│ GliNERProcessor │
-│ (Risk Analysis) │    │ (Orchestration) │    │ (AI Validation) │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────┐                              ┌─────────────────┐
+│   RiskScorer    │◀────────────────────────────│ GliNERProcessor │
+│ (Risk Analysis) │                              │ (AI Validation) │
+└─────────────────┘                              └─────────────────┘
 ```
 
 ### Core Components
@@ -82,84 +84,47 @@ Below is a visualization of the pipeline showing all stages and data flow:
 | Component | Purpose |
 |-----------|---------|
 | **DLPInputProcessor** | Text preprocessing & chunking |
-| **RegexProcessor** | Fast pattern matching 
-| **GliNERProcessor** | Semantic analysis | 
+| **RegexProcessor** | Fast pattern matching
+| **GliNERProcessor** | Semantic analysis |
 | **RiskScorer** | Threat assessment |
-| **DLPPipeline** | Orchestration & metrics | 
 
-## Setup
-
-This example utilizes the Triton Inference Server to perform AI inference for semantic analysis. The GLiNER model is used for contextual entity validation.
-
-### Prerequisites
-
-- Python 3.10 or higher
-- CUDA-compatible GPU (optional, for accelerated AI processing)
-
-#### 1. Clone the Repository
-
-
-
-#### 3. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-#### Download SLM model
-```bash
-# The GLiNER model will be downloaded automatically on first use
-python -c "from gliner import GLiNER; GLiNER.from_pretrained('gretelai/gretel-gliner-bi-small-v1.0')"
-```
 
 ## Running the Pipeline
 
-With the Morpheus CLI, the entire DLP pipeline can be configured and run. Using the `morpheus run pipeline-dlp` command, we can build the pipeline by specifying each stage's configuration.
-
-### Quick Start Example
-
-```python
-from dlp_workflow import DLPPipeline
-
-# Load regex patterns
-import json
-with open('regex_patterns.json', 'r') as f:
-    patterns = json.load(f)
-
-# Initialize the hybrid DLP pipeline
-dlp_pipeline = DLPPipeline(
-    regex_patterns=patterns,
-    confidence_threshold=0.7,
-    model_name="gretelai/gretel-gliner-bi-small-v1.0",
-    context_window=300
-)
-
-# Process a document
-document = """
-PATIENT INFORMATION
-Medical Record #: MRN-12345678
-Name: John Smith
-SSN: 123-45-6789
-Email: jsmith@email.net
-Credit Card: 4532-1234-5678-9012
-"""
-
-# Full pipeline processing
-results = dlp_pipeline.process(document)
-
-print(f"Risk Score: {results['risk_assessment']['risk_score']}/100")
-print(f"Risk Level: {results['risk_assessment']['risk_level']}")
-print(f"Total Findings: {results['total_findings']}")
-print(f"Processing Time: {results['performance_metrics']['total_time']:.3f}s")
+From the root of the Morpheus repo, run:
+```bash
+python examples/data_loss_prevention/run.py --help
 ```
 
-### Command Line Interface
+Output:
+```
+Usage: run.py [OPTIONS]
 
+Options:
+  --log_level [CRITICAL|FATAL|ERROR|WARN|WARNING|INFO|DEBUG]
+                                  Specify the logging level to use.  [default:
+                                  INFO]
+  --regex_file PATH               JSON file containing regex patterns
+                                  [default: /home/dagardner/work/morpheus/exam
+                                  ples/data_loss_prevention/data/regex_pattern
+                                  s.json]
+  --dataset TEXT                  Specify the datasets to use, can be set
+                                  multiple times, valid datasets are: gretel.
+                                  [default: gretel]
+  --num_samples INTEGER           Number of samples to use from each dataset,
+                                  set to -1 for all samples.  [default: 2000]
+  --out_file FILE                 Output file  [required]
+  --help                          Show this message and exit.
+```
 
-##  License
+To launch the configured Morpheus pipeline with the default arguments, run the following:
 
+```bash
+python examples/data_loss_prevention/run.py
+```
 
 ## Acknowledgments
 
 - **GLiNER Team**: Excellent semantic analysis model
-- **Gretel.ai**: High-quality synthetic datasets and finetuned GLiNER model for PII
+- **Gretel.ai**: High-quality synthetic datasets and fine-tuned GLiNER model for PII
 - **nervaluate**: Comprehensive NER evaluation metrics
