@@ -104,15 +104,23 @@ class RiskScorer(ControlMessageStage, GpuAndCpuMixin):
         num_medium = 0
         num_low = 0
 
+        data_types_found = set()
+        highest_confidence = 0
+
         for finding in findings:
             # Get data type (either direct type or mapped from semantic)
-            data_type: str = finding.get("data_type", finding["label"])
+            data_type: str = finding["label"]
+            data_types_found.add(data_type)
 
             # Get weight for this data type
             weight = self.type_weights.get(data_type, self.default_weight)
 
             # Adjust by confidence
             confidence = finding["score"]
+
+            if confidence > highest_confidence:
+                highest_confidence = confidence
+
             weighted_score = weight * confidence
             total_score += weighted_score
 
@@ -134,16 +142,10 @@ class RiskScorer(ControlMessageStage, GpuAndCpuMixin):
         # Determine risk level from score
         risk_level = self._risk_score_to_level(risk_score)
 
-        # Get unique data types found
-        data_types_found = list({finding.get("data_type", finding["label"]) for finding in findings})
-
-        # Find highest confidence score
-        highest_confidence = max(finding["score"] for finding in findings)
-
         return {
             "risk_score": risk_score,
             "risk_level": risk_level,
-            "data_types_found": data_types_found,
+            "data_types_found": sorted(data_types_found),
             "highest_confidence": highest_confidence,
             "num_high": num_high,
             "num_medium": num_medium,
