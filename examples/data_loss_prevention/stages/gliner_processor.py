@@ -16,7 +16,6 @@
 import typing
 
 import mrc
-from gliner import GLiNER
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
@@ -27,6 +26,9 @@ from morpheus.messages import ControlMessage
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.utils.type_aliases import DataFrameType
+
+if typing.TYPE_CHECKING:
+    from gliner import GLiNER
 
 
 @register_stage("gliner-processor")
@@ -74,7 +76,9 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         else:
             map_location = "cpu"
 
-        self.model = GLiNER.from_pretrained(model_name, map_location=map_location)
+        self._model_name = model_name
+        self._map_location = map_location
+        self._model = None
         self.column_name = column_name
         self.context_window = context_window
         self.fallback = fallback
@@ -90,6 +94,17 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
 
     def supports_cpp_node(self) -> bool:
         return False
+
+    @property
+    def model(self) -> "GLiNER":
+        """
+        Return the GLiNER model instance.
+        """
+        if self._model is None:
+            from gliner import GLiNER
+            self._model = GLiNER.from_pretrained(self._model_name, map_location=self._map_location)
+
+        return self._model
 
     def _extract_contexts_from_regex_findings(
             self, text: str, regex_findings: list[dict[str, typing.Any]]) -> tuple[list[str], list[tuple[int, int]]]:
