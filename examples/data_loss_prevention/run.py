@@ -63,13 +63,24 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               default=2000,
               show_default=True,
               help="Number of samples to use from each dataset, set to -1 for all samples.")
+@click.option('--model_max_batch_size',
+              type=int,
+              default=16,
+              show_default=True,
+              help=("Maximum batch size for model inference, used by the GliNER processor. "
+                    "Larger values may improve performance but require more GPU memory."))
 @click.option("--out_file",
               help="Output file",
               type=click.Path(dir_okay=False),
               default=os.path.join(MORPHEUS_ROOT, ".tmp/output/data_loss_prevention.jsonlines"),
               show_default=True,
               required=True)
-def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_samples: int, out_file: pathlib.Path):
+def main(log_level: int,
+         regex_file: pathlib.Path,
+         dataset: list[str],
+         num_samples: int,
+         model_max_batch_size: int,
+         out_file: pathlib.Path):
     configure_logging(log_level=log_level)
 
     if num_samples < 0:
@@ -77,6 +88,7 @@ def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_sampl
 
     config = Config()
     config.mode = PipelineModes.NLP
+    config.model_max_batch_size = model_max_batch_size
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)

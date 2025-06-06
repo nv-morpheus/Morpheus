@@ -26,6 +26,7 @@ from morpheus.config import ExecutionMode
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
+from morpheus.utils.type_aliases import DataFrameType
 
 
 @register_stage("gliner-processor")
@@ -78,6 +79,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self.context_window = context_window
         self.fallback = fallback
         self._needed_columns['dlp_findings'] = TypeId.STRING
+        self._model_max_batch_size = config.model_max_batch_size
 
     @property
     def name(self) -> str:
@@ -88,25 +90,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
 
     def supports_cpp_node(self) -> bool:
         return False
-
-    def gliner_predict(self, text: str) -> list[dict[str, list]]:
-        """
-        Predict entities in text using GLiNER
-        """
-        results = self.model.predict_entities(text,
-                                              self.entity_labels,
-                                              flat_ner=True,
-                                              threshold=self.confidence_threshold,
-                                              multi_label=False)
-
-        return results
-
-    def filter_entities(self, entities: list[dict[str, list]]) -> list[dict[str, list]]:
-        """
-        Filter entities for relevant keys
-        """
-        entities = [{'label': r['label'], 'start': r['start'], 'end': r['end'], 'score': r['score']} for r in entities]
-        return entities
 
     def _extract_contexts_from_regex_findings(
             self, text: str, regex_findings: list[dict[str, typing.Any]]) -> tuple[list[str], list[tuple[int, int]]]:
@@ -152,37 +135,75 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
 
         return (contexts, spans)
 
-    def _process_row(self, text: str,
-                     regex_findings: list[dict[str, typing.Any]] | None) -> list[dict[str, typing.Any]]:
-        all_entities = []
-        if regex_findings is not None and len(regex_findings) > 0:
+    def _prepare_data(self, rows: list[dict[str, typing.Any]]) -> tuple[list[str], list[tuple[int, int]], list[int]]:
+        """
+        Prepare the data for processing by ensuring the necessary columns are present.
+        """
+        model_data = []
+        model_row_to_row_num = []
+        all_spans = []
+        for (i, row) in enumerate(rows):
+            regex_findings = row['regex_findings']
+            text = row[self.column_name]
+            if regex_findings is not None and len(regex_findings) > 0:
 
-            contexts, spans = self._extract_contexts_from_regex_findings(text, regex_findings)
-            assert len(contexts) == len(spans)
-            model_entities = self.model.batch_predict_entities(contexts,
-                                                               self.entity_labels,
-                                                               flat_ner=True,
-                                                               threshold=self.confidence_threshold,
-                                                               multi_label=False)
+                contexts, spans = self._extract_contexts_from_regex_findings(text, regex_findings)
+                assert len(contexts) == len(spans)
+                model_data.extend(contexts)
+                all_spans.append(spans)
+                model_row_to_row_num.extend([i] * len(contexts))
+            elif self.fallback:
+                # If fallback is enabled, process the full text
+                model_data.append(text)
+                all_spans.append([(0, len(text))])
+                model_row_to_row_num.append(i)
 
-            seen = set()
-            unique_entities = []
-            for i, entities in enumerate(model_entities):
-                span_offset = spans[i][0]
-                for entity in entities:
-                    entity["start"] += span_offset
-                    entity["end"] += span_offset
-                    entity_key = (entity["label"], entity["text"], entity["start"], entity["end"])
-                    if entity_key not in seen:
-                        seen.add(entity_key)
-                        unique_entities.append(entity)
+        assert len(model_data) == len(model_row_to_row_num), "Mismatch between contexts and row numbers"
+        return (model_data, all_spans, model_row_to_row_num)
 
-            all_entities = unique_entities
-        elif self.fallback:
-            model_entities = self.gliner_predict(text)
-            all_entities = self.filter_entities(model_entities)
+    def _process_one_result(self, model_entities: list[dict[str, typing.Any]],
+                            spans: list[tuple[int, int]]) -> list[dict[str, typing.Any]]:
+        seen = set()
+        unique_entities = []
+        for k, entities in enumerate(model_entities):
+            span_offset = spans[k][0]
+            for entity in entities:
+                entity["start"] += span_offset
+                entity["end"] += span_offset
+                entity_key = (entity["label"], entity["text"], entity["start"], entity["end"])
+                if entity_key not in seen:
+                    seen.add(entity_key)
+                    unique_entities.append(entity)
 
-        return all_entities
+        return unique_entities
+
+    def _process_results(self,
+                         num_rows: int,
+                         model_entities: list[list[dict[str, typing.Any]]],
+                         all_spans: list[tuple[int, int]],
+                         model_row_to_row_num: list[int]) -> list[list[dict[str, typing.Any]]]:
+        dlp_findings = [[] for _ in range(num_rows)]
+
+        entities_per_row = None
+        current_row = None
+        for (i, entities) in enumerate(model_entities):
+            row_num = model_row_to_row_num[i]
+            if row_num != current_row:
+                if current_row is not None:
+                    spans = all_spans[current_row]
+                    dlp_findings[current_row] = self._process_one_result(entities_per_row, spans)
+
+                current_row = row_num
+                entities_per_row = []
+
+            entities_per_row.append(entities)
+
+        # Process the last row
+        if current_row is not None:
+            spans = all_spans[current_row]
+            dlp_findings[current_row] = self._process_one_result(entities_per_row, spans)
+
+        return dlp_findings
 
     def process(self, msg: ControlMessage) -> ControlMessage:
         """
@@ -193,11 +214,20 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
             dlp_findings = []
             rows = df[[self.column_name, 'regex_findings']].to_dict(orient="records")
 
-            for row in rows:
-                regex_findings = row['regex_findings']
-                text = row[self.column_name]
+            (model_data, all_spans, model_row_to_row_num) = self._prepare_data(rows)
 
-                dlp_findings.append(self._process_row(text, regex_findings))
+            model_entities = []
+            for i in range(0, len(model_data), self._model_max_batch_size):
+                batch_data = model_data[i:i + self._model_max_batch_size]
+
+                model_entities.extend(
+                    self.model.batch_predict_entities(batch_data,
+                                                      self.entity_labels,
+                                                      flat_ner=True,
+                                                      threshold=self.confidence_threshold,
+                                                      multi_label=False))
+
+            dlp_findings = self._process_results(len(rows), model_entities, all_spans, model_row_to_row_num)
 
             df['dlp_findings'] = dlp_findings
 
