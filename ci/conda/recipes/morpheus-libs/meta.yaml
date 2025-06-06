@@ -67,6 +67,8 @@ outputs:
         - indicators=2.3
         - libcudf {{ rapids_version }}
         - librdkafka =2.6.1
+        # Listing mlflow in the host depencies so that it solves along with libgcc this avoids an incompaible
+        # runtime environment
         - mlflow>=2.18
         - mrc {{ minor_version }}
         - nlohmann_json 3.11.*
