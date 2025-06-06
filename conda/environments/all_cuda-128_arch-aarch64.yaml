@@ -133,7 +133,7 @@ dependencies:
   - dgl
   - exhale>=0.3.7
   - faiss-cpu
-  - gliner==0.2.19
+  - gliner==0.2.20
   - google-search-results==2.4
   - gpudb>=7.2.2.3
   - langchain-nvidia-ai-endpoints==0.0.11

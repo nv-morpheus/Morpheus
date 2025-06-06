@@ -63,7 +63,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                  column_name: str = "source_text",
                  confidence_threshold: float = 0.7,
                  context_window: int = 100,
-                 fallback: bool = True):
+                 fallback: bool = True,
+                 cache_dir: str | None = None):
 
         super().__init__(config)
         self.confidence_threshold = confidence_threshold
@@ -78,11 +79,12 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self._model_name = model_name
         self._map_location = map_location
         self._model = None
+        self._model_max_batch_size = config.model_max_batch_size
         self.column_name = column_name
         self.context_window = context_window
         self.fallback = fallback
+        self._cache_dir = cache_dir
         self._needed_columns['dlp_findings'] = TypeId.STRING
-        self._model_max_batch_size = config.model_max_batch_size
 
     @property
     def name(self) -> str:
@@ -101,7 +103,9 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         """
         if self._model is None:
             from gliner import GLiNER
-            self._model = GLiNER.from_pretrained(self._model_name, map_location=self._map_location)
+            self._model = GLiNER.from_pretrained(self._model_name,
+                                                 map_location=self._map_location,
+                                                 cache_dir=self._cache_dir)
 
         return self._model
 
