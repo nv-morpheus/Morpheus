@@ -27,6 +27,11 @@ This example demonstrates how to use Morpheus to implement a DLP solution that c
 | Morpheus Release Container | ✔ |  |
 | Dev Container | ✔ |  |
 
+### Supported Architectures
+| Architecture | Supported | Issue |
+|--------------|-----------|-------|
+| x86_64 | ✔ | |
+| aarch64 | ✘ | Work-around available refer to: [#2095](https://github.com/nv-morpheus/Morpheus/issues/2095) |
 
 ## Background
 
@@ -38,7 +43,7 @@ The goal of this  DLP pipeline is to identify and mitigate exposure of sensitive
 - **Secure Cloud and SaaS Workloads**: Protect data in motion and at rest across hybrid and multi-cloud architectures
 
 This pipeline implements a hybrid approach that couples:
-- **Regex-based pre-filtering** for fast and scalable detection with high recall 
+- **Regex-based pre-filtering** for fast and scalable detection with high recall
 - **Contextual entity validation** using GLiNER-based semantic analysis
 
 ## 🎯 Supported Data Types
