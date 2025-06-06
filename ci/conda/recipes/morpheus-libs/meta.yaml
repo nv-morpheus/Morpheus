@@ -67,6 +67,7 @@ outputs:
         - indicators=2.3
         - libcudf {{ rapids_version }}
         - librdkafka =2.6.1
+        - mlflow>=2.18
         - mrc {{ minor_version }}
         - nlohmann_json 3.11.*
         - pip
@@ -94,7 +95,7 @@ outputs:
         - feedparser =6.0.*
         - grpcio =1.62.*
         - lxml
-        - mlflow>=2.18
+        - mlflow
         - mrc
         - networkx=2.8.8
         - numba=0.60 # Pin version to avoid https://github.com/nv-morpheus/Morpheus/issues/2166
