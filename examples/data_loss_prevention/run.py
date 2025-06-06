@@ -36,6 +36,7 @@ from morpheus.utils.logger import configure_logging
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
+MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR_DIR, "..", "..")))
 
 
 @click.command()
@@ -65,7 +66,8 @@ CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 @click.option("--out_file",
               help="Output file",
               type=click.Path(dir_okay=False),
-              default=".tmp/output/data_loss_prevention.jsonlines",
+              default=os.path.join(MORPHEUS_ROOT, ".tmp/output/data_loss_prevention.jsonlines"),
+              show_default=True,
               required=True)
 def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_samples: int, out_file: pathlib.Path):
     configure_logging(log_level=log_level)
@@ -101,6 +103,8 @@ def main(log_level: int, regex_file: pathlib.Path, dataset: list[str], num_sampl
 
     pipeline.add_stage(dlp_post_process(config))
     pipeline.add_stage(DLPOutput(config, filename=str(out_file), overwrite=True))
+
+    pipeline.add_stage(MonitorStage(config, description="output"))
 
     # Run the pipeline
     pipeline.run()
