@@ -629,4 +629,4 @@ dependencies:
           - pip
           - pip:
             # Installing gliner from PyPI instead of conda-forge to ensure we receive a cuda enabled version of torch
-            - gliner==0.2
+            - gliner==0.2.19
