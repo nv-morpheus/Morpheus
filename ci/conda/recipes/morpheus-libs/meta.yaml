@@ -66,7 +66,7 @@ outputs:
         - glog >=0.7.1,<0.8
         - indicators=2.3
         - libcudf {{ rapids_version }}
-        - libgcc>=13, <14.3
+        - libgcc>=13, <14.3  # Work-around for #2066
         - librdkafka =2.6.1
         - mrc {{ minor_version }}
         - nlohmann_json 3.11.*
@@ -162,7 +162,7 @@ outputs:
         # in versions that are not compatible with morpheus-core
         - cuda-cudart-dev {{ cuda_compiler_version }}.*
         - cuda-version {{ cuda_compiler_version }}.*
-        - libgcc>=13, <14.3
+        - libgcc>=13, <14.3  # Work-around for #2066
         - {{ pin_subpackage('morpheus-core', exact=True) }}
         - pip
         - python {{ python }}
@@ -222,7 +222,7 @@ outputs:
         - {{ pin_subpackage('morpheus-core', exact=True) }}
         - cython 3.0.*
         - glog >=0.7.1,<0.8
-        - libgcc>=13, <14.3
+        - libgcc>=13, <14.3  # Work-around for #2066
         - pip
         - pybind11-stubgen 0.10.5
         - python {{ python }}
