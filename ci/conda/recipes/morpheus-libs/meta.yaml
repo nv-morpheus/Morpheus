@@ -59,9 +59,9 @@ outputs:
         - cuda-nvml-dev {{ cuda_compiler_version }}.*
         - cuda-nvrtc-dev {{ cuda_compiler_version }}.*
         - cuda-nvtx-dev {{ cuda_compiler_version }}.*
+        - cuda-python {{ cuda_compiler_version }}.*
         - cuda-version {{ cuda_compiler_version }}.*
         # Non-CUDA dependencies
-        - cuda-python {{ cuda_compiler_version }}.*
         - cudf {{ rapids_version }}
         - cython 3.0.*
         - glog >=0.7.1,<0.8
