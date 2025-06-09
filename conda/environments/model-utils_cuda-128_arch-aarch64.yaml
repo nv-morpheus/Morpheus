@@ -7,7 +7,6 @@ channels:
 - rapidsai-nightly
 - nvidia
 - nvidia/label/dev
-- pytorch
 dependencies:
 - cuml=25.02.*
 - jupyterlab

@@ -7,7 +7,6 @@ channels:
 - rapidsai-nightly
 - nvidia
 - nvidia/label/dev
-- pytorch
 dependencies:
 - appdirs
 - beautifulsoup4=4.12
@@ -37,6 +36,7 @@ dependencies:
 - python-confluent-kafka=2.6.1
 - python-graphviz
 - python=3.12
+- pytorch
 - rapids-dask-dependency=25.02
 - requests-cache=1.1
 - requests>=2.32.3,<3
@@ -49,11 +49,9 @@ dependencies:
 - watchdog=3.0
 - websockets
 - pip:
-  - --extra-index-url https://download.pytorch.org/whl/cu124
   - databricks-cli < 0.100
   - databricks-connect
   - gpudb>=7.2.2.3
   - milvus==2.3.5
   - pymilvus==2.3.6
-  - torch==2.4.0+cu124
 name: runtime_cuda-128_arch-x86_64

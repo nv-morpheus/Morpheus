@@ -7,7 +7,6 @@ channels:
 - rapidsai-nightly
 - nvidia
 - nvidia/label/dev
-- pytorch
 dependencies:
 - anyio>=3.7
 - appdirs
@@ -19,6 +18,7 @@ dependencies:
 - cuml=25.02.*
 - cupy<13.4
 - datacompy=0.13.1
+- dglteam/label/th24_cu124::dgl=2.4.0
 - dill=0.3.7
 - docker-py>=7.1,<8
 - elasticsearch==8.9.0
@@ -51,6 +51,7 @@ dependencies:
 - python-docx==1.1.0
 - python-graphviz
 - python=3.12
+- pytorch
 - rapids-dask-dependency=25.02
 - requests-cache=1.1
 - requests-toolbelt=1.0
@@ -66,12 +67,8 @@ dependencies:
 - watchdog=3.0
 - websockets
 - pip:
-  - --extra-index-url https://download.pytorch.org/whl/cu124
-  - --find-links https://data.dgl.ai/wheels/torch-2.3/repo.html
-  - --find-links https://data.dgl.ai/wheels/torch-2.4/cu124/repo.html
   - databricks-cli < 0.100
   - databricks-connect
-  - dgl
   - faiss-cpu
   - google-search-results==2.4
   - gpudb>=7.2.2.3
@@ -83,5 +80,4 @@ dependencies:
   - pymilvus==2.3.6
   - python-logging-loki
   - sentence-transformers==2.7
-  - torch==2.4.0+cu124
 name: examples_cuda-128_arch-x86_64

@@ -7,7 +7,6 @@ channels:
 - rapidsai-nightly
 - nvidia
 - nvidia/label/dev
-- pytorch
 dependencies:
 - boto3=1.35
 - kfp
@@ -15,10 +14,9 @@ dependencies:
 - nodejs=18.*
 - papermill=2.6.0
 - pip
+- pytorch
 - s3fs=2024.10
 - tini=0.19
 - pip:
-  - --extra-index-url https://download.pytorch.org/whl/cu124
   - python-logging-loki
-  - torch==2.4.0+cu124
 name: dfp_example_cuda-128_arch-x86_64
