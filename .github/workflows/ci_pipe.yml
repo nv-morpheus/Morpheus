@@ -48,6 +48,7 @@ env:
   CHANGE_TARGET: "${{ github.base_ref }}"
   CUDA_PATH: "/usr/local/cuda/"
   CUDA_VER: "12.8"
+  CONDA_OVERRIDE_CUDA: "12.8"
   GH_TOKEN: "${{ github.token }}"
   GIT_COMMIT: "${{ github.sha }}"
   MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
