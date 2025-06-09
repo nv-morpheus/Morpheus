@@ -77,8 +77,9 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
             patterns = self.load_regex_patterns(patterns_file)
             logger.info("Loaded %d regex pattern groups", len(patterns))
 
+        self._output_columns = {}
         # For each entity type, combine multiple patterns into a single regex
-        for entity_type, pattern_list in patterns.items():
+        for pattern_name, pattern_list in patterns.items():
 
             # Combine all patterns for this entity type with OR operator
             if len(pattern_list) > 1:
@@ -86,9 +87,10 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
             else:
                 combined_pattern = pattern_list[0]
 
-            self.combined_patterns[entity_type] = re.compile(combined_pattern)
-
-        self._needed_columns['regex_findings'] = TypeId.STRING
+            self.combined_patterns[pattern_name] = combined_pattern
+            output_column = f"regex_matches_{pattern_name}"
+            self._output_columns[pattern_name] = output_column
+            self._needed_columns[pattern_name] = TypeId.STRING
 
     @staticmethod
     def load_regex_patterns(file_path: str | pathlib.Path) -> dict[str, list[str]]:
@@ -124,27 +126,10 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
         with msg.payload().mutable_dataframe() as df:
             # Extract the text column to process
             text_series = df[self.column_name]
-            if not isinstance(text_series, pd.Series):
-                # cudf series doesn't support iteration
-                text_series = text_series.to_arrow().to_pylist()
 
-            all_findings = []
-            for text in text_series:
-                findings = []
-                for (pattern_name, pattern) in self.combined_patterns.items():
-                    matches = pattern.finditer(text)
-                    for match in matches:
-                        findings.append({
-                            "label": pattern_name,
-                            "match": match.group(),
-                            "span": match.span(),
-                            "detection_method": "regex",
-                            "confidence": self.confidence
-                        })
-
-                all_findings.append(findings)
-
-            df['regex_findings'] = all_findings
+            for pattern_name, pattern in self.combined_patterns.items():
+                output_column = self._output_columns[pattern_name]
+                df[output_column] = text_series.str.findall(pattern)
 
         return msg
 
