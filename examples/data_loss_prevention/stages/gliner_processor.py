@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import typing
 
 import mrc
@@ -29,6 +30,8 @@ from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 if typing.TYPE_CHECKING:
     from gliner import GLiNER
 
+logger = logging.getLogger(f"morpheus.{__name__}")
+
 
 @register_stage("gliner-processor")
 class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
@@ -44,7 +47,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         List of entity labels to detect, this should match the named patterns used in the RegexProcessor stage.
     model_name : str
         Name of the model to use.
-    column_name : str
+    source_column_name : str
         Name of the column containing the source text to process.
     context_window : int
         Number of characters before and after a regex match to include in the context for SLM analysis.
@@ -60,7 +63,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                  *,
                  labels: list[str],
                  model_name: str = "gretelai/gretel-gliner-bi-small-v1.0",
-                 column_name: str = "source_text",
+                 source_column_name: str = "source_text",
+                 regex_col_prefix: str = "regex_matches_",
                  confidence_threshold: float = 0.7,
                  context_window: int = 100,
                  fallback: bool = True,
@@ -80,7 +84,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self._map_location = map_location
         self._model = None
         self._model_max_batch_size = config.model_max_batch_size
-        self.column_name = column_name
+        self.source_column_name = source_column_name
+        self._regex_col_prefix = regex_col_prefix
         self.context_window = context_window
         self.fallback = fallback
         self._cache_dir = cache_dir
@@ -110,7 +115,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         return self._model
 
     def _extract_contexts_from_regex_findings(
-            self, text: str, regex_findings: list[dict[str, typing.Any]]) -> tuple[list[str], list[tuple[int, int]]]:
+            self, text: str, row: dict[str, typing.Any],
+            regex_columns: list[str]) -> tuple[list[str], list[str], list[tuple[int, int]]]:
         """
         Extract text contexts around regex matches to focus SLM analysis
 
@@ -130,30 +136,40 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         unique_spans = set()
         text_len = len(text)
 
-        for finding in regex_findings:
-            span = finding.get("span")
-            if span:
-                start, end = span
+        regex_findings = []
+        for regex_col in regex_columns:
+            findings = row[regex_col]
+            if isinstance(findings, list) and len(findings) > 0:
+                regex_findings.extend(findings)
 
-                # Expand the context window with single min/max calls
-                context_start = max(0, start - context_window)
-                context_end = min(text_len, end + context_window)
+            for finding in findings:
+                start = text.find(finding)
 
-                # Only add if this span is unique
-                span_key = (context_start, context_end)
-                if span_key not in unique_spans:
-                    unique_spans.add(span_key)
-                    contexts.append(text[context_start:context_end])
-                    spans.append(span_key)
+                if start > -1:  # Ensure the finding was found in the text
+                    end = start + len(finding)
+
+                    # Expand the context window with single min/max calls
+                    context_start = max(0, start - context_window)
+                    context_end = min(text_len, end + context_window)
+
+                    # Only add if this span is unique
+                    span_key = (context_start, context_end)
+                    if span_key not in unique_spans:
+                        unique_spans.add(span_key)
+                        contexts.append(text[context_start:context_end])
+                        spans.append(span_key)
+                else:
+                    logger.warning("Regex finding '%s' not found in text: %s", finding, text)
 
         # If no valid contexts were extracted, use the full text
         if not contexts:
             contexts.append(text)
             spans.append((0, len(text)))
 
-        return (contexts, spans)
+        return (regex_findings, contexts, spans)
 
-    def _prepare_data(self, rows: list[dict[str, typing.Any]]) -> tuple[list[str], list[tuple[int, int]], list[int]]:
+    def _prepare_data(self, rows: list[dict[str, typing.Any]],
+                      regex_columns: list[str]) -> tuple[list[str], list[tuple[int, int]], list[int]]:
         """
         Prepare the data for processing by ensuring the necessary columns are present.
         """
@@ -161,11 +177,10 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         model_row_to_row_num = []
         all_spans = []
         for (i, row) in enumerate(rows):
-            regex_findings = row['regex_findings']
-            text = row[self.column_name]
-            if regex_findings is not None and len(regex_findings) > 0:
 
-                contexts, spans = self._extract_contexts_from_regex_findings(text, regex_findings)
+            text = row[self.source_column_name]
+            (regex_findings, contexts, spans) = self._extract_contexts_from_regex_findings(text, row, regex_columns)
+            if len(regex_findings) > 0:
                 assert len(contexts) == len(spans)
                 model_data.extend(contexts)
                 all_spans.append(spans)
@@ -230,9 +245,11 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
 
         with msg.payload().mutable_dataframe() as df:
             dlp_findings = []
-            rows = df[[self.column_name, 'regex_findings']].to_dict(orient="records")
 
-            (model_data, all_spans, model_row_to_row_num) = self._prepare_data(rows)
+            regex_columns = [col for col in df.columns if col.startswith(self._regex_col_prefix)]
+            rows = df[[self.source_column_name] + regex_columns].to_dict(orient="records")
+
+            (model_data, all_spans, model_row_to_row_num) = self._prepare_data(rows, regex_columns)
 
             model_entities = []
             for i in range(0, len(model_data), self._model_max_batch_size):

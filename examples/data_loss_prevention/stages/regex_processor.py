@@ -16,10 +16,8 @@
 import json
 import logging
 import pathlib
-import re
 
 import mrc
-import pandas as pd
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
@@ -46,10 +44,8 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
     patterns_file : str | pathlib.Path | None
         Path to a JSON file containing regex patterns for different data types.
         Ignored if `patterns` is provided.
-    column_name : str
+    source_column_name : str
         Name of the column containing the source text to process.
-    confidence: float
-        Confidence score to assign to regex findings.
     """
 
     def __init__(self,
@@ -57,8 +53,7 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
                  *,
                  patterns: dict[str, list[str]] | None = None,
                  patterns_file: str | pathlib.Path | None = None,
-                 column_name: str = "source_text",
-                 confidence: float = 0.9):
+                 source_column_name: str = "source_text"):
         """
         Initialize with regex patterns to detect sensitive data
 
@@ -67,9 +62,8 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
             case_sensitive: Whether regex matching should be case sensitive
         """
         super().__init__(config)
-        self.column_name = column_name
+        self.source_column_name = source_column_name
         self.combined_patterns = {}
-        self.confidence = confidence
 
         if patterns is None:
             if patterns_file is None:
@@ -109,7 +103,7 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
         return False
 
     @property
-    def patterns(self) -> dict[str, re.Pattern]:
+    def patterns(self) -> dict[str, str]:
         """
         Returns the compiled regex patterns used for detection.
         """
@@ -125,7 +119,7 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
 
         with msg.payload().mutable_dataframe() as df:
             # Extract the text column to process
-            text_series = df[self.column_name]
+            text_series = df[self.source_column_name]
 
             for pattern_name, pattern in self.combined_patterns.items():
                 output_column = self._output_columns[pattern_name]
