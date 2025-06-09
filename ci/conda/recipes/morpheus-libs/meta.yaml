@@ -76,6 +76,7 @@ outputs:
         - pip
         - pybind11-stubgen 0.10.5
         - python {{ python }}
+        - pytorch=2.4.0=cuda120*
         - rapidjson 1.1.0
         - scikit-build 0.17.6
         # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
@@ -108,6 +109,7 @@ outputs:
         - python
         - python-confluent-kafka =2.6.1
         - python-graphviz
+        - pytorch
         - rapids-dask-dependency {{ rapids_version }} # provides dask and distributed
         - requests>=2.32.3,<3
         - requests-cache =1.1.*
