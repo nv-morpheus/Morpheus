@@ -296,6 +296,7 @@ dependencies:
       - output_types: [conda]
         packages:
           # Include: cudatoolkit-dev
+          - cuda-python=12.8
           - &cudf cudf=25.02
           - cython=3.0
           - glog>=0.7.1,<0.8

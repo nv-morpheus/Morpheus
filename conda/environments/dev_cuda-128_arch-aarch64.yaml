@@ -24,6 +24,7 @@ dependencies:
 - cuda-nvml-dev=12.8
 - cuda-nvrtc-dev=12.8
 - cuda-nvtx-dev=12.8
+- cuda-python=12.8
 - cuda-sanitizer-api
 - cuda-version=12.8
 - cudf=25.02
