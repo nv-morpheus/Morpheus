@@ -26,6 +26,7 @@ from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
+from morpheus.utils.type_utils import get_df_pkg
 
 
 @register_stage("risk-scorer")
@@ -71,6 +72,8 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
             "num_low": TypeId.INT32
         })
 
+        self._df_pkg = get_df_pkg(config.execution_mode)
+
     @property
     def name(self) -> str:
         return "risk-scorer"
@@ -98,18 +101,12 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
         return "Minimal"
 
-    def _score_row(self, findings: list[dict[str, typing.Any]] | None) -> dict[str, typing.Any]:
+    def _score_fn(self, series: pd.Series) -> list[typing.Any]:
+
+        findings = series.dlp_findings
 
         if findings is None or len(findings) == 0:
-            return {
-                "risk_score": 0,
-                "risk_level": None,
-                "data_types_found": [],
-                "highest_confidence": 0.0,
-                "num_high": 0,
-                "num_medium": 0,
-                "num_low": 0
-            }
+            return [0, None, [], 0.0, 0, 0, 0]
 
         # Calculate total weighted score
         total_score = 0
@@ -155,15 +152,7 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         # Determine risk level from score
         risk_level = self._risk_score_to_level(risk_score)
 
-        return {
-            "risk_score": risk_score,
-            "risk_level": risk_level,
-            "data_types_found": sorted(data_types_found),
-            "highest_confidence": highest_confidence,
-            "num_high": num_high,
-            "num_medium": num_medium,
-            "num_low": num_low
-        }
+        return [risk_score, risk_level, sorted(data_types_found), highest_confidence, num_high, num_medium, num_low]
 
     def score(self, msg: ControlMessage) -> ControlMessage:
         """
@@ -171,28 +160,25 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         """
 
         with msg.payload().mutable_dataframe() as df:
-            dlp_findings = df['dlp_findings']
-            if not isinstance(dlp_findings, pd.Series):
+            is_pandas = isinstance(df, pd.DataFrame)
+            dlp_findings = df[['dlp_findings']]
+            if not is_pandas:
+                dlp_findings = dlp_findings.to_pandas()
 
-                # cudf series doesn't support iteration
-                dlp_findings = dlp_findings.to_arrow().to_pylist()
+            results = dlp_findings.apply(self._score_fn, axis=1, result_type='expand')
 
-            scores = {
-                "risk_score": [],
-                "risk_level": [],
-                "data_types_found": [],
-                "highest_confidence": [],
-                "num_high": [],
-                "num_medium": [],
-                "num_low": [],
-            }
-            for findings in dlp_findings:
-                score = self._score_row(findings)
-                for (key, value) in score.items():
-                    scores[key].append(value)
+            if not is_pandas:
+                results = self._df_pkg.from_pandas(results)
 
-            for key, value in scores.items():
-                df[key] = value
+            df[[
+                "risk_score",
+                "risk_level",
+                "data_types_found",
+                "highest_confidence",
+                "num_high",
+                "num_medium",
+                "num_low"
+            ]] = results
 
         return msg
 
