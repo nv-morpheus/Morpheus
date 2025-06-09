@@ -20,18 +20,21 @@ from morpheus.pipeline.stage_decorator import stage
 
 
 @stage(name="dlp-post-process", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
-def dlp_post_process(msg: ControlMessage) -> MessageMeta:
+def dlp_post_process(msg: ControlMessage, *, include_privacy_masks: bool) -> MessageMeta:
     # Return the message for the next stage
-    with msg.payload().mutable_dataframe() as df:
+    columns = [
+        'source_text',
+        'dlp_findings',
+        'risk_level',
+        'risk_score',
+        'highest_confidence',
+        'num_low',
+        'num_medium',
+        'num_high',
+        'data_types_found'
+    ]
+    if include_privacy_masks:
+        columns.append('privacy_mask')
 
-        return MessageMeta(df[[
-            'source_text',
-            'dlp_findings',
-            'risk_level',
-            'risk_score',
-            'highest_confidence',
-            'num_low',
-            'num_medium',
-            'num_high',
-            'data_types_found'
-        ]])
+    with msg.payload().mutable_dataframe() as df:
+        return MessageMeta(df[columns])

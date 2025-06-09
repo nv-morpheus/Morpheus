@@ -48,13 +48,19 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
         List of dataset names to load from the datasets library.
     num_samples : int | None, optional
         Number of samples to load from each dataset. If not specified, all samples will be loaded.
+    include_privacy_masks : bool, optional
+        Whether to include privacy masks in the output DataFrame. Defaults to False.
     """
 
     AVAILABLE_DATASETS = {
         "gretel": "gretelai/gretel-pii-masking-en-v1",
     }
 
-    def __init__(self, config: Config, dataset_names: list[str], num_samples: int | None = None):
+    def __init__(self,
+                 config: Config,
+                 dataset_names: list[str],
+                 num_samples: int | None = None,
+                 include_privacy_masks: bool = False):
         super().__init__(config)
 
         for name in dataset_names:
@@ -65,6 +71,7 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
         self._num_samples = num_samples
         self._df_str = exec_mode_to_df_type_str(config.execution_mode)
         self._df_class = get_df_class(config.execution_mode)
+        self._include_privacy_masks = include_privacy_masks
 
     @property
     def name(self) -> str:
@@ -101,16 +108,25 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
         return list_of_masks
 
     @classmethod
-    def process_gretel_dataset(cls, df: pd.DataFrame, num_samples: int | None) -> pd.DataFrame:
+    def process_gretel_dataset(cls, df: pd.DataFrame, num_samples: int | None,
+                               include_privacy_masks: bool) -> pd.DataFrame:
         """Process Gretel dataset to standard format."""
-        df = df[["text", "entities"]]
-        df.columns = ["source_text", "privacy_mask"]
+        source_columns = ["text"]
+        output_columns = ["source_text"]
+        if include_privacy_masks:
+            source_columns.append("entities")
+            output_columns.append("privacy_mask")
+
+        df = df[source_columns]
+        df.columns = output_columns
 
         if num_samples is not None:
             df = df.sample(n=num_samples).reset_index(drop=True)
 
-        df["privacy_mask"] = df["privacy_mask"].apply(yaml.safe_load)
-        df["privacy_mask"] = df.apply(cls.fix_gretel_masks, axis=1)
+        if include_privacy_masks:
+            df["privacy_mask"] = df["privacy_mask"].apply(yaml.safe_load)
+            df["privacy_mask"] = df.apply(cls.fix_gretel_masks, axis=1)
+
         df["source"] = "gretel"
 
         return df
@@ -136,11 +152,14 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
         for dataset_name in self._dataset_names:
             dataset = load_dataset(self.AVAILABLE_DATASETS[dataset_name], split="validation")
             df = dataset.to_pandas()
-            if dataset_name == "gretel":
-                df = self.process_gretel_dataset(df, self._num_samples)
 
-            df = self.normalize_privacy_masks(df)
-            df = df[df.privacy_mask.str.len() > 0].reset_index(drop=True)
+            if dataset_name == "gretel":
+                df = self.process_gretel_dataset(df, self._num_samples, self._include_privacy_masks)
+
+            if self._include_privacy_masks:
+
+                df = self.normalize_privacy_masks(df)
+                df = df[df.privacy_mask.str.len() > 0].reset_index(drop=True)
 
             if self._df_str == "cudf":
                 df = self._df_class(df)

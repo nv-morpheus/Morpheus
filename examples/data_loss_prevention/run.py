@@ -58,6 +58,11 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               multiple=True,
               help=("Specify the datasets to use, can be set multiple times, valid datasets are: "
                     f"{', '.join(sorted(DatasetsSourceStage.AVAILABLE_DATASETS.keys()))}."))
+@click.option('--include_privacy_masks',
+              is_flag=True,
+              default=False,
+              show_default=True,
+              help="Include privacy masks in the output DataFrame. This is useful for evaluation.")
 @click.option('--num_samples',
               type=int,
               default=2000,
@@ -83,6 +88,7 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
 def main(log_level: int,
          regex_file: pathlib.Path,
          dataset: list[str],
+         include_privacy_masks: bool,
          num_samples: int,
          model_max_batch_size: int,
          model_cache_dir: pathlib.Path,
@@ -100,7 +106,11 @@ def main(log_level: int,
     pipeline = LinearPipeline(config)
 
     # Set source stage
-    pipeline.set_source(DatasetsSourceStage(config, dataset_names=dataset, num_samples=num_samples))
+    pipeline.set_source(
+        DatasetsSourceStage(config,
+                            dataset_names=dataset,
+                            num_samples=num_samples,
+                            include_privacy_masks=include_privacy_masks))
 
     pipeline.add_stage(MonitorStage(config, description="Datasets Source"))
 
@@ -120,7 +130,7 @@ def main(log_level: int,
 
     pipeline.add_stage(MonitorStage(config, description="Risk Scorer"))
 
-    pipeline.add_stage(dlp_post_process(config))
+    pipeline.add_stage(dlp_post_process(config, include_privacy_masks=include_privacy_masks))
     pipeline.add_stage(DLPOutput(config, filename=str(out_file), overwrite=True))
 
     pipeline.add_stage(MonitorStage(config, description="output"))
