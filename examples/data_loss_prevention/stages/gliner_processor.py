@@ -26,6 +26,7 @@ from morpheus.config import ExecutionMode
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
+from .gliner_triton import GliNERTritonInference
 
 if typing.TYPE_CHECKING:
     from gliner import GLiNER
@@ -90,6 +91,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self.fallback = fallback
         self._cache_dir = cache_dir
         self._needed_columns['dlp_findings'] = TypeId.STRING
+        self.gliner_triton = GliNERTritonInference(model_source_dir="/workspace/examples/data_loss_prevention/model/gliner_bi_encoder")
 
     @property
     def name(self) -> str:
@@ -235,7 +237,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         if current_row is not None:
             spans = all_spans[current_row]
             dlp_findings[current_row] = self._process_one_result(entities_per_row, spans)
-
         return dlp_findings
 
     def process(self, msg: ControlMessage) -> ControlMessage:
@@ -254,13 +255,18 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
             model_entities = []
             for i in range(0, len(model_data), self._model_max_batch_size):
                 batch_data = model_data[i:i + self._model_max_batch_size]
+                entities = self.gliner_triton.process(
+                    batch_data,
+                    self.entity_labels
+                )
+                model_entities.extend(entities)
 
-                model_entities.extend(
-                    self.model.batch_predict_entities(batch_data,
-                                                      self.entity_labels,
-                                                      flat_ner=True,
-                                                      threshold=self.confidence_threshold,
-                                                      multi_label=False))
+                # model_entities.extend(
+                #     self.model.batch_predict_entities(batch_data,
+                #                                       self.entity_labels,
+                #                                       flat_ner=True,
+                #                                       threshold=self.confidence_threshold,
+                #                                       multi_label=False))
 
             dlp_findings = self._process_results(len(rows), model_entities, all_spans, model_row_to_row_num)
 
