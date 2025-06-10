@@ -118,7 +118,7 @@ def mlflow_uri(tmp_path):
 
     yield uri
 
-    num_runs = len(fluent._active_run_stack)
+    num_runs = len(fluent._active_run_stack.get())
     for _ in range(num_runs):
         mlflow.end_run()
 
