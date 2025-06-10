@@ -14,7 +14,7 @@ dependencies:
 - nodejs=18.*
 - papermill=2.6.0
 - pip
-- pytorch=2.4.0=cuda120*
+- pytorch<2.5=cpu*
 - s3fs=2024.10
 - tini=0.19
 - pip:

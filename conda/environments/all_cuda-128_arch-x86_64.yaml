@@ -102,7 +102,7 @@ dependencies:
 - python-docx==1.1.0
 - python-graphviz
 - python=3.12
-- pytorch=2.4.0=cuda120*
+- pytorch<2.5=cuda120*
 - rapidjson=1.1.0
 - rapids-dask-dependency=25.02
 - rdma-core>=48

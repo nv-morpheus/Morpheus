@@ -129,7 +129,8 @@ outputs:
         - pytest-benchmark
         - pytest-cov
         - pytest =7.4.4
-        - pytorch=2.4.0=cuda120*
+        - pytorch <2.5=cuda120* [linux64]
+        - pytorch <2.5=cpu* [aarch64]
       source_files:
         - dependencies.yaml
         - pyproject.toml
@@ -186,7 +187,8 @@ outputs:
         - pytest-benchmark
         - pytest-cov
         - pytest =7.4.4
-        - pytorch=2.4.0=cuda120*
+        - pytorch <2.5=cuda120* [linux64]
+        - pytorch <2.5=cpu* [aarch64]
       source_files:
         - dependencies.yaml
         - pyproject.toml
@@ -248,7 +250,8 @@ outputs:
         - pytest-benchmark
         - pytest-cov
         - pytest =7.4.4
-        - pytorch=2.4.0=cuda120*
+        - pytorch <2.5=cuda120* [linux64]
+        - pytorch <2.5=cpu* [aarch64]
       source_files:
         - dependencies.yaml
         - pyproject.toml

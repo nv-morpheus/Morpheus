@@ -405,7 +405,6 @@ dependencies:
           - pydantic
           - python-confluent-kafka=2.6.1
           - python-graphviz
-          - &pytorch pytorch=2.4.0=cuda120*
           - pluggy=1.3
           - rapids-dask-dependency=25.02 # provides dask and distributed
           - requests>=2.32.3,<3
@@ -429,13 +428,15 @@ dependencies:
           - matrix:
               arch: x86_64
             packages:
+              - &pytorch_cuda pytorch<2.5=cuda120*
               - pip:
                 # Milvus does not have arm64 builds for linux
                 - &milvus milvus==2.3.5 # update to match pymilvus when available
                 - &pymilvus pymilvus==2.3.6
           - matrix:
               arch: aarch64
-            packages: []
+            packages:
+              - &pytorch_cpu pytorch<2.5=cpu*
 
   test_python_morpheus:
     common:
@@ -502,9 +503,20 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - *pytorch
           - morpheus-dfp=25.06
           - tini=0.19
+    specific:
+      - output_types: [conda]
+        matrices:
+          - matrix:
+              arch: x86_64
+            packages:
+              - *pytorch_cuda
+          - matrix:
+              arch: aarch64
+            packages:
+              - *pytorch_cpu
+
 
   example-gnn:
     common:
