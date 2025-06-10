@@ -48,6 +48,8 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
         List of dataset names to load from the datasets library.
     num_samples : int | None, optional
         Number of samples to load from each dataset. If not specified, all samples will be loaded.
+    repeat : int, default = 1, min = 1
+        Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
     include_privacy_masks : bool, optional
         Whether to include privacy masks in the output DataFrame. Defaults to False.
     """
@@ -60,6 +62,7 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
                  config: Config,
                  dataset_names: list[str],
                  num_samples: int | None = None,
+                 repeat: int = 1,
                  include_privacy_masks: bool = False):
         super().__init__(config)
 
@@ -72,6 +75,7 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
         self._df_str = exec_mode_to_df_type_str(config.execution_mode)
         self._df_class = get_df_class(config.execution_mode)
         self._include_privacy_masks = include_privacy_masks
+        self._repeat_count = repeat
 
     @property
     def name(self) -> str:
@@ -164,7 +168,17 @@ class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource)
             if self._df_str == "cudf":
                 df = self._df_class(df)
 
-            if subscription.is_subscribed():
-                yield MessageMeta(df=df)
-            else:
-                break
+            for i in range(self._repeat_count):
+                if not subscription.is_subscribed():
+                    break
+
+                msg = MessageMeta(df)
+
+                # If we are looping, copy the object. Do this before we push the object in case it changes
+                if (i + 1 < self._repeat_count):
+                    df = df.copy()
+
+                    # Shift the index to allow for unique indices without reading more data
+                    df.index += len(df)
+
+                yield msg

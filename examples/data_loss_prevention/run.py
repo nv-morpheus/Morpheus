@@ -32,6 +32,7 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.utils.logger import configure_logging
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -58,16 +59,28 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               multiple=True,
               help=("Specify the datasets to use, can be set multiple times, valid datasets are: "
                     f"{', '.join(sorted(DatasetsSourceStage.AVAILABLE_DATASETS.keys()))}."))
+@click.option('--input_file',
+              type=click.Path(dir_okay=False, exists=True, readable=True),
+              default=None,
+              show_default=True,
+              help=("Input file to use, if specified, overrides the dataset option."))
 @click.option('--include_privacy_masks',
               is_flag=True,
               default=False,
               show_default=True,
-              help="Include privacy masks in the output DataFrame. This is useful for evaluation.")
+              help=("Include privacy masks in the output DataFrame, ignored if --input_file is set. "
+                    "This is useful for evaluation."))
 @click.option('--num_samples',
               type=int,
               default=2000,
               show_default=True,
-              help="Number of samples to use from each dataset, set to -1 for all samples.")
+              help=("Number of samples to use from each dataset, ignored if --input_file is set, "
+                    "set to -1 for all samples."))
+@click.option('--repeat',
+              type=int,
+              default=1,
+              show_default=True,
+              help=("Repeat the input dataset, useful for testing. A value of 1 means no repeat."))
 @click.option('--model_max_batch_size',
               type=int,
               default=16,
@@ -88,8 +101,10 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
 def main(log_level: int,
          regex_file: pathlib.Path,
          dataset: list[str],
+         input_file: pathlib.Path | None,
          include_privacy_masks: bool,
          num_samples: int,
+         repeat: int,
          model_max_batch_size: int,
          model_cache_dir: pathlib.Path,
          out_file: pathlib.Path):
@@ -106,11 +121,15 @@ def main(log_level: int,
     pipeline = LinearPipeline(config)
 
     # Set source stage
-    pipeline.set_source(
-        DatasetsSourceStage(config,
-                            dataset_names=dataset,
-                            num_samples=num_samples,
-                            include_privacy_masks=include_privacy_masks))
+    if input_file is not None:
+        pipeline.set_source(FileSourceStage(config, filename=input_file, repeat=repeat))
+    else:
+        pipeline.set_source(
+            DatasetsSourceStage(config,
+                                dataset_names=dataset,
+                                num_samples=num_samples,
+                                include_privacy_masks=include_privacy_masks,
+                                repeat=repeat))
 
     pipeline.add_stage(MonitorStage(config, description="Datasets Source"))
 
