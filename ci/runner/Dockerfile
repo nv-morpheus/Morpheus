@@ -33,6 +33,7 @@ ARG CUDA_SHORT_VER
 SHELL ["/bin/bash",  "-c"]
 
 ENV REAL_ARCH=${REAL_ARCH}
+ENV CONDA_OVERRIDE_CUDA=${CUDA_SHORT_VER}
 
 # https://github.com/rapidsai/ci-imgs/issues/241
 RUN rm -rf /tmp/sccache* /root/.cache
@@ -89,6 +90,8 @@ ARG REAL_ARCH
 ARG CUDA_SHORT_VER
 ARG PROJ_NAME
 ARG PYTHON_VER
+
+ENV CONDA_OVERRIDE_CUDA=${CUDA_SHORT_VER}
 
 RUN --mount=type=cache,id=apt,target=/var/cache/apt \
     apt update && \

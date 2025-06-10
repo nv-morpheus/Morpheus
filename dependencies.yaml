@@ -428,7 +428,7 @@ dependencies:
           - matrix:
               arch: x86_64
             packages:
-              - &pytorch_cuda pytorch<2.5=cuda120*
+              - &pytorch_cuda pytorch=2.4.0=cuda120*
               - pip:
                 # Milvus does not have arm64 builds for linux
                 - &milvus milvus==2.3.5 # update to match pymilvus when available

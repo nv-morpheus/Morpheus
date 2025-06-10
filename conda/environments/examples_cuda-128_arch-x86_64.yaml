@@ -51,7 +51,7 @@ dependencies:
 - python-docx==1.1.0
 - python-graphviz
 - python=3.12
-- pytorch<2.5=cuda120*
+- pytorch=2.4.0=cuda120*
 - rapids-dask-dependency=25.02
 - requests-cache=1.1
 - requests-toolbelt=1.0
