@@ -1,30 +1,46 @@
 import torch
 import tritonclient.http as httpclient
-from gliner import GLiNER
 
 
 class GliNERTritonInference:
 
-    def __init__(self,
-                 model_source_dir: str,
-                 triton_model_name: str = "gliner_bi_encoder",
-                 gliner_threshold: float = 0.3):
+    def __init__(
+            self,
+            model_source_dir: str,
+            triton_model_name: str = "gliner_bi_encoder",
+            gliner_threshold: float = 0.3,
+            onnx_path: str = "model.onnx",  # relative to the model_source_dir
+            map_location: str = "cuda"):
 
         # We load the model locally to use its pre/post-processing functions.
         # The actual heavy inference will be done on Triton.
-        self.gliner_model = GLiNER.from_pretrained(model_source_dir,
-                                                   local_files_only=True,
-                                                   onnx_path="model.onnx",
-                                                   map_location="cuda")
+        self._model = None
+        self._model_source_dir = model_source_dir
+        self._onnx_path = onnx_path
+        self._map_location = map_location
         self.triton_model_name = triton_model_name
         self.gliner_threshold = gliner_threshold
         self.labels_embeddings = torch.tensor([])
+        self.client = httpclient.InferenceServerClient(url="localhost:8000")
+
+    @property
+    def model(self) -> "GLiNER":
+        """
+        Return the GLiNER model instance.
+        """
+        if self._model is None:
+            from gliner import GLiNER
+            self._model = GLiNER.from_pretrained(self._model_source_dir,
+                                                 local_files_only=True,
+                                                 onnx_path=self._onnx_path,
+                                                 map_location=self._map_location)
+        return self._model
 
     def post_process_results(self, logits_tensor, raw_batch, texts) -> list:
         """
         Post-process the results from the ONNX model.
         """
-        onnx_results = self.gliner_model.decoder.decode(
+        onnx_results = self.model.decoder.decode(
             raw_batch["tokens"],
             raw_batch["id_to_classes"],
             logits_tensor,
@@ -58,9 +74,9 @@ class GliNERTritonInference:
         """
         # === 1. PRE-PROCESSING ===
         if self.labels_embeddings.numel() == 0:
-            self.labels_embeddings = self.gliner_model.encode_labels(labels)
+            self.labels_embeddings = self.model.encode_labels(labels)
 
-        model_input, raw_batch = self.gliner_model.prepare_model_inputs(texts, labels, prepare_entities=False)
+        model_input, raw_batch = self.model.prepare_model_inputs(texts, labels, prepare_entities=False)
 
         # Convert torch tensors to numpy for Triton
         onnx_inputs = {
@@ -84,7 +100,6 @@ class GliNERTritonInference:
         onnx_inputs, raw_batch = self.pre_process(texts, labels)
 
         # === 2. TRITON INFERENCE ===
-        client = httpclient.InferenceServerClient(url="localhost:8000")
 
         # Create InferInput objects
         triton_inputs = [
@@ -100,7 +115,7 @@ class GliNERTritonInference:
         triton_outputs = [httpclient.InferRequestedOutput("output")]
 
         # Get response
-        response = client.infer(self.triton_model_name, inputs=triton_inputs, outputs=triton_outputs)
+        response = self.client.infer(self.triton_model_name, inputs=triton_inputs, outputs=triton_outputs)
         logits_np = response.as_numpy("output")
 
         # === 3. POST-PROCESSING ===

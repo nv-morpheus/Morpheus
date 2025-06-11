@@ -77,15 +77,12 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self.confidence_threshold = confidence_threshold
         self.entity_labels = labels
 
-        # Load the fine-tuned GLiNER model
         if config.execution_mode == ExecutionMode.GPU:
             map_location = "cuda"
         else:
             map_location = "cpu"
 
         self._model_name = model_name
-        self._map_location = map_location
-        self._model = None
         self._model_max_batch_size = config.model_max_batch_size
         self.source_column_name = source_column_name
         self._regex_col_prefix = regex_col_prefix
@@ -93,7 +90,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self.fallback = fallback
         self._cache_dir = cache_dir
         self._needed_columns['dlp_findings'] = TypeId.STRING
-        self.gliner_triton = GliNERTritonInference(model_source_dir=model_source_dir)
+        self.gliner_triton = GliNERTritonInference(model_source_dir=model_source_dir, map_location=map_location)
 
     @property
     def name(self) -> str:
@@ -104,19 +101,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
 
     def supports_cpp_node(self) -> bool:
         return False
-
-    @property
-    def model(self) -> "GLiNER":
-        """
-        Return the GLiNER model instance.
-        """
-        if self._model is None:
-            from gliner import GLiNER
-            self._model = GLiNER.from_pretrained(self._model_name,
-                                                 map_location=self._map_location,
-                                                 cache_dir=self._cache_dir)
-
-        return self._model
 
     def _extract_contexts_from_regex_findings(
             self, text: str, row: dict[str, typing.Any],
