@@ -27,8 +27,7 @@ from morpheus.messages import ControlMessage
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 
-if typing.TYPE_CHECKING:
-    from gliner import GLiNER
+from .gliner_triton import GliNERTritonInference
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -62,6 +61,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                  config: Config,
                  *,
                  labels: list[str],
+                 model_source_dir: str | None = None,
                  model_name: str = "gretelai/gretel-gliner-bi-small-v1.0",
                  source_column_name: str = "source_text",
                  regex_col_prefix: str = "regex_matches_",
@@ -74,15 +74,12 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self.confidence_threshold = confidence_threshold
         self.entity_labels = labels
 
-        # Load the fine-tuned GLiNER model
         if config.execution_mode == ExecutionMode.GPU:
             map_location = "cuda"
         else:
             map_location = "cpu"
 
         self._model_name = model_name
-        self._map_location = map_location
-        self._model = None
         self._model_max_batch_size = config.model_max_batch_size
         self.source_column_name = source_column_name
         self._regex_col_prefix = regex_col_prefix
@@ -90,6 +87,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self.fallback = fallback
         self._cache_dir = cache_dir
         self._needed_columns['dlp_findings'] = TypeId.STRING
+        self.gliner_triton = GliNERTritonInference(model_source_dir=model_source_dir, map_location=map_location)
 
     @property
     def name(self) -> str:
@@ -100,19 +98,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
 
     def supports_cpp_node(self) -> bool:
         return False
-
-    @property
-    def model(self) -> "GLiNER":
-        """
-        Return the GLiNER model instance.
-        """
-        if self._model is None:
-            from gliner import GLiNER
-            self._model = GLiNER.from_pretrained(self._model_name,
-                                                 map_location=self._map_location,
-                                                 cache_dir=self._cache_dir)
-
-        return self._model
 
     def _extract_contexts_from_regex_findings(
             self, text: str, row: dict[str, typing.Any],
@@ -235,7 +220,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         if current_row is not None:
             spans = all_spans[current_row]
             dlp_findings[current_row] = self._process_one_result(entities_per_row, spans)
-
         return dlp_findings
 
     def process(self, msg: ControlMessage) -> ControlMessage:
@@ -254,13 +238,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
             model_entities = []
             for i in range(0, len(model_data), self._model_max_batch_size):
                 batch_data = model_data[i:i + self._model_max_batch_size]
-
-                model_entities.extend(
-                    self.model.batch_predict_entities(batch_data,
-                                                      self.entity_labels,
-                                                      flat_ner=True,
-                                                      threshold=self.confidence_threshold,
-                                                      multi_label=False))
+                entities = self.gliner_triton.process(batch_data, self.entity_labels)
+                model_entities.extend(entities)
 
             dlp_findings = self._process_results(len(rows), model_entities, all_spans, model_row_to_row_num)
 
