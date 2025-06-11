@@ -14,6 +14,7 @@
 
 import os
 import typing
+from functools import partial
 
 import numpy as np
 import torch
@@ -87,7 +88,27 @@ class GliNERTritonInference:
 
         return self._labels
 
-    def post_process_results(self, logits_tensor, raw_batch, texts) -> list:
+    def pre_process(self, texts):
+        """
+        Pre-process the data for the ONNX model.
+        """
+        # === 1. PRE-PROCESSING ===
+        model_input, raw_batch = self.model.prepare_model_inputs(texts, self.labels, prepare_entities=False)
+
+        # Convert torch tensors to numpy for Triton
+        onnx_inputs = [
+            ("labels_embeddings", self.labels_embeddings),
+            ("input_ids", model_input["input_ids"].cpu().numpy()),
+            ("attention_mask", model_input["attention_mask"].cpu().numpy()),
+            ("words_mask", model_input["words_mask"].cpu().numpy()),
+            ("text_lengths", model_input["text_lengths"].cpu().numpy()),
+            ("span_idx", model_input["span_idx"].cpu().numpy()),
+            ("span_mask", model_input["span_mask"].cpu().numpy()),
+        ]
+
+        return onnx_inputs, raw_batch
+
+    def _process_inference_results(self, logits_tensor, raw_batch, texts) -> list:
         """
         Post-process the results from the ONNX model.
         """
@@ -119,27 +140,23 @@ class GliNERTritonInference:
             all_entities.append(entities)
         return all_entities
 
-    def pre_process(self, texts):
-        """
-        Pre-process the data for the ONNX model.
-        """
-        # === 1. PRE-PROCESSING ===
-        model_input, raw_batch = self.model.prepare_model_inputs(texts, self.labels, prepare_entities=False)
+    def _infer_callback(self,
+                        raw_batch: dict,
+                        texts: list[str],
+                        cb,
+                        result: tritonclient.InferResult,
+                        error: tritonclient.InferenceServerException | None = None):
+        if (error is not None):
+            raise error
 
-        # Convert torch tensors to numpy for Triton
-        onnx_inputs = [
-            ("labels_embeddings", self.labels_embeddings),
-            ("input_ids", model_input["input_ids"].cpu().numpy()),
-            ("attention_mask", model_input["attention_mask"].cpu().numpy()),
-            ("words_mask", model_input["words_mask"].cpu().numpy()),
-            ("text_lengths", model_input["text_lengths"].cpu().numpy()),
-            ("span_idx", model_input["span_idx"].cpu().numpy()),
-            ("span_mask", model_input["span_mask"].cpu().numpy()),
-        ]
+        logits_np = result.as_numpy("output")
 
-        return onnx_inputs, raw_batch
+        # === 3. POST-PROCESSING ===
+        logits = torch.from_numpy(logits_np).to(self.model.device)
+        entities = self._process_inference_results(logits, raw_batch, texts)
+        cb(entities=entities)
 
-    def process(self, texts: list[str]):
+    def process(self, texts: list[str], callback):
         """
         Performs full NER pipeline: pre-process, infer, post-process.
         """
@@ -161,10 +178,7 @@ class GliNERTritonInference:
         triton_outputs = [tritonclient.InferRequestedOutput("output")]
 
         # Get response
-        response = self.client.infer(self.triton_model_name, inputs=triton_inputs, outputs=triton_outputs)
-        logits_np = response.as_numpy("output")
-
-        # === 3. POST-PROCESSING ===
-        logits = torch.from_numpy(logits_np).to(self.model.device)
-
-        return self.post_process_results(logits, raw_batch, texts)
+        self.client.async_infer(self.triton_model_name,
+                                inputs=triton_inputs,
+                                outputs=triton_outputs,
+                                callback=partial(self._infer_callback, raw_batch, texts, callback))

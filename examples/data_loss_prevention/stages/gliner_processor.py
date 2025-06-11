@@ -15,6 +15,7 @@
 
 import logging
 import typing
+from functools import partial
 
 import mrc
 from mrc.core import operators as ops
@@ -76,6 +77,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self._model_max_batch_size = config.model_max_batch_size
         self.source_column_name = source_column_name
         self._regex_col_prefix = regex_col_prefix
+        self._confidence_threshold = confidence_threshold
         self.context_window = context_window
         self.fallback = fallback
         self._needed_columns['dlp_findings'] = TypeId.STRING
@@ -196,6 +198,14 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                          model_row_to_row_num: list[int]) -> list[list[dict[str, typing.Any]]]:
         dlp_findings = [[] for _ in range(num_rows)]
 
+        # flattend the model_entities list
+        _flat = []
+        for entities in model_entities:
+            assert entities is not None
+            _flat.extend(entities)
+
+        model_entities = _flat
+
         entities_per_row = None
         current_row = None
         for (i, entities) in enumerate(model_entities):
@@ -216,6 +226,15 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
             dlp_findings[current_row] = self._process_one_result(entities_per_row, spans)
         return dlp_findings
 
+    def _infer_callback(self,
+                        *,
+                        batch_num: int,
+                        model_entities: list[list[dict[str, typing.Any]]],
+                        future: mrc.Future,
+                        entities: list[list[dict[str, typing.Any]]]):
+        model_entities[batch_num] = entities
+        future.set_result(batch_num)
+
     def process(self, msg: ControlMessage) -> ControlMessage:
         """
         Analyze text using an entity prediction model for sensitive data detection
@@ -229,11 +248,23 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
 
             (model_data, all_spans, model_row_to_row_num) = self._prepare_data(rows, regex_columns)
 
+            batches = []
             model_entities = []
             for i in range(0, len(model_data), self._model_max_batch_size):
                 batch_data = model_data[i:i + self._model_max_batch_size]
-                entities = self.gliner_triton.process(batch_data)
-                model_entities.extend(entities)
+                batches.append(batch_data)
+                model_entities.append(None)
+
+            futures = []
+            for (batch_num, batch) in enumerate(batches):
+                future = mrc.Future()
+                futures.append(future)
+                self.gliner_triton.process(
+                    batch,
+                    partial(self._infer_callback, batch_num=batch_num, model_entities=model_entities, future=future))
+
+            for future in futures:
+                future.result()
 
             dlp_findings = self._process_results(len(rows), model_entities, all_spans, model_row_to_row_num)
 
