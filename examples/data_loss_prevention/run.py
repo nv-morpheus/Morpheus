@@ -81,6 +81,7 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               default=1,
               show_default=True,
               help=("Repeat the input dataset, useful for testing. A value of 1 means no repeat."))
+@click.option("--server_url", required=True, help="Tritonserver url.", default="localhost:8001")
 @click.option('--model_max_batch_size',
               type=int,
               default=16,
@@ -105,6 +106,7 @@ def main(log_level: int,
          include_privacy_masks: bool,
          num_samples: int,
          repeat: int,
+         server_url: str,
          model_max_batch_size: int,
          model_source_dir: pathlib.Path,
          out_file: pathlib.Path):
@@ -139,7 +141,7 @@ def main(log_level: int,
 
     pipeline.add_stage(MonitorStage(config, description="Regex Processor"))
 
-    pipeline.add_stage(GliNERProcessor(config, model_source_dir=str(model_source_dir)))
+    pipeline.add_stage(GliNERProcessor(config, server_url=server_url, model_source_dir=str(model_source_dir)))
 
     pipeline.add_stage(MonitorStage(config, description="GliNER Processor"))
 

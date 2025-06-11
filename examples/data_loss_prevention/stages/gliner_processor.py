@@ -60,6 +60,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                  config: Config,
                  *,
                  model_source_dir: str | None = None,
+                 server_url: str = "localhost:8001",
+                 triton_model_name: str = "gliner_bi_encoder",
                  model_name: str = "gretelai/gretel-gliner-bi-small-v1.0",
                  source_column_name: str = "source_text",
                  regex_col_prefix: str = "regex_matches_",
@@ -81,7 +83,9 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self.context_window = context_window
         self.fallback = fallback
         self._needed_columns['dlp_findings'] = TypeId.STRING
-        self.gliner_triton = GliNERTritonInference(model_source_dir=model_source_dir,
+        self.gliner_triton = GliNERTritonInference(server_url=server_url,
+                                                   triton_model_name=triton_model_name,
+                                                   model_source_dir=model_source_dir,
                                                    map_location=map_location,
                                                    gliner_threshold=confidence_threshold)
 

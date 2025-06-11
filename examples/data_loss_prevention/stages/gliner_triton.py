@@ -26,13 +26,12 @@ if typing.TYPE_CHECKING:
 
 class GliNERTritonInference:
 
-    def __init__(
-            self,
-            model_source_dir: str,
-            server_url: str = "localhost:8001",  # TODO: Make these CLI flags
-            triton_model_name: str = "gliner_bi_encoder",
-            gliner_threshold: float = 0.3,
-            map_location: str = "cuda"):
+    def __init__(self,
+                 model_source_dir: str,
+                 server_url: str = "localhost:8001",
+                 triton_model_name: str = "gliner_bi_encoder",
+                 gliner_threshold: float = 0.3,
+                 map_location: str = "cuda"):
 
         # We load the model locally to use its pre/post-processing functions.
         # The actual heavy inference will be done on Triton.
