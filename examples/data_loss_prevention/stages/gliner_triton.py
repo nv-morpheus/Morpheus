@@ -122,14 +122,12 @@ class GliNERTritonInference:
         # === 2. TRITON INFERENCE ===
 
         # Create InferInput objects
-        triton_inputs = [
-            tritonclient.InferInput(name, data.shape, tritonclient.np_to_triton_dtype(data.dtype))
-            for name, data in onnx_inputs.items()
-        ]
+        triton_inputs = []
 
-        # Set data for each input
-        for i, name in enumerate(onnx_inputs.keys()):
-            triton_inputs[i].set_data_from_numpy(onnx_inputs[name])
+        for name, data in onnx_inputs.items():
+            triton_input = tritonclient.InferInput(name, data.shape, tritonclient.np_to_triton_dtype(data.dtype))
+            triton_input.set_data_from_numpy(data)
+            triton_inputs.append(triton_input)
 
         # Request output
         triton_outputs = [tritonclient.InferRequestedOutput("output")]
@@ -139,6 +137,6 @@ class GliNERTritonInference:
         logits_np = response.as_numpy("output")
 
         # === 3. POST-PROCESSING ===
-        logits = torch.from_numpy(logits_np)
+        logits = torch.from_numpy(logits_np).to(self.model.device)
 
         return self.post_process_results(logits, raw_batch, texts)
