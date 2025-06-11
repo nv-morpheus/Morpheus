@@ -26,6 +26,7 @@ from morpheus.config import ExecutionMode
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
+
 from .gliner_triton import GliNERTritonInference
 
 if typing.TYPE_CHECKING:
@@ -63,6 +64,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                  config: Config,
                  *,
                  labels: list[str],
+                 model_source_dir: str | None = None,
                  model_name: str = "gretelai/gretel-gliner-bi-small-v1.0",
                  source_column_name: str = "source_text",
                  regex_col_prefix: str = "regex_matches_",
@@ -91,7 +93,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self.fallback = fallback
         self._cache_dir = cache_dir
         self._needed_columns['dlp_findings'] = TypeId.STRING
-        self.gliner_triton = GliNERTritonInference(model_source_dir="/workspace/examples/data_loss_prevention/model/gliner_bi_encoder")
+        self.gliner_triton = GliNERTritonInference(model_source_dir=model_source_dir)
 
     @property
     def name(self) -> str:
@@ -255,10 +257,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
             model_entities = []
             for i in range(0, len(model_data), self._model_max_batch_size):
                 batch_data = model_data[i:i + self._model_max_batch_size]
-                entities = self.gliner_triton.process(
-                    batch_data,
-                    self.entity_labels
-                )
+                entities = self.gliner_triton.process(batch_data, self.entity_labels)
                 model_entities.extend(entities)
 
                 # model_entities.extend(

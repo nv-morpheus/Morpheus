@@ -87,6 +87,11 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               show_default=True,
               help=("Maximum batch size for model inference, used by the GliNER processor. "
                     "Larger values may improve performance but require more GPU memory."))
+@click.option('--model_source_dir',
+              help="Directory containing the GliNER model files",
+              type=click.Path(exists=True, dir_okay=True, file_okay=False, readable=True, resolve_path=True),
+              default=os.path.join(CUR_DIR, "model/gliner_bi_encoder"),
+              show_default=True)
 @click.option('--model_cache_dir',
               help="Directory to cache the GliNER model",
               type=click.Path(exists=False, dir_okay=True, file_okay=False, writable=True, resolve_path=True),
@@ -106,6 +111,7 @@ def main(log_level: int,
          num_samples: int,
          repeat: int,
          model_max_batch_size: int,
+         model_source_dir: pathlib.Path,
          model_cache_dir: pathlib.Path,
          out_file: pathlib.Path):
     configure_logging(log_level=log_level)
@@ -141,7 +147,10 @@ def main(log_level: int,
     pipeline.add_stage(MonitorStage(config, description="Regex Processor"))
 
     pipeline.add_stage(
-        GliNERProcessor(config, labels=list(regex_processor.patterns.keys()), cache_dir=str(model_cache_dir)))
+        GliNERProcessor(config,
+                        labels=list(regex_processor.patterns.keys()),
+                        model_source_dir=model_source_dir,
+                        cache_dir=str(model_cache_dir)))
 
     pipeline.add_stage(MonitorStage(config, description="GliNER Processor"))
 
