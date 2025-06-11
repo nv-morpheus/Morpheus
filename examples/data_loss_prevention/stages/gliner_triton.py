@@ -99,15 +99,15 @@ class GliNERTritonInference:
         model_input, raw_batch = self.model.prepare_model_inputs(texts, labels, prepare_entities=False)
 
         # Convert torch tensors to numpy for Triton
-        onnx_inputs = {
-            "labels_embeddings": self.labels_embeddings.cpu().numpy(),
-            "input_ids": model_input["input_ids"].cpu().numpy(),
-            "attention_mask": model_input["attention_mask"].cpu().numpy(),
-            "words_mask": model_input["words_mask"].cpu().numpy(),
-            "text_lengths": model_input["text_lengths"].cpu().numpy(),
-            "span_idx": model_input["span_idx"].cpu().numpy(),
-            "span_mask": model_input["span_mask"].cpu().numpy(),
-        }
+        onnx_inputs = [
+            ("labels_embeddings", self.labels_embeddings.cpu().numpy()),
+            ("input_ids", model_input["input_ids"].cpu().numpy()),
+            ("attention_mask", model_input["attention_mask"].cpu().numpy()),
+            ("words_mask", model_input["words_mask"].cpu().numpy()),
+            ("text_lengths", model_input["text_lengths"].cpu().numpy()),
+            ("span_idx", model_input["span_idx"].cpu().numpy()),
+            ("span_mask", model_input["span_mask"].cpu().numpy()),
+        ]
 
         return onnx_inputs, raw_batch
 
@@ -124,7 +124,7 @@ class GliNERTritonInference:
         # Create InferInput objects
         triton_inputs = []
 
-        for name, data in onnx_inputs.items():
+        for (name, data) in onnx_inputs:
             triton_input = tritonclient.InferInput(name, data.shape, tritonclient.np_to_triton_dtype(data.dtype))
             triton_input.set_data_from_numpy(data)
             triton_inputs.append(triton_input)
