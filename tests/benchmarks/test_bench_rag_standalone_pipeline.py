@@ -28,16 +28,15 @@ from _utils.dataset_manager import DatasetManager
 from _utils.milvus import populate_milvus
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.llm import LLMEngine
-from morpheus.llm.nodes.extracter_node import ExtracterNode
-from morpheus.llm.nodes.rag_node import RAGNode
-from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus_llm.llm import LLMEngine
+from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
+from morpheus_llm.llm.nodes.rag_node import RAGNode
+from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
+from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
 
 EMBEDDING_SIZE = 384
 QUESTION = "What are some new attacks discovered in the cyber security industry?"
@@ -107,8 +106,7 @@ def _run_pipeline(config: Config,
 
     pipe.set_source(InMemorySourceStage(config, dataframes=[source_df]))
 
-    pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
+    pipe.add_stage(DeserializeStage(config, task_type="llm_engine", task_payload=completion_task))
 
     pipe.add_stage(
         LLMEngineStage(config,
@@ -123,7 +121,7 @@ def _run_pipeline(config: Config,
 
 
 @pytest.mark.milvus
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.use_cudf
 @pytest.mark.benchmark
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
@@ -137,10 +135,12 @@ def test_rag_standalone_pipe(benchmark: collections.abc.Callable[[collections.ab
                              repeat_count: int,
                              import_mod: types.ModuleType,
                              llm_service_name: str):
+    if llm_service_name == "openai":
+        os.environ.update({"OPENAI_API_KEY": "test_api_key"})
     collection_name = f"test_bench_rag_standalone_pipe_{llm_service_name}"
     populate_milvus(milvus_server_uri=milvus_server_uri,
                     collection_name=collection_name,
-                    resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
+                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
                     df=dataset["service/milvus_rss_data.json"],
                     overwrite=True)
 

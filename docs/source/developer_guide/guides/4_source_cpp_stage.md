@@ -17,7 +17,7 @@ limitations under the License.
 
 # Creating a C++ Source Stage
 ## Building the Example
-The code for this guide can be found in the `examples/developer_guide/4_rabbitmq_cpp_stage` directory of the Morpheus repository. There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to cmake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+The code for this guide can be found in the `examples/developer_guide/4_rabbitmq_cpp_stage` directory of the Morpheus repository. There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to CMake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
 ```bash
 CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
 ```
@@ -35,6 +35,8 @@ pip install ./
 For this example, we are going to add a C++ implementation for the `RabbitMQSourceStage` we designed in the Python examples. The Python implementation of this stage emits messages of the type `MessageMeta`; as such, our C++ implementation must do the same.
 
 For communicating with [RabbitMQ](https://www.rabbitmq.com/) we will be using the [SimpleAmqpClient](https://github.com/alanxz/SimpleAmqpClient) library, and [libcudf](https://docs.rapids.ai/api/libcudf/stable/index.html) for constructing the `DataFrame`.
+
+> **Note**: Since the C++ implementation will only be used when the execution mode is set to GPU. It is safe to assume the C++ implementation will always interact with cuDF DataFrames, and the Python implementation will always interact with pandas DataFrames.
 
 ## Header Definition
 
@@ -73,7 +75,7 @@ class MORPHEUS_EXPORT RabbitMQSourceStage : public mrc::pymrc::PythonSource<std:
     using typename base_t::subscriber_fn_t;
 ```
 
-Our base class defines `source_type_t` as an alias for `std::shared_ptr<MessageMeta>`, which we are going to use as it will occur in some of our function signatures. The way to think about `source_type_t` is it is the stage we are writing emits objects of type `MessageMeta`. The `subscriber_fn_t` is an alias for a function which will receive an `rxcpp::subscriber` instance and emit messages into the pipeline.  The class we are deriving from `PythonSource` defines both of these to make writing function signatures easier.
+Our base class defines `source_type_t` as an alias for `std::shared_ptr<MessageMeta>`, which we are going to use as it will occur in some of our function signatures. The way to think about `source_type_t` is it is the stage we are writing emits objects of type `MessageMeta`. The `subscriber_fn_t` is an alias for a function which will receive an `rxcpp::subscriber` instance and emit messages into the pipeline. The class we are deriving from `PythonSource` defines both of these to make writing function signatures easier.
 
 Our constructor is similar to the constructor of our Python class with the majority of the parameters being specific to communicating with RabbitMQ. In this case the default destructor is sufficient.
 
@@ -98,7 +100,7 @@ void close();
 
 The `build` method is responsible for returning a function with a signature matching `subscriber_fn_t`, the result of which will be passed into our base's constructor. Typically, this function is the center of a source stage, making calls to the `subscriber`'s `on_next`, `on_error`, and `on_completed` methods. For this example, the RabbitMQ-specific logic was broken out into the `source_generator` method, which should be analogous to the `source_generator` method from the Python class, and will emit new messages into the pipeline by calling `subscriber.on_next(message)`.
 
-The `from_json` method parses a JSON string to a cuDF [table_with_metadata](https://docs.rapids.ai/api/libcudf/stable/structcudf_1_1io_1_1table__with__metadata.html). Lastly, the `close` method disconnects from the RabbitMQ exchange.
+The `from_json` method parses a JSON string to a cuDF [`table_with_metadata`](https://docs.rapids.ai/api/libcudf/stable/structcudf_1_1io_1_1table__with__metadata.html). Lastly, the `close` method disconnects from the RabbitMQ exchange.
 
 We will also need three private attributes specific to our interactions with RabbitMQ: our polling interval, the name of the queue we are listening to, and a pointer to our channel object.
 
@@ -285,7 +287,7 @@ void RabbitMQSourceStage::source_generator(rxcpp::subscriber<RabbitMQSourceStage
 
 ## A note on performance:
 
-We don't yet know the size of the messages we are going to receive from RabbitMQ, but we should assume they may be quite large. As such, we try to limit the number of copies of this data, preferring to instead pass by reference or move data. The `SimpleAmqpClient`'s `Body()` method returns a const reference to the payload, which we also pass by reference into the `from_json` method. Since our stage has no need for the data itself after it's emitted into the pipeline, we move our cuDF data table when we construct our `MessageMeta` instance, and then we once again move the message into the subscriber's `on_next` method.
+We don't yet know the size of the messages we are going to receive from RabbitMQ, but we should assume they may be quite large. As such, we try to limit the number of copies of this data, preferring to instead pass by reference or move data. The `SimpleAmqpClient`'s `Body()` method returns a constant reference to the payload, which we also pass by reference into the `from_json` method. Since our stage has no need for the data itself after it's emitted into the pipeline, we move our cuDF data table when we construct our `MessageMeta` instance, and then we once again move the message into the subscriber's `on_next` method.
 
 Our `from_json` and `close` methods are rather straightforward:
 
@@ -477,7 +479,8 @@ PYBIND11_MODULE(rabbitmq_cpp_stage, m)
 
 ## Python Changes
 
-Previously, our stage connected to the RabbitMQ server in the constructor. This is no longer advantageous to us when C++ execution is enabled. Instead, we will record our constructor arguments and move the connection code to a new `connect` method. Our new constructor and `connect` methods are updated to:
+Previously, our stage connected to the RabbitMQ server in the constructor. This is no longer advantageous to us when C++ execution is enabled. Instead, we will record our constructor arguments and move the connection code to a new `connect` method. Since this stage's C++ implementation will always be used when running in GPU mode, we can assume the Python implementation will always interact with pandas DataFrames.
+Our new constructor and `connect` methods are updated to:
 
 ```python
 def __init__(self,
@@ -493,13 +496,10 @@ def __init__(self,
     self._exchange_type = exchange_type
     self._queue_name = queue_name
 
-    self._connection = None
+    self._connection: pika.BlockingConnection = None
     self._channel = None
 
     self._poll_interval = pd.Timedelta(poll_interval)
-
-    # Flag to indicate whether or not we should stop
-    self._stop_requested = False
 ```
 ```python
 def connect(self):
@@ -516,20 +516,20 @@ def connect(self):
     self._channel.queue_bind(exchange=self._exchange, queue=self._queue_name)
 ```
 
-Lastly, our `_build_source` method needs to be updated to build a C++ node when `morpheus.config.CppConfig.get_should_use_cpp()` is configured to `True` by using the `self._build_cpp_node()` method.
+Lastly, our `_build_source` method needs to be updated to build a C++ node when `self._build_cpp_node()` returns `True`.
 
 ```python
 def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
     if self._build_cpp_node():
         from ._lib import rabbitmq_cpp_stage
 
-        node = morpheus_rabbit_cpp.RabbitMQSourceStage(builder,
-                                                        self.unique_name,
-                                                        self._host,
-                                                        self._exchange,
-                                                        self._exchange_type,
-                                                        self._queue_name,
-                                                        self._poll_interval.to_pytimedelta())
+        node = rabbitmq_cpp_stage.RabbitMQSourceStage(builder,
+                                                      self.unique_name,
+                                                      self._host,
+                                                      self._exchange,
+                                                      self._exchange_type,
+                                                      self._queue_name,
+                                                      self._poll_interval.to_pytimedelta())
     else:
         self.connect()
         node = builder.make_source(self.unique_name, self.source_generator)

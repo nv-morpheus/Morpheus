@@ -48,8 +48,8 @@ NEXT_PATCH=$(echo ${NEXT_FULL_VERSION} | awk '{split($0, a, "."); print a[3]}')
 NEXT_SHORT_TAG=${NEXT_MAJOR}.${NEXT_MINOR}
 
 # Need to distutils-normalize the versions for some use cases
-CURRENT_SHORT_TAG_PEP440=$(python -c "from setuptools.extern import packaging; print(packaging.version.Version('${CURRENT_SHORT_TAG}'))")
-NEXT_SHORT_TAG_PEP440=$(python -c "from setuptools.extern import packaging; print(packaging.version.Version('${NEXT_SHORT_TAG}'))")
+CURRENT_SHORT_TAG_PEP440=$(python -c "from packaging import version; print(version.Version('${CURRENT_SHORT_TAG}'))")
+NEXT_SHORT_TAG_PEP440=$(python -c "from packaging import version; print(version.Version('${NEXT_SHORT_TAG}'))")
 
 echo "Preparing release $CURRENT_FULL_VERSION (PEP ${CURRENT_SHORT_TAG_PEP440}) => $NEXT_FULL_VERSION (PEP ${NEXT_SHORT_TAG_PEP440})"
 
@@ -77,20 +77,33 @@ fi
 # Root CMakeLists.txt
 sed_runner 's/'"VERSION ${CURRENT_FULL_VERSION}.*"'/'"VERSION ${NEXT_FULL_VERSION}"'/g' CMakeLists.txt
 
+# Root manifest.yaml
+sed_runner "s|branch-${CURRENT_SHORT_TAG}|branch-${NEXT_SHORT_TAG}|g" manifest.yaml
+
 # Depedencies file
 sed_runner "s/mrc=${CURRENT_SHORT_TAG}/mrc=${NEXT_SHORT_TAG}/g" dependencies.yaml
+
+# Generate the environment files based upon the updated dependencies.yaml
+conda run -n base --live-stream rapids-dependency-file-generator
 
 # examples/digital_fingerprinting
 sed_runner "s/v${CURRENT_FULL_VERSION}-runtime/v${NEXT_FULL_VERSION}-runtime/g" \
    examples/digital_fingerprinting/production/docker-compose.yml \
    examples/digital_fingerprinting/production/Dockerfile
 sed_runner "s/v${CURRENT_FULL_VERSION}-runtime/v${NEXT_FULL_VERSION}-runtime/g" examples/digital_fingerprinting/production/Dockerfile
-sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" examples/digital_fingerprinting/starter/README.md
+
+# examples/developer_guide
+sed_runner 's/'"VERSION ${CURRENT_FULL_VERSION}.*"'/'"VERSION ${NEXT_FULL_VERSION}"'/g' \
+   examples/developer_guide/3_simple_cpp_stage/CMakeLists.txt \
+   examples/developer_guide/4_rabbitmq_cpp_stage/CMakeLists.txt
 
 # docs/source/cloud_deployment_guide.md
 sed_runner "s|${CURRENT_SHORT_TAG}.tgz|${NEXT_SHORT_TAG}.tgz|g" docs/source/cloud_deployment_guide.md
 sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" docs/source/cloud_deployment_guide.md
 sed_runner "s|tree/branch-${CURRENT_SHORT_TAG}|tree/branch-${NEXT_SHORT_TAG}|g" docs/source/cloud_deployment_guide.md
+
+# docs/source/examples.md
+sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" docs/source/examples.md
 
 # docs/source/getting_started.md
 # Only do the minor version here since the full version can mess up the examples
@@ -99,3 +112,19 @@ sed_runner "s/${CURRENT_SHORT_TAG}/${NEXT_SHORT_TAG}/g" docs/source/getting_star
 # models/model-cards
 sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" models/model-cards/*.md
 sed_runner "s|tree/branch-${CURRENT_SHORT_TAG}|tree/branch-${NEXT_SHORT_TAG}|g" models/model-cards/*.md
+
+# thirdparty
+sed_runner "s|tree/branch-${CURRENT_SHORT_TAG}|tree/branch-${NEXT_SHORT_TAG}|g" thirdparty/README.md
+
+# Update the version of the Morpheus model container
+# We need to update several files, however we need to avoid symlinks as well as the build and .cache directories
+DOCS_MD_FILES=$(find -P ./docs/source/ -type f -iname "*.md")
+EXAMPLES_MD_FILES=$(find -P ./examples/ -type f -iname "*.md")
+sed_runner "s|morpheus-tritonserver-models:${CURRENT_SHORT_TAG}|morpheus-tritonserver-models:${NEXT_SHORT_TAG}|g" \
+   ${DOCS_MD_FILES} \
+   ${EXAMPLES_MD_FILES} \
+   .devcontainer/docker-compose.yml \
+   examples/sid_visualization/docker-compose.yml \
+   models/triton-model-repo/README.md \
+   scripts/validation/val-globals.sh \
+   tests/benchmarks/README.md

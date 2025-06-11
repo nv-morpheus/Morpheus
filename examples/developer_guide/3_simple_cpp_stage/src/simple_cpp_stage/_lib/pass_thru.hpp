@@ -17,11 +17,11 @@
 
 #pragma once
 
-#include <morpheus/export.h>            // for exporting symbols
-#include <morpheus/messages/multi.hpp>  // for MultiMessage
-#include <mrc/segment/builder.hpp>      // for Segment Builder
-#include <mrc/segment/object.hpp>       // for Segment Object
-#include <pymrc/node.hpp>               // for PythonNode
+#include <morpheus/export.h>              // for exporting symbols
+#include <morpheus/messages/control.hpp>  // for ControlMessage
+#include <mrc/segment/builder.hpp>        // for Segment Builder
+#include <mrc/segment/object.hpp>         // for Segment Object
+#include <pymrc/node.hpp>                 // for PythonNode
 #include <rxcpp/rx.hpp>
 
 #include <memory>
@@ -37,10 +37,10 @@ using namespace morpheus;
 
 // pybind11 sets visibility to hidden by default; we want to export our symbols
 class MORPHEUS_EXPORT PassThruStage
-  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
+  : public mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>
 {
   public:
-    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>;
     using base_t::sink_type_t;
     using base_t::source_type_t;
     using base_t::subscribe_fn_t;

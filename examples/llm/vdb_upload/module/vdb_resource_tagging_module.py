@@ -16,6 +16,7 @@ import logging
 
 import mrc
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import ValidationError
 
 from morpheus.messages import ControlMessage
@@ -27,9 +28,7 @@ logger = logging.getLogger(__name__)
 
 class VDBResourceTaggingSchema(BaseModel):
     vdb_resource_name: str
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra='forbid')
 
 
 VDBResourceTaggingLoaderFactory = ModuleLoaderFactory("vdb_resource_tagging",

@@ -44,7 +44,7 @@ def cuml_fixture(fail_missing: bool):
 
 
 @pytest.fixture(name="config")
-def config_fixture(config, use_cpp: bool):  # pylint: disable=unused-argument
+def config_fixture(config):
     """
     The GNN fraud detection pipeline utilizes the "other" pipeline mode.
     """
@@ -68,22 +68,22 @@ def manual_seed_fixture(manual_seed):
     yield seed_fn
 
 
-@pytest.fixture(name="example_dir")
+@pytest.fixture(scope='session', name="example_dir")
 def example_dir_fixture():
     yield os.path.join(TEST_DIRS.examples_dir, 'gnn_fraud_detection_pipeline')
 
 
-@pytest.fixture(name="training_file")
+@pytest.fixture(scope='session', name="training_file")
 def training_file_fixture(example_dir: str):
     yield os.path.join(example_dir, 'training.csv')
 
 
-@pytest.fixture(name="model_dir")
+@pytest.fixture(scope='session', name="model_dir")
 def model_dir_fixture(example_dir: str):
     yield os.path.join(example_dir, 'model')
 
 
-@pytest.fixture(name="xgb_model")
+@pytest.fixture(scope='session', name="xgb_model")
 def xgb_model_fixture(model_dir: str):
     yield os.path.join(model_dir, 'xgb.pt')
 

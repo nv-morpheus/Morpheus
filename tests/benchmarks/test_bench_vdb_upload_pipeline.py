@@ -32,9 +32,9 @@ from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.rss_source_stage import RSSSourceStage
-from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
+from morpheus_llm.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 
 EMBEDDING_SIZE = 384
 MODEL_MAX_BATCH_SIZE = 64
@@ -79,7 +79,7 @@ def _run_pipeline(config: Config,
     pipe.add_stage(
         WriteToVectorDBStage(config,
                              resource_name=collection_name,
-                             resource_kwargs=utils_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
+                             resource_kwargs=utils_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
                              recreate=True,
                              service="milvus",
                              uri=milvus_server_uri))
@@ -87,12 +87,12 @@ def _run_pipeline(config: Config,
 
 
 @pytest.mark.milvus
-@pytest.mark.use_python
+@pytest.mark.cpu_mode
 @pytest.mark.use_pandas
 @pytest.mark.benchmark
 @pytest.mark.import_mod([
     os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'),
-    os.path.join(TEST_DIRS.examples_dir, 'llm/common/web_scraper_stage.py'),
+    os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/module/web_scraper_stage.py'),
 ])
 @mock.patch('feedparser.http.get')
 @mock.patch('requests.Session')

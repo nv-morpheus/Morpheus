@@ -21,81 +21,84 @@ limitations under the License.
 # Model Overview
 
 ## Description:
-* This model is an example of a binary XGBoost classifier to differentiate between anomalous GPU behavior, such as crypto mining / GPU malware, and non-anomalous GPU-based workflows (e.g., ML/DL training). This model is for demonstration purposes and not for production usage. <br>
+* This model is an example of a binary XGBoost classifier to differentiate between anomalous GPU behavior, such as cryptocurrency mining / GPU malware, and non-anomalous GPU-based workflows (for example, ML/DL training). This model is for demonstration purposes and not for production usage. <br>
 
-## References(s):
-* Chen, Guestrin (2016) XGBoost. A scalable tree boosting system. https://arxiv.org/abs/1603.02754  <br> 
+## References:
+<!-- Vale attempts to spell check the author names -->
+<!-- vale off -->
+* Chen, Guestrin (2016) XGBoost. A scalable tree boosting system. https://arxiv.org/abs/1603.02754  <br>
+<!-- vale on -->
 
-## Model Architecture: 
-**Architecture Type:** 
+## Model Architecture:
+**Architecture Type:**
 * Gradient boosting <br>
 
-**Network Architecture:** 
-* XGBOOST <br>
+**Network Architecture:**
+* XGBoost <br>
 
 ## Input: (Enter "None" As Needed)
 
-**Input Format:** 
-* nvidia-smi output <br>
+**Input Format:**
+* `nvidia-smi` output <br>
 
-**Input Parameters:** 
-* GPU statistics that are included in the nvidia-smi output <br>
+**Input Parameters:**
+* GPU statistics that are included in the `nvidia-smi` output <br>
 
 **Other Properties Related to Output:** N/A <br>
 
 ## Output: (Enter "None" As Needed)
 
-**Output Format:** 
+**Output Format:**
 * Binary Results <br>
 
-**Output Parameters:** 
+**Output Parameters:**
 * N/A <br>
 
-**Other Properties Related to Output:** 
-* N/A <br> 
+**Other Properties Related to Output:**
+* N/A <br>
 
 ## Software Integration:
 
-**Runtime(s):** 
+**Runtime:**
 * Morpheus  <br>
 
-**Supported Hardware Platform(s):** <br>
+**Supported Hardware Platforms:** <br>
 * Ampere/Turing <br>
 
-**Supported Operating System(s):** <br>
+**Supported Operating Systems:** <br>
 * Linux <br>
 
-## Model Version(s): 
+## Model Versions:
 * v1  <br>
 
-# Training & Evaluation: 
+# Training & Evaluation:
 
 ## Training Dataset:
 
-**Link:** 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/training-data/abp-sample-nvsmi-training-data.json  <br>
+**Link:**
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/models/datasets/training-data/abp-sample-nvsmi-training-data.json  <br>
 
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
-* Sample dataset consists of over 1000 nvidia-smi outputs <br>
+**Properties (Quantity, Dataset Descriptions, Sensors):**
+* Sample dataset consists of over 1000 `nvidia-smi` outputs <br>
 
 ## Evaluation Dataset:
 
-**Link:** 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/validation-data/abp-validation-data.jsonlines  <br>
+**Link:**
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/models/datasets/validation-data/abp-validation-data.jsonlines  <br>
 
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
-* Sample dataset consists of over 1000 nvidia-smi outputs <br>
+**Properties (Quantity, Dataset Descriptions, Sensors):**
+* Sample dataset consists of over 1000 `nvidia-smi` outputs <br>
 
 ## Inference:
 
-**Engine:** 
+**Engine:**
 * Triton <br>
 
 **Test Hardware:** <br>
 * DGX (V100) <br>
 
 ## Ethical Considerations:
-NVIDIA believes Trustworthy AI is a shared responsibility and we have established policies and practices to enable development for a wide array of AI applications.  When downloaded or used in accordance with our terms of service, developers should work with their supporting model team to ensure this model meets requirements for the relevant industry and use case and addresses unforeseen product misuse.  For more detailed information on ethical considerations for this model, please see the Model Card++ Explainability, Bias, Safety & Security, and Privacy Subcards below.  Please report security vulnerabilities or NVIDIA AI Concerns [here](https://www.nvidia.com/en-us/support/submit-security-vulnerability/).
+NVIDIA believes Trustworthy AI is a shared responsibility and we have established policies and practices to enable development for a wide array of AI applications. When downloaded or used in accordance with our terms of service, developers should work with their supporting model team to ensure this model meets requirements for the relevant industry and use case and addresses unforeseen product misuse. For more detailed information on ethical considerations for this model, please see the Model Card++ Explainability, Bias, Safety & Security, and Privacy Subcards below. Please report security vulnerabilities or NVIDIA AI Concerns [here](https://www.nvidia.com/en-us/support/submit-security-vulnerability/).
 
 # Subcards
 
@@ -109,41 +112,41 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 
 ## Model Card ++ Explainability Subcard
 
-### Name example applications and use cases for this model. 
+### Name example applications and use cases for this model.
 * The model is primarily designed for testing purposes and serves as a small model specifically used to evaluate and validate the ABP pipeline. Its application is focused on assessing the effectiveness of the pipeline rather than being intended for broader use cases or specific applications beyond testing.
 
 ### Intended Users.
 * The model is primarily designed for testing purposes. This model is intended to be an example for developers that want to test Morpheus ABP pipeline.
 
-### Name who is intended to benefit from this model. 
-* The intended beneficiaries of this model are developers who aim to test the functionality of the ABP models for detecting crypto mining.
+### Name who is intended to benefit from this model.
+* The intended beneficiaries of this model are developers who aim to test the functionality of the ABP models for detecting cryptocurrency mining.
 
-### Describe the model output. 
-* This model output can be used as a binary result, Crypto mining or legitimate GPU usage. 
+### Describe the model output.
+* This model output can be used as a binary result, cryptocurrency mining or legitimate GPU usage.
 
 ### Describe how this model works.
-* nvidia-smi features are used as the input and the model predicts a label for each row 
+* `nvidia-smi` features are used as the input and the model predicts a label for each row
 
-### List the technical limitations of the model. 
+### List the technical limitations of the model.
 * For different GPU workloads different models need to be trained.
 
 ### Has this been verified to have met prescribed NVIDIA quality standards?
 * Yes
-  
+
 ### What performance metrics were used to affirm the model's performance?
 * Accuracy
 
 ### What are the potential known risks to users and stakeholders?
 * N/A
 
-### Link the relevant end user license agreement 
+### Link the relevant end user license agreement
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 
-## Model Card ++ Saftey & Security Subcard
+## Model Card ++ Safety & Security Subcard
 
-### Link the location of the training dataset's repository.
-* https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/models/datasets/training-data/abp-sample-nvsmi-training-data.json
+### Link the location of the repository for the training dataset.
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/models/datasets/training-data/abp-sample-nvsmi-training-data.json
 
 ### Describe the life critical impact (if present).
 * None
@@ -178,14 +181,14 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 
 ### Protected classes used to create this model? (The following were used in model the model's training:)
 * N/A
-  
+
 ### How often is dataset reviewed?
 * The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.
 
 ### Is a mechanism in place to honor data subject right of access or deletion of personal data?
 * N/A
 
-### If PII collected for the development of this AI model, was it minimized to only what was required? 
+### If PII collected for the development of this AI model, was it minimized to only what was required?
 * N/A
 
 ### Is there data provenance?

@@ -55,13 +55,16 @@ $ nvidia-smi dmon
 
 Each line in the output represents the GPU metrics at a single point in time. As the tool progresses the GPU begins to be utilized and the SM% and Mem% values increase as memory is loaded into the GPU and computations are performed. The model we will be using can ingest this information and determine whether or not the GPU is mining cryptocurrencies without needing additional information from the host machine.
 
-In this example we will be using the `examples/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents a new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
+In this example we will be using the `examples/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents a new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF DataFrames. This will all be handled by Morpheus.
 
 #### Generating your own dataset
 
 This example can be easily applied to datasets generated from your own NVIDIA GPU devices. If NetQ is not deployed in your environment, the `nvsmi_data_extract.py` script is provided which uses [pyNVML](https://pypi.org/project/nvidia-ml-py/) and [pandas](https://pandas.pydata.org/) to generate data similar to NetQ. `pyNVML` contains the Python bindings for NVIDIA Management Library (NVML), the same library used by `nvidia-smi`.
 
-`pyNVML` and `pandas` come already installed on the Morpheus release and development Docker images. Otherwise, they will need to be installed before running the script.
+pyNVML is not installed by default, use the following command to install it:
+```bash
+conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-125_arch-x86_64.yaml
+```
 
 Run the following to start generating your dataset:
 ```
@@ -86,12 +89,12 @@ This example utilizes the Triton Inference Server to perform inference.
 
 Pull the Docker image for Triton:
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:23.06-py3
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10
 ```
 
-From the Morpheus repo root directory, run the following to launch Triton and load the `abp-nvsmi-xgb` XGBoost model:
+Run the following to launch Triton and load the `abp-nvsmi-xgb` XGBoost model:
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:24.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
 ```
 
 This will launch Triton and only load the `abp-nvsmi-xgb` model. This model has been configured with a max batch size of 32768, and to use dynamic batching for increased performance.
@@ -124,7 +127,7 @@ morpheus --log_level=DEBUG \
    pipeline-fil --columns_file=data/columns_fil.txt \
    `# 1st Stage: Read from file` \
    from-file --filename=examples/data/nvsmi.jsonlines \
-   `# 2nd Stage: Deserialize from JSON strings to objects` \
+   `# 2nd Stage: Deserialize batch DataFrame into ControlMessages` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
    preprocess \
@@ -203,17 +206,17 @@ CPP Enabled: True
 Added source: <from-file-0; FileSourceStage(filename=examples/data/nvsmi.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
-  └─ morpheus.MessageMeta -> morpheus.MultiMessage
+  └─ morpheus.MessageMeta -> morpheus.ControlMessage
 Added stage: <preprocess-fil-2; PreprocessFILStage()>
-  └─ morpheus.MultiMessage -> morpheus.MultiInferenceFILMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=abp-nvsmi-xgb, server_url=localhost:8000, force_convert_inputs=False, use_shared_memory=False)>
-  └─ morpheus.MultiInferenceFILMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <add-class-5; AddClassificationsStage(threshold=0.5, labels=[], prefix=)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
+  └─ morpheus.ControlMessage -> morpheus.ControlMessage
 Added stage: <serialize-6; SerializeStage(include=['mining'], exclude=['^ID$', '^_ts_'], fixed_columns=True)>
-  └─ morpheus.MultiResponseMessage -> morpheus.MessageMeta
+  └─ morpheus.ControlMessage -> morpheus.MessageMeta
 Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====

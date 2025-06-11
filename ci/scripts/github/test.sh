@@ -17,14 +17,11 @@
 set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
+source ${WORKSPACE}/ci/scripts/github/morpheus_env.sh
+source ${WORKSPACE}/ci/scripts/github/cmake_all.sh
 /usr/bin/nvidia-smi
 
-rapids-dependency-file-generator \
-  --output conda \
-  --file-key all \
-  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee "${WORKSPACE_TMP}/env.yaml"
-
-update_conda_env "${WORKSPACE_TMP}/env.yaml"
+update_conda_env "${WORKSPACE}/conda/environments/all_cuda-125_arch-x86_64.yaml"
 
 log_toolchain
 
