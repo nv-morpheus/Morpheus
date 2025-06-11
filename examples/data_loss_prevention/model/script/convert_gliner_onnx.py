@@ -29,7 +29,7 @@ def convert_bi_encoder_to_onnx(model, onnx_path, example_texts, example_labels, 
     print(f"Labels embeddings shape: {labels_embeddings.shape}")
 
     # Prepare model inputs
-    model_input, raw_batch = model.prepare_model_inputs(example_texts, example_labels, prepare_entities=False)
+    model_input, _ = model.prepare_model_inputs(example_texts, example_labels, prepare_entities=False)
 
     # Create wrapper model that uses pre-encoded labels
     class BiEncoderONNXWrapper(torch.nn.Module):
