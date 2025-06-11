@@ -29,9 +29,6 @@ from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 
 from .gliner_triton import GliNERTritonInference
 
-if typing.TYPE_CHECKING:
-    from gliner import GLiNER
-
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
@@ -243,13 +240,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                 batch_data = model_data[i:i + self._model_max_batch_size]
                 entities = self.gliner_triton.process(batch_data, self.entity_labels)
                 model_entities.extend(entities)
-
-                # model_entities.extend(
-                #     self.model.batch_predict_entities(batch_data,
-                #                                       self.entity_labels,
-                #                                       flat_ner=True,
-                #                                       threshold=self.confidence_threshold,
-                #                                       multi_label=False))
 
             dlp_findings = self._process_results(len(rows), model_entities, all_spans, model_row_to_row_num)
 

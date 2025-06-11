@@ -12,8 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 import torch
-import tritonclient.http as httpclient
+import tritonclient.grpc as tritonclient
+
+if typing.TYPE_CHECKING:
+    from gliner import GLiNER
 
 
 class GliNERTritonInference:
@@ -21,6 +26,7 @@ class GliNERTritonInference:
     def __init__(
             self,
             model_source_dir: str,
+            server_url: str = "localhost:8001",
             triton_model_name: str = "gliner_bi_encoder",
             gliner_threshold: float = 0.3,
             onnx_path: str = "model.onnx",  # relative to the model_source_dir
@@ -35,7 +41,7 @@ class GliNERTritonInference:
         self.triton_model_name = triton_model_name
         self.gliner_threshold = gliner_threshold
         self.labels_embeddings = torch.tensor([])
-        self.client = httpclient.InferenceServerClient(url="localhost:8000")
+        self.client = tritonclient.InferenceServerClient(url=server_url)
 
     @property
     def model(self) -> "GLiNER":
@@ -117,7 +123,7 @@ class GliNERTritonInference:
 
         # Create InferInput objects
         triton_inputs = [
-            httpclient.InferInput(name, data.shape, httpclient.np_to_triton_dtype(data.dtype))
+            tritonclient.InferInput(name, data.shape, tritonclient.np_to_triton_dtype(data.dtype))
             for name, data in onnx_inputs.items()
         ]
 
@@ -126,7 +132,7 @@ class GliNERTritonInference:
             triton_inputs[i].set_data_from_numpy(onnx_inputs[name])
 
         # Request output
-        triton_outputs = [httpclient.InferRequestedOutput("output")]
+        triton_outputs = [tritonclient.InferRequestedOutput("output")]
 
         # Get response
         response = self.client.infer(self.triton_model_name, inputs=triton_inputs, outputs=triton_outputs)
