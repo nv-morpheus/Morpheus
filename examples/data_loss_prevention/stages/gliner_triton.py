@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import typing
 
+import numpy as np
 import torch
 import tritonclient.grpc as tritonclient
 
@@ -23,24 +25,26 @@ if typing.TYPE_CHECKING:
 
 class GliNERTritonInference:
 
-    def __init__(
-            self,
-            model_source_dir: str,
-            server_url: str = "localhost:8001",
-            triton_model_name: str = "gliner_bi_encoder",
-            gliner_threshold: float = 0.3,
-            onnx_path: str = "model.onnx",  # relative to the model_source_dir
-            map_location: str = "cuda"):
+    def __init__(self,
+                 model_source_dir: str,
+                 server_url: str = "localhost:8001",
+                 triton_model_name: str = "gliner_bi_encoder",
+                 gliner_threshold: float = 0.3,
+                 map_location: str = "cuda"):
 
         # We load the model locally to use its pre/post-processing functions.
         # The actual heavy inference will be done on Triton.
         self._model = None
         self._model_source_dir = model_source_dir
-        self._onnx_path = onnx_path
         self._map_location = map_location
         self.triton_model_name = triton_model_name
         self.gliner_threshold = gliner_threshold
-        self.labels_embeddings = torch.tensor([])
+        self._labels_embeddings: np.ndarray | None = None
+        self._labels: list[str] | None = None
+        self._labels_file = os.path.join(model_source_dir, "label_embedding.pt")
+        if not os.path.exists(self._labels_file):
+            raise RuntimeError(f"Labels embeddings file not found: {self._labels_file}")
+
         self.client = tritonclient.InferenceServerClient(url=server_url)
 
     @property
@@ -52,9 +56,35 @@ class GliNERTritonInference:
             from gliner import GLiNER
             self._model = GLiNER.from_pretrained(self._model_source_dir,
                                                  local_files_only=True,
-                                                 onnx_path=self._onnx_path,
                                                  map_location=self._map_location)
         return self._model
+
+    def _load_label_data(self):
+        label_data = torch.load(self._labels_file)
+        self._labels_embeddings = label_data['embeddings'].cpu().numpy()
+        self._labels = label_data['labels']
+
+    @property
+    def labels_embeddings(self) -> np.ndarray:
+        """
+        Return the labels embeddings tensor.
+        If not loaded, it will load from the specified file.
+        """
+        if self._labels_embeddings is None:
+            self._load_label_data()
+
+        return self._labels_embeddings
+
+    @property
+    def labels(self) -> list[str]:
+        """
+        Return the list of labels.
+        If not loaded, it will load from the specified file.
+        """
+        if self._labels is None:
+            self._load_label_data()
+
+        return self._labels
 
     def post_process_results(self, logits_tensor, raw_batch, texts) -> list:
         """
@@ -88,19 +118,16 @@ class GliNERTritonInference:
             all_entities.append(entities)
         return all_entities
 
-    def pre_process(self, texts, labels):
+    def pre_process(self, texts):
         """
         Pre-process the data for the ONNX model.
         """
         # === 1. PRE-PROCESSING ===
-        if self.labels_embeddings.numel() == 0:
-            self.labels_embeddings = self.model.encode_labels(labels)
-
-        model_input, raw_batch = self.model.prepare_model_inputs(texts, labels, prepare_entities=False)
+        model_input, raw_batch = self.model.prepare_model_inputs(texts, self.labels, prepare_entities=False)
 
         # Convert torch tensors to numpy for Triton
         onnx_inputs = [
-            ("labels_embeddings", self.labels_embeddings.cpu().numpy()),
+            ("labels_embeddings", self.labels_embeddings),
             ("input_ids", model_input["input_ids"].cpu().numpy()),
             ("attention_mask", model_input["attention_mask"].cpu().numpy()),
             ("words_mask", model_input["words_mask"].cpu().numpy()),
@@ -111,13 +138,13 @@ class GliNERTritonInference:
 
         return onnx_inputs, raw_batch
 
-    def process(self, texts: list[str], labels: list[str]):
+    def process(self, texts: list[str]):
         """
         Performs full NER pipeline: pre-process, infer, post-process.
         """
 
         # === 1. PRE-PROCESSING ===
-        onnx_inputs, raw_batch = self.pre_process(texts, labels)
+        onnx_inputs, raw_batch = self.pre_process(texts)
 
         # === 2. TRITON INFERENCE ===
 

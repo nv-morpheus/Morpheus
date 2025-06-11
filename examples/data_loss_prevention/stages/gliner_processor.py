@@ -42,8 +42,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
     ----------
     config : morpheus.config.Config
         Pipeline configuration instance.
-    labels : list[str]
-        List of entity labels to detect, this should match the named patterns used in the RegexProcessor stage.
     model_name : str
         Name of the model to use.
     source_column_name : str
@@ -60,20 +58,15 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
     def __init__(self,
                  config: Config,
                  *,
-                 labels: list[str],
                  model_source_dir: str | None = None,
                  model_name: str = "gretelai/gretel-gliner-bi-small-v1.0",
                  source_column_name: str = "source_text",
                  regex_col_prefix: str = "regex_matches_",
-                 confidence_threshold: float = 0.7,
+                 confidence_threshold: float = 0.3,
                  context_window: int = 100,
-                 fallback: bool = True,
-                 cache_dir: str | None = None):
+                 fallback: bool = True):
 
         super().__init__(config)
-        self.confidence_threshold = confidence_threshold
-        self.entity_labels = labels
-
         if config.execution_mode == ExecutionMode.GPU:
             map_location = "cuda"
         else:
@@ -85,9 +78,10 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self._regex_col_prefix = regex_col_prefix
         self.context_window = context_window
         self.fallback = fallback
-        self._cache_dir = cache_dir
         self._needed_columns['dlp_findings'] = TypeId.STRING
-        self.gliner_triton = GliNERTritonInference(model_source_dir=model_source_dir, map_location=map_location)
+        self.gliner_triton = GliNERTritonInference(model_source_dir=model_source_dir,
+                                                   map_location=map_location,
+                                                   gliner_threshold=confidence_threshold)
 
     @property
     def name(self) -> str:
@@ -238,7 +232,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
             model_entities = []
             for i in range(0, len(model_data), self._model_max_batch_size):
                 batch_data = model_data[i:i + self._model_max_batch_size]
-                entities = self.gliner_triton.process(batch_data, self.entity_labels)
+                entities = self.gliner_triton.process(batch_data)
                 model_entities.extend(entities)
 
             dlp_findings = self._process_results(len(rows), model_entities, all_spans, model_row_to_row_num)
