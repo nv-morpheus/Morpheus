@@ -141,8 +141,7 @@ def main(log_level: int,
 
     pipeline.add_stage(DLPInputProcessor(config))
 
-    regex_processor = RegexProcessor(config, patterns_file=regex_file)
-    pipeline.add_stage(regex_processor)
+    pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file))
 
     pipeline.add_stage(MonitorStage(config, description="Regex Processor"))
 
