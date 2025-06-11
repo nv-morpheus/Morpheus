@@ -323,7 +323,7 @@ def main():
 
     try:
         # Convert model to ONNX
-        original_model = convert_gliner_to_onnx(
+        _ = convert_gliner_to_onnx(
             model_name_or_path=model_name,
             onnx_output_dir=output_dir,
             example_texts=example_texts,
