@@ -252,20 +252,20 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
 
             (model_data, all_spans, model_row_to_row_num) = self._prepare_data(rows, regex_columns)
 
-            batches = []
+            futures = []
             model_entities = []
             for i in range(0, len(model_data), self._model_max_batch_size):
-                batch_data = model_data[i:i + self._model_max_batch_size]
-                batches.append(batch_data)
-                model_entities.append(None)
-
-            futures = []
-            for (batch_num, batch) in enumerate(batches):
                 future = mrc.Future()
                 futures.append(future)
+                model_entities.append(None)
+                batch_data = model_data[i:i + self._model_max_batch_size]
+
                 self.gliner_triton.process(
-                    batch,
-                    partial(self._infer_callback, batch_num=batch_num, model_entities=model_entities, future=future))
+                    batch_data,
+                    partial(self._infer_callback,
+                            batch_num=len(model_entities) - 1,
+                            model_entities=model_entities,
+                            future=future))
 
             for future in futures:
                 future.result()
