@@ -76,6 +76,16 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               show_default=True,
               help=("Number of samples to use from each dataset, ignored if --input_file is set, "
                     "set to -1 for all samples."))
+@click.option('--use_chunking',
+              is_flag=True,
+              default=False,
+              show_default=True,
+              help="Chunk the input text into smaller pieces for processing.")
+@click.option('--chunking_size',
+              type=int,
+              default=1000,
+              show_default=True,
+              help=("Size of text chunks to process at once, ignored unless --use_chunking is set."))
 @click.option('--repeat',
               type=int,
               default=1,
@@ -105,6 +115,8 @@ def main(log_level: int,
          input_file: pathlib.Path | None,
          include_privacy_masks: bool,
          num_samples: int,
+         use_chunking: bool,
+         chunking_size: int,
          repeat: int,
          server_url: str,
          model_max_batch_size: int,
@@ -135,7 +147,9 @@ def main(log_level: int,
 
     pipeline.add_stage(MonitorStage(config, description="Datasets Source"))
 
-    pipeline.add_stage(DLPInputProcessor(config))
+    pipeline.add_stage(DLPInputProcessor(config, use_chunking=use_chunking, chunking_size=chunking_size))
+
+    pipeline.add_stage(MonitorStage(config, description="Input Processor"))
 
     pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file))
 
