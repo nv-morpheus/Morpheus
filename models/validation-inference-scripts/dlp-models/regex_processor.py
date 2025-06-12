@@ -21,50 +21,14 @@ class GliNERProcessor:
         if labels:
             self.entity_labels = labels
         else:
+            # few default labels
             self.entity_labels = [
                 "medical_record_number",
                 "date_of_birth",
                 "ssn",
                 "date",
                 "first_name",
-                "email",
-                "last_name",
-                "customer_id",
-                "employee_id",
-                "name",
-                "street_address",
-                "phone_number",
-                "ipv4",
-                "credit_card_number",
-                "license_plate",
-                "address",
-                "user_name",
-                "device_identifier",
-                "bank_routing_number",
-                "date_time",
-                "company_name",
-                "unique_identifier",
-                "biometric_identifier",
-                "account_number",
-                "city",
-                "certificate_license_number",
-                "time",
-                "postcode",
-                "vehicle_identifier",
-                "coordinate",
-                "country",
-                "api_key",
-                "ipv6",
-                "password",
-                "health_plan_beneficiary_number",
-                "national_id",
-                "tax_id",
-                "url",
-                "state",
-                "swift_bic",
-                "cvv",
-                "pin"
-            ]
+                "email"]
 
         # Load the fine-tuned GLiNER model
         self.model = GLiNER.from_pretrained(model_name, map_location="cuda:0")

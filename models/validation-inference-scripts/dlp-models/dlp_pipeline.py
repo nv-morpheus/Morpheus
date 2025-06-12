@@ -1,3 +1,4 @@
+import json
 import math
 import time
 
@@ -59,6 +60,7 @@ class RiskScorer:
         type_weights : dict[str, int], optional
             A dictionary of type weights for the risk scoring.
         """
+        self.type_weights = type_weights
         if type_weights is None:
             self.type_weights = {
                 "password": 85,
@@ -78,6 +80,7 @@ class RiskScorer:
                 "health": 75,
                 "api_credentials": 75
                 }
+
 
         # Default weight if type not in dictionary
         self.default_weight = 50
@@ -167,17 +170,24 @@ class DLPPipeline:
                  regex_patterns: dict[str, list[str]],
                  confidence_threshold: float = 0.7,
                  model_name: str = "gretelai/gretel-gliner-bi-small-v1.0",
-                 context_window: int = 300):
+                 context_window: int = 300,
+                 config_file: str = "data/config.json"):
         """Initialize the enhanced DLP pipeline"""
+
+        with open(config_file, 'r') as f:
+            config = json.load(f)
 
         self.input_processor = DLPInputProcessor(split_by_paragraphs=False)
         self.regex_processor = RegexProcessor(patterns=regex_patterns)
         self.gliner_processor = GliNERProcessor(
             confidence_threshold=confidence_threshold,
             context_window=context_window,
-            model_name=model_name
+            model_name=model_name,
+            labels=config['entity_labels']
         )
-        self.risk_scorer = RiskScorer()
+        self.risk_scorer = RiskScorer(
+            type_weights=config['type_weights']
+        )
 
     def inference(self, document: str,
                   failback: bool = False) -> dict[str, list]:
