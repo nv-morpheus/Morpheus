@@ -1,3 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 import math
 import time
@@ -45,10 +60,11 @@ class DLPInputProcessor:
 
             if current_chunk:
                 chunks.append(current_chunk)
-
-            return chunks
+            normalized_text = chunks
         else:
-            return [normalized_text]
+            normalized_text = [normalized_text]
+        return normalized_text
+
 
 class RiskScorer:
 
@@ -73,14 +89,12 @@ class RiskScorer:
                 "ip_address": 30,
                 "date": 20,
                 "api_key": 80,
-                "customer_id": 65,
-                # Semantic categories
+                "customer_id": 65,  # Semantic categories
                 "personal": 70,
                 "financial": 85,
                 "health": 75,
                 "api_credentials": 75
-                }
-
+            }
 
         # Default weight if type not in dictionary
         self.default_weight = 50
@@ -103,7 +117,9 @@ class RiskScorer:
                 "risk_level": "None",
                 "data_types_found": [],
                 "highest_confidence": 0.0,
-                "severity_distribution": {"high": 0, "medium": 0, "low": 0}
+                "severity_distribution": {
+                    "high": 0, "medium": 0, "low": 0
+                }
             }
 
         # Calculate total weighted score
@@ -122,7 +138,7 @@ class RiskScorer:
             total_score += weighted_score
 
             # Count by severity
-            if weighted_score>= 80:
+            if weighted_score >= 80:
                 severity_counts["high"] += 1
             elif weighted_score >= 50:
                 severity_counts["medium"] += 1
@@ -132,7 +148,8 @@ class RiskScorer:
         # Normalize to 0-100 scale with diminishing returns for many findings
 
         max_score = 100
-        normalization_factor = max(1, math.log2(len(findings) + 1)) * 20  # Adjust scaling factor
+        normalization_factor = max(1, math.log2(
+            len(findings) + 1)) * 20  # Adjust scaling factor
 
         # Calculate normalized risk score
         risk_score = min(max_score, total_score / normalization_factor)
@@ -144,8 +161,7 @@ class RiskScorer:
                      "Low" if risk_score >= 20 else "Minimal"
 
         # Get unique data types found
-        data_types_found = list({finding.get("label")
-                               for finding in findings})
+        data_types_found = list({finding.get("label") for finding in findings})
 
         # Find highest confidence score
         highest_confidence = max(finding["score"] for finding in findings)
@@ -159,7 +175,6 @@ class RiskScorer:
         }
 
 
-
 class DLPPipeline:
     """ DLP pipeline integrating components.
     This class is used to process a document through the DLP pipeline.
@@ -167,30 +182,41 @@ class DLPPipeline:
     """
 
     def __init__(self,
+                 *,
                  regex_patterns: dict[str, list[str]],
-                 confidence_threshold: float = 0.7,
+                 confidence_threshold: float = 0.3,
                  model_name: str = "gretelai/gretel-gliner-bi-small-v1.0",
                  context_window: int = 300,
                  config_file: str = "data/config.json"):
-        """Initialize the enhanced DLP pipeline"""
+        """Initialize the enhanced DLP pipeline
 
-        with open(config_file, 'r') as f:
+        Parameters
+        ----------
+        regex_patterns : dict[str, list[str]]
+            A dictionary of regex patterns for the DLP pipeline.
+        confidence_threshold : float, optional
+            The confidence threshold for the DLP pipeline, by default 0.3
+        model_name : str, optional
+            The name of the GLiNER model to use, by default "gretelai/gretel-gliner-bi-small-v1.0"
+        context_window : int, optional
+            The context window for the GLiNER model, by default 300
+        config_file : str, optional
+            The path to the config file for the GLiNER model, by default "data/config.json"
+        """
+
+        with open(config_file, 'r', encoding='utf-8') as f:
             config = json.load(f)
 
         self.input_processor = DLPInputProcessor(split_by_paragraphs=False)
         self.regex_processor = RegexProcessor(patterns=regex_patterns)
-        self.gliner_processor = GliNERProcessor(
-            confidence_threshold=confidence_threshold,
-            context_window=context_window,
-            model_name=model_name,
-            labels=config['entity_labels']
-        )
-        self.risk_scorer = RiskScorer(
-            type_weights=config['type_weights']
-        )
+        # self.regex_processor = GPURegexEntityDetector(patterns=regex_patterns)
+        self.gliner_processor = GliNERProcessor(confidence_threshold=confidence_threshold,
+                                                context_window=context_window,
+                                                model_name=model_name,
+                                                labels=config['entity_labels'])
+        self.risk_scorer = RiskScorer(type_weights=config['type_weights'])
 
-    def inference(self, document: str,
-                  failback: bool = False) -> dict[str, list]:
+    def inference(self, document: str, failback: bool = False) -> dict[str, list]:
         """Process a document through the DLP pipeline.
 
         Parameters
@@ -242,10 +268,10 @@ class DLPPipeline:
 
             # Stage 3: GLiNER processing with timing
             gliner_start = time.time()
-            semantic_findings = self.gliner_processor.process(chunk, regex_findings)
+            semantic_findings = self.gliner_processor.process(
+                chunk, regex_findings)
             gliner_time = time.time() - gliner_start
             gliner_times.append(gliner_time)
-
 
             all_findings.extend(semantic_findings)
 

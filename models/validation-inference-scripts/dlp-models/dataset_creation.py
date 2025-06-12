@@ -1,3 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import argparse
 import re
 from ast import literal_eval
@@ -5,7 +20,8 @@ from ast import literal_eval
 import pandas as pd
 from datasets import load_dataset
 
-SEED = 42
+# random seed for reproducibility
+SEED = 42  # type: ignore
 
 
 def fix_gretel_masks(row):
@@ -19,14 +35,12 @@ def fix_gretel_masks(row):
             print("WARNING: found more than one of the entity!")
         start, end = matches[0].start(), matches[0].end()
 
-        list_of_masks.append(
-            {
-                "label": label,
-                "start": start,
-                "end": end,
-                "value": value,
-            }
-        )
+        list_of_masks.append({
+            "label": label,
+            "start": start,
+            "end": end,
+            "value": value,
+        })
 
     return list_of_masks
 
@@ -38,16 +52,13 @@ def process_gretel_dataset(dataset, num_samples):
     df.columns = ["source_text", "privacy_mask"]
 
     if num_samples:
-        df = df.sample(n=num_samples, random_state=SEED).reset_index(
-            drop=True
-        )
+        df = df.sample(n=num_samples, random_state=SEED).reset_index(drop=True)
 
     df["privacy_mask"] = df["privacy_mask"].apply(literal_eval)
     df["privacy_mask"] = df.apply(fix_gretel_masks, axis=1)
     df["source"] = "gretel"
 
     return df
-
 
 
 def load_and_process_datasets(dataset_names, num_samples=None):
@@ -67,19 +78,15 @@ def load_and_process_datasets(dataset_names, num_samples=None):
 
         if name == "gretel":
             df = process_gretel_dataset(dataset, num_samples)
-
-        dataframes.append(df)
+            dataframes.append(df)
+        else:
+            raise ValueError(f"Unknown dataset: {name}")
 
     # Combine dataframes
-    joint_dataframe = pd.concat(dataframes, ignore_index=True).reset_index(
-        drop=True
-    )
-
+    joint_dataframe = pd.concat(dataframes, ignore_index=True).reset_index(drop=True)
 
     # Filter out empty masks
-    joint_dataframe = joint_dataframe[
-        joint_dataframe.privacy_mask.str.len() > 0
-    ].reset_index(drop=True)
+    joint_dataframe = joint_dataframe[joint_dataframe.privacy_mask.str.len() > 0].reset_index(drop=True)
 
     return joint_dataframe
 
@@ -103,9 +110,7 @@ def analyze_dataset(dataframe):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Create evaluation dataset from PII masking datasets"
-    )
+    parser = argparse.ArgumentParser(description="Create evaluation dataset from PII masking datasets")
     parser.add_argument(
         "--datasets",
         nargs="+",
@@ -113,11 +118,7 @@ def main():
         default=["both"],
         help="Datasets to include (default: both)",
     )
-    parser.add_argument(
-        "--num-samples",
-        type=int,
-        help="Number of samples per dataset (default: all)"
-    )
+    parser.add_argument("--num-samples", type=int, help="Number of samples per dataset (default: all)")
     parser.add_argument(
         "--output",
         type=str,
@@ -139,9 +140,7 @@ def main():
     else:
         dataset_names = args.datasets
 
-    joint_dataframe = load_and_process_datasets(
-        dataset_names, args.num_samples
-    )
+    joint_dataframe = load_and_process_datasets(dataset_names, args.num_samples)
 
     analyze_dataset(joint_dataframe)
 

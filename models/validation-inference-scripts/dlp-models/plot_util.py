@@ -1,17 +1,43 @@
-import matplotlib.gridspec as gridspec
+# SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from matplotlib import gridspec
 
-def visualize_benchmark_results(results_df, output_path=None, dataset_name=None):
-    """
-    Visualize benchmark results with bar charts and radar plots.
 
-    Args:
-        results_df: DataFrame containing benchmark results
-        output_path: Path to save visualization files
-        dataset_name: Name of the dataset used for benchmarking
+def visualize_benchmark_results(results_df: pd.DataFrame,
+                                output_path: str | None = None,
+                                dataset_name: str | None = None):
+    """Visualize benchmark results with bar charts and radar plots.
+
+    Parameters
+    ----------
+    results_df : pd.DataFrame
+        The results dataframe.
+    output_path : str | None, optional
+        The path to save the visualization, by default None
+    dataset_name : str | None, optional
+        The name of the dataset used for benchmarking, by default None
+
+    Returns
+    -------
+    plt.Figure
+        The figure object.
     """
     plt.style.use('ggplot')
 
@@ -126,7 +152,7 @@ def visualize_throughput_latency(timing_metrics, output_path=None, dataset_name=
     plt.style.use('ggplot')
 
     # Create figure with subplots
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 12))
+    fig, ((ax1, ax2), (ax3, _)) = plt.subplots(2, 2, figsize=(14, 12))
 
     # Prepare data for plotting
     models = ['regex', 'hybrid', 'gliner', 'hybrid+regex']
@@ -175,10 +201,6 @@ def visualize_throughput_latency(timing_metrics, output_path=None, dataset_name=
     ax3.set_ylabel('Tokens per second', fontsize=12)
     ax3.set_xlabel('Model', fontsize=12)
 
-    # Add value labels on bars
-    # for i, v in enumerate(tokens_per_second):
-    #     ax3.text(i, v + 0.1, f"{v:.4f} tokens/s", ha='center', fontsize=10)
-
     title = 'Performance Metrics'
     if dataset_name:
         title += f' - {dataset_name}'
@@ -193,24 +215,27 @@ def visualize_throughput_latency(timing_metrics, output_path=None, dataset_name=
     return fig
 
 
-def plot_latency_speedup(latency_df, speedup_model_factor="gliner", columns=["total_time", "throughput"]):
-    """plot latency speedup plot
+def plot_latency_speedup(latency_df: pd.DataFrame, speedup_model_factor: str = "gliner", columns: list[str] = None):
+    """Plot latency speedup plot.
 
     Parameters
     ----------
-    latency_df : _type_
-        _description_
+    latency_df : pd.DataFrame
+        The latency dataframe.
     speedup_model_factor : str, optional
-        _description_, by default "gliner"
-    columns : list, optional
-        _description_, by default ["total_time", "throughput"]
+        The model to use for speedup, by default "gliner"
+    columns : list[str], optional
+        The columns to use for the plot, by default None
     """
+    if columns is None:
+        columns = ["total_time", "throughput"]
+
     # Calculate speedup factors relative to GliNER model
     hybrid_total_time = latency_df[latency_df['model'] == speedup_model_factor][columns[0]].iloc[0]
     hybrid_avg_time = latency_df[latency_df['model'] == speedup_model_factor][columns[1]].iloc[0]
 
     # Create figure with subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
     # Plot average latency
     ax1.bar(latency_df['model'], latency_df[columns[0]], color=['#1f77b4', '#ff7f0e', '#2ca02c'])

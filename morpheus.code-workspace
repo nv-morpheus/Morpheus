@@ -519,7 +519,7 @@
             "editor.codeActionsOnSave": {
                 "source.organizeImports": "explicit"
             },
-            "editor.defaultFormatter": "eeyore.yapf",
+            "editor.defaultFormatter": "ms-python.autopep8",
             "editor.formatOnSave": true,
             "editor.tabSize": 4
         },
