@@ -84,7 +84,7 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
             self.combined_patterns[pattern_name] = combined_pattern
             output_column = f"regex_matches_{pattern_name}"
             self._output_columns[pattern_name] = output_column
-            self._needed_columns[pattern_name] = TypeId.STRING
+            self._needed_columns[output_column] = TypeId.STRING
 
     @staticmethod
     def load_regex_patterns(file_path: str | pathlib.Path) -> dict[str, list[str]]:
