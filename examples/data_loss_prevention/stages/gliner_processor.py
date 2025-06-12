@@ -32,6 +32,9 @@ from .gliner_triton import GliNERTritonInference
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
+EntitiesType = list[dict[str, typing.Any]]
+SpanType = tuple[int, int]
+
 
 @register_stage("gliner-processor")
 class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
@@ -43,14 +46,20 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
     ----------
     config : morpheus.config.Config
         Pipeline configuration instance.
-    model_name : str
-        Name of the model to use.
+    model_source_dir : str
+        Path to the directory containing the GLiNER model files. Used for pre and post-processing.
+    server_url : str
+        URL of the Triton inference server.
+    triton_model_name : str
+        Name of the Triton model to use for inference.
     source_column_name : str
         Name of the column containing the source text to process.
-    context_window : int
-        Number of characters before and after a regex match to include in the context for SLM analysis.
+    regex_col_prefix : str
+        Prefix used to identify regex match columns in the DataFrame.
     confidence_threshold: float
         Minimum confidence score to report a finding
+    context_window : int
+        Number of characters before and after a regex match to include in the context for SLM analysis.
     fallback : bool
         If True, fallback to GLiNER prediction if no regex findings are available.
         If False, only process rows with regex findings.
@@ -59,10 +68,9 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
     def __init__(self,
                  config: Config,
                  *,
-                 model_source_dir: str | None = None,
+                 model_source_dir: str,
                  server_url: str = "localhost:8001",
                  triton_model_name: str = "gliner_bi_encoder",
-                 model_name: str = "gretelai/gretel-gliner-bi-small-v1.0",
                  source_column_name: str = "source_text",
                  regex_col_prefix: str = "regex_matches_",
                  confidence_threshold: float = 0.3,
@@ -75,7 +83,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         else:
             map_location = "cpu"
 
-        self._model_name = model_name
         self._model_max_batch_size = config.model_max_batch_size
         self.source_column_name = source_column_name
         self._regex_col_prefix = regex_col_prefix
@@ -99,18 +106,21 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _extract_contexts_from_regex_findings(
-            self, text: str, row: dict[str, typing.Any],
-            regex_columns: list[str]) -> tuple[list[str], list[str], list[tuple[int, int]]]:
+    def _extract_contexts_from_regex_findings(self, text: str, row: dict[str, typing.Any],
+                                              regex_columns: list[str]) -> tuple[list[str], list[str], list[SpanType]]:
         """
         Extract text contexts around regex matches to focus SLM analysis
 
         Args:
             text: The full text being analyzed
-            regex_findings: List of regex findings with span information
+            row: The current row of the DataFrame containing regex findings
+            regex_columns: List of column names that contain regex findings
 
         Returns:
-            List of text contexts for focused analysis
+            A tuple containing:
+            - A list of regex findings
+            - A list of contexts extracted around the regex findings
+            - A list of spans (start, end) for each context
         """
         contexts = []
         spans = []
@@ -154,7 +164,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         return (regex_findings, contexts, spans)
 
     def _prepare_data(self, rows: list[dict[str, typing.Any]],
-                      regex_columns: list[str]) -> tuple[list[str], list[tuple[int, int]], list[int]]:
+                      regex_columns: list[str]) -> tuple[list[str], list[list[SpanType]], list[int]]:
         """
         Prepare the data for processing by ensuring the necessary columns are present.
         """
@@ -179,8 +189,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         assert len(model_data) == len(model_row_to_row_num), "Mismatch between contexts and row numbers"
         return (model_data, all_spans, model_row_to_row_num)
 
-    def _process_one_result(self, model_entities: list[dict[str, typing.Any]],
-                            spans: list[tuple[int, int]]) -> list[dict[str, typing.Any]]:
+    def _process_one_result(self, model_entities: list[EntitiesType], spans: list[SpanType]) -> list[EntitiesType]:
         seen = set()
         unique_entities = []
         for k, entities in enumerate(model_entities):
@@ -197,10 +206,10 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
 
     def _process_results(self,
                          num_rows: int,
-                         model_entities: list[list[dict[str, typing.Any]]],
-                         all_spans: list[tuple[int, int]],
-                         model_row_to_row_num: list[int]) -> list[list[dict[str, typing.Any]]]:
-        dlp_findings = [[] for _ in range(num_rows)]
+                         model_entities: list[list[EntitiesType]],
+                         all_spans: list[list[SpanType]],
+                         model_row_to_row_num: list[int]) -> list[list[EntitiesType]]:
+        dlp_findings = [[]] * num_rows
 
         # flattend the model_entities list
         _flat = []
@@ -210,7 +219,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
 
         model_entities = _flat
 
-        entities_per_row = None
+        entities_per_row = []
         current_row = None
         for (i, entities) in enumerate(model_entities):
             row_num = model_row_to_row_num[i]
@@ -233,9 +242,9 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
     def _infer_callback(self,
                         *,
                         batch_num: int,
-                        model_entities: list[list[dict[str, typing.Any]]],
+                        model_entities: list[list[EntitiesType]],
                         future: mrc.Future,
-                        entities: list[list[dict[str, typing.Any]]]):
+                        entities: list[EntitiesType]):
         model_entities[batch_num] = entities
         future.set_result(batch_num)
 
