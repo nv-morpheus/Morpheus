@@ -42,23 +42,14 @@ class DLPInputProcessor(PreallocatorMixin, GpuAndCpuMixin, ControlMessageStage):
         Pipeline configuration instance.
     column_name : str
         Name of the column containing the source text to process.
-    use_chunking : bool
+    split_paragraphs : bool
         If True, splits input text into chunks. Defaults to False.
-    chunking_size : int
-        Maximum size of text chunks to process at once, ignored unless `use_chunking` is True.
-        Defaults to 1000 characters.
     """
 
-    def __init__(self,
-                 config: Config,
-                 *,
-                 column_name: str = "source_text",
-                 chunking_size: int = 1000,
-                 use_chunking: bool = False):
+    def __init__(self, config: Config, *, column_name: str = "source_text", split_paragraphs: bool = False):
         super().__init__(config)
         self.column_name = column_name
-        self.chunking_size = chunking_size
-        self.use_chunking = use_chunking
+        self.split_paragraphs = split_paragraphs
         self.df_class = get_df_class(config.execution_mode)
 
     @property
@@ -84,49 +75,25 @@ class DLPInputProcessor(PreallocatorMixin, GpuAndCpuMixin, ControlMessageStage):
         """
 
         with msg.mutable_dataframe() as df:
+            if df.index.name is None:
+                df.index.name = "index"
+
             source_series: SeriesType = df[self.column_name]
-            if not self.use_chunking:
-                df[self.column_name] = source_series.str.replace('\r\n', '\n').str.replace('\r', '\n')
+            source_series = source_series.str.replace('\r\n', '\n').str.replace('\r', '\n')
+            if not self.split_paragraphs:
+                df[self.column_name] = source_series
                 meta = msg
             else:
-                new_rows = []
+                split_series = source_series.str.split("\n").explode()
+                new_df = self.df_class({self.column_name: split_series})
 
-                if not isinstance(source_series, pd.Series):
-                    # cudf series doesn't support iteration
-                    source_series = source_series.to_arrow().to_pylist()
-
-                for row in source_series:
-                    # Basic normalization
-                    normalized_text = row.replace('\r\n', '\n').replace('\r', '\n')
-
-                    # For larger texts, split into chunks to optimize processing
-                    if self.use_chunking:
-                        # Split by paragraphs first to preserve content boundaries
-                        paragraphs = normalized_text.split('\n\n')
-                        current_chunk = []
-                        current_chunk_len = 0
-
-                        for para in paragraphs:
-                            if current_chunk_len > 0 and (current_chunk_len + len(para) > self.chunking_size):
-                                new_rows.append("".join(current_chunk))
-                                current_chunk = [para]
-                                current_chunk_len = len(para)
-                            else:
-                                if len(current_chunk) > 0:
-                                    current_chunk.append("\n\n")
-                                    current_chunk_len += 2
-
-                                current_chunk.append(para)
-                                current_chunk_len += len(para)
-
-                        if len(current_chunk) > 0:
-                            new_rows.append("".join(current_chunk))
-
-                    else:
-                        new_rows.append(normalized_text)
-
-                new_df = self.df_class({self.column_name: new_rows})
-                meta = MessageMeta(new_df)
+                # Ideally we wouldn't modify the original DataFrame, but for large DataFrames this we were getting
+                # out of memory errors on the merge operation.
+                df.drop(columns=[self.column_name], inplace=True)
+                merged_df = new_df.merge(df, on=[df.index.name])
+                merged_df.index.name = "original_source_index"
+                merged_df.reset_index(drop=False, inplace=True)
+                meta = MessageMeta(merged_df)
 
         control_msg = ControlMessage()
         control_msg.payload(meta)
