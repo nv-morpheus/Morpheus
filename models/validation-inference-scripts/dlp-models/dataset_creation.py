@@ -31,62 +31,28 @@ def fix_gretel_masks(row):
     return list_of_masks
 
 
-def normalize_privacy_masks(dataframe):
-    """Normalize privacy masks to consistent format."""
-    for _, row in dataframe.iterrows():
-        list_of_masks = []
-        for m in row.privacy_mask:
-            list_of_masks.append(
-                {
-                    "label": m["label"],
-                    "start": m["start"],
-                    "end": m["end"],
-                    "value": m["value"],
-                }
-            )
-        row.privacy_mask = list_of_masks
-    return dataframe
-
-
 def process_gretel_dataset(dataset, num_samples):
     """Process Gretel dataset to standard format."""
     df = dataset.to_pandas()
     df = df[["text", "entities"]]
     df.columns = ["source_text", "privacy_mask"]
-    
+
     if num_samples:
         df = df.sample(n=num_samples, random_state=SEED).reset_index(
             drop=True
         )
-    
+
     df["privacy_mask"] = df["privacy_mask"].apply(literal_eval)
     df["privacy_mask"] = df.apply(fix_gretel_masks, axis=1)
     df["source"] = "gretel"
-    
+
     return df
 
-
-def process_ai4privacy_dataset(dataset, num_samples):
-    """Process AI4Privacy dataset to standard format."""
-    df = dataset.to_pandas()
-    df = df[df["language"] == "en"]
-    df = df[["source_text", "privacy_mask"]]
-    df = df[df["privacy_mask"].str.len() > 0]
-    
-    if num_samples:
-        df = df.sample(n=num_samples, random_state=SEED).reset_index(
-            drop=True
-        )
-    
-    df["source"] = "ai4privacy"
-    
-    return df
 
 
 def load_and_process_datasets(dataset_names, num_samples=None):
     """Load and process specified datasets."""
     available_datasets = {
-        "ai4privacy": "ai4privacy/pii-masking-400k",
         "gretel": "gretelai/gretel-pii-masking-en-v1",
     }
 
@@ -101,8 +67,6 @@ def load_and_process_datasets(dataset_names, num_samples=None):
 
         if name == "gretel":
             df = process_gretel_dataset(dataset, num_samples)
-        elif name == "ai4privacy":
-            df = process_ai4privacy_dataset(dataset, num_samples)
 
         dataframes.append(df)
 
@@ -111,8 +75,6 @@ def load_and_process_datasets(dataset_names, num_samples=None):
         drop=True
     )
 
-    # Normalize all privacy masks to consistent format
-    joint_dataframe = normalize_privacy_masks(joint_dataframe)
 
     # Filter out empty masks
     joint_dataframe = joint_dataframe[

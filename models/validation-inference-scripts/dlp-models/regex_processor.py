@@ -82,7 +82,7 @@ class GliNERProcessor:
             List of findings with metadata
         """
 
-    
+
         # If regex findings are provided, use them to filter text for analysis
         if regex_findings and len(regex_findings) > 0:
 
@@ -96,7 +96,7 @@ class GliNERProcessor:
                 threshold=self.confidence_threshold,
                 multi_label=False
             )
-           
+
             seen = set()
             unique_entities = []
             for i, entities in enumerate(all_entities):
@@ -283,7 +283,7 @@ class GPURegexEntityDetector:
         Returns:
             List of detected entities with text, label, and position
         """
-       
+
         results = []
         if delimiter is not None:
             text_series = cudf.Series([s for s in text.split(delimiter)])
