@@ -37,7 +37,7 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         "password": 85,
         "credit_card_number": 90,
         "ssn": 95,
-        "address": 60,
+        "street_address": 60,
         "email": 40,
         "phone_number": 45,
         "ipv4": 30,
@@ -47,11 +47,8 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         "time": 20,
         "api_key": 80,
         "customer_id": 65,
-        "personal": 70,
-        "financial": 85,
         "health_plan_beneficiary_number": 75,
-        "medical_record_number": 75,
-        "api_credentials": 75
+        "medical_record_number": 75
     }
 
     def __init__(self, config: Config, *, type_weights: dict[str, int] | None = None, default_weight: int = 50):
