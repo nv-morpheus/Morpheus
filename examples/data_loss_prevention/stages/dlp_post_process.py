@@ -23,6 +23,7 @@ from morpheus.pipeline.stage_decorator import stage
 def dlp_post_process(msg: ControlMessage, *, include_privacy_masks: bool) -> MessageMeta:
     # Return the message for the next stage
     columns = [
+        "original_source_index",
         'source_text',
         'dlp_findings',
         'risk_level',
@@ -37,4 +38,4 @@ def dlp_post_process(msg: ControlMessage, *, include_privacy_masks: bool) -> Mes
         columns.append('privacy_mask')
 
     with msg.payload().mutable_dataframe() as df:
-        return MessageMeta(df[columns])
+        return MessageMeta(df[columns].sort_values('original_source_index'))

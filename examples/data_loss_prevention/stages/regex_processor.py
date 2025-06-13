@@ -21,11 +21,12 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
-from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
+from morpheus.utils.type_utils import get_df_class
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -63,7 +64,8 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
         """
         super().__init__(config)
         self.source_column_name = source_column_name
-        self.combined_patterns = {}
+
+        self._df_class = get_df_class(config.execution_mode)
 
         if patterns is None:
             if patterns_file is None:
@@ -71,7 +73,7 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
             patterns = self.load_regex_patterns(patterns_file)
             logger.info("Loaded %d regex pattern groups", len(patterns))
 
-        self._output_columns = {}
+        self.combined_patterns = {}
         # For each entity type, combine multiple patterns into a single regex
         for pattern_name, pattern_list in patterns.items():
 
@@ -82,9 +84,6 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
                 combined_pattern = pattern_list[0]
 
             self.combined_patterns[pattern_name] = combined_pattern
-            output_column = f"regex_matches_{pattern_name}"
-            self._output_columns[pattern_name] = output_column
-            self._needed_columns[output_column] = TypeId.STRING
 
     @staticmethod
     def load_regex_patterns(file_path: str | pathlib.Path) -> dict[str, list[str]]:
@@ -97,7 +96,7 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
         return "regex-processor"
 
     def accepted_types(self) -> tuple:
-        return (ControlMessage, )
+        return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:
         return False
@@ -109,23 +108,30 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
         """
         return self.combined_patterns.copy()
 
-    def process(self, msg: ControlMessage) -> ControlMessage:
+    def process(self, msg: MessageMeta) -> ControlMessage:
         """
         Scan text for sensitive data using regex patterns
-
-        Returns:
-            List of findings with metadata
         """
 
-        with msg.payload().mutable_dataframe() as df:
+        with msg.mutable_dataframe() as df:
             # Extract the text column to process
             text_series = df[self.source_column_name]
 
+            boolean_columns = {}
             for pattern_name, pattern in self.combined_patterns.items():
-                output_column = self._output_columns[pattern_name]
-                df[output_column] = text_series.str.findall(pattern)
+                boolean_columns[pattern_name] = text_series.str.contains(pattern)
 
-        return msg
+            # Combine all boolean columns into a single series
+            bool_df = self._df_class(boolean_columns)
+            bool_series = bool_df.any(axis=1)
+
+            # drop input rows that did not match any pattern
+            df.drop(bool_series[(bool_series == False)].index, axis=0, inplace=True)
+            df.reset_index(drop=True, inplace=True)
+
+        cm_msg = ControlMessage()
+        cm_msg.payload(msg)
+        return cm_msg
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.process))

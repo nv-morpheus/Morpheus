@@ -62,15 +62,6 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
         # Default weight if type not in dictionary
         self.default_weight = default_weight
-        self._needed_columns.update({
-            "risk_score": TypeId.INT32,
-            "risk_level": TypeId.STRING,
-            "data_types_found": TypeId.STRING,
-            "highest_confidence": TypeId.FLOAT32,
-            "num_high": TypeId.INT32,
-            "num_medium": TypeId.INT32,
-            "num_low": TypeId.INT32
-        })
 
         self._df_pkg = get_df_pkg(config.execution_mode)
 

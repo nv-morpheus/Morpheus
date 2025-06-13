@@ -26,7 +26,6 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
-from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.type_utils import exec_mode_to_df_type_str
@@ -36,7 +35,7 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_stage("datasets-source")
-class DatasetsSourceStage(PreallocatorMixin, GpuAndCpuMixin, SingleOutputSource):
+class DatasetsSourceStage(GpuAndCpuMixin, SingleOutputSource):
     """
     Source stage that loads data from the datasets library into a DataFrame.
 
