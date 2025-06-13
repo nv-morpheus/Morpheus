@@ -35,19 +35,22 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
     DEFAULT_TYPE_WEIGHTS = {
         "password": 85,
-        "credit_card": 90,
+        "credit_card_number": 90,
         "ssn": 95,
         "address": 60,
         "email": 40,
-        "phone_us": 45,
-        "phone_numbers": 45,
-        "ip_address": 30,
+        "phone_number": 45,
+        "ipv4": 30,
+        "ipv6": 30,
         "date": 20,
+        "date_time": 20,
+        "time": 20,
         "api_key": 80,
-        "customer_id": 65,  # Semantic categories
+        "customer_id": 65,
         "personal": 70,
         "financial": 85,
-        "health": 75,
+        "health_plan_beneficiary_number": 75,
+        "medical_record_number": 75,
         "api_credentials": 75
     }
 
