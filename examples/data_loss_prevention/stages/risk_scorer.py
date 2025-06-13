@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import math
-import typing
 
 import mrc
 import pandas as pd
@@ -134,9 +133,9 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
             total_score += weighted_score
 
             # Count by severity
-            if weighted_score >= 80:
+            if weight >= 80:
                 num_high += 1
-            elif weighted_score >= 50:
+            elif weight >= 50:
                 num_medium += 1
             else:
                 num_low += 1
