@@ -23,6 +23,7 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.utils.type_utils import get_df_pkg
@@ -91,12 +92,20 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
         return "Minimal"
 
-    def _score_fn(self, series: pd.Series) -> list[typing.Any]:
+    def _score_fn(self, row_index: int, group_df: pd.DataFrame) -> pd.DataFrame | None:
 
-        findings = series.dlp_findings
+        findings = group_df.dlp_findings
 
-        if findings is None or len(findings) == 0:
-            return [0, None, [], 0.0, 0, 0, 0]
+        if findings is None:
+            return None
+
+        flat_findings = []
+        for finding in findings:
+            flat_findings.extend(finding)
+
+        findings = flat_findings
+        if len(findings) == 0:
+            return None
 
         # Calculate total weighted score
         total_score = 0
@@ -142,7 +151,17 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         # Determine risk level from score
         risk_level = self._risk_score_to_level(risk_score)
 
-        return [risk_score, risk_level, sorted(data_types_found), highest_confidence, num_high, num_medium, num_low]
+        return pd.DataFrame({
+            "original_source_index": row_index,
+            "risk_score": [risk_score],
+            "risk_level": [risk_level],
+            "data_types_found": [sorted(data_types_found)],
+            "highest_confidence": [highest_confidence],
+            "num_high": [num_high],
+            "num_medium": [num_medium],
+            "num_low": [num_low],
+            "dlp_findings": [findings]
+        })
 
     def score(self, msg: ControlMessage) -> ControlMessage:
         """
@@ -151,24 +170,22 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
         with msg.payload().mutable_dataframe() as df:
             is_pandas = isinstance(df, pd.DataFrame)
-            dlp_findings = df[['dlp_findings']]
             if not is_pandas:
-                dlp_findings = dlp_findings.to_pandas()
+                df = df.to_pandas()
 
-            results = dlp_findings.apply(self._score_fn, axis=1, result_type='expand')
+        groups = df.groupby(["original_source_index"], as_index=False)
+        results = []
+        for (original_source_index, group_df) in groups:
+            scored_df = self._score_fn(original_source_index, group_df)
+            if scored_df is not None:
+                results.append(scored_df)
 
-            if not is_pandas:
-                results = self._df_pkg.from_pandas(results)
+        result_df = pd.concat(results, axis=0)
 
-            df[[
-                "risk_score",
-                "risk_level",
-                "data_types_found",
-                "highest_confidence",
-                "num_high",
-                "num_medium",
-                "num_low"
-            ]] = results
+        if not is_pandas:
+            result_df = self._df_pkg.from_pandas(result_df)
+
+        msg.payload(MessageMeta(result_df))
 
         return msg
 
