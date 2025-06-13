@@ -115,6 +115,22 @@ def main(log_level: int,
     if num_samples < 0:
         num_samples = None
 
+    output_columns = [
+        "original_source_index",
+        'dlp_findings',
+        'risk_level',
+        'risk_score',
+        'highest_confidence',
+        'num_minimal',
+        'num_low',
+        'num_medium',
+        'num_high',
+        'num_critical',
+        'data_types_found'
+    ]
+    if include_privacy_masks:
+        output_columns.append('privacy_mask')
+
     config = Config()
     config.mode = PipelineModes.NLP
     config.model_max_batch_size = model_max_batch_size
@@ -151,7 +167,7 @@ def main(log_level: int,
 
     pipeline.add_stage(MonitorStage(config, description="Risk Scorer"))
 
-    pipeline.add_stage(dlp_post_process(config, include_privacy_masks=include_privacy_masks))
+    pipeline.add_stage(dlp_post_process(config, columns=output_columns))
     pipeline.add_stage(DLPOutput(config, filename=str(out_file), overwrite=True))
 
     pipeline.add_stage(MonitorStage(config, description="DLP Output"))

@@ -20,23 +20,12 @@ from morpheus.pipeline.stage_decorator import stage
 
 
 @stage(name="dlp-post-process", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
-def dlp_post_process(msg: ControlMessage, *, include_privacy_masks: bool) -> MessageMeta:
-    # Return the message for the next stage
-    columns = [
-        "original_source_index",
-        'dlp_findings',
-        'risk_level',
-        'risk_score',
-        'highest_confidence',
-        'num_minimal',
-        'num_low',
-        'num_medium',
-        'num_high',
-        'num_critical',
-        'data_types_found'
-    ]
-    if include_privacy_masks:
-        columns.append('privacy_mask')
-
+def dlp_post_process(msg: ControlMessage,
+                     *,
+                     columns: list[str],
+                     sort_col: str = 'original_source_index') -> MessageMeta:
+    """
+    Convert the incoming ControlMessage payload to a sorted MessageMeta containing only the requested columns.
+    """
     with msg.payload().mutable_dataframe() as df:
-        return MessageMeta(df[columns].sort_values('original_source_index'))
+        return MessageMeta(df[columns].sort_values(sort_col))
