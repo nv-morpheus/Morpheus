@@ -28,9 +28,11 @@ def dlp_post_process(msg: ControlMessage, *, include_privacy_masks: bool) -> Mes
         'risk_level',
         'risk_score',
         'highest_confidence',
+        'num_minimal',
         'num_low',
         'num_medium',
         'num_high',
+        'num_critical',
         'data_types_found'
     ]
     if include_privacy_masks:
