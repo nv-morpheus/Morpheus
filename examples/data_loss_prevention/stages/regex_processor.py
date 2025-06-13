@@ -126,7 +126,10 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
             bool_series = bool_df.any(axis=1)
 
             # drop input rows that did not match any pattern
-            df.drop(bool_series[(bool_series == False)].index, axis=0, inplace=True)
+            df.drop(
+                bool_series[(bool_series == False)].index,  # noqa: E712 pylint: disable=singleton-comparison
+                axis=0,
+                inplace=True)
             df.reset_index(drop=True, inplace=True)
 
         cm_msg = ControlMessage()
