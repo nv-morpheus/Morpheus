@@ -33,6 +33,8 @@ from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -81,6 +83,11 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               default=1,
               show_default=True,
               help=("Repeat the input dataset, useful for testing. A value of 1 means no repeat."))
+@click.option('--regex_only',
+              is_flag=True,
+              default=False,
+              show_default=True,
+              help=("Only perform regex matching and skip the GliNER processor."))
 @click.option("--server_url", required=True, help="Tritonserver url.", default="localhost:8001")
 @click.option('--model_max_batch_size',
               type=int,
@@ -106,6 +113,7 @@ def main(log_level: int,
          include_privacy_masks: bool,
          num_samples: int,
          repeat: int,
+         regex_only: bool,
          server_url: str,
          model_max_batch_size: int,
          model_source_dir: pathlib.Path,
@@ -114,22 +122,6 @@ def main(log_level: int,
 
     if num_samples < 0:
         num_samples = None
-
-    output_columns = [
-        "original_source_index",
-        'dlp_findings',
-        'risk_level',
-        'risk_score',
-        'highest_confidence',
-        'num_minimal',
-        'num_low',
-        'num_medium',
-        'num_high',
-        'num_critical',
-        'data_types_found'
-    ]
-    if include_privacy_masks:
-        output_columns.append('privacy_mask')
 
     config = Config()
     config.mode = PipelineModes.NLP
@@ -155,22 +147,44 @@ def main(log_level: int,
 
     pipeline.add_stage(MonitorStage(config, description="Input Processor"))
 
-    pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file))
+    pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file, include_pattern_names=regex_only))
 
     pipeline.add_stage(MonitorStage(config, description="Regex Processor"))
 
-    pipeline.add_stage(GliNERProcessor(config, server_url=server_url, model_source_dir=str(model_source_dir)))
+    if regex_only:
+        pipeline.add_stage(SerializeStage(config))
+        pipeline.add_stage(WriteToFileStage(config, filename=str(out_file), overwrite=True))
 
-    pipeline.add_stage(MonitorStage(config, description="GliNER Processor"))
+    else:
 
-    pipeline.add_stage(RiskScorer(config))
+        output_columns = [
+            "original_source_index",
+            'dlp_findings',
+            'risk_level',
+            'risk_score',
+            'highest_confidence',
+            'num_minimal',
+            'num_low',
+            'num_medium',
+            'num_high',
+            'num_critical',
+            'data_types_found'
+        ]
+        if include_privacy_masks:
+            output_columns.append('privacy_mask')
 
-    pipeline.add_stage(MonitorStage(config, description="Risk Scorer"))
+        pipeline.add_stage(GliNERProcessor(config, server_url=server_url, model_source_dir=str(model_source_dir)))
 
-    pipeline.add_stage(dlp_post_process(config, columns=output_columns))
-    pipeline.add_stage(DLPOutput(config, filename=str(out_file), overwrite=True))
+        pipeline.add_stage(MonitorStage(config, description="GliNER Processor"))
 
-    pipeline.add_stage(MonitorStage(config, description="DLP Output"))
+        pipeline.add_stage(RiskScorer(config))
+
+        pipeline.add_stage(MonitorStage(config, description="Risk Scorer"))
+
+        pipeline.add_stage(dlp_post_process(config, columns=output_columns))
+        pipeline.add_stage(DLPOutput(config, filename=str(out_file), overwrite=True))
+
+        pipeline.add_stage(MonitorStage(config, description="DLP Output"))
 
     # Run the pipeline
     pipeline.run()

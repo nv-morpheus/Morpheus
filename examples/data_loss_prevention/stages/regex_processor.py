@@ -27,6 +27,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.utils.type_utils import get_df_class
+from morpheus.utils.type_utils import get_df_pkg
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -47,6 +48,8 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
         Ignored if `patterns` is provided.
     source_column_name : str
         Name of the column containing the source text to process.
+    include_pattern_names : bool
+        If True, the output will include the names of the patterns that matched.
     """
 
     def __init__(self,
@@ -54,7 +57,8 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
                  *,
                  patterns: dict[str, list[str]] | None = None,
                  patterns_file: str | pathlib.Path | None = None,
-                 source_column_name: str = "source_text"):
+                 source_column_name: str = "source_text",
+                 include_pattern_names: bool = False):
         """
         Initialize with regex patterns to detect sensitive data
 
@@ -66,6 +70,8 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
         self.source_column_name = source_column_name
 
         self._df_class = get_df_class(config.execution_mode)
+        self._df_pkg = get_df_pkg(config.execution_mode)
+        self._include_pattern_names = include_pattern_names
 
         if patterns is None:
             if patterns_file is None:
@@ -118,12 +124,27 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
             text_series = df[self.source_column_name]
 
             boolean_columns = {}
+            label_columns = []
             for pattern_name, pattern in self.combined_patterns.items():
-                boolean_columns[pattern_name] = text_series.str.contains(pattern)
+                bool_col = text_series.str.contains(pattern)
+                boolean_columns[pattern_name] = bool_col
+
+                if self._include_pattern_names:
+                    label = self._df_pkg.Series(data=None, index=df.index, dtype="O")
+                    label[bool_col] = pattern_name
+                    label_columns.append(label)
 
             # Combine all boolean columns into a single series
             bool_df = self._df_class(boolean_columns)
             bool_series = bool_df.any(axis=1)
+
+            if self._include_pattern_names:
+                label_series = self._df_pkg.Series(data=None, index=df.index, dtype="O")
+                for label_col in label_columns:
+                    label_series = label_series.str.cat(label_col, sep=" ", na_rep="").str.strip()
+
+                label_series = label_series.str.replace(" ", ", ")
+                df["labels"] = label_series
 
             # drop input rows that did not match any pattern
             df.drop(
