@@ -13,11 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re2 as re
-from gliner import GLiNER
-
 # import re
 import cudf
+import re2 as re
+from gliner import GLiNER
 
 
 class GliNERProcessor:
@@ -26,11 +25,13 @@ class GliNERProcessor:
     Uses a model to predict entities in text
     """
 
-    def __init__(self,
-                 model_name: str = "gretelai/gretel-gliner-bi-small-v1.0",
-                 confidence_threshold: float = 0.7,
-                 context_window: int = 100,
-                 labels: list[str] = None):
+    def __init__(
+        self,
+        model_name: str = "gretelai/gretel-gliner-bi-small-v1.0",
+        confidence_threshold: float = 0.7,
+        context_window: int = 100,
+        labels: list[str] = None,
+    ):
         """
         Initialize with configuration for SLM-based detection
 
@@ -42,16 +43,25 @@ class GliNERProcessor:
             self.entity_labels = labels
         else:
             # few default labels
-            self.entity_labels = ["medical_record_number", "date_of_birth", "ssn", "date", "first_name", "email"]
+            self.entity_labels = [
+                "medical_record_number",
+                "date_of_birth",
+                "ssn",
+                "date",
+                "first_name",
+                "email",
+            ]
 
         # Load the fine-tuned GLiNER model
         self.model = GLiNER.from_pretrained(model_name, map_location="cuda:0")
         self.context_window = context_window
 
-    def process(self,
-                text: str,
-                regex_findings: list[dict[str, list]] = None,
-                failback: bool = True) -> list[dict[str, list]]:
+    def process(
+        self,
+        text: str,
+        regex_findings: list[dict[str, list]] = None,
+        failback: bool = True,
+    ) -> list[dict[str, list]]:
         """
         Analyze text using an entity prediction model for sensitive data detection
 
@@ -72,13 +82,17 @@ class GliNERProcessor:
         # If regex findings are provided, use them to filter text for analysis
         if regex_findings and len(regex_findings) > 0:
 
-            contexts, spans = self._extract_contexts_from_regex_findings(text, regex_findings)
+            contexts, spans = self._extract_contexts_from_regex_findings(
+                text, regex_findings
+            )
             assert len(contexts) == len(spans), "Mismatch in context window and spans"
-            all_entities = self.model.batch_predict_entities(contexts,
-                                                             self.entity_labels,
-                                                             flat_ner=True,
-                                                             threshold=self.confidence_threshold,
-                                                             multi_label=False)
+            all_entities = self.model.batch_predict_entities(
+                contexts,
+                self.entity_labels,
+                flat_ner=True,
+                threshold=self.confidence_threshold,
+                multi_label=False,
+            )
 
             seen = set()
             unique_entities = []
@@ -87,7 +101,12 @@ class GliNERProcessor:
                 for entity in entities:
                     entity["start"] += span_offset
                     entity["end"] += span_offset
-                    entity_key = (entity["label"], entity["text"], entity["start"], entity["end"])
+                    entity_key = (
+                        entity["label"],
+                        entity["text"],
+                        entity["start"],
+                        entity["end"],
+                    )
                     if entity_key not in seen:
                         seen.add(entity_key)
                         unique_entities.append(entity)
@@ -100,7 +119,9 @@ class GliNERProcessor:
 
         return all_entities
 
-    def _extract_contexts_from_regex_findings(self, text: str, regex_findings: list[dict[str, list]]) -> list[str]:
+    def _extract_contexts_from_regex_findings(
+        self, text: str, regex_findings: list[dict[str, list]]
+    ) -> list[str]:
         """
         Extract text contexts around regex matches to focus SLM analysis
 
@@ -146,11 +167,13 @@ class GliNERProcessor:
         """
         Predict entities in text using GLiNER
         """
-        results = self.model.predict_entities(text,
-                                              self.entity_labels,
-                                              flat_ner=True,
-                                              threshold=self.confidence_threshold,
-                                              multi_label=False)
+        results = self.model.predict_entities(
+            text,
+            self.entity_labels,
+            flat_ner=True,
+            threshold=self.confidence_threshold,
+            multi_label=False,
+        )
 
         return results
 
@@ -158,7 +181,15 @@ class GliNERProcessor:
         """
         Filter entities for relevant keys
         """
-        entities = [{'label': r['label'], 'start': r['start'], 'end': r['end'], 'score': r['score']} for r in entities]
+        entities = [
+            {
+                "label": r["label"],
+                "start": r["start"],
+                "end": r["end"],
+                "score": r["score"],
+            }
+            for r in entities
+        ]
         return entities
 
 
@@ -183,7 +214,7 @@ class RegexProcessor:
 
             # Combine all patterns for this entity type with OR operator
             if len(pattern_list) > 1:
-                combined_pattern = '|'.join(f'(?:{p})' for p in pattern_list)
+                combined_pattern = "|".join(f"(?:{p})" for p in pattern_list)
                 self.combined_patterns[entity_type] = re.compile(
                     combined_pattern,  # flags
                 )
@@ -205,13 +236,15 @@ class RegexProcessor:
             # for pattern in pattern_list:
             matches = pattern.finditer(text)
             for match in matches:
-                findings.append({
-                    "label": pattern_name,
-                    "match": match.group(),
-                    "span": match.span(),
-                    "detection_method": "regex",
-                    "confidence": 0.9  # High confidence for regex matches
-                })
+                findings.append(
+                    {
+                        "label": pattern_name,
+                        "match": match.group(),
+                        "span": match.span(),
+                        "detection_method": "regex",
+                        "confidence": 0.9,  # High confidence for regex matches
+                    }
+                )
 
         return findings
 
@@ -254,12 +287,14 @@ class GPURegexEntityDetector:
         chunks = []
 
         for i in range(0, len(words), chunk_size):
-            chunk_words = words[i:i + chunk_size]
+            chunk_words = words[i : i + chunk_size]
             chunks.append(" ".join(chunk_words))
 
         return chunks
 
-    def process(self, text: str, chunk_size: int = 200, delimiter: str | None = None) -> list[dict[str, list]]:
+    def process(
+        self, text: str, chunk_size: int = 200, delimiter: str | None = None
+    ) -> list[dict[str, list]]:
         """
         Detect entities in text using GPU-accelerated regex.
 
@@ -294,12 +329,14 @@ class GPURegexEntityDetector:
                             start = text.find(match)
                             if start != -1:
                                 end = start + len(match)
-                                results.append({
-                                    "match": match,
-                                    "label": entity_type,
-                                    "span": (start, end),
-                                    "confidence": 1.0,  # nominal score
-                                    "detection_method": "cudf"
-                                })
+                                results.append(
+                                    {
+                                        "match": match,
+                                        "label": entity_type,
+                                        "span": (start, end),
+                                        "confidence": 1.0,  # nominal score
+                                        "detection_method": "cudf",
+                                    }
+                                )
 
         return results
