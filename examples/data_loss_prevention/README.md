@@ -114,6 +114,15 @@ Below is a visualization of the pipeline showing all stages and data flow:
 
 This example utilizes the Triton Inference Server to perform inference.
 
+### Downloading the model
+
+The model is stored in the Morpheus repository using [Git Large File Storage (LFS)](https://git-lfs.github.com/). Only those files which are strictly needed to run Morpheus are downloaded by default when the repository is cloned. The model can be downloaded using the `fetch_data.py` script.
+
+```bash
+git lfs install
+./scripts/fetch_data.py fetch models
+```
+
 ### Launching Triton
 
 Pull the Docker image for Triton:
