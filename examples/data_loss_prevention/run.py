@@ -33,8 +33,6 @@ from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -151,40 +149,42 @@ def main(log_level: int,
 
     pipeline.add_stage(MonitorStage(config, description="Regex Processor"))
 
+    output_columns = [
+        "original_source_index",
+        'risk_level',
+        'risk_score',
+        'highest_confidence',
+        'num_minimal',
+        'num_low',
+        'num_medium',
+        'num_high',
+        'num_critical',
+        'data_types_found'
+    ]
+
+    if include_privacy_masks:
+        output_columns.append('privacy_mask')
+
     if regex_only:
-        pipeline.add_stage(SerializeStage(config))
-        pipeline.add_stage(WriteToFileStage(config, filename=str(out_file), overwrite=True))
+        risk_scorer_input = "labels"
 
     else:
-
-        output_columns = [
-            "original_source_index",
-            'dlp_findings',
-            'risk_level',
-            'risk_score',
-            'highest_confidence',
-            'num_minimal',
-            'num_low',
-            'num_medium',
-            'num_high',
-            'num_critical',
-            'data_types_found'
-        ]
-        if include_privacy_masks:
-            output_columns.append('privacy_mask')
-
         pipeline.add_stage(GliNERProcessor(config, server_url=server_url, model_source_dir=str(model_source_dir)))
 
         pipeline.add_stage(MonitorStage(config, description="GliNER Processor"))
 
-        pipeline.add_stage(RiskScorer(config))
+        risk_scorer_input = "dlp_findings"
 
-        pipeline.add_stage(MonitorStage(config, description="Risk Scorer"))
+    output_columns.append(risk_scorer_input)
 
-        pipeline.add_stage(dlp_post_process(config, columns=output_columns))
-        pipeline.add_stage(DLPOutput(config, filename=str(out_file), overwrite=True))
+    pipeline.add_stage(RiskScorer(config, findings_column=risk_scorer_input))
 
-        pipeline.add_stage(MonitorStage(config, description="DLP Output"))
+    pipeline.add_stage(MonitorStage(config, description="Risk Scorer"))
+
+    pipeline.add_stage(dlp_post_process(config, output_columns=output_columns))
+    pipeline.add_stage(DLPOutput(config, filename=str(out_file), overwrite=True))
+
+    pipeline.add_stage(MonitorStage(config, description="DLP Output"))
 
     # Run the pipeline
     pipeline.run()
