@@ -20,6 +20,7 @@ limitations under the License.
 This example demonstrates how to use Morpheus to implement a DLP solution that combines regex pattern matching with small language model (SLM) powered semantic analysis for data protection.
 
 ## Supported Environments
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-128_arch-$(arch).yaml` or `conda/environments/examples_cuda-125_arch-$(arch).yaml` environment files. Refer to the [Setup](#setup) section for more information.
 | Environment | Supported | Notes |
 |-------------|-----------|-------|
 | Conda | ✔ | |
@@ -112,7 +113,20 @@ Below is a visualization of the pipeline showing all stages and data flow:
 
 ## Setup
 
-This example utilizes the Triton Inference Server to perform inference.
+### Installing GliNER and dependencies
+
+Prior to running the DLP pipeline, additional requirements must be installed in to your Conda environment.
+
+```bash
+conda env update --solver=libmamba \
+  -n ${CONDA_DEFAULT_ENV} \
+  --file ./conda/environments/examples_cuda-128_arch-$(arch).yaml
+```
+
+Install the GliNER package itself: <!-- Work-around for https://github.com/urchade/GLiNER/issues/267 -->
+```bash
+pip install --no-deps gliner==0.2.21
+```
 
 ### Downloading the model
 
@@ -125,7 +139,7 @@ git lfs install
 
 ### Launching Triton
 
-Pull the Docker image for Triton:
+This example utilizes the Triton Inference Server to perform inference. Pull the Docker image for Triton:
 ```bash
 docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06
 ```

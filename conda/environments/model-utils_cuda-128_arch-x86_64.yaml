@@ -12,7 +12,7 @@ dependencies:
 - cuml=25.02.*
 - jupyterlab
 - matplotlib
-- onnx
+- onnx=1.15
 - pandas
 - pip
 - python=3.12

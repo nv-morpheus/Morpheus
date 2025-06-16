@@ -80,6 +80,7 @@ dependencies:
 - numexpr
 - numpydoc=1.5
 - onnx=1.15
+- onnxruntime=1.22=*cuda
 - openai==1.13.*
 - papermill=2.6.0
 - pip
@@ -134,7 +135,6 @@ dependencies:
   - dgl
   - exhale>=0.3.7
   - faiss-cpu
-  - gliner==0.2.20
   - google-search-results==2.4
   - gpudb>=7.2.2.3
   - langchain-nvidia-ai-endpoints==0.0.11
