@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# import re
+import re
+
+from gliner import GLiNER
 
 import cudf
-import re2 as re
-from gliner import GLiNER
 
 
 class GliNERProcessor:
@@ -42,8 +42,7 @@ class GliNERProcessor:
             self.entity_labels = labels
         else:
             # few default labels
-            self.entity_labels = [
-                "medical_record_number", "date_of_birth", "ssn", "date", "first_name", "email"]
+            self.entity_labels = ["medical_record_number", "date_of_birth", "ssn", "date", "first_name", "email"]
 
         # Load the fine-tuned GLiNER model
         self.model = GLiNER.from_pretrained(model_name, map_location="cuda:0")
@@ -73,10 +72,8 @@ class GliNERProcessor:
         # If regex findings are provided, use them to filter text for analysis
         if regex_findings and len(regex_findings) > 0:
 
-            contexts, spans = self._extract_contexts_from_regex_findings(
-                text, regex_findings)
-            assert len(contexts) == len(
-                spans), "Mismatch in context window and spans"
+            contexts, spans = self._extract_contexts_from_regex_findings(text, regex_findings)
+            assert len(contexts) == len(spans), "Mismatch in context window and spans"
             all_entities = self.model.batch_predict_entities(contexts,
                                                              self.entity_labels,
                                                              flat_ner=True,
@@ -90,8 +87,7 @@ class GliNERProcessor:
                 for entity in entities:
                     entity["start"] += span_offset
                     entity["end"] += span_offset
-                    entity_key = (entity["label"], entity["text"],
-                                  entity["start"], entity["end"])
+                    entity_key = (entity["label"], entity["text"], entity["start"], entity["end"])
                     if entity_key not in seen:
                         seen.add(entity_key)
                         unique_entities.append(entity)
@@ -162,13 +158,12 @@ class GliNERProcessor:
         """
         Filter entities for relevant keys
         """
-        entities = [{'label': r['label'], 'start': r['start'],
-                     'end': r['end'], 'score': r['score']} for r in entities]
+        entities = [{'label': r['label'], 'start': r['start'], 'end': r['end'], 'score': r['score']} for r in entities]
         return entities
 
 
 class RegexProcessor:
-    """Process text with regex patterns to identify structured sensitive data"""
+    """CPU based regex processor. Uses text with regex patterns to identify structured sensitive data"""
 
     def __init__(self, patterns: dict[str, list[str]]):
         """
@@ -235,8 +230,7 @@ class GPURegexEntityDetector:
         for entity_type, _patterns in self.patterns.items():
             # Combine patterns with OR operator if there are multiple patterns
             if len(_patterns) > 1:
-                combined_pattern = "|".join(
-                    f"(?:{pattern})" for pattern in _patterns)
+                combined_pattern = "|".join(f"(?:{pattern})" for pattern in _patterns)
                 self.entity_patterns[entity_type] = combined_pattern
             else:
                 self.entity_patterns[entity_type] = _patterns[0]
@@ -287,8 +281,7 @@ class GPURegexEntityDetector:
         if delimiter is not None:
             text_series = cudf.Series(list(text.split(delimiter)))
         else:
-            text_series = cudf.Series(
-                self.split_text_by_words(text, chunk_size))
+            text_series = cudf.Series(self.split_text_by_words(text, chunk_size))
         for entity_type, pattern in self.entity_patterns.items():
             matches = text_series.str.findall(pattern)
             all_empty_lists = matches.list.len() > 0

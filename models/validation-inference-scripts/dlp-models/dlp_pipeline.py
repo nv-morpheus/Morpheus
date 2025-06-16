@@ -138,19 +138,18 @@ class RiskScorer:
             total_score += weighted_score
 
             # Count by severity
-            if weighted_score >= 80:
+            if weight >= 80:
                 severity_counts["high"] += 1
-            elif weighted_score >= 50:
+            elif weight >= 50:
                 severity_counts["medium"] += 1
             else:
                 severity_counts["low"] += 1
 
         # Normalize to 0-100 scale with diminishing returns for many findings
-
+        # max_score = 100
         max_score = 100
-        normalization_factor = max(1, math.log2(
-            len(findings) + 1)) * 20  # Adjust scaling factor
-
+        # Adjust scaling factor to increase risk for more findings
+        normalization_factor = max(1, math.log2(len(findings) + 1)) * 2
         # Calculate normalized risk score
         risk_score = min(max_score, total_score / normalization_factor)
 
@@ -268,8 +267,7 @@ class DLPPipeline:
 
             # Stage 3: GLiNER processing with timing
             gliner_start = time.time()
-            semantic_findings = self.gliner_processor.process(
-                chunk, regex_findings)
+            semantic_findings = self.gliner_processor.process(chunk, regex_findings)
             gliner_time = time.time() - gliner_start
             gliner_times.append(gliner_time)
 
