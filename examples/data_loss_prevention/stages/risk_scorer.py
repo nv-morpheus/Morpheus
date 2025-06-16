@@ -104,10 +104,10 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
         flat_findings = []
         for finding in findings:
-            if isinstance(finding, list):
-                flat_findings.extend(finding)
-            else:
-                flat_findings.append(finding)
+            if isinstance(finding, str):
+                finding = [s.strip() for s in finding.split(',')]
+
+            flat_findings.extend(finding)
 
         findings = flat_findings
 
