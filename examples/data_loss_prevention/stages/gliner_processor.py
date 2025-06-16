@@ -47,6 +47,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         Pipeline configuration instance.
     model_source_dir : str
         Path to the directory containing the GLiNER model files. Used for pre and post-processing.
+    onnx_path : str
+        Path to the ONNX model file, relative to the `model_source_dir`. Default is "model.onnx".
     server_url : str
         URL of the Triton inference server.
     triton_model_name : str
@@ -68,6 +70,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                  config: Config,
                  *,
                  model_source_dir: str,
+                 onnx_path: str = "model.onnx",
                  server_url: str = "localhost:8001",
                  triton_model_name: str = "gliner-bi-encoder-onnx",
                  source_column_name: str = "source_text",
@@ -91,6 +94,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         self.gliner_triton = GliNERTritonInference(server_url=server_url,
                                                    triton_model_name=triton_model_name,
                                                    model_source_dir=model_source_dir,
+                                                   onnx_path=onnx_path,
                                                    map_location=map_location,
                                                    gliner_threshold=confidence_threshold)
 

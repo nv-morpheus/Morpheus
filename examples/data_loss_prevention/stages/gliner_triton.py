@@ -28,6 +28,7 @@ class GliNERTritonInference:
 
     def __init__(self,
                  model_source_dir: str,
+                 onnx_path: str = "model.onnx",
                  server_url: str = "localhost:8001",
                  triton_model_name: str = "gliner-bi-encoder-onnx",
                  gliner_threshold: float = 0.3,
@@ -37,6 +38,7 @@ class GliNERTritonInference:
         # The actual heavy inference will be done on Triton.
         self._model = None
         self._model_source_dir = model_source_dir
+        self._onnx_path = onnx_path
         self._map_location = map_location
         self.triton_model_name = triton_model_name
         self.gliner_threshold = gliner_threshold
@@ -57,7 +59,9 @@ class GliNERTritonInference:
             from gliner import GLiNER
             self._model = GLiNER.from_pretrained(self._model_source_dir,
                                                  local_files_only=True,
-                                                 map_location=self._map_location)
+                                                 map_location=self._map_location,
+                                                 onnx_path=self._onnx_path,
+                                                 load_onnx_model=True)
         return self._model
 
     def _load_label_data(self):
