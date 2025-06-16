@@ -85,7 +85,14 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               is_flag=True,
               default=False,
               show_default=True,
-              help=("Only perform regex matching and skip the GliNER processor."))
+              help=("Only perform regex matching and skip the GliNER processor. "
+                    "Cannot be combined with --model_only."))
+@click.option('--model_only',
+              is_flag=True,
+              default=False,
+              show_default=True,
+              help=("Only perform the GliNER processor and skip the regex matching. "
+                    "Cannot be combined with --regex_only."))
 @click.option("--server_url", required=True, help="Tritonserver url.", default="localhost:8001", show_default=True)
 @click.option('--model_max_batch_size',
               type=int,
@@ -112,11 +119,15 @@ def main(log_level: int,
          num_samples: int,
          repeat: int,
          regex_only: bool,
+         model_only: bool,
          server_url: str,
          model_max_batch_size: int,
          model_source_dir: pathlib.Path,
          out_file: pathlib.Path):
     configure_logging(log_level=log_level)
+
+    if regex_only and model_only:
+        raise ValueError("Cannot use --regex_only and --model_only together.")
 
     if num_samples < 0:
         num_samples = None
@@ -145,9 +156,10 @@ def main(log_level: int,
 
     pipeline.add_stage(MonitorStage(config, description="Input Processor"))
 
-    pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file, include_pattern_names=regex_only))
+    if not model_only:
+        pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file, include_pattern_names=regex_only))
 
-    pipeline.add_stage(MonitorStage(config, description="Regex Processor"))
+        pipeline.add_stage(MonitorStage(config, description="Regex Processor"))
 
     output_columns = [
         "original_source_index",

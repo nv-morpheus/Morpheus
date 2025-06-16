@@ -23,9 +23,9 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import MessageMeta
-from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
+from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.type_utils import get_df_class
 from morpheus.utils.type_utils import get_df_pkg
 
@@ -33,7 +33,7 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_stage("regex-processor")
-class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
+class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
     """
     Process text with regex patterns to identify structured sensitive data
 
@@ -102,7 +102,7 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
         return "regex-processor"
 
     def accepted_types(self) -> tuple:
-        return (MessageMeta, )
+        return (ControlMessage, )
 
     def supports_cpp_node(self) -> bool:
         return False
@@ -114,12 +114,12 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
         """
         return self.combined_patterns.copy()
 
-    def process(self, msg: MessageMeta) -> ControlMessage:
+    def process(self, msg: ControlMessage) -> ControlMessage:
         """
         Scan text for sensitive data using regex patterns
         """
 
-        with msg.mutable_dataframe() as df:
+        with msg.payload().mutable_dataframe() as df:
             # Extract the text column to process
             text_series = df[self.source_column_name]
 
@@ -153,9 +153,7 @@ class RegexProcessor(GpuAndCpuMixin, ControlMessageStage):
                 inplace=True)
             df.reset_index(drop=True, inplace=True)
 
-        cm_msg = ControlMessage()
-        cm_msg.payload(msg)
-        return cm_msg
+        return msg
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.process))
