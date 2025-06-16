@@ -110,6 +110,36 @@ Below is a visualization of the pipeline showing all stages and data flow:
 | **GliNERProcessor** | Semantic analysis |
 | **RiskScorer** | Threat assessment |
 
+## Setup
+
+This example utilizes the Triton Inference Server to perform inference.
+
+### Launching Triton
+
+Pull the Docker image for Triton:
+```bash
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06
+```
+
+Run the following to launch Triton and load the `gliner-bi-encoder-onnx` model:
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model gliner-bi-encoder-onnx
+```
+
+This will launch Triton and only load the `gliner-bi-encoder-onnx` model.
+
+Once Triton has loaded the model, the following will be displayed:
+
+```
++------------------------+---------+--------+
+| Model                  | Version | Status |
++------------------------+---------+--------+
+| gliner-bi-encoder-onnx | 1       | READY  |
++------------------------+---------+--------+
+```
+
+> **Note**: If this is not present in the output, check the Triton log for any error messages related to loading the model.
+
 
 ## Running the Pipeline
 
@@ -127,15 +157,33 @@ Options:
                                   Specify the logging level to use.  [default:
                                   INFO]
   --regex_file PATH               JSON file containing regex patterns
-                                  [default: /home/dagardner/work/morpheus/exam
-                                  ples/data_loss_prevention/data/regex_pattern
-                                  s.json]
+                                  [default: examples/data_loss_prevention/data/regex_patterns.json]
   --dataset TEXT                  Specify the datasets to use, can be set
                                   multiple times, valid datasets are: gretel.
                                   [default: gretel]
+  --input_file FILE               Input file to use, if specified, overrides
+                                  the dataset option.
+  --include_privacy_masks         Include privacy masks in the output
+                                  DataFrame, ignored if --input_file is set.
+                                  This is useful for evaluation.
   --num_samples INTEGER           Number of samples to use from each dataset,
-                                  set to -1 for all samples.  [default: 2000]
-  --out_file FILE                 Output file  [required]
+                                  ignored if --input_file is set, set to -1
+                                  for all samples.  [default: 2000]
+  --repeat INTEGER                Repeat the input dataset, useful for
+                                  testing. A value of 1 means no repeat.
+                                  [default: 1]
+  --regex_only                    Only perform regex matching and skip the
+                                  GliNER processor.
+  --server_url TEXT               Tritonserver url.  [default: localhost:8001;
+                                  required]
+  --model_max_batch_size INTEGER  Maximum batch size for model inference, used
+                                  by the GliNER processor. Larger values may
+                                  improve performance but require more GPU
+                                  memory.  [default: 16]
+  --model_source_dir DIRECTORY    Directory containing the GliNER model files
+                                  [default: models/dlp_models/gliner_bi_encoder]
+  --out_file FILE                 Output file  [default: .tmp/output/data_loss_prevention.jsonlines;
+                                  required]
   --help                          Show this message and exit.
 ```
 

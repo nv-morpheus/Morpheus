@@ -86,7 +86,7 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               default=False,
               show_default=True,
               help=("Only perform regex matching and skip the GliNER processor."))
-@click.option("--server_url", required=True, help="Tritonserver url.", default="localhost:8001")
+@click.option("--server_url", required=True, help="Tritonserver url.", default="localhost:8001", show_default=True)
 @click.option('--model_max_batch_size',
               type=int,
               default=16,
