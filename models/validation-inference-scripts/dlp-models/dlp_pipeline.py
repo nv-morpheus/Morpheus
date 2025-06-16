@@ -17,7 +17,8 @@ import json
 import math
 import time
 
-from regex_processor import GliNERProcessor, RegexProcessor
+from regex_processor import GliNERProcessor
+from regex_processor import RegexProcessor
 
 
 class DLPInputProcessor:

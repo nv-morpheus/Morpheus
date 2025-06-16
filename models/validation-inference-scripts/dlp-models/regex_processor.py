@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-
+import re2 as re
 from gliner import GLiNER
 
+# import re
 import cudf
 
 

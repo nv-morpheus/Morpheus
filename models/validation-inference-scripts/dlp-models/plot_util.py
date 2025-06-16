@@ -269,3 +269,84 @@ def plot_latency_speedup(latency_df: pd.DataFrame, speedup_model_factor: str = "
 
     plt.tight_layout()
     plt.show()
+
+
+def visualize_risk_assessment(risk_assessment: dict[str, list],
+                              type_weights: dict[str, int] = None,
+                              default_weight: int = 50):
+    """Visualize risk assessment data.
+
+    Parameters
+    ----------
+    risk_assessment : dict[str, list]
+        The risk assessment data.
+    type_weights : dict[str, int], optional
+        The type weights, by default None
+    default_weight : int, optional
+        The default weight, by default 50
+    """
+
+    if type_weights is None:
+        type_weights = {}
+
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+
+    # 1. Risk score gauge
+    risk_score = risk_assessment["risk_score"]
+    risk_level = risk_assessment["risk_level"]
+
+    # Create a gauge chart for risk score
+    gauge_colors = {
+        'Critical': '#FF0000', 'High': '#FF6600', 'Medium': '#FFCC00', 'Low': '#CCFF00', 'Minimal': '#00FF00'
+    }
+
+    ax1.pie([risk_score, 100 - risk_score],
+            colors=[gauge_colors.get(risk_level, '#CCCCCC'), '#F8F8F8'],
+            startangle=90,
+            counterclock=False,
+            wedgeprops={
+                'width': 0.3, 'edgecolor': 'w', 'linewidth': 3
+            })
+    ax1.add_patch(plt.Circle((0, 0), 0.35, color='white'))
+    ax1.text(0, 0, f"{risk_score}\n{risk_level}", ha='center', va='center', fontsize=14)
+    ax1.set_title("Risk Score", fontsize=18)
+    ax1.axis('equal')
+
+    # 2. Severity distribution bar chart
+    severity = risk_assessment["severity_distribution"]
+    labels = list(severity.keys())
+    values = list(severity.values())
+    colors = ['#FF0000', '#FFCC00', '#00CC00']
+
+    bars = ax2.bar(labels, values, color=colors)
+    ax2.set_title("Findings by Severity", fontsize=18)
+    ax2.set_ylim(0, max(values) + 1 if values else 1)
+
+    # Add counts above bars
+    for bar_plot in bars:
+        height = bar_plot.get_height()
+        ax2.text(bar_plot.get_x() + bar_plot.get_width() / 2., height + 0.1, f'{int(height)}', ha='center', va='bottom')
+
+    plt.tight_layout()
+    plt.show()
+
+    # Create a horizontal bar chart for data types found
+    if risk_assessment["data_types_found"]:
+        plt.figure(figsize=(10, len(risk_assessment["data_types_found"]) * 0.4 + 1))
+        # Get weights for each data type
+        data_types = risk_assessment["data_types_found"]
+        weights = [type_weights.get(dt, default_weight) for dt in data_types]
+        # Sort by weight
+        data_types_sorted = [x for _, x in sorted(zip(weights, data_types), reverse=True)]
+        weights_sorted = sorted(weights, reverse=True)
+
+        # Create color map based on weights
+        colors = ['#FF0000' if w >= 80 else '#FFCC00' if w >= 50 else '#00CC00' for w in weights_sorted]
+
+        plt.barh(data_types_sorted, weights_sorted, color=colors)
+        plt.xlabel('Sensitivity Weight')
+        plt.title('Data Types Found by Sensitivity')
+        plt.xlim(0, 100)
+        plt.tight_layout()
+        plt.show()
+        

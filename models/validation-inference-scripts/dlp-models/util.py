@@ -19,16 +19,18 @@ import time
 from ast import literal_eval
 
 import pandas as pd
+from dlp_pipeline import DLPPipeline
 from nervaluate import Evaluator
+from regex_processor import GliNERProcessor
+from regex_processor import GPURegexEntityDetector
+from regex_processor import RegexProcessor
 from tqdm import tqdm
-from dlp_models.pipeline import Pipeline
-from dlp_models.regex_processor import RegexProcessor
-from dlp_models.gliNER_processor import GliNERProcessor
+
 
 def run_benchmark_pipeline(
     dataset: pd.DataFrame,
-    pipeline: Pipeline,
-    regex_processor: RegexProcessor,
+    pipeline: DLPPipeline,
+    regex_processor: RegexProcessor | GPURegexEntityDetector,
     gliner_processor: GliNERProcessor,
 ) -> dict:
     """Run the benchmark pipeline for the given dataset, pipeline, regex processor, and gliner processor.
@@ -36,10 +38,10 @@ def run_benchmark_pipeline(
     Parameters
     ----------
     dataset : pd.DataFrame
-        The dataset to run the benchmark pipeline on.
-    pipeline : Pipeline
+        The datdaset to run the benchmark pipeline on.
+    pipeline : DLPPipeline
         The pipeline to run the benchmark pipeline on.
-    regex_processor : RegexProcessor
+    regex_processor : RegexProcessor | GPURegexEntityDetector
         The regex processor to run the benchmark pipeline on.
     gliner_processor : GliNERProcessor
         The GliNER processor to run the benchmark pipeline on.
