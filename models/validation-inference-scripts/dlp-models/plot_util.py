@@ -349,4 +349,3 @@ def visualize_risk_assessment(risk_assessment: dict[str, list],
         plt.xlim(0, 100)
         plt.tight_layout()
         plt.show()
-        
