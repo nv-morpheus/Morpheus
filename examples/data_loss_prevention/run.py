@@ -96,7 +96,7 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
 @click.option('--model_source_dir',
               help="Directory containing the GliNER model files",
               type=click.Path(exists=True, dir_okay=True, file_okay=False, readable=True, resolve_path=True),
-              default=os.path.join(CUR_DIR, "model/gliner_bi_encoder"),
+              default=os.path.join(MORPHEUS_ROOT, "models/dlp_models/gliner_bi_encoder"),
               show_default=True)
 @click.option("--out_file",
               help="Output file",

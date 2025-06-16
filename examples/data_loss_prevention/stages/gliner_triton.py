@@ -29,7 +29,7 @@ class GliNERTritonInference:
     def __init__(self,
                  model_source_dir: str,
                  server_url: str = "localhost:8001",
-                 triton_model_name: str = "gliner_bi_encoder",
+                 triton_model_name: str = "gliner-bi-encoder-onnx",
                  gliner_threshold: float = 0.3,
                  map_location: str = "cuda"):
 

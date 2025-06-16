@@ -69,7 +69,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                  *,
                  model_source_dir: str,
                  server_url: str = "localhost:8001",
-                 triton_model_name: str = "gliner_bi_encoder",
+                 triton_model_name: str = "gliner-bi-encoder-onnx",
                  source_column_name: str = "source_text",
                  match_column_name: str = "matched",
                  confidence_threshold: float = 0.3,
