@@ -104,9 +104,13 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
         flat_findings = []
         for finding in findings:
-            flat_findings.extend(finding)
+            if isinstance(finding, list):
+                flat_findings.extend(finding)
+            else:
+                flat_findings.append(finding)
 
         findings = flat_findings
+
         if len(findings) == 0:
             return None
 
