@@ -33,7 +33,7 @@ from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+# from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -101,7 +101,7 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               show_default=True,
               help=("Maximum batch size for model inference, used by the GliNER processor. "
                     "Larger values may improve performance but require more GPU memory."))
-@click.option('--pipeline_batch_size', type=int, default=1024 * 32, show_default=True, help=("Pipeline batch size."))
+# @click.option('--pipeline_batch_size', type=int, default=1024 * 32, show_default=True, help=("Pipeline batch size."))
 @click.option('--model_source_dir',
               help="Directory containing the GliNER model files",
               type=click.Path(exists=True, dir_okay=True, file_okay=False, readable=True, resolve_path=True),
@@ -113,20 +113,21 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               default=os.path.join(MORPHEUS_ROOT, ".tmp/output/data_loss_prevention.jsonlines"),
               show_default=True,
               required=True)
-def main(log_level: int,
-         regex_file: pathlib.Path,
-         dataset: list[str],
-         input_file: pathlib.Path | None,
-         include_privacy_masks: bool,
-         num_samples: int,
-         repeat: int,
-         regex_only: bool,
-         model_only: bool,
-         server_url: str,
-         model_max_batch_size: int,
-         pipeline_batch_size: int,
-         model_source_dir: pathlib.Path,
-         out_file: pathlib.Path):
+def main(
+        log_level: int,
+        regex_file: pathlib.Path,
+        dataset: list[str],
+        input_file: pathlib.Path | None,
+        include_privacy_masks: bool,
+        num_samples: int,
+        repeat: int,
+        regex_only: bool,
+        model_only: bool,
+        server_url: str,
+        model_max_batch_size: int,
+        # pipeline_batch_size: int,
+        model_source_dir: pathlib.Path,
+        out_file: pathlib.Path):
     configure_logging(log_level=log_level)
 
     if regex_only and model_only:
@@ -138,7 +139,7 @@ def main(log_level: int,
     config = Config()
     config.mode = PipelineModes.NLP
     config.model_max_batch_size = model_max_batch_size
-    config.pipeline_batch_size = pipeline_batch_size
+    # config.pipeline_batch_size = pipeline_batch_size
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
@@ -160,8 +161,8 @@ def main(log_level: int,
 
     pipeline.add_stage(MonitorStage(config, description="Input Processor"))
 
-    pipeline.add_stage(DeserializeStage(config))
-    pipeline.add_stage(MonitorStage(config, description="Deserialize Stage"))
+    # pipeline.add_stage(DeserializeStage(config))
+    # pipeline.add_stage(MonitorStage(config, description="Deserialize Stage"))
 
     if not model_only:
         pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file, include_pattern_names=regex_only))

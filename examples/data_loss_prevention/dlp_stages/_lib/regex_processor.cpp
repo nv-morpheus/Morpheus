@@ -31,6 +31,7 @@
 #include <pybind11/pybind11.h>
 #include <pymrc/utils.hpp>  // for pymrc::import
 
+#include <chrono>
 #include <cstddef>
 
 namespace morpheus_dlp {
@@ -56,6 +57,7 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t cm_msg) {
+                auto time_start       = std::chrono::steady_clock::now();
                 auto meta             = cm_msg->payload();
                 auto table_info       = meta->get_info();
                 const auto& col_view  = table_info.get_column(m_source_column_name);
@@ -67,6 +69,7 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
 
                 namespace ast = cudf::ast;
                 ast::tree tree{};
+                std::vector<ast::column_reference> column_references;
 
                 for (std::size_t i = 0; i < m_regex_patterns.size(); ++i)
                 {
@@ -77,14 +80,16 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                     if (i == 0)
                     {
                         // For the first pattern, just use the column reference
-                        tree.push(ast::column_reference(i));
+                        column_references.emplace_back(i);
+                        tree.push(column_references.back());
                     }
                     else
                     {
-                        const auto& prev   = tree.back();
-                        const auto col_ref = tree.push(ast::column_reference(i));
+                        const auto& prev = column_references.back();
+                        column_references.emplace_back(i);
+                        tree.push(column_references.back());
                         // For subsequent patterns, combine with a logical AND
-                        tree.push(ast::operation{ast::ast_operator::LOGICAL_AND, prev, col_ref});
+                        tree.push(ast::operation{ast::ast_operator::LOGICAL_AND, prev, column_references.back()});
                     }
 
                     if (m_include_pattern_names)
@@ -95,7 +100,8 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                 }
 
                 auto boolean_table = cudf::table_view(boolean_column_views);
-                auto bool_col      = cudf::compute_column(boolean_table, tree.back());
+                const auto& expr   = tree.back();
+                auto bool_col      = cudf::compute_column(boolean_table, expr);
 
                 if (m_include_pattern_names)
                 {
@@ -120,6 +126,10 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                 cudf::io::table_with_metadata table_w_meta = {std::move(table), std::move(metadata)};
                 auto new_meta                              = MessageMeta::create_from_cpp(std::move(table_w_meta), 1);
                 cm_msg->payload(new_meta);
+
+                auto stop_time = std::chrono::steady_clock::now();
+                auto elapsed   = std::chrono::duration_cast<std::chrono::milliseconds>(stop_time - time_start).count();
+                std::cerr << "Regex stage completed in " << elapsed << " ms" << std::endl;
 
                 output.on_next(std::move(cm_msg));
             },

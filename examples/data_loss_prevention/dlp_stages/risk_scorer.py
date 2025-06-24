@@ -181,6 +181,7 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
             if not is_pandas:
                 df = df.to_pandas()
 
+        print(f"RiskScorer processing {len(df)} findings...")
         groups = df.groupby(["original_source_index"], as_index=False)
         results = []
         for (original_source_index, group_df) in groups:
@@ -188,7 +189,24 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
             if scored_df is not None:
                 results.append(scored_df)
 
-        result_df = pd.concat(results, axis=0)
+        print(f"RiskScorer processing {len(results)} results...")
+        # Remove if statement this isn't needed, we shouldn't be expecting 0 row dfs
+        if len(results) > 0:
+            result_df = pd.concat(results, axis=0)
+        else:
+            result_df = pd.DataFrame(columns=[
+                "original_source_index",
+                "risk_score",
+                "risk_level",
+                "highest_confidence",
+                "num_minimal",
+                "num_low",
+                "num_medium",
+                "num_high",
+                "num_critical",
+                "data_types_found",
+                self._findings_column
+            ])
 
         if not is_pandas:
             result_df = self._df_pkg.from_pandas(result_df)

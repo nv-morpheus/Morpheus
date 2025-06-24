@@ -106,7 +106,7 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
         return (ControlMessage, )
 
     def supports_cpp_node(self) -> bool:
-        return False
+        return True
 
     @property
     def patterns(self) -> dict[str, str]:
@@ -160,7 +160,17 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
         return msg
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        node = builder.make_node(self.unique_name, ops.map(self.process))
+        if self._build_cpp_node():
+            print("Building C++ node for RegexProcessor", flush=True)
+            from ._lib import regex_processor
+            node = regex_processor.RegexProcessor(builder,
+                                                  self.unique_name,
+                                                  source_column_name=self.source_column_name,
+                                                  regex_patterns=self.combined_patterns,
+                                                  include_pattern_names=self._include_pattern_names)
+        else:
+            print("Building Python node for RegexProcessor", flush=True)
+            node = builder.make_node(self.unique_name, ops.map(self.process))
         builder.make_edge(input_node, node)
 
         return node

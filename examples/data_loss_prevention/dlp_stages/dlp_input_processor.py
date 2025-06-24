@@ -22,16 +22,16 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
-from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
-from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.type_aliases import SeriesType
 from morpheus.utils.type_utils import get_df_class
 
 
 @register_stage("dlp_input_processor", modes=[PipelineModes.NLP])
-class DLPInputProcessor(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
+class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
     """
     Handles input text processing and normalization for DLP pipeline
 
@@ -66,7 +66,7 @@ class DLPInputProcessor(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
         # Enable support by default
         return False
 
-    def preprocess(self, msg: MessageMeta) -> MessageMeta:
+    def preprocess(self, msg: MessageMeta) -> ControlMessage:
         """
         Preprocess input text:
         1. Normalize whitespace
@@ -98,7 +98,9 @@ class DLPInputProcessor(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
         t2 = time.time()
         print(f"DLPInputProcessor took {t2 - t1:.4f} seconds to preprocess input text.")
 
-        return meta
+        cm = ControlMessage()
+        cm.payload(meta)
+        return cm
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.preprocess))
