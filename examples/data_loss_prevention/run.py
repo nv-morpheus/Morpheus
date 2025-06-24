@@ -21,6 +21,7 @@ import click
 from dlp_stages.datasets_source import DatasetsSourceStage
 from dlp_stages.dlp_input_processor import DLPInputProcessor
 from dlp_stages.dlp_output import DLPOutput
+from dlp_stages.dlp_post_process import df_printer
 from dlp_stages.dlp_post_process import dlp_post_process
 from dlp_stages.gliner_processor import GliNERProcessor
 from dlp_stages.regex_processor import RegexProcessor
@@ -161,11 +162,15 @@ def main(
 
     pipeline.add_stage(MonitorStage(config, description="Input Processor"))
 
+    pipeline.add_stage(df_printer(config, name="Pre-regex"))
+
     # pipeline.add_stage(DeserializeStage(config))
     # pipeline.add_stage(MonitorStage(config, description="Deserialize Stage"))
 
     if not model_only:
         pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file, include_pattern_names=regex_only))
+
+        pipeline.add_stage(df_printer(config, name="Post-regex"))
 
         pipeline.add_stage(MonitorStage(config, description="Regex Processor"))
 

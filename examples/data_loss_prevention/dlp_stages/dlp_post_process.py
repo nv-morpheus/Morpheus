@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
-
 from morpheus.config import ExecutionMode
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
@@ -29,10 +27,15 @@ def dlp_post_process(msg: ControlMessage,
     """
     Convert the incoming ControlMessage payload to a sorted MessageMeta containing only the requested columns.
     """
-    t1 = time.time()
     with msg.payload().mutable_dataframe() as df:
         new_meta = MessageMeta(df[output_columns].sort_values(sort_col))
 
-    t2 = time.time()
-    #print(f"DLP post-process took {t2 - t1:.3f} seconds")
     return new_meta
+
+
+@stage(name="df_printer", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
+def df_printer(msg: ControlMessage, *, name: str) -> ControlMessage:
+    with msg.payload().mutable_dataframe() as df:
+        print(f"\n***********\n{name} : {df.head()}\n***********\n")
+
+    return msg
