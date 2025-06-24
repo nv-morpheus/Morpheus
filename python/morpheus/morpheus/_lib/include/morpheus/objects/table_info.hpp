@@ -102,6 +102,17 @@ struct MORPHEUS_EXPORT TableInfoBase
     const cudf::column_view& get_column(cudf::size_type idx) const;
 
     /**
+     * @brief Returns a reference to the view of the specified column
+     *
+     * @throws std::out_of_range
+     * If `column_name` is not one of the column names in the table
+     *
+     * @param column_name : The name of the desired column
+     * @return cudf::column_view : A reference to the desired column
+     */
+    const cudf::column_view& get_column(const std::string& column_name) const;
+
+    /**
      * @brief Returns true if the underlying dataframe as a unique index.
      *
      * @return bool

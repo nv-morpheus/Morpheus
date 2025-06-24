@@ -18,13 +18,13 @@ import os
 import pathlib
 
 import click
-from stages.datasets_source import DatasetsSourceStage
-from stages.dlp_input_processor import DLPInputProcessor
-from stages.dlp_output import DLPOutput
-from stages.dlp_post_process import dlp_post_process
-from stages.gliner_processor import GliNERProcessor
-from stages.regex_processor import RegexProcessor
-from stages.risk_scorer import RiskScorer
+from dlp_stages.datasets_source import DatasetsSourceStage
+from dlp_stages.dlp_input_processor import DLPInputProcessor
+from dlp_stages.dlp_output import DLPOutput
+from dlp_stages.dlp_post_process import dlp_post_process
+from dlp_stages.gliner_processor import GliNERProcessor
+from dlp_stages.regex_processor import RegexProcessor
+from dlp_stages.risk_scorer import RiskScorer
 
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
@@ -33,6 +33,7 @@ from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -100,6 +101,7 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               show_default=True,
               help=("Maximum batch size for model inference, used by the GliNER processor. "
                     "Larger values may improve performance but require more GPU memory."))
+@click.option('--pipeline_batch_size', type=int, default=1024 * 32, show_default=True, help=("Pipeline batch size."))
 @click.option('--model_source_dir',
               help="Directory containing the GliNER model files",
               type=click.Path(exists=True, dir_okay=True, file_okay=False, readable=True, resolve_path=True),
@@ -122,6 +124,7 @@ def main(log_level: int,
          model_only: bool,
          server_url: str,
          model_max_batch_size: int,
+         pipeline_batch_size: int,
          model_source_dir: pathlib.Path,
          out_file: pathlib.Path):
     configure_logging(log_level=log_level)
@@ -135,13 +138,14 @@ def main(log_level: int,
     config = Config()
     config.mode = PipelineModes.NLP
     config.model_max_batch_size = model_max_batch_size
+    config.pipeline_batch_size = pipeline_batch_size
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
 
     # Set source stage
     if input_file is not None:
-        pipeline.set_source(FileSourceStage(config, filename=input_file, repeat=repeat))
+        pipeline.set_source(FileSourceStage(config, filename=input_file, repeat=repeat, filter_null=False))
     else:
         pipeline.set_source(
             DatasetsSourceStage(config,
@@ -155,6 +159,9 @@ def main(log_level: int,
     pipeline.add_stage(DLPInputProcessor(config))
 
     pipeline.add_stage(MonitorStage(config, description="Input Processor"))
+
+    pipeline.add_stage(DeserializeStage(config))
+    pipeline.add_stage(MonitorStage(config, description="Deserialize Stage"))
 
     if not model_only:
         pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file, include_pattern_names=regex_only))

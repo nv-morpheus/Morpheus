@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
 import typing
 
 import mrc
@@ -21,16 +22,16 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
+from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.type_aliases import SeriesType
 from morpheus.utils.type_utils import get_df_class
 
 
 @register_stage("dlp_input_processor", modes=[PipelineModes.NLP])
-class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
+class DLPInputProcessor(GpuAndCpuMixin, PassThruTypeMixin, SinglePortStage):
     """
     Handles input text processing and normalization for DLP pipeline
 
@@ -65,13 +66,14 @@ class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
         # Enable support by default
         return False
 
-    def preprocess(self, msg: MessageMeta) -> ControlMessage:
+    def preprocess(self, msg: MessageMeta) -> MessageMeta:
         """
         Preprocess input text:
         1. Normalize whitespace
         2. Split into manageable chunks for processing
         """
 
+        t1 = time.time()
         with msg.mutable_dataframe() as df:
             if df.index.name is None:
                 df.index.name = "index"
@@ -93,10 +95,10 @@ class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
                 merged_df.reset_index(drop=False, inplace=True)
                 meta = MessageMeta(merged_df)
 
-        new_msg = ControlMessage()
-        new_msg.payload(meta)
+        t2 = time.time()
+        print(f"DLPInputProcessor took {t2 - t1:.4f} seconds to preprocess input text.")
 
-        return new_msg
+        return meta
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.preprocess))

@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
+
 import mrc
 import pandas as pd
 from mrc.core import operators as ops
@@ -173,6 +175,7 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         Calculate risk scores based on findings
         """
 
+        t1 = time.time()
         with msg.payload().mutable_dataframe() as df:
             is_pandas = isinstance(df, pd.DataFrame)
             if not is_pandas:
@@ -192,6 +195,8 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
         msg.payload(MessageMeta(result_df))
 
+        t2 = time.time()
+        #print(f"RiskScorer took {t2 - t1:.4f} seconds to score findings.")
         return msg
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:

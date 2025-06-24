@@ -1,0 +1,177 @@
+/**
+ * SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "regex_processor.h"
+
+#include <cudf/ast/expressions.hpp>  // for cudf::ast::tree, cudf::ast::column_reference, ast_operator
+#include <cudf/column/column.hpp>
+#include <cudf/column/column_factories.hpp>  // for make_column_from_scalar
+#include <cudf/io/types.hpp>                 // for cudf::io::table_metadata and table_with_metadata
+#include <cudf/scalar/scalar.hpp>            // for scalar
+#include <cudf/scalar/scalar_factories.hpp>  // for cudf::make_string_scalar
+#include <cudf/stream_compaction.hpp>        // for apply_boolean_mask
+#include <cudf/strings/contains.hpp>         // for contains_re
+#include <cudf/transform.hpp>                // for compute_column
+#include <pybind11/attr.h>
+#include <pybind11/cast.h>
+#include <pybind11/pybind11.h>
+#include <pymrc/utils.hpp>  // for pymrc::import
+
+#include <cstddef>
+
+namespace morpheus_dlp {
+
+RegexProcessor::RegexProcessor(std::string&& source_column_name,
+                               std::vector<std::unique_ptr<cudf::strings::regex_program>>&& regex_patterns,
+                               std::vector<std::unique_ptr<cudf::scalar>>&& pattern_name_scalars,
+                               bool include_pattern_names) :
+  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
+  m_source_column_name(std::move(source_column_name)),
+  m_regex_patterns(std::move(regex_patterns)),
+  m_pattern_name_scalars(std::move(pattern_name_scalars)),
+  m_include_pattern_names(include_pattern_names)
+{
+    CHECK(m_regex_patterns.size() == m_pattern_name_scalars.size())
+        << "Number of regex patterns must match number of pattern names";
+    CHECK(m_regex_patterns.size() > 0) << "At least one regex pattern must be provided";
+    CHECK(m_regex_patterns.size() > 1) << "C++ impl currently only supports multiple regex patterns";
+}
+
+RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
+{
+    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [this, &output](sink_type_t cm_msg) {
+                auto meta             = cm_msg->payload();
+                auto table_info       = meta->get_info();
+                const auto& col_view  = table_info.get_column(m_source_column_name);
+                const auto col_length = col_view.size();
+
+                std::vector<std::unique_ptr<cudf::column>> boolean_columns(m_regex_patterns.size());
+                std::vector<cudf::column_view> boolean_column_views(m_regex_patterns.size());
+                std::vector<std::unique_ptr<cudf::column>> label_columns;
+
+                namespace ast = cudf::ast;
+                ast::tree tree{};
+
+                for (std::size_t i = 0; i < m_regex_patterns.size(); ++i)
+                {
+                    // Apply the regex program to the column view
+                    boolean_columns[i]      = cudf::strings::contains_re(col_view, *m_regex_patterns[i]);
+                    boolean_column_views[i] = boolean_columns[i]->view();
+
+                    if (i == 0)
+                    {
+                        // For the first pattern, just use the column reference
+                        tree.push(ast::column_reference(i));
+                    }
+                    else
+                    {
+                        const auto& prev   = tree.back();
+                        const auto col_ref = tree.push(ast::column_reference(i));
+                        // For subsequent patterns, combine with a logical AND
+                        tree.push(ast::operation{ast::ast_operator::LOGICAL_AND, prev, col_ref});
+                    }
+
+                    if (m_include_pattern_names)
+                    {
+                        label_columns.emplace_back(
+                            cudf::make_column_from_scalar(*m_pattern_name_scalars[i], col_length));
+                    }
+                }
+
+                auto boolean_table = cudf::table_view(boolean_column_views);
+                auto bool_col      = cudf::compute_column(boolean_table, tree.back());
+
+                if (m_include_pattern_names)
+                {
+                    // TODO: Do something with the label columns
+                }
+
+                const auto& table_view = table_info.get_view();
+                auto table             = cudf::apply_boolean_mask(table_view, bool_col->view());
+
+                // Create a table_with_metadata this is copy/pasted from meta.cpp and should probably be a method there
+                auto column_names = table_info.get_column_names();
+                auto metadata     = cudf::io::table_metadata{};
+
+                metadata.schema_info.reserve(column_names.size() + 1);
+                metadata.schema_info.emplace_back("");
+
+                for (auto column_name : column_names)
+                {
+                    metadata.schema_info.emplace_back(column_name);
+                }
+
+                cudf::io::table_with_metadata table_w_meta = {std::move(table), std::move(metadata)};
+                auto new_meta                              = MessageMeta::create_from_cpp(std::move(table_w_meta), 1);
+                cm_msg->payload(new_meta);
+
+                output.on_next(std::move(cm_msg));
+            },
+            [&](std::exception_ptr error_ptr) {
+                output.on_error(error_ptr);
+            },
+            [&]() {
+                output.on_completed();
+            }));
+    };
+}
+
+std::shared_ptr<mrc::segment::Object<RegexProcessor>> PassThruStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::string source_column_name,
+    std::map<std::string, std::string> regex_patterns,
+    bool include_pattern_names)
+{
+    std::vector<std::unique_ptr<cudf::strings::regex_program>> cudf_regex_patterns(regex_patterns.size());
+    std::vector<std::unique_ptr<cudf::scalar>> pattern_name_scalars(regex_patterns.size());
+
+    std::size_t i = 0;
+    for (auto& [pattern_name, pattern] : regex_patterns)
+    {
+        cudf_regex_patterns[i]  = cudf::strings::regex_program::create(pattern);
+        pattern_name_scalars[i] = cudf::make_string_scalar(pattern_name);
+        ++i;
+    }
+    return builder.construct_object<RegexProcessor>(name,
+                                                    std::move(source_column_name),
+                                                    std::move(cudf_regex_patterns),
+                                                    std::move(pattern_name_scalars),
+                                                    include_pattern_names);
+}
+
+namespace py = pybind11;
+
+// Define the pybind11 module m.
+PYBIND11_MODULE(regex_processor, m)
+{
+    mrc::pymrc::import(m, "morpheus._lib.messages");
+
+    py::class_<mrc::segment::Object<RegexProcessor>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<RegexProcessor>>>(m, "RegexProcessor", py::multiple_inheritance())
+        .def(py::init<>(&PassThruStageInterfaceProxy::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("source_column_name"),
+             py::arg("regex_patterns"),
+             py::arg("include_pattern_names"));
+}
+
+}  // namespace morpheus_dlp
