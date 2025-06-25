@@ -23,14 +23,9 @@
         "\\b\\w{3,9}\\s\\d{4}\\b"
     ],
     "first_name": [
-        "\\bfirst[_\\s]?name[:=]?\\s*[A-Z][a-z]+\\b",
-        "\\bFirst[:=]?\\s*[A-Z][a-z]+\\b",
-        "\\bFName[:=]?\\s*[A-Z][a-z]+\\b",
-        "\\bGiven[_\\s]?name[:=]?\\s*[A-Z][a-z]+\\b",
-        "\\bForename[:=]?\\s*[A-Z][a-z]+\\b",
+        "\\b(?:first[_\\s]?name|First|FName|Given[_\\s]?name|Forename)[:=]?\\s*[A-Z][a-z]+\\b",
         "\\b[A-Z][a-z]{1,20}[-'][A-Z][a-z]{1,20}\\b",
-        "\\bfirst name[:=]\\s*['\"]?([A-Za-z-']{2,25})['\"]?\\b",
-        "\\bfname[:=]\\s*['\"]?([A-Za-z-']{2,25})['\"]?\\b"
+        "\\b(?:first name|fname)[:=]\\s*['\"]?([A-Za-z-']{2,25})['\"]?\\b"
     ],
     "email": [
         "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
@@ -40,14 +35,9 @@
         "\\b[A-Za-z0-9._%+-]+\\s?\\(at\\)\\s?[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b"
     ],
     "last_name": [
-        "\\blast[_\\s]?name[:=]?\\s*[A-Z][a-z]+\\b",
-        "\\bLast[:=]?\\s*[A-Z][a-z]+\\b",
-        "\\bSurname[:=]?\\s*[A-Z][a-z]+\\b",
-        "\\bLName[:=]?\\s*[A-Z][a-z]+\\b",
-        "\\bFamily[_\\s]?name[:=]?\\s*[A-Z][a-z]+\\b",
+        "\\b(?:last[_\\s]?name|Last|Surname|LName|Family[_\\s]?name)[:=]?\\s*[A-Z][a-z]+\\b",
         "\\b[A-Z][a-z]{1,20}[-'][A-Z][a-z]{1,20}\\b",
-        "\\blast name[:=]\\s*['\"]?([A-Za-z-']{2,25})['\"]?\\b",
-        "\\blname[:=]\\s*['\"]?([A-Za-z-']{2,25})['\"]?\\b"
+        "\\b(?:last name|lname)[:=]\\s*['\"]?([A-Za-z-']{2,25})['\"]?\\b"
     ],
     "customer_id": [
         "\\bcustomer[_\\s]?id[:=]?\\s*[A-Z0-9]{6,12}\\b",
@@ -71,11 +61,7 @@
         "\\bemployee[-_]?id[:=]\\s*['\"]?([A-Za-z0-9-_]{3,15})['\"]?\\b"
     ],
     "name": [
-        "\\bname[:=]?\\s*[A-Z][a-z]+(?:\\s[A-Z][a-z]+)+\\b",
-        "\\bFull[_\\s]?Name[:=]?\\s*[A-Z][a-z]+(?:\\s[A-Z][a-z]+)+\\b",
-        "\\bPerson[:=]?\\s*[A-Z][a-z]+(?:\\s[A-Z][a-z]+)+\\b",
-        "\\bContact[:=]?\\s*[A-Z][a-z]+(?:\\s[A-Z][a-z]+)+\\b",
-        "\\bClient[:=]?\\s*[A-Z][a-z]+(?:\\s[A-Z][a-z]+)+\\b",
+        "\\b(?:name|Full[_\\s]?Name|Person|Contact|Client)[:=]?\\s*[A-Z][a-z]+(?:\\s[A-Z][a-z]+)+\\b",
         "\\b[A-Z][a-z]{1,20}\\s+[A-Z][a-z]{1,20}\\b",
         "\\b[A-Z][a-z]{1,20}\\s+[A-Z]\\.\\s+[A-Z][a-z]{1,20}\\b",
         "\\bname[:=]\\s*['\"]?([A-Za-z \\.-]{2,50})['\"]?\\b",
