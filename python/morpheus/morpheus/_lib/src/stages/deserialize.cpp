@@ -97,7 +97,7 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
                 auto end_time = std::chrono::steady_clock::now();
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
                 std::cerr << "DeserializeStage processed " << incoming_message->count() << " rows in "
-                          << duration.count() << " ms";
+                          << duration.count() << " ms\n";
             },
             [&](std::exception_ptr error_ptr) {
                 output.on_error(error_ptr);

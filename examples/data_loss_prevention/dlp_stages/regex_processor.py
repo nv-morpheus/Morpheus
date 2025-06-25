@@ -161,7 +161,6 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node():
-            print("Building C++ node for RegexProcessor", flush=True)
             from ._lib import regex_processor
             node = regex_processor.RegexProcessor(builder,
                                                   self.unique_name,
