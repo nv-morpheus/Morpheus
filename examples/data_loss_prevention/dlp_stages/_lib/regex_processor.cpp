@@ -77,25 +77,26 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                     boolean_columns[i]      = cudf::strings::contains_re(col_view, *m_regex_patterns[i]);
                     boolean_column_views[i] = boolean_columns[i]->view();
 
-                    if (i == 0)
-                    {
-                        // For the first pattern, just use the column reference
-                        column_references.emplace_back(i);
-                        tree.push(column_references.back());
-                    }
-                    else
-                    {
-                        const auto& prev = column_references.back();
-                        column_references.emplace_back(i);
-                        tree.push(column_references.back());
-                        // For subsequent patterns, combine with a logical AND
-                        tree.push(ast::operation{ast::ast_operator::LOGICAL_AND, prev, column_references.back()});
-                    }
+                    column_references.emplace_back(i);
+                    tree.push(column_references.back());
 
                     if (m_include_pattern_names)
                     {
                         label_columns.emplace_back(
                             cudf::make_column_from_scalar(*m_pattern_name_scalars[i], col_length));
+                    }
+                }
+
+                for (std::size_t i = 1; i < column_references.size(); ++i)
+                {
+                    if (i == 1)
+                    {
+                        tree.push(
+                            ast::operation{ast::ast_operator::LOGICAL_OR, column_references[0], column_references[1]});
+                    }
+                    else
+                    {
+                        tree.push(ast::operation{ast::ast_operator::LOGICAL_OR, tree.back(), column_references[i]});
                     }
                 }
 
