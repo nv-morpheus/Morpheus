@@ -59,20 +59,20 @@ class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (MessageMeta, )
+        return (ControlMessage, )
 
     def supports_cpp_node(self):
         # Enable support by default
         return False
 
-    def preprocess(self, msg: MessageMeta) -> ControlMessage:
+    def preprocess(self, msg: ControlMessage) -> ControlMessage:
         """
         Preprocess input text:
         1. Normalize whitespace
         2. Split into manageable chunks for processing
         """
 
-        with msg.mutable_dataframe() as df:
+        with msg.payload().mutable_dataframe() as df:
             if df.index.name is None:
                 df.index.name = "index"
 
@@ -80,7 +80,6 @@ class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
             source_series = source_series.str.replace('\r\n', '\n').str.replace('\r', '\n')
             if not self.split_paragraphs:
                 df[self.column_name] = source_series
-                meta = msg
             else:
                 split_series = source_series.str.split("\n").explode()
                 new_df = self.df_class({self.column_name: split_series})
@@ -92,11 +91,9 @@ class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
                 merged_df.index.name = "original_source_index"
                 merged_df.reset_index(drop=False, inplace=True)
                 meta = MessageMeta(merged_df)
+                msg.payload(meta)
 
-        new_msg = ControlMessage()
-        new_msg.payload(meta)
-
-        return new_msg
+        return msg
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.preprocess))
