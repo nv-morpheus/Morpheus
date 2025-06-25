@@ -18,13 +18,14 @@ import os
 import pathlib
 
 import click
-from stages.datasets_source import DatasetsSourceStage
-from stages.dlp_input_processor import DLPInputProcessor
-from stages.dlp_output import DLPOutput
-from stages.dlp_post_process import dlp_post_process
-from stages.gliner_processor import GliNERProcessor
-from stages.regex_processor import RegexProcessor
-from stages.risk_scorer import RiskScorer
+from dlp_stages.datasets_source import DatasetsSourceStage
+from dlp_stages.dlp_input_processor import DLPInputProcessor
+from dlp_stages.dlp_output import DLPOutput
+from dlp_stages.dlp_post_process import df_printer
+from dlp_stages.dlp_post_process import dlp_post_process
+from dlp_stages.gliner_processor import GliNERProcessor
+from dlp_stages.regex_processor import RegexProcessor
+from dlp_stages.risk_scorer import RiskScorer
 
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
@@ -163,8 +164,15 @@ def main(log_level: int,
 
     pipeline.add_stage(MonitorStage(config, description="Input Processor"))
 
+    pipeline.add_stage(df_printer(config, name="Pre-regex"))
+
+    # pipeline.add_stage(DeserializeStage(config))
+    # pipeline.add_stage(MonitorStage(config, description="Deserialize Stage"))
+
     if not model_only:
         pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file, include_pattern_names=regex_only))
+
+        pipeline.add_stage(df_printer(config, name="Post-regex"))
 
         pipeline.add_stage(MonitorStage(config, description="Regex Processor"))
 

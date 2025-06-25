@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
+
 import mrc
 import pandas as pd
 from mrc.core import operators as ops
@@ -173,11 +175,13 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         Calculate risk scores based on findings
         """
 
+        t1 = time.time()
         with msg.payload().mutable_dataframe() as df:
             is_pandas = isinstance(df, pd.DataFrame)
             if not is_pandas:
                 df = df.to_pandas()
 
+        print(f"RiskScorer processing {len(df)} findings...")
         groups = df.groupby(["original_source_index"], as_index=False)
         results = []
         for (original_source_index, group_df) in groups:
@@ -185,13 +189,32 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
             if scored_df is not None:
                 results.append(scored_df)
 
-        result_df = pd.concat(results, axis=0)
+        print(f"RiskScorer processing {len(results)} results...")
+        # Remove if statement this isn't needed, we shouldn't be expecting 0 row dfs
+        if len(results) > 0:
+            result_df = pd.concat(results, axis=0)
+        else:
+            result_df = pd.DataFrame(columns=[
+                "original_source_index",
+                "risk_score",
+                "risk_level",
+                "highest_confidence",
+                "num_minimal",
+                "num_low",
+                "num_medium",
+                "num_high",
+                "num_critical",
+                "data_types_found",
+                self._findings_column
+            ])
 
         if not is_pandas:
             result_df = self._df_pkg.from_pandas(result_df)
 
         msg.payload(MessageMeta(result_df))
 
+        t2 = time.time()
+        #print(f"RiskScorer took {t2 - t1:.4f} seconds to score findings.")
         return msg
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:

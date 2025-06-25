@@ -28,4 +28,14 @@ def dlp_post_process(msg: ControlMessage,
     Convert the incoming ControlMessage payload to a sorted MessageMeta containing only the requested columns.
     """
     with msg.payload().mutable_dataframe() as df:
-        return MessageMeta(df[output_columns].sort_values(sort_col))
+        new_meta = MessageMeta(df[output_columns].sort_values(sort_col))
+
+    return new_meta
+
+
+@stage(name="df_printer", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
+def df_printer(msg: ControlMessage, *, name: str) -> ControlMessage:
+    with msg.payload().mutable_dataframe() as df:
+        print(f"\n***********\n{name} ({len(df)}): {df.head(10)}\n***********\n")
+
+    return msg
