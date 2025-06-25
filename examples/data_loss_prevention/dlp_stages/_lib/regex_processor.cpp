@@ -19,13 +19,17 @@
 
 #include <cudf/ast/expressions.hpp>  // for cudf::ast::tree, cudf::ast::column_reference, ast_operator
 #include <cudf/column/column.hpp>
-#include <cudf/column/column_factories.hpp>  // for make_column_from_scalar
-#include <cudf/io/types.hpp>                 // for cudf::io::table_metadata and table_with_metadata
-#include <cudf/scalar/scalar.hpp>            // for scalar
-#include <cudf/scalar/scalar_factories.hpp>  // for cudf::make_string_scalar
-#include <cudf/stream_compaction.hpp>        // for apply_boolean_mask
-#include <cudf/strings/contains.hpp>         // for contains_re
-#include <cudf/transform.hpp>                // for compute_column
+#include <cudf/column/column_factories.hpp>           // for make_column_from_scalar
+#include <cudf/copying.hpp>                           // for cudf::copy_if_else
+#include <cudf/io/types.hpp>                          // for cudf::io::table_metadata and table_with_metadata
+#include <cudf/stream_compaction.hpp>                 // for apply_boolean_mask
+#include <cudf/strings/combine.hpp>                   // for concatenate
+#include <cudf/strings/contains.hpp>                  // for contains_re
+#include <cudf/strings/convert/convert_booleans.hpp>  // for from_booleans
+#include <cudf/strings/strip.hpp>                     // for strip
+#include <cudf/table/table_view.hpp>
+#include <cudf/transform.hpp>  // for compute_column
+#include <cudf/types.hpp>
 #include <pybind11/attr.h>
 #include <pybind11/cast.h>
 #include <pybind11/pybind11.h>
@@ -33,12 +37,13 @@
 
 #include <chrono>
 #include <cstddef>
+#include <memory>
 
 namespace morpheus_dlp {
 
 RegexProcessor::RegexProcessor(std::string&& source_column_name,
                                std::vector<std::unique_ptr<cudf::strings::regex_program>>&& regex_patterns,
-                               std::vector<std::unique_ptr<cudf::scalar>>&& pattern_name_scalars,
+                               std::vector<cudf::string_scalar>&& pattern_name_scalars,
                                bool include_pattern_names) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_source_column_name(std::move(source_column_name)),
@@ -82,8 +87,8 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
 
                     if (m_include_pattern_names)
                     {
-                        label_columns.emplace_back(
-                            cudf::make_column_from_scalar(*m_pattern_name_scalars[i], col_length));
+                        label_columns.emplace_back(cudf::copy_if_else(
+                            m_pattern_name_scalars[i], cudf::string_scalar("", false), boolean_column_views[i]));
                     }
                 }
 
@@ -104,17 +109,32 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                 const auto& expr   = tree.back();
                 auto bool_col      = cudf::compute_column(boolean_table, expr);
 
+                cudf::table_view table_view{table_info.get_view()};
+
+                std::unique_ptr<cudf::column> labels_col;
                 if (m_include_pattern_names)
                 {
-                    // TODO: Do something with the label columns
+                    auto labels_table = cudf::table(std::move(label_columns));
+                    auto labels_view  = labels_table.view();
+                    labels_col        = cudf::strings::concatenate(labels_view,
+                                                            cudf::string_scalar(", "),
+                                                            cudf::string_scalar(""),
+                                                            cudf::strings::separator_on_nulls::NO);
+                    std::vector<cudf::column_view> columns{table_view.begin(), table_view.end()};
+                    columns.push_back(labels_col->view());
+                    table_view = cudf::table_view(columns);
                 }
 
-                const auto& table_view = table_info.get_view();
-                auto table             = cudf::apply_boolean_mask(table_view, bool_col->view());
+                auto table = cudf::apply_boolean_mask(table_view, bool_col->view());
 
                 // Create a table_with_metadata this is copy/pasted from meta.cpp and should probably be a method there
                 auto column_names = table_info.get_column_names();
-                auto metadata     = cudf::io::table_metadata{};
+                if (m_include_pattern_names)
+                {
+                    column_names.emplace_back("labels");
+                }
+
+                auto metadata = cudf::io::table_metadata{};
 
                 metadata.schema_info.reserve(column_names.size() + 1);
                 metadata.schema_info.emplace_back("");
@@ -151,13 +171,13 @@ std::shared_ptr<mrc::segment::Object<RegexProcessor>> PassThruStageInterfaceProx
     bool include_pattern_names)
 {
     std::vector<std::unique_ptr<cudf::strings::regex_program>> cudf_regex_patterns(regex_patterns.size());
-    std::vector<std::unique_ptr<cudf::scalar>> pattern_name_scalars(regex_patterns.size());
+    std::vector<cudf::string_scalar> pattern_name_scalars;
 
     std::size_t i = 0;
     for (auto& [pattern_name, pattern] : regex_patterns)
     {
-        cudf_regex_patterns[i]  = cudf::strings::regex_program::create(pattern);
-        pattern_name_scalars[i] = cudf::make_string_scalar(pattern_name);
+        cudf_regex_patterns[i] = cudf::strings::regex_program::create(pattern);
+        pattern_name_scalars.emplace_back(pattern_name);
         ++i;
     }
     return builder.construct_object<RegexProcessor>(name,

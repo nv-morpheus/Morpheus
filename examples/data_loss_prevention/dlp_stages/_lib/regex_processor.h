@@ -17,12 +17,13 @@
 
 #pragma once
 
-#include <cudf/strings/regex/regex_program.hpp>
-#include <morpheus/export.h>              // for exporting symbols
-#include <morpheus/messages/control.hpp>  // for ControlMessage
-#include <mrc/segment/builder.hpp>        // for Segment Builder
-#include <mrc/segment/object.hpp>         // for Segment Object
-#include <pymrc/node.hpp>                 // for PythonNode
+#include <cudf/scalar/scalar.hpp>                // for cudf::string_scalar
+#include <cudf/strings/regex/regex_program.hpp>  // for cudf::strings::regex_program
+#include <morpheus/export.h>                     // for exporting symbols
+#include <morpheus/messages/control.hpp>         // for ControlMessage
+#include <mrc/segment/builder.hpp>               // for Segment Builder
+#include <mrc/segment/object.hpp>                // for Segment Object
+#include <pymrc/node.hpp>                        // for PythonNode
 #include <rxcpp/rx.hpp>
 
 #include <map>     // for map
@@ -45,7 +46,7 @@ class MORPHEUS_EXPORT RegexProcessor
 
     RegexProcessor(std::string&& source_column_name,
                    std::vector<std::unique_ptr<cudf::strings::regex_program>>&& regex_patterns,
-                   std::vector<std::unique_ptr<cudf::scalar>>&& pattern_name_scalars,
+                   std::vector<cudf::string_scalar>&& pattern_name_scalars,
                    bool include_pattern_names);
 
     subscribe_fn_t build_operator();
@@ -53,7 +54,7 @@ class MORPHEUS_EXPORT RegexProcessor
   private:
     std::string m_source_column_name;
     std::vector<std::unique_ptr<cudf::strings::regex_program>> m_regex_patterns;
-    std::vector<std::unique_ptr<cudf::scalar>> m_pattern_name_scalars;
+    std::vector<cudf::string_scalar> m_pattern_name_scalars;
     bool m_include_pattern_names = false;
 };
 
