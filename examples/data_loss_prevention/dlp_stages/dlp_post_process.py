@@ -33,6 +33,7 @@ def dlp_post_process(msg: ControlMessage,
     return new_meta
 
 
+# TODO remove this once we are ready to merge
 @stage(name="df_printer", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
 def df_printer(msg: ControlMessage, *, name: str) -> ControlMessage:
     with msg.payload().mutable_dataframe() as df:

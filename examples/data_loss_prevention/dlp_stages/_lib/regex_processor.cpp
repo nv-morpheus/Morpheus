@@ -150,7 +150,7 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
 
                 auto stop_time = std::chrono::steady_clock::now();
                 auto elapsed   = std::chrono::duration_cast<std::chrono::milliseconds>(stop_time - time_start).count();
-                std::cerr << "Regex stage completed in " << elapsed << " ms" << std::endl;
+                m_regex_time_ms += elapsed;
 
                 output.on_next(std::move(cm_msg));
             },
@@ -158,6 +158,7 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                 output.on_error(error_ptr);
             },
             [&]() {
+                std::cerr << "\nRegex stage completed in " << m_regex_time_ms << " ms" << std::endl;
                 output.on_completed();
             }));
     };
