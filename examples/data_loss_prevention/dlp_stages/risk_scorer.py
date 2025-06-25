@@ -69,6 +69,7 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
         self._findings_column = findings_column
         self._df_pkg = get_df_pkg(config.execution_mode)
+        self._elapsed_time_secs = 0.0
 
     @property
     def name(self) -> str:
@@ -195,12 +196,15 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
         msg.payload(MessageMeta(result_df))
 
-        # t2 = time.time()
-        #print(f"RiskScorer took {t2 - t1:.4f} seconds to score findings.")
+        t2 = time.time()
+        self._elapsed_time_secs += t2 - t1
         return msg
 
+    def _on_completed(self) -> None:
+        print(f"RiskScorer completed in {self._elapsed_time_secs:.2f} seconds")
+
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        node = builder.make_node(self.unique_name, ops.map(self.score))
+        node = builder.make_node(self.unique_name, ops.map(self.score), ops.on_completed(self._on_completed))
         builder.make_edge(input_node, node)
 
         return node

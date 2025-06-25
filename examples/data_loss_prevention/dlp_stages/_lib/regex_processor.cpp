@@ -158,7 +158,7 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                 output.on_error(error_ptr);
             },
             [&]() {
-                std::cerr << "Regex stage completed in " << m_regex_time_ms << " ms" << std::endl;
+                std::cerr << "Regex stage completed in " << m_regex_time_ms / 1000.0 << " s" << std::endl;
                 output.on_completed();
             }));
     };
