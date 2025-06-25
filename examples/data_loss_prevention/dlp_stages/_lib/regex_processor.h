@@ -55,6 +55,7 @@ class MORPHEUS_EXPORT RegexProcessor
     std::string m_source_column_name;
     std::vector<std::unique_ptr<cudf::strings::regex_program>> m_regex_patterns;
     std::vector<cudf::string_scalar> m_pattern_name_scalars;
+    long m_regex_time_ms         = 0;
     bool m_include_pattern_names = false;
 };
 
