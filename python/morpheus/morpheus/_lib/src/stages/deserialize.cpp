@@ -32,7 +32,6 @@
 #include <pymrc/utils.hpp>      // for cast_from_pyobject
 
 #include <algorithm>  // for min
-#include <chrono>
 #include <exception>  // for exception_ptr
 #include <optional>   // for optional
 #include <sstream>    // for operator<<, basic_ostringstream
@@ -45,7 +44,6 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t incoming_message) {
-                auto start_time = std::chrono::steady_clock::now();
                 if (!incoming_message->has_sliceable_index())
                 {
                     if (m_ensure_sliceable_index)
@@ -93,11 +91,6 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
 
                     output.on_next(std::move(windowed_message));
                 }
-
-                auto end_time = std::chrono::steady_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-                std::cerr << "DeserializeStage processed " << incoming_message->count() << " rows in "
-                          << duration.count() << " ms\n";
             },
             [&](std::exception_ptr error_ptr) {
                 output.on_error(error_ptr);

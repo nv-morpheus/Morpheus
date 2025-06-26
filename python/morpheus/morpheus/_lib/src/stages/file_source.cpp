@@ -33,7 +33,6 @@
 #include <pybind11/pytypes.h>   // for pybind11::int_
 #include <pymrc/node.hpp>
 
-#include <chrono>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -65,7 +64,6 @@ FileSourceStage::FileSourceStage(std::string filename,
 FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
-        auto time_start = std::chrono::steady_clock::now();
         auto data_table = load_table_from_file(m_filename, FileTypes::Auto, m_json_lines);
         if (m_filter_null)
         {
@@ -122,10 +120,6 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 
         DCHECK(!meta) << "meta was not properly pushed";
         DCHECK(!next_meta) << "next_meta was not properly pushed";
-        auto stop_time = std::chrono::steady_clock::now();
-        auto elapsed   = std::chrono::duration_cast<std::chrono::milliseconds>(stop_time - time_start).count();
-        std::cerr << "FileSourceStage: Read " << m_repeat << " repeats of file '" << m_filename << "' in " << elapsed
-                  << " ms" << std::endl;
 
         output.on_completed();
     };
