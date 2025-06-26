@@ -48,6 +48,10 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               callback=parse_log_level,
               show_default=True,
               help="Specify the logging level to use.")
+@click.option("--num_threads",
+              default=16,
+              type=click.IntRange(min=1),
+              help="Number of internal pipeline threads to use.")
 @click.option("--regex_file",
               help="JSON file containing regex patterns",
               default=os.path.join(CUR_DIR, "data/regex_patterns.json"),
@@ -114,6 +118,7 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               show_default=True,
               required=True)
 def main(log_level: int,
+         num_threads: int,
          regex_file: pathlib.Path,
          dataset: list[str],
          input_file: pathlib.Path | None,
@@ -137,6 +142,7 @@ def main(log_level: int,
 
     config = Config()
     config.mode = PipelineModes.NLP
+    config.num_threads = num_threads
     config.model_max_batch_size = model_max_batch_size
     config.pipeline_batch_size = pipeline_batch_size
 
