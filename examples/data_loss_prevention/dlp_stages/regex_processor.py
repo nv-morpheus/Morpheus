@@ -16,7 +16,6 @@
 import json
 import logging
 import pathlib
-import time
 
 import mrc
 from mrc.core import operators as ops
@@ -120,7 +119,6 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
         Scan text for sensitive data using regex patterns
         """
 
-        t1 = time.time()
         with msg.payload().mutable_dataframe() as df:
             # Extract the text column to process
             text_series = df[self.source_column_name]
@@ -155,8 +153,6 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
                 inplace=True)
             df.reset_index(drop=True, inplace=True)
 
-        t2 = time.time()
-        print(f"\nRegexProcessor took {t2-t1} seconds to process input text.", flush=True)
         return msg
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
@@ -168,7 +164,6 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
                                                   regex_patterns=self.combined_patterns,
                                                   include_pattern_names=self._include_pattern_names)
         else:
-            print("Building Python node for RegexProcessor", flush=True)
             node = builder.make_node(self.unique_name, ops.map(self.process))
         builder.make_edge(input_node, node)
 

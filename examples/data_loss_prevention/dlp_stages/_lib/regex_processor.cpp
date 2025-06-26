@@ -35,7 +35,6 @@
 #include <pybind11/pybind11.h>
 #include <pymrc/utils.hpp>  // for pymrc::import
 
-#include <chrono>
 #include <cstddef>
 #include <memory>
 
@@ -62,7 +61,6 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t cm_msg) {
-                auto time_start       = std::chrono::steady_clock::now();
                 auto meta             = cm_msg->payload();
                 auto table_info       = meta->get_info();
                 const auto& col_view  = table_info.get_column(m_source_column_name);
@@ -148,17 +146,12 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                 auto new_meta                              = MessageMeta::create_from_cpp(std::move(table_w_meta), 1);
                 cm_msg->payload(new_meta);
 
-                auto stop_time = std::chrono::steady_clock::now();
-                auto elapsed   = std::chrono::duration_cast<std::chrono::milliseconds>(stop_time - time_start).count();
-                m_regex_time_ms += elapsed;
-
                 output.on_next(std::move(cm_msg));
             },
             [&](std::exception_ptr error_ptr) {
                 output.on_error(error_ptr);
             },
             [&]() {
-                std::cerr << "Regex stage completed in " << m_regex_time_ms / 1000.0 << " s" << std::endl;
                 output.on_completed();
             }));
     };
