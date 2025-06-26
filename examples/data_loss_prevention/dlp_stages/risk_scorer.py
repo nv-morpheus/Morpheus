@@ -29,7 +29,21 @@ from morpheus.utils.type_utils import get_df_pkg
 
 @register_stage("risk-scorer")
 class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
-    """Analyzes findings to calculate risk scores and metrics"""
+    """
+    Analyzes findings to calculate risk scores and metrics
+
+    Parameters
+    ----------
+    config : morpheus.config.Config
+        Pipeline configuration instance.
+    findings_column : str
+        Name of the column containing findings to score.
+    type_weights : dict[str, int] | None
+        Dictionary mapping data types to their risk weights.
+        If None, uses `RiskScorer.DEFAULT_TYPE_WEIGHTS`.
+    default_weight : int
+        Default weight to use for data types not in `type_weights`.
+    """
 
     DEFAULT_TYPE_WEIGHTS = {
         "password": 85,
