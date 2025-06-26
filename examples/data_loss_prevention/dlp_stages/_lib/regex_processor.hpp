@@ -29,6 +29,11 @@
 #include <map>     // for map
 #include <memory>  // for shared_ptr
 #include <string>  // for string
+#include <vector>  // for vector
+
+// IWYU pragma: no_include <boost/fiber/context.hpp>
+// IWYU pragma: no_include "morpheus/objects/data_table.hpp"
+// IWYU pragma: no_include <thread>
 
 namespace morpheus_dlp {
 

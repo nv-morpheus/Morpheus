@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "regex_processor.h"
+#include "regex_processor.hpp"
 
 #include <cudf/ast/expressions.hpp>  // for cudf::ast::tree, cudf::ast::column_reference, ast_operator
 #include <cudf/column/column.hpp>
