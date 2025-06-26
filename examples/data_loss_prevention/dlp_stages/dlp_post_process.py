@@ -31,12 +31,3 @@ def dlp_post_process(msg: ControlMessage,
         new_meta = MessageMeta(df[output_columns].sort_values(sort_col))
 
     return new_meta
-
-
-# TODO remove this once we are ready to merge
-@stage(name="df_printer", execution_modes=(ExecutionMode.GPU, ExecutionMode.CPU))
-def df_printer(msg: ControlMessage, *, name: str) -> ControlMessage:
-    with msg.payload().mutable_dataframe() as df:
-        print(f"\n***********\n{name} ({len(df)}): {df.head(10)}\n***********\n")
-
-    return msg
