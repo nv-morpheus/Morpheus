@@ -15,28 +15,34 @@
  * limitations under the License.
  */
 
-#include "regex_processor.hpp"
+#include "regex_processor.hpp"  // IWYU pragma: associated
 
-#include <cudf/ast/expressions.hpp>  // for cudf::ast::tree, cudf::ast::column_reference, ast_operator
-#include <cudf/column/column.hpp>
-#include <cudf/column/column_factories.hpp>           // for make_column_from_scalar
-#include <cudf/copying.hpp>                           // for cudf::copy_if_else
-#include <cudf/io/types.hpp>                          // for cudf::io::table_metadata and table_with_metadata
-#include <cudf/stream_compaction.hpp>                 // for apply_boolean_mask
-#include <cudf/strings/combine.hpp>                   // for concatenate
-#include <cudf/strings/contains.hpp>                  // for contains_re
-#include <cudf/strings/convert/convert_booleans.hpp>  // for from_booleans
-#include <cudf/strings/strip.hpp>                     // for strip
-#include <cudf/table/table_view.hpp>
-#include <cudf/transform.hpp>  // for compute_column
-#include <cudf/types.hpp>
+#include <cudf/ast/expressions.hpp>         // for cudf::ast::tree, cudf::ast::column_reference, ast_operator
+#include <cudf/column/column.hpp>           // for cudf::column
+#include <cudf/column/column_view.hpp>      // for column_view
+#include <cudf/copying.hpp>                 // for cudf::copy_if_else
+#include <cudf/io/types.hpp>                // for cudf::io::table_metadata and table_with_metadata
+#include <cudf/stream_compaction.hpp>       // for apply_boolean_mask
+#include <cudf/strings/combine.hpp>         // for concatenate
+#include <cudf/strings/contains.hpp>        // for contains_re
+#include <cudf/table/table.hpp>             // for table
+#include <cudf/table/table_view.hpp>        // for table_view
+#include <cudf/transform.hpp>               // for compute_column
+#include <glog/logging.h>                   // for CHECK, COMPACT_GOOGLE_LOG_FATAL, LogMessageFatal
+#include <morpheus/messages/meta.hpp>       // for MessageMeta
+#include <morpheus/objects/table_info.hpp>  // for TableInfo
 #include <pybind11/attr.h>
-#include <pybind11/cast.h>
 #include <pybind11/pybind11.h>
 #include <pymrc/utils.hpp>  // for pymrc::import
 
-#include <cstddef>
-#include <memory>
+#include <cstddef>    // for size_t
+#include <exception>  // for exception_ptr
+#include <memory>     // for unique_ptr, shared_ptr
+#include <ostream>    // for operator<<
+#include <utility>    // for move
+
+// IWYU pragma: no_include <unordered_map>
+// IWYU pragma: no_include "morpheus/messages/control.hpp"
 
 namespace morpheus_dlp {
 
