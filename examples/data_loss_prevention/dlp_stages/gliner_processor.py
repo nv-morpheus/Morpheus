@@ -55,8 +55,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         Name of the Triton model to use for inference.
     source_column_name : str
         Name of the column containing the source text to process.
-    regex_col_prefix : str
-        Prefix used to identify regex match columns in the DataFrame.
     confidence_threshold: float
         Minimum confidence score to report a finding
     context_window : int
@@ -74,7 +72,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                  server_url: str = "localhost:8001",
                  triton_model_name: str = "gliner-bi-encoder-onnx",
                  source_column_name: str = "source_text",
-                 match_column_name: str = "matched",
                  confidence_threshold: float = 0.3,
                  context_window: int = 100,
                  fallback: bool = False):
@@ -87,7 +84,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
 
         self._model_max_batch_size = config.model_max_batch_size
         self.source_column_name = source_column_name
-        self.match_column_name = match_column_name
         self._confidence_threshold = confidence_threshold
         self.context_window = context_window
         self.fallback = fallback
