@@ -52,7 +52,6 @@ MLflow
 Morpheus
 [Nn]amespace(s?)
 NeMo
-nervaluate
 nginx
 NIC
 NIM(s?)
