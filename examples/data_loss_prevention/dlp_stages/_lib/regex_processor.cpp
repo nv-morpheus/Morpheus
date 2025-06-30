@@ -96,17 +96,10 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                     }
                 }
 
-                for (std::size_t i = 1; i < column_references.size(); ++i)
+                tree.push(ast::operation{ast::ast_operator::LOGICAL_OR, column_references[0], column_references[1]});
+                for (std::size_t i = 2; i < column_references.size(); ++i)
                 {
-                    if (i == 1)
-                    {
-                        tree.push(
-                            ast::operation{ast::ast_operator::LOGICAL_OR, column_references[0], column_references[1]});
-                    }
-                    else
-                    {
-                        tree.push(ast::operation{ast::ast_operator::LOGICAL_OR, tree.back(), column_references[i]});
-                    }
+                    tree.push(ast::operation{ast::ast_operator::LOGICAL_OR, tree.back(), column_references[i]});
                 }
 
                 auto boolean_table = cudf::table_view(boolean_column_views);
