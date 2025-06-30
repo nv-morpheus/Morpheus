@@ -78,6 +78,7 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
 
                 namespace ast = cudf::ast;
                 ast::tree tree{};
+                std::vector<ast::column_reference> column_references;
 
                 for (std::size_t i = 0; i < m_regex_patterns.size(); ++i)
                 {
@@ -85,16 +86,8 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                     boolean_columns[i]      = cudf::strings::contains_re(col_view, *m_regex_patterns[i]);
                     boolean_column_views[i] = boolean_columns[i]->view();
 
-                    if (i > 0)
-                    {
-                        const auto& last_op = tree.back();
-                        const auto& col_ref = tree.push(ast::column_reference(i));
-                        tree.push(ast::operation{ast::ast_operator::LOGICAL_OR, last_op, col_ref});
-                    }
-                    else
-                    {
-                        tree.push(ast::column_reference(i));
-                    }
+                    column_references.emplace_back(i);
+                    tree.push(column_references.back());
 
                     if (m_include_pattern_names)
                     {
@@ -103,8 +96,22 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                     }
                 }
 
+                for (std::size_t i = 1; i < column_references.size(); ++i)
+                {
+                    if (i == 1)
+                    {
+                        tree.push(
+                            ast::operation{ast::ast_operator::LOGICAL_OR, column_references[0], column_references[1]});
+                    }
+                    else
+                    {
+                        tree.push(ast::operation{ast::ast_operator::LOGICAL_OR, tree.back(), column_references[i]});
+                    }
+                }
+
                 auto boolean_table = cudf::table_view(boolean_column_views);
-                auto bool_col      = cudf::compute_column(boolean_table, tree.back());
+                const auto& expr   = tree.back();
+                auto bool_col      = cudf::compute_column(boolean_table, expr);
 
                 cudf::table_view table_view{table_info.get_view()};
 
