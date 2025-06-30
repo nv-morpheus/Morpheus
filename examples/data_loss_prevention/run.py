@@ -20,8 +20,6 @@ import pathlib
 import click
 from dlp_stages.datasets_source import DatasetsSourceStage
 from dlp_stages.dlp_input_processor import DLPInputProcessor
-from dlp_stages.dlp_output import DLPOutput
-from dlp_stages.dlp_post_process import dlp_post_process
 from dlp_stages.gliner_processor import GliNERProcessor
 from dlp_stages.regex_processor import RegexProcessor
 from dlp_stages.risk_scorer import RiskScorer
@@ -33,6 +31,8 @@ from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
 
@@ -206,8 +206,8 @@ def main(log_level: int,
 
     pipeline.add_stage(MonitorStage(config, description="Risk Scorer"))
 
-    pipeline.add_stage(dlp_post_process(config, output_columns=output_columns))
-    pipeline.add_stage(DLPOutput(config, filename=str(out_file), overwrite=True))
+    pipeline.add_stage(SerializeStage(config, include=output_columns))
+    pipeline.add_stage(WriteToFileStage(config, filename=str(out_file), overwrite=True))
 
     pipeline.add_stage(MonitorStage(config, description="DLP Output"))
 
