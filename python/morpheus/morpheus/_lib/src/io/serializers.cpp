@@ -17,9 +17,11 @@
 
 #include "morpheus/io/serializers.hpp"
 
-#include "morpheus/objects/table_info_data.hpp"
+#include "morpheus/objects/data_table.hpp"       // for IDataTable
+#include "morpheus/objects/table_info_data.hpp"  // for TableInfoData
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/io/csv.hpp>
 #include <cudf/io/data_sink.hpp>
 #include <cudf/io/json.hpp>
@@ -27,13 +29,16 @@
 #include <cudf/io/types.hpp>  // for column_name_info, sink_info, table_metadata
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
+#include <cudf/utilities/traits.hpp>  // for is_nested
 #include <glog/logging.h>
+#include <pybind11/gil.h>  // for PyGILState_Check, gil_scoped_acquire
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
 
 #include <cstddef>  // for size_t
 #include <fstream>
+#include <memory>  // for shared_ptr
 #include <numeric>
 #include <sstream>  // IWYU pragma: keep
 #include <vector>
