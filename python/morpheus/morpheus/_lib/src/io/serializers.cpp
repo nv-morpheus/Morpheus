@@ -39,10 +39,107 @@
 #include <vector>
 // IWYU pragma: no_include <unordered_map>
 
-namespace morpheus {
 namespace py = pybind11;
 using namespace py::literals;
 using namespace std::string_literals;
+
+namespace {
+
+std::vector<std::size_t> get_struct_col_indicies(const cudf::table_view& tbl_view)
+{
+    std::vector<std::size_t> col_indicies;
+    for (std::size_t i = 0; i < tbl_view.num_columns(); ++i)
+    {
+        const auto& col = tbl_view.column(i);
+        if (cudf::is_nested(col.type()))
+        {
+            col_indicies.push_back(i);
+        }
+    }
+
+    return col_indicies;
+}
+
+cudf::io::column_name_info make_column_name_info(std::string name, const py::object& py_col)
+{
+    // construct a column_name_info from a python column object, loosely based on the _dtype_to_names_list
+    // method in cudf's `python/cudf/cudf/io/json.py`
+    DCHECK(PyGILState_Check() != 0);
+    auto dtypes_mod  = py::module_::import("cudf.core.dtypes");
+    auto StructDtype = dtypes_mod.attr("StructDtype");
+    auto ListDtype   = dtypes_mod.attr("ListDtype");
+
+    const auto& py_dtype = py_col.attr("dtype");
+    bool is_struct_col   = py::isinstance(py_dtype, StructDtype);
+    bool is_list_col     = py::isinstance(py_dtype, ListDtype);
+
+    py::list fields;
+    if (is_struct_col)
+    {
+        // Attribute only exists on StructDtype
+        fields = py::list(py_col.attr("dtype").attr("fields").attr("keys")());
+    }
+
+    std::vector<cudf::io::column_name_info> children;
+    if (is_struct_col || is_list_col)
+    {
+        auto py_children = py_col.attr("children");
+        std::size_t i    = 0;
+
+        for (auto& child : py_children)
+        {
+            // child is a handle
+            const auto& py_child = child.cast<py::object>();
+            std::string child_name{};
+            if (is_struct_col)
+            {
+                child_name = fields[i].cast<std::string>();
+            }
+
+            children.emplace_back(make_column_name_info(child_name, py_child));
+
+            ++i;
+        }
+    }
+
+    cudf::io::column_name_info col_info{std::move(name)};
+    col_info.children = std::move(children);
+
+    return col_info;
+}
+
+cudf::io::table_metadata build_cudf_metadata(const morpheus::TableInfoData& tbl, const py::object& df)
+{
+    std::vector<cudf::size_type> col_idexes(tbl.column_names.size());
+    std::iota(col_idexes.begin(), col_idexes.end(), 1);
+    auto tbl_view = tbl.table_view.select(col_idexes);
+
+    // TODO remove these two loops and check for a struct column inline
+    cudf::io::table_metadata tbl_meta{
+        std::vector<cudf::io::column_name_info>{tbl.column_names.cbegin(), tbl.column_names.cend()}};
+
+    // If we have a struct column, we need to grab the GIL and inspect the children
+    // ref : https://github.com/rapidsai/cudf/issues/19215
+    auto struct_cols = get_struct_col_indicies(tbl_view);
+    if (!struct_cols.empty())
+    {
+        pybind11::gil_scoped_acquire gil;
+
+        // we need the column objects not the series objects
+        const pybind11::tuple& columns = df.attr("_columns");
+        for (const auto col_idx : struct_cols)
+        {
+            const auto& py_col            = columns[col_idx];
+            tbl_meta.schema_info[col_idx] = make_column_name_info(tbl.column_names[col_idx], py_col);
+        }
+    }
+
+    return tbl_meta;
+}
+
+}  // namespace
+
+namespace morpheus {
 
 class OStreamSink : public cudf::io::data_sink
 {
@@ -140,7 +237,8 @@ std::string df_to_csv(const TableInfo& tbl, bool include_header, bool include_in
     return out_stream.str();
 }
 
-void table_to_json(const TableInfoData& tbl, std::ostream& out_stream, bool include_index_col, bool flush)
+void table_to_json(
+    const TableInfoData& tbl, const py::object& df, std::ostream& out_stream, bool include_index_col, bool flush)
 {
     if (!include_index_col)
     {
@@ -152,13 +250,12 @@ void table_to_json(const TableInfoData& tbl, std::ostream& out_stream, bool incl
     std::iota(col_idexes.begin(), col_idexes.end(), 1);
     auto tbl_view = tbl.table_view.select(col_idexes);
 
-    cudf::io::table_metadata tbl_meta{
-        std::vector<cudf::io::column_name_info>{column_names.cbegin(), column_names.cend()}};
+    auto tbl_meta = build_cudf_metadata(tbl, df);
 
     OStreamSink sink(out_stream);
     auto destination     = cudf::io::sink_info(&sink);
     auto options_builder = cudf::io::json_writer_options_builder(destination, tbl_view)
-                               .metadata(tbl_meta)
+                               .metadata(std::move(tbl_meta))
                                .lines(true)
                                .include_nulls(true)
                                .na_rep("null");
@@ -174,6 +271,7 @@ void table_to_json(const TableInfoData& tbl, std::ostream& out_stream, bool incl
 void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col, bool flush)
 {
     table_to_json(TableInfoData{tbl.get_view(), tbl.get_index_names(), tbl.get_column_names()},
+                  tbl.get_parent()->get_py_object(),
                   out_stream,
                   include_index_col,
                   flush);
@@ -267,6 +365,7 @@ void SerializersProxy::write_df_to_file(pybind11::object df,
     {
     case FileTypes::JSON: {
         table_to_json(tbl,
+                      df,
                       out_file,
                       get_with_default(kwargs, "include_index_col", true),
                       get_with_default(kwargs, "flush", false));
