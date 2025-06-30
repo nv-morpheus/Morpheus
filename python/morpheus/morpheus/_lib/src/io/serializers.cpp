@@ -98,12 +98,10 @@ cudf::io::column_name_info make_column_name_info(std::string name, const py::obj
     return col_info;
 }
 
-cudf::io::table_metadata build_cudf_metadata(const morpheus::TableInfoData& tbl, const py::object& df)
+cudf::io::table_metadata build_cudf_metadata(const morpheus::TableInfoData& tbl,
+                                             const cudf::table_view& tbl_view,
+                                             const py::object& df)
 {
-    std::vector<cudf::size_type> col_idexes(tbl.column_names.size());
-    std::iota(col_idexes.begin(), col_idexes.end(), 1);
-    auto tbl_view = tbl.table_view.select(col_idexes);
-
     std::vector<std::size_t> struct_col_indicies;
     std::vector<cudf::io::column_name_info> column_name_infos(tbl.column_names.size());
     for (std::size_t i = 0; i < tbl.column_names.size(); ++i)
@@ -245,7 +243,7 @@ void table_to_json(
     std::iota(col_idexes.begin(), col_idexes.end(), 1);
     auto tbl_view = tbl.table_view.select(col_idexes);
 
-    auto tbl_meta = build_cudf_metadata(tbl, df);
+    auto tbl_meta = build_cudf_metadata(tbl, tbl_view, df);
 
     OStreamSink sink(out_stream);
     auto destination     = cudf::io::sink_info(&sink);
