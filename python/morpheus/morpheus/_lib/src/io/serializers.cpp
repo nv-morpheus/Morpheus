@@ -102,7 +102,7 @@ cudf::io::table_metadata build_cudf_metadata(const morpheus::TableInfoData& tbl,
                                              const cudf::table_view& tbl_view,
                                              const py::object& df)
 {
-    std::vector<std::size_t> struct_col_indicies;
+    std::vector<std::size_t> nested_col_indicies;
     std::vector<cudf::io::column_name_info> column_name_infos(tbl.column_names.size());
     for (std::size_t i = 0; i < tbl.column_names.size(); ++i)
     {
@@ -112,19 +112,19 @@ cudf::io::table_metadata build_cudf_metadata(const morpheus::TableInfoData& tbl,
         }
         else
         {
-            struct_col_indicies.push_back(i);
+            nested_col_indicies.push_back(i);
         }
     }
 
     // If we have a struct column, we need to grab the GIL and inspect the children
     // Remove once https://github.com/rapidsai/cudf/issues/19215 is resolved
-    if (!struct_col_indicies.empty())
+    if (!nested_col_indicies.empty())
     {
         pybind11::gil_scoped_acquire gil;
 
         // we need the column objects not the series objects
         const pybind11::tuple& columns = df.attr("_columns");
-        for (const auto col_idx : struct_col_indicies)
+        for (const auto col_idx : nested_col_indicies)
         {
             const auto& py_col         = columns[col_idx];
             column_name_infos[col_idx] = make_column_name_info(tbl.column_names[col_idx], py_col);
