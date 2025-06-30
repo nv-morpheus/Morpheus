@@ -114,7 +114,7 @@ cudf::io::table_metadata build_cudf_metadata(const morpheus::TableInfoData& tbl,
     }
 
     // If we have a struct column, we need to grab the GIL and inspect the children
-    // ref : https://github.com/rapidsai/cudf/issues/19215
+    // Remove once https://github.com/rapidsai/cudf/issues/19215 is resolved
     if (!struct_col_indicies.empty())
     {
         pybind11::gil_scoped_acquire gil;
@@ -214,11 +214,7 @@ void table_to_csv(
 
 void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_header, bool include_index_col, bool flush)
 {
-    table_to_csv(TableInfoData{tbl.get_view(), tbl.get_index_names(), tbl.get_column_names()},
-                 out_stream,
-                 include_header,
-                 include_index_col,
-                 flush);
+    table_to_csv(tbl.get_data(), out_stream, include_header, include_index_col, flush);
 }
 
 std::string df_to_csv(const TableInfo& tbl, bool include_header, bool include_index_col)
@@ -264,11 +260,7 @@ void table_to_json(
 
 void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col, bool flush)
 {
-    table_to_json(TableInfoData{tbl.get_view(), tbl.get_index_names(), tbl.get_column_names()},
-                  tbl.get_parent()->get_py_object(),
-                  out_stream,
-                  include_index_col,
-                  flush);
+    table_to_json(tbl.get_data(), tbl.get_parent()->get_py_object(), out_stream, include_index_col, flush);
 }
 
 std::string df_to_json(const TableInfo& tbl, bool include_index_col)
@@ -311,11 +303,7 @@ void table_to_parquet(
 void df_to_parquet(
     const TableInfo& tbl, std::ostream& out_stream, bool include_header, bool include_index_col, bool flush)
 {
-    table_to_parquet(TableInfoData{tbl.get_view(), tbl.get_index_names(), tbl.get_column_names()},
-                     out_stream,
-                     include_header,
-                     include_index_col,
-                     flush);
+    table_to_parquet(tbl.get_data(), out_stream, include_header, include_index_col, flush);
 }
 
 std::string df_to_parquet(const TableInfo& tbl, bool include_header, bool include_index_col)

@@ -126,13 +126,14 @@ struct MORPHEUS_EXPORT TableInfoBase
      */
     const std::shared_ptr<const IDataTable>& get_parent() const;
 
+    const TableInfoData& get_data() const;
+
   protected:
     TableInfoBase() = default;
 
     TableInfoBase(std::shared_ptr<const IDataTable> parent, TableInfoData data);
 
     TableInfoData& get_data();
-    const TableInfoData& get_data() const;
 
   private:
     std::shared_ptr<const IDataTable> m_parent;
