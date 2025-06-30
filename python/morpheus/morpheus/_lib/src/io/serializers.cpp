@@ -45,21 +45,6 @@ using namespace std::string_literals;
 
 namespace {
 
-std::vector<std::size_t> get_struct_col_indicies(const cudf::table_view& tbl_view)
-{
-    std::vector<std::size_t> col_indicies;
-    for (std::size_t i = 0; i < tbl_view.num_columns(); ++i)
-    {
-        const auto& col = tbl_view.column(i);
-        if (cudf::is_nested(col.type()))
-        {
-            col_indicies.push_back(i);
-        }
-    }
-
-    return col_indicies;
-}
-
 cudf::io::column_name_info make_column_name_info(std::string name, const py::object& py_col)
 {
     // construct a column_name_info from a python column object, loosely based on the _dtype_to_names_list
@@ -114,27 +99,36 @@ cudf::io::table_metadata build_cudf_metadata(const morpheus::TableInfoData& tbl,
     std::iota(col_idexes.begin(), col_idexes.end(), 1);
     auto tbl_view = tbl.table_view.select(col_idexes);
 
-    // TODO remove these two loops and check for a struct column inline
-    cudf::io::table_metadata tbl_meta{
-        std::vector<cudf::io::column_name_info>{tbl.column_names.cbegin(), tbl.column_names.cend()}};
+    std::vector<std::size_t> struct_col_indicies;
+    std::vector<cudf::io::column_name_info> column_name_infos(tbl.column_names.size());
+    for (std::size_t i = 0; i < tbl.column_names.size(); ++i)
+    {
+        if (!cudf::is_nested(tbl_view.column(i).type()))
+        {
+            column_name_infos[i] = tbl.column_names[i];
+        }
+        else
+        {
+            struct_col_indicies.push_back(i);
+        }
+    }
 
     // If we have a struct column, we need to grab the GIL and inspect the children
     // ref : https://github.com/rapidsai/cudf/issues/19215
-    auto struct_cols = get_struct_col_indicies(tbl_view);
-    if (!struct_cols.empty())
+    if (!struct_col_indicies.empty())
     {
         pybind11::gil_scoped_acquire gil;
 
         // we need the column objects not the series objects
         const pybind11::tuple& columns = df.attr("_columns");
-        for (const auto col_idx : struct_cols)
+        for (const auto col_idx : struct_col_indicies)
         {
-            const auto& py_col            = columns[col_idx];
-            tbl_meta.schema_info[col_idx] = make_column_name_info(tbl.column_names[col_idx], py_col);
+            const auto& py_col         = columns[col_idx];
+            column_name_infos[col_idx] = make_column_name_info(tbl.column_names[col_idx], py_col);
         }
     }
 
-    return tbl_meta;
+    return cudf::io::table_metadata{std::move(column_name_infos)};
 }
 
 }  // namespace
