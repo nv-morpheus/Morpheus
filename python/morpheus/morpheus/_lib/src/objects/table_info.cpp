@@ -178,7 +178,7 @@ const cudf::column_view& TableInfoBase::get_column(const std::string& column_nam
     auto itr = std::find(this->get_data().column_names.begin(), this->get_data().column_names.end(), column_name);
     if (itr == this->get_data().column_names.end())
     {
-        throw std::invalid_argument(column_name + " does not found");
+        throw std::invalid_argument(column_name + " is not found");
     }
 
     auto idx = std::distance(this->get_data().column_names.begin(), itr);
