@@ -209,8 +209,6 @@ def main(log_level: int,
     pipeline.add_stage(SerializeStage(config, include=output_columns))
     pipeline.add_stage(WriteToFileStage(config, filename=str(out_file), overwrite=True))
 
-    pipeline.add_stage(MonitorStage(config, description="DLP Output"))
-
     # Run the pipeline
     pipeline.run()
 
