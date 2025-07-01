@@ -277,8 +277,12 @@ std::string df_to_json(const TableInfo& tbl, bool include_index_col)
     return out_stream.str();
 }
 
-void table_to_parquet(
-    const TableInfoData& tbl, std::ostream& out_stream, bool include_header, bool include_index_col, bool flush)
+void table_to_parquet(const TableInfoData& tbl,
+                      const py::object& df,
+                      std::ostream& out_stream,
+                      bool include_header,
+                      bool include_index_col,
+                      bool flush)
 {
     auto column_names         = tbl.column_names;
     cudf::size_type start_col = 1;
@@ -292,9 +296,12 @@ void table_to_parquet(
     std::iota(col_idexes.begin(), col_idexes.end(), start_col);
     auto tbl_view = tbl.table_view.select(col_idexes);
 
+    cudf::io::table_input_metadata tbl_meta(build_cudf_metadata(tbl, tbl_view, df));
+
     OStreamSink sink(out_stream);
-    auto destination     = cudf::io::sink_info(&sink);
-    auto options_builder = cudf::io::parquet_writer_options_builder(destination, tbl_view);
+    auto destination = cudf::io::sink_info(&sink);
+    auto options_builder =
+        cudf::io::parquet_writer_options_builder(destination, tbl_view).metadata(std::move(tbl_meta));
 
     cudf::io::write_parquet(options_builder.build());
 
@@ -307,7 +314,8 @@ void table_to_parquet(
 void df_to_parquet(
     const TableInfo& tbl, std::ostream& out_stream, bool include_header, bool include_index_col, bool flush)
 {
-    table_to_parquet(tbl.get_data(), out_stream, include_header, include_index_col, flush);
+    table_to_parquet(
+        tbl.get_data(), tbl.get_parent()->get_py_object(), out_stream, include_header, include_index_col, flush);
 }
 
 std::string df_to_parquet(const TableInfo& tbl, bool include_header, bool include_index_col)
@@ -367,6 +375,7 @@ void SerializersProxy::write_df_to_file(pybind11::object df,
     }
     case FileTypes::PARQUET: {
         table_to_parquet(tbl,
+                         df,
                          out_file,
                          get_with_default(kwargs, "include_header", true),
                          get_with_default(kwargs, "include_index_col", true),
