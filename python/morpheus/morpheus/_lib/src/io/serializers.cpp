@@ -99,17 +99,17 @@ cudf::io::column_name_info make_column_name_info(std::string name, const py::obj
     return col_info;
 }
 
-cudf::io::table_metadata build_cudf_metadata(const morpheus::TableInfoData& tbl,
-                                             const cudf::table_view& tbl_view,
+cudf::io::table_metadata build_cudf_metadata(const cudf::table_view& tbl_view,
+                                             const std::vector<std::string>& column_names,
                                              const py::object& df)
 {
     std::vector<std::size_t> nested_col_indicies;
-    std::vector<cudf::io::column_name_info> column_name_infos(tbl.column_names.size());
-    for (std::size_t i = 0; i < tbl.column_names.size(); ++i)
+    std::vector<cudf::io::column_name_info> column_name_infos(column_names.size());
+    for (std::size_t i = 0; i < column_names.size(); ++i)
     {
         if (!cudf::is_nested(tbl_view.column(i).type()))
         {
-            column_name_infos[i] = tbl.column_names[i];
+            column_name_infos[i] = column_names[i];
         }
         else
         {
@@ -124,11 +124,18 @@ cudf::io::table_metadata build_cudf_metadata(const morpheus::TableInfoData& tbl,
         pybind11::gil_scoped_acquire gil;
 
         // we need the column objects not the series objects
-        const pybind11::tuple& columns = df.attr("_columns");
+        const pybind11::tuple& df_columns = df.attr("_columns");
+        const auto num_df_cols            = py::len(df_columns);
+
+        // When the index is included in the output, the index doesn't appear in the DataFrame's _columns
+        DCHECK(num_df_cols == column_names.size() || num_df_cols + 1 == column_names.size())
+            << "Number of columns in DataFrame does not match number of column names provided";
+
+        const auto col_idx_offset = column_names.size() - num_df_cols;
         for (const auto col_idx : nested_col_indicies)
         {
-            const auto& py_col         = columns[col_idx];
-            column_name_infos[col_idx] = make_column_name_info(tbl.column_names[col_idx], py_col);
+            const auto& py_col         = df_columns[col_idx - col_idx_offset];
+            column_name_infos[col_idx] = make_column_name_info(column_names[col_idx], py_col);
         }
     }
 
@@ -239,12 +246,11 @@ void table_to_json(
         LOG(WARNING) << "Ignoring include_index_col=false as this isn't supported by cuDF";
     }
 
-    auto column_names = tbl.column_names;
-    std::vector<cudf::size_type> col_idexes(column_names.size());
+    std::vector<cudf::size_type> col_idexes(tbl.column_names.size());
     std::iota(col_idexes.begin(), col_idexes.end(), 1);
     auto tbl_view = tbl.table_view.select(col_idexes);
 
-    auto tbl_meta = build_cudf_metadata(tbl, tbl_view, df);
+    auto tbl_meta = build_cudf_metadata(tbl_view, tbl.column_names, df);
 
     OStreamSink sink(out_stream);
     auto destination     = cudf::io::sink_info(&sink);
@@ -296,7 +302,7 @@ void table_to_parquet(const TableInfoData& tbl,
     std::iota(col_idexes.begin(), col_idexes.end(), start_col);
     auto tbl_view = tbl.table_view.select(col_idexes);
 
-    cudf::io::table_input_metadata tbl_meta(build_cudf_metadata(tbl, tbl_view, df));
+    cudf::io::table_input_metadata tbl_meta(build_cudf_metadata(tbl_view, column_names, df));
 
     OStreamSink sink(out_stream);
     auto destination = cudf::io::sink_info(&sink);
