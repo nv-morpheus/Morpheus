@@ -220,5 +220,7 @@ def write_df_to_file(df: DataFrameType, file_name: str, file_type: FileTypes = F
             df_to_stream_json(df=df, stream=f, **kwargs)
         elif (mode == FileTypes.CSV):
             df_to_stream_csv(df=df, stream=f, **kwargs)
+        elif (mode == FileTypes.PARQUET):
+            df_to_stream_parquet(df=df, stream=f, **kwargs)
         else:
             assert False, "Unsupported filetype"
