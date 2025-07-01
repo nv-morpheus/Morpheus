@@ -17,7 +17,8 @@
 
 #include "morpheus/io/serializers.hpp"
 
-#include "morpheus/objects/data_table.hpp"       // for IDataTable
+#include "morpheus/objects/data_table.hpp"  // for IDataTable
+#include "morpheus/objects/file_types.hpp"
 #include "morpheus/objects/table_info_data.hpp"  // for TableInfoData
 #include "morpheus/utilities/cudf_util.hpp"
 
@@ -362,6 +363,14 @@ void SerializersProxy::write_df_to_file(pybind11::object df,
                      get_with_default(kwargs, "include_header", true),
                      get_with_default(kwargs, "include_index_col", true),
                      get_with_default(kwargs, "flush", false));
+        break;
+    }
+    case FileTypes::PARQUET: {
+        table_to_parquet(tbl,
+                         out_file,
+                         get_with_default(kwargs, "include_header", true),
+                         get_with_default(kwargs, "include_index_col", true),
+                         get_with_default(kwargs, "flush", false));
         break;
     }
     case FileTypes::Auto:
