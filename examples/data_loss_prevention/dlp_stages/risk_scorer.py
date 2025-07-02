@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
-
 import mrc
 import numpy as np
 import pandas as pd
@@ -97,7 +95,6 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         self._findings_column = findings_column
         self._df_pkg = get_df_pkg(config.execution_mode)
         self._group_cols = [self._findings_column] + list(self._NEW_COLUMNS.keys())
-        self._elapsed_time = 0.0
 
     @property
     def name(self) -> str:
@@ -202,7 +199,7 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         """
         Calculate risk scores based on findings
         """
-        t1 = time.time()
+
         with msg.payload().mutable_dataframe() as df:
             is_pandas = isinstance(df, pd.DataFrame)
             if not is_pandas:
@@ -217,16 +214,10 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
 
         msg.payload(MessageMeta(result_df))
 
-        t2 = time.time()
-        self._elapsed_time += (t2 - t1)
-
         return msg
 
-    def get_elapsed_time(self):
-        print(f"Elapsed time for {self.name}: {self._elapsed_time:.4f} seconds", flush=True)
-
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        node = builder.make_node(self.unique_name, ops.map(self.score), ops.on_completed(self.get_elapsed_time))
+        node = builder.make_node(self.unique_name, ops.map(self.score))
         builder.make_edge(input_node, node)
 
         return node

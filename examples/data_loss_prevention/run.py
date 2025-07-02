@@ -165,7 +165,7 @@ def main(log_level: int,
     pipeline.add_stage(DeserializeStage(config))
     pipeline.add_stage(MonitorStage(config, description="Deserialize Stage"))
 
-    pipeline.add_stage(DLPInputProcessor(config, log_elapsed_time=True))
+    pipeline.add_stage(DLPInputProcessor(config))
 
     pipeline.add_stage(MonitorStage(config, description="Input Processor"))
 
