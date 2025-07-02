@@ -169,7 +169,8 @@ std::shared_ptr<mrc::segment::Object<RegexProcessor>> PassThruStageInterfaceProx
     std::size_t i = 0;
     for (auto& [pattern_name, pattern] : regex_patterns)
     {
-        cudf_regex_patterns[i] = cudf::strings::regex_program::create(pattern);
+        cudf_regex_patterns[i] = cudf::strings::regex_program::create(
+            pattern, cudf::strings::regex_flags::DEFAULT, cudf::strings::capture_groups::NON_CAPTURE);
         pattern_name_scalars.emplace_back(pattern_name);
         ++i;
     }
