@@ -25,6 +25,7 @@
 #include <cudf/stream_compaction.hpp>       // for apply_boolean_mask
 #include <cudf/strings/combine.hpp>         // for concatenate
 #include <cudf/strings/contains.hpp>        // for contains_re
+#include <cudf/strings/regex/flags.hpp>     // for capture_groups, regex_flags
 #include <cudf/table/table.hpp>             // for table
 #include <cudf/table/table_view.hpp>        // for table_view
 #include <cudf/transform.hpp>               // for compute_column
