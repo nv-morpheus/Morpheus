@@ -61,6 +61,7 @@ class MORPHEUS_EXPORT RegexProcessor
     std::vector<std::unique_ptr<cudf::strings::regex_program>> m_regex_patterns;
     std::vector<cudf::string_scalar> m_pattern_name_scalars;
     bool m_include_pattern_names = false;
+    std::map<std::string, long> m_regex_times_ms;
 };
 
 struct MORPHEUS_EXPORT PassThruStageInterfaceProxy
