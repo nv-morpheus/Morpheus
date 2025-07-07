@@ -25,6 +25,28 @@ if typing.TYPE_CHECKING:
 
 
 class GliNERTritonInference:
+    """
+    Triton client for GLiNER model inference.
+    This class uses the local model for pre and post-processing, while the actual inference is done on the Triton
+    hosted instance of the model.
+
+    Parameters
+    ----------
+    model_source_dir : str
+        Path to the directory containing the GLiNER model files. Used for pre and post-processing.
+    onnx_path : str, default = "model.onnx"
+        Path to the ONNX model file, relative to the `model_source_dir`. Default is "model.onnx".
+    server_url : str, default = "localhost:8001"
+        URL of the Triton inference server.
+    triton_model_name : str, default = "gliner-bi-encoder-onnx"
+        Name of the Triton model to use for inference.
+    gliner_threshold: float, default = 0.3
+        Minimum confidence score to report a finding
+    map_location : str, default = "cuda"
+        Device to load the model on. Default is "cuda". Can also be set to "cpu".
+        Note this only affects the local model used for pre/post-processing, and has no impact on the inference which
+        is done in Triton.
+    """
 
     def __init__(self,
                  model_source_dir: str,
