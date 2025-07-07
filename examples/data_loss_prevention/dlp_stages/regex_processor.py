@@ -41,14 +41,14 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
     ----------
     config : morpheus.config.Config
         Pipeline configuration instance.
-    patterns: dict[str, list[str]] | None
+    patterns: dict[str, list[str]] | None, default = None
         Dictionary mapping data types to lists of regex patterns
-    patterns_file : str | pathlib.Path | None
+    patterns_file : str | pathlib.Path | None, default = None
         Path to a JSON file containing regex patterns for different data types.
         Ignored if `patterns` is provided.
-    source_column_name : str
+    source_column_name : str, default = "source_text"
         Name of the column containing the source text to process.
-    include_pattern_names : bool
+    include_pattern_names : bool, default = False
         If True, the output will include the names of the patterns that matched.
     """
 

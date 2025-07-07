@@ -38,10 +38,10 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         Pipeline configuration instance.
     findings_column : str
         Name of the column containing findings to score.
-    type_weights : dict[str, int] | None
+    type_weights : dict[str, int] | None, default = None
         Dictionary mapping data types to their risk weights.
         If None, uses `RiskScorer.DEFAULT_TYPE_WEIGHTS`.
-    default_weight : int
+    default_weight : int, default = 50
         Default weight to use for data types not in `type_weights`.
     """
 
