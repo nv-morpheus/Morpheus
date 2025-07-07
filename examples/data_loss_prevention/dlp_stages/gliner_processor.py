@@ -47,19 +47,19 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         Pipeline configuration instance.
     model_source_dir : str
         Path to the directory containing the GLiNER model files. Used for pre and post-processing.
-    onnx_path : str
+    onnx_path : str, default = "model.onnx"
         Path to the ONNX model file, relative to the `model_source_dir`. Default is "model.onnx".
-    server_url : str
+    server_url : str, default = "localhost:8001"
         URL of the Triton inference server.
-    triton_model_name : str
+    triton_model_name : str, default = "gliner-bi-encoder-onnx"
         Name of the Triton model to use for inference.
-    source_column_name : str
+    source_column_name : str, default = "source_text"
         Name of the column containing the source text to process.
-    confidence_threshold: float
+    confidence_threshold: float, default = 0.3
         Minimum confidence score to report a finding
-    context_window : int
+    context_window : int, default = 100
         Number of characters before and after a regex match to include in the context for SLM analysis.
-    fallback : bool
+    fallback : bool, default = False
         If True, fallback to GLiNER prediction if no regex findings are available.
         If False, only process rows with regex findings.
     """

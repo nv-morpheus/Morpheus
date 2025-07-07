@@ -45,11 +45,11 @@ class DatasetsSourceStage(GpuAndCpuMixin, SingleOutputSource):
         Pipeline configuration instance.
     dataset_names : list[str]
         List of dataset names to load from the datasets library.
-    num_samples : int | None, optional
+    num_samples : int | None, default = None
         Number of samples to load from each dataset. If not specified, all samples will be loaded.
     repeat : int, default = 1, min = 1
         Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
-    include_privacy_masks : bool, optional
+    include_privacy_masks : bool, default = False
         Whether to include privacy masks in the output DataFrame. Defaults to False.
     """
 
