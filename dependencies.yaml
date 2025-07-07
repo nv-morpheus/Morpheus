@@ -560,11 +560,11 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - &transformers transformers=4.40
+          - &transformers transformers>=4.40,<5.0
           - anyio>=3.7
           - arxiv=1.4
           - httpx>=0.23,<0.28 # work-around for https://github.com/openai/openai-python/issues/1915
-          - huggingface_hub=0.24
+          - huggingface_hub>=0.24,<1.0
           - jsonpatch>=1.33
           - numexpr
           - &onnx onnx=1.15

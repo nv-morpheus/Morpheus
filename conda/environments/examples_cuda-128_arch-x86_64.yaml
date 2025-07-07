@@ -27,7 +27,7 @@ dependencies:
 - grpcio
 - grpcio-status
 - httpx>=0.23,<0.28
-- huggingface_hub=0.24
+- huggingface_hub>=0.24,<1.0
 - jsonpatch>=1.33
 - kfp
 - libwebp=1.3.2
@@ -61,7 +61,7 @@ dependencies:
 - scikit-learn=1.3.2
 - sqlalchemy<2.0
 - tqdm=4
-- transformers=4.40
+- transformers>=4.40,<5.0
 - tritonclient=2.34
 - typing_utils=0.1
 - urllib3>=2.3,<3
