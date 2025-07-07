@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-import time
 import typing
 
 import mrc
@@ -22,7 +20,6 @@ from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.control_message_stage import ControlMessageStage
@@ -30,10 +27,8 @@ from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 from morpheus.utils.type_aliases import SeriesType
 from morpheus.utils.type_utils import get_df_class
 
-logger = logging.getLogger(f"morpheus.{__name__}")
 
-
-@register_stage("dlp_input_processor", modes=[PipelineModes.NLP])
+@register_stage("dlp_input_processor")
 class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
     """
     Handles input text processing and normalization for DLP pipeline
@@ -42,24 +37,17 @@ class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
     ----------
     config : morpheus.config.Config
         Pipeline configuration instance.
-    column_name : str
+    column_name : str, default = "source_text"
         Name of the column containing the source text to process.
-    split_paragraphs : bool
+    split_paragraphs : bool, default = True
         If True, splits input text into chunks. Defaults to False.
     """
 
-    def __init__(self,
-                 config: Config,
-                 *,
-                 column_name: str = "source_text",
-                 split_paragraphs: bool = True,
-                 log_elapsed_time: bool = False):
+    def __init__(self, config: Config, *, column_name: str = "source_text", split_paragraphs: bool = True):
         super().__init__(config)
         self.column_name = column_name
         self.split_paragraphs = split_paragraphs
         self.df_class = get_df_class(config.execution_mode)
-        self._elapsed_time = 0.0
-        self._log_elapsed_time = log_elapsed_time
 
     @property
     def name(self) -> str:
@@ -83,7 +71,6 @@ class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
         2. Split into manageable chunks for processing
         """
 
-        t1 = time.time()
         with msg.payload().mutable_dataframe() as df:
             if df.index.name is None:
                 df.index.name = "index"
@@ -102,16 +89,10 @@ class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
                 meta = MessageMeta(new_df)
                 msg.payload(meta)
 
-        t2 = time.time()
-        self._elapsed_time += (t2 - t1)
         return msg
 
-    def log_elapsed_time(self):
-        if self._log_elapsed_time:
-            logger.warning("Elapsed time for %s: %.4f seconds", self.name, self._elapsed_time)
-
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        node = builder.make_node(self.unique_name, ops.map(self.preprocess), ops.on_completed(self.log_elapsed_time))
+        node = builder.make_node(self.unique_name, ops.map(self.preprocess))
         builder.make_edge(input_node, node)
 
         return node
