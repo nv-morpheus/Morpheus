@@ -125,28 +125,33 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
 
                 auto table = cudf::apply_boolean_mask(table_view, bool_col->view());
 
-                // Create a table_with_metadata this is copy/pasted from meta.cpp and should probably be a method there
-                auto column_names = table_info.get_column_names();
-                if (m_include_pattern_names)
+                // If we don't have any rows, we can stop here no need to emit an empty table
+                if (table->num_rows() > 0)
                 {
-                    column_names.emplace_back("labels");
+                    // Create a table_with_metadata this is copy/pasted from meta.cpp and should probably be a method
+                    // there
+                    auto column_names = table_info.get_column_names();
+                    if (m_include_pattern_names)
+                    {
+                        column_names.emplace_back("labels");
+                    }
+
+                    auto metadata = cudf::io::table_metadata{};
+
+                    metadata.schema_info.reserve(column_names.size() + 1);
+                    metadata.schema_info.emplace_back("");
+
+                    for (auto column_name : column_names)
+                    {
+                        metadata.schema_info.emplace_back(column_name);
+                    }
+
+                    cudf::io::table_with_metadata table_w_meta = {std::move(table), std::move(metadata)};
+                    auto new_meta = MessageMeta::create_from_cpp(std::move(table_w_meta), 1);
+                    cm_msg->payload(new_meta);
+
+                    output.on_next(std::move(cm_msg));
                 }
-
-                auto metadata = cudf::io::table_metadata{};
-
-                metadata.schema_info.reserve(column_names.size() + 1);
-                metadata.schema_info.emplace_back("");
-
-                for (auto column_name : column_names)
-                {
-                    metadata.schema_info.emplace_back(column_name);
-                }
-
-                cudf::io::table_with_metadata table_w_meta = {std::move(table), std::move(metadata)};
-                auto new_meta                              = MessageMeta::create_from_cpp(std::move(table_w_meta), 1);
-                cm_msg->payload(new_meta);
-
-                output.on_next(std::move(cm_msg));
             },
             [&](std::exception_ptr error_ptr) {
                 output.on_error(error_ptr);
