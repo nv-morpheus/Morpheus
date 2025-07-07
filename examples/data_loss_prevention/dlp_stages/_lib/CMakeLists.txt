@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-list(APPEND CMAKE_MESSAGE_CONTEXT "dlp_regex_progessor")
+list(APPEND CMAKE_MESSAGE_CONTEXT "dlp_regex_processor")
 
 morpheus_add_pybind11_module(regex_processor
   SOURCE_FILES
