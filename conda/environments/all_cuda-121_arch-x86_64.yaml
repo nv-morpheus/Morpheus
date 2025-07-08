@@ -50,6 +50,7 @@ dependencies:
 - grpcio-status=1.59
 - grpcio=1.59
 - gxx_linux-64=11.2
+- httpx>=0.23,<0.28
 - huggingface_hub=0.20.2
 - include-what-you-use=0.20
 - ipython

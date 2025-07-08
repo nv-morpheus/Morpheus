@@ -25,6 +25,7 @@ dependencies:
 - feedparser=6.0
 - grpcio-status=1.59
 - grpcio=1.59
+- httpx>=0.23,<0.28
 - huggingface_hub=0.20.2
 - jsonpatch>=1.33
 - kfp
@@ -68,6 +69,8 @@ dependencies:
   - --extra-index-url https://download.pytorch.org/whl/cu121
   - --find-links https://data.dgl.ai/wheels-test/repo.html
   - --find-links https://data.dgl.ai/wheels/cu121/repo.html
+  - databricks-cli < 0.100
+  - databricks-connect
   - dgl==2.0.0
   - dglgo
   - faiss-gpu==1.7.*
