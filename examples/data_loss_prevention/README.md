@@ -17,7 +17,7 @@ limitations under the License.
 
 # Data Loss Prevention (DLP) Pipeline with Morpheus
 
-This example demonstrates how to use Morpheus to implement a DLP solution that combines regex pattern matching with small language model (SLM) powered semantic analysis for data protection.
+This example demonstrates how to use Morpheus to implement a high-performance DLP solution for sensitive data detection. It combines regex pattern matching with semantic analysis powered by a small language model (SLM), enabling efficient and accurate identification of sensitive information in unstructured text.
 
 ## Supported Environments
 All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-128_arch-$(arch).yaml` or `conda/environments/examples_cuda-125_arch-$(arch).yaml` environment files. Refer to the [Setup](#setup) section for more information.
@@ -47,7 +47,7 @@ This pipeline implements a hybrid approach that couples:
 - **Regex-based pre-filtering** for fast and scalable detection with high recall
 - **Contextual entity validation** using GLiNER-based semantic analysis
 
-## 🎯 Supported Data Types
+##  Supported Data Types
 
 The DLP pipeline is capable of detecting multiple categories of sensitive information including these and more entities:
 
@@ -69,7 +69,7 @@ The DLP pipeline is capable of detecting multiple categories of sensitive inform
 11. **Customer IDs**: Business customer identifiers
 12. **Account Numbers**: Bank and financial accounts
 
-### The Dataset
+## Dataset
 
 The dataset that this workflow processes can be various text formats including JSON, CSV, or plain text documents converted into textual data. For example, below is a sample document containing multiple types of sensitive information:
 
