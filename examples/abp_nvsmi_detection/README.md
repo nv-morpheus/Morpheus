@@ -123,13 +123,13 @@ From the  Morpheus repo root directory, run:
 morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 1024 (Must be equal or less than Triton config)` \
    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
-   `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
+   `# Specify a FIL pipeline` \
    pipeline-fil --columns_file=data/columns_fil.txt \
    `# 1st Stage: Read from file` \
    from-file --filename=examples/data/nvsmi.jsonlines \
    `# 2nd Stage: Deserialize batch DataFrame into ControlMessages` \
    deserialize \
-   `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
+   `# 3rd Stage: Preprocessing stages the model input data into tensors` \
    preprocess \
    `# 4th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
    inf-triton --model_name=abp-nvsmi-xgb --server_url=localhost:8000 \
@@ -137,7 +137,7 @@ morpheus --log_level=DEBUG \
    monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
    `# 6th Stage: Add results from inference to the messages` \
    add-class \
-   `# 7th Stage: Convert from objects back into strings. Ignore verbose input data` \
+   `# 7th Stage: Include only the 'mining' column in the output` \
    serialize --include 'mining' \
    `# 8th Stage: Write out the JSON lines to the detections.jsonlines file` \
    to-file --filename=.tmp/output/abp_nvsmi_detections.jsonlines --overwrite
