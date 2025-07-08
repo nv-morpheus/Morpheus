@@ -215,7 +215,7 @@ def visualize_throughput_latency(timing_metrics, output_path=None, dataset_name=
     return fig
 
 
-def plot_latency_speedup(latency_df: pd.DataFrame, speedup_model_factor: str = "gliner", columns: list[str] = None):
+def visualize_latency(latency_df: pd.DataFrame, speedup_model_factor: str = "gliner", columns: list[str] = None, plt_type="latency"):
     """Plot latency speedup plot.
 
     Parameters
@@ -234,38 +234,41 @@ def plot_latency_speedup(latency_df: pd.DataFrame, speedup_model_factor: str = "
     hybrid_total_time = latency_df[latency_df['model'] == speedup_model_factor][columns[0]].iloc[0]
     hybrid_avg_time = latency_df[latency_df['model'] == speedup_model_factor][columns[1]].iloc[0]
 
-    # Create figure with subplots
-    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    
+    if plt_type == "latency":
+        _, ax1 = plt.subplots(1, 1, figsize=(15, 6))
+        # Plot average latency
+        ax1.bar(latency_df['model'], latency_df[columns[0]], color=['#1f77b4', '#ff7f0e', '#2ca02c'])
+        ax1.set_title('Average Latency by Model', fontsize=14, fontweight='bold')
+        ax1.set_ylabel('Average Latency (seconds)', fontsize=12)
+        ax1.set_xlabel('Model', fontsize=12)
 
-    # Plot average latency
-    ax1.bar(latency_df['model'], latency_df[columns[0]], color=['#1f77b4', '#ff7f0e', '#2ca02c'])
-    ax1.set_title('Average Latency by Model', fontsize=14, fontweight='bold')
-    ax1.set_ylabel('Average Latency (seconds)', fontsize=12)
-    ax1.set_xlabel('Model', fontsize=12)
-
-    for i, v in enumerate(latency_df[columns[0]]):
-        speedup = hybrid_total_time / v
-        if latency_df.iloc[i]['model'] == speedup_model_factor:
-            ax1.text(i, v + v * 0.05, f'{v:.4f}s', ha='center', va='top', fontweight='bold')
-        else:
-            ax1.text(i, v + v * 0.05, f'{v:.4f}s\n({speedup:.1f}x faster)', ha='center', va='top', fontweight='bold')
-
-    # Plot throughput
-    ax2.bar(latency_df['model'], latency_df[columns[1]], color=['#1f77b4', '#ff7f0e', '#2ca02c'])
-    ax2.set_title('Throughput by Model', fontsize=14, fontweight='bold')
-    ax2.set_ylabel('Throughput (MB/s)', fontsize=12)
-    ax2.set_xlabel('Model', fontsize=12)
-    for i, v in enumerate(latency_df[columns[1]]):
-        speedup = v / hybrid_avg_time
-        if latency_df.iloc[i]['model'] == speedup_model_factor:
-            ax2.text(i, v + v * 0.05, f'{v:.4f} MB/s', ha='center', va='top', fontweight='bold')
-        else:
-            ax2.text(i,
-                     v + v * 0.05,
-                     f'{v:.4f} MB/s\n({speedup:.1f}x faster)',
-                     ha='center',
-                     va='top',
-                     fontweight='bold')
+        for i, v in enumerate(latency_df[columns[0]]):
+            speedup = hybrid_total_time / v
+            if latency_df.iloc[i]['model'] == speedup_model_factor:
+                ax1.text(i, v + v * 0.05, f'{v:.4f}s', ha='center', va='top', fontweight='bold')
+            else:
+                ax1.text(i, v + v * 0.05, f'{v:.4f}s\n({speedup:.1f}x faster)', ha='center', va='top', fontweight='bold')
+    elif plt_type == "throughput":    
+        # Plot throughput
+        _, ax2 = plt.subplots(1, 1, figsize=(15, 6))
+        ax2.bar(latency_df['model'], latency_df[columns[1]], color=['#1f77b4', '#ff7f0e', '#2ca02c'])
+        ax2.set_title('Throughput by Model', fontsize=14, fontweight='bold')
+        ax2.set_ylabel('Throughput (MB/s)', fontsize=12)
+        ax2.set_xlabel('Model', fontsize=12)
+        for i, v in enumerate(latency_df[columns[1]]):
+            speedup = v / hybrid_avg_time
+            if latency_df.iloc[i]['model'] == speedup_model_factor:
+                ax2.text(i, v + v * 0.05, f'{v:.4f} MB/s', ha='center', va='top', fontweight='bold')
+            else:
+                ax2.text(i,
+                        v + v * 0.05,
+                        f'{v:.4f} MB/s\n({speedup:.1f}x faster)',
+                        ha='center',
+                        va='top',
+                        fontweight='bold')
+    else: 
+        return None 
 
     plt.tight_layout()
     plt.show()

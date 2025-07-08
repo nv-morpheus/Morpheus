@@ -17,8 +17,7 @@ import json
 import math
 import time
 
-from regex_processor import GliNERProcessor
-from regex_processor import RegexProcessor
+from regex_processor import GliNERProcessor, RegexProcessor
 
 
 class DLPInputProcessor:
@@ -216,7 +215,7 @@ class DLPPipeline:
                                                 labels=config['entity_labels'])
         self.risk_scorer = RiskScorer(type_weights=config['type_weights'])
 
-    def inference(self, document: str, failback: bool = False) -> dict[str, list]:
+    def inference(self, document: str, failback: bool = False) -> list:
         """Process a document through the DLP pipeline.
 
         Parameters
@@ -233,9 +232,13 @@ class DLPPipeline:
             A dictionary containing the findings from the DLP pipeline.
         """
         regex_findings = self.regex_processor.process(document)
-        return self.gliner_processor.process(document, regex_findings, failback=failback)
+        if len(regex_findings) > 0:
+            return self.gliner_processor.process(document, regex_findings,
+                                                 failback=failback)
+        else:
+            return []
 
-    def process(self, document: str) -> dict[str, list]:
+    def process(self, document: str) -> dict:
         """Process a document through the DLP pipeline.
 
         Parameters

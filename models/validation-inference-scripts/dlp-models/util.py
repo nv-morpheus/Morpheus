@@ -32,6 +32,7 @@ def run_benchmark_pipeline(
     pipeline: DLPPipeline,
     regex_processor: RegexProcessor | GPURegexEntityDetector,
     gliner_processor: GliNERProcessor,
+    model_skip=False
 ) -> dict:
     """Run the benchmark pipeline for the given dataset, pipeline, regex processor, and gliner processor.
 
@@ -80,13 +81,15 @@ def run_benchmark_pipeline(
         hybrid_times.append(hybrid_time)
         hybrid_results.append(json.dumps(gliner_processor.filter_entities(hybrid_findings)))
 
-        # GliNER model with timing
-        start_time = time.time()
-        gliner_findings = gliner_processor.gliner_predict(sample["source_text"])
-        gliner_time = time.time() - start_time
-        gliner_times.append(gliner_time)
+        if model_skip==True:
+            
+            # GliNER model with timing
+            start_time = time.time()
+            gliner_findings = gliner_processor.gliner_predict(sample["source_text"])
+            gliner_time = time.time() - start_time
+            gliner_times.append(gliner_time)
 
-        gliner_results.append(json.dumps(gliner_processor.filter_entities(gliner_findings)))
+            gliner_results.append(json.dumps(gliner_processor.filter_entities(gliner_findings)))
 
     # dataset size for throuput inference per second
     dataset_size = (
