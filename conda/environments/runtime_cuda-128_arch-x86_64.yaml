@@ -51,8 +51,6 @@ dependencies:
 - yaml=0.2
 - pip:
   - --extra-index-url https://download.pytorch.org/whl/cu124
-  - databricks-cli < 0.100
-  - databricks-connect
   - gpudb>=7.2.2.3
   - marshmallow>=3.18,<4.0
   - milvus==2.3.5

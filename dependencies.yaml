@@ -158,6 +158,8 @@ files:
       - example-llms
       - python
       - runtime
+      - databricks_example
+
 
   # Dependencies which are needed to run the model generation scripts in the `models` directory.
   # Includes: none
@@ -376,6 +378,15 @@ dependencies:
         packages:
           - benchmark=1.8.3
 
+  databricks_example:
+    common:
+      - output_types: [conda]
+        packages:    
+          - pip
+          - pip:
+            - databricks-cli < 0.100
+            - databricks-connect
+
   # Runtime dependencies for Morpheus. Included in nearly all output files so dependencies should
   # be added only if it is needed to run the core Morpheus library.
   # This should be synced with `run` in ci/conda/recipes/morpheus/meta.yaml
@@ -424,8 +435,6 @@ dependencies:
           - pip
           - pip:
             - &torch-extra-index --extra-index-url https://download.pytorch.org/whl/cu124
-            - databricks-cli < 0.100
-            - databricks-connect
             - &gpudb gpudb>=7.2.2.3
     specific:
       - output_types: [conda]
