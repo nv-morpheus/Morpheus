@@ -204,6 +204,16 @@ def pytest_runtest_teardown(item, nextitem):
     reset_logging(logger_name=None)  # Reset the root logger as well
 
 
+@pytest.fixture(scope="session", autouse=True)
+def ensure_cudf_helper():
+    """
+    Ensures that the cudf helper is loaded before any tests are run. This is necessary to ensure that the
+    `cudf` module is available for tests that require it.
+    """
+    from morpheus.common import load_cudf_helper
+    load_cudf_helper()
+
+
 @pytest.fixture(scope="function")
 def df_type(request: pytest.FixtureRequest):
 
