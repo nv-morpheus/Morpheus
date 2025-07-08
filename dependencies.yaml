@@ -429,6 +429,7 @@ dependencies:
               arch: x86_64
             packages:
               - pip:
+                - &marshmallow marshmallow>=3.18,<4.0 # Avoid marshmallow 4.0+ which is incompatible #2232
                 # Milvus does not have arm64 builds for linux
                 - &milvus milvus==2.3.5 # update to match pymilvus when available
                 - &pymilvus pymilvus==2.3.6
@@ -493,6 +494,7 @@ dependencies:
            - &langchain langchain==0.1.16
            - &langchain-nvidia-ai-endpoints langchain-nvidia-ai-endpoints==0.0.11
            - &langchain-openai langchain-openai==0.1.3
+           - *marshmallow
            - *milvus
            - &nemollm nemollm==0.3.5
            - &openai openai==1.13.*

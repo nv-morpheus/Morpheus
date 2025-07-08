@@ -121,7 +121,7 @@ inf-triton --model_name=root-cause-binary-onnx --server_url=localhost:8000 --for
 monitor --description='Inference rate' --smoothing=0.001 --unit inf \
 `# 6th Stage: Add scores from inference to the messages` \
 add-scores --label=is_root_cause \
-`# 7th Stage: Convert from objects back into strings` \
+`# 7th Stage: Prepare for output, excluding any columns starting with 'ts_'` \
 serialize --exclude '^ts_' \
 `# 8th Stage: Write results out to CSV file` \
 to-file --filename=.tmp/output/root-cause-binary-output.jsonlines --overwrite
