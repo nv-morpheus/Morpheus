@@ -68,7 +68,7 @@ def df_to_stream_json(df: DataFrameType, stream: IOBase, include_index_col=True,
     return stream
 
 
-def df_to_stream_parquet(df: DataFrameType, stream: IOBase, include_index_col: bool = False):
+def df_to_stream_parquet(df: DataFrameType, stream: IOBase, include_index_col: bool = True) -> IOBase:
     """
     Serializes a DataFrame into Parquet format into the provided stream object.
 
@@ -78,7 +78,7 @@ def df_to_stream_parquet(df: DataFrameType, stream: IOBase, include_index_col: b
         Input DataFrame to serialize.
     stream : IOBase
         The stream where the serialized DataFrame will be written to.
-    include_index_col: bool, default False
+    include_index_col: bool, default True
         Write out the index as a column.
     """
     df.to_parquet(stream, index=include_index_col)
@@ -160,7 +160,7 @@ def df_to_json(df: DataFrameType, strip_newlines=False, include_index_col=True) 
 
 def df_to_parquet(df: DataFrameType,
                   strip_newlines: bool = False,
-                  include_index_col: bool = False) -> typing.List[bytes]:
+                  include_index_col: bool = True) -> typing.List[bytes]:
     """
     Serializes a DataFrame into Parquet and returns the serialized output seperated by lines.
 
@@ -170,8 +170,8 @@ def df_to_parquet(df: DataFrameType,
         Input DataFrame to serialize.
     strip_newlines : bool, default False
         Whether or not to strip the newline characters from each string, by default False.
-    include_index_col: bool, default False
-        Write out the index as a column, by default False.
+    include_index_col: bool, default True
+        Write out the index as a column, by default True.
     Returns
     -------
     typing.List[str]

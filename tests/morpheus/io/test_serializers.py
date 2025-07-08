@@ -18,6 +18,7 @@ import pathlib
 import typing
 from io import BytesIO
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -108,3 +109,31 @@ def test_write_df_to_file(dataset: DatasetManager,
     result_df = read_file_to_df(out_file, file_type=file_type, filter_nulls=False)
 
     dataset.assert_compare_df(df, result_df)
+
+
+@pytest.mark.parametrize("extension,file_type",
+                         [("json", FileTypes.JSON), ("json", FileTypes.Auto), ("jsonlines", FileTypes.JSON),
+                          ("jsonlines", FileTypes.Auto), ("parquet", FileTypes.PARQUET), ("parquet", FileTypes.Auto)],
+                         ids=['json', 'json_auto', 'jsonlines', 'jsonlines_auto', 'parquet', 'parquet_auto'])
+def test_nested_round_trip(dataset: DatasetManager, tmp_path: pathlib.Path, extension: str, file_type: FileTypes):
+    """
+    Nested datastructures are not supported by CSV, so we only test JSON and Parquet.
+    Verifies issue #2236
+    """
+    df = dataset['nested.jsonlines']
+    out_file = str(tmp_path / f"test.{extension}")
+
+    write_df_to_file(df=df, file_name=out_file, file_type=file_type, include_index_col=False)
+    result_df = read_file_to_df(out_file, file_type=file_type, filter_nulls=False)
+
+    # Neither datacompy or pandas compare can handle nested structures
+    def _flatten(df: pd.DataFrame) -> dict:
+        results = df.to_dict(orient='records')
+
+        for row in results:
+            for key in row.keys():
+                v = row[key]
+                if isinstance(v, np.ndarray):
+                    row[key] = v.tolist()
+
+    assert _flatten(df) == _flatten(result_df)
