@@ -60,7 +60,6 @@ RegexProcessor::RegexProcessor(std::string&& source_column_name,
     CHECK(m_regex_patterns.size() == m_pattern_name_scalars.size())
         << "Number of regex patterns must match number of pattern names";
     CHECK(m_regex_patterns.size() > 0) << "At least one regex pattern must be provided";
-    CHECK(m_regex_patterns.size() > 1) << "C++ impl currently only supports multiple regex patterns";
 }
 
 RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
@@ -97,27 +96,54 @@ RegexProcessor::subscribe_fn_t RegexProcessor::build_operator()
                     }
                 }
 
-                tree.push(ast::operation{ast::ast_operator::LOGICAL_OR, column_references[0], column_references[1]});
-                for (std::size_t i = 2; i < column_references.size(); ++i)
+                // When we have multiple regex patterns, we need to combine the boolean columns into a single boolean
+                // column using a logical OR operation.
+                std::unique_ptr<cudf::column> bool_col;
+                if (boolean_columns.size() > 1)
                 {
-                    tree.push(ast::operation{ast::ast_operator::LOGICAL_OR, tree.back(), column_references[i]});
-                }
+                    tree.push(
+                        ast::operation{ast::ast_operator::LOGICAL_OR, column_references[0], column_references[1]});
+                    for (std::size_t i = 2; i < column_references.size(); ++i)
+                    {
+                        tree.push(ast::operation{ast::ast_operator::LOGICAL_OR, tree.back(), column_references[i]});
+                    }
 
-                auto boolean_table = cudf::table_view(boolean_column_views);
-                const auto& expr   = tree.back();
-                auto bool_col      = cudf::compute_column(boolean_table, expr);
+                    auto boolean_table = cudf::table_view(boolean_column_views);
+                    const auto& expr   = tree.back();
+                    bool_col           = cudf::compute_column(boolean_table, expr);
+                }
+                else if (boolean_columns.size() == 1)
+                {
+                    bool_col = std::move(boolean_columns[0]);
+                }
+                else
+                {
+                    LOG(FATAL) << "No boolean columns found, this should never happen";
+                }
 
                 cudf::table_view table_view{table_info.get_view()};
 
                 std::unique_ptr<cudf::column> labels_col;
                 if (m_include_pattern_names)
                 {
-                    auto labels_table = cudf::table(std::move(label_columns));
-                    auto labels_view  = labels_table.view();
-                    labels_col        = cudf::strings::concatenate(labels_view,
-                                                            cudf::string_scalar(", "),
-                                                            cudf::string_scalar(""),
-                                                            cudf::strings::separator_on_nulls::NO);
+                    if (label_columns.size() > 1)
+                    {
+                        auto labels_table = cudf::table(std::move(label_columns));
+                        auto labels_view  = labels_table.view();
+                        labels_col        = cudf::strings::concatenate(labels_view,
+                                                                cudf::string_scalar(", "),
+                                                                cudf::string_scalar(""),
+                                                                cudf::strings::separator_on_nulls::NO);
+                    }
+                    else if (label_columns.size() == 1)
+                    {
+                        labels_col = std::move(label_columns[0]);
+                    }
+                    else
+                    {
+                        LOG(FATAL) << "No label columns found, this should never happen";
+                    }
+
                     std::vector<cudf::column_view> columns{table_view.begin(), table_view.end()};
                     columns.push_back(labels_col->view());
                     table_view = cudf::table_view(columns);
