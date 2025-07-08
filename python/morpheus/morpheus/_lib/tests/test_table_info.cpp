@@ -18,12 +18,13 @@
 #include "./test_utils/common.hpp"  // IWYU pragma: associated
 
 #include "morpheus/io/deserializers.hpp"
-#include "morpheus/io/serializers.hpp"
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/objects/table_info.hpp"  // for TableInfo
 
-#include <boost/algorithm/string.hpp>
+#include <cudf/column/column_view.hpp>  // for column_view
+#include <cudf/table/table_view.hpp>    // for table_view
+#include <cudf/types.hpp>               // for data_type
 #include <gtest/gtest.h>
-#include <nlohmann/json.hpp>
 #include <pybind11/gil.h>       // for gil_scoped_release, gil_scoped_acquire
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
 
