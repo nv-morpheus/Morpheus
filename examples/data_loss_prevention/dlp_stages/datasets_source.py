@@ -98,7 +98,7 @@ class DatasetsSourceStage(GpuAndCpuMixin, SingleOutputSource):
             value = m["entity"]
             matches = list(re.finditer(re.escape(value), row.source_text))
             if len(matches) > 1:
-                print("WARNING: found more than one of the entity!")
+                logger.warning("WARNING: found more than one of the entity!")
 
             match = matches[0]
             list_of_masks.append({
