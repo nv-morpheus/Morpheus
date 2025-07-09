@@ -76,6 +76,8 @@ class DLPInputProcessor(GpuAndCpuMixin, ControlMessageStage):
                 df.index.name = "index"
 
             source_series: SeriesType = df[self.column_name]
+
+            # Replace \r (carriage return) and \r\n characters with \n
             source_series = source_series.str.replace('\r\n?', '\n', regex=True)
             if not self.split_paragraphs:
                 df[self.column_name] = source_series
