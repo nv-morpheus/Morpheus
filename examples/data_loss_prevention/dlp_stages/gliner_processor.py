@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import typing
 from functools import partial
 
@@ -29,8 +28,6 @@ from morpheus.pipeline.control_message_stage import ControlMessageStage
 from morpheus.pipeline.execution_mode_mixins import GpuAndCpuMixin
 
 from .gliner_triton import GliNERTritonInference
-
-logger = logging.getLogger(f"morpheus.{__name__}")
 
 EntitiesType = list[dict[str, typing.Any]]
 
