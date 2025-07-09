@@ -59,13 +59,6 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
                  patterns_file: str | pathlib.Path | None = None,
                  source_column_name: str = "source_text",
                  include_pattern_names: bool = False):
-        """
-        Initialize with regex patterns to detect sensitive data
-
-        Args:
-            patterns: Dictionary mapping data types to lists of regex patterns
-            case_sensitive: Whether regex matching should be case sensitive
-        """
         super().__init__(config)
         self.source_column_name = source_column_name
 
