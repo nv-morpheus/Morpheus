@@ -102,21 +102,38 @@ struct MORPHEUS_EXPORT TableInfoBase
     const cudf::column_view& get_column(cudf::size_type idx) const;
 
     /**
+     * @brief Returns a reference to the view of the specified column
+     *
+     * @throws std::out_of_range
+     * If `column_name` is not one of the column names in the table
+     *
+     * @param column_name : The name of the desired column
+     * @return cudf::column_view : A reference to the desired column
+     */
+    const cudf::column_view& get_column(const std::string& column_name) const;
+
+    /**
      * @brief Returns true if the underlying dataframe as a unique index.
      *
      * @return bool
      */
     bool has_sliceable_index() const;
 
+    /**
+     * @brief Get the parent data table of this TableInfo
+     *
+     * @return std::shared_ptr<const IDataTable>
+     */
+    const std::shared_ptr<const IDataTable>& get_parent() const;
+
+    const TableInfoData& get_data() const;
+
   protected:
     TableInfoBase() = default;
 
     TableInfoBase(std::shared_ptr<const IDataTable> parent, TableInfoData data);
 
-    const std::shared_ptr<const IDataTable>& get_parent() const;
-
     TableInfoData& get_data();
-    const TableInfoData& get_data() const;
 
   private:
     std::shared_ptr<const IDataTable> m_parent;

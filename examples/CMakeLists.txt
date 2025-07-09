@@ -17,5 +17,6 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "examples")
 list(PREPEND CMAKE_PREFIX_PATH "${PROJECT_BINARY_DIR}")
 
 add_subdirectory(developer_guide)
+add_subdirectory(data_loss_prevention)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
