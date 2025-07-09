@@ -100,7 +100,7 @@ class RiskScorer:
         # Default weight if type not in dictionary
         self.default_weight = 50
 
-    def score(self, findings: list[dict[str, list]]) -> dict[str, list]:
+    def score(self, findings: list[dict[str, list]]) -> dict:
         """
         Calculate risk scores based on findings.
 
@@ -236,6 +236,7 @@ class DLPPipeline:
         if len(regex_findings) > 0:
             return self.gliner_processor.process(document, regex_findings, failback=failback)
         return []
+
     def process(self, document: str) -> dict:
         """Process a document through the DLP pipeline.
 
