@@ -107,7 +107,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         # flattend the batch_entities list, currently each entry in the batch_entities represents a batch of entities
         # by flattening it we get a list of entities for each row in the input DataFrame
         for entities in batch_entities:
-            assert entities is not None
             dlp_findings.extend(entities)
 
         return dlp_findings
