@@ -75,6 +75,9 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
         "num_critical": 0
     }
 
+    # Normalize to 0-100 scale with diminishing returns for many findings
+    MAX_SCORE = 100
+
     def __init__(self,
                  config: Config,
                  *,
@@ -174,11 +177,8 @@ class RiskScorer(GpuAndCpuMixin, ControlMessageStage):
             # Count by severity
             score_counts[self._risk_score_to_level(weight)] += 1
 
-        # Normalize to 0-100 scale with diminishing returns for many findings
-        max_score = 100
-
         # Calculate normalized risk score
-        risk_score = round(min(max_score, total_score / len(findings)))
+        risk_score = round(min(self.MAX_SCORE, total_score / len(findings)))
 
         # Determine risk level from score
         risk_level = self._risk_score_to_level(risk_score).title()
