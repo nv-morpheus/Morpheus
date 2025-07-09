@@ -27,13 +27,11 @@ from regex_processor import RegexProcessor
 from tqdm import tqdm
 
 
-def run_benchmark_pipeline(
-    dataset: pd.DataFrame,
-    pipeline: DLPPipeline,
-    regex_processor: RegexProcessor | GPURegexEntityDetector,
-    gliner_processor: GliNERProcessor,
-    model_skip=False
-) -> dict:
+def run_benchmark_pipeline(dataset: pd.DataFrame,
+                           pipeline: DLPPipeline,
+                           regex_processor: RegexProcessor | GPURegexEntityDetector,
+                           gliner_processor: GliNERProcessor,
+                           model_skip=False) -> dict:
     """Run the benchmark pipeline for the given dataset, pipeline, regex processor, and gliner processor.
 
     Parameters
@@ -46,6 +44,9 @@ def run_benchmark_pipeline(
         The regex processor to run the benchmark pipeline on.
     gliner_processor : GliNERProcessor
         The GliNER processor to run the benchmark pipeline on.
+    model_skip : bool, optional
+        Whether to skip the gliner model, by default False
+
 
     Returns
     -------
@@ -81,8 +82,8 @@ def run_benchmark_pipeline(
         hybrid_times.append(hybrid_time)
         hybrid_results.append(json.dumps(gliner_processor.filter_entities(hybrid_findings)))
 
-        if model_skip==True:
-            
+        if model_skip:
+
             # GliNER model with timing
             start_time = time.time()
             gliner_findings = gliner_processor.gliner_predict(sample["source_text"])

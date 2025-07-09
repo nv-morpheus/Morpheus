@@ -17,7 +17,8 @@ import json
 import math
 import time
 
-from regex_processor import GliNERProcessor, RegexProcessor
+from regex_processor import GliNERProcessor
+from regex_processor import RegexProcessor
 
 
 class DLPInputProcessor:
@@ -233,11 +234,8 @@ class DLPPipeline:
         """
         regex_findings = self.regex_processor.process(document)
         if len(regex_findings) > 0:
-            return self.gliner_processor.process(document, regex_findings,
-                                                 failback=failback)
-        else:
-            return []
-
+            return self.gliner_processor.process(document, regex_findings, failback=failback)
+        return []
     def process(self, document: str) -> dict:
         """Process a document through the DLP pipeline.
 

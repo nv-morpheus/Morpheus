@@ -55,7 +55,8 @@ def visualize_benchmark_results(results_df: pd.DataFrame,
 
     # Bar chart for main metrics
     ax1 = plt.subplot(gs[0, 0])
-    df_melt = pd.melt(df, id_vars=['model'], value_vars=metrics, var_name='Metric', value_name='Score')
+    df_melt = pd.melt(
+        df, id_vars=['model'], value_vars=metrics, var_name='Metric', value_name='Score')
 
     sns.barplot(x='Metric', y='Score', hue='model', data=df_melt, ax=ax1)
     title = 'Performance Metrics by Model'
@@ -69,9 +70,11 @@ def visualize_benchmark_results(results_df: pd.DataFrame,
 
     # Bar chart for error metrics
     ax2 = plt.subplot(gs[0, 1])
-    df_melt_err = pd.melt(df, id_vars=['model'], value_vars=error_metrics, var_name='Error Metric', value_name='Rate')
+    df_melt_err = pd.melt(df, id_vars=[
+                          'model'], value_vars=error_metrics, var_name='Error Metric', value_name='Rate')
 
-    sns.barplot(x='Error Metric', y='Rate', hue='model', data=df_melt_err, ax=ax2)
+    sns.barplot(x='Error Metric', y='Rate',
+                hue='model', data=df_melt_err, ax=ax2)
     ax2.set_title('Error Metrics by Model', fontsize=14)
     ax2.set_ylim(0, df_melt_err['Rate'].max() * 1.2)
     ax2.set_xlabel('Error Metric', fontsize=12)
@@ -108,7 +111,8 @@ def make_metrics_per_entity(results_per_tag: list, metric: str = "partial"):
         recall, precision, f1 = (results_per_tag[entity][metric]['recall'],
                                  results_per_tag[entity][metric]['precision'],
                                  results_per_tag[entity][metric]['f1'])
-        metrics_all.append({'entity': entity, 'recall': recall, 'precision': precision, 'f1': f1})
+        metrics_all.append(
+            {'entity': entity, 'recall': recall, 'precision': precision, 'f1': f1})
     df = pd.DataFrame(metrics_all)
     return df
 
@@ -140,8 +144,10 @@ def plot_detail_metrics(df, only_heatmap=True):
 
     # Heatmap
     plt.figure(figsize=(10, 16))
-    heatmap_data = df_sorted[['entity', 'recall', 'precision', 'f1']].set_index('entity')
-    sns.heatmap(heatmap_data, annot=True, cmap='YlGnBu', fmt='.3f', cbar_kws={'label': 'Score'})
+    heatmap_data = df_sorted[['entity', 'recall',
+                              'precision', 'f1']].set_index('entity')
+    sns.heatmap(heatmap_data, annot=True, cmap='YlGnBu',
+                fmt='.3f', cbar_kws={'label': 'Score'})
     plt.title('Recall, Precision, and F1 Scores by Entity')
     plt.tight_layout()
     plt.show()
@@ -164,7 +170,8 @@ def visualize_throughput_latency(timing_metrics, output_path=None, dataset_name=
         timing_metrics['gliner_avg_latency'],
         timing_metrics['hybrid_plus_regex_avg_latency']
     ]
-    ax1.bar(models, latencies, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])
+    ax1.bar(models, latencies, color=[
+            '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])
     ax1.set_title('Average Latency by Model', fontsize=14)
     ax1.set_ylabel('Latency (seconds)', fontsize=12)
     ax1.set_xlabel('Model', fontsize=12)
@@ -180,7 +187,8 @@ def visualize_throughput_latency(timing_metrics, output_path=None, dataset_name=
         timing_metrics['gliner_throughput'],
         timing_metrics['hybrid_throughput_plus_regex']
     ]
-    ax2.bar(models, throughputs, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])
+    ax2.bar(models, throughputs, color=[
+            '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])
     ax2.set_title('Throughput by Model', fontsize=14)
     ax2.set_ylabel('Throughput (MB/s)', fontsize=12)
     ax2.set_xlabel('Model', fontsize=12)
@@ -196,7 +204,8 @@ def visualize_throughput_latency(timing_metrics, output_path=None, dataset_name=
         timing_metrics['tokens_per_second_gliner'],
         timing_metrics['tokens_per_second_plus_regex']
     ]
-    ax3.bar(models, tokens_per_second, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])
+    ax3.bar(models, tokens_per_second, color=[
+            '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])
     ax3.set_title('Tokens per second by Model', fontsize=14)
     ax3.set_ylabel('Tokens per second', fontsize=12)
     ax3.set_xlabel('Model', fontsize=12)
@@ -214,8 +223,10 @@ def visualize_throughput_latency(timing_metrics, output_path=None, dataset_name=
 
     return fig
 
-
-def visualize_latency(latency_df: pd.DataFrame, speedup_model_factor: str = "gliner", columns: list[str] = None, plt_type="latency"):
+def visualize_latency(latency_df: pd.DataFrame,
+                      speedup_model_factor: str = "gliner",
+                      columns: list[str] = None,
+                      plt_type="latency") -> None:
     """Plot latency speedup plot.
 
     Parameters
@@ -226,50 +237,60 @@ def visualize_latency(latency_df: pd.DataFrame, speedup_model_factor: str = "gli
         The model to use for speedup, by default "gliner"
     columns : list[str], optional
         The columns to use for the plot, by default None
+    plt_type : str, optional
+        The type of plot to create, by default "latency"
     """
     if columns is None:
         columns = ["total_time", "throughput"]
 
     # Calculate speedup factors relative to GliNER model
-    hybrid_total_time = latency_df[latency_df['model'] == speedup_model_factor][columns[0]].iloc[0]
-    hybrid_avg_time = latency_df[latency_df['model'] == speedup_model_factor][columns[1]].iloc[0]
+    hybrid_total_time = latency_df[latency_df['model']
+                                   == speedup_model_factor][columns[0]].iloc[0]
+    hybrid_avg_time = latency_df[latency_df['model']
+                                 == speedup_model_factor][columns[1]].iloc[0]
 
-    
     if plt_type == "latency":
         _, ax1 = plt.subplots(1, 1, figsize=(15, 6))
         # Plot average latency
-        ax1.bar(latency_df['model'], latency_df[columns[0]], color=['#1f77b4', '#ff7f0e', '#2ca02c'])
-        ax1.set_title('Average Latency by Model', fontsize=14, fontweight='bold')
+        ax1.bar(latency_df['model'], latency_df[columns[0]],
+                color=['#1f77b4', '#ff7f0e', '#2ca02c'])
+        ax1.set_title('Average Latency by Model',
+                      fontsize=14, fontweight='bold')
         ax1.set_ylabel('Average Latency (seconds)', fontsize=12)
         ax1.set_xlabel('Model', fontsize=12)
 
         for i, v in enumerate(latency_df[columns[0]]):
             speedup = hybrid_total_time / v
             if latency_df.iloc[i]['model'] == speedup_model_factor:
-                ax1.text(i, v + v * 0.05, f'{v:.4f}s', ha='center', va='top', fontweight='bold')
+                ax1.text(i, v + v * 0.05,
+                         f'{v:.4f}s', ha='center', va='top', fontweight='bold')
             else:
-                ax1.text(i, v + v * 0.05, f'{v:.4f}s\n({speedup:.1f}x faster)', ha='center', va='top', fontweight='bold')
-    elif plt_type == "throughput":    
+                ax1.text(i,
+                         v + v * 0.05,
+                         f'{v:.4f}s\n({speedup:.1f}x faster)',
+                         ha='center',
+                         va='top',
+                         fontweight='bold')
+    else:
         # Plot throughput
         _, ax2 = plt.subplots(1, 1, figsize=(15, 6))
-        ax2.bar(latency_df['model'], latency_df[columns[1]], color=['#1f77b4', '#ff7f0e', '#2ca02c'])
+        ax2.bar(latency_df['model'], latency_df[columns[1]],
+                color=['#1f77b4', '#ff7f0e', '#2ca02c'])
         ax2.set_title('Throughput by Model', fontsize=14, fontweight='bold')
         ax2.set_ylabel('Throughput (MB/s)', fontsize=12)
         ax2.set_xlabel('Model', fontsize=12)
         for i, v in enumerate(latency_df[columns[1]]):
             speedup = v / hybrid_avg_time
             if latency_df.iloc[i]['model'] == speedup_model_factor:
-                ax2.text(i, v + v * 0.05, f'{v:.4f} MB/s', ha='center', va='top', fontweight='bold')
+                ax2.text(i, v + v * 0.05, f'{v:.4f} MB/s',
+                         ha='center', va='top', fontweight='bold')
             else:
                 ax2.text(i,
-                        v + v * 0.05,
-                        f'{v:.4f} MB/s\n({speedup:.1f}x faster)',
-                        ha='center',
-                        va='top',
-                        fontweight='bold')
-    else: 
-        return None 
-
+                         v + v * 0.05,
+                         f'{v:.4f} MB/s\n({speedup:.1f}x faster)',
+                         ha='center',
+                         va='top',
+                         fontweight='bold')
     plt.tight_layout()
     plt.show()
 
@@ -309,9 +330,10 @@ def visualize_risk_assessment(risk_assessment: dict[str, list],
             counterclock=False,
             wedgeprops={
                 'width': 0.3, 'edgecolor': 'w', 'linewidth': 3
-            })
+    })
     ax1.add_patch(plt.Circle((0, 0), 0.35, color='white'))
-    ax1.text(0, 0, f"{risk_score}\n{risk_level}", ha='center', va='center', fontsize=14)
+    ax1.text(0, 0, f"{risk_score}\n{risk_level}",
+             ha='center', va='center', fontsize=14)
     ax1.set_title("Risk Score", fontsize=18)
     ax1.axis('equal')
 
@@ -328,23 +350,27 @@ def visualize_risk_assessment(risk_assessment: dict[str, list],
     # Add counts above bars
     for bar_plot in bars:
         height = bar_plot.get_height()
-        ax2.text(bar_plot.get_x() + bar_plot.get_width() / 2., height + 0.1, f'{int(height)}', ha='center', va='bottom')
+        ax2.text(bar_plot.get_x() + bar_plot.get_width() / 2.,
+                 height + 0.1, f'{int(height)}', ha='center', va='bottom')
 
     plt.tight_layout()
     plt.show()
 
     # Create a horizontal bar chart for data types found
     if risk_assessment["data_types_found"]:
-        plt.figure(figsize=(10, len(risk_assessment["data_types_found"]) * 0.4 + 1))
+        plt.figure(
+            figsize=(10, len(risk_assessment["data_types_found"]) * 0.4 + 1))
         # Get weights for each data type
         data_types = risk_assessment["data_types_found"]
         weights = [type_weights.get(dt, default_weight) for dt in data_types]
         # Sort by weight
-        data_types_sorted = [x for _, x in sorted(zip(weights, data_types), reverse=True)]
+        data_types_sorted = [x for _, x in sorted(
+            zip(weights, data_types), reverse=True)]
         weights_sorted = sorted(weights, reverse=True)
 
         # Create color map based on weights
-        colors = ['#FF0000' if w >= 80 else '#FFCC00' if w >= 50 else '#00CC00' for w in weights_sorted]
+        colors = ['#FF0000' if w >= 80 else '#FFCC00' if w >=
+                  50 else '#00CC00' for w in weights_sorted]
 
         plt.barh(data_types_sorted, weights_sorted, color=colors)
         plt.xlabel('Sensitivity Weight')
