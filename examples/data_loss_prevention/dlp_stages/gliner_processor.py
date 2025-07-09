@@ -126,8 +126,6 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         """
 
         with msg.payload().mutable_dataframe() as df:
-            dlp_findings = []
-
             input_data = df[self.source_column_name]
             if not isinstance(input_data, pd.Series):
                 input_data = input_data.to_arrow().to_pylist()
