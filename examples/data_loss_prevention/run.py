@@ -69,12 +69,6 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
               default=None,
               show_default=True,
               help=("Input file to use, if specified, overrides the dataset option."))
-@click.option('--include_privacy_masks',
-              is_flag=True,
-              default=False,
-              show_default=True,
-              help=("Include privacy masks in the output DataFrame, ignored if --input_file is set. "
-                    "This is useful for evaluation."))
 @click.option('--num_samples',
               type=int,
               default=2000,
@@ -122,7 +116,6 @@ def main(log_level: int,
          regex_file: pathlib.Path,
          dataset: list[str],
          input_file: pathlib.Path | None,
-         include_privacy_masks: bool,
          num_samples: int,
          repeat: int,
          regex_only: bool,
@@ -153,12 +146,7 @@ def main(log_level: int,
     if input_file is not None:
         pipeline.set_source(FileSourceStage(config, filename=input_file, repeat=repeat, filter_null=False))
     else:
-        pipeline.set_source(
-            DatasetsSourceStage(config,
-                                dataset_names=dataset,
-                                num_samples=num_samples,
-                                include_privacy_masks=include_privacy_masks,
-                                repeat=repeat))
+        pipeline.set_source(DatasetsSourceStage(config, dataset_names=dataset, num_samples=num_samples, repeat=repeat))
 
     pipeline.add_stage(MonitorStage(config, description="Datasets Source"))
 
@@ -186,9 +174,6 @@ def main(log_level: int,
         'num_critical',
         'data_types_found'
     ]
-
-    if include_privacy_masks:
-        output_columns.append('privacy_mask')
 
     if regex_only:
         risk_scorer_input = "labels"
