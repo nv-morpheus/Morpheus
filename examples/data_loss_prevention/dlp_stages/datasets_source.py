@@ -135,20 +135,15 @@ class DatasetsSourceStage(GpuAndCpuMixin, SingleOutputSource):
         return df
 
     @staticmethod
-    def normalize_privacy_masks(dataframe: pd.DataFrame) -> pd.DataFrame:
+    def normalize_privacy_masks(masks) -> list[dict[str, str]]:
         """Normalize privacy masks to consistent format."""
-        for _, row in dataframe.iterrows():
-            list_of_masks = []
-            for m in row.privacy_mask:
-                list_of_masks.append({
-                    "label": m["label"],
-                    "start": m["start"],
-                    "end": m["end"],
-                    "value": m["value"],
-                })
-            row.privacy_mask = list_of_masks
 
-        return dataframe
+        return [{
+            "label": m["label"],
+            "start": m["start"],
+            "end": m["end"],
+            "value": m["value"],
+        } for m in masks]
 
     def source_generator(self, subscription: mrc.Subscription) -> collections.abc.Iterator[MessageMeta]:
 
@@ -160,8 +155,7 @@ class DatasetsSourceStage(GpuAndCpuMixin, SingleOutputSource):
                 df = self.process_gretel_dataset(df, self._num_samples, self._include_privacy_masks)
 
             if self._include_privacy_masks:
-
-                df = self.normalize_privacy_masks(df)
+                df["privacy_mask"] = df["privacy_mask"].apply(self.normalize_privacy_masks)
                 df = df[df.privacy_mask.str.len() > 0].reset_index(drop=True)
 
             if self._df_str == "cudf":
