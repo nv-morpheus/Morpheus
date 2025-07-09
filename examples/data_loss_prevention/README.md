@@ -71,13 +71,14 @@ The DLP pipeline is capable of detecting multiple categories of sensitive inform
 
 ## Dataset
 
-The dataset that this workflow processes can be various text formats including JSON, CSV, or plain text documents converted into textual data. For example, below is a sample document containing multiple types of sensitive information:
+The dataset that this workflow processes can be various text formats including JSON, CSV, or plain text documents converted into *textual data* of CSV format. 
+For this pipeline example, the input is a CSV with `source_text` column indicating the target text. For example, below is a sample document containing multiple types of sensitive information indicated in the `source_text` field:
 
 ```json
 {
   "timestamp": 1616380971990,
   "document_type": "patient_record",
-  "content": "PATIENT INFORMATION\nMedical Record #: MRN-12345678\nName: John Smith\nSSN: 123-45-6789\nEmail: jsmith@email.net\nCredit Card: 4532-1234-5678-9012\nPhone: (555) 123-4567\nAPI Key: ak_live_HJd8e7h23hFxMznWcQE5TWqL",
+  "source_text": "PATIENT INFORMATION\nMedical Record #: MRN-12345678\nName: John Smith\nSSN: 123-45-6789\nEmail: jsmith@email.net\nCredit Card: 4532-1234-5678-9012\nPhone: (555) 123-4567\nAPI Key: ak_live_HJd8e7h23hFxMznWcQE5TWqL",
   "source": "healthcare_system",
   "classification": "confidential"
 }
@@ -90,16 +91,17 @@ The pipeline we will be using in this example is a hybrid feed-forward pipeline 
 Below is a visualization of the pipeline showing all stages and data flow:
 
 ```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Input Text    │───▶│ DLPInputProcessor│───▶│ RegexProcessor  │
-│   Documents     │     │ (Preprocessing)  │     │  (Fast Filter)  │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
-                                                       │
-                                                       ▼
-┌─────────────────┐                              ┌─────────────────┐
-│   RiskScorer    │◀────────────────────────────│ GliNERProcessor │
-│ (Risk Analysis) │                              │ (AI Validation) │
-└─────────────────┘                              └─────────────────┘
+┌────────────────────┐                                                        
+│    Input Text      │                                                        
+│    Documents       │                                                        
+└────────┬───────────┘                                                        
+         │                                                                     
+         ▼                                                                     
+┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐
+│  DLPInputProcessor │-▶│   RegexProcessor   │-▶│   GliNERProcessor  │-▶│     RiskScorer     │
+│   (Preprocessing)  │  │    (Fast Filter)   │  │   (AI Validation)  │  │   (Risk Analysis)  │
+└────────────────────┘  └────────────────────┘  └────────────────────┘  └────────────────────┘
+
 ```
 
 ### Core Components
