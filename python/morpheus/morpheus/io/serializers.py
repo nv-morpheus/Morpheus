@@ -68,7 +68,7 @@ def df_to_stream_json(df: DataFrameType, stream: IOBase, include_index_col=True,
     return stream
 
 
-def df_to_stream_parquet(df: DataFrameType, stream: IOBase):
+def df_to_stream_parquet(df: DataFrameType, stream: IOBase, include_index_col: bool = True) -> IOBase:
     """
     Serializes a DataFrame into Parquet format into the provided stream object.
 
@@ -78,8 +78,10 @@ def df_to_stream_parquet(df: DataFrameType, stream: IOBase):
         Input DataFrame to serialize.
     stream : IOBase
         The stream where the serialized DataFrame will be written to.
+    include_index_col: bool, default True
+        Write out the index as a column.
     """
-    df.to_parquet(stream)
+    df.to_parquet(stream, index=include_index_col)
 
     return stream
 
@@ -156,7 +158,9 @@ def df_to_json(df: DataFrameType, strip_newlines=False, include_index_col=True) 
     return results
 
 
-def df_to_parquet(df: DataFrameType, strip_newlines=False) -> typing.List[bytes]:
+def df_to_parquet(df: DataFrameType,
+                  strip_newlines: bool = False,
+                  include_index_col: bool = True) -> typing.List[bytes]:
     """
     Serializes a DataFrame into Parquet and returns the serialized output seperated by lines.
 
@@ -164,8 +168,10 @@ def df_to_parquet(df: DataFrameType, strip_newlines=False) -> typing.List[bytes]
     ----------
     df : DataFrameType
         Input DataFrame to serialize.
-    strip_newlines : bool, optional
+    strip_newlines : bool, default False
         Whether or not to strip the newline characters from each string, by default False.
+    include_index_col: bool, default True
+        Write out the index as a column, by default True.
     Returns
     -------
     typing.List[str]
@@ -173,7 +179,7 @@ def df_to_parquet(df: DataFrameType, strip_newlines=False) -> typing.List[bytes]
     """
     buf = BytesIO()
 
-    df_to_stream_parquet(df=df, stream=buf)
+    df_to_stream_parquet(df=df, stream=buf, include_index_col=include_index_col)
 
     # Start from beginning
     buf.seek(0)
@@ -209,16 +215,21 @@ def write_df_to_file(df: DataFrameType, file_name: str, file_type: FileTypes = F
             write_df_to_file_cpp(df=df, filename=file_name, file_type=file_type, **kwargs)
             return
 
-    mode = file_type
+    if (file_type == FileTypes.Auto):
+        file_type = determine_file_type(file_name)
 
-    if (mode == FileTypes.Auto):
-        mode = determine_file_type(file_name)
+    if (file_type == FileTypes.PARQUET):
+        open_kwargs = {"mode": "wb"}
+    else:
+        open_kwargs = {"mode": "w", "encoding": 'UTF-8'}
 
-    with open(file_name, mode="w", encoding='UTF-8') as f:
+    with open(file_name, **open_kwargs) as f:
 
-        if (mode == FileTypes.JSON):
+        if (file_type == FileTypes.JSON):
             df_to_stream_json(df=df, stream=f, **kwargs)
-        elif (mode == FileTypes.CSV):
+        elif (file_type == FileTypes.CSV):
             df_to_stream_csv(df=df, stream=f, **kwargs)
+        elif (file_type == FileTypes.PARQUET):
+            df_to_stream_parquet(df=df, stream=f, **kwargs)
         else:
             assert False, "Unsupported filetype"

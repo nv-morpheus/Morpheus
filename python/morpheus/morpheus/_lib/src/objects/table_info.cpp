@@ -173,6 +173,18 @@ const cudf::column_view& TableInfoBase::get_column(cudf::size_type idx) const
     return this->m_data.table_view.column(this->m_data.index_names.size() + idx);
 }
 
+const cudf::column_view& TableInfoBase::get_column(const std::string& column_name) const
+{
+    auto itr = std::find(this->get_data().column_names.begin(), this->get_data().column_names.end(), column_name);
+    if (itr == this->get_data().column_names.end())
+    {
+        throw std::invalid_argument(column_name + " is not found");
+    }
+
+    auto idx = std::distance(this->get_data().column_names.begin(), itr);
+    return get_column(idx);
+}
+
 const std::shared_ptr<const IDataTable>& TableInfoBase::get_parent() const
 {
     return m_parent;

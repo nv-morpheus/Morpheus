@@ -129,7 +129,7 @@ morpheus --log_level=DEBUG \
    add-class \
    `# 7th Stage: Filtering removes any messages that did not detect SI` \
    filter --filter_source=TENSOR \
-   `# 8th Stage: Convert from objects back into strings` \
+   `# 8th Stage: Prepare for output, excluding any columns starting with '_ts_'` \
    serialize --exclude '^_ts_' \
    `# 9th Stage: Write out the JSON lines to the nlp_si_detections.jsonlines file` \
    to-file --filename=.tmp/output/nlp_si_detections.jsonlines --overwrite
