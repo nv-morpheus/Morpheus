@@ -48,7 +48,7 @@ WORKDIR /workspace/examples/digital_fingerprinting/production
 COPY . /workspace/examples/digital_fingerprinting/production/
 
 # Create a conda env with morpheus-dfp and any additional dependencies needed to run the examples
-RUN conda env create --solver=libmamba -y --name morpheus-dfp --file ./conda/environments/dfp_example_cuda-125_arch-$(arch).yaml
+RUN conda env create --solver=libmamba -y --name morpheus-dfp --file ./conda/environments/dfp_example_cuda-128_arch-$(arch).yaml
 
 # Work-around PyTorch instalation issue https://github.com/nv-morpheus/Morpheus/issues/2095
 RUN source activate morpheus-dfp && \
