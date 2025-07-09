@@ -71,7 +71,7 @@ The DLP pipeline is capable of detecting multiple categories of sensitive inform
 
 ## Dataset
 
-The dataset that this workflow processes can be various text formats including JSON, CSV, or plain text documents converted into *textual data* of CSV format. 
+The dataset that this workflow processes can be various text formats including JSON, CSV, or plain text documents converted into *textual data* of CSV format.
 For this pipeline example, the input is a CSV with `source_text` column indicating the target text. For example, below is a sample document containing multiple types of sensitive information indicated in the `source_text` field:
 
 ```json
@@ -91,16 +91,16 @@ The pipeline we will be using in this example is a hybrid feed-forward pipeline 
 Below is a visualization of the pipeline showing all stages and data flow:
 
 ```
-┌────────────────────┐                                                        
-│    Input Text      │                                                        
-│    Documents       │                                                        
-└────────┬───────────┘                                                        
-         │                                                                     
-         ▼                                                                     
-┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐
+┌────────────────────┐
+│    Input Text      │
+│    Documents       │
+└────────┬───────────┘
+         │
+         ▼
+┌────────────────────┐   ┌────────────────────┐   ┌────────────────────┐   ┌────────────────────┐
 │  DLPInputProcessor │-▶│   RegexProcessor   │-▶│   GliNERProcessor  │-▶│     RiskScorer     │
-│   (Preprocessing)  │  │    (Fast Filter)   │  │   (AI Validation)  │  │   (Risk Analysis)  │
-└────────────────────┘  └────────────────────┘  └────────────────────┘  └────────────────────┘
+│   (Preprocessing)  │   │    (Fast Filter)   │   │   (AI Validation)  │   │   (Risk Analysis)  │
+└────────────────────┘   └────────────────────┘   └────────────────────┘   └────────────────────┘
 
 ```
 
