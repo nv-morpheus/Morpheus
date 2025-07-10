@@ -139,6 +139,13 @@ git lfs install
 ./scripts/fetch_data.py fetch models
 ```
 
+### Build the Example
+
+Build the example by passing in the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to CMake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+```bash
+CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
+```
+
 ### Launching Triton
 
 This example utilizes the Triton Inference Server to perform inference. Pull the Docker image for Triton:
