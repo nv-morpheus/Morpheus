@@ -209,7 +209,6 @@ class DLPPipeline:
 
         self.input_processor = DLPInputProcessor(split_by_paragraphs=False)
         self.regex_processor = RegexProcessor(patterns=regex_patterns)
-        # self.regex_processor = GPURegexEntityDetector(patterns=regex_patterns)
         self.gliner_processor = GliNERProcessor(confidence_threshold=confidence_threshold,
                                                 context_window=context_window,
                                                 model_name=model_name,

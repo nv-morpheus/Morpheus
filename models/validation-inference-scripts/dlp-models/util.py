@@ -77,27 +77,31 @@ def run_benchmark_pipeline(dataset: pd.DataFrame,
 
         # Hybrid model with timing
         start_time = time.time()
-        hybrid_findings = pipeline.inference(sample["source_text"], failback=False)
+        hybrid_findings = pipeline.inference(
+            sample["source_text"], failback=False)
         hybrid_time = time.time() - start_time
         hybrid_times.append(hybrid_time)
-        hybrid_results.append(json.dumps(gliner_processor.filter_entities(hybrid_findings)))
+        hybrid_results.append(json.dumps(
+            gliner_processor.filter_entities(hybrid_findings)))
 
-        if model_skip:
+        if not model_skip:
 
             # GliNER model with timing
             start_time = time.time()
-            gliner_findings = gliner_processor.gliner_predict(sample["source_text"])
+            gliner_findings = gliner_processor.gliner_predict(
+                sample["source_text"])
             gliner_time = time.time() - start_time
             gliner_times.append(gliner_time)
-
-            gliner_results.append(json.dumps(gliner_processor.filter_entities(gliner_findings)))
+            gliner_results.append(json.dumps(
+                gliner_processor.filter_entities(gliner_findings)))
 
     # dataset size for throuput inference per second
     dataset_size = (
         sum(sys.getsizeof(txt)
             # MB
             for txt in dataset["source_text"].tolist()) / 1024 / 1024)
-    dataset_tokens = sum(len(txt.split()) for txt in dataset["source_text"].tolist())
+    dataset_tokens = sum(len(txt.split())
+                         for txt in dataset["source_text"].tolist())
 
     # Log timing statistics
     timing_metrics = {
@@ -156,7 +160,8 @@ def evaluate_results(
 
     all_results = {}
 
-    ground_truth = true_samples[true_samples["source"] == dataset]["privacy_mask"].tolist()
+    ground_truth = true_samples[true_samples["source"]
+                                == dataset]["privacy_mask"].tolist()
 
     # Get list of all possible labels
     labels = set()
@@ -168,7 +173,8 @@ def evaluate_results(
     pred = [literal_eval(results[i]) for i in range(len(results))]
     ground_truth = ground_truth[:len(pred)]
     evaluator = Evaluator(true=ground_truth, pred=pred, tags=list_of_entities)
-    results, results_per_tag, result_indices, result_indices_by_tag = (evaluator.evaluate())
+    results, results_per_tag, result_indices, result_indices_by_tag = (
+        evaluator.evaluate())
     results_df = pd.DataFrame(results)
 
     missed = results_df.loc["missed", "ent_type"]
@@ -198,7 +204,8 @@ def format_findings(results: dict[str, list]) -> str:
 
     output.append("\nSeverity Distribution:")
     dist = results["risk_assessment"]["severity_distribution"]
-    output.append(f"  High: {dist['high']}, Medium: {dist['medium']}, Low: {dist['low']}")
+    output.append(
+        f"  High: {dist['high']}, Medium: {dist['medium']}, Low: {dist['low']}")
 
     if results["findings"]:
         output.append("\nDetailed Findings:")
@@ -215,6 +222,7 @@ def format_findings(results: dict[str, list]) -> str:
                 output.append(f"    Match: {match_text}")
 
         if len(results["findings"]) > 10:
-            output.append(f"\n  ... and {len(results['findings']) - 10} more findings")
+            output.append(
+                f"\n  ... and {len(results['findings']) - 10} more findings")
 
     return "\n".join(output)
