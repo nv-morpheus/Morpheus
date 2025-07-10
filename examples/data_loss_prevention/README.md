@@ -98,7 +98,7 @@ Below is a visualization of the pipeline showing all stages and data flow:
          │
          ▼
 ┌────────────────────┐   ┌────────────────────┐   ┌────────────────────┐   ┌────────────────────┐
-│  DLPInputProcessor │-▶│   RegexProcessor   │-▶│   GliNERProcessor  │-▶│     RiskScorer     │
+│  DLPInputProcessor │-▶ │   RegexProcessor   │-▶ │   GliNERProcessor  │-▶ │     RiskScorer     │
 │   (Preprocessing)  │   │    (Fast Filter)   │   │   (AI Validation)  │   │   (Risk Analysis)  │
 └────────────────────┘   └────────────────────┘   └────────────────────┘   └────────────────────┘
 
