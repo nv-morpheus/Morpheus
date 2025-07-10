@@ -122,7 +122,7 @@ Prior to running the DLP pipeline, additional requirements must be installed in 
 ```bash
 conda env update --solver=libmamba \
   -n ${CONDA_DEFAULT_ENV} \
-  --file ./conda/environments/examples_cuda-128_arch-$(arch).yaml
+  --file ./conda/environments/all_cuda-128_arch-$(arch).yaml
 ```
 
 Install the GliNER package itself: <!-- Work-around for https://github.com/urchade/GLiNER/issues/267 -->
