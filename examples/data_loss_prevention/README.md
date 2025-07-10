@@ -20,7 +20,7 @@ limitations under the License.
 This example demonstrates how to use Morpheus to implement a high-performance DLP solution for sensitive data detection. It combines regex pattern matching with semantic analysis powered by a small language model (SLM), enabling efficient and accurate identification of sensitive information in unstructured text.
 
 ## Supported Environments
-All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-128_arch-$(arch).yaml` or `conda/environments/examples_cuda-125_arch-$(arch).yaml` environment files. Refer to the [Setup](#setup) section for more information.
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-128_arch-$(arch).yaml` environment file. Refer to the [Setup](#setup) section for more information.
 | Environment | Supported | Notes |
 |-------------|-----------|-------|
 | Conda | ✔ | |
@@ -141,9 +141,19 @@ git lfs install
 
 ### Build the Example
 
-Build the example by passing in the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to CMake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+#### From Source
+For users who cloned the Morpheus repository can build the example by passing in the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to CMake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
 ```bash
 CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
+```
+
+#### From the Docker container
+For users using the Morpheus Docker container, the example can be built by running the following:
+```bash
+cd /workspace/examples/data_loss_prevention
+./compile.sh
+
+pip install ./
 ```
 
 ### Launching Triton
