@@ -364,7 +364,7 @@ dependencies:
           # Include: cve-mitigation
           - appdirs
           - beautifulsoup4=4.12
-          - click>=8
+          - click==8.1 # 8.2 introcudes a behavior change that breaks some tests
           # - cuda-version=12.5 ##
           - cudf=24.10
           - cupy # Version determined from cudf

@@ -11,7 +11,7 @@ channels:
 dependencies:
 - appdirs
 - beautifulsoup4=4.12
-- click>=8
+- click==8.1
 - cuda-cudart=12.5
 - cuda-nvrtc=12.5
 - cuda-nvtx=12.5
