@@ -77,10 +77,8 @@ class GliNERTritonInference:
         self._labels: list[str] = labels
         self._labels_file = os.path.join(model_source_dir, "label_embedding.pt")
         self._fallback_model_name = fallback_model_name
-        if not os.path.exists(self._labels_file):
-            raise RuntimeError(f"Labels embeddings file not found: {self._labels_file}")
 
-        self.client = tritonclient.InferenceServerClient(url=server_url)
+        self._client = tritonclient.InferenceServerClient(url=server_url)
 
     @property
     def model(self) -> "GLiNER":
@@ -227,7 +225,7 @@ class GliNERTritonInference:
         triton_outputs = [tritonclient.InferRequestedOutput("output")]
 
         # Get response
-        self.client.async_infer(self._triton_model_name,
-                                inputs=triton_inputs,
-                                outputs=triton_outputs,
-                                callback=partial(self._infer_callback, raw_batch, texts, callback))
+        self._client.async_infer(self._triton_model_name,
+                                 inputs=triton_inputs,
+                                 outputs=triton_outputs,
+                                 callback=partial(self._infer_callback, raw_batch, texts, callback))

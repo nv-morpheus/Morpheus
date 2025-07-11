@@ -130,9 +130,11 @@ Install the GliNER package itself: <!-- Work-around for https://github.com/urcha
 pip install --no-deps gliner==0.2.21
 ```
 
-### Downloading the model
+### Downloading the model (optional)
 
-The model is stored in the Morpheus repository using [Git Large File Storage (LFS)](https://git-lfs.github.com/). Only those files which are strictly needed to run Morpheus are downloaded by default when the repository is cloned. The model can be downloaded using the `fetch_data.py` script.
+Users who are using the pre-built Morpheus Docker container should skip this step.
+
+Downloading the model locally offers a slight performance benefit, otherwise the model is fetched on-demand. The model is stored in the Morpheus repository using [Git Large File Storage (LFS)](https://git-lfs.github.com/). Only those files which are strictly needed to run Morpheus are downloaded by default when the repository is cloned. The model can be downloaded using the `fetch_data.py` script.
 
 ```bash
 git lfs install
@@ -141,14 +143,27 @@ git lfs install
 
 ### Build the Example
 
-Build the example by passing in the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to CMake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+#### Building the example by itself
+This approach should be used by users who are using the pre-built Morpheus Docker container.
+
+```bash
+cd /workspace/examples/data_loss_prevention
+./compile.sh
+cd /workspace
+```
+
+#### Building the example with Morpheus
+
+This approach should be used by users who cloned the Morpheus git repository locally. Build the example by passing in the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to CMake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
 ```bash
 CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
 ```
 
 ### Launching Triton
 
-This example utilizes the Triton Inference Server to perform inference. Pull the Docker image for Triton:
+This example utilizes the Triton Inference Server to perform inference. For users who are using the pre-built Morpheus Docker container, these steps should be performed outside of the container.
+
+Pull the Docker image for Triton:
 ```bash
 docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06
 ```
