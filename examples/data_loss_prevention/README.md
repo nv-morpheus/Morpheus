@@ -25,7 +25,7 @@ All environments require additional Conda packages which can be installed with e
 |-------------|-----------|-------|
 | Conda | ✔ | |
 | Morpheus Docker Container | ✔ |  |
-| Morpheus Release Container | ✘ | Not currently supported refer to [#2242](https://github.com/nv-morpheus/Morpheus/issues/2242)|
+| Morpheus Release Container | ✔ |  |
 | Dev Container | ✔ |  |
 
 ### Supported Architectures
