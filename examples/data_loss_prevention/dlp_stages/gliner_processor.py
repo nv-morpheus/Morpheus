@@ -44,6 +44,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         Pipeline configuration instance.
     model_source_dir : str
         Path to the directory containing the GLiNER model files. Used for pre and post-processing.
+    labels : list[str]
+        List of entity labels to detect, this should match the named patterns used in the RegexProcessor stage.
     onnx_path : str, default = "model.onnx"
         Path to the ONNX model file, relative to the `model_source_dir`. Default is "model.onnx".
     server_url : str, default = "localhost:8001"
@@ -59,19 +61,23 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
     fallback : bool, default = False
         If True, fallback to GLiNER prediction if no regex findings are available.
         If False, only process rows with regex findings.
+    fallback_model_name: str, default="gretelai/gretel-gliner-bi-small-v1.0"
+        Name of the fallback model to use if the local model is not present.
     """
 
     def __init__(self,
                  config: Config,
                  *,
                  model_source_dir: str,
+                 labels: list[str],
                  onnx_path: str = "model.onnx",
                  server_url: str = "localhost:8001",
                  triton_model_name: str = "gliner-bi-encoder-onnx",
                  source_column_name: str = "source_text",
                  confidence_threshold: float = 0.3,
                  context_window: int = 100,
-                 fallback: bool = False):
+                 fallback: bool = False,
+                 fallback_model_name: str = "gretelai/gretel-gliner-bi-small-v1.0"):
 
         super().__init__(config)
         if config.execution_mode == ExecutionMode.GPU:
@@ -89,7 +95,9 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                                                    model_source_dir=model_source_dir,
                                                    onnx_path=onnx_path,
                                                    map_location=map_location,
-                                                   gliner_threshold=confidence_threshold)
+                                                   labels=labels,
+                                                   gliner_threshold=confidence_threshold,
+                                                   fallback_model_name=fallback_model_name)
 
     @property
     def name(self) -> str:

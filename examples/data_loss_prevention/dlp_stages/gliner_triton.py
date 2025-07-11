@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 import typing
 from functools import partial
@@ -22,6 +23,8 @@ import tritonclient.grpc as tritonclient
 
 if typing.TYPE_CHECKING:
     from gliner import GLiNER
+
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class GliNERTritonInference:
@@ -34,6 +37,8 @@ class GliNERTritonInference:
     ----------
     model_source_dir : str
         Path to the directory containing the GLiNER model files. Used for pre and post-processing.
+    labels : list[str]
+        List of entity labels to detect, this should match the named patterns used in the RegexProcessor stage.
     onnx_path : str, default = "model.onnx"
         Path to the ONNX model file, relative to the `model_source_dir`. Default is "model.onnx".
     server_url : str, default = "localhost:8001"
@@ -46,15 +51,19 @@ class GliNERTritonInference:
         Device to load the model on. Default is "cuda". Can also be set to "cpu".
         Note this only affects the local model used for pre/post-processing, and has no impact on the inference which
         is done in Triton.
+    fallback_model_name: str, default="gretelai/gretel-gliner-bi-small-v1.0"
+        Name of the fallback model to use if the local model is not present.
     """
 
     def __init__(self,
                  model_source_dir: str,
+                 labels: list[str],
                  onnx_path: str = "model.onnx",
                  server_url: str = "localhost:8001",
                  triton_model_name: str = "gliner-bi-encoder-onnx",
                  gliner_threshold: float = 0.3,
-                 map_location: str = "cuda"):
+                 map_location: str = "cuda",
+                 fallback_model_name: str = "gretelai/gretel-gliner-bi-small-v1.0"):
 
         # We load the model locally to use its pre/post-processing functions.
         # The actual heavy inference will be done on Triton.
@@ -62,15 +71,14 @@ class GliNERTritonInference:
         self._model_source_dir = model_source_dir
         self._onnx_path = onnx_path
         self._map_location = map_location
-        self.triton_model_name = triton_model_name
-        self.gliner_threshold = gliner_threshold
+        self._triton_model_name = triton_model_name
+        self._gliner_threshold = gliner_threshold
         self._labels_embeddings: np.ndarray | None = None
-        self._labels: list[str] | None = None
+        self._labels: list[str] = labels
         self._labels_file = os.path.join(model_source_dir, "label_embedding.pt")
-        if not os.path.exists(self._labels_file):
-            raise RuntimeError(f"Labels embeddings file not found: {self._labels_file}")
+        self._fallback_model_name = fallback_model_name
 
-        self.client = tritonclient.InferenceServerClient(url=server_url)
+        self._client = tritonclient.InferenceServerClient(url=server_url)
 
     @property
     def model(self) -> "GLiNER":
@@ -79,17 +87,37 @@ class GliNERTritonInference:
         """
         if self._model is None:
             from gliner import GLiNER
-            self._model = GLiNER.from_pretrained(self._model_source_dir,
-                                                 local_files_only=True,
-                                                 map_location=self._map_location,
-                                                 onnx_path=self._onnx_path,
-                                                 load_onnx_model=True)
+
+            if os.path.exists(self._model_source_dir) and os.path.exists(
+                    os.path.join(self._model_source_dir, self._onnx_path)):
+                model_kwargs = {
+                    "pretrained_model_name_or_path": self._model_source_dir,
+                    "local_files_only": True,
+                    "map_location": self._map_location,
+                    "onnx_path": self._onnx_path,
+                    "load_onnx_model": True
+                }
+            else:
+                model_kwargs = {
+                    "pretrained_model_name_or_path": self._fallback_model_name,
+                    "local_files_only": False,
+                    "map_location": self._map_location
+                }
+
+            self._model = GLiNER.from_pretrained(**model_kwargs)
         return self._model
 
     def _load_label_data(self):
-        label_data = torch.load(self._labels_file)
-        self._labels_embeddings = label_data['embeddings'].cpu().numpy()
-        self._labels = label_data['labels']
+        if os.path.exists(self._labels_file):
+            label_data = torch.load(self._labels_file)
+
+            labels_embeddings = label_data['embeddings']
+            if sorted(self._labels) != sorted(label_data['labels']):
+                raise ValueError("Label mismatch between model and label file.")
+        else:
+            labels_embeddings = self.model.encode_labels(self._labels)
+
+        self._labels_embeddings = labels_embeddings.cpu().numpy()
 
     @property
     def labels_embeddings(self) -> np.ndarray:
@@ -102,23 +130,12 @@ class GliNERTritonInference:
 
         return self._labels_embeddings
 
-    @property
-    def labels(self) -> list[str]:
-        """
-        Return the list of labels.
-        If not loaded, it will load from the specified file.
-        """
-        if self._labels is None:
-            self._load_label_data()
-
-        return self._labels
-
     def pre_process(self, texts):
         """
         Pre-process the data for the ONNX model.
         """
         # === 1. PRE-PROCESSING ===
-        model_input, raw_batch = self.model.prepare_model_inputs(texts, self.labels, prepare_entities=False)
+        model_input, raw_batch = self.model.prepare_model_inputs(texts, self._labels, prepare_entities=False)
 
         # Convert torch tensors to numpy for Triton
         onnx_inputs = [
@@ -142,7 +159,7 @@ class GliNERTritonInference:
             raw_batch["id_to_classes"],
             logits_tensor,
             flat_ner=True,
-            threshold=self.gliner_threshold,
+            threshold=self._gliner_threshold,
             multi_label=False,
         )
 
@@ -203,7 +220,7 @@ class GliNERTritonInference:
         triton_outputs = [tritonclient.InferRequestedOutput("output")]
 
         # Get response
-        self.client.async_infer(self.triton_model_name,
-                                inputs=triton_inputs,
-                                outputs=triton_outputs,
-                                callback=partial(self._infer_callback, raw_batch, texts, callback))
+        self._client.async_infer(self._triton_model_name,
+                                 inputs=triton_inputs,
+                                 outputs=triton_outputs,
+                                 callback=partial(self._infer_callback, raw_batch, texts, callback))

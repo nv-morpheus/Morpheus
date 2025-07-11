@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import os
 import pathlib
@@ -39,6 +40,12 @@ from morpheus.utils.logger import configure_logging
 logger = logging.getLogger(f"morpheus.{__name__}")
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR_DIR, "..", "..")))
+
+
+def load_regex_patterns(file_path: str | pathlib.Path) -> dict[str, list[str]]:
+    """Load regex patterns from a JSON file."""
+    with open(file_path, 'r', encoding="utf-8") as f:
+        return json.load(f)
 
 
 @click.command()
@@ -102,7 +109,7 @@ MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(CUR
 @click.option('--pipeline_batch_size', type=int, default=1024 * 32, show_default=True, help=("Pipeline batch size."))
 @click.option('--model_source_dir',
               help="Directory containing the GliNER model files",
-              type=click.Path(exists=True, dir_okay=True, file_okay=False, readable=True, resolve_path=True),
+              type=click.Path(dir_okay=True, file_okay=False, readable=True, resolve_path=True),
               default=os.path.join(MORPHEUS_ROOT, "models/dlp_models/gliner_bi_encoder"),
               show_default=True)
 @click.option("--out_file",
@@ -129,6 +136,8 @@ def main(log_level: int,
 
     if regex_only and model_only:
         raise ValueError("Cannot use --regex_only and --model_only together.")
+
+    regex_patterns = load_regex_patterns(regex_file)
 
     if num_samples < 0:
         num_samples = None
@@ -158,7 +167,7 @@ def main(log_level: int,
     pipeline.add_stage(MonitorStage(config, description="Input Processor"))
 
     if not model_only:
-        pipeline.add_stage(RegexProcessor(config, patterns_file=regex_file, include_pattern_names=regex_only))
+        pipeline.add_stage(RegexProcessor(config, patterns=regex_patterns, include_pattern_names=regex_only))
 
         pipeline.add_stage(MonitorStage(config, description="Regex Processor"))
 
@@ -179,7 +188,11 @@ def main(log_level: int,
         risk_scorer_input = "labels"
 
     else:
-        pipeline.add_stage(GliNERProcessor(config, server_url=server_url, model_source_dir=str(model_source_dir)))
+        pipeline.add_stage(
+            GliNERProcessor(config,
+                            server_url=server_url,
+                            model_source_dir=str(model_source_dir),
+                            labels=list(regex_patterns.keys())))
 
         pipeline.add_stage(MonitorStage(config, description="GliNER Processor"))
 
