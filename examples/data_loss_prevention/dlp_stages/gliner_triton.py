@@ -37,6 +37,8 @@ class GliNERTritonInference:
     ----------
     model_source_dir : str
         Path to the directory containing the GLiNER model files. Used for pre and post-processing.
+    labels : list[str]
+        List of entity labels to detect, this should match the named patterns used in the RegexProcessor stage.
     onnx_path : str, default = "model.onnx"
         Path to the ONNX model file, relative to the `model_source_dir`. Default is "model.onnx".
     server_url : str, default = "localhost:8001"
@@ -55,6 +57,7 @@ class GliNERTritonInference:
 
     def __init__(self,
                  model_source_dir: str,
+                 labels: list[str],
                  onnx_path: str = "model.onnx",
                  server_url: str = "localhost:8001",
                  triton_model_name: str = "gliner-bi-encoder-onnx",
@@ -71,7 +74,7 @@ class GliNERTritonInference:
         self._triton_model_name = triton_model_name
         self._gliner_threshold = gliner_threshold
         self._labels_embeddings: np.ndarray | None = None
-        self._labels: list[str] | None = None
+        self._labels: list[str] = labels
         self._labels_file = os.path.join(model_source_dir, "label_embedding.pt")
         self._fallback_model_name = fallback_model_name
         if not os.path.exists(self._labels_file):
@@ -112,9 +115,16 @@ class GliNERTritonInference:
         return self._model
 
     def _load_label_data(self):
-        label_data = torch.load(self._labels_file)
-        self._labels_embeddings = label_data['embeddings'].cpu().numpy()
-        self._labels = label_data['labels']
+        if os.path.exists(self._labels_file):
+            label_data = torch.load(self._labels_file)
+
+            labels_embeddings = label_data['embeddings']
+            if sorted(self._labels) != sorted(label_data['labels']):
+                raise ValueError("Label mismatch between model and label file.")
+        else:
+            labels_embeddings = self.model.encode_labels(self._labels)
+
+        self._labels_embeddings = labels_embeddings.cpu().numpy()
 
     @property
     def labels_embeddings(self) -> np.ndarray:
@@ -127,23 +137,12 @@ class GliNERTritonInference:
 
         return self._labels_embeddings
 
-    @property
-    def labels(self) -> list[str]:
-        """
-        Return the list of labels.
-        If not loaded, it will load from the specified file.
-        """
-        if self._labels is None:
-            self._load_label_data()
-
-        return self._labels
-
     def pre_process(self, texts):
         """
         Pre-process the data for the ONNX model.
         """
         # === 1. PRE-PROCESSING ===
-        model_input, raw_batch = self.model.prepare_model_inputs(texts, self.labels, prepare_entities=False)
+        model_input, raw_batch = self.model.prepare_model_inputs(texts, self._labels, prepare_entities=False)
 
         # Convert torch tensors to numpy for Triton
         onnx_inputs = [

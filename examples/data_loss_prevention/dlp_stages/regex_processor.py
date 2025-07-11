@@ -41,11 +41,8 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
     ----------
     config : morpheus.config.Config
         Pipeline configuration instance.
-    patterns: dict[str, list[str]] | None, default = None
+    patterns: dict[str, list[str]]
         Dictionary mapping data types to lists of regex patterns
-    patterns_file : str | pathlib.Path | None, default = None
-        Path to a JSON file containing regex patterns for different data types.
-        Ignored if `patterns` is provided.
     source_column_name : str, default = "source_text"
         Name of the column containing the source text to process.
     include_pattern_names : bool, default = False
@@ -56,7 +53,6 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
                  config: Config,
                  *,
                  patterns: dict[str, list[str]] | None = None,
-                 patterns_file: str | pathlib.Path | None = None,
                  source_column_name: str = "source_text",
                  include_pattern_names: bool = False):
         super().__init__(config)
@@ -65,12 +61,6 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
         self._df_class = get_df_class(config.execution_mode)
         self._df_pkg = get_df_pkg(config.execution_mode)
         self._include_pattern_names = include_pattern_names
-
-        if patterns is None:
-            if patterns_file is None:
-                raise ValueError("Either 'patterns' or 'patterns_file' must be provided")
-            patterns = self.load_regex_patterns(patterns_file)
-            logger.info("Loaded %d regex pattern groups", len(patterns))
 
         self.combined_patterns = {}
         # For each entity type, combine multiple patterns into a single regex
@@ -83,12 +73,6 @@ class RegexProcessor(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
                 combined_pattern = pattern_list[0]
 
             self.combined_patterns[pattern_name] = combined_pattern
-
-    @staticmethod
-    def load_regex_patterns(file_path: str | pathlib.Path) -> dict[str, list[str]]:
-        """Load regex patterns from a JSON file."""
-        with open(file_path, 'r', encoding="utf-8") as f:
-            return json.load(f)
 
     @property
     def name(self) -> str:

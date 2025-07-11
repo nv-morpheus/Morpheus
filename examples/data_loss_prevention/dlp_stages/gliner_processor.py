@@ -44,6 +44,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
         Pipeline configuration instance.
     model_source_dir : str
         Path to the directory containing the GLiNER model files. Used for pre and post-processing.
+    labels : list[str]
+        List of entity labels to detect, this should match the named patterns used in the RegexProcessor stage.
     onnx_path : str, default = "model.onnx"
         Path to the ONNX model file, relative to the `model_source_dir`. Default is "model.onnx".
     server_url : str, default = "localhost:8001"
@@ -67,6 +69,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                  config: Config,
                  *,
                  model_source_dir: str,
+                 labels: list[str],
                  onnx_path: str = "model.onnx",
                  server_url: str = "localhost:8001",
                  triton_model_name: str = "gliner-bi-encoder-onnx",
@@ -92,6 +95,7 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                                                    model_source_dir=model_source_dir,
                                                    onnx_path=onnx_path,
                                                    map_location=map_location,
+                                                   labels=labels,
                                                    gliner_threshold=confidence_threshold,
                                                    fallback_model_name=fallback_model_name)
 
