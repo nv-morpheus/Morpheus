@@ -132,9 +132,9 @@ pip install --no-deps gliner==0.2.21
 
 ### Downloading the model (optional)
 
-Users who are using the pre-built Morpheus Docker container should skip this step.
+Users who are using the pre-built Morpheus Docker container should skip this step. Downloading the model locally offers a slight performance benefit, otherwise the model is fetched on-demand, then on subsequent runs a cached copy of the model is used.
 
-Downloading the model locally offers a slight performance benefit, otherwise the model is fetched on-demand. The model is stored in the Morpheus repository using [Git Large File Storage (LFS)](https://git-lfs.github.com/). Only those files which are strictly needed to run Morpheus are downloaded by default when the repository is cloned. The model can be downloaded using the `fetch_data.py` script.
+The model is stored in the Morpheus repository using [Git Large File Storage (LFS)](https://git-lfs.github.com/). Only those files which are strictly needed to run Morpheus are downloaded by default when the repository is cloned. The model can be downloaded using the `fetch_data.py` script.
 
 ```bash
 git lfs install
