@@ -13,9 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
-import pathlib
 
 import mrc
 from mrc.core import operators as ops
