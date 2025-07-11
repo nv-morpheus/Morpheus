@@ -89,20 +89,7 @@ For this pipeline example, the input is a CSV with `source_text` column indicati
 The pipeline we will be using in this example is a hybrid feed-forward pipeline where data flows through both regex and AI processing stages. The pipeline combines fast regex pattern matching with semantic analysis for optimal performance.
 
 Below is a visualization of the pipeline showing all stages and data flow:
-
-```
-┌────────────────────┐
-│    Input Text      │
-│    Documents       │
-└────────┬───────────┘
-         │
-         ▼
-┌────────────────────┐   ┌────────────────────┐   ┌────────────────────┐   ┌────────────────────┐
-│  DLPInputProcessor │-▶ │   RegexProcessor   │-▶ │   GliNERProcessor  │-▶ │     RiskScorer     │
-│   (Preprocessing)  │   │    (Fast Filter)   │   │   (AI Validation)  │   │   (Risk Analysis)  │
-└────────────────────┘   └────────────────────┘   └────────────────────┘   └────────────────────┘
-
-```
+![DLP Diagram](./images/dlp_diagram.png)
 
 ### Core Components
 
