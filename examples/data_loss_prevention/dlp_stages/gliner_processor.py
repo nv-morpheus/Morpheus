@@ -59,6 +59,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
     fallback : bool, default = False
         If True, fallback to GLiNER prediction if no regex findings are available.
         If False, only process rows with regex findings.
+    fallback_model_name: str, default="gretelai/gretel-gliner-bi-small-v1.0"
+        Name of the fallback model to use if the local model is not present.
     """
 
     def __init__(self,
@@ -71,7 +73,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                  source_column_name: str = "source_text",
                  confidence_threshold: float = 0.3,
                  context_window: int = 100,
-                 fallback: bool = False):
+                 fallback: bool = False,
+                 fallback_model_name: str = "gretelai/gretel-gliner-bi-small-v1.0"):
 
         super().__init__(config)
         if config.execution_mode == ExecutionMode.GPU:
@@ -89,7 +92,8 @@ class GliNERProcessor(GpuAndCpuMixin, ControlMessageStage):
                                                    model_source_dir=model_source_dir,
                                                    onnx_path=onnx_path,
                                                    map_location=map_location,
-                                                   gliner_threshold=confidence_threshold)
+                                                   gliner_threshold=confidence_threshold,
+                                                   fallback_model_name=fallback_model_name)
 
     @property
     def name(self) -> str:
