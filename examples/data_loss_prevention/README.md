@@ -147,9 +147,7 @@ git lfs install
 This approach should be used by users who are using the pre-built Morpheus Docker container.
 
 ```bash
-cd /workspace/examples/data_loss_prevention
-./compile.sh
-cd /workspace
+./examples/data_loss_prevention/compile.sh
 ```
 
 #### Building the example with Morpheus
