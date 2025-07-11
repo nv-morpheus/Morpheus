@@ -109,7 +109,7 @@ def load_regex_patterns(file_path: str | pathlib.Path) -> dict[str, list[str]]:
 @click.option('--pipeline_batch_size', type=int, default=1024 * 32, show_default=True, help=("Pipeline batch size."))
 @click.option('--model_source_dir',
               help="Directory containing the GliNER model files",
-              type=click.Path(exists=True, dir_okay=True, file_okay=False, readable=True, resolve_path=True),
+              type=click.Path(dir_okay=True, file_okay=False, readable=True, resolve_path=True),
               default=os.path.join(MORPHEUS_ROOT, "models/dlp_models/gliner_bi_encoder"),
               show_default=True)
 @click.option("--out_file",
