@@ -98,11 +98,6 @@ class GliNERTritonInference:
                     "load_onnx_model": True
                 }
             else:
-                logger.warning(
-                    "Unable to find local GLiNER model files in the specified directory: %s. "
-                    "Falling back to downloading the model",
-                    self._model_source_dir)
-                # If the model source directory does not exist, we fallback to the Hugging Face model.
                 model_kwargs = {
                     "pretrained_model_name_or_path": self._fallback_model_name,
                     "local_files_only": False,
