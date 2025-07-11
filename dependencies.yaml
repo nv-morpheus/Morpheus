@@ -327,6 +327,8 @@ dependencies:
           - isort
           - pylint=3.0.3
           - pynvml=11.4
+          # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
+          - setuptools>=75,<80
           - vale=3.7
           - vale-styles-microsoft
           - vale-styles-write-good
