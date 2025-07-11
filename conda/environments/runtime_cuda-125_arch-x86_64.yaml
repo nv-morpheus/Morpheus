@@ -29,6 +29,7 @@ dependencies:
 - mlflow>=2.10.0,<2.18
 - mrc=24.10
 - networkx=2.8.8
+- numba=0.60.0
 - numpydoc=1.5
 - pip
 - pluggy=1.3
