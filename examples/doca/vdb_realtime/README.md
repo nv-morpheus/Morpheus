@@ -98,7 +98,7 @@ export NGC_API_KEY="<YOUR_NGC_API>"
 
 Then install basic requirements:
 ```bash
-conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-128_arch-$(arch).yaml --prune
+conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-128_arch-$(arch).yaml
 ```
 
 Run the RAG example to query the Milvus database:
