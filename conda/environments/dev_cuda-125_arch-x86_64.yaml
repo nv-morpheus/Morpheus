@@ -107,8 +107,6 @@ dependencies:
 - yapf=0.40.1
 - pip:
   - --extra-index-url https://download.pytorch.org/whl/cu124
-  - databricks-cli < 0.100
-  - databricks-connect
   - milvus==2.3.5
   - pymilvus==2.3.6
   - pytest-kafka==0.6.0

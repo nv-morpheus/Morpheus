@@ -397,8 +397,6 @@ dependencies:
           - pip
           - pip:
             - --extra-index-url https://download.pytorch.org/whl/cu124
-            - databricks-cli < 0.100
-            - databricks-connect
             - milvus==2.3.5 # update to match pymilvus when available
             - pymilvus==2.3.6
             - torch==2.4.0+cu124
