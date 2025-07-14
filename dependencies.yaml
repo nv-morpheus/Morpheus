@@ -150,6 +150,7 @@ files:
       arch: [x86_64, aarch64]
     includes:
       - cve-mitigation
+      - databricks_example
       - example-abp-nvsmi
       - example-dfp-prod
       - example-gnn
@@ -333,6 +334,8 @@ dependencies:
           - isort
           - pylint=3.0.3
           - pynvml=11.4
+          # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
+          - setuptools>=75,<80
           - versioneer
           - yapf=0.43
     specific:
@@ -381,7 +384,7 @@ dependencies:
           # Include: cve-mitigation
           - appdirs
           - beautifulsoup4=4.12
-          - click>=8
+          - click==8.1 # 8.2 introcudes a behavior change that breaks some tests
           # - cuda-version=12.5 ##
           - cudf=24.10
           - cupy # Version determined from cudf
@@ -398,6 +401,7 @@ dependencies:
           - networkx=2.8.8
           - numba=0.60 # Pin version to avoid https://github.com/nv-morpheus/Morpheus/issues/2166
           - numpydoc=1.5
+          - numba=0.60.0
           - pydantic
           - python-confluent-kafka>=1.9.2,<1.10.0a0
           - python-graphviz
@@ -416,8 +420,6 @@ dependencies:
           - pip
           - pip:
             - &torch-extra-index --extra-index-url https://download.pytorch.org/whl/cu124
-            - databricks-cli < 0.100
-            - databricks-connect
     specific:
       - output_types: [conda]
         matrices:
@@ -588,6 +590,15 @@ dependencies:
                 - *newspaper3k
                 - *pypdfium2
 
+
+  databricks_example:
+    common:
+      - output_types: [conda]
+        packages:
+          - pip
+          - pip:
+            - databricks-cli < 0.100
+            - databricks-connect
 
   model-training-tuning:
     common:
