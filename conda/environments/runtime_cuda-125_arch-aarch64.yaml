@@ -11,7 +11,7 @@ channels:
 dependencies:
 - appdirs
 - beautifulsoup4=4.12
-- click>=8
+- click==8.1
 - cuda-cudart=12.5
 - cuda-nvrtc=12.5
 - cuda-nvtx=12.5
@@ -30,6 +30,7 @@ dependencies:
 - mrc=25.02
 - networkx=2.8.8
 - numba=0.60
+- numba=0.60.0
 - numpydoc=1.5
 - pip
 - pluggy=1.3
@@ -50,7 +51,5 @@ dependencies:
 - websockets
 - pip:
   - --extra-index-url https://download.pytorch.org/whl/cu124
-  - databricks-cli < 0.100
-  - databricks-connect
   - torch==2.4.0
 name: runtime_cuda-125_arch-aarch64
