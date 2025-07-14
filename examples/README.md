@@ -25,7 +25,7 @@ limitations under the License.
 * [Example Ransomware Detection Morpheus Pipeline for AppShield Data](./ransomware_detection/README.md)
 * [Root Cause Analysis Acceleration & Predictive Maintenance Example](./root_cause_analysis/README.md)
 * [SID Visualization Example](./sid_visualization/README.md)
-* [Data Loss Prevention (DLP) Pipeline using Morpheus](./data_loss_prevention/README.md)
+* [Data Loss Prevention (DLP) Pipeline](./data_loss_prevention/README.md)
 * Large Language Models (LLMs)
   * [Agents](./llm/agents/README.md)
   * [Completion](./llm/completion/README.md)
