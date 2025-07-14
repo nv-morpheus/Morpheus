@@ -114,7 +114,7 @@ The ONNX to TensorRT (TRT) conversion utility requires additional packages, whic
 conda env update --solver=libmamba -n morpheus --file conda/environments/model-utils_cuda-128_arch-$(arch).yaml
 ```
 
-Example usage of the ONNX to TRT conversion utility can be found in `models/README.md <https://github.com/nv-morpheus/Morpheus/blob/branch-25.06/models/README.md#generating-trt-models-from-onnx>`_.
+Example usage of the ONNX to TRT conversion utility can be found in `models/README.md <https://github.com/nv-morpheus/Morpheus/blob/branch-25.10/models/README.md#generating-trt-models-from-onnx>`_.
 
 AutoComplete
 ------------

@@ -308,7 +308,7 @@ dependencies:
           - libcudf=25.02
           - librdkafka=2.6.1
           - libzlib>=1.3.1,<1.4
-          - &mrc mrc=25.06
+          - &mrc mrc=25.10
           - nlohmann_json=3.11
           - pybind11-stubgen=0.10.5
           - pylibcudf=25.02
@@ -532,7 +532,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - morpheus-dfp=25.06
+          - morpheus-dfp=25.10
           - tini=0.19
           - pip:
             - *torch-extra-index

@@ -34,14 +34,14 @@ Pull the Morpheus Triton models Docker image from NGC.
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.10
 ```
 
 ##### Start Triton Inference Server Container
 From the Morpheus repo root directory, run the following to launch Triton and load the `log-parsing-onnx` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model log-parsing-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.10 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model log-parsing-onnx
 ```
 
 ##### Verify Model Deployment

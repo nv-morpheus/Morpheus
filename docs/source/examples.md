@@ -40,7 +40,7 @@ Morpheus supports multiple environments, each environment is intended to support
 
 In addition to this many of the examples utilize the Morpheus Triton Models container which can be obtained by running the following command:
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.10
 ```
 
 The following are the supported environments:

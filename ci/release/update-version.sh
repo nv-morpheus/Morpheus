@@ -85,7 +85,7 @@ sed_runner "s/mrc=${CURRENT_SHORT_TAG}/mrc=${NEXT_SHORT_TAG}/g" dependencies.yam
 sed_runner "s/morpheus-dfp=${CURRENT_SHORT_TAG}/morpheus-dfp=${NEXT_SHORT_TAG}/g" dependencies.yaml
 
 # Generate the environment files based upon the updated dependencies.yaml
-rapids-dependency-file-generator
+conda run -n base --live-stream rapids-dependency-file-generator
 
 # examples/digital_fingerprinting
 sed_runner "s/v${CURRENT_FULL_VERSION}-runtime/v${NEXT_FULL_VERSION}-runtime/g" \

@@ -11,7 +11,7 @@ channels:
 dependencies:
 - boto3=1.35
 - kfp
-- morpheus-dfp=25.06
+- morpheus-dfp=25.10
 - nodejs=18.*
 - papermill=2.6.0
 - pip

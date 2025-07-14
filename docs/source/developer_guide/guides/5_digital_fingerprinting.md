@@ -23,10 +23,10 @@ Every account, user, service, and machine has a digital fingerprint that represe
 To construct this digital fingerprint, we will be training unsupervised behavioral models at various granularities, including a generic model for all users in the organization along with fine-grained models for each user to monitor their behavior. These models are continuously updated and retrained over time​, and alerts are triggered when deviations from normality occur for any user​.
 
 ## Running the DFP Example
-Instructions for building and running the DFP example are available in the [`examples/digital_fingerprinting/production/README.md`](https://github.com/nv-morpheus/Morpheus/blob/branch-25.06/examples/digital_fingerprinting/production/README.md) guide in the Morpheus repository.
+Instructions for building and running the DFP example are available in the [`examples/digital_fingerprinting/production/README.md`](https://github.com/nv-morpheus/Morpheus/blob/branch-25.10/examples/digital_fingerprinting/production/README.md) guide in the Morpheus repository.
 
 ## Training Sources
-The data we will want to use for the training and inference will be any sensitive system that the user interacts with, such as VPN, authentication and cloud services. The digital fingerprinting example ([`examples/digital_fingerprinting/production/README.md`](https://github.com/nv-morpheus/Morpheus/blob/branch-25.06/examples/digital_fingerprinting/production/README.md)) included in Morpheus ingests logs from [Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-sign-ins), and [Duo Authentication](https://duo.com/docs/adminapi).
+The data we will want to use for the training and inference will be any sensitive system that the user interacts with, such as VPN, authentication and cloud services. The digital fingerprinting example ([`examples/digital_fingerprinting/production/README.md`](https://github.com/nv-morpheus/Morpheus/blob/branch-25.10/examples/digital_fingerprinting/production/README.md)) included in Morpheus ingests logs from [Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-sign-ins), and [Duo Authentication](https://duo.com/docs/adminapi).
 
 The location of these logs could be either local to the machine running Morpheus, a shared file system like NFS, or on a remote store such as [Amazon S3](https://aws.amazon.com/s3/).
 

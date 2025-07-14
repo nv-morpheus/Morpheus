@@ -140,7 +140,7 @@ NVIDIA believes Trustworthy AI is a shared responsibility and we have establishe
 * None
 
 ### Link the relevant end user license agreement
-* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-25.06/LICENSE)
+* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-25.10/LICENSE)
 
 ## Model Card ++ Safety & Security Subcard
 
