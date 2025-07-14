@@ -31,6 +31,7 @@ files:
       - cudatoolkit-dev
       - cve-mitigation
       - data_retrieval
+      - optional_databricks
       - development
       - docs
       - example-dfp-prod
@@ -158,7 +159,7 @@ files:
       - example-llms
       - python
       - runtime
-      - databricks_example
+      - optional_databricks
 
 
   # Dependencies which are needed to run the model generation scripts in the `models` directory.
@@ -378,7 +379,7 @@ dependencies:
         packages:
           - benchmark=1.8.3
 
-  databricks_example:
+  optional_databricks:
     common:
       - output_types: [conda]
         packages:    
