@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -136,7 +136,7 @@ jobs:
 
   test:
     name: Test
-    runs-on: linux-amd64-gpu-v100-latest-1
+    runs-on: linux-amd64-gpu-l4-latest-1
     # Consider lowering this back down to 60 minutes per https://github.com/nv-morpheus/Morpheus/issues/1948
     timeout-minutes: 90
     container:
