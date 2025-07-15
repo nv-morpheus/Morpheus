@@ -1,0 +1,4 @@
+auto_update_conda: False
+channels:
+  - rapidsai-nightly
+  - conda-forge
