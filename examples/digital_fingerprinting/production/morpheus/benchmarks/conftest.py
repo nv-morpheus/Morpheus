@@ -17,8 +17,8 @@ import glob
 import json
 from os import path
 
-from pynvml.smi import NVSMI_QUERY_GPU
-from pynvml.smi import nvidia_smi
+from pynvml_utils import nvidia_smi
+from pynvml_utils.smi import NVSMI_QUERY_GPU
 
 from benchmarks.test_bench_e2e_dfp_pipeline import PIPELINES_CONF
 
