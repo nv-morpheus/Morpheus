@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=$TARGETPLATFORM python:3.10-slim-buster
+FROM --platform=$TARGETPLATFORM python:3.12-slim-bullseye
 
 # Install curl for health check
 RUN apt update && \
@@ -24,7 +24,7 @@ RUN apt update && \
     rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
 # Install python packages
-RUN pip install "mlflow >=2.10.0,<3" boto3 pyyaml
+RUN pip install "mlflow >=2.18,<3" boto3 pyyaml
 
 # We run on port 5000
 EXPOSE 5000
