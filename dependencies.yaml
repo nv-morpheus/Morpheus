@@ -338,7 +338,7 @@ dependencies:
           - flake8
           - isort
           - pylint=3.0.3
-          - pynvml=12
+          - &pynvml pynvml=12
           # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
           - setuptools>=75,<80
           - versioneer
@@ -382,7 +382,7 @@ dependencies:
   optional_databricks:
     common:
       - output_types: [conda]
-        packages:    
+        packages:
           - pip
           - pip:
             - databricks-cli < 0.100
@@ -566,7 +566,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - pynvml=11.4
+          - *pynvml
 
   example-llms:
     common:

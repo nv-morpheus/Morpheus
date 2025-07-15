@@ -17,8 +17,8 @@ import glob
 import json
 from os import path
 
-from pynvml.smi import NVSMI_QUERY_GPU
-from pynvml.smi import nvidia_smi
+from pynvml_utils import nvidia_smi
+from pynvml_utils.smi import NVSMI_QUERY_GPU
 
 from benchmarks.test_bench_e2e_dfp_pipeline import PIPELINES_CONF
 
@@ -39,7 +39,6 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):  # pylint:dis
         query_opts["driver_version"],
         query_opts["count"],
         query_opts["index"],
-        query_opts["gpu_name"],
         query_opts["gpu_uuid"],
         query_opts["memory.total"],
         query_opts["memory.used"],
@@ -55,7 +54,6 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):  # pylint:dis
         gpu_num = gpu["minor_number"]
         output_json["machine_info"]["gpu_" + gpu_num] = {}
         output_json["machine_info"]["gpu_" + gpu_num]["id"] = gpu_num
-        output_json["machine_info"]["gpu_" + gpu_num]["name"] = gpu["product_name"]
         output_json["machine_info"][
             "gpu_" + gpu_num]["utilization"] = f"{gpu['utilization']['gpu_util']}{gpu['utilization']['unit']}"
         output_json["machine_info"][
