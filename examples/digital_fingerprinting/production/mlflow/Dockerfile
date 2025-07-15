@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=$TARGETPLATFORM python:3.10-slim-buster
+FROM --platform=$TARGETPLATFORM python:3.12-slim-bullseye
 
 # Install curl for health check
 RUN apt update && \
