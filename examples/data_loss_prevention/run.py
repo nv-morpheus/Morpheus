@@ -78,7 +78,7 @@ def load_regex_patterns(file_path: str | pathlib.Path) -> dict[str, list[str]]:
               help=("Input file to use, if specified, overrides the dataset option."))
 @click.option('--num_samples',
               type=int,
-              default=2000,
+              default=-1,
               show_default=True,
               help=("Number of samples to use from each dataset, ignored if --input_file is set, "
                     "set to -1 for all samples."))

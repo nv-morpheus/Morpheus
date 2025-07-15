@@ -39,6 +39,7 @@ class GliNERTritonInference:
         Path to the directory containing the GLiNER model files. Used for pre and post-processing.
     labels : list[str]
         List of entity labels to detect, this should match the named patterns used in the RegexProcessor stage.
+        Ignored if the `label_embedding.pt` file is present in the `model_source_dir`.
     onnx_path : str, default = "model.onnx"
         Path to the ONNX model file, relative to the `model_source_dir`. Default is "model.onnx".
     server_url : str, default = "localhost:8001"
@@ -74,7 +75,8 @@ class GliNERTritonInference:
         self._triton_model_name = triton_model_name
         self._gliner_threshold = gliner_threshold
         self._labels_embeddings: np.ndarray | None = None
-        self._labels: list[str] = labels
+        self._labels: list[str] | None = None
+        self._user_labels: list[str] = labels
         self._labels_file = os.path.join(model_source_dir, "label_embedding.pt")
         self._fallback_model_name = fallback_model_name
 
@@ -112,9 +114,9 @@ class GliNERTritonInference:
             label_data = torch.load(self._labels_file)
 
             labels_embeddings = label_data['embeddings']
-            if sorted(self._labels) != sorted(label_data['labels']):
-                raise ValueError("Label mismatch between model and label file.")
+            self._labels = label_data['labels']
         else:
+            self._labels = self._user_labels
             labels_embeddings = self.model.encode_labels(self._labels)
 
         self._labels_embeddings = labels_embeddings.cpu().numpy()
@@ -130,12 +132,23 @@ class GliNERTritonInference:
 
         return self._labels_embeddings
 
+    @property
+    def labels(self) -> list[str]:
+        """
+        Return the list of labels.
+        If not loaded, it will load from the specified file.
+        """
+        if self._labels is None:
+            self._load_label_data()
+
+        return self._labels
+
     def pre_process(self, texts):
         """
         Pre-process the data for the ONNX model.
         """
         # === 1. PRE-PROCESSING ===
-        model_input, raw_batch = self.model.prepare_model_inputs(texts, self._labels, prepare_entities=False)
+        model_input, raw_batch = self.model.prepare_model_inputs(texts, self.labels, prepare_entities=False)
 
         # Convert torch tensors to numpy for Triton
         onnx_inputs = [
@@ -189,6 +202,7 @@ class GliNERTritonInference:
                         result: tritonclient.InferResult,
                         error: tritonclient.InferenceServerException | None = None):
         if (error is not None):
+            logger.error("Triton inference failed: %s", error)
             raise error
 
         logits_np = result.as_numpy("output")
