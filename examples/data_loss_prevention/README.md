@@ -200,7 +200,7 @@ Options:
                                   This is useful for evaluation.
   --num_samples INTEGER           Number of samples to use from each dataset,
                                   ignored if --input_file is set, set to -1
-                                  for all samples.  [default: 2000]
+                                  for all samples.  [default: -1]
   --repeat INTEGER                Repeat the input dataset, useful for
                                   testing. A value of 1 means no repeat.
                                   [default: 1]
