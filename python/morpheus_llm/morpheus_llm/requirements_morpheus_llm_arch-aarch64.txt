@@ -9,7 +9,6 @@ langchain-openai==0.1.3
 langchain==0.1.16
 marshmallow>=3.18,<4.0
 milvus==2.3.5
-nemollm==0.3.5
 openai==1.13.*
 pymilvus==2.3.6
 torch==2.4.0

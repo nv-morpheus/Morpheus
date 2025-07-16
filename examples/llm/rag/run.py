@@ -54,8 +54,8 @@ def run():
     "--model_name",
     required=True,
     type=str,
-    default='gpt-43b-002',
-    help="The name of the large language model that is deployed on Triton server",
+    default='gpt-3.5-turbo',
+    help="The name of the large language model to use.",
 )
 @click.option(
     "--vdb_resource_name",
@@ -72,8 +72,8 @@ def run():
 )
 @click.option(
     "--llm_service",
-    default="NemoLLM",
-    type=click.Choice(['NemoLLM', 'OpenAI'], case_sensitive=False),
+    default="OpenAI",
+    type=click.Choice(['OpenAI'], case_sensitive=False),
     help="LLM service to issue requests to, should be used in conjunction with --model_name.",
 )
 @click.option(

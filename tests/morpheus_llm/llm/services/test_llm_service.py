@@ -22,7 +22,6 @@ import pytest
 
 from morpheus_llm.llm.services.llm_service import LLMClient
 from morpheus_llm.llm.services.llm_service import LLMService
-from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus_llm.llm.services.nvfoundation_llm_service import NVFoundationLLMService
 from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
 
@@ -34,7 +33,7 @@ def test_is_abstract(cls: ABC):
 
 @pytest.mark.usefixtures("restore_environ")
 @pytest.mark.parametrize("service_name, expected_cls, env_values",
-                         [("nemo", NeMoLLMService, {}), ("openai", OpenAIChatService, {
+                         [("openai", OpenAIChatService, {
                              'OPENAI_API_KEY': 'test_api'
                          }),
                           pytest.param("nvfoundation", NVFoundationLLMService, {'NVIDIA_API_KEY': 'test_api'})])
@@ -46,10 +45,17 @@ def test_create(service_name: str, expected_cls: type, env_values: dict[str, str
     assert isinstance(service, expected_cls)
 
 
+def test_nemo_llm_service_create_not_supported():
+    """
+    Test that NeMoLLMService raises an error when trying to create a client.
+    """
+    with pytest.raises(RuntimeError, match=".*no longer supported.*"):
+        LLMService.create("nemo")
+
+
 @pytest.mark.parametrize(
     "service_name, class_name",
-    [("nemo", "morpheus_llm.llm.services.nemo_llm_service.NeMoLLMService"),
-     ("openai", "morpheus_llm.llm.services.openai_chat_service.OpenAIChatService"),
+    [("openai", "morpheus_llm.llm.services.openai_chat_service.OpenAIChatService"),
      ("nvfoundation", "morpheus_llm.llm.services.nvfoundation_llm_service.NVFoundationLLMService")])
 def test_create_mocked(service_name: str, class_name: str):
     with mock.patch(class_name) as mock_cls:

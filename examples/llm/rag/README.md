@@ -131,16 +131,9 @@ pipeline option of `rag`:
 
 ### Run example (Standalone Pipeline):
 
-**Using NGC NeMo LLMs**
-
-```bash
-export NGC_API_KEY=[YOUR_KEY_HERE]
-python examples/llm/main.py rag pipeline
-```
-
 **Using OpenAI LLM models**
 
 ```bash
 export OPENAI_API_KEY=[YOUR_KEY_HERE]
-python examples/llm/main.py rag pipeline --llm_service=OpenAI --model_name=gpt-3.5-turbo
+python examples/llm/main.py rag pipeline
 ```
