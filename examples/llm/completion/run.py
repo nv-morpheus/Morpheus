@@ -53,9 +53,9 @@ def run():
     help="Number of times to repeat the input query. Useful for testing performance.",
 )
 @click.option("--llm_service",
-              default="NemoLLM",
+              default="OpenAI",
               type=click.Choice(['NemoLLM', 'OpenAI'], case_sensitive=False),
-              help="LLM service to issue requests to.")
+              help="LLM service to issue requests to. Currently `NemoLLM` is not supported.")
 @click.option(
     "--input_file",
     type=click.Path(exists=True, readable=True),

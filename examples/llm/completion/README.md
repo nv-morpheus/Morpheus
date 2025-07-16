@@ -136,8 +136,8 @@ python examples/llm/main.py completion [OPTIONS] COMMAND [ARGS]...
     - **Default**: `64`
 
 - `--llm_service [NemoLLM|OpenAI]`
-    - **Description**: LLM service to issue requests to.
-    - **Default**: `NemoLLM`
+    - **Description**: LLM service to issue requests to. Currently `NemoLLM` is not supported.
+    - **Default**: `OpenAI`
 
 - `--help`
     - **Description**: Show the help message with options and commands details.
