@@ -108,7 +108,6 @@ dependencies:
 - rapids-dask-dependency=25.02
 - rdma-core>=48
 - requests-cache=1.1
-- requests-toolbelt=1.0
 - requests>=2.32.3,<3
 - s3fs=2024.10
 - scikit-build=0.17.6
@@ -148,7 +147,6 @@ dependencies:
   - langchain==0.1.16
   - marshmallow>=3.18,<4.0
   - milvus==2.3.5
-  - nemollm==0.3.5
   - nvidia-sphinx-theme>=0.0.7
   - pymilvus==2.3.6
   - pytest-kafka[kafka-python-ng]>=0.8,<0.9
