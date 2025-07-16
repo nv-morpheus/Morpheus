@@ -54,8 +54,8 @@ def run():
     "--model_name",
     required=True,
     type=str,
-    default='all-MiniLM-L6-v2',
-    help="The name of the large language model that is deployed on Triton server",
+    default='gpt-3.5-turbo',
+    help="The name of the large language model to use.",
 )
 @click.option(
     "--vdb_resource_name",
