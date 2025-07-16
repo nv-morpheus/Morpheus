@@ -21,14 +21,6 @@ import pytest
 from _utils import require_env_variable
 
 
-@pytest.fixture(name="nemollm", scope='session', autouse=True)
-def nemollm_fixture(nemollm: types.ModuleType):
-    """
-    Fixture to ensure nemollm is installed
-    """
-    yield nemollm
-
-
 @pytest.fixture(name="openai", scope='session', autouse=True)
 def openai_fixture(openai: types.ModuleType):
     """
@@ -125,16 +117,6 @@ def capital_responses_fixture(countries: list[str], capitals: list[str]):
     yield responses
 
 
-@pytest.fixture(name="ngc_api_key", scope='session')
-def ngc_api_key_fixture():
-    """
-    Integration tests require an NGC API key.
-    """
-    yield require_env_variable(
-        varname="NGC_API_KEY",
-        reason="nemo integration tests require the `NGC_API_KEY` environment variable to be defined.")
-
-
 @pytest.fixture(name="openai_api_key", scope='session')
 def openai_api_key_fixture():
     """
@@ -153,37 +135,3 @@ def serpapi_api_key_fixture():
     yield require_env_variable(
         varname="SERPAPI_API_KEY",
         reason="serpapi integration tests require the `SERPAPI_API_KEY` environment variable to be defined.")
-
-
-@pytest.mark.usefixtures("nemollm")
-@pytest.fixture(name="mock_nemollm")
-def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
-
-    from concurrent.futures import Future
-
-    def generate_mock(*_, **kwargs):
-
-        fut = Future()
-
-        fut.set_result(kwargs["prompt"])
-
-        return fut
-
-    mock_nemollm.generate.side_effect = generate_mock
-
-    def generate_multiple_mock(*_, **kwargs):
-
-        assert kwargs["return_type"] == "text", "Only text return type is supported for mocking."
-
-        prompts: list[str] = kwargs["prompts"]
-
-        # Raise a runtime error if the prompt contains the word "error"
-        for p in prompts:
-            if ("error" in p):
-                raise RuntimeError("unittest")
-
-        return list(prompts)
-
-    mock_nemollm.generate_multiple.side_effect = generate_multiple_mock
-
-    yield mock_nemollm

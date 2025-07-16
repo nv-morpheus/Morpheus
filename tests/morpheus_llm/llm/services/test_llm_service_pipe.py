@@ -29,7 +29,6 @@ from morpheus_llm.llm import LLMEngine
 from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
 from morpheus_llm.llm.nodes.llm_generate_node import LLMGenerateNode
 from morpheus_llm.llm.services.llm_service import LLMClient
-from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
 from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
@@ -66,20 +65,6 @@ def _run_pipeline(config: Config, llm_client: LLMClient, country_prompts: list[s
     pipe.run()
 
     assert_results(sink.get_results())
-
-
-def test_completion_pipe_nemo(config: Config,
-                              mock_nemollm: mock.MagicMock,
-                              country_prompts: list[str],
-                              capital_responses: list[str]):
-    mock_nemollm.post_process_generate_response.side_effect = [{"text": response} for response in capital_responses]
-
-    # Set a dummy key to bypass the API key check
-    with set_env(NGC_API_KEY="test"):
-
-        llm_client = NeMoLLMService().get_client(model_name="test_model")
-
-        _run_pipeline(config, llm_client, country_prompts, capital_responses)
 
 
 def test_completion_pipe_openai(config: Config,
