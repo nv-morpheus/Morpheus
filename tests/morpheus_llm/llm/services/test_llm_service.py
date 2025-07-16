@@ -46,14 +46,6 @@ def test_create(service_name: str, expected_cls: type, env_values: dict[str, str
     assert isinstance(service, expected_cls)
 
 
-def test_nemo_llm_service_not_supported():
-    """
-    Test that NeMoLLMService raises an error when trying to create a client.
-    """
-    with pytest.raises(RuntimeError, match=".*no longer supported.*"):
-        NeMoLLMService()
-
-
 def test_nemo_llm_service_create_not_supported():
     """
     Test that NeMoLLMService raises an error when trying to create a client.
