@@ -24,13 +24,6 @@ from morpheus_llm.llm.services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
-IMPORT_EXCEPTION = None
-
-try:
-    import nemollm
-except ImportError as import_exc:
-    IMPORT_EXCEPTION = import_exc
-
 
 class NeMoLLMClient(LLMClient):
     """
@@ -49,8 +42,8 @@ class NeMoLLMClient(LLMClient):
     """
 
     def __init__(self, parent: "NeMoLLMService", *, model_name: str, **model_kwargs) -> None:
-        if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='nemollm')) from IMPORT_EXCEPTION
+        raise RuntimeError("NeMoLLM is no longer supported, this class will be removed in future releases of Morpheus. "
+                           "Refer to https://github.com/nv-morpheus/Morpheus/issues/2266 for more details.")
 
         super().__init__()
 
@@ -237,8 +230,8 @@ class NeMoLLMService(LLMService):
 
         """
 
-        if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='nemollm')) from IMPORT_EXCEPTION
+        raise RuntimeError("NeMoLLM is no longer supported, this class will be removed in future releases of Morpheus. "
+                           "Refer to https://github.com/nv-morpheus/Morpheus/issues/2266 for more details.")
 
         super().__init__()
 
