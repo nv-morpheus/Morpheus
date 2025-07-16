@@ -18,11 +18,14 @@ import typing
 import warnings
 
 from morpheus.utils.env_config_value import EnvConfigValue
-from morpheus_llm.error import IMPORT_ERROR_MESSAGE
 from morpheus_llm.llm.services.llm_service import LLMClient
 from morpheus_llm.llm.services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
+
+# NemoLLM is no longer supported, this class will be removed in future releases of Morpheus.
+# flake8: noqa: F821
+# pylint: disable=undefined-variable,unreachable
 
 
 class NeMoLLMClient(LLMClient):

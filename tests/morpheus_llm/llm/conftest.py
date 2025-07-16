@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import types
-from unittest import mock
 
 import pytest
 
