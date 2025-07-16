@@ -54,8 +54,8 @@ def run():
 )
 @click.option("--llm_service",
               default="OpenAI",
-              type=click.Choice(['NemoLLM', 'OpenAI'], case_sensitive=False),
-              help="LLM service to issue requests to. Currently `NemoLLM` is not supported.")
+              type=click.Choice(['OpenAI'], case_sensitive=False),
+              help="LLM service to issue requests to.")
 @click.option(
     "--input_file",
     type=click.Path(exists=True, readable=True),

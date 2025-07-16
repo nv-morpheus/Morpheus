@@ -135,8 +135,8 @@ python examples/llm/main.py completion [OPTIONS] COMMAND [ARGS]...
     - **Description**: Number of times to repeat the input query. Useful for testing performance.
     - **Default**: `64`
 
-- `--llm_service [NemoLLM|OpenAI]`
-    - **Description**: LLM service to issue requests to. Currently `NemoLLM` is not supported.
+- `--llm_service [OpenAI]`
+    - **Description**: LLM service to issue requests to.
     - **Default**: `OpenAI`
 
 - `--help`
@@ -145,5 +145,5 @@ python examples/llm/main.py completion [OPTIONS] COMMAND [ARGS]...
 ### Running Morpheus Pipeline with OpenAI LLM service
 
 ```bash
-python examples/llm/main.py completion pipeline --llm_service OpenAI
+python examples/llm/main.py completion pipeline
 ```

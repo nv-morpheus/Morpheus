@@ -73,7 +73,7 @@ def run():
 @click.option(
     "--llm_service",
     default="OpenAI",
-    type=click.Choice(['NemoLLM', 'OpenAI'], case_sensitive=False),
+    type=click.Choice(['OpenAI'], case_sensitive=False),
     help="LLM service to issue requests to, should be used in conjunction with --model_name.",
 )
 @click.option(
