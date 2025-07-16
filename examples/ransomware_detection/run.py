@@ -42,7 +42,7 @@ CUR_DIR = os.path.dirname(__file__)
 @click.option('--debug', default=False)
 @click.option(
     "--num_threads",
-    default=len(os.sched_getaffinity(0)),
+    default=16,
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use.",
 )
