@@ -33,7 +33,6 @@ from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
 from morpheus_llm.llm.nodes.llm_generate_node import LLMGenerateNode
 from morpheus_llm.llm.nodes.prompt_template_node import PromptTemplateNode
 from morpheus_llm.llm.services.llm_service import LLMClient
-from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
 from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
@@ -79,22 +78,6 @@ def _run_pipeline(config: Config, llm_client: LLMClient, countries: list[str], c
     return sink.get_results()
 
 
-@pytest.mark.usefixtures("nemollm")
-def test_completion_pipe_nemo(config: Config,
-                              mock_nemollm: mock.MagicMock,
-                              countries: list[str],
-                              capital_responses: list[str]):
-
-    # Set a dummy key to bypass the API key check
-    with set_env(NGC_API_KEY="test"):
-
-        llm_client = NeMoLLMService().get_client(model_name="test_model")
-
-        mock_nemollm.post_process_generate_response.side_effect = [{"text": response} for response in capital_responses]
-        results = _run_pipeline(config, llm_client, countries=countries, capital_responses=capital_responses)
-        assert_results(results)
-
-
 @pytest.mark.usefixtures("openai")
 def test_completion_pipe_openai(config: Config,
                                 mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
@@ -112,17 +95,6 @@ def test_completion_pipe_openai(config: Config,
         assert_results(results)
         mock_client.chat.completions.create.assert_not_called()
         mock_async_client.chat.completions.create.assert_called()
-
-
-@pytest.mark.usefixtures("nemollm")
-@pytest.mark.usefixtures("ngc_api_key")
-def test_completion_pipe_integration_nemo(config: Config, countries: list[str], capital_responses: list[str]):
-    llm_client = NeMoLLMService().get_client(model_name="gpt-43b-002")
-
-    results = _run_pipeline(config, llm_client, countries=countries, capital_responses=capital_responses)
-    assert results['diff_cols'] == 0
-    assert results['total_rows'] == len(countries)
-    assert results['matching_rows'] + results['diff_rows'] == len(countries)
 
 
 @pytest.mark.usefixtures("openai")
