@@ -47,6 +47,12 @@ Save the Morpheus repo directory:
 export MORPHEUS_ROOT=$(git rev-parse --show-toplevel)
 ```
 
+Ensure the data has been downloaded:
+```bash
+git lfs install
+./scripts/fetch_data.py fetch examples
+```
+
 Change to the example directory:
 ```bash
 cd ${MORPHEUS_ROOT}/examples/sid_visualization
@@ -78,12 +84,6 @@ BUILD_DIR=build-docker ./scripts/compile.sh
 Verify Morpheus is installed:
 ```bash
 morpheus --version
-```
-
-Ensure the data has been downloaded:
-```bash
-git lfs install
-./scripts/fetch_data.py fetch examples
 ```
 
 ***Keep this shell in the Morpheus Dev container running. It will be used later to start Morpheus.***
