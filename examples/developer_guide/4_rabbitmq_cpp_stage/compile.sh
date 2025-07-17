@@ -17,6 +17,9 @@
 set -x
 set -e
 
+export CUR_DIR=${CUR_DIR:-"$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"}
+cd ${CUR_DIR}
+
 # Optionally can set INSTALL_PREFIX to build and install to a specific directory. Also causes cmake install to run
 BUILD_DIR=${BUILD_DIR:-"build"}
 
