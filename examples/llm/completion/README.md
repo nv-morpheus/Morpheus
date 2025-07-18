@@ -48,7 +48,7 @@ The primary goal of this example is to showcase the creation of a pipeline that 
 
 #### LLM Service
 
-- The pipeline is designed to support any LLM service that adheres to our LLMService interface. Compatible services include OpenAI, NeMo, or even local execution using llama-cpp-python. In this demonstration, we focus on utilizing NeMo as the LLM service, highlighting the advantages it offers over other LLM services and the seamless integration with the NeMo ecosystem. Furthermore, the pipeline can accommodate more complex configurations using NeMo + Inform without necessitating changes to the core pipeline.
+- The pipeline is designed to support any LLM service that adheres to our LLMService interface. Compatible services include OpenAI, or even local execution using llama-cpp-python.
 
 #### Downstream Tasks
 
@@ -71,7 +71,7 @@ This example Morpheus pipeline is built using the following components:
 
 ### Prerequisites
 
-Before running the pipeline, ensure that the `NGC_API_KEY` environment variable is set.
+Before running the pipeline, ensure that the `OPENAI_API_KEY` environment variable is set.
 
 #### Install Dependencies
 
@@ -81,20 +81,6 @@ Install the required dependencies.
 conda env update --solver=libmamba \
   -n ${CONDA_DEFAULT_ENV} \
   --file ./conda/environments/examples_cuda-128_arch-$(arch).yaml
-```
-
-
-#### Setting up NGC API Key
-
-For this example, we utilize the NeMo Service within NGC. To gain access, an NGC API key is required. Follow the
-instructions outlined [here](https://docs.nvidia.com/ngc/gpu-cloud/ngc-user-guide/index.html#generating-api-key) to
-generate your NGC API key.
-
-Configure the following environment variables, with NGC_ORG_ID being optional:
-
-```bash
-export NGC_API_KEY=<YOUR_API_KEY>
-export NGC_ORG_ID=<YOUR_NGC_ORG_ID>
 ```
 
 ### Running the Morpheus Pipeline
