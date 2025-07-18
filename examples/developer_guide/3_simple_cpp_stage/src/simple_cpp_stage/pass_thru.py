@@ -53,9 +53,8 @@ class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        if self._build_cpp_node() and isinstance(self._input_type, ControlMessage):
+        if self._build_cpp_node() and issubclass(self._input_type, ControlMessage):
             from ._lib import pass_thru_cpp
-
             node = pass_thru_cpp.PassThruStage(builder, self.unique_name)
         else:
             node = builder.make_node(self.unique_name, ops.map(self.on_data))
