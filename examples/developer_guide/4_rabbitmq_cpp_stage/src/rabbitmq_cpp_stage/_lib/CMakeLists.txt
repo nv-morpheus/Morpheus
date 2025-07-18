@@ -15,6 +15,12 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "rabbitmq_cpp_stage")
 
+if(PROJECT_IS_TOPLEVEL)
+  find_library(MORPHEUS morpheus REQUIRED)
+else()
+  set(MORPHEUS morpheus)
+endif()
+
 morpheus_add_pybind11_module(rabbitmq_cpp_stage
   SOURCE_FILES
     "rabbitmq_source.cpp"
@@ -22,7 +28,7 @@ morpheus_add_pybind11_module(rabbitmq_cpp_stage
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     ${SimpleAmqpClient_SOURCE_DIR}/src
   LINK_TARGETS
-    morpheus
+    ${MORPHEUS}
     CUDA::nvtx3
     cudf::cudf
     glog::glog

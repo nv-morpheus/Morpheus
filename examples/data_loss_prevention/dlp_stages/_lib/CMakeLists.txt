@@ -15,13 +15,19 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "dlp_regex_processor")
 
+if(PROJECT_IS_TOPLEVEL)
+  find_library(MORPHEUS morpheus REQUIRED)
+else()
+  set(MORPHEUS morpheus)
+endif()
+
 morpheus_add_pybind11_module(regex_processor
   SOURCE_FILES
     "regex_processor.cpp"
   INCLUDE_DIRS
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   LINK_TARGETS
-    morpheus
+    ${MORPHEUS}
     CUDA::nvtx3
     cudf::cudf
     glog::glog
