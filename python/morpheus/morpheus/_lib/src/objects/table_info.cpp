@@ -65,9 +65,13 @@ TableInfoData get_table_info_data_slice(const TableInfoData& table,
         stop = table.table_view.num_rows();
     }
 
-    CHECK_GT(stop, 0) << "Stop must be > 0";
-    CHECK_LE(stop, table.table_view.num_rows()) << "Stop must be less than the number of rows";
-    CHECK_LE(start, stop) << "Start must be less than stop";
+    // Allow for empty slices
+    if (!(start == 0 && stop == 0))
+    {
+        CHECK_GT(stop, 0) << "Stop must be > 0";
+        CHECK_LE(stop, table.table_view.num_rows()) << "Stop must be less than the number of rows";
+        CHECK_LE(start, stop) << "Start must be less than stop";
+    }
 
     if (column_names.empty())
     {
