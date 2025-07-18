@@ -83,20 +83,6 @@ conda env update --solver=libmamba \
   --file ./conda/environments/examples_cuda-128_arch-$(arch).yaml
 ```
 
-
-#### Setting up NGC API Key
-
-For this example, we utilize the NeMo Service within NGC. To gain access, an NGC API key is required. Follow the
-instructions outlined [here](https://docs.nvidia.com/ngc/gpu-cloud/ngc-user-guide/index.html#generating-api-key) to
-generate your NGC API key.
-
-Configure the following environment variables, with NGC_ORG_ID being optional:
-
-```bash
-export NGC_API_KEY=<YOUR_API_KEY>
-export NGC_ORG_ID=<YOUR_NGC_ORG_ID>
-```
-
 ### Running the Morpheus Pipeline
 
 The top level entrypoint to each of the LLM example pipelines is `examples/llm/main.py`. This script accepts a set
