@@ -15,7 +15,11 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "dlp_regex_processor")
 
-find_library(MORPHEUS morpheus REQUIRED)
+if(PROJECT_IS_TOPLEVEL)
+  find_library(MORPHEUS morpheus REQUIRED)
+else()
+  set(MORPHEUS morpheus)
+endif()
 
 morpheus_add_pybind11_module(regex_processor
   SOURCE_FILES
