@@ -48,7 +48,7 @@ The primary goal of this example is to showcase the creation of a pipeline that 
 
 #### LLM Service
 
-- The pipeline is designed to support any LLM service that adheres to our LLMService interface. Compatible services include OpenAI, NeMo, or even local execution using llama-cpp-python. In this demonstration, we focus on utilizing NeMo as the LLM service, highlighting the advantages it offers over other LLM services and the seamless integration with the NeMo ecosystem. Furthermore, the pipeline can accommodate more complex configurations using NeMo + Inform without necessitating changes to the core pipeline.
+- The pipeline is designed to support any LLM service that adheres to our LLMService interface. Compatible services include OpenAI, or even local execution using llama-cpp-python.
 
 #### Downstream Tasks
 
@@ -71,7 +71,7 @@ This example Morpheus pipeline is built using the following components:
 
 ### Prerequisites
 
-Before running the pipeline, ensure that the `NGC_API_KEY` environment variable is set.
+Before running the pipeline, ensure that the `OPENAI_API_KEY` environment variable is set.
 
 #### Install Dependencies
 
