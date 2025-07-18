@@ -37,7 +37,12 @@ from ..common.utils import build_milvus_service
 logger = logging.getLogger(__name__)
 
 
-def _build_engine(model_name: str, vdb_resource_name: str, llm_service: str, embedding_size: int):
+def _build_engine(model_name: str,
+                  vdb_resource_name: str,
+                  llm_service: str,
+                  llm_base_url: str,
+                  llm_api_key: str | None,
+                  embedding_size: int):
 
     engine = LLMEngine()
 
@@ -69,7 +74,12 @@ Please answer the following question: \n{{ query }}"""
                                               model_kwargs={'device': 'cuda'},
                                               encode_kwargs={'batch_size': 100})
 
-    llm_service = build_llm_service(model_name, llm_service=llm_service, temperature=0.5, tokens_to_generate=200)
+    llm_service = build_llm_service(model_name,
+                                    llm_service=llm_service,
+                                    base_url=llm_base_url,
+                                    api_key=llm_api_key,
+                                    temperature=0.5,
+                                    tokens_to_generate=4096)
 
     # Async wrapper around embeddings
     async def calc_embeddings(texts: list[str]) -> list[list[float]]:
@@ -94,6 +104,8 @@ def standalone(num_threads,
                vdb_resource_name,
                repeat_count,
                llm_service: str,
+               llm_base_url: str,
+               llm_api_key: str | None,
                embedding_size: int,
                question: list[str]):
     config = Config()
@@ -122,6 +134,8 @@ def standalone(num_threads,
                        engine=_build_engine(model_name=model_name,
                                             vdb_resource_name=vdb_resource_name,
                                             llm_service=llm_service,
+                                            llm_base_url=llm_base_url,
+                                            llm_api_key=llm_api_key,
                                             embedding_size=embedding_size)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
