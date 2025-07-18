@@ -85,9 +85,8 @@ def run():
     envvar='NVIDIA_API_KEY',
     type=str,
     default=None,
-    help=
-    "API key for the LLM service, if unset the value of ${NVIDIA_API_KEY} will be used. Must be compatible with --llm_service ."
-)
+    help=("API key for the LLM service, if unset the value of the `NVIDIA_API_KEY` environment variable will be used. "
+          "Must be compatible with --llm_service ."))
 @click.option(
     "--question",
     type=str,
