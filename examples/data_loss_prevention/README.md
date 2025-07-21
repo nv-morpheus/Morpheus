@@ -26,7 +26,7 @@ All environments require additional Conda packages which can be installed with e
 | Conda | ✔ | |
 | Morpheus Docker Container | ✔ |  |
 | Morpheus Release Container | ✔ |  |
-| Dev Container | ✔ |  |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script to start Triton and adding the `--server_url=triton:8001` flag to the `run.py` command. |
 
 ### Supported Architectures
 | Architecture | Supported | Issue |
