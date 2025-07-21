@@ -19,7 +19,7 @@
 # This will store all of the cmake args. Make sure to prepend args to allow
 # incoming values to overwrite them
 
-source $RECIPE_DIR/../cmake_common.sh
+source $RECIPE_DIR/cmake_common.sh
 
 CMAKE_ARGS=${CMAKE_ARGS:-""}
 
