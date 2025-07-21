@@ -52,7 +52,7 @@
   "postAttachCommand": [
     "/bin/bash",
     "-c",
-    "if [ ${CODESPACES:-false} = 'true' ]; then . devcontainer-utils-post-attach-command; . rapids-post-attach-command; fi"
+    "if [ ${CODESPACES:-false} = 'true' ]; then . devcontainer-utils-post-attach-command; . rapids-post-attach-command; fi; /home/coder/morpheus/.devcontainer/unset-safepath.sh"
   ],
   "workspaceFolder": "/home/coder",
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/coder/morpheus,type=bind,consistency=consistent",
