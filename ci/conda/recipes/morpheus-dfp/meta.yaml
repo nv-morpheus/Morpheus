@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This recipe splits into packages - morpheus-core, morpheus-dfp and morpheus-llm
+{% set version = environ.get('GIT_VERSION', '0.0.0.dev').lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
+{% set minor_version =  version.split('.')[0] + '.' + version.split('.')[1] %}
+
+package:
+  name: morpheus-split
+  version: {{ version }}
+
+source:
+  git_url: ../../../..
+
+outputs:
+
+  ############################### morpheus-dfp #############################
+  - name: morpheus-dfp
+    type: conda_v2
+    build:
+      number: {{ GIT_DESCRIBE_NUMBER }}
+      string: cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
+      script_env:
+        - CMAKE_CUDA_ARCHITECTURES
+        - MORPHEUS_CACHE_DIR
+        - MORPHEUS_PYTHON_BUILD_STUBS
+        - PARALLEL_LEVEL
+      run_exports:
+        - {{ pin_subpackage("morpheus-dfp", max_pin="x.x") }}
+    script: morpheus_dfp_build.sh
+
+    requirements:
+      build:
+        - {{ compiler("c") }}
+        - {{ compiler("cuda") }}
+        - {{ compiler("cxx") }}
+        - ccache
+        - cmake =3.27
+        - ninja =1.11
+        - pkg-config =0.29
+      host:
+        # cuda version is pinned here. without this the resolver pulls
+        # in versions that are not compatible with morpheus-core
+        - cuda-cudart-dev {{ cuda_compiler_version }}.*
+        - cuda-version {{ cuda_compiler_version }}.*
+        - morpheus-core {{ version}}
+        - pip
+        - python {{ python }}
+        - scikit-build 0.17.6
+        # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
+        - setuptools>=75,<80
+        - versioneer-518
+      run:
+        - morpheus-core {{ version}}
+
+    test:
+      imports:
+        - morpheus_dfp
+      requires:
+        - cuml {{ rapids_version }}.*
+        - pynvml
+        - pytest-asyncio
+        - pytest-benchmark
+        - pytest-cov
+        - pytest =7.4.4
+      source_files:
+        - dependencies.yaml
+        - pyproject.toml
+        - scripts/fetch_data.py
+        - tests/*
+      script: morpheus_dfp_test.sh
+
+
+about:
+  home: https://github.com/nv-morpheus/Morpheus
+  license: Apache-2.0
+  license_family: Apache
+  license_file: LICENSE
+  summary: Morpheus Cybersecurity Library
