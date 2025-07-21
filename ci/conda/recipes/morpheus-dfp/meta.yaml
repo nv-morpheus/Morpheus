@@ -55,7 +55,7 @@ outputs:
         # in versions that are not compatible with morpheus-core
         - cuda-cudart-dev {{ cuda_compiler_version }}.*
         - cuda-version {{ cuda_compiler_version }}.*
-        - morpheus-core {{ version}}
+        - morpheus-core={{ version }}=cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
         - pip
         - python {{ python }}
         - scikit-build 0.17.6
@@ -63,7 +63,7 @@ outputs:
         - setuptools>=75,<80
         - versioneer-518
       run:
-        - morpheus-core {{ version}}
+        - morpheus-core={{ version }}=cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
 
     test:
       imports:

@@ -55,7 +55,7 @@ outputs:
         # in versions that are not compatible with morpheus-core
         - cuda-cudart-dev {{ cuda_compiler_version }}.*
         - cuda-version {{ cuda_compiler_version }}.*
-        - morpheus-core {{ version}}
+        - morpheus-core={{ version }}=cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
         - cython 3.0.*
         - glog >=0.7.1,<0.8
         - pip
@@ -68,7 +68,7 @@ outputs:
         - versioneer-518
         - zlib >=1.3.1,<2 # required to build triton client
       run:
-        - morpheus-core {{ version}}
+        - morpheus-core={{ version }}=cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
 
     test:
       imports:
