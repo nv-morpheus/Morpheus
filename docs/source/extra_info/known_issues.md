@@ -26,7 +26,7 @@ limitations under the License.
 - Build errors after a CMake reconfigure, work-around is to delete the `build` directory and re-run CMake ([#2279](https://github.com/nv-morpheus/Morpheus/issues/2279)).
 - C++ examples fail to build inside the release container on AArch64 ([#2276](https://github.com/nv-morpheus/Morpheus/issues/2276)).
 - DOCA Builds failing inside devcontainer ([#2285](https://github.com/nv-morpheus/Morpheus/issues/2285))
-- Python stubgen failing for C++ examples inside devcontainer ([#2287](https://github.com/nv-morpheus/Morpheus/issues/2287)), the actual build succeeds, and code is functional, but the Python stub files are not generated.
+- Python `stubgen` failing for C++ examples inside devcontainer ([#2287](https://github.com/nv-morpheus/Morpheus/issues/2287)), the actual build succeeds, and code is functional, but the Python stub files are not generated.
 
 
 Refer to [open issues in the Morpheus project](https://github.com/nv-morpheus/Morpheus/issues)
