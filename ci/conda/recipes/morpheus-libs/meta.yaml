@@ -70,8 +70,8 @@ outputs:
         - librdkafka =2.6.1
         # Listing mlflow in the host dependencies so that it solves along with libgcc this avoids an
         # incompatible runtime environment
-        - mlflow>=2.18
-        - mrc {{ minor_version }}
+        - &mlflow mlflow>=2.18
+        - &mrc mrc {{ minor_version }}
         - nlohmann_json 3.11.*
         - pip
         - pybind11-stubgen 0.10.5
@@ -98,8 +98,8 @@ outputs:
         - feedparser =6.0.*
         - grpcio =1.62.*
         - lxml
-        - mlflow
-        - mrc
+        - *mlflow
+        - *mrc
         - networkx=2.8.8
         - numba=0.60 # Pin version to avoid https://github.com/nv-morpheus/Morpheus/issues/2166
         - numpydoc =1.5.*
