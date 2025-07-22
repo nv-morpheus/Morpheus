@@ -15,7 +15,7 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "rabbitmq_cpp_stage")
 
-if(PROJECT_IS_TOPLEVEL)
+if(PROJECT_IS_TOP_LEVEL)
   find_library(MORPHEUS morpheus REQUIRED)
 else()
   set(MORPHEUS morpheus)
