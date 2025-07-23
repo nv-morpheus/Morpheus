@@ -208,7 +208,7 @@ The output file `.tmp/output/nlp_si_detections.jsonlines` will contain the origi
 * `secret_keys`
 * `user`
 
-The value for these fields will be a `1` indicating a detection or a `0` indicating no detection. An example row with a detection is:
+The value for these fields will be a `true` indicating a detection or `false` indicating no detection. An example row with a detection is:
 ```json
 {
   "timestamp": 1616381019580,
@@ -224,15 +224,15 @@ The value for these fields will be a `1` indicating a detection or a `0` indicat
   "dest_port": "80",
   "flags": "24",
   "is_pii": false,
-  "address": 0,
-  "bank_acct": 0,
-  "credit_card": 0,
-  "email": 0,
-  "govt_id": 0,
-  "name": 0,
-  "password": 0,
-  "phone_num": 0,
-  "secret_keys": 1,
-  "user": 0
+  "address": false,
+  "bank_acct": false,
+  "credit_card": false,
+  "email": false,
+  "govt_id": false,
+  "name": false,
+  "password": false,
+  "phone_num": false,
+  "secret_keys": true,
+  "user": false
 }
 ```
