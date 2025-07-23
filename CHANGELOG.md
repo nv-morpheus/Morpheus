@@ -15,6 +15,71 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# Morpheus 25.06.00 (23 Jul 2025)
+
+## 🚨 Breaking Changes
+
+- Remove NeMoLLM as a dependency, and remove as an option in LLM pipelines ([#2272](https://github.com/nv-morpheus/Morpheus/pull/2272)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Adopt Python 3.12 ([#2184](https://github.com/nv-morpheus/Morpheus/pull/2184)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Bugfix: Remove `MORPHEUS_USE_CONDA` option; Add warning if `CONDA_PREFIX` not found ([#2171](https://github.com/nv-morpheus/Morpheus/pull/2171)) [@willkill07](https://github.com/willkill07)
+
+## 🐛 Bug Fixes
+
+- Fix: typo for PROJECT_IS_TOP_LEVEL for building examples ([#2291](https://github.com/nv-morpheus/Morpheus/pull/2291)) [@willkill07](https://github.com/willkill07)
+- Fix mlflow dependency in Conda packages ([#2290](https://github.com/nv-morpheus/Morpheus/pull/2290)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix devcontainer builds ([#2288](https://github.com/nv-morpheus/Morpheus/pull/2288)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix type checking of the input message in PassThruStage example ([#2284](https://github.com/nv-morpheus/Morpheus/pull/2284)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Replace default model in RAG pipeline with Nvidia hosted model ([#2283](https://github.com/nv-morpheus/Morpheus/pull/2283)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Allow empty DataFrame slices ([#2282](https://github.com/nv-morpheus/Morpheus/pull/2282)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix Sid visualization example ([#2278](https://github.com/nv-morpheus/Morpheus/pull/2278)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix: examples build on aarch64 ([#2277](https://github.com/nv-morpheus/Morpheus/pull/2277)) [@willkill07](https://github.com/willkill07)
+- Remove NeMoLLM as a dependency, and remove as an option in LLM pipelines ([#2272](https://github.com/nv-morpheus/Morpheus/pull/2272)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix incompatible pynvml versions in conda envs ([#2264](https://github.com/nv-morpheus/Morpheus/pull/2264)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix DFP docker build issues ([#2261](https://github.com/nv-morpheus/Morpheus/pull/2261)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix handling of labels in DLP example ([#2257](https://github.com/nv-morpheus/Morpheus/pull/2257)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add optional databricks packages to the all env, and rename the group ([#2251](https://github.com/nv-morpheus/Morpheus/pull/2251)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Support running the DLP example within the release container ([#2244](https://github.com/nv-morpheus/Morpheus/pull/2244)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Clamp marshmallow to &lt;4 to avoid version incompatibilities ([#2235](https://github.com/nv-morpheus/Morpheus/pull/2235)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix conda package dependency issues ([#2229](https://github.com/nv-morpheus/Morpheus/pull/2229)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Work-arounds for dependency issues ([#2225](https://github.com/nv-morpheus/Morpheus/pull/2225)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix script reference in DFP example&#39;s Dockerfile from 125 to 128 ([#2215](https://github.com/nv-morpheus/Morpheus/pull/2215)) [@Misiac](https://github.com/Misiac)
+- Fix docker container for Python 3.12 ([#2208](https://github.com/nv-morpheus/Morpheus/pull/2208)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Invoke `CudfHelper::load()` from the main Python thread ([#2207](https://github.com/nv-morpheus/Morpheus/pull/2207)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add test to verify that #2202 is fixed ([#2206](https://github.com/nv-morpheus/Morpheus/pull/2206)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Pin cupy to version &lt;13.4; fix documentation link ([#2194](https://github.com/nv-morpheus/Morpheus/pull/2194)) [@willkill07](https://github.com/willkill07)
+- Bugfix: Remove `MORPHEUS_USE_CONDA` option; Add warning if `CONDA_PREFIX` not found ([#2171](https://github.com/nv-morpheus/Morpheus/pull/2171)) [@willkill07](https://github.com/willkill07)
+- Several fixes &amp; improvements of C++ `MonitorStage` ([#2170](https://github.com/nv-morpheus/Morpheus/pull/2170)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Bugfix: update old references of 25.02 to 25.06 ([#2151](https://github.com/nv-morpheus/Morpheus/pull/2151)) [@willkill07](https://github.com/willkill07)
+
+## 📖 Documentation
+
+- Update nlp_si_detection example `README.md` to reflect that boolean values are used in the output ([#2293](https://github.com/nv-morpheus/Morpheus/pull/2293)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update known issues document ([#2292](https://github.com/nv-morpheus/Morpheus/pull/2292)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update DLP diagram ([#2255](https://github.com/nv-morpheus/Morpheus/pull/2255)) [@hsin-c](https://github.com/hsin-c)
+- Update examples content list README.md to include DLP pipeline in the list ([#2250](https://github.com/nv-morpheus/Morpheus/pull/2250)) [@tzemicheal](https://github.com/tzemicheal)
+- Update DLP README and notebook to include new diagrams ([#2246](https://github.com/nv-morpheus/Morpheus/pull/2246)) [@hsin-c](https://github.com/hsin-c)
+- Document the need to build the DLP example with the MORPHEUS_BUILD_EXAMPLES=ON flag ([#2243](https://github.com/nv-morpheus/Morpheus/pull/2243)) [@dagardner-nv](https://github.com/dagardner-nv)
+- DLP diagram formatting update ([#2240](https://github.com/nv-morpheus/Morpheus/pull/2240)) [@hsin-c](https://github.com/hsin-c)
+- Fix incorrect and outdated comments in examples documentation ([#2234](https://github.com/nv-morpheus/Morpheus/pull/2234)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add analytics to rendered documentation ([#2205](https://github.com/nv-morpheus/Morpheus/pull/2205)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 🚀 New Features
+
+- DLP inference example notebook ([#2227](https://github.com/nv-morpheus/Morpheus/pull/2227)) [@tzemicheal](https://github.com/tzemicheal)
+- Add Data Loss Prevention Example ([#2226](https://github.com/nv-morpheus/Morpheus/pull/2226)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Switch to the Nvidia Sphinx Theme for documentation ([#2203](https://github.com/nv-morpheus/Morpheus/pull/2203)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Adopt Python 3.12 ([#2184](https://github.com/nv-morpheus/Morpheus/pull/2184)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Adopt Rapids 25.02 and CUDA 12.8 ([#2183](https://github.com/nv-morpheus/Morpheus/pull/2183)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Kinetica Vector DB Service ([#2098](https://github.com/nv-morpheus/Morpheus/pull/2098)) [@am-kinetica](https://github.com/am-kinetica)
+
+## 🛠️ Improvements
+
+- Set a reasonable num_threads default value for ransomware_detection example ([#2268](https://github.com/nv-morpheus/Morpheus/pull/2268)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update Dependency ([#2230](https://github.com/nv-morpheus/Morpheus/pull/2230)) [@Salonijain27](https://github.com/Salonijain27)
+- Remove cudf_helpers.pyx patch for 24.12 bug ([#2201](https://github.com/nv-morpheus/Morpheus/pull/2201)) [@mroeschke](https://github.com/mroeschke)
+- Forward merge branch-25.02 into branch-25.06 ([#2197](https://github.com/nv-morpheus/Morpheus/pull/2197)) [@willkill07](https://github.com/willkill07)
+- CI: Add new L4 runner for test ([#2145](https://github.com/nv-morpheus/Morpheus/pull/2145)) [@willkill07](https://github.com/willkill07)
+
 # Morpheus 25.02.01 (28 Feb 2025)
 
 ## 🐛 Bug Fixes
