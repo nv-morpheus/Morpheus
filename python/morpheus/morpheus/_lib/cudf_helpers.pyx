@@ -16,35 +16,17 @@
 import itertools
 
 import cudf
-from cudf.core.column import ColumnBase
-from cudf.core.dtypes import StructDtype
 
 from libcpp.string cimport string
 from libcpp.utility cimport move
 from libcpp.vector cimport vector
 from pylibcudf cimport Column as plc_Column
 from pylibcudf cimport Table as plc_Table
-from pylibcudf.libcudf.io.types cimport column_name_info
-from pylibcudf.libcudf.io.types cimport table_metadata
+from pylibcudf.io.types cimport TableWithMetadata
 from pylibcudf.libcudf.io.types cimport table_with_metadata
 from pylibcudf.libcudf.table.table_view cimport table_view
 from pylibcudf.libcudf.types cimport size_type
 
-
-cdef vector[string] get_column_names(object tbl, object index):
-    cdef vector[string] column_names
-    if index is not False:
-        if isinstance(tbl._index, cudf.core.multiindex.MultiIndex):
-            for idx_name in tbl._index.names:
-                column_names.push_back(str.encode(idx_name))
-        else:
-            if tbl._index.name is not None:
-                column_names.push_back(str.encode(tbl._index.name))
-
-    for col_name in tbl._column_names:
-        column_names.push_back(str.encode(col_name))
-
-    return column_names
 
 cdef extern from "morpheus/objects/table_info.hpp" namespace "morpheus" nogil:
 
@@ -63,101 +45,23 @@ cdef extern from "morpheus/objects/table_info.hpp" namespace "morpheus" nogil:
 
 cdef public api:
     object make_table_from_table_with_metadata(table_with_metadata table, int index_col_count):
-
-        schema_infos = [x.name.decode() for x in table.metadata.schema_info]
-        index_names = schema_infos[0:index_col_count] if index_col_count > 0 else None
-        column_names = schema_infos[index_col_count:]
-
-        plc_table = plc_Table.from_libcudf(move(table.tbl))
-
-        if index_names is None:
-            index = None
-            data = {
-                col_name: ColumnBase.from_pylibcudf(col)
-                for col_name, col in zip(
-                    column_names, plc_table.columns()
-                )
-            }
-        else:
-            result_columns = [
-                ColumnBase.from_pylibcudf(col)
-                for col in plc_table.columns()
-            ]
-            index = cudf.Index._from_data(
-                dict(
-                    zip(
-                        index_names,
-                        result_columns[: len(index_names)],
-                    )
-                )
-            )
-            data = dict(
-                zip(
-                    column_names,
-                    result_columns[len(index_names) :],
-                )
-            )
-        df = cudf.DataFrame._from_data(data, index)
-
-        # Update the struct field names after the DataFrame is created
-        update_struct_field_names(df, table.metadata.schema_info)
-
+        cdef TableWithMetadata tbl_meta = TableWithMetadata.from_libcudf(table)
+        df = cudf.DataFrame.from_pylibcudf(tbl_meta)
+        if index_col_count > 0:
+            df = df.set_index(df.columns[:index_col_count])
         return df
 
     object make_table_from_table_info_data(TableInfoData table_info, object owner):
-
-        cdef table_metadata tbl_meta
-
-        num_index_cols_meta = 0
-        cdef column_name_info child_info
-        for i, name in enumerate(owner._column_names, num_index_cols_meta):
-            child_info.name = name.encode()
-            tbl_meta.schema_info.push_back(child_info)
-            _set_col_children_metadata(
-                owner[name]._column,
-                tbl_meta.schema_info[i]
-            )
-
-        index_names = None
-
-        if (table_info.index_names.size() > 0):
-            index_names = []
-
-            for c_name in table_info.index_names:
-                name = c_name.decode()
-                index_names.append(name if name != "" else None)
-
-        column_names = []
-
-        for c_name in table_info.column_names:
-                name = c_name.decode()
-                column_names.append(name if name != "" else None)
-
-
-        column_indicies = []
-
-        for c_index in table_info.column_indices:
-            column_indicies.append(c_index)
-
-        data, index = data_from_table_view_indexed(
-            table_info.table_view,
-            owner=owner,
-            column_names=column_names,
-            column_indices=column_indicies,
-            index_names=index_names
-        )
-
-        df = cudf.DataFrame._from_data(data, index)
-
-        update_struct_field_names(df, tbl_meta.schema_info)
-
+        owner_plc_table, _ = owner.reset_index().to_pylibcudf()
+        cdef plc_Table view_owner = <plc_Table>owner_plc_table
+        cdef plc_Table plc_table = plc_Table.from_table_view(table_info.table_view, view_owner)
+        df = cudf.DataFrame.from_pylibcudf(plc_table)
+        index_col_count = table_info.index_names.size()
+        if index_col_count > 0:
+            df = df.set_index(df.columns[:index_col_count])
         return df
 
-
     TableInfoData make_table_info_data_from_table(object table):
-
-        cdef vector[string] temp_col_names = get_column_names(table, True)
-
         cdef plc_Table plc_table = plc_Table(
             [
                 col.to_pylibcudf(mode="read")
@@ -170,9 +74,15 @@ cdef public api:
 
         # cuDF does a weird check where if there is only one name in both index and columns, and that column is empty or
         # None, then change it to '""'. Not sure what this is used for
-        check_empty_name = get_column_names(table, True).size() == 1
+        all_names = []
+        if isinstance(table.index, cudf.MultiIndex):
+            all_names.extend(table.index.names)
+        elif table.index.name is not None:
+            all_names.append(table.index.name)
+        all_names.extend(table.columns)
+        check_empty_name = len(all_names) == 1
 
-        for name in table._index.names:
+        for name in table.index.names:
             if (check_empty_name and name in (None, '')):
                 name = '""'
             elif (name is None):
@@ -180,7 +90,7 @@ cdef public api:
 
             index_names.push_back(str.encode(name))
 
-        for name in table._column_names:
+        for name in table.columns:
             if (check_empty_name and name in (None, '')):
                 name = '""'
             elif (name is None):
@@ -189,118 +99,3 @@ cdef public api:
             column_names.push_back(str.encode(name))
 
         return TableInfoData(input_table_view, index_names, column_names)
-
-    cdef data_from_table_view_indexed(
-        table_view tv,
-        object owner,
-        object column_names,
-        object column_indices,
-        object index_names
-    ):
-        """
-        Given a ``cudf::table_view``, constructs a Frame from it,
-        along with referencing an ``owner`` Python object that owns the memory
-        lifetime. If ``owner`` is a Frame we reach inside of it and
-        reach inside of each ``cudf.Column`` to make the owner of each newly
-        created ``Buffer`` underneath the ``cudf.Column`` objects of the
-        created Frame the respective ``Buffer`` from the relevant
-        ``cudf.Column`` of the ``owner`` Frame
-        """
-        cdef size_type column_idx = 0
-        table_owner = isinstance(owner, cudf.core.frame.Frame)
-
-        # First construct the index, if any
-        index = None
-        if index_names is not None:
-            index_columns = []
-            for _ in index_names:
-                column_owner = owner
-                if table_owner:
-                    column_owner = owner._index._columns[column_idx]
-                index_columns.append(
-                    ColumnBase.from_pylibcudf(
-                        plc_Column.from_column_view(
-                            tv.column(column_idx),
-                            column_owner.to_pylibcudf(mode="read")
-                        )
-                    )
-                )
-                column_idx += 1
-            index = cudf.core.index._index_from_data(
-                dict(zip(index_names, index_columns)))
-
-        # Construct the data dict
-        cdef size_type source_column_idx = 0
-        data_columns = []
-        for _ in column_names:
-            column_owner = owner
-            if table_owner:
-                column_owner = owner._columns[column_indices[source_column_idx]]
-            data_columns.append(
-                ColumnBase.from_pylibcudf(
-                    plc_Column.from_column_view(
-                        tv.column(column_idx),
-                        column_owner.to_pylibcudf(mode="read")
-                    )
-                )
-            )
-            column_idx += 1
-            source_column_idx += 1
-
-        return dict(zip(column_names, data_columns)), index
-
-cdef _set_col_children_metadata(col,
-                                column_name_info& col_meta):
-    cdef column_name_info child_info
-    if isinstance(col.dtype, cudf.StructDtype):
-        for i, (child_col, name) in enumerate(
-            zip(col.children, list(col.dtype.fields))
-        ):
-            child_info.name = name.encode()
-            col_meta.children.push_back(child_info)
-            _set_col_children_metadata(
-                child_col, col_meta.children[i]
-            )
-    elif isinstance(col.dtype, cudf.ListDtype):
-        for i, child_col in enumerate(col.children):
-            col_meta.children.push_back(child_info)
-            _set_col_children_metadata(
-                child_col, col_meta.children[i]
-            )
-    else:
-        return
-
-cdef update_struct_field_names(
-    table,
-    vector[column_name_info]& schema_info
-):
-    for i, (name, col) in enumerate(table._data.items()):
-        table._data[name] = update_column_struct_field_names(
-            col, schema_info[i]
-        )
-
-
-cdef update_column_struct_field_names(
-    col,
-    column_name_info& info
-):
-    cdef vector[string] field_names
-
-    if col.dtype != "object" and col.children:
-        children = list(col.children)
-        for i, child in enumerate(children):
-            children[i] = update_column_struct_field_names(
-                child,
-                info.children[i]
-            )
-            col.set_base_children(tuple(children))
-
-    if isinstance(col.dtype, StructDtype):
-        field_names.reserve(len(col.base_children))
-        for i in range(info.children.size()):
-            field_names.push_back(info.children[i].name)
-        col = col._rename_fields(
-            field_names
-        )
-
-    return col
