@@ -33,7 +33,12 @@ def build_huggingface_embeddings(model_name: str, model_kwargs: dict = None, enc
     return embeddings
 
 
-def build_llm_service(model_name: str, llm_service: str, tokens_to_generate: int, **model_kwargs):
+def build_llm_service(model_name: str,
+                      llm_service: str,
+                      tokens_to_generate: int,
+                      base_url: str | None = None,
+                      api_key: str | None = None,
+                      **model_kwargs):
     lowered_llm_service = llm_service.lower()
 
     service: LLMService | None = None
@@ -43,7 +48,7 @@ def build_llm_service(model_name: str, llm_service: str, tokens_to_generate: int
         service = NeMoLLMService()
     elif (lowered_llm_service == 'openai'):
         model_kwargs['max_tokens'] = tokens_to_generate
-        service = OpenAIChatService()
+        service = OpenAIChatService(base_url=base_url, api_key=api_key)
     else:
         raise RuntimeError(f"Unsupported LLM service name: {llm_service}")
 

@@ -99,6 +99,8 @@ ENV SCCACHE_BUCKET="rapids-sccache-devs"
 ENV AWS_ROLE_ARN="arn:aws:iam::279114543810:role/nv-gha-token-sccache-devs"
 ENV HISTFILE="/home/coder/.cache/._bash_history"
 
-ENV MORPHEUS_SUPPORT_DOCA=ON
+# Temporarily disable DOCA support https://github.com/nv-morpheus/Morpheus/issues/2285
+ENV MORPHEUS_SUPPORT_DOCA=OFF
+
 COPY ./docker/optional_deps docker/optional_deps
 RUN ./docker/optional_deps/doca.sh /tmp/doca
