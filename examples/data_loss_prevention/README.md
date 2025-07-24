@@ -119,7 +119,7 @@ pip install --no-deps gliner==0.2.21
 
 ### Downloading the model (optional)
 
-The model being used is [https://huggingface.co/gretelai/gretel-gliner-bi-small-v1.0](https://huggingface.co/gretelai/gretel-gliner-bi-small-v1.0) which is released under the [Apache License 2.0](https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md).
+The model being used is [gretelai/gretel-gliner-bi-small-v1.0](https://huggingface.co/gretelai/gretel-gliner-bi-small-v1.0) which is released under the [Apache License 2.0](https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md).
 
 Users who are using the pre-built Morpheus Docker container should skip this step. Downloading the model locally offers a slight performance benefit, otherwise the model is fetched on-demand, then on subsequent runs a cached copy of the model is used.
 
