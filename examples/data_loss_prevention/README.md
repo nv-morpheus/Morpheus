@@ -223,7 +223,7 @@ Options:
 ```
 
 
-> **Note**: By default when the `--input_file` and `--dataset` flags are not set, the [gretelai/gretel-pii-masking-en-v1](https://huggingface.co/datasets/gretelai/gretel-pii-masking-en-v1) dataset will be fetched at runtime. This dataset is being released under the [Apache License 2.0](https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md).
+> **Note**: By default when the `--input_file` and `--dataset` flags are not set, the [gretelai/gretel-pii-masking-en-v1](https://huggingface.co/datasets/gretelai/gretel-pii-masking-en-v1) dataset will be fetched at runtime. This dataset is released under the [Apache License 2.0](https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md).
 
 To launch the configured Morpheus pipeline with the default arguments, run the following:
 
