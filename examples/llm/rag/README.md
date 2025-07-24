@@ -18,7 +18,7 @@ limitations under the License.
 # Retrieval Augmented Generation (RAG) Pipeline
 
 ## Supported Environments
-All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-125_arch-$(arch).yaml` or `conda/environments/examples_cuda-125_arch-$(arch).yaml` environment files. This example also requires the [VDB upload](../vdb_upload/README.md) pipeline to have been run previously.
+All environments require additional Conda packages which can be installed with either the `conda/environments/all_cuda-128_arch-$(arch).yaml` or `conda/environments/examples_cuda-125_arch-$(arch).yaml` environment files. This example also requires the [VDB upload](../vdb_upload/README.md) pipeline to have been run previously.
 | Environment | Supported | Notes |
 |-------------|-----------|-------|
 | Conda | ✔ | |
@@ -102,20 +102,11 @@ The standalone Morpheus pipeline is built using the following components:
 
 Before running the pipeline, we need obtain service API keys for the following services:
 
-### Obtain an OpenAI API or NGC API Key
+### Obtain an NVIDIA API key
 
-#### NGC
+By default this pipeline utilizes an NVIDIA hosted LLM model (specified with the `--model_name` and `--llm_base_url` flags), which requires an API key that can be obtained by visiting [`build.nvidia.com`](https://build.nvidia.com/) and creating an account.
 
-- Follow the instructions [here](https://docs.nvidia.com/ngc/gpu-cloud/ngc-user-guide/index.html#generating-personal-api-key)
-- We'll refer to your NGC API key as `${NGC_API_KEY}` for the rest of this document.
-
-#### OpenAI
-
-- Follow the instructions [here](https://platform.openai.com/docs/quickstart?context=python) to obtain an OpenAI
-  API key.
-- We'll refer to your OpenAI API key as `${OPENAI_API_KEY}` for the rest of this document.
-
-Before running the pipeline, we need to ensure that the following services are running:
+Once obtained, set the `NVIDIA_API_KEY` environment variable to the key value, alternately you can pass the key directly to the pipeline with the `--llm_api_key` flag.
 
 ### Milvus Service
 
@@ -131,16 +122,7 @@ pipeline option of `rag`:
 
 ### Run example (Standalone Pipeline):
 
-**Using NGC NeMo LLMs**
-
 ```bash
-export NGC_API_KEY=[YOUR_KEY_HERE]
+export NVIDIA_API_KEY=[YOUR_KEY_HERE]
 python examples/llm/main.py rag pipeline
-```
-
-**Using OpenAI LLM models**
-
-```bash
-export OPENAI_API_KEY=[YOUR_KEY_HERE]
-python examples/llm/main.py rag pipeline --llm_service=OpenAI --model_name=gpt-3.5-turbo
 ```

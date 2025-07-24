@@ -60,14 +60,12 @@ void CudfHelper::load()
 
 pybind11::object proxy_table_from_table_with_metadata(cudf::io::table_with_metadata&& table, int index_col_count)
 {
-    CudfHelper::load();
     return pybind11::reinterpret_steal<pybind11::object>(
         (PyObject*)make_table_from_table_with_metadata(std::move(table), index_col_count));
 }
 
 morpheus::TableInfoData proxy_table_info_data_from_table(pybind11::object table)
 {
-    CudfHelper::load();
     return make_table_info_data_from_table(table.ptr());
 }
 
@@ -78,7 +76,6 @@ pybind11::object CudfHelper::table_from_table_with_metadata(cudf::io::table_with
 
 pybind11::object CudfHelper::table_from_table_info(const TableInfoBase& table_info)
 {
-    CudfHelper::load();
     // Get the table info data from the table_into
     auto table_info_data = table_info.get_data();
 

@@ -21,5 +21,5 @@ limitations under the License.
 |-------------|-----------|-------|
 | Conda | ✔ | |
 | Morpheus Docker Container | ✔ | |
-| Morpheus Release Container | ✔ | Requires adding development packages to the container's Conda environment via `conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-125_arch-$(arch).yaml` |
+| Morpheus Release Container | ✔ | Requires adding development packages to the container's Conda environment via `conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-128_arch-$(arch).yaml` |
 | Dev Container | ✔ |  |

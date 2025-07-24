@@ -40,7 +40,6 @@ from morpheus.stages.postprocess.filter_detections_stage import FilterDetections
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.file_utils import date_extractor
-from morpheus.utils.logger import configure_logging
 from morpheus_dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 from morpheus_dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
 from morpheus_dfp.stages.dfp_inference_stage import DFPInferenceStage
@@ -105,8 +104,6 @@ def dfp_training_pipeline_stages(pipe_config: Config,
                                  filenames: typing.List[str],
                                  reuse_cache=False):
 
-    configure_logging(log_level=logger.level)
-
     pipeline = LinearPipeline(pipe_config)
     pipeline.set_source(MultiFileSource(pipe_config, filenames=filenames))
     pipeline.add_stage(
@@ -156,8 +153,6 @@ def dfp_inference_pipeline_stages(pipe_config: Config,
                                   filenames: typing.List[str],
                                   output_filepath: str,
                                   reuse_cache=False):
-
-    configure_logging(log_level=logger.level)
 
     pipeline = LinearPipeline(pipe_config)
     pipeline.set_source(MultiFileSource(pipe_config, filenames=filenames))

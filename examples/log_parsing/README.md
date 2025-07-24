@@ -24,7 +24,7 @@ Example Morpheus pipeline using Triton Inference server and Morpheus.
 | Conda | ✔ | |
 | Morpheus Docker Container | ✔ | Requires launching Triton on the host |
 | Morpheus Release Container | ✔ | Requires launching Triton on the host |
-| Dev Container | ✔ | Requires using the `dev-triton-start` script. If using the `run.py` script this requires adding the `--server_url=triton:8000` flag. If using the CLI example this requires replacing `--server_url=localhost:8000` with `--server_url=triton:8000` |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script. If using the `run.py` script this requires adding the `--server_url=triton:8001` flag. If using the CLI example this requires replacing `--server_url=localhost:8001` with `--server_url=triton:8001` |
 
 ### Set up Triton Inference Server
 
@@ -34,14 +34,14 @@ Pull the Morpheus Triton models Docker image from NGC.
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06
 ```
 
 ##### Start Triton Inference Server Container
 From the Morpheus repo root directory, run the following to launch Triton and load the `log-parsing-onnx` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model log-parsing-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model log-parsing-onnx
 ```
 
 ##### Verify Model Deployment

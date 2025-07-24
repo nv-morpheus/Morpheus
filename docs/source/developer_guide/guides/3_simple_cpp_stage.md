@@ -28,7 +28,7 @@ CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
 ### Compiling the Example as a standalone Project
 The second method is to build the example as a standalone project. For those using the release container, additional dependencies will need to be installed prior to performing the build:
 ```bash
-conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-125_arch-$(arch).yaml
+conda env update --solver=libmamba -n morpheus --file /workspace/conda/environments/dev_cuda-128_arch-$(arch).yaml
 
 # reload the environment
 conda deactivate
@@ -251,7 +251,7 @@ PassThruStage::subscribe_fn_t PassThruStage::build_operator()
 }
 ```
 
-Note the use of `std::move` in the `on_next` function. In Morpheus, our messages often contain both large payloads as well as Python objects where performing a copy necessitates acquiring the Python [Global Interpreter Lock (GIL)](https://docs.python.org/3.10/glossary.html#term-global-interpreter-lock). In either case, unnecessary copies can become a performance bottleneck, and much care is taken to limit the number of copies required for data to move through the pipeline.
+Note the use of `std::move` in the `on_next` function. In Morpheus, our messages often contain both large payloads as well as Python objects where performing a copy necessitates acquiring the Python [Global Interpreter Lock (GIL)](https://docs.python.org/3.12/glossary.html#term-global-interpreter-lock). In either case, unnecessary copies can become a performance bottleneck, and much care is taken to limit the number of copies required for data to move through the pipeline.
 
 There are situations in which a C++ stage does need to interact with Python, and therefore acquiring the GIL is a requirement. This is typically accomplished using pybind11's [`gil_scoped_acquire`](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) RAII class inside of a code block. Conversely there are situations in which we want to ensure that we are not holding the GIL and in these situations pybind11's [`gil_scoped_release`](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) class can be used.
 
@@ -383,7 +383,7 @@ As mentioned in the previous section, our `_build_single` method needs to be upd
 
 ```python
 def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-    if self._build_cpp_node() and isinstance(self._input_type, ControlMessage):
+    if self._build_cpp_node() and issubclass(self._input_type, ControlMessage):
         from ._lib import pass_thru_cpp
 
         node = pass_thru_cpp.PassThruStage(builder, self.unique_name)
@@ -438,7 +438,7 @@ class PassThruStage(PassThruTypeMixin, GpuAndCpuMixin, SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        if self._build_cpp_node() and isinstance(self._input_type, ControlMessage):
+        if self._build_cpp_node() and issubclass(self._input_type, ControlMessage):
             from ._lib import pass_thru_cpp
 
             node = pass_thru_cpp.PassThruStage(builder, self.unique_name)

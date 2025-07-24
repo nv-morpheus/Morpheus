@@ -65,9 +65,13 @@ TableInfoData get_table_info_data_slice(const TableInfoData& table,
         stop = table.table_view.num_rows();
     }
 
-    CHECK_GT(stop, 0) << "Stop must be > 0";
-    CHECK_LE(stop, table.table_view.num_rows()) << "Stop must be less than the number of rows";
-    CHECK_LE(start, stop) << "Start must be less than stop";
+    // Allow for empty slices
+    if (!(start == 0 && stop == 0))
+    {
+        CHECK_GT(stop, 0) << "Stop must be > 0";
+        CHECK_LE(stop, table.table_view.num_rows()) << "Stop must be less than the number of rows";
+        CHECK_LE(start, stop) << "Start must be less than stop";
+    }
 
     if (column_names.empty())
     {
@@ -171,6 +175,18 @@ const cudf::column_view& TableInfoBase::get_column(cudf::size_type idx) const
     }
 
     return this->m_data.table_view.column(this->m_data.index_names.size() + idx);
+}
+
+const cudf::column_view& TableInfoBase::get_column(const std::string& column_name) const
+{
+    auto itr = std::find(this->get_data().column_names.begin(), this->get_data().column_names.end(), column_name);
+    if (itr == this->get_data().column_names.end())
+    {
+        throw std::invalid_argument(column_name + " is not found");
+    }
+
+    auto idx = std::distance(this->get_data().column_names.begin(), itr);
+    return get_column(idx);
 }
 
 const std::shared_ptr<const IDataTable>& TableInfoBase::get_parent() const

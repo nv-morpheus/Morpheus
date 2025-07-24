@@ -137,6 +137,7 @@ add_morpheus_test(
   NAME file_in_out
   FILES
     test_file_in_out.cpp
+    test_table_info.cpp
 )
 
 add_morpheus_test(

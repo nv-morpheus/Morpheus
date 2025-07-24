@@ -14,6 +14,7 @@ markers = [
   "benchmark: Benchmarks",
   "slow: Slow tests",
   "kafka: Tests that require a running instance of kafka",
+  "kinetica: Tests that require a running instance of Kinetica",
   "milvus: Tests that require a running instance of milvus",
   "gpu_mode: Test support GPU nodes and objects",
   "cpu_mode: Test only supports CPU nodes and objects",
@@ -172,7 +173,7 @@ persistent = true
 
 # Minimum Python version to use for version dependent checks. Will default to the
 # version used to run pylint.
-py-version = "3.10"
+py-version = "3.12"
 
 # Discover python modules and packages in the file system subtree.
 # recursive =

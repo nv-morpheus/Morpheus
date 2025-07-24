@@ -33,7 +33,7 @@ To set up a Conda environment with the [`morpheus-core`](https://anaconda.org/nv
 ### Create a Conda Environment
 ```bash
 export CONDA_ENV_NAME=morpheus
-conda create -n ${CONDA_ENV_NAME} python=3.10
+conda create -n ${CONDA_ENV_NAME} python=3.12
 conda activate ${CONDA_ENV_NAME}
 ```
 
@@ -48,7 +48,7 @@ conda config --env --add channels conda-forge &&\
 
 ### Install the `morpheus-core` Library
 ```bash
-conda install -c nvidia morpheus-core=24.10
+conda install -c nvidia morpheus-core=25.06
 ```
 The `morpheus-core` Conda package installs the `morpheus` Python package. It also pulls down all the necessary Conda runtime dependencies for the core stages including [`mrc`](https://anaconda.org/nvidia/mrc) and [`libmrc`](https://anaconda.org/nvidia/libmrc).
 
@@ -65,7 +65,7 @@ Digital Finger Printing (DFP) is a technique used to identify anomalous behavior
 ### Create a Conda Environment
 ```bash
 export CONDA_ENV_NAME=morpheus-dfp
-conda create -n ${CONDA_ENV_NAME} python=3.10
+conda create -n ${CONDA_ENV_NAME} python=3.12
 conda activate ${CONDA_ENV_NAME}
 ```
 
@@ -80,7 +80,7 @@ conda config --env --add channels conda-forge &&\
 
 ### Install the `morpheus-dfp` Library
 ```bash
-conda install -c nvidia morpheus-dfp=24.10
+conda install -c nvidia morpheus-dfp=25.06
 ```
 The `morpheus-dfp` Conda package installs the `morpheus_dfp` Python package. It also pulls down all the necessary Conda runtime dependencies including [`morpheus-core`](https://anaconda.org/nvidia/morpheus-core).
 ### Install Additional PyPI dependencies
@@ -97,7 +97,7 @@ To set up a Conda environment with the [`morpheus-llm`](https://anaconda.org/nvi
 ### Create a Conda Environment
 ```bash
 export CONDA_ENV_NAME=morpheus-llm
-conda create -n ${CONDA_ENV_NAME} python=3.10
+conda create -n ${CONDA_ENV_NAME} python=3.12
 conda activate ${CONDA_ENV_NAME}
 ```
 
@@ -112,7 +112,7 @@ conda config --env --add channels conda-forge &&\
 
 ### Install the `morpheus-llm` Library
 ```bash
-conda install -c nvidia morpheus-llm=24.10
+conda install -c nvidia morpheus-llm=25.06
 ```
 The `morpheus-llm` Conda package installs the `morpheus_llm` python package. It also pulls down all the necessary Conda packages including [`morpheus-core`](https://anaconda.org/nvidia/morpheus-core).
 

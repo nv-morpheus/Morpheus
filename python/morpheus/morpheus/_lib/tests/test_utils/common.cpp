@@ -23,6 +23,7 @@
 #include "morpheus/io/loaders/payload.hpp"
 #include "morpheus/io/loaders/rest.hpp"
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
 #include <cpython/initconfig.h>  // for PyStatus_Exception, PyConfig_Clear, PyConfig_InitPythonConfig
@@ -80,6 +81,7 @@ void TestWithPythonInterpreter::SetUp()
         false);
 
     pybind11::gil_scoped_acquire gil;
+    CudfHelper::load();
 }
 
 void TestWithPythonInterpreter::TearDown() {}

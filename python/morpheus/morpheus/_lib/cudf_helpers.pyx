@@ -22,235 +22,14 @@ from cudf.core.dtypes import StructDtype
 from libcpp.string cimport string
 from libcpp.utility cimport move
 from libcpp.vector cimport vector
+from pylibcudf cimport Column as plc_Column
+from pylibcudf cimport Table as plc_Table
 from pylibcudf.libcudf.io.types cimport column_name_info
 from pylibcudf.libcudf.io.types cimport table_metadata
 from pylibcudf.libcudf.io.types cimport table_with_metadata
 from pylibcudf.libcudf.table.table_view cimport table_view
 from pylibcudf.libcudf.types cimport size_type
 
-##### THE FOLLOWING CODE IS COPIED FROM CUDF AND SHOULD BE REMOVED WHEN UPDATING TO cudf>=24.12 #####
-# see https://github.com/rapidsai/cudf/pull/17193 for details
-
-# isort: off
-
-# imports needed for get_element, which is required by from_column_view_with_fix
-cimport pylibcudf.libcudf.copying as cpp_copying
-from pylibcudf.libcudf.column.column_view cimport column_view
-from libcpp.memory cimport make_unique, unique_ptr
-from pylibcudf.libcudf.scalar.scalar cimport scalar
-from pylibcudf cimport Table as plc_Table, Scalar as plc_Scalar
-import pylibcudf as plc
-
-# imports needed for from_column_view_with_fix
-import rmm
-from libc.stdint cimport uintptr_t
-from cudf.core.buffer import (
-    # Buffer,
-    ExposureTrackedBuffer,
-    SpillableBuffer,
-    # acquire_spill_lock,
-    as_buffer,
-    # cuda_array_interface_wrapper,
-)
-cimport pylibcudf.libcudf.types as libcudf_types
-from cudf._lib.types cimport (
-    dtype_from_column_view,
-    # dtype_to_data_type,
-    # dtype_to_pylibcudf_type,
-)
-from cudf._lib.null_mask import bitmask_allocation_size_bytes
-from cudf._lib.column cimport Column
-# isort: on
-
-cdef get_element(column_view col_view, size_type index):
-
-    cdef unique_ptr[scalar] c_output
-    with nogil:
-        c_output = move(
-            cpp_copying.get_element(col_view, index)
-        )
-
-    plc_scalar = plc_Scalar.from_libcudf(move(c_output))
-    return plc.interop.to_arrow(plc_scalar).as_py()
-
-
-cdef Column from_column_view_with_fix(column_view cv, object owner):
-    """
-    Given a ``cudf::column_view``, constructs a ``cudf.Column`` from it,
-    along with referencing an ``owner`` Python object that owns the memory
-    lifetime. If ``owner`` is a ``cudf.Column``, we reach inside of it and
-    make the owner of each newly created ``Buffer`` the respective
-    ``Buffer`` from the ``owner`` ``cudf.Column``.
-    If ``owner`` is ``None``, we allocate new memory for the resulting
-    ``cudf.Column``.
-    """
-    column_owner = isinstance(owner, Column)
-    mask_owner = owner
-    if column_owner and isinstance(owner.dtype, cudf.CategoricalDtype):
-        owner = owner.base_children[0]
-
-    size = cv.size()
-    offset = cv.offset()
-    dtype = dtype_from_column_view(cv)
-    dtype_itemsize = getattr(dtype, "itemsize", 1)
-
-    data_ptr = <uintptr_t>(cv.head[void]())
-    data = None
-    base_size = size + offset
-    data_owner = owner
-
-    if column_owner:
-        data_owner = owner.base_data
-        mask_owner = mask_owner.base_mask
-        base_size = owner.base_size
-    base_nbytes = base_size * dtype_itemsize
-    # special case for string column
-    is_string_column = (cv.type().id() == libcudf_types.type_id.STRING)
-    if is_string_column:
-        if cv.num_children() == 0:
-            base_nbytes = 0
-        else:
-            # get the size from offset child column (device to host copy)
-            offsets_column_index = 0
-            offset_child_column = cv.child(offsets_column_index)
-            if offset_child_column.size() == 0:
-                base_nbytes = 0
-            else:
-                chars_size = get_element(
-                    offset_child_column, offset_child_column.size()-1)
-                base_nbytes = chars_size
-
-    if data_ptr:
-        if data_owner is None:
-            buffer_size = (
-                base_nbytes
-                if is_string_column
-                else ((size + offset) * dtype_itemsize)
-            )
-            data = as_buffer(
-                rmm.DeviceBuffer(ptr=data_ptr,
-                                    size=buffer_size)
-            )
-        elif (
-            column_owner and
-            isinstance(data_owner, ExposureTrackedBuffer)
-        ):
-            data = as_buffer(
-                data=data_ptr,
-                size=base_nbytes,
-                owner=data_owner,
-                exposed=False,
-            )
-        elif (
-            # This is an optimization of the most common case where
-            # from_column_view creates a "view" that is identical to
-            # the owner.
-            column_owner and
-            isinstance(data_owner, SpillableBuffer) and
-            # We check that `data_owner` is spill locked (not spillable)
-            # and that it points to the same memory as `data_ptr`.
-            not data_owner.spillable and
-            data_owner.memory_info() == (data_ptr, base_nbytes, "gpu")
-        ):
-            data = data_owner
-        else:
-            # At this point we don't know the relationship between data_ptr
-            # and data_owner thus we mark both of them exposed.
-            # TODO: try to discover their relationship and create a
-            #       SpillableBufferSlice instead.
-            data = as_buffer(
-                data=data_ptr,
-                size=base_nbytes,
-                owner=data_owner,
-                exposed=True,
-            )
-            if isinstance(data_owner, ExposureTrackedBuffer):
-                # accessing the pointer marks it exposed permanently.
-                data_owner.mark_exposed()
-            elif isinstance(data_owner, SpillableBuffer):
-                if data_owner.is_spilled:
-                    raise ValueError(
-                        f"{data_owner} is spilled, which invalidates "
-                        f"the exposed data_ptr ({hex(data_ptr)})"
-                    )
-                # accessing the pointer marks it exposed permanently.
-                data_owner.mark_exposed()
-    else:
-        data = as_buffer(
-            rmm.DeviceBuffer(ptr=data_ptr, size=0)
-        )
-
-    mask = None
-    mask_ptr = <uintptr_t>(cv.null_mask())
-    if mask_ptr:
-        if mask_owner is None:
-            if column_owner:
-                # if we reached here, it means `owner` is a `Column`
-                # that does not have a null mask, but `cv` thinks it
-                # should have a null mask. This can happen in the
-                # following sequence of events:
-                #
-                # 1) `cv` is constructed as a view into a
-                #    `cudf::column` that is nullable (i.e., it has
-                #    a null mask), but contains no nulls.
-                # 2) `owner`, a `Column`, is constructed from the
-                #    same `cudf::column`. Because `cudf::column`
-                #    is memory owning, `owner` takes ownership of
-                #    the memory owned by the
-                #    `cudf::column`. Because the column has a null
-                #    count of 0, it may choose to discard the null
-                #    mask.
-                # 3) Now, `cv` points to a discarded null mask.
-                #
-                # TL;DR: we should not include a null mask in the
-                # result:
-                mask = None
-            else:
-                mask = as_buffer(
-                    rmm.DeviceBuffer(
-                        ptr=mask_ptr,
-                        size=bitmask_allocation_size_bytes(base_size)
-                    )
-                )
-        else:
-            mask = as_buffer(
-                data=mask_ptr,
-                size=bitmask_allocation_size_bytes(base_size),
-                owner=mask_owner,
-                exposed=True
-            )
-
-    if cv.has_nulls():
-        null_count = cv.null_count()
-    else:
-        null_count = 0
-
-    children = []
-    for child_index in range(cv.num_children()):
-        child_owner = owner
-        if column_owner:
-            child_owner = owner.base_children[child_index]
-        children.append(
-            from_column_view_with_fix(
-                cv.child(child_index),
-                child_owner
-            )
-        )
-    children = tuple(children)
-
-    result = cudf.core.column.build_column(
-        data=data,
-        dtype=dtype,
-        mask=mask,
-        size=size,
-        offset=offset,
-        null_count=null_count,
-        children=tuple(children)
-    )
-
-    return result
-
-##### THE PREVIOUS CODE IS COPIED FROM CUDF AND SHOULD BE REMOVED WHEN UPDATING TO cudf>=24.12 #####
 
 cdef vector[string] get_column_names(object tbl, object index):
     cdef vector[string] column_names
@@ -360,17 +139,13 @@ cdef public api:
         for c_index in table_info.column_indices:
             column_indicies.append(c_index)
 
-        try:
-            data, index = data_from_table_view_indexed(
-                table_info.table_view,
-                owner=owner,
-                column_names=column_names,
-                column_indices=column_indicies,
-                index_names=index_names
-            )
-        except Exception:
-            import traceback
-            print("error while converting libcudf table to cudf dataframe:", traceback.format_exc())
+        data, index = data_from_table_view_indexed(
+            table_info.table_view,
+            owner=owner,
+            column_names=column_names,
+            column_indices=column_indicies,
+            index_names=index_names
+        )
 
         df = cudf.DataFrame._from_data(data, index)
 
@@ -443,9 +218,11 @@ cdef public api:
                 if table_owner:
                     column_owner = owner._index._columns[column_idx]
                 index_columns.append(
-                    from_column_view_with_fix(
-                        tv.column(column_idx),
-                        column_owner
+                    ColumnBase.from_pylibcudf(
+                        plc_Column.from_column_view(
+                            tv.column(column_idx),
+                            column_owner.to_pylibcudf(mode="read")
+                        )
                     )
                 )
                 column_idx += 1
@@ -460,7 +237,12 @@ cdef public api:
             if table_owner:
                 column_owner = owner._columns[column_indices[source_column_idx]]
             data_columns.append(
-                from_column_view_with_fix(tv.column(column_idx), column_owner)
+                ColumnBase.from_pylibcudf(
+                    plc_Column.from_column_view(
+                        tv.column(column_idx),
+                        column_owner.to_pylibcudf(mode="read")
+                    )
+                )
             )
             column_idx += 1
             source_column_idx += 1

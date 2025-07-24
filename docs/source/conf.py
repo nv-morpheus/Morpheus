@@ -56,7 +56,7 @@ os.environ["MORPHEUS_IN_SPHINX_BUILD"] = "1"
 # -- Project information -----------------------------------------------------
 
 project = 'morpheus'
-copyright = '2024, NVIDIA'
+copyright = '2025, NVIDIA'
 author = 'NVIDIA'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -94,6 +94,7 @@ extensions = [
     'myst_parser',
     'nbsphinx',
     'numpydoc',
+    'sphinx_copybutton',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
@@ -124,7 +125,7 @@ exhale_args = {
     "exhaleExecutesDoxygen":
         True,
     "exhaleDoxygenStdin":
-        textwrap.dedent('''
+        textwrap.dedent(r'''
         BRIEF_MEMBER_DESC = YES
         BUILTIN_STL_SUPPORT = YES
         DOT_IMAGE_FORMAT = svg
@@ -141,8 +142,8 @@ exhale_args = {
         ENABLE_PREPROCESSING = YES
         MACRO_EXPANSION = YES
         EXPAND_ONLY_PREDEF = NO
-        PREDEFINED = "MORPHEUS_EXPORT=" \
-                     "DOXYGEN_SHOULD_SKIP_THIS=1"
+        PREDEFINED += "MORPHEUS_EXPORT="
+        GENERATE_XML = YES
     ''')
 }
 
@@ -155,6 +156,7 @@ exhale_args = {
 #     'show-inheritance': True,
 # }
 
+copybutton_prompt_text = ">>> |$ |# "  # characters to be stripped from the copied text
 autosummary_imported_members = False
 autosummary_generate = True  # Generate autodoc stubs with summaries from code
 autoclass_content = "class"  # Dont show __init__
@@ -202,7 +204,8 @@ linkcheck_ignore = [
     r'^https://$',
     r'https://(platform\.)?openai.com',
     r'https://code.visualstudio.com',
-    r"^https://github.com/nv-morpheus/Morpheus/blob/.*#.+$"
+    r"^https://github.com/nv-morpheus/Morpheus/blob/.*#.+$",
+    r"^https://nvcr.io/$"  # Don't ignore all of nvcr.io just any links to the root
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -238,28 +241,42 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 #
 # html_theme = 'alabaster'
-html_theme = "sphinx_rtd_theme"
+html_theme = "nvidia_sphinx_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 
 html_logo = '_static/main_nv_logo_square.png'
+html_title = f'{project.title()} ({version})'
 
 html_theme_options = {
-    'logo_only': True,
-    'display_version': True,
-    'style_nav_header_background': '#000000',  # Toc options
-    'collapse_navigation': False,
-    'navigation_depth': 6,
+    'logo_only':
+        True,
+    'display_version':
+        True,
+    'style_nav_header_background':
+        '#000000',  # Toc options
+    'collapse_navigation':
+        False,
+    'navigation_depth':
+        6,
+    'extra_head': [  # Adding Adobe Analytics
+        '''
+    <script src="https://assets.adobedtm.com/5d4962a43b79/c1061d2c5e7b/launch-191c2462b890.min.js" ></script>
+    '''
+    ],
+    'extra_footer': [
+        '''
+    <script type="text/javascript">if (typeof _satellite !== "undefined") {_satellite.pageBottom();}</script>
+    '''
+    ],
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
-html_js_files = ["example_mod.js"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -330,16 +347,6 @@ texinfo_documents = [
 intersphinx_mapping = {
     "python": ('https://docs.python.org/', None), "scipy": ('https://docs.scipy.org/doc/scipy/reference', None)
 }
-
-
-def setup(app):
-    app.add_css_file('omni-style.css')
-    app.add_css_file('copybutton.css')
-    app.add_css_file('infoboxes.css')
-    app.add_css_file('params.css')
-    app.add_css_file('references.css')
-    app.add_css_file('py_properties.css')
-
 
 # The following is used by sphinx.ext.linkcode to provide links to github
 linkcode_resolve = make_linkcode_resolve(

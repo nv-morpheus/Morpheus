@@ -15,13 +15,19 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "pass_thru_cpp_stage")
 
+if(PROJECT_IS_TOP_LEVEL)
+  find_library(MORPHEUS morpheus REQUIRED)
+else()
+  set(MORPHEUS morpheus)
+endif()
+
 morpheus_add_pybind11_module(pass_thru_cpp
   SOURCE_FILES
     "pass_thru.cpp"
   INCLUDE_DIRS
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   LINK_TARGETS
-    morpheus
+    ${MORPHEUS}
     CUDA::nvtx3
     cudf::cudf
     glog::glog

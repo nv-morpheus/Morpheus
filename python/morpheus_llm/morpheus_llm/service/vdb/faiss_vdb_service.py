@@ -47,7 +47,7 @@ class FaissVectorDBResourceService(VectorDBResourceService):
 
     def __init__(self, parent: "FaissVectorDBService", *, name: str) -> None:
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='langchain and faiss-gpu')) from IMPORT_EXCEPTION
+            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='langchain and faiss-cpu')) from IMPORT_EXCEPTION
 
         super().__init__()
 
@@ -282,7 +282,7 @@ class FaissVectorDBService(VectorDBService):
     def __init__(self, local_dir: str, embeddings: "Embeddings"):
 
         if IMPORT_EXCEPTION is not None:
-            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='langchain and faiss-gpu')) from IMPORT_EXCEPTION
+            raise ImportError(IMPORT_ERROR_MESSAGE.format(package='langchain and faiss-cpu')) from IMPORT_EXCEPTION
 
         self._local_dir = local_dir
         self._embeddings = embeddings

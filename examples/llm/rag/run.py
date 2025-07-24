@@ -54,8 +54,8 @@ def run():
     "--model_name",
     required=True,
     type=str,
-    default='gpt-43b-002',
-    help="The name of the large language model that is deployed on Triton server",
+    default='meta/llama-3.3-70b-instruct',
+    help="The name of the large language model to use.",
 )
 @click.option(
     "--vdb_resource_name",
@@ -72,10 +72,21 @@ def run():
 )
 @click.option(
     "--llm_service",
-    default="NemoLLM",
-    type=click.Choice(['NemoLLM', 'OpenAI'], case_sensitive=False),
+    default="OpenAI",
+    type=click.Choice(['OpenAI'], case_sensitive=False),
     help="LLM service to issue requests to, should be used in conjunction with --model_name.",
 )
+@click.option("--llm_base_url",
+              type=str,
+              default="https://integrate.api.nvidia.com/v1",
+              help="Base URL for the LLM service. Must be compatible with --llm_service .")
+@click.option(
+    '--llm_api_key',
+    envvar='NVIDIA_API_KEY',
+    type=str,
+    default=None,
+    help=("API key for the LLM service, if unset the value of the `NVIDIA_API_KEY` environment variable will be used. "
+          "Must be compatible with --llm_service ."))
 @click.option(
     "--question",
     type=str,

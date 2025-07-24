@@ -47,7 +47,7 @@ on:
 env:
   CHANGE_TARGET: "${{ github.base_ref }}"
   CUDA_PATH: "/usr/local/cuda/"
-  CUDA_VER: "12.5"
+  CUDA_VER: "12.8"
   GH_TOKEN: "${{ github.token }}"
   GIT_COMMIT: "${{ github.sha }}"
   MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
@@ -230,7 +230,7 @@ jobs:
       matrix:
         arch: ["amd64", "arm64"]
         include:
-          - runner: linux-amd64-gpu-v100-latest-1
+          - runner: linux-amd64-gpu-l4-latest-1
             arch: "amd64"
           - runner: linux-arm64-cpu16
             arch: "arm64"

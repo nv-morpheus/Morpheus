@@ -85,7 +85,7 @@ This example utilizes the Triton Inference Server to perform inference. The neur
 From the Morpheus repo root directory, run the following to launch Triton and load the `sid-minibert` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
 ```
 
 This will launch Triton and only load the `sid-minibert-onnx` model. This model has been configured with a max batch size of 32, and to use dynamic batching for increased performance.
@@ -129,7 +129,7 @@ morpheus --log_level=DEBUG \
    add-class \
    `# 7th Stage: Filtering removes any messages that did not detect SI` \
    filter --filter_source=TENSOR \
-   `# 8th Stage: Convert from objects back into strings` \
+   `# 8th Stage: Prepare for output, excluding any columns starting with '_ts_'` \
    serialize --exclude '^_ts_' \
    `# 9th Stage: Write out the JSON lines to the nlp_si_detections.jsonlines file` \
    to-file --filename=.tmp/output/nlp_si_detections.jsonlines --overwrite
@@ -208,7 +208,7 @@ The output file `.tmp/output/nlp_si_detections.jsonlines` will contain the origi
 * `secret_keys`
 * `user`
 
-The value for these fields will be a `1` indicating a detection or a `0` indicating no detection. An example row with a detection is:
+The value for these fields will be a `true` indicating a detection or `false` indicating no detection. An example row with a detection is:
 ```json
 {
   "timestamp": 1616381019580,
@@ -224,15 +224,15 @@ The value for these fields will be a `1` indicating a detection or a `0` indicat
   "dest_port": "80",
   "flags": "24",
   "is_pii": false,
-  "address": 0,
-  "bank_acct": 0,
-  "credit_card": 0,
-  "email": 0,
-  "govt_id": 0,
-  "name": 0,
-  "password": 0,
-  "phone_num": 0,
-  "secret_keys": 1,
-  "user": 0
+  "address": false,
+  "bank_acct": false,
+  "credit_card": false,
+  "email": false,
+  "govt_id": false,
+  "name": false,
+  "password": false,
+  "phone_num": false,
+  "secret_keys": true,
+  "user": false
 }
 ```

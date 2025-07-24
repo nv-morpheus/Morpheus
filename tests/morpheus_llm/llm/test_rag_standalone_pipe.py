@@ -149,30 +149,6 @@ def _run_pipeline(config: Config,
     return sink.get_results()
 
 
-@pytest.mark.usefixtures("nemollm")
-@pytest.mark.milvus
-@pytest.mark.use_cudf
-@pytest.mark.parametrize("repeat_count", [5])
-@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
-def test_rag_standalone_pipe_nemo(config: Config,
-                                  mock_nemollm: mock.MagicMock,
-                                  milvus_server_uri: str,
-                                  repeat_count: int,
-                                  milvus_rss_collection: str,
-                                  import_mod: types.ModuleType):
-    mock_nemollm.post_process_generate_response.side_effect = [{"text": EXPECTED_RESPONSE} for _ in range(repeat_count)]
-    results = _run_pipeline(
-        config=config,
-        llm_service_name="nemollm",
-        model_name="test_model",
-        milvus_server_uri=milvus_server_uri,
-        collection_name=milvus_rss_collection,
-        repeat_count=repeat_count,
-        utils_mod=import_mod,
-    )
-    assert_results(results)
-
-
 @pytest.mark.usefixtures("openai", "restore_environ")
 @pytest.mark.milvus
 @pytest.mark.use_cudf
@@ -203,33 +179,6 @@ def test_rag_standalone_pipe_openai(config: Config,
     assert_results(results)
     mock_client.chat.completions.create.assert_not_called()
     mock_async_client.chat.completions.create.assert_called()
-
-
-@pytest.mark.usefixtures("nemollm")
-@pytest.mark.usefixtures("ngc_api_key")
-@pytest.mark.milvus
-@pytest.mark.use_cudf
-@pytest.mark.parametrize("repeat_count", [5])
-@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
-def test_rag_standalone_pipe_integration_nemo(config: Config,
-                                              milvus_server_uri: str,
-                                              repeat_count: int,
-                                              milvus_rss_collection: str,
-                                              import_mod: types.ModuleType):
-
-    results = _run_pipeline(
-        config=config,
-        llm_service_name="nemollm",
-        model_name="gpt-43b-002",
-        milvus_server_uri=milvus_server_uri,
-        collection_name=milvus_rss_collection,
-        repeat_count=repeat_count,
-        utils_mod=import_mod,
-    )
-
-    assert results['diff_cols'] == 0
-    assert results['total_rows'] == repeat_count
-    assert results['matching_rows'] + results['diff_rows'] == repeat_count
 
 
 @pytest.mark.usefixtures("openai")

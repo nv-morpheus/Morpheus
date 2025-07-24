@@ -25,6 +25,7 @@ limitations under the License.
 * [Example Ransomware Detection Morpheus Pipeline for AppShield Data](./ransomware_detection/README.md)
 * [Root Cause Analysis Acceleration & Predictive Maintenance Example](./root_cause_analysis/README.md)
 * [SID Visualization Example](./sid_visualization/README.md)
+* [Data Loss Prevention (DLP) Pipeline](./data_loss_prevention/README.md)
 * Large Language Models (LLMs)
   * [Agents](./llm/agents/README.md)
   * [Completion](./llm/completion/README.md)
@@ -34,6 +35,7 @@ limitations under the License.
 ## Environments
 Morpheus supports multiple environments, each environment is intended to support a given use-case. Each example documents which environments it is able to run in. With the exception of the Morpheus Release Container, the examples require fetching both the `datasets` and `examples` dataset via the `fetch_data.sh` script:
 ```bash
+git lfs install
 ./scripts/fetch_data.py fetch examples datasets
 ```
 

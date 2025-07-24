@@ -47,13 +47,13 @@
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="nvidia/cuda"
 ARG CUDA_MAJOR_VER=12
-ARG CUDA_MINOR_VER=5
-ARG CUDA_REV_VER=1
+ARG CUDA_MINOR_VER=8
+ARG CUDA_REV_VER=0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=22.04
 
 # =====Global Options=====
-ARG PYTHON_VER=3.10
+ARG PYTHON_VER=3.12
 # Allows running the docker build from a different directory than MORPHEUS_ROOT. Needed for using Morpheus in a
 # submodule
 ARG MORPHEUS_ROOT_HOST=.
@@ -303,7 +303,6 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
         -c nvidia \
         -c nvidia/label/dev \
         -c pytorch \
-        -c defaults \
         morpheus && \
     # Change to the morpheus directory and build the docs
     cd ${MORPHEUS_ROOT_HOST} &&\
@@ -338,7 +337,6 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
         -c nvidia \
         -c nvidia/label/dev \
         -c pytorch \
-        -c defaults \
         morpheus && \
     /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file \
         conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-${REAL_ARCH}.yaml
@@ -419,13 +417,17 @@ RUN git config --global --add safe.directory "*"
 # ============ Stage: python_debug_bld ===========
 # Configure and build cpython with debugging symbols
 FROM --platform=$TARGETPLATFORM development AS development_pydbg
+ARG PYTHON_VER
+
+# Temporary until #68 goes in
+ARG MORPHEUS_USER="root"
+
 
 COPY ${MORPHEUS_ROOT_HOST}/ci/conda/recipes/python-dbg/ ./ci/conda/recipes/python-dbg
 COPY ${MORPHEUS_ROOT_HOST}/ci/conda/recipes/run_conda_build.sh ./ci/conda/recipes/run_conda_build.sh
 COPY ${MORPHEUS_ROOT_HOST}/ci/conda/recipes/python_dbg_install.sh ./ci/conda/recipes/python_dbg_install.sh
 
-# Temporary until #68 goes in
-ARG MORPHEUS_USER="root"
+
 
 # Build and install debug cpython
 RUN source activate morpheus \
@@ -434,6 +436,6 @@ RUN source activate morpheus \
        ./ci/conda/recipes/run_conda_build.sh pydebug \
     && ./ci/conda/recipes/python_dbg_install.sh \
        -s $( ls /opt/conda/conda-bld/src_cache/Python-${PYTHON_VER}*.tar.xz ) \
-       -c $( ls /opt/conda/conda-bld/linux-64/python-${PYTHON_VER}*.tar.bz2 ) \
+       -c $( ls /opt/conda/conda-bld/linux-64/morpheus-python-dbg-${PYTHON_VER}*.tar.bz2 ) \
        -i ./ci/conda/recipes/python-dbg/source \
        -g $(eval echo "~${MORPHEUS_USER}")/.gdbinit

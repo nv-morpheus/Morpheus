@@ -63,7 +63,7 @@ This example can be easily applied to datasets generated from your own NVIDIA GP
 
 pyNVML is not installed by default, use the following command to install it:
 ```bash
-conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-125_arch-$(arch).yaml
+conda env update --solver=libmamba -n morpheus --file conda/environments/examples_cuda-128_arch-$(arch).yaml
 ```
 
 Run the following to start generating your dataset:
@@ -89,12 +89,12 @@ This example utilizes the Triton Inference Server to perform inference.
 
 Pull the Docker image for Triton:
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02
+docker pull nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06
 ```
 
 Run the following to launch Triton and load the `abp-nvsmi-xgb` XGBoost model:
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.02 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 nvcr.io/nvidia/morpheus/morpheus-tritonserver-models:25.06 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
 ```
 
 This will launch Triton and only load the `abp-nvsmi-xgb` model. This model has been configured with a max batch size of 32768, and to use dynamic batching for increased performance.
@@ -123,13 +123,13 @@ From the  Morpheus repo root directory, run:
 morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 1024 (Must be equal or less than Triton config)` \
    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
-   `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
+   `# Specify a FIL pipeline` \
    pipeline-fil --columns_file=data/columns_fil.txt \
    `# 1st Stage: Read from file` \
    from-file --filename=examples/data/nvsmi.jsonlines \
    `# 2nd Stage: Deserialize batch DataFrame into ControlMessages` \
    deserialize \
-   `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
+   `# 3rd Stage: Preprocessing stages the model input data into tensors` \
    preprocess \
    `# 4th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
    inf-triton --model_name=abp-nvsmi-xgb --server_url=localhost:8000 \
@@ -137,7 +137,7 @@ morpheus --log_level=DEBUG \
    monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
    `# 6th Stage: Add results from inference to the messages` \
    add-class \
-   `# 7th Stage: Convert from objects back into strings. Ignore verbose input data` \
+   `# 7th Stage: Include only the 'mining' column in the output` \
    serialize --include 'mining' \
    `# 8th Stage: Write out the JSON lines to the detections.jsonlines file` \
    to-file --filename=.tmp/output/abp_nvsmi_detections.jsonlines --overwrite

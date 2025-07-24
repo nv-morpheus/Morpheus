@@ -14,7 +14,8 @@
 # limitations under the License.
 
 ARG BASE_IMG=nvcr.io/nvidia/cuda
-ARG BASE_IMG_TAG=12.5.1-base-ubuntu22.04
+ARG BASE_IMG_TAG=12.8.0-base-ubuntu22.04
+ARG CONDA_CHANNEL_ALIAS="https://conda.anaconda.org"
 
 FROM --platform=$TARGETPLATFORM ${BASE_IMG}:${BASE_IMG_TAG} AS base
 
@@ -29,6 +30,8 @@ RUN apt-get update && apt-get install -y \
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-$(arch).sh -O /tmp/miniconda.sh \
     && bash /tmp/miniconda.sh -b -p /opt/conda \
     && rm /tmp/miniconda.sh
+
+COPY docker/condarc /opt/conda/.condarc
 
 # Add conda to the PATH
 ENV PATH=/opt/conda/bin:$PATH
@@ -48,7 +51,9 @@ WORKDIR /workspace/examples/digital_fingerprinting/production
 COPY . /workspace/examples/digital_fingerprinting/production/
 
 # Create a conda env with morpheus-dfp and any additional dependencies needed to run the examples
-RUN conda env create --solver=libmamba -y --name morpheus-dfp --file ./conda/environments/dfp_example_cuda-125_arch-$(arch).yaml
+RUN CONDA_ALWAYS_YES=true \
+    conda env create --solver=libmamba -y --name morpheus-dfp \
+    --file ./conda/environments/dfp_example_cuda-128_arch-$(arch).yaml
 
 # Work-around PyTorch instalation issue https://github.com/nv-morpheus/Morpheus/issues/2095
 RUN source activate morpheus-dfp && \
