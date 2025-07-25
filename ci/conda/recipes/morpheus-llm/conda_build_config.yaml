@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,24 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-list(APPEND CMAKE_MESSAGE_CONTEXT "pass_thru_cpp_stage")
+c_compiler_version:
+  - 12.1
 
-if(PROJECT_IS_TOP_LEVEL)
-  find_library(MORPHEUS morpheus REQUIRED)
-else()
-  set(MORPHEUS morpheus)
-endif()
+cxx_compiler_version:
+  - 12.1
 
-morpheus_add_pybind11_module(pass_thru_cpp
-  SOURCE_FILES
-    "pass_thru.cpp"
-  INCLUDE_DIRS
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  LINK_TARGETS
-    ${MORPHEUS}
-    CUDA::nvtx3
-    cudf::cudf
-    glog::glog
-)
+cuda_compiler:
+  - cuda-nvcc
 
-list(POP_BACK CMAKE_MESSAGE_CONTEXT)
+cuda_compiler_version:
+  - 12.8
+
+python:
+  - 3.12
+
+rapids_version:
+  - 25.02

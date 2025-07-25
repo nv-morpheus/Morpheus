@@ -20,7 +20,7 @@ source ${SCRIPT_DIR}/common.sh
 set +e
 
 # Intentionally excluding CHANGELOG.md as it immutable
-DOC_FILES=$(git ls-files "*.md" "*.rst" | grep -v -E '^CHANGELOG\.md$')
+DOC_FILES=$(git ls-files "*.md" "*.rst" | grep -v -E '^CHANGELOG\.md$' | grep -v -E '^thirdparty/LICENSES/LICENSE\.gretelai-gretel-gliner-bi-small-v1\.0\.md$')
 
 vale ${DOC_FILES}
 RETVAL=$?

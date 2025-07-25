@@ -70,8 +70,8 @@ outputs:
         - librdkafka =2.6.1
         # Listing mlflow in the host dependencies so that it solves along with libgcc this avoids an
         # incompatible runtime environment
-        - mlflow>=2.18
-        - mrc {{ minor_version }}
+        - &mlflow mlflow>=2.18
+        - &mrc mrc {{ minor_version }}
         - nlohmann_json 3.11.*
         - pip
         - pybind11-stubgen 0.10.5
@@ -98,8 +98,8 @@ outputs:
         - feedparser =6.0.*
         - grpcio =1.62.*
         - lxml
-        - mlflow
-        - mrc
+        - *mlflow
+        - *mrc
         - networkx=2.8.8
         - numba=0.60 # Pin version to avoid https://github.com/nv-morpheus/Morpheus/issues/2166
         - numpydoc =1.5.*
@@ -112,7 +112,7 @@ outputs:
         - requests>=2.32.3,<3
         - requests-cache =1.1.*
         - scikit-learn =1.3.2.*
-        - sqlalchemy <2.0 # 2.0 is incompatible with pandas=1.3
+        - sqlalchemy 1.4.54, <2.0 # 2.0 is incompatible with pandas=1.3
         - tqdm =4.*
         - tritonclient =2.34.*
         - typing_utils =0.1.*
@@ -136,122 +136,6 @@ outputs:
         - tests/*
       script: morpheus_core_test.sh
 
-  ############################### morpheus-dfp #############################
-  - name: morpheus-dfp
-    type: conda_v2
-    build:
-      number: {{ GIT_DESCRIBE_NUMBER }}
-      string: cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
-      script_env:
-        - CMAKE_CUDA_ARCHITECTURES
-        - MORPHEUS_CACHE_DIR
-        - MORPHEUS_PYTHON_BUILD_STUBS
-        - PARALLEL_LEVEL
-      run_exports:
-        - {{ pin_subpackage("morpheus-dfp", max_pin="x.x") }}
-    script: morpheus_dfp_build.sh
-
-    requirements:
-      build:
-        - {{ compiler("c") }}
-        - {{ compiler("cuda") }}
-        - {{ compiler("cxx") }}
-        - ccache
-        - cmake =3.27
-        - ninja =1.11
-        - pkg-config =0.29
-      host:
-        # cuda version is pinned here. without this the resolver pulls
-        # in versions that are not compatible with morpheus-core
-        - cuda-cudart-dev {{ cuda_compiler_version }}.*
-        - cuda-version {{ cuda_compiler_version }}.*
-        - {{ pin_subpackage('morpheus-core', exact=True) }}
-        - pip
-        - python {{ python }}
-        - scikit-build 0.17.6
-        # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
-        - setuptools>=75,<80
-        - versioneer-518
-      run:
-        - {{ pin_subpackage('morpheus-core', exact=True) }}
-
-    test:
-      imports:
-        - morpheus_dfp
-      requires:
-        - cuml {{ rapids_version }}.*
-        - pynvml
-        - pytest-asyncio
-        - pytest-benchmark
-        - pytest-cov
-        - pytest =7.4.4
-      source_files:
-        - dependencies.yaml
-        - pyproject.toml
-        - scripts/fetch_data.py
-        - tests/*
-      script: morpheus_dfp_test.sh
-
-  ############################### morpheus-llm #############################
-  - name: morpheus-llm
-    type: conda_v2
-    build:
-      number: {{ GIT_DESCRIBE_NUMBER }}
-      string: cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
-      script_env:
-        - CMAKE_CUDA_ARCHITECTURES
-        - MORPHEUS_CACHE_DIR
-        - MORPHEUS_PYTHON_BUILD_STUBS
-        - PARALLEL_LEVEL
-      run_exports:
-        - {{ pin_subpackage("morpheus-llm", max_pin="x.x") }}
-    script: morpheus_llm_build.sh
-
-    requirements:
-      build:
-        - {{ compiler("c") }}
-        - {{ compiler("cuda") }}
-        - {{ compiler("cxx") }}
-        - ccache
-        - cmake =3.27
-        - ninja =1.11
-        - pkg-config =0.29
-      host:
-        # cuda version is pinned here. without this the resolver pulls
-        # in versions that are not compatible with morpheus-core
-        - cuda-cudart-dev {{ cuda_compiler_version }}.*
-        - cuda-version {{ cuda_compiler_version }}.*
-        - {{ pin_subpackage('morpheus-core', exact=True) }}
-        - cython 3.0.*
-        - glog >=0.7.1,<0.8
-        - pip
-        - pybind11-stubgen 0.10.5
-        - python {{ python }}
-        - rapidjson 1.1.0
-        - scikit-build 0.17.6
-        # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224
-        - setuptools>=75,<80
-        - versioneer-518
-        - zlib >=1.3.1,<2 # required to build triton client
-      run:
-        - {{ pin_subpackage('morpheus-core', exact=True) }}
-
-    test:
-      imports:
-        - morpheus_llm
-      requires:
-        - cuml {{ rapids_version }}.*
-        - pynvml
-        - pytest-asyncio
-        - pytest-benchmark
-        - pytest-cov
-        - pytest =7.4.4
-      source_files:
-        - dependencies.yaml
-        - pyproject.toml
-        - scripts/fetch_data.py
-        - tests/*
-      script: morpheus_llm_test.sh
 
 about:
   home: https://github.com/nv-morpheus/Morpheus

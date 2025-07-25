@@ -26,7 +26,7 @@ All environments require additional Conda packages which can be installed with e
 | Conda | ✔ | |
 | Morpheus Docker Container | ✔ |  |
 | Morpheus Release Container | ✔ |  |
-| Dev Container | ✔ |  |
+| Dev Container | ✔ | Requires using the `dev-triton-start` script to start Triton and adding the `--server_url=triton:8001` flag to the `run.py` command. |
 
 ### Supported Architectures
 | Architecture | Supported | Issue |
@@ -104,7 +104,7 @@ Below is a visualization of the pipeline showing all stages and data flow:
 
 ### Installing GliNER and dependencies
 
-Prior to running the DLP pipeline, additional requirements must be installed in to your Conda environment.
+Prior to running the DLP pipeline, additional requirements must be installed in to your Conda environment. This will download and install additional third-party open source software projects. Review the license terms of these open source projects before use.
 
 ```bash
 conda env update --solver=libmamba \
@@ -119,6 +119,8 @@ pip install --no-deps gliner==0.2.21
 
 ### Downloading the model (optional)
 
+The model being used is [gretelai/gretel-gliner-bi-small-v1.0](https://huggingface.co/gretelai/gretel-gliner-bi-small-v1.0) which is released under the [Apache License 2.0](https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md).
+
 Users who are using the pre-built Morpheus Docker container should skip this step. Downloading the model locally offers a slight performance benefit, otherwise the model is fetched on-demand, then on subsequent runs a cached copy of the model is used.
 
 The model is stored in the Morpheus repository using [Git Large File Storage (LFS)](https://git-lfs.github.com/). Only those files which are strictly needed to run Morpheus are downloaded by default when the repository is cloned. The model can be downloaded using the `fetch_data.py` script.
@@ -127,6 +129,7 @@ The model is stored in the Morpheus repository using [Git Large File Storage (LF
 git lfs install
 ./scripts/fetch_data.py fetch models
 ```
+
 
 ### Build the Example
 
@@ -218,6 +221,9 @@ Options:
                                   required]
   --help                          Show this message and exit.
 ```
+
+
+> **Note**: By default when the `--input_file` and `--dataset` flags are not set, the [gretelai/gretel-pii-masking-en-v1](https://huggingface.co/datasets/gretelai/gretel-pii-masking-en-v1) dataset will be fetched at runtime. This dataset is released under the [Apache License 2.0](https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md).
 
 To launch the configured Morpheus pipeline with the default arguments, run the following:
 

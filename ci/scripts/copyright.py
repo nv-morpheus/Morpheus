@@ -50,6 +50,7 @@ ExemptFiles: typing.List[re.Pattern] = [
     re.compile(r"[^ \/\n]*docs/source/(_lib|_modules|_templates)/.*$"),
     re.compile(r"PULL_REQUEST_TEMPLATE.md"),  # Ignore the PR template,
     re.compile(r"[^ \/\n]*conda/environments/.*\.yaml$"),  # Ignore generated environment files
+    re.compile(r"[^ \/\n]*thirdparty/LICENSES/LICENSE\.gretelai-gretel-gliner-bi-small-v1\.0\.md$"),
 ]
 
 # this will break starting at year 10000, which is probably OK :)
