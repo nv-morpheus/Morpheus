@@ -80,6 +80,12 @@ limitations under the License.
 - Forward merge branch-25.02 into branch-25.06 ([#2197](https://github.com/nv-morpheus/Morpheus/pull/2197)) [@willkill07](https://github.com/willkill07)
 - CI: Add new L4 runner for test ([#2145](https://github.com/nv-morpheus/Morpheus/pull/2145)) [@willkill07](https://github.com/willkill07)
 
+# Morpheus 25.02.02 (29 Aug 2025)
+
+## 🛠️ Improvements
+
+- Forward-merge branch-24.10 into branch-25.02 ([#2302](https://github.com/nv-morpheus/Morpheus/pull/2302))
+
 # Morpheus 25.02.01 (28 Feb 2025)
 
 ## 🐛 Bug Fixes
@@ -149,6 +155,12 @@ limitations under the License.
 - Misc cleanups to example pipelines ([#2049](https://github.com/nv-morpheus/Morpheus/pull/2049)) [@dagardner-nv](https://github.com/dagardner-nv)
 - Improve `SharedProcessPool` tests performance ([#1950](https://github.com/nv-morpheus/Morpheus/pull/1950)) [@yczhang-nv](https://github.com/yczhang-nv)
 - Add parquet support to write_to_file_stage.py ([#1937](https://github.com/nv-morpheus/Morpheus/pull/1937)) [@yczhang-nv](https://github.com/yczhang-nv)
+
+# Morpheus 24.10.02 (29 Aug 2025)
+
+## 🛠️ Improvements
+- Forward-merge branch-24.06 into branch-24.10 ([#2300](https://github.com/nv-morpheus/Morpheus/pull/2300))
+- Forward-merge branch-24.06 into branch-24.10 ([#2245](https://github.com/nv-morpheus/Morpheus/pull/2245))
 
 # Morpheus 24.10.01 (22 Nov 2024)
 
@@ -295,6 +307,11 @@ limitations under the License.
 - Install built documentation into release container ([#1806](https://github.com/nv-morpheus/Morpheus/pull/1806)) [@dagardner-nv](https://github.com/dagardner-nv)
 - Removing support for `MultiMessage` from stages ([#1803](https://github.com/nv-morpheus/Morpheus/pull/1803)) [@yczhang-nv](https://github.com/yczhang-nv)
 - Batch incoming DOCA raw packet data ([#1731](https://github.com/nv-morpheus/Morpheus/pull/1731)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+# Morpheus 24.06.02 (29 Aug 2025)
+
+## 🛠️ Improvements
+- Update dependencies for Morpheus 24.06 container ([#2217](https://github.com/nv-morpheus/Morpheus/pull/2217)) [@yczhang-nv](https://github.com/yczhang-nv)
 
 # Morpheus 24.06.01 (23 Aug 2024)
 
