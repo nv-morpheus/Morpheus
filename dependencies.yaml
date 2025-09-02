@@ -333,6 +333,7 @@ dependencies:
           - mlflow>=2.10.0,<3
           - mrc=24.06
           - networkx=2.8.8
+          - npy-append-array=0.9.16 # Avoids a version conflict introduced by 0.9.19 and possibly other versions
           - numpydoc=1.5
           - nvtabular=23.08.00
           - pydantic
