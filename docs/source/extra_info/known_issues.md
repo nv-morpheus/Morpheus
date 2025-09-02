@@ -17,6 +17,7 @@ limitations under the License.
 
 # Known Issues
 
+- numba triggering IndexError on systems with driver version 580+ ([#2305](https://github.com/nv-morpheus/Morpheus/issues/2305))
 - TrainAEStage fails with a Segmentation fault ([#1641](https://github.com/nv-morpheus/Morpheus/issues/1641))
 - vdb_upload example pipeline triggers an internal error in Triton ([#1649](https://github.com/nv-morpheus/Morpheus/issues/1649))
 
