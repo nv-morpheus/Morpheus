@@ -131,7 +131,8 @@ jobs:
 
   test:
     name: Test
-    runs-on: linux-amd64-gpu-v100-latest-1
+    # Using earliest to avoid Morpheus conflict with driver version 580+ #2305
+    runs-on: linux-amd64-gpu-v100-earliest-1
     timeout-minutes: 60
     container:
       credentials:
