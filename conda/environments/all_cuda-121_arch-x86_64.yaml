@@ -19,7 +19,7 @@ dependencies:
 - breathe=4.35.0
 - ccache
 - clangdev=16
-- click>=8
+- click>=8, <8.2
 - cmake=3.27
 - cuda-cudart-dev=12.1
 - cuda-cudart=12.1
