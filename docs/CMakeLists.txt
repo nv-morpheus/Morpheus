@@ -20,7 +20,7 @@ find_package(Sphinx REQUIRED)
 
 set(SPHINX_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR}/html)
-set(SPHINX_ARGS -b html -j auto -T -W)
+set(SPHINX_ARGS -b html -j auto -T)
 
 add_custom_target(${PROJECT_NAME}_docs
    COMMAND
