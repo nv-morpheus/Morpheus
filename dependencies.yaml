@@ -35,6 +35,7 @@ files:
       - example-dfp-prod
       - example-gnn
       - example-llms
+      - optional_databricks
       - python
       - runtime
       - test_python_morpheus
