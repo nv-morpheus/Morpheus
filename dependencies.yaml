@@ -442,7 +442,7 @@ dependencies:
     common:
       - output_types: [requirements]
         packages:
-           - faiss-cpu
+           - &faiss-cpu faiss-cpu==1.9 # Pinning to 1.9 due to incompatibility with numpy
            - google-search-results==2.4
            - langchain==0.1.16
            - langchain-nvidia-ai-endpoints==0.0.11
@@ -514,7 +514,7 @@ dependencies:
           - pip:
             - langchain==0.1.16
             - langchain-nvidia-ai-endpoints==0.0.11
-            - faiss-cpu
+            - *faiss-cpu
             - google-search-results==2.4
             - nemollm==0.3.5
             - sentence-transformers==2.7 # using pip now instead of conda to avoid install of pytorch cpu
