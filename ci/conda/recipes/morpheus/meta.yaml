@@ -100,7 +100,6 @@ outputs:
         - mlflow>=2.10.0,<2.18
         - mrc
         - networkx=2.8.8
-        - npy-append-array=0.9.16 # Avoids a version conflict introduced by 0.9.19 and possibly other versions
         - numpydoc =1.5.*
         - pydantic
         - pluggy =1.3.*
