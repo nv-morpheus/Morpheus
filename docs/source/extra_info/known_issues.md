@@ -17,7 +17,7 @@ limitations under the License.
 
 # Known Issues
 
-- numba triggering IndexError on systems with driver version 580+ ([#2305](https://github.com/nv-morpheus/Morpheus/issues/2305))
+- Numba triggering IndexError on systems with driver version 580+ ([#2305](https://github.com/nv-morpheus/Morpheus/issues/2305))
 - `vdb_upload` example pipeline triggers an internal error in Triton ([#1649](https://github.com/nv-morpheus/Morpheus/issues/1649))
 - `ransomware_detection` example pipeline occasionally logs a `distributed.comm.core.CommClosedError` error during shutdown ([#2026](https://github.com/nv-morpheus/Morpheus/issues/2026)).
 
