@@ -35,7 +35,6 @@ dependencies:
 - networkx=2.8.8
 - newspaper3k=0.2
 - nodejs=18.*
-- npy-append-array=0.9.16
 - numba=0.60.0
 - numexpr
 - numpydoc=1.5
