@@ -56,7 +56,7 @@ outputs:
         - cuda-cudart-dev {{ cuda_compiler_version }}.*
         - cuda-version {{ cuda_compiler_version }}.*
         - morpheus-core={{ version }}=cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
-        - pip
+        - pip=25.2 # We currently depend on deprecated pip functionality which was removed in pip v25.3 #2053
         - python {{ python }}
         - scikit-build 0.17.6
         # We are currently depending on some deprecated functionality removed in setuptools 80+ #2224

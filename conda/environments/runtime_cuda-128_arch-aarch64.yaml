@@ -32,7 +32,7 @@ dependencies:
 - numba=0.60
 - numba=0.60.0
 - numpydoc=1.5
-- pip
+- pip=25.2
 - pluggy=1.3
 - pydantic
 - python-confluent-kafka=2.6.1

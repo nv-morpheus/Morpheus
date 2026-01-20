@@ -58,7 +58,7 @@ outputs:
         - morpheus-core={{ version }}=cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
         - cython 3.0.*
         - glog >=0.7.1,<0.8
-        - pip
+        - pip=25.2 # We currently depend on deprecated pip functionality which was removed in pip v25.3 #2053
         - pybind11-stubgen 0.10.5
         - python {{ python }}
         - rapidjson 1.1.0

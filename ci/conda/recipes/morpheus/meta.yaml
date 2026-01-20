@@ -75,7 +75,7 @@ outputs:
         - librdkafka =2.6.1
         - mrc {{ minor_version }}
         - nlohmann_json 3.11.*
-        - pip
+        - pip=25.2 # We currently depend on deprecated pip functionality which was removed in pip v25.3 #2053
         - pybind11-stubgen 0.10.5
         - python {{ python }}
         - rapidjson 1.1.0
