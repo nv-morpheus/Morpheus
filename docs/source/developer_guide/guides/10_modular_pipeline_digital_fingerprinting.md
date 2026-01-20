@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -429,7 +429,7 @@ docker compose build
 > unexpected)
 > ```
 >
-> This is most likely due to using an older version of the `docker-compose` command, instead re-run the build with `docker compose`. Refer to [Migrate to Compose V2](https://docs.docker.com/compose/migrate/) for more information.
+> This is most likely due to using an older version of the `docker-compose` command, instead re-run the build with `docker compose`. Refer to the [Docker Compose](https://docs.docker.com/compose/) documentation for more information.
 
 ### Downloading the example datasets
 First, we will need to install `s3fs` and then run the `examples/digital_fingerprinting/fetch_example_data.py` script. This will download the example data into the `examples/data/dfp` dir.
