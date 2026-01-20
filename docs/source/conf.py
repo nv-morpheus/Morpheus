@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -205,7 +205,8 @@ linkcheck_ignore = [
     r'https://(platform\.)?openai.com',
     r'https://code.visualstudio.com',
     r"^https://github.com/nv-morpheus/Morpheus/blob/.*#.+$",
-    r"^https://nvcr.io/$"  # Don't ignore all of nvcr.io just any links to the root
+    r"^https://nvcr.io/$",  # Don't ignore all of nvcr.io just any links to the root
+    r"^https://medium\.com/"  # These are now returning 403 errors
 ]
 
 # Add any paths that contain templates here, relative to this directory.
