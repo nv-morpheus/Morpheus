@@ -30,7 +30,7 @@ if [[ "$#" -ne 2 ]]; then
    # Current version comes from the previous alpha tag
    CURRENT_FULL_VERSION=$(git tag --merged HEAD --list 'v*' | sort --version-sort | tail -n 2 | head -n 1 | tr -d 'va')
    # Next version comes from the latest alpha tag
-   NEXT_FULL_VERSION=$(git tag --merged HEAD --list 'v*' | sort --version-sort | tail -n 1 | tr -d 'va')
+   NEXT_FULL_VERSION=$(git tag --merged HEAD --list 'v*' | sort --version-sort | tail -n 1 | sed -e 's|a[0-9]*||g' | tr -d 'va')
 else
    # User has supplied current and next arguments
    CURRENT_FULL_VERSION=$1
