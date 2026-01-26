@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -59,7 +59,7 @@ def _get_git_revision():
     return revision.decode('utf-8')
 
 
-def _linkcode_resolve(domain, info, package, url_fmt, revision):
+def _linkcode_resolve(domain, info, *, package, url_fmt, revision, morpheus_root):
     """Determine a link to online source for a class/method/function
 
     This is called by sphinx.ext.linkcode
@@ -139,7 +139,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
             fn = os.path.abspath(os.path.join("..", "python", fn))
 
         # Convert to relative from module root
-        fn = os.path.relpath(fn, start=os.path.dirname(__import__(package).__file__))
+        fn = os.path.relpath(fn, start=morpheus_root)
 
     # Get the line number if we need it. (Can work without it)
     if (lineno is None):
@@ -152,10 +152,13 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
                 lineno = obj.__code__.co_firstlineno
             else:
                 lineno = ''
-    return url_fmt.format(revision=revision, package=package, path=fn, lineno=lineno)
+
+    url = url_fmt.format(revision=revision, package=package, path=fn, lineno=lineno)
+
+    return url
 
 
-def make_linkcode_resolve(package, url_fmt):
+def make_linkcode_resolve(*, morpheus_root: str, package: str, url_fmt: str):
     """Returns a linkcode_resolve function for the given URL format
 
     revision is a git commit reference (hash or name)
@@ -167,4 +170,4 @@ def make_linkcode_resolve(package, url_fmt):
                                    '{path}#L{lineno}')
     """
     revision = _get_git_revision()
-    return partial(_linkcode_resolve, revision=revision, package=package, url_fmt=url_fmt)
+    return partial(_linkcode_resolve, morpheus_root=morpheus_root, revision=revision, package=package, url_fmt=url_fmt)
