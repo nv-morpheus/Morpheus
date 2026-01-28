@@ -142,7 +142,7 @@ def _linkcode_resolve(domain, info, *, package, url_fmt, revision, morpheus_root
         if not os.path.exists(fn) or os.path.commonpath((morpheus_root, fn)) != morpheus_root:
             # If it isn't in the morpheus root, we can't link to it (most likely a 3rd party lib)
             return
-        
+
         fn = os.path.relpath(fn, start=morpheus_root)
 
     # Get the line number if we need it. (Can work without it)
