@@ -42,7 +42,7 @@ git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs examples
 
 rapids-logger "Configuring for docs"
-cmake ${CMAKE_BUILD_ALL_FEATURES} -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_BUILD_DOCS=ON .
+cmake ${CMAKE_BUILD_ALL_FEATURES} -DMORPHEUS_PYTHON_INPLACE_BUILD=ON -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF -DMORPHEUS_BUILD_DOCS=ON .
 
 rapids-logger "Installing Morpheus"
 cmake --build ${BUILD_DIR} --parallel ${PARALLEL_LEVEL} --target install
