@@ -140,11 +140,10 @@ def _linkcode_resolve(domain, info, *, package, url_fmt, revision, morpheus_root
             fn = os.path.abspath(os.path.join("..", "python", fn))
 
         # Convert to relative from module root
-        if os.path.commonpath((morpheus_root, fn)) != morpheus_root:
+        if not os.path.exists(fn) or os.path.commonpath((morpheus_root, fn)) != morpheus_root:
             # If it isn't in the morpheus root, we can't link to it (most likely a 3rd party lib)
             return
         
-        fnp = fn
         fn = os.path.relpath(fn, start=morpheus_root)
 
     # Get the line number if we need it. (Can work without it)
@@ -160,8 +159,6 @@ def _linkcode_resolve(domain, info, *, package, url_fmt, revision, morpheus_root
                 lineno = ''
 
     url = url_fmt.format(revision=revision, package=package, path=fn, lineno=lineno)
-
-    print(f"\n********************\ndomain={domain}\ninfo={info}\nfnp={fnp}\nfn={fn}\npackage={package}\nmorpheus_root={morpheus_root}\nResolved linkcode URL: {url}\n********************\n")
 
     return url
 
