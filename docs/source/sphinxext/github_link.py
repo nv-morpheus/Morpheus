@@ -119,7 +119,6 @@ def _linkcode_resolve(domain, info, *, package, url_fmt, revision, morpheus_root
         except Exception:
             fn = None
 
-    fnp='undef'
     if not fn:
         # Possibly Cython code. Search docstring for source
         m = source_regex.search(obj.__doc__ or "")
