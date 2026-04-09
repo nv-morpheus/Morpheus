@@ -37,6 +37,7 @@ MockedMLFlow = namedtuple("MockedMLFlow",
                               'ModelSignature',
                               'RunsArtifactRepository',
                               'end_run',
+                              'get_artifact_uri',
                               'get_tracking_uri',
                               'log_metrics',
                               'log_params',
@@ -71,6 +72,7 @@ def mock_mlflow():
           mock.patch("morpheus.controllers.mlflow_model_writer_controller.RunsArtifactRepository") as
           mock_runs_artifact_repository,
           mock.patch("mlflow.end_run") as mock_mlflow_end_run,
+          mock.patch("mlflow.get_artifact_uri") as mock_mlflow_get_artifact_uri,
           mock.patch("mlflow.get_tracking_uri") as mock_mlflow_get_tracking_uri,
           mock.patch("mlflow.log_metrics") as mock_mlflow_log_metrics,
           mock.patch("mlflow.log_params") as mock_mlflow_log_params,
@@ -94,12 +96,12 @@ def mock_mlflow():
         mock_mlflow_start_run.return_value = mock_mlflow_start_run
         mock_mlflow_start_run.__enter__.return_value = mock_mlflow_start_run
         mock_mlflow_start_run.info.run_id = "test_run_id"
-        mock_mlflow_start_run.info.run_uuid = "test_run_uuid"
 
         yield MockedMLFlow(mock_mlflow_client,
                            mock_model_signature,
                            mock_runs_artifact_repository,
                            mock_mlflow_end_run,
+                           mock_mlflow_get_artifact_uri,
                            mock_mlflow_get_tracking_uri,
                            mock_mlflow_log_metrics,
                            mock_mlflow_log_params,
@@ -306,7 +308,7 @@ def test_on_data(
     mock_mlflow.ModelSignature.assert_called_once()
 
     mock_mlflow.pytorch_log_model.assert_called_once_with(pytorch_model=mock_model,
-                                                          artifact_path="dfencoder-test_run_uuid",
+                                                          artifact_path="dfencoder-test_run_id",
                                                           conda_env=conda_env,
                                                           signature=mock_mlflow.ModelSignature)
 
@@ -325,10 +327,69 @@ def test_on_data(
         mock_requests.patch.assert_not_called()
 
     mock_mlflow.RunsArtifactRepository.get_underlying_uri.assert_called_once_with(mock_mlflow.model_info.model_uri)
+    mock_mlflow.get_artifact_uri.assert_not_called()
 
     expected_tags = {"start": min_time, "end": max_time, "count": len(df)}
 
     mock_mlflow.MlflowClient.create_model_version.assert_called_once_with(name="dfp-Account-123456789",
                                                                           source=mock_mlflow.model_src,
+                                                                          run_id="test_run_id",
+                                                                          tags=expected_tags)
+
+
+def test_on_data_mlflow_3x_uri(
+        config: Config,
+        mock_mlflow: MockedMLFlow,  # pylint: disable=redefined-outer-name
+        mock_requests: MockedRequests,
+        dataset_pandas: DatasetManager):
+    """MLflow 3.x returns models:/m-<hash> URIs from log_model; verify the writer falls back to
+    mlflow.get_artifact_uri() instead of the incompatible RunsArtifactRepository path."""
+    from morpheus_dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+    from morpheus_dfp.stages.dfp_mlflow_model_writer import conda_env
+
+    # Simulate MLflow 3.x "logged model" URI
+    mock_mlflow.model_info.model_uri = "models:/m-abc123def456"
+
+    mock_artifact_uri = mock.MagicMock()
+    mock_mlflow.get_artifact_uri.return_value = mock_artifact_uri
+
+    mock_requests.get.side_effect = RuntimeError("should not be called")
+    mock_requests.patch.side_effect = RuntimeError("should not be called")
+
+    config.ae.timestamp_column_name = 'eventTime'
+
+    input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
+    df = dataset_pandas[input_file]
+
+    mock_model = mock.MagicMock()
+    mock_model.learning_rate_decay.state_dict.return_value = {'last_epoch': 1}
+    mock_model.learning_rate = 0.01
+    mock_model.batch_size = 32
+    mock_model.categorical_fts = {}
+    mock_model.prepare_df.return_value = df
+    mock_model.get_anomaly_score.return_value = pd.Series(float(i) for i in range(len(df)))
+
+    msg = ControlMessage()
+    msg.payload(MessageMeta(df))
+    msg.set_metadata("model", mock_model)
+    msg.set_metadata("user_id", 'Account-123456789')
+
+    stage = DFPMLFlowModelWriterStage(config, timeout=10)
+    assert stage._controller.on_data(msg) is msg
+
+    # RunsArtifactRepository must NOT be called for models:/ URIs
+    mock_mlflow.RunsArtifactRepository.get_underlying_uri.assert_not_called()
+
+    # mlflow.get_artifact_uri must be called with the model_path used in log_model
+    mock_mlflow.get_artifact_uri.assert_called_once_with("dfencoder-test_run_id")
+
+    expected_tags = {
+        "start": df['eventTime'].min(),
+        "end": df['eventTime'].max(),
+        "count": df['eventTime'].count()
+    }
+
+    mock_mlflow.MlflowClient.create_model_version.assert_called_once_with(name="dfp-Account-123456789",
+                                                                          source=mock_artifact_uri,
                                                                           run_id="test_run_id",
                                                                           tags=expected_tags)

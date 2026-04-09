@@ -253,7 +253,7 @@ class MLFlowModelWriterController:
             with mlflow.start_run(run_name="autoencoder model training run",
                                   experiment_id=experiment.experiment_id) as run:
 
-                model_path = f"{model_path}-{run.info.run_uuid}"
+                model_path = f"{model_path}-{run.info.run_id}"
 
                 # Log all params in one dict to avoid round trips
                 mlflow.log_params({
@@ -322,7 +322,14 @@ class MLFlowModelWriterController:
                     # Need to apply permissions
                     self._apply_model_permissions(reg_model_name=reg_model_name)
 
-                model_src = RunsArtifactRepository.get_underlying_uri(model_info.model_uri)
+                model_uri = model_info.model_uri
+                if model_uri.startswith("models:/"):
+                    # MLflow 3.x returns "logged model" URIs (models:/m-<hash>) which are not
+                    # compatible with RunsArtifactRepository. Derive the artifact URI directly
+                    # from the active run context instead.
+                    model_src = mlflow.get_artifact_uri(model_path)
+                else:
+                    model_src = RunsArtifactRepository.get_underlying_uri(model_uri)
 
                 tags = {
                     "start": message.payload().get_data(self._timestamp_column_name).min(),
