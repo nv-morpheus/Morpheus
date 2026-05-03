@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -84,6 +84,7 @@ def mock_mlflow():
         mock_model_signature.return_value = mock_model_signature
 
         mock_model_info = mock.MagicMock()
+        mock_model_info.model_uri = "runs:/test_run_id/dfencoder-test_run_id"
         mock_mlflow_pytorch_log_model.return_value = mock_model_info
 
         mock_model_src = mock.MagicMock()
@@ -345,7 +346,6 @@ def test_on_data_mlflow_3x_uri(
     """MLflow 3.x returns models:/m-<hash> URIs from log_model; verify the writer falls back to
     mlflow.get_artifact_uri() instead of the incompatible RunsArtifactRepository path."""
     from morpheus_dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
-    from morpheus_dfp.stages.dfp_mlflow_model_writer import conda_env
 
     # Simulate MLflow 3.x "logged model" URI
     mock_mlflow.model_info.model_uri = "models:/m-abc123def456"
