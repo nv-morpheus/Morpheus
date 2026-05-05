@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +32,6 @@ from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
 from morpheus_llm.llm.nodes.llm_generate_node import LLMGenerateNode
 from morpheus_llm.llm.nodes.prompt_template_node import PromptTemplateNode
 from morpheus_llm.llm.services.llm_service import LLMService
-from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
 from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
@@ -77,8 +76,8 @@ def _run_pipeline(config: Config,
 @pytest.mark.use_cudf
 @pytest.mark.cpu_mode
 @pytest.mark.benchmark
-@pytest.mark.usefixtures("mock_nemollm", "mock_chat_completion")
-@pytest.mark.parametrize("llm_service_cls", [NeMoLLMService, OpenAIChatService])
+@pytest.mark.usefixtures("mock_chat_completion")
+@pytest.mark.parametrize("llm_service_cls", [OpenAIChatService])
 def test_completion_pipe(benchmark: collections.abc.Callable[[collections.abc.Callable], typing.Any],
                          config: Config,
                          dataset: DatasetManager,

@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2025, NVIDIA CORPORATION.
+# Copyright (c) 2023-2026, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ import pymilvus
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from morpheus_llm.llm.services.llm_service import LLMService
-from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
 from morpheus_llm.service.vdb.milvus_client import DATA_TYPE_MAP
 from morpheus_llm.service.vdb.milvus_vector_db_service import MilvusVectorDBService
@@ -43,10 +42,7 @@ def build_llm_service(model_name: str,
 
     service: LLMService | None = None
 
-    if (lowered_llm_service == 'nemollm'):
-        model_kwargs['tokens_to_generate'] = tokens_to_generate
-        service = NeMoLLMService()
-    elif (lowered_llm_service == 'openai'):
+    if (lowered_llm_service == 'openai'):
         model_kwargs['max_tokens'] = tokens_to_generate
         service = OpenAIChatService(base_url=base_url, api_key=api_key)
     else:

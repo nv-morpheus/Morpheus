@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,13 +44,6 @@ def test_create(service_name: str, expected_cls: type, env_values: dict[str, str
     service = LLMService.create(service_name)
     assert isinstance(service, expected_cls)
 
-
-def test_nemo_llm_service_create_not_supported():
-    """
-    Test that NeMoLLMService raises an error when trying to create a client.
-    """
-    with pytest.raises(RuntimeError, match=".*no longer supported.*"):
-        LLMService.create("nemo")
 
 
 @pytest.mark.parametrize(

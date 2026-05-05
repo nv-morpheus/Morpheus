@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -1114,13 +1114,6 @@ def morpheus_llm_fixture(fail_missing: bool):
                          fail_missing=fail_missing)
 
 
-@pytest.fixture(name="nemollm", scope='session')
-def nemollm_fixture(fail_missing: bool):
-    """
-    Fixture to ensure nemollm is installed
-    """
-    yield import_or_skip("nemollm", reason=OPT_DEP_SKIP_REASON.format(package="nemollm"), fail_missing=fail_missing)
-
 
 @pytest.fixture(name="openai", scope='session')
 def openai_fixture(fail_missing: bool):
@@ -1251,16 +1244,6 @@ def mock_chat_completion_fixture():
             return_value=mk_mock_openai_response(['test_output']))
         yield (mock_client, mock_async_client)
 
-
-@pytest.mark.usefixtures("nemollm")
-@pytest.fixture(name="mock_nemollm")
-def mock_nemollm_fixture():
-    with mock.patch("nemollm.NemoLLM", autospec=True) as mock_nemollm:
-        mock_nemollm.return_value = mock_nemollm
-        mock_nemollm.generate_multiple.return_value = ["test_output"]
-        mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}
-
-        yield mock_nemollm
 
 
 @pytest.fixture(name="array_pkg")

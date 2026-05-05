@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025, NVIDIA CORPORATION.
+# Copyright (c) 2022-2026, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ from abc import ABC
 from abc import abstractmethod
 
 if typing.TYPE_CHECKING:
-    from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService
     from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
 
 logger = logging.getLogger(__name__)
@@ -182,11 +181,6 @@ class LLMService(ABC):
 
     @typing.overload
     @staticmethod
-    def create(service_type: typing.Literal["nemo"], *service_args, **service_kwargs) -> "NeMoLLMService":
-        pass
-
-    @typing.overload
-    @staticmethod
     def create(service_type: typing.Literal["openai"], *service_args, **service_kwargs) -> "OpenAIChatService":
         pass
 
@@ -196,7 +190,7 @@ class LLMService(ABC):
         pass
 
     @staticmethod
-    def create(service_type: str | typing.Literal["nemo"] | typing.Literal["openai"], *service_args, **service_kwargs):
+    def create(service_type: str | typing.Literal["openai"], *service_args, **service_kwargs):
         """
         Returns a service for interacting with LLM models.
 

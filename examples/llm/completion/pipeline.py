@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2025, NVIDIA CORPORATION.
+# Copyright (c) 2023-2026, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ from morpheus_llm.llm.nodes.extracter_node import ExtracterNode
 from morpheus_llm.llm.nodes.llm_generate_node import LLMGenerateNode
 from morpheus_llm.llm.nodes.prompt_template_node import PromptTemplateNode
 from morpheus_llm.llm.services.llm_service import LLMService
-from morpheus_llm.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus_llm.llm.services.openai_chat_service import OpenAIChatService
 from morpheus_llm.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus_llm.stages.llm.llm_engine_stage import LLMEngineStage
@@ -45,10 +44,7 @@ def _build_engine(llm_service: str):
     llm_service_cls: type[LLMService] = None
     model_name: str = None
 
-    if llm_service == "NemoLLM":
-        llm_service_cls = NeMoLLMService
-        model_name = "gpt-43b-002"
-    elif llm_service == "OpenAI":
+    if llm_service == "OpenAI":
         llm_service_cls = OpenAIChatService
         model_name = 'gpt-3.5-turbo'
     else:
