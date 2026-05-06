@@ -1114,7 +1114,6 @@ def morpheus_llm_fixture(fail_missing: bool):
                          fail_missing=fail_missing)
 
 
-
 @pytest.fixture(name="openai", scope='session')
 def openai_fixture(fail_missing: bool):
     """
@@ -1243,7 +1242,6 @@ def mock_chat_completion_fixture():
         mock_async_client.chat.completions.create = mock.AsyncMock(
             return_value=mk_mock_openai_response(['test_output']))
         yield (mock_client, mock_async_client)
-
 
 
 @pytest.fixture(name="array_pkg")

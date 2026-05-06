@@ -45,7 +45,6 @@ def test_create(service_name: str, expected_cls: type, env_values: dict[str, str
     assert isinstance(service, expected_cls)
 
 
-
 @pytest.mark.parametrize(
     "service_name, class_name",
     [("openai", "morpheus_llm.llm.services.openai_chat_service.OpenAIChatService"),
