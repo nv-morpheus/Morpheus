@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -488,7 +488,10 @@ def test_auto_encoder_get_results(train_ae: autoencoder.AutoEncoder, train_df: p
     assert 'max_abs_z' in results.columns
     assert 'mean_abs_z' in results.columns
 
-    assert np.isclose(results.loc[0, 'max_abs_z'], 2.51, atol=1e-2)
+    # Widened tolerance from 1e-2 to 0.05: PyTorch guarantees determinism only per-GPU model
+    # (see manual_seed fixture docstring). CI observed 2.4616 vs expected 2.51 (delta ~0.048)
+    # on a different GPU, which exceeded the original atol. See PR #2331 for context.
+    assert np.isclose(results.loc[0, 'max_abs_z'], 2.51, atol=0.05)
 
     # Numpy float has different precision checks than python float, so we wrap it.
     assert np.isclose(results.loc[0, 'mean_abs_z'], 0.361, atol=1e-3)
