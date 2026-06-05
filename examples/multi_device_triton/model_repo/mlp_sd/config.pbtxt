@@ -1,0 +1,14 @@
+# 1-GPU baseline (same math, unsharded) for the correctness comparison. Served by
+# the stock single-device path on GPU 0. 1/model.plan = the full (unsharded) engine.
+# Batched model: max_batch_size rows of a 4096-d feature.
+name: "mlp_sd"
+backend: "tensorrt"
+max_batch_size: 2048
+default_model_filename: "model.plan"
+
+instance_group [
+  { kind: KIND_GPU count: 1 gpus: [ 0 ] }
+]
+
+input  [ { name: "X" data_type: TYPE_FP32 dims: [ 4096 ] } ]
+output [ { name: "Y" data_type: TYPE_FP32 dims: [ 4096 ] } ]

@@ -1,0 +1,23 @@
+# 2-GPU TensorRT Multi-Device model (TRT-28040). A single KIND_MODEL instance
+# drives a tensor-parallel-sharded engine across GPUs 0 and 1 via the MD-enabled
+# tensorrt backend (NCCL DistCollective). Per-rank weight-shard engines live as
+# 1/model.plan.rank0 and 1/model.plan.rank1. Transparent to the client (Morpheus
+# TritonInferenceStage / a NeMo-Retriever NIM) -- same gRPC API as any model.
+# Batched model: max_batch_size rows of a 4096-d feature, sharded MLP 4096->4096.
+name: "mlp_md"
+backend: "tensorrt"
+max_batch_size: 2048
+default_model_filename: "model.plan"
+
+instance_group [
+  { kind: KIND_MODEL count: 1 }
+]
+
+parameters [
+  { key: "enable_multi_device"           value: { string_value: "true" } },
+  { key: "multi_device_gpus"             value: { string_value: "0,1" } },
+  { key: "multi_device_per_rank_engines" value: { string_value: "true" } }
+]
+
+input  [ { name: "X" data_type: TYPE_FP32 dims: [ 4096 ] } ]
+output [ { name: "Y" data_type: TYPE_FP32 dims: [ 4096 ] } ]
