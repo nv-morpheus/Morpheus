@@ -1,5 +1,5 @@
 
-# SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,6 +34,19 @@ CMAKE_ARGS="-DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES=-"RAPIDS"} ${C
 CMAKE_ARGS="-DPython_EXECUTABLE=${PYTHON} ${CMAKE_ARGS}"
 CMAKE_ARGS="-DPYTHON_EXECUTABLE=${PYTHON} ${CMAKE_ARGS}" # for pybind11
 CMAKE_ARGS="--log-level=VERBOSE ${CMAKE_ARGS}"
+
+# Conda host dependencies (scikit-build, cython, etc.) are installed under $PREFIX but
+# may not be registered with pip. Point CMake at the host prefix so load_sk_build.cmake
+# can locate skbuild under Python3_SITELIB during conda-build (notably on arm64).
+if [[ -n "${PREFIX}" ]]; then
+   _PYTHON_VERSION=$(${PYTHON} -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+   _HOST_SITE_PACKAGES="${PREFIX}/lib/python${_PYTHON_VERSION}/site-packages"
+   if [[ -d "${_HOST_SITE_PACKAGES}/skbuild" ]]; then
+      CMAKE_ARGS="-DPython3_ROOT_DIR=${PREFIX} ${CMAKE_ARGS}"
+      CMAKE_ARGS="-DPython_ROOT_DIR=${PREFIX} ${CMAKE_ARGS}"
+      CMAKE_ARGS="-DPython3_FIND_VIRTUALENV=NEVER ${CMAKE_ARGS}"
+   fi
+fi
 
 # Append to front of args to allow users to overwrite them
 if [[ -n "${MORPHEUS_CACHE_DIR}" ]]; then

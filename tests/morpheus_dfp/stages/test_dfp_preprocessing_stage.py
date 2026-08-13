@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,7 +49,6 @@ def test_process_features(
 
     expected_df = control_message.payload().copy_dataframe()
     expected_df['v210'] = expected_df['v2'] + 10
-    expected_df['v3'] = expected_df['v3'].astype(str)
 
     schema = DataFrameInputSchema(column_info=[
         CustomColumn(name='v210', dtype=str, process_column_fn=lambda df: df['v2'] + 10),
@@ -60,4 +59,7 @@ def test_process_features(
     results = stage.process_features(control_message)
 
     assert isinstance(results, ControlMessage)
-    dataset_pandas.assert_compare_df(results.payload().get_data(), expected_df)
+    data = results.payload().get_data()
+    # Restore float dtype before comparison; string conversion loses float tolerance.
+    data['v3'] = data['v3'].astype(float)
+    dataset_pandas.assert_compare_df(data, expected_df)

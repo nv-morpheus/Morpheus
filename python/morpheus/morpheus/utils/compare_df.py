@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
 import logging
 import re
 import typing
+import warnings
 
 import datacompy
 import pandas as pd
@@ -117,16 +118,20 @@ def compare_df(df_a: pd.DataFrame,
     # Now get the results in the same order
     df_b_filtered = df_b_filtered[same_columns]
 
-    comparison = datacompy.Compare(
-        df_a_filtered,
-        df_b_filtered,
-        on_index=True,
-        abs_tol=abs_tol,
-        rel_tol=rel_tol,
-        df1_name=dfa_name,
-        df2_name=dfb_name,
-        cast_column_names_lower=False,
-    )
+    with warnings.catch_warnings():
+        # datacompy 0.13.x triggers pandas FutureWarnings during column alignment
+        warnings.filterwarnings("ignore", category=FutureWarning)
+        warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+        comparison = datacompy.Compare(
+            df_a_filtered,
+            df_b_filtered,
+            on_index=True,
+            abs_tol=abs_tol,
+            rel_tol=rel_tol,
+            df1_name=dfa_name,
+            df2_name=dfb_name,
+            cast_column_names_lower=False,
+        )
 
     total_rows = len(df_a_filtered)
     diff_rows = len(df_a_filtered) - int(comparison.count_matching_rows())
