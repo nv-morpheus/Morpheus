@@ -74,15 +74,15 @@ def test_is_multicast():
 
 
 def test_is_private():
-    input_df = cudf.Series(["0.0.0.0", "5.79.97.178"])
-    expected = cudf.Series([True, False])
+    input_df = cudf.Series(["0.0.0.0", "5.79.97.178", "192.0.0.8", "192.0.0.9", "192.0.0.10"])
+    expected = cudf.Series([True, False, True, False, False])
     actual = ip.is_private(input_df)
     assert actual.equals(expected)
 
 
 def test_is_global():
-    input_df = cudf.Series(["0.0.0.0", "5.79.97.178"])
-    expected = cudf.Series([False, True])
+    input_df = cudf.Series(["0.0.0.0", "5.79.97.178", "192.0.0.8", "192.0.0.9", "192.0.0.10"])
+    expected = cudf.Series([False, True, False, True, True])
     actual = ip.is_global(input_df)
     assert actual.equals(expected)
 
